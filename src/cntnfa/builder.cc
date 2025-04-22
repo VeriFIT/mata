@@ -123,7 +123,7 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
                         std::make_unique<CounterIncrement>(counter_id, value), annotations_id);
                 } else if (type == "=") {
                     aut.annotation_collection.insert(
-                        std::make_unique<CounterTest>(counter_id, value), annotations_id);
+                        std::make_unique<CounterEqual>(counter_id, value), annotations_id);
                 } else if (type == ">") {
                     aut.annotation_collection.insert(
                         std::make_unique<CounterGreater>(counter_id, value), annotations_id);

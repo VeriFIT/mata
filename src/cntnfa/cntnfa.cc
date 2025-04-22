@@ -699,8 +699,8 @@ Nfa& Nfa::unite_nondet_counter_nfa_with(const Nfa &aut) {
             return std::make_shared<CounterAssign>(new_id, val);
         } else if (ann->get_type() == "CounterIncrement") {
             return std::make_shared<CounterIncrement>(new_id, val);
-        } else if (ann->get_type() == "CounterTest") {
-            return std::make_shared<CounterTest>(new_id, val);
+        } else if (ann->get_type() == "CounterEqual") {
+            return std::make_shared<CounterEqual>(new_id, val);
         } else if (ann->get_type() == "CounterGreater") {
             return std::make_shared<CounterGreater>(new_id, val);
         } else if (ann->get_type() == "CounterLess") {

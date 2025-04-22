@@ -167,18 +167,18 @@ public:
     std::string get_type() const override;
 };
 
-/// Class for testing a counter's value against an expected value.
-// Note: (= c0 0) is a counter test in Mata format.
-class CounterTest : public TransitionAnnotation {
+/// Class for checking if a counter's value is equal to the value.
+// Note: (= c0 0) is a counter equal check in Mata format.
+class CounterEqual : public TransitionAnnotation {
 public:
-    CounterTest() = default;
-    CounterTest(size_t counter_id, CounterValue value)
+    CounterEqual() = default;
+    CounterEqual(size_t counter_id, CounterValue value)
         : TransitionAnnotation(counter_id, value) {}
 
-    bool operator==(const CounterTest& other) const {
+    bool operator==(const CounterEqual& other) const {
         return counter_id == other.counter_id && value == other.value;
     }
-    auto operator<=>(const CounterTest& other) const {
+    auto operator<=>(const CounterEqual& other) const {
         if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
             return cmp;
         }

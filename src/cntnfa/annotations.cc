@@ -63,24 +63,24 @@ std::string CounterIncrement::get_type() const {
     return "CounterIncrement";
 }
 
-void CounterTest::execute(CounterSet& counters) const {
+void CounterEqual::execute(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterTest::test(const CounterSet& counters) const {
+bool CounterEqual::test(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
-        throw std::runtime_error("CounterTest: Invalid counter ID.");
+        throw std::runtime_error("CounterEqual: Invalid counter ID.");
     }
     return counters[counter_id].value == value;
 }
 
-bool CounterTest::apply(CounterSet& counters) const {
+bool CounterEqual::apply(CounterSet& counters) const {
     return test(counters);
 }
 
-std::string CounterTest::get_type() const {
-    return "CounterTest";
+std::string CounterEqual::get_type() const {
+    return "CounterEqual";
 }
 
 void CounterGreater::execute(CounterSet& counters) const {

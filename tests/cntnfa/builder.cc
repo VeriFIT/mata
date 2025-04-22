@@ -235,7 +235,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         // Annotations
         size_t ann0 = nfa.create_annotation_set();
         size_t ann1 = nfa.create_annotation_set();
-        nfa.add_annotation(ann0, std::make_shared<CounterTest>(c0, 0));
+        nfa.add_annotation(ann0, std::make_shared<CounterEqual>(c0, 0));
         nfa.add_annotation(ann1, std::make_shared<CounterIncrement>(c1, 1));
 
         // Transitions
@@ -311,16 +311,16 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         size_t ann6 = nfa.create_annotation_set();
         size_t ann7 = nfa.create_annotation_set();
 
-        nfa.add_annotation(ann0, std::make_shared<CounterTest>(c0, 0));     // = c0 0
+        nfa.add_annotation(ann0, std::make_shared<CounterEqual>(c0, 0));    // = c0 0
         nfa.add_annotation(ann1, std::make_shared<CounterIncrement>(c1, 1));// + c1 1
-        nfa.add_annotation(ann2, std::make_shared<CounterTest>(c1, 1));     // = c1 1
+        nfa.add_annotation(ann2, std::make_shared<CounterEqual>(c1, 1));    // = c1 1
         nfa.add_annotation(ann2, std::make_shared<CounterIncrement>(c2, 2));// + c2 2
         nfa.add_annotation(ann3, std::make_shared<CounterIncrement>(c1, 1));// + c1 1
         nfa.add_annotation(ann4, std::make_shared<CounterIncrement>(c0, 3));// + c0 3
-        nfa.add_annotation(ann5, std::make_shared<CounterTest>(c1, 1));     // = c1 1
+        nfa.add_annotation(ann5, std::make_shared<CounterEqual>(c1, 1));    // = c1 1
         nfa.add_annotation(ann5, std::make_shared<CounterIncrement>(c2, 2));// + c2 2
-        nfa.add_annotation(ann6, std::make_shared<CounterTest>(c0, 0));     // = c0 0
-        nfa.add_annotation(ann7, std::make_shared<CounterTest>(c1, 1));     // = c1 1
+        nfa.add_annotation(ann6, std::make_shared<CounterEqual>(c0, 0));    // = c0 0
+        nfa.add_annotation(ann7, std::make_shared<CounterEqual>(c1, 1));    // = c1 1
         nfa.add_annotation(ann7, std::make_shared<CounterIncrement>(c2, 2));// + c2 2
 
         // Transitions
