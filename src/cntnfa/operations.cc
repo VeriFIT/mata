@@ -947,6 +947,7 @@ bool mata::cntnfa::Nfa::is_prfx_in_lang(const Run& run) const {
     return this->final.intersects_with(current_post);
 }
 
+// FIXME: This function is not working correctly.
 bool mata::cntnfa::Nfa::is_counter_nfa_lang_empty(Run* cex) const {
     using Config = Configuration;
 
