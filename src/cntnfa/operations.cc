@@ -1136,6 +1136,10 @@ Nfa mata::cntnfa::minimize(
     return algo(aut);
 }
 
+Nfa mata::cntnfa::intersection_counter_nfas(const Nfa &lhs, const Nfa &rhs) {
+    return algorithms::product_counter_nfas(lhs, rhs);
+}
+
 Nfa mata::cntnfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
 
     auto both_final = [&](const State lhs_state,const State rhs_state) {
@@ -1158,8 +1162,9 @@ Nfa mata::cntnfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol fir
     return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
 }
 
-Nfa mata::cntnfa::union_nondet_counter_nfas(const Nfa &lhs, const Nfa &rhs) {
-    return Nfa{lhs}.unite_nondet_counter_nfa_with(rhs);
+// TODO: Do we need this function? It can be useful if we want counters to be shared.
+Nfa mata::cntnfa::union_nondet_counter_nfas_shared_counters(const Nfa &lhs, const Nfa &rhs) {
+    return Nfa{lhs}.unite_nondet_shared_counters_nfa_with(rhs);
 }
 
 Nfa mata::cntnfa::union_nondet(const Nfa &lhs, const Nfa &rhs) {

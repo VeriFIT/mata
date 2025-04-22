@@ -22,6 +22,149 @@ using InvertedProductStorage = std::vector<State>;
 
 namespace mata::cntnfa {
 
+Nfa mata::cntnfa::algorithms::product_counter_nfas(const Nfa& lhs, const Nfa& rhs) {
+    using StatePair = std::pair<State, State>;
+    Nfa result;
+
+    // Maps state pairs (lhs × rhs) to result states
+    std::map<StatePair, State> state_map;
+    // Queue to process pairs (BFS-like)
+    std::deque<StatePair> worklist;
+
+    // Helper to get or create a state in the result automaton for a pair of lhs and rhs states
+    auto get_or_create_state = [&](State lhs_s, State rhs_s) -> State {
+        StatePair p = {lhs_s, rhs_s};
+        auto it = state_map.find(p);
+        if (it != state_map.end()) {
+            return it->second;
+        }
+
+        // Create new state in the result
+        State new_state = result.add_state();
+        state_map[p] = new_state;
+        worklist.push_back(p);
+
+        // Initial state if both components are initial
+        if (lhs.initial.contains(lhs_s) && rhs.initial.contains(rhs_s)) {
+            result.initial.insert(new_state);
+        }
+
+        // Final state if both components are final
+        if (lhs.final.contains(lhs_s) && rhs.final.contains(rhs_s)) {
+            result.final.insert(new_state);
+        }
+
+        return new_state;
+    };
+
+    // Merge shared counters from both automata (by name)
+    std::unordered_map<std::string, size_t> counter_id_map;
+    for (size_t i = 0; i < lhs.counter_set.size(); ++i) {
+        const auto& c = lhs.counter_set.get(i);
+        size_t new_id = result.counter_set.insert(c.name, c.value);
+        counter_id_map[c.name] = new_id;
+    }
+    for (size_t i = 0; i < rhs.counter_set.size(); ++i) {
+        const auto& c = rhs.counter_set.get(i);
+        if (counter_id_map.count(c.name) == 0) {
+            size_t new_id = result.counter_set.insert(c.name, c.value);
+            counter_id_map[c.name] = new_id;
+        }
+    }
+
+    // Helper to remap annotation from lhs or rhs to result using shared counter names
+    auto remap_annotation = [&](const std::shared_ptr<TransitionAnnotation>& ann, const CounterRegisterSet& from_set) -> std::shared_ptr<TransitionAnnotation> {
+        std::string name = from_set.get_name(ann->get_counter_id());
+        size_t new_id = counter_id_map.at(name);
+        CounterValue val = ann->get_value();
+
+        // Create a new annotation of the same type with remapped counter ID
+        if (ann->get_type() == "CounterAssign") return std::make_shared<CounterAssign>(new_id, val);
+        if (ann->get_type() == "CounterIncrement") return std::make_shared<CounterIncrement>(new_id, val);
+        if (ann->get_type() == "CounterEqual") return std::make_shared<CounterEqual>(new_id, val);
+        if (ann->get_type() == "CounterNotEqual") return std::make_shared<CounterNotEqual>(new_id, val);
+        if (ann->get_type() == "CounterGreater") return std::make_shared<CounterGreater>(new_id, val);
+        if (ann->get_type() == "CounterLess") return std::make_shared<CounterLess>(new_id, val);
+        if (ann->get_type() == "CounterGreaterEqual") return std::make_shared<CounterGreaterEqual>(new_id, val);
+        if (ann->get_type() == "CounterLessEqual") return std::make_shared<CounterLessEqual>(new_id, val);
+
+        throw std::runtime_error("Unknown annotation type: " + ann->get_type());
+    };
+
+    // Initialize product state space from all pairs of initial states
+    for (auto s1 : lhs.initial) {
+        for (auto s2 : rhs.initial) {
+            // Fills state_map and worklist
+            get_or_create_state(s1, s2);
+        }
+    }
+
+    // Process all reachable state pairs
+    while (!worklist.empty()) {
+        auto [s1, s2] = worklist.front();
+        worklist.pop_front();
+        State current = state_map[{s1, s2}];
+
+        auto it1 = lhs.delta[s1].begin();
+        auto it2 = rhs.delta[s2].begin();
+
+        // Merge transitions by synchronizing on the same symbol
+        while (it1 != lhs.delta[s1].end() && it2 != rhs.delta[s2].end()) {
+            if (it1->symbol < it2->symbol) {
+                ++it1;
+            } else if (it1->symbol > it2->symbol) {
+                ++it2;
+            } else {
+                Symbol symbol = it1->symbol;
+                // Combined transitions under symbol
+                SymbolPost product_post{symbol};
+
+                // For each pair of targets, create a new transition
+                for (auto tgt1 : it1->targets) {
+                    for (auto tgt2 : it2->targets) {
+                        State tgt = get_or_create_state(tgt1.state, tgt2.state);
+
+                        // Merge annotations from both automata
+                        std::vector<std::shared_ptr<TransitionAnnotation>> all_anns;
+                        if (tgt1.annotations_id != UNDEFINED_ANNOTATIONS) {
+                            for (const auto& ann : lhs.annotation_collection[tgt1.annotations_id]) {
+                                all_anns.push_back(remap_annotation(ann, lhs.counter_set));
+                            }
+                        }
+                        if (tgt2.annotations_id != UNDEFINED_ANNOTATIONS) {
+                            for (const auto& ann : rhs.annotation_collection[tgt2.annotations_id]) {
+                                all_anns.push_back(remap_annotation(ann, rhs.counter_set));
+                            }
+                        }
+
+                        // Insert the combined annotations into result
+                        size_t ann_set = UNDEFINED_ANNOTATIONS;
+                        if (!all_anns.empty()) {
+                            ann_set = result.annotation_collection.size();
+                            result.annotation_collection.allocate(ann_set + 1);
+                            for (auto& ann : all_anns) {
+                                result.annotation_collection.insert(ann, ann_set);
+                            }
+                        }
+
+                        // Add the final target state with annotations
+                        product_post.insert(AnnotationState(tgt, ann_set));
+                    }
+                }
+
+                // Add the transition to the product automaton
+                result.delta.mutable_state_post(current).push_back(std::move(product_post));
+
+                // Move to the next transition
+                ++it1;
+                ++it2;
+            }
+        }
+    }
+
+    return result;
+}
+
 //TODO: move this method to cntnfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
 Nfa mata::cntnfa::algorithms::product(
         const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,

@@ -645,7 +645,7 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
     return *this;
 }
 
-Nfa& Nfa::unite_nondet_counter_nfa_with(const Nfa &aut) {
+Nfa& Nfa::unite_nondet_shared_counters_nfa_with(const Nfa &aut) {
     // Edge cases
     if (this == &aut) {
         return *this;
@@ -695,23 +695,14 @@ Nfa& Nfa::unite_nondet_counter_nfa_with(const Nfa &aut) {
         size_t new_id = remapped_counter_ids.at(name);
 
         // Handle each annotation type individually
-        if (ann->get_type() == "CounterAssign") {
-            return std::make_shared<CounterAssign>(new_id, val);
-        } else if (ann->get_type() == "CounterIncrement") {
-            return std::make_shared<CounterIncrement>(new_id, val);
-        } else if (ann->get_type() == "CounterEqual") {
-            return std::make_shared<CounterEqual>(new_id, val);
-        } else if (ann->get_type() == "CounterNotEqual") {
-            return std::make_shared<CounterNotEqual>(new_id, val);
-        } else if (ann->get_type() == "CounterGreater") {
-            return std::make_shared<CounterGreater>(new_id, val);
-        } else if (ann->get_type() == "CounterLess") {
-            return std::make_shared<CounterLess>(new_id, val);
-        } else if (ann->get_type() == "CounterGreaterEqual") {
-            return std::make_shared<CounterGreaterEqual>(new_id, val);
-        } else if (ann->get_type() == "CounterLessEqual") {
-            return std::make_shared<CounterLessEqual>(new_id, val);
-        }
+        if (ann->get_type() == "CounterAssign") return std::make_shared<CounterAssign>(new_id, val);
+        if (ann->get_type() == "CounterIncrement") return std::make_shared<CounterIncrement>(new_id, val);
+        if (ann->get_type() == "CounterEqual") return std::make_shared<CounterEqual>(new_id, val);
+        if (ann->get_type() == "CounterNotEqual") return std::make_shared<CounterNotEqual>(new_id, val);
+        if (ann->get_type() == "CounterGreater") return std::make_shared<CounterGreater>(new_id, val);
+        if (ann->get_type() == "CounterLess") return std::make_shared<CounterLess>(new_id, val);
+        if (ann->get_type() == "CounterGreaterEqual") return std::make_shared<CounterGreaterEqual>(new_id, val);
+        if (ann->get_type() == "CounterLessEqual") return std::make_shared<CounterLessEqual>(new_id, val);
 
         throw std::runtime_error("Unknown annotation type: " + ann->get_type());
     };

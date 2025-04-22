@@ -99,6 +99,11 @@ Simlib::Util::BinaryRelation compute_relation(
         const ParameterMap&  params = {{ "relation", "simulation"}, { "direction", "forward"}});
 
 /**
+ * @brief Compute product of two NFAs.
+ */
+Nfa product_counter_nfas(const Nfa& lhs, const Nfa& rhs);
+
+/**
  * @brief Compute product of two NFAs, final condition is to be specified, with a possibility of using multiple epsilons.
  *
  * @param[in] lhs First NFA to compute intersection for.

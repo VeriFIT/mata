@@ -281,8 +281,9 @@ public:
 
     /**
      * @brief In-place nondeterministic union of counter NFA with @p aut.
+     * Counter with the same name are shared between the two automata.
      */
-    Nfa& unite_nondet_counter_nfa_with(const Nfa &aut);
+    Nfa& unite_nondet_shared_counters_nfa_with(const Nfa &aut);
 
     /**
      * @brief In-place nondeterministic union with @p aut.
@@ -564,10 +565,11 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
 /**
  * @brief Compute non-deterministic union of two counter NFAs.
- *
+ * Counters are shared between the two NFAs in this implementation.
+ * It means that counters with the same name in both NFAs will be merged into one.
  * Counter NFAs are unnecessarily contain counters or annotations.
  */
-Nfa union_nondet_counter_nfas(const Nfa &lhs, const Nfa &rhs);
+Nfa union_nondet_counter_nfas_shared_counters(const Nfa &lhs, const Nfa &rhs);
 
 /**
  * @brief Compute non-deterministic union of two NFAs (no counters or annotations).
@@ -614,6 +616,11 @@ Nfa lang_difference(
         std::function<bool(const Nfa&, const Nfa&, const StateSet&, const StateSet&, const State, const Nfa&)>
     > macrostate_discover = std::nullopt
 );
+
+/**
+ * @brief Compute intersection of two counter NFAs.
+ */
+Nfa intersection_counter_nfas(const Nfa &lhs, const Nfa &rhs);
 
 /**
  * @brief Compute intersection of two NFAs.

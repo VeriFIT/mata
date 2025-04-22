@@ -3311,7 +3311,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
     }
 }
 
-TEST_CASE("mata::cntnfa::unite_nondet_counter_nfas()") {
+TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
     // Define runs for testing
     Run zero{{0}, {}};
     Run one{{1}, {}};
@@ -3341,10 +3341,68 @@ TEST_CASE("mata::cntnfa::unite_nondet_counter_nfas()") {
     REQUIRE_FALSE(rhs.is_in_lang_of_counter_nfa(zero));
 
     SECTION("Union accepts both languages") {
-        Nfa result = union_nondet_counter_nfas(lhs, rhs);
+        Nfa result = union_nondet_counter_nfas_shared_counters(lhs, rhs);
         CHECK(result.is_in_lang_of_counter_nfa(zero));
         CHECK(result.is_in_lang_of_counter_nfa(one));
     }
+}
+
+TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
+{
+    // First automaton A
+    Nfa a;
+    a.initial.insert(0);
+    a.final.insert(2);
+    a.delta.add(0, 'a', 1);
+    a.delta.add(1, 'b', 2);
+
+    // Add a counter and an annotation to A
+    size_t c_a = a.counter_set.insert("c0", 0);
+    size_t ann_id_a = a.annotation_collection.insert(std::make_shared<CounterIncrement>(c_a, 1));
+    a.delta.add(2, 'c', AnnotationState(2, ann_id_a));
+
+    // Second automaton B
+    Nfa b;
+    b.initial.insert(0);
+    b.final.insert(2);
+    b.delta.add(0, 'a', 1);
+    b.delta.add(1, 'b', 2);
+
+    // Add the same counter name to B to ensure shared semantics
+    size_t c_b = b.counter_set.insert("c0", 0);
+    size_t ann_id_b = b.annotation_collection.insert(std::make_shared<CounterEqual>(c_b, 1));
+    b.delta.add(2, 'c', AnnotationState(2, ann_id_b));
+
+    // Compute the intersection (product)
+    Nfa result = intersection_counter_nfas(a, b);
+
+    // It should have exactly one initial state from pair (0, 0)
+    REQUIRE(result.initial.size() == 1);
+
+    // It should have one final state from pair (2, 2)
+    REQUIRE(!result.final.empty());
+
+    // Check transitions on a, b, c
+    bool has_a = false, has_b = false, has_c = false;
+    for (const auto& post : result.delta) {
+        for (const auto& sp : post) {
+            if (sp.symbol == 'a') has_a = true;
+            if (sp.symbol == 'b') has_b = true;
+            if (sp.symbol == 'c') has_c = true;
+        }
+    }
+    REQUIRE(has_a);
+    REQUIRE(has_b);
+    REQUIRE(has_c);
+
+    // Check the counter set size
+    REQUIRE(result.counter_set.size() == 1);
+
+    // Check the counter name
+    REQUIRE(result.counter_set.get_name(0) == "c0");
+
+    // Check the number of states
+    REQUIRE(result.num_of_states() == 3);
 }
 
 TEST_CASE("mata::cntnfa::union_norename()") {
