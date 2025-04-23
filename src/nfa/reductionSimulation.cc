@@ -230,9 +230,32 @@ namespace {
 
         bool forward_eq = false;
         bool backward_eq = false;
+        bool bidirect_eq = false;
 
-        while (!(forward_eq && backward_eq)){
-            
+        while (!(forward_eq && backward_eq && bidirect_eq)){
+
+            // MERGE IN BOTH DIRECTIONS
+            state_map_dummy.clear();
+
+            const auto sim_birelation_fw = algorithms::compute_relation(
+                    tmp, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+
+            Nfa aut_bir = revert(tmp);
+            const auto sim_birelation_bw = algorithms::compute_relation(
+                    aut_bir, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+
+            result = merge_in_both_directions(tmp, state_map_dummy, sim_birelation_fw, sim_birelation_bw);
+
+            if (tmp.num_of_states() == result.num_of_states()){
+                bidirect_eq = true;
+            }
+            else {
+                bidirect_eq = false;
+            }
+
+            tmp = result;
+
+            // MERGE IN FORWARD DIRECTION
             state_map_dummy.clear();
             
             // Compute the forward simulation TODO take out into a function
@@ -249,6 +272,7 @@ namespace {
                 
             tmp = result;
 
+            // MERGE IN BACKWARD DIRECTION
             state_map_dummy.clear();
 
             // Compute the backward simulation TODO take out into a function
