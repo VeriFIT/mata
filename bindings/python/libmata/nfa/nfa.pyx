@@ -616,7 +616,7 @@ cdef class Nfa:
     def __repr__(self):
         return str(self)
 
-    def to_dot_file(self, output_file='aut.dot', output_format='pdf', decode_ascii_chars=False, use_intervals=False, max_label_lenght=-1):
+    def to_dot_file(self, output_file='aut.dot', output_format='pdf', decode_ascii_chars=False, use_intervals=False, max_label_length=-1):
         """Transforms the automaton to dot format.
 
         By default, the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
