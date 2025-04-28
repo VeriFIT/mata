@@ -429,24 +429,78 @@ bool Nfa::is_flat() const {
     return flat;
 }
 
-std::string Nfa::print_to_dot(const bool ascii) const {
+std::string Nfa::print_to_dot(const bool ascii, const bool use_intervals, const int max_label_len) const {
     std::stringstream output;
-    print_to_dot(output, ascii);
+    print_to_dot(output, ascii, use_intervals, max_label_len);
     return output.str();
 }
 
-void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
+void Nfa::print_to_dot(std::ostream &output, const bool ascii, const bool use_intervals, const int max_label_len) const {
+    auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
+        switch (symbol) {
+            case EPSILON:      return "<eps>";
+            default:           return "<" + std::to_string(symbol) + ">";
+        }
+    };
+
     auto to_ascii = [&](const Symbol symbol) {
         // Translate only printable ASCII characters.
-        if (symbol < 33) {
-            return "<" + std::to_string(symbol) + ">";
+        if (symbol < 33 || symbol >= 127) {
+            return translate_special_symbols(symbol);
         }
         switch (symbol) {
             case '"':     return std::string("\\\"");
             case '\\':    return std::string("\\\\");
-            case EPSILON: return std::string("<eps>");
             default:      return std::string(1, static_cast<char>(symbol));
         }
+    };
+
+    auto translate_symbol = [&](const Symbol symbol) {
+        if (ascii) {
+            return to_ascii(symbol);
+        }
+        return translate_special_symbols(symbol);
+    };
+
+    auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+        std::string result;
+        for (const Symbol& symbol: symbols) {
+            result += translate_symbol(symbol) + ",";
+        }
+        result.pop_back(); // Remove last comma
+        return result;
+    };
+
+    auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+        std::string result;
+
+        std::vector<std::pair<Symbol, Symbol>> intervals;
+        auto symbols_it = symbols.begin();
+        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
+        ++symbols_it;
+        for (; symbols_it != symbols.end(); ++symbols_it) {
+            if (*symbols_it == interval.second + 1) {
+                interval.second = *symbols_it;
+            } else {
+                intervals.push_back(interval);
+                interval = {*symbols_it, *symbols_it};
+            }
+        }
+        intervals.push_back(interval);
+
+        for (const auto& interval: intervals) {
+            const size_t interval_size = interval.second - interval.first + 1;
+            if (interval_size == 1) {
+                result += translate_symbol(interval.first) + ",";
+            } else if (interval_size == 2) {
+                result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
+            } else {
+                result += "[" + translate_symbol(interval.first) + "-" + translate_symbol(interval.second) + "],";
+            }
+        }
+
+        result.pop_back(); // Remove last comma
+        return result;
     };
 
     output << "digraph finiteAutomaton {" << std::endl
@@ -458,15 +512,30 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
 
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
+        std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
         for (const SymbolPost &move: delta[source]) {
-            output << source << " -> {";
             for (State target: move.targets) {
-                output << target << " ";
+                tgt_symbols_map[target].insert(move.symbol);
             }
-            if (ascii) {
-                output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
+        }
+        for (const auto& [target, symbols]: tgt_symbols_map) {
+            if (max_label_len == 0) {
+                output << source << " -> " << target << ";" << std::endl;
+                continue;
+            }
+
+            std::string label = (use_intervals) ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
+            std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
+            bool is_shortened = false;
+            if (max_label_len > 0 && label.length() > static_cast<size_t>(max_label_len)) {
+                label = label.substr(0, static_cast<size_t>(max_label_len)) + "...";
+                is_shortened = true;
+            }
+
+            if (is_shortened) {
+                output << source << " -> " << target << " [label=\"" << label << "\", tooltip=\"" << on_hover_label << "\"];" << std::endl;
             } else {
-                output << "} [label=\"" << move.symbol << "\"];" << std::endl;
+                output << source << " -> " << target << " [label=\"" << label << "\"];" << std::endl;
             }
         }
     }
@@ -479,12 +548,12 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
     output << "}" << std::endl;
 }
 
-void Nfa::print_to_dot(const std::string& filename, const bool ascii) const {
+void Nfa::print_to_dot(const std::string& filename, const bool ascii, const bool use_intervals, const int max_label_len) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_dot(output, ascii);
+    print_to_dot(output, ascii, use_intervals, max_label_len);
 }
 
 std::string Nfa::print_to_mata(const Alphabet* alphabet) const {

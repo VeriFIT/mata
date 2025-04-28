@@ -112,6 +112,16 @@ extern const std::string g_GIT_SHA1;
  */
 namespace utils {
 
+inline std::string replace_all(const std::string& input, const std::string& match, const std::string& replace) {
+	std::string result = input;
+	size_t pos = 0;
+	while ((pos = result.find(match, pos)) != std::string::npos) {
+		result.replace(pos, match.length(), replace);
+		pos += replace.length();
+	}
+	return result;
+}
+
 /** Are two sets disjoint? */
 template <class T>
 bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
