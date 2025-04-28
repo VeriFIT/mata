@@ -112,7 +112,7 @@ public:
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
 
-    virtual void execute(CounterSet& counters) const = 0;
+    virtual void execute(CounterSet& counters) const = 0; // change the name to update TODO
     virtual bool test(const CounterSet& counters) const = 0;
     virtual bool apply(CounterSet&) const = 0;
     // TODO: Change type to enum or something similar.

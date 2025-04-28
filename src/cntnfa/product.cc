@@ -79,7 +79,7 @@ Nfa mata::cntnfa::algorithms::product_counter_nfas(const Nfa& lhs, const Nfa& rh
         CounterValue val = ann->get_value();
 
         // Create a new annotation of the same type with remapped counter ID
-        if (ann->get_type() == "CounterAssign") return std::make_shared<CounterAssign>(new_id, val);
+        if (ann->get_type() == "CounterAssign") return std::make_shared<CounterAssign>(new_id, val); // c++ enum class udelat TODO
         if (ann->get_type() == "CounterIncrement") return std::make_shared<CounterIncrement>(new_id, val);
         if (ann->get_type() == "CounterEqual") return std::make_shared<CounterEqual>(new_id, val);
         if (ann->get_type() == "CounterNotEqual") return std::make_shared<CounterNotEqual>(new_id, val);
@@ -109,7 +109,7 @@ Nfa mata::cntnfa::algorithms::product_counter_nfas(const Nfa& lhs, const Nfa& rh
         auto it2 = rhs.delta[s2].begin();
 
         // Merge transitions by synchronizing on the same symbol
-        while (it1 != lhs.delta[s1].end() && it2 != rhs.delta[s2].end()) {
+        while (it1 != lhs.delta[s1].end() && it2 != rhs.delta[s2].end()) { // predelat toto na synchronized iterator ? TODO
             if (it1->symbol < it2->symbol) {
                 ++it1;
             } else if (it1->symbol > it2->symbol) {
@@ -126,7 +126,7 @@ Nfa mata::cntnfa::algorithms::product_counter_nfas(const Nfa& lhs, const Nfa& rh
 
                         // Merge annotations from both automata
                         std::vector<std::shared_ptr<TransitionAnnotation>> all_anns;
-                        if (tgt1.annotations_id != UNDEFINED_ANNOTATIONS) {
+                        if (tgt1.annotations_id != UNDEFINED_ANNOTATIONS) { // std::optional ? TODO
                             for (const auto& ann : lhs.annotation_collection[tgt1.annotations_id]) {
                                 all_anns.push_back(remap_annotation(ann, lhs.counter_set));
                             }

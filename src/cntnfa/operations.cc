@@ -1140,7 +1140,7 @@ Nfa mata::cntnfa::intersection_counter_nfas(const Nfa &lhs, const Nfa &rhs) {
     return algorithms::product_counter_nfas(lhs, rhs);
 }
 
-Nfa mata::cntnfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+Nfa mata::cntnfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) { // udelat override TODO
 
     auto both_final = [&](const State lhs_state,const State rhs_state) {
         return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);

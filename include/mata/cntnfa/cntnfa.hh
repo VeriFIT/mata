@@ -40,7 +40,7 @@ namespace mata::cntnfa {
 /**
  * A struct representing an NFA.
  */
-struct Nfa {
+struct Nfa {  // Change to CntNfa TODO
 public:
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
