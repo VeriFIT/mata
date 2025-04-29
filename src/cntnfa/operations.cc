@@ -969,7 +969,7 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
 
     // Start from initial states with zero-initialized counters
     for (State s : initial) {
-        Config init_cfg{s, counter_set}; // counters are copied from `counter_set` which holds zero-initialized values
+        Config init_cfg{s, counter_set};
         worklist.push_back(init_cfg);
         processed.insert(init_cfg);
         predecessors[init_cfg] = init_cfg;
@@ -998,7 +998,8 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
                 *cex = std::move(path);
             }
 
-            return false; // Language is not empty
+            // Language is not empty
+            return false;
         }
 
         // Explore all transitions from current state
@@ -1020,15 +1021,15 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
                     for (const auto& ann : anns) {
                         const std::string& type = ann->get_type();
                         if (type == "CounterAssign" || type == "CounterIncrement") {
-                            ann->apply(next_cfg.counters); // these mutate counters
+                            ann->update(next_cfg.counters);
                         }
                     }
 
-                    // Then: check counter conditions
+                    // Then: check counter guards
                     for (const auto& ann : anns) {
                         const std::string& type = ann->get_type();
                         if (type == "CounterTest" || type == "CounterGreater" || type == "CounterLess") {
-                            if (!ann->test(next_cfg.counters)) { // use test(), not apply(), to avoid mutation
+                            if (!ann->guard(next_cfg.counters)) {
                                 passed = false;
                                 break;
                             }
@@ -1037,7 +1038,8 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
                 }
 
                 if (!passed) {
-                    continue; // skip invalid transitions
+                    // Skip invalid transitions
+                    continue;
                 }
 
                 // If this configuration was not visited yet, enqueue it

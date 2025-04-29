@@ -112,8 +112,8 @@ public:
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
 
-    virtual void execute(CounterSet& counters) const = 0; // change the name to update TODO
-    virtual bool test(const CounterSet& counters) const = 0;
+    virtual void update(CounterSet& counters) const = 0;
+    virtual bool guard(const CounterSet& counters) const = 0;
     virtual bool apply(CounterSet&) const = 0;
     // TODO: Change type to enum or something similar.
     virtual std::string get_type() const = 0;
@@ -137,8 +137,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -161,8 +161,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -185,8 +185,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -209,8 +209,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -231,8 +231,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -253,8 +253,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -275,8 +275,8 @@ CounterGreaterEqual() = default;
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };
@@ -297,8 +297,8 @@ public:
         return value <=> other.value;
     }
 
-    void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) const override;
+    void update(CounterSet& counters) const override;
+    bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
     std::string get_type() const override;
 };

@@ -8,7 +8,7 @@ namespace mata::cntnfa {
 /* TransitionAnnotation */
 
 /* CounterAssign */
-void CounterAssign::execute(CounterSet& counters) const {
+void CounterAssign::update(CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterAssign: Invalid counter ID.");
     }
@@ -22,13 +22,13 @@ void CounterAssign::execute(CounterSet& counters) const {
     }
 }
 
-bool CounterAssign::test(const CounterSet& counters) const {
+bool CounterAssign::guard(const CounterSet& counters) const {
     (void)counters;
     return true;
 }
 
 bool CounterAssign::apply(CounterSet& counters) const {
-    execute(counters);
+    update(counters);
     return true;
 }
 
@@ -37,7 +37,7 @@ std::string CounterAssign::get_type() const {
 }
 
 /* CounterIncrement */
-void CounterIncrement::execute(CounterSet& counters) const {
+void CounterIncrement::update(CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterIncrement: Invalid counter ID.");
     }
@@ -51,13 +51,13 @@ void CounterIncrement::execute(CounterSet& counters) const {
     }
 }
 
-bool CounterIncrement::test(const CounterSet& counters) const {
+bool CounterIncrement::guard(const CounterSet& counters) const {
     (void)counters;
     return true;
 }
 
 bool CounterIncrement::apply(CounterSet& counters) const {
-    execute(counters);
+    update(counters);
     return true;
 }
 
@@ -66,12 +66,12 @@ std::string CounterIncrement::get_type() const {
 }
 
 /* CounterEqual */
-void CounterEqual::execute(CounterSet& counters) const {
+void CounterEqual::update(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterEqual::test(const CounterSet& counters) const {
+bool CounterEqual::guard(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterEqual: Invalid counter ID.");
     }
@@ -79,7 +79,7 @@ bool CounterEqual::test(const CounterSet& counters) const {
 }
 
 bool CounterEqual::apply(CounterSet& counters) const {
-    return test(counters);
+    return guard(counters);
 }
 
 std::string CounterEqual::get_type() const {
@@ -87,12 +87,12 @@ std::string CounterEqual::get_type() const {
 }
 
 /* CounterNotEqual */
-void CounterNotEqual::execute(CounterSet& counters) const {
+void CounterNotEqual::update(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterNotEqual::test(const CounterSet& counters) const {
+bool CounterNotEqual::guard(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterNotEqual: Invalid counter ID.");
     }
@@ -100,7 +100,7 @@ bool CounterNotEqual::test(const CounterSet& counters) const {
 }
 
 bool CounterNotEqual::apply(CounterSet& counters) const {
-    return test(counters);
+    return guard(counters);
 }
 
 std::string CounterNotEqual::get_type() const {
@@ -108,12 +108,12 @@ std::string CounterNotEqual::get_type() const {
 }
 
 /* CounterGreater */
-void CounterGreater::execute(CounterSet& counters) const {
+void CounterGreater::update(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterGreater::test(const CounterSet& counters) const {
+bool CounterGreater::guard(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterGreater: Invalid counter ID.");
     }
@@ -121,7 +121,7 @@ bool CounterGreater::test(const CounterSet& counters) const {
 }
 
 bool CounterGreater::apply(CounterSet& counters) const {
-    return test(counters);
+    return guard(counters);
 }
 
 std::string CounterGreater::get_type() const {
@@ -129,12 +129,12 @@ std::string CounterGreater::get_type() const {
 }
 
 /* CounterLess */
-void CounterLess::execute(CounterSet& counters) const {
+void CounterLess::update(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterLess::test(const CounterSet& counters) const {
+bool CounterLess::guard(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterLess: Invalid counter ID.");
     }
@@ -142,7 +142,7 @@ bool CounterLess::test(const CounterSet& counters) const {
 }
 
 bool CounterLess::apply(CounterSet& counters) const {
-    return test(counters);
+    return guard(counters);
 }
 
 std::string CounterLess::get_type() const {
@@ -150,12 +150,12 @@ std::string CounterLess::get_type() const {
 }
 
 /* CounterGreaterEqual */
-void CounterGreaterEqual::execute(CounterSet& counters) const {
+void CounterGreaterEqual::update(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterGreaterEqual::test(const CounterSet& counters) const {
+bool CounterGreaterEqual::guard(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterGreaterEqual: Invalid counter ID.");
     }
@@ -163,7 +163,7 @@ bool CounterGreaterEqual::test(const CounterSet& counters) const {
 }
 
 bool CounterGreaterEqual::apply(CounterSet& counters) const {
-    return test(counters);
+    return guard(counters);
 }
 
 std::string CounterGreaterEqual::get_type() const {
@@ -171,12 +171,12 @@ std::string CounterGreaterEqual::get_type() const {
 }
 
 /* CounterLessEqual */
-void CounterLessEqual::execute(CounterSet& counters) const {
+void CounterLessEqual::update(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterLessEqual::test(const CounterSet& counters) const {
+bool CounterLessEqual::guard(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterLessEqual: Invalid counter ID.");
     }
@@ -184,7 +184,7 @@ bool CounterLessEqual::test(const CounterSet& counters) const {
 }
 
 bool CounterLessEqual::apply(CounterSet& counters) const {
-    return test(counters);
+    return guard(counters);
 }
 
 std::string CounterLessEqual::get_type() const {
