@@ -111,12 +111,19 @@ extern const std::string g_GIT_SHA1;
  *   5. Other helper functions.
  */
 namespace utils {
-
-inline std::string replace_all(const std::string& input, const std::string& match, const std::string& replace) {
+/**
+ * @brief  Replace all occurrences of a substring in a string
+ *
+ * @param input The input string
+ * @param needle The substring to be replaced
+ * @param replace The replacement string
+ * @return A new string with all occurrences of the substring replaced.
+ */
+inline std::string replace_all(const std::string& input, const std::string& needle, const std::string& replace) {
 	std::string result = input;
 	size_t pos = 0;
-	while ((pos = result.find(match, pos)) != std::string::npos) {
-		result.replace(pos, match.length(), replace);
+	while ((pos = result.find(needle, pos)) != std::string::npos) {
+		result.replace(pos, needle.length(), replace);
 		pos += replace.length();
 	}
 	return result;

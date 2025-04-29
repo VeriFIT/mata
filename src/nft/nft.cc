@@ -96,7 +96,6 @@ void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
     auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
         switch (symbol) {
             case EPSILON:      return "<eps>";
-            case EPSILON - 99: return "<marker>";
             case DONT_CARE:    return "<dcare>";
             default:           return "<" + std::to_string(symbol) + ">";
         }
