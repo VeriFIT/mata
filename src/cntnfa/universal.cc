@@ -15,11 +15,11 @@ using namespace mata::utils;
 
 /// naive universality check (complementation + emptiness)
 bool mata::cntnfa::algorithms::is_universal_naive(
-	const Nfa&         aut,
+	const Cntnfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
 { // {{{
-	Nfa cmpl = complement(aut, alphabet);
+	Cntnfa cmpl = complement(aut, alphabet);
 
 	return cmpl.is_lang_empty(cex);
 } // is_universal_naive }}}
@@ -27,7 +27,7 @@ bool mata::cntnfa::algorithms::is_universal_naive(
 
 /// universality check using Antichains
 bool mata::cntnfa::algorithms::is_universal_antichains(
-	const Nfa&         aut,
+	const Cntnfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
 { // {{{
@@ -131,7 +131,7 @@ bool mata::cntnfa::algorithms::is_universal_antichains(
 } // }}}
 
 // The dispatching method that calls the correct one based on parameters.
-bool mata::cntnfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
+bool mata::cntnfa::Cntnfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
@@ -151,6 +151,6 @@ bool mata::cntnfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const P
 	return algo(*this, alphabet, cex);
 } // is_universal()
 
-bool mata::cntnfa::Nfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
+bool mata::cntnfa::Cntnfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
     return this->is_universal(alphabet, nullptr, params);
 }

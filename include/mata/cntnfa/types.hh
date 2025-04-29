@@ -62,7 +62,7 @@ public:
     static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
-struct Nfa; ///< A non-deterministic finite automaton.
+struct Cntnfa; ///< A non-deterministic finite automaton with counters.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = Limits::max_symbol;

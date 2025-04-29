@@ -36,7 +36,7 @@ namespace {
      *  are considered as potentially reachable.
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
-    StateBoolArray reachable_states(const Nfa& nfa,
+    StateBoolArray reachable_states(const Cntnfa& nfa,
                                        const std::optional<const StateBoolArray>& states_to_consider = std::nullopt) {
         std::vector<State> worklist{};
         StateBoolArray reachable(nfa.num_of_states(), false);
@@ -65,12 +65,12 @@ namespace {
     }
 }
 
-void Nfa::remove_epsilon(const Symbol epsilon)
+void Cntnfa::remove_epsilon(const Symbol epsilon)
 {
     *this = mata::cntnfa::remove_epsilon(*this, epsilon);
 }
 
-StateSet Nfa::get_reachable_states() const {
+StateSet Cntnfa::get_reachable_states() const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
@@ -86,12 +86,12 @@ StateSet Nfa::get_reachable_states() const {
     return reachable_states;
 }
 
-StateSet Nfa::get_terminating_states() const
+StateSet Cntnfa::get_terminating_states() const
 {
     return revert(*this).get_reachable_states();
 }
 
-std::vector<State> Nfa::distances_from_initial() const {
+std::vector<State> Cntnfa::distances_from_initial() const {
     std::vector<State> distances(num_of_states()+1, Limits::max_state);
     BoolVector visited(num_of_states()+1, false);
     std::deque<State> que;
@@ -117,11 +117,11 @@ std::vector<State> Nfa::distances_from_initial() const {
     return distances;
 }
 
-std::vector<State> Nfa::distances_to_final() const {
+std::vector<State> Cntnfa::distances_to_final() const {
     return revert(*this).distances_from_initial();
 }
 
-Run Nfa::get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const {
+Run Cntnfa::get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const {
     Run result{{}, {q}};
     while (!final[q]) {
         for (Move move : delta[q].moves()) {
@@ -136,7 +136,7 @@ Run Nfa::get_shortest_accepting_run_from_state(State q, const std::vector<State>
     return result;
 }
 
-Nfa& Nfa::trim(StateRenaming* state_renaming) {
+Cntnfa& Cntnfa::trim(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
     useful_states.clear();
@@ -238,7 +238,7 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  */
-void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
+void Cntnfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::vector<State> program_stack;
     std::vector<State> tarjan_stack;
@@ -318,7 +318,7 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
     }
 }
 
-BoolVector Nfa::get_useful_states() const {
+BoolVector Cntnfa::get_useful_states() const {
     BoolVector useful(this->num_of_states(), false);
     bool final_scc = false;
 
@@ -358,7 +358,7 @@ BoolVector Nfa::get_useful_states() const {
     return useful;
 }
 
-bool Nfa::is_lang_empty_scc() const {
+bool Cntnfa::is_lang_empty_scc() const {
     bool accepting_state = false;
 
     TarjanDiscoverCallback callback {};
@@ -374,7 +374,7 @@ bool Nfa::is_lang_empty_scc() const {
     return !accepting_state;
 }
 
-bool Nfa::is_acyclic() const {
+bool Cntnfa::is_acyclic() const {
     bool acyclic = true;
 
     TarjanDiscoverCallback callback {};
@@ -399,10 +399,10 @@ bool Nfa::is_acyclic() const {
     return acyclic;
 }
 
-bool Nfa::is_flat() const {
+bool Cntnfa::is_flat() const {
     bool flat = true;
 
-    mata::cntnfa::Nfa::TarjanDiscoverCallback callback {};
+    mata::cntnfa::Cntnfa::TarjanDiscoverCallback callback {};
     callback.scc_discover = [&](const std::vector<mata::cntnfa::State>& scc, const std::vector<mata::cntnfa::State>& tarjan_stack) -> bool {
         (void)tarjan_stack;
         
@@ -427,13 +427,13 @@ bool Nfa::is_flat() const {
     return flat;
 }
 
-std::string Nfa::print_to_dot() const {
+std::string Cntnfa::print_to_dot() const {
     std::stringstream output;
     print_to_dot(output);
     return output.str();
 }
 
-void Nfa::print_to_dot(std::ostream &output) const {
+void Cntnfa::print_to_dot(std::ostream &output) const {
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
@@ -460,13 +460,13 @@ void Nfa::print_to_dot(std::ostream &output) const {
     output << "}" << std::endl;
 }
 
-std::string Nfa::print_to_mata() const {
+std::string Cntnfa::print_to_mata() const {
     std::stringstream output;
     print_to_mata(output);
     return output.str();
 }
 
-void Nfa::print_to_mata(std::ostream &output) const {
+void Cntnfa::print_to_mata(std::ostream &output) const {
     output << "@NFA-explicit" << std::endl
            << "%Alphabet-auto" << std::endl;
            // TODO should be this, but we cannot parse %Alphabet-numbers yet
@@ -493,8 +493,8 @@ void Nfa::print_to_mata(std::ostream &output) const {
     }
 }
 
-Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{num_of_states(), StateSet(initial), StateSet(final) };
+Cntnfa Cntnfa::get_one_letter_aut(Symbol abstract_symbol) const {
+    Cntnfa digraph{num_of_states(), StateSet(initial), StateSet(final) };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
         // Directly try to add the transition. Finding out whether the transition is already in the digraph
@@ -504,11 +504,11 @@ Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
     return digraph;
 }
 
-void Nfa::get_one_letter_aut(Nfa& result) const {
+void Cntnfa::get_one_letter_aut(Cntnfa& result) const {
     result = get_one_letter_aut();
 }
 
-StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
+StateSet Cntnfa::post(const StateSet& states, const Symbol& symbol) const {
     StateSet res{};
     if (delta.empty()) {
         return res;
@@ -525,7 +525,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     return res;
 }
 
- void Nfa::unify_initial() {
+void Cntnfa::unify_initial() {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
     for (const State orig_initial_state: initial) {
@@ -541,7 +541,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     initial.insert(new_initial_state);
 }
 
-void Nfa::unify_final() {
+void Cntnfa::unify_final() {
     if (final.empty() || final.size() == 1) { return; }
     const Target new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
@@ -555,7 +555,7 @@ void Nfa::unify_final() {
     final.insert(new_final_state);
 }
 
-Nfa& Nfa::operator=(Nfa&& other) noexcept {
+Cntnfa& Cntnfa::operator=(Cntnfa&& other) noexcept {
     if (this != &other) {
         delta = std::move(other.delta);
         initial = std::move(other.initial);
@@ -567,20 +567,20 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
     return *this;
 }
 
-State Nfa::add_state() {
+State Cntnfa::add_state() {
     const size_t num_of_states{ this->num_of_states() };
     delta.allocate(num_of_states + 1);
     return num_of_states;
 }
 
-State Nfa::add_state(State state) {
+State Cntnfa::add_state(State state) {
     if (state >= delta.num_of_states()) {
         delta.allocate(state + 1);
     }
     return state;
 }
 
-size_t Nfa::num_of_states() const {
+size_t Cntnfa::num_of_states() const {
     return std::max({
         static_cast<size_t>(initial.domain_size()),
         static_cast<size_t>(final.domain_size()),
@@ -588,13 +588,13 @@ size_t Nfa::num_of_states() const {
     });
 }
 
-size_t Nfa::create_annotation_set() {
+size_t Cntnfa::create_annotation_set() {
     const size_t num_of_annotation_sets{ this->num_of_annotation_sets() };
     annotation_collection.allocate(num_of_annotation_sets + 1);
     return num_of_annotation_sets;
 }
 
-size_t Nfa::add_annotation(size_t annotations_id, std::shared_ptr<TransitionAnnotation> annotation) {
+size_t Cntnfa::add_annotation(size_t annotations_id, std::shared_ptr<TransitionAnnotation> annotation) {
     if (annotations_id >= annotation_collection.size()) {
         annotation_collection.allocate(annotations_id + 1);
     }
@@ -602,29 +602,29 @@ size_t Nfa::add_annotation(size_t annotations_id, std::shared_ptr<TransitionAnno
     return annotations_id;
 }
 
-size_t Nfa::num_of_annotation_sets() const {
+size_t Cntnfa::num_of_annotation_sets() const {
     return annotation_collection.size();
 }
 
-size_t Nfa::num_of_counters() const {
+size_t Cntnfa::num_of_counters() const {
     return counter_set.size();
 }
 
-const OrdVector<std::shared_ptr<TransitionAnnotation>>& Nfa::get_annotation_set(size_t annotations_id) const {
+const OrdVector<std::shared_ptr<TransitionAnnotation>>& Cntnfa::get_annotation_set(size_t annotations_id) const {
     if (annotations_id >= annotation_collection.size()) {
         throw std::out_of_range("Invalid annotation ID.");
     }
     return annotation_collection[annotations_id];
 }
 
-void Nfa::clear() {
+void Cntnfa::clear() {
     delta.clear();
     annotation_collection.clear();
     initial.clear();
     final.clear();
 }
 
-bool Nfa::is_identical(const Nfa& aut) const {
+bool Cntnfa::is_identical(const Cntnfa& aut) const {
     if (utils::OrdVector<State>(initial) != utils::OrdVector<State>(aut.initial)) {
         return false;
     }
@@ -634,7 +634,7 @@ bool Nfa::is_identical(const Nfa& aut) const {
     return delta == aut.delta;
 }
 
-Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::optional<State> sink_state) {
+Cntnfa& Cntnfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::optional<State> sink_state) {
     const State sink{ sink_state.value_or(num_of_states()) };
     if (initial.empty()) { // The automaton has no reachable states (accepting an empty language).
         // Insert a single initial sink state.
@@ -645,7 +645,7 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
     return *this;
 }
 
-Nfa& Nfa::unite_nondet_shared_counters_nfa_with(const Nfa &aut) {
+Cntnfa& Cntnfa::unite_nondet_shared_counters_nfa_with(const Cntnfa &aut) {
     // Edge cases
     if (this == &aut) {
         return *this;
@@ -732,7 +732,7 @@ Nfa& Nfa::unite_nondet_shared_counters_nfa_with(const Nfa &aut) {
     return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(const mata::cntnfa::Nfa& aut) {
+Cntnfa& Cntnfa::unite_nondet_with(const mata::cntnfa::Cntnfa& aut) {
     const size_t num_of_states{ this->num_of_states() };
     const size_t aut_num_of_states{ aut.num_of_states() };
     const size_t new_num_of_states{ num_of_states + aut_num_of_states };

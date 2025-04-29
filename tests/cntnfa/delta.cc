@@ -24,7 +24,7 @@ TEST_CASE("mata::cntnfa::SymbolPost") {
 }
 
 TEST_CASE("mata::cntnfa::Delta::state_post()") {
-    Nfa aut{};
+    Cntnfa aut{};
 
     SECTION("Add new states within the limit") {
         aut.add_state(19);
@@ -77,7 +77,7 @@ TEST_CASE("mata::cntnfa::Delta::state_post()") {
 }
 
 TEST_CASE("mata::cntnfa::Delta::contains()") {
-    Nfa nfa;
+    Cntnfa nfa;
     CHECK(!nfa.delta.contains(0, 1, 0));
     CHECK(!nfa.delta.contains(Transition{ 0, 1, 0 }));
     nfa.delta.add(0, 1, 0);
@@ -86,7 +86,7 @@ TEST_CASE("mata::cntnfa::Delta::contains()") {
 }
 
 TEST_CASE("mata::cntnfa::Delta::remove()") {
-    Nfa nfa;
+    Cntnfa nfa;
 
     SECTION("Simple remove") {
         nfa.delta.add(0, 1, 0);
@@ -99,7 +99,7 @@ TEST_CASE("mata::cntnfa::Delta::remove()") {
 }
 
 TEST_CASE("mata::cntnfa::Delta::mutable_post()") {
-    Nfa nfa;
+    Cntnfa nfa;
 
     SECTION("Default initialized") {
         CHECK(nfa.delta.num_of_states() == 0);
@@ -123,7 +123,7 @@ TEST_CASE("mata::cntnfa::Delta::mutable_post()") {
 }
 
 TEST_CASE("mata::cntnfa::StatePost iteration over moves") {
-    Nfa nfa;
+    Cntnfa nfa;
     std::vector<Move> iterated_moves{};
     std::vector<Move> expected_moves{};
     StatePost state_post{};
@@ -290,7 +290,7 @@ TEST_CASE("mata::cntnfa::StatePost iteration over moves") {
 }
 
 TEST_CASE("mata::cntnfa::Delta iteration over transitions") {
-    Nfa nfa;
+    Cntnfa nfa;
     std::vector<Transition> iterated_transitions{};
     std::vector<Transition> expected_transitions{};
 
@@ -379,19 +379,19 @@ TEST_CASE("mata::cntnfa::Delta iteration over transitions") {
 }
 
 TEST_CASE("mata::cntnfa::Delta::operator=()") {
-    Nfa nfa{};
+    Cntnfa nfa{};
     nfa.initial.insert(0);
     nfa.final.insert(1);
     nfa.delta.add(0, 'a', 1);
 
-    Nfa copied_nfa{ nfa };
+    Cntnfa copied_nfa{ nfa };
     nfa.delta.add(1, 'b', 0);
     CHECK(nfa.delta.num_of_transitions() == 2);
     CHECK(copied_nfa.delta.num_of_transitions() == 1);
 }
 
 TEST_CASE("mata::cntnfa::StatePost::Moves") {
-    Nfa nfa{};
+    Cntnfa nfa{};
     nfa.initial.insert(0);
     nfa.final.insert(5);
     nfa.delta.add(0, 'a', 1);
@@ -466,7 +466,7 @@ TEST_CASE("mata::cntnfa::Delta::add_symbols_to()") {
     });
 }
 
-TEST_CASE("CntNfa: Transition comparison") {
+TEST_CASE("Cntnfa: Transition comparison") {
     Transition tr1 {1, 2, 3};
     Transition tr2 {1, 3, 1};
     Transition tr3 {1, 2, 5};

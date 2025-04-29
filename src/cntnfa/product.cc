@@ -22,9 +22,9 @@ using InvertedProductStorage = std::vector<State>;
 
 namespace mata::cntnfa {
 
-Nfa mata::cntnfa::algorithms::product_counter_nfas(const Nfa& lhs, const Nfa& rhs) {
+Cntnfa mata::cntnfa::algorithms::product_counter_nfas(const Cntnfa& lhs, const Cntnfa& rhs) {
     using StatePair = std::pair<State, State>;
-    Nfa result;
+    Cntnfa result;
 
     // Maps state pairs (lhs × rhs) to result states
     std::map<StatePair, State> state_map;
@@ -166,11 +166,11 @@ Nfa mata::cntnfa::algorithms::product_counter_nfas(const Nfa& lhs, const Nfa& rh
 }
 
 //TODO: move this method to cntnfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
-Nfa mata::cntnfa::algorithms::product(
-        const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,
+Cntnfa mata::cntnfa::algorithms::product(
+        const Cntnfa& lhs, const Cntnfa& rhs, const std::function<bool(State,State)>&& final_condition,
         const Symbol first_epsilon, ProductMap *product_map) {
 
-    Nfa product{}; // The product automaton.
+    Cntnfa product{}; // The product automaton.
 
     // Set of product states to process.
     std::deque<State> worklist{};

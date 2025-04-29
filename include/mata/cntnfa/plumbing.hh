@@ -13,7 +13,7 @@ using namespace mata::cntnfa::builder;
  * Simplified NFA API, used in binding to call NFA algorithms.
  *
  * In particular, this mostly includes operations and checks, that do not return Automaton,
- * but instead take resulting automaton as pointer (e.g. `void f(Nfa* result, const Nfa& lhs, const Nfa& rhs)`).
+ * but instead take resulting automaton as pointer (e.g. `void f(Cntnfa* result, const Cntnfa& lhs, const Cntnfa& rhs)`).
  */
 namespace mata::cntnfa::plumbing {
 
@@ -28,38 +28,38 @@ inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
 }
 
 inline void complement(
-        Nfa*               result,
-        const Nfa&         aut,
+        Cntnfa*               result,
+        const Cntnfa&         aut,
         const Alphabet&    alphabet,
         const ParameterMap&  params = {{ "algorithm", "classical"},
                                        { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Nfa* res, const Nfa &aut) { *res = minimize(aut); }
+inline void minimize(Cntnfa* res, const Cntnfa &aut) { *res = minimize(aut); }
 
-inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
+inline void determinize(Cntnfa* result, const Cntnfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, StateRenaming *state_renaming = nullptr,
+inline void reduce(Cntnfa* result, const Cntnfa &aut, StateRenaming *state_renaming = nullptr,
                    const ParameterMap& params = {{ "algorithm", "simulation"}}) {
     *result = reduce(aut, state_renaming, params);
 }
 
-inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
+inline void revert(Cntnfa* result, const Cntnfa& aut) { *result = revert(aut); }
 
-inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
+inline void remove_epsilon(Cntnfa* result, const Cntnfa& aut, Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
+void construct(Cntnfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
                NameStateMap* state_map = nullptr) {
     OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) { alphabet = &tmp_alphabet; }
     *result = builder::construct(parsed, alphabet, state_map);
 }
 
-inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
+inline void union_nondet(Cntnfa *unionAutomaton, const Cntnfa &lhs, const Cntnfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
 
 /**
  * @brief Compute intersection of two NFAs.
@@ -76,7 +76,7 @@ inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { 
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
+inline void intersection(Cntnfa* res, const Cntnfa& lhs, const Cntnfa& rhs, Symbol first_epsilon = EPSILON,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
     *res = intersection(lhs, rhs, first_epsilon, prod_map);
 }
@@ -86,7 +86,7 @@ inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_
  * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+inline void concatenate(Cntnfa* res, const Cntnfa& lhs, const Cntnfa& rhs, bool use_epsilon = false,
                  StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }

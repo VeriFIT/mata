@@ -26,7 +26,7 @@ using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 TEST_CASE("mata::cntnfa::size()") {
-    Nfa nfa{};
+    Cntnfa nfa{};
     CHECK(nfa.num_of_states() == 0);
 
     nfa.add_state(3);
@@ -44,11 +44,11 @@ TEST_CASE("mata::cntnfa::size()") {
     FILL_WITH_AUT_B(nfa);
     CHECK(nfa.num_of_states() == 15);
 
-    nfa = Nfa{ 0, {}, {} };
+    nfa = Cntnfa{ 0, {}, {} };
     CHECK(nfa.num_of_states() == 0);
 }
 
-TEST_CASE("CntNfa: StatePost::emplace_back()") {
+TEST_CASE("Cntnfa: StatePost::emplace_back()") {
     StatePost state_post{};
     state_post.emplace_back(1, StateSet{2, 3});
     CHECK(state_post == StatePost{ SymbolPost{ Symbol{ 1 }, StateSet{ 2, 3 } } });
@@ -61,13 +61,13 @@ TEST_CASE("mata::cntnfa::Trans::operator<<") {
 }
 
 TEST_CASE("mata::cntnfa::create_alphabet()") {
-    Nfa a{1};
+    Cntnfa a{1};
     a.delta.add(0, 'a', 0);
 
-    Nfa b{1};
+    Cntnfa b{1};
     b.delta.add(0, 'b', 0);
     b.delta.add(0, 'a', 0);
-    Nfa c{1};
+    Cntnfa c{1};
     b.delta.add(0, 'c', 0);
 
     auto alphabet{ create_alphabet(a, b, c) };
@@ -79,9 +79,9 @@ TEST_CASE("mata::cntnfa::create_alphabet()") {
     // create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
-TEST_CASE("mata::cntnfa::Nfa::delta.add()/delta.contains()")
+TEST_CASE("mata::cntnfa::Cntnfa::delta.add()/delta.contains()")
 { // {{{
-    Nfa a(3);
+    Cntnfa a(3);
 
     SECTION("Empty automata have now transitions")
     {
@@ -153,7 +153,7 @@ TEST_CASE("mata::cntnfa::Nfa::delta.add()/delta.contains()")
 
 TEST_CASE("mata::cntnfa::Delta.transform/append")
 { // {{{
-    Nfa a(3);
+    Cntnfa a(3);
     a.delta.add(1, 'a', 1);
     a.delta.add(2, 'b', {2,1,0});
 
@@ -176,19 +176,19 @@ TEST_CASE("mata::cntnfa::Delta.transform/append")
 // TODO: Uncomment when is_counter_nfa_lang_empty() is implemented correctly.
 // TEST_CASE("mata::cntnfa::is_counter_nfa_lang_empty()")
 // {
-//     // Nfa aut(3);
+//     // Cntnfa aut(3);
 //     // Run cex;
 
 //     SECTION("Empty automaton")
 //     {
-//         Nfa aut(3);
+//         Cntnfa aut(3);
 
 //         REQUIRE(aut.is_counter_nfa_lang_empty());
 //     }
 
 //     SECTION("Automaton with initial and final state but no transitions")
 //     {
-//         Nfa aut(3);
+//         Cntnfa aut(3);
 //         Run cex;
 
 //         aut.initial.insert(0);
@@ -200,7 +200,7 @@ TEST_CASE("mata::cntnfa::Delta.transform/append")
 
 //     SECTION("Automaton with counter increments")
 //     {
-//         Nfa aut(3);
+//         Cntnfa aut(3);
 //         Run cex;
 
 //         size_t c0 = aut.counter_set.insert("c0");
@@ -218,7 +218,7 @@ TEST_CASE("mata::cntnfa::Delta.transform/append")
 
 //     SECTION("Automaton with failing counter test")
 //     {
-//         Nfa aut(3);
+//         Cntnfa aut(3);
 //         Run cex;
 
 //         aut.counter_set.clear();
@@ -235,7 +235,7 @@ TEST_CASE("mata::cntnfa::Delta.transform/append")
 
 TEST_CASE("mata::cntnfa::is_lang_empty()")
 { // {{{
-    Nfa aut(14);
+    Cntnfa aut(14);
     Run cex;
 
     SECTION("An empty automaton has an empty language")
@@ -330,7 +330,7 @@ TEST_CASE("mata::cntnfa::is_lang_empty()")
 
 TEST_CASE("mata::cntnfa::is_acyclic")
 { // {{{
-    Nfa aut(14);
+    Cntnfa aut(14);
 
     SECTION("An empty automaton is acyclic")
     {
@@ -377,7 +377,7 @@ TEST_CASE("mata::cntnfa::is_acyclic")
 
     SECTION("Automaton with self-loops")
     {
-        Nfa aut(2);
+        Cntnfa aut(2);
         aut.initial = {0};
         aut.final = {1};
         aut.delta.add(0, 'c', 1);
@@ -388,7 +388,7 @@ TEST_CASE("mata::cntnfa::is_acyclic")
 
 TEST_CASE("mata::cntnfa::is_flat")
 { // {{{
-    Nfa aut(14);
+    Cntnfa aut(14);
 
     SECTION("An empty automaton is flat")
     {
@@ -436,7 +436,7 @@ TEST_CASE("mata::cntnfa::is_flat")
 
 TEST_CASE("mata::cntnfa::get_word_for_path()")
 { // {{{
-    Nfa aut(5);
+    Cntnfa aut(5);
     Run path;
     Word word;
 
@@ -514,7 +514,7 @@ TEST_CASE("mata::cntnfa::get_word_for_path()")
 
 TEST_CASE("mata::cntnfa::is_lang_empty_cex()")
 {
-    Nfa aut(10);
+    Cntnfa aut(10);
     Run cex;
 
     SECTION("Counterexample of an automaton with non-empty language")
@@ -540,8 +540,8 @@ TEST_CASE("mata::cntnfa::is_lang_empty_cex()")
 
 TEST_CASE("mata::cntnfa::determinize()")
 {
-    Nfa aut(3);
-    Nfa result;
+    Cntnfa aut(3);
+    Cntnfa result;
     std::unordered_map<StateSet, State> subset_map;
 
     SECTION("empty automaton")
@@ -578,7 +578,7 @@ TEST_CASE("mata::cntnfa::determinize()")
 
     SECTION("This broke Delta when delta[q] could cause re-allocation of post")
     {
-        Nfa x{};
+        Cntnfa x{};
         x.initial.insert(0);
         x.final.insert(4);
         x.delta.add(0, 1, 3);
@@ -597,8 +597,8 @@ TEST_CASE("mata::cntnfa::determinize()")
     }
 } // }}}
 
-TEST_CASE("mata::cntnfa::Nfa::get_word_from_complement()") {
-    Nfa aut{};
+TEST_CASE("mata::cntnfa::Cntnfa::get_word_from_complement()") {
+    Cntnfa aut{};
     std::optional<mata::Word> result;
     std::unordered_map<StateSet, State> subset_map;
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
@@ -726,10 +726,10 @@ TEST_CASE("mata::cntnfa::Nfa::get_word_from_complement()") {
 }
 
 TEST_CASE("mata::cntnfa::lang_difference()") {
-    Nfa nfa_included{};
-    Nfa nfa_excluded{};
-    Nfa result{};
-    Nfa expected{};
+    Cntnfa nfa_included{};
+    Cntnfa nfa_excluded{};
+    Cntnfa result{};
+    Cntnfa expected{};
 
     SECTION("empty automata") {
         result = lang_difference(nfa_included, nfa_excluded);
@@ -884,11 +884,11 @@ TEST_CASE("mata::cntnfa::lang_difference()") {
     }
 }
 
-TEST_CASE("mata::cntnfa::Nfa::get_word_from_lang_difference()") {
-    Nfa nfa_included{};
-    Nfa nfa_excluded{};
+TEST_CASE("mata::cntnfa::Cntnfa::get_word_from_lang_difference()") {
+    Cntnfa nfa_included{};
+    Cntnfa nfa_excluded{};
     std::optional<Word> result{};
-    Nfa expected{};
+    Cntnfa expected{};
 
     SECTION("empty automata") {
         result = get_word_from_lang_difference(nfa_included, nfa_excluded);
@@ -1038,8 +1038,8 @@ TEST_CASE("mata::cntnfa::Nfa::get_word_from_lang_difference()") {
 }
 
 TEST_CASE("mata::cntnfa::minimize() for profiling", "[.profiling],[minimize]") {
-    Nfa aut(4);
-    Nfa result;
+    Cntnfa aut(4);
+    Cntnfa result;
     std::unordered_map<StateSet, State> subset_map;
 
     aut.initial.insert(0);
@@ -1079,7 +1079,7 @@ TEST_CASE("mata::cntnfa::minimize() for profiling", "[.profiling],[minimize]") {
 
 TEST_CASE("mata::cntnfa::construct() correct calls")
 { // {{{
-    Nfa aut(10);
+    Cntnfa aut(10);
     mata::parser::ParsedSection parsec;
     OnTheFlyAlphabet alphabet;
 
@@ -1170,7 +1170,7 @@ TEST_CASE("mata::cntnfa::construct() correct calls")
 
 TEST_CASE("mata::cntnfa::construct() invalid calls")
 { // {{{
-    Nfa aut;
+    Cntnfa aut;
     mata::parser::ParsedSection parsec;
 
     SECTION("construct() call with invalid ParsedSection object")
@@ -1202,7 +1202,7 @@ TEST_CASE("mata::cntnfa::construct() invalid calls")
 
 TEST_CASE("mata::cntnfa::construct() from IntermediateAut correct calls")
 { // {{{
-    Nfa aut;
+    Cntnfa aut;
     mata::IntermediateAut inter_aut;
     OnTheFlyAlphabet alphabet;
 
@@ -1427,7 +1427,7 @@ TEST_CASE("mata::cntnfa::construct() from IntermediateAut correct calls")
 
 TEST_CASE("mata::cntnfa::make_complete()")
 { // {{{
-    Nfa aut{};
+    Cntnfa aut{};
 
     SECTION("empty automaton, empty alphabet")
     {
@@ -1601,15 +1601,15 @@ TEST_CASE("mata::cntnfa::make_complete()")
 
 TEST_CASE("mata::cntnfa::complement()")
 { // {{{
-    Nfa aut(3);
-    Nfa cmpl;
+    Cntnfa aut(3);
+    Cntnfa cmpl;
 
     SECTION("empty automaton, empty alphabet")
     {
         OnTheFlyAlphabet alph{};
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
-        Nfa empty_string_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
+        Cntnfa empty_string_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(cmpl, empty_string_nfa));
     }
 
@@ -1625,7 +1625,7 @@ TEST_CASE("mata::cntnfa::complement()")
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
+        Cntnfa sigma_star_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(cmpl, sigma_star_nfa));
     }
 
@@ -1688,7 +1688,7 @@ TEST_CASE("mata::cntnfa::complement()")
         OnTheFlyAlphabet alph{};
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
-        Nfa empty_string_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
+        Cntnfa empty_string_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(empty_string_nfa, cmpl));
     }
 
@@ -1704,7 +1704,7 @@ TEST_CASE("mata::cntnfa::complement()")
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
+        Cntnfa sigma_star_nfa{ cntnfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(sigma_star_nfa, cmpl));
     }
 
@@ -1720,7 +1720,7 @@ TEST_CASE("mata::cntnfa::complement()")
         aut.delta.add(0, alph["a"], 2);
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
-        Nfa cmpl_min = complement(aut, alph, { { "algorithm", "brzozowski"} });
+        Cntnfa cmpl_min = complement(aut, alph, { { "algorithm", "brzozowski"} });
         CHECK(are_equivalent(cmpl, cmpl_min, &alph));
         CHECK(cmpl_min.num_of_states() == 4);
         CHECK(cmpl.num_of_states() == 5);
@@ -1731,7 +1731,7 @@ TEST_CASE("mata::cntnfa::complement()")
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa::is_universal()")
 // {
-//     Nfa aut(6);
+//     Cntnfa aut(6);
 //     Run cex;
 //     ParameterMap params;
 
@@ -1948,8 +1948,8 @@ TEST_CASE("mata::cntnfa::complement()")
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa::is_included()")
 // {
-//     Nfa smaller(10);
-//     Nfa bigger(16);
+//     Cntnfa smaller(10);
+//     Cntnfa bigger(16);
 //     Run cex;
 //     ParameterMap params;
 
@@ -2286,8 +2286,8 @@ TEST_CASE("mata::cntnfa::complement()")
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa::are_equivalent")
 // {
-//     Nfa smaller(10);
-//     Nfa bigger(16);
+//     Cntnfa smaller(10);
+//     Cntnfa bigger(16);
 //     Word cex;
 //     ParameterMap params;
 
@@ -2385,9 +2385,9 @@ TEST_CASE("mata::cntnfa::complement()")
 //     /// TODO: Update this test for cntnfa.
 //     // SECTION("a* != (a|b)*, was throwing exception")
 //     // {
-//     //     Nfa aut;
+//     //     Cntnfa aut;
 //     //     mata::parser::create_nfa(&aut, "a*");
-//     //     Nfa aut2;
+//     //     Cntnfa aut2;
 //     //     mata::parser::create_nfa(&aut2, "(a|b)*");
 //     //     CHECK(!are_equivalent(aut, aut2));
 //     // }
@@ -2453,11 +2453,11 @@ TEST_CASE("mata::cntnfa::complement()")
 
 TEST_CASE("mata::cntnfa::revert()")
 { // {{{
-    Nfa aut(9);
+    Cntnfa aut(9);
 
     SECTION("empty automaton")
     {
-        Nfa result = revert(aut);
+        Cntnfa result = revert(aut);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -2472,7 +2472,7 @@ TEST_CASE("mata::cntnfa::revert()")
         aut.final.insert(2);
         aut.final.insert(5);
 
-        Nfa result = revert(aut);
+        Cntnfa result = revert(aut);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial[2]);
@@ -2487,7 +2487,7 @@ TEST_CASE("mata::cntnfa::revert()")
         aut.final.insert(2);
         aut.delta.add(1, 'a', 2);
 
-        Nfa result = revert(aut);
+        Cntnfa result = revert(aut);
 
         REQUIRE(result.initial[2]);
         REQUIRE(result.final[1]);
@@ -2510,7 +2510,7 @@ TEST_CASE("mata::cntnfa::revert()")
         aut.delta.add(7, 'a', 8);
         aut.final = {3};
 
-        Nfa result = revert(aut);
+        Cntnfa result = revert(aut);
         //REQUIRE(result.final == StateSet({1, 2}));
         REQUIRE(StateSet(result.final) == StateSet({1, 2}));
         REQUIRE(result.delta.contains(2, 'a', 1));
@@ -2527,9 +2527,9 @@ TEST_CASE("mata::cntnfa::revert()")
     }
 
     SECTION("Automaton A") {
-        Nfa nfa{ 11 };
+        Cntnfa nfa{ 11 };
         FILL_WITH_AUT_A(nfa);
-        Nfa res = revert(nfa);
+        Cntnfa res = revert(nfa);
         CHECK(res.initial[5]);
         CHECK(res.final[1]);
         CHECK(res.final[3]);
@@ -2552,9 +2552,9 @@ TEST_CASE("mata::cntnfa::revert()")
     }
 
     SECTION("Automaton B") {
-        Nfa nfa{ 15 };
+        Cntnfa nfa{ 15 };
         FILL_WITH_AUT_B(nfa);
-        Nfa res = revert(nfa);
+        Cntnfa res = revert(nfa);
         CHECK(res.initial[2]);
         CHECK(res.initial[12]);
         CHECK(res.final[4]);
@@ -2575,9 +2575,9 @@ TEST_CASE("mata::cntnfa::revert()")
 } // }}}
 
 
-TEST_CASE("mata::cntnfa::Nfa::is_deterministic()")
+TEST_CASE("mata::cntnfa::Cntnfa::is_deterministic()")
 { // {{{
-    Nfa aut('s'+1);
+    Cntnfa aut('s'+1);
 
     SECTION("(almost) empty automaton") {
         // no initial states
@@ -2631,7 +2631,7 @@ TEST_CASE("mata::cntnfa::Nfa::is_deterministic()")
 
 TEST_CASE("mata::cntnfa::is_complete()")
 { // {{{
-    Nfa aut('q'+1);
+    Cntnfa aut('q'+1);
 
     SECTION("empty automaton")
     {
@@ -2694,7 +2694,7 @@ TEST_CASE("mata::cntnfa::is_complete()")
 
 TEST_CASE("mata::cntnfa::is_prfx_in_lang()")
 { // {{{
-    Nfa aut('q'+1);
+    Cntnfa aut('q'+1);
 
     SECTION("empty automaton")
     {
@@ -2752,7 +2752,7 @@ TEST_CASE("mata::cntnfa::is_prfx_in_lang()")
 
 TEST_CASE("mata::cntnfa::fw-direct-simulation()")
 { // {{{
-    Nfa aut;
+    Cntnfa aut;
 
     SECTION("empty automaton")
     {
@@ -2792,7 +2792,7 @@ TEST_CASE("mata::cntnfa::fw-direct-simulation()")
 
     }
 
-    Nfa aut_big(9);
+    Cntnfa aut_big(9);
 
     SECTION("bigger automaton")
     {
@@ -2831,12 +2831,12 @@ TEST_CASE("mata::cntnfa::fw-direct-simulation()")
 
 TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 {
-    Nfa aut;
+    Cntnfa aut;
     StateRenaming state_renaming;
 
     SECTION("empty automaton")
     {
-        Nfa result = reduce(aut, &state_renaming);
+        Cntnfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -2849,7 +2849,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Nfa result = reduce(aut, &state_renaming);
+        Cntnfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2881,7 +2881,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
         aut.final = {3, 9};
 
 
-        Nfa result = reduce(aut, &state_renaming);
+        Cntnfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.num_of_states() == 6);
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2914,7 +2914,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
     {
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
-        Nfa result = reduce(aut.trim(), &state_renaming);
+        Cntnfa result = reduce(aut.trim(), &state_renaming);
         CHECK(are_equivalent(result, aut));
     }
 }
@@ -2922,16 +2922,16 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa::algorithms::minimize_hopcroft()") {
 //     SECTION("empty automaton") {
-//         Nfa aut;
-//         Nfa result = minimize_hopcroft(aut);
+//         Cntnfa aut;
+//         Cntnfa result = minimize_hopcroft(aut);
 //         CHECK(result.is_lang_empty());
 //     }
 
 //     SECTION("one state") {
-//         Nfa aut(1);
+//         Cntnfa aut(1);
 //         aut.initial.insert(0);
 //         aut.final.insert(0);
-//         Nfa result = minimize_hopcroft(aut);
+//         Cntnfa result = minimize_hopcroft(aut);
 //         CHECK(result.delta.num_of_transitions() == 0);
 //         CHECK(result.num_of_states() == 1);
 //         CHECK(result.initial.size() == 1);
@@ -2940,11 +2940,11 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 //     }
 
 //     SECTION("one trans") {
-//         Nfa aut(2);
+//         Cntnfa aut(2);
 //         aut.initial.insert(0);
 //         aut.final.insert(1);
 //         aut.delta.add(0, 'a', 1);
-//         Nfa result = minimize_hopcroft(aut);
+//         Cntnfa result = minimize_hopcroft(aut);
 //         CHECK(result.delta.num_of_transitions() == 1);
 //         CHECK(result.num_of_states() == 2);
 //         CHECK(result.initial.size() == 1);
@@ -2954,13 +2954,13 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 //     }
 
 //     SECTION("line") {
-//         Nfa aut(3);
+//         Cntnfa aut(3);
 //         aut.initial.insert(0);
 //         aut.final.insert(2);
 //         aut.delta.add(0, 'a', 1);
 //         aut.delta.add(1, 'a', 2);
 //         aut.delta.add(2, 'a', 3);
-//         Nfa result = minimize_hopcroft(aut);
+//         Cntnfa result = minimize_hopcroft(aut);
 //         CHECK(result.delta.num_of_transitions() == 3);
 //         CHECK(result.num_of_states() == 4);
 //         CHECK(result.initial.size() == 1);
@@ -2970,7 +2970,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 //     }
 
 //     SECTION("loop") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.final.insert(1);
 //         aut.delta.add(0, 1, 2);
@@ -2978,8 +2978,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 //         aut.delta.add(1, 1, 1);
 //         aut.delta.add(2, 1, 1);
 
-//         Nfa aut_brz = minimize_brzozowski(aut);
-//         Nfa aut_hop = minimize_hopcroft(aut);
+//         Cntnfa aut_brz = minimize_brzozowski(aut);
+//         Cntnfa aut_hop = minimize_hopcroft(aut);
 //         CHECK(are_equivalent(aut_brz, aut_hop));
 //         CHECK(aut_brz.num_of_states() == aut_hop.num_of_states());
 //         CHECK(aut_brz.delta.num_of_transitions() == aut_hop.delta.num_of_transitions());
@@ -2988,7 +2988,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 //     }
 
 //     SECTION("difficult") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.final.insert(1);
 //         aut.final.insert(6);
@@ -3000,8 +3000,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 //         aut.delta.add(5, 0, 6);
 //         aut.delta.add(3, 0, 1);
 
-//         Nfa aut_brz = minimize_brzozowski(aut);
-//         Nfa aut_hop = minimize_hopcroft(aut);
+//         Cntnfa aut_brz = minimize_brzozowski(aut);
+//         Cntnfa aut_hop = minimize_hopcroft(aut);
 //         CHECK(are_equivalent(aut_brz, aut_hop));
 //         CHECK(aut_brz.num_of_states() == aut_hop.num_of_states());
 //         CHECK(aut_brz.delta.num_of_transitions() == aut_hop.delta.num_of_transitions());
@@ -3011,7 +3011,7 @@ TEST_CASE("mata::cntnfa::reduce_size_by_simulation()")
 // }
 
 TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
-    Nfa aut;
+    Cntnfa aut;
     StateRenaming state_renaming;
     ParameterMap params_after, params_with;
     params_after["algorithm"] = "residual";
@@ -3024,8 +3024,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
         params_with["type"] = "with";
         params_with["direction"] = "forward";
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Cntnfa result_after = reduce(aut, &state_renaming, params_after);
+        Cntnfa result_with = reduce(aut, &state_renaming, params_with);
 
         REQUIRE(result_after.delta.empty());
         REQUIRE(result_after.initial.empty());
@@ -3044,8 +3044,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Cntnfa result_after = reduce(aut, &state_renaming, params_after);
+        Cntnfa result_with = reduce(aut, &state_renaming, params_with);
 
         REQUIRE(result_after.num_of_states() == 0);
         REQUIRE(result_after.initial.empty());
@@ -3084,8 +3084,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
         aut.delta.add(3, 'a', 3);
         aut.delta.add(2, 'a', 1);
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Cntnfa result_after = reduce(aut, &state_renaming, params_after);
+        Cntnfa result_with = reduce(aut, &state_renaming, params_with);
 
         REQUIRE(result_after.num_of_states() == 4);
         REQUIRE(result_after.initial[0]);
@@ -3148,8 +3148,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
         aut.delta.add(6, 'c', 1);
         aut.delta.add(6, 'd', 1);
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Cntnfa result_after = reduce(aut, &state_renaming, params_after);
+        Cntnfa result_with = reduce(aut, &state_renaming, params_with);
 
         REQUIRE(result_after.num_of_states() == 5);
         REQUIRE(result_after.initial[0]);
@@ -3254,8 +3254,8 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
         aut.delta.add(6, 'c', 1);
         aut.delta.add(6, 'd', 1);
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Cntnfa result_after = reduce(aut, &state_renaming, params_after);
+        Cntnfa result_with = reduce(aut, &state_renaming, params_with);
 
         REQUIRE(result_after.num_of_states() == 6);
         REQUIRE(result_after.initial[0]);
@@ -3317,7 +3317,7 @@ TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
     Run one{{1}, {}};
 
     // First automaton
-    Nfa lhs(2);
+    Cntnfa lhs(2);
     size_t c0_id_lhs = lhs.counter_set.insert("c0");
     size_t ann_set_lhs = lhs.annotation_collection.insert(std::make_shared<CounterIncrement>(c0_id_lhs, 1));
 
@@ -3329,7 +3329,7 @@ TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
     REQUIRE_FALSE(lhs.is_in_lang_of_counter_nfa(one));
 
     // Second automaton
-    Nfa rhs(2);
+    Cntnfa rhs(2);
     size_t c1_id_rhs = rhs.counter_set.insert("c1");
     size_t ann_set_rhs = rhs.annotation_collection.insert(std::make_shared<CounterIncrement>(c1_id_rhs, 2));
 
@@ -3341,7 +3341,7 @@ TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
     REQUIRE_FALSE(rhs.is_in_lang_of_counter_nfa(zero));
 
     SECTION("Union accepts both languages") {
-        Nfa result = union_nondet_counter_nfas_shared_counters(lhs, rhs);
+        Cntnfa result = union_nondet_counter_nfas_shared_counters(lhs, rhs);
         CHECK(result.is_in_lang_of_counter_nfa(zero));
         CHECK(result.is_in_lang_of_counter_nfa(one));
     }
@@ -3350,7 +3350,7 @@ TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
 TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
 {
     // First automaton A
-    Nfa a;
+    Cntnfa a;
     a.initial.insert(0);
     a.final.insert(2);
     a.delta.add(0, 'a', 1);
@@ -3362,7 +3362,7 @@ TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
     a.delta.add(2, 'c', AnnotationState(2, ann_id_a));
 
     // Second automaton B
-    Nfa b;
+    Cntnfa b;
     b.initial.insert(0);
     b.final.insert(2);
     b.delta.add(0, 'a', 1);
@@ -3374,7 +3374,7 @@ TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
     b.delta.add(2, 'c', AnnotationState(2, ann_id_b));
 
     // Compute the intersection (product)
-    Nfa result = intersection_counter_nfas(a, b);
+    Cntnfa result = intersection_counter_nfas(a, b);
 
     // It should have exactly one initial state from pair (0, 0)
     REQUIRE(result.initial.size() == 1);
@@ -3409,14 +3409,14 @@ TEST_CASE("mata::cntnfa::union_norename()") {
     Run one{{1},{}};
     Run zero{{0}, {}};
 
-    Nfa lhs(2);
+    Cntnfa lhs(2);
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, 1);
     lhs.final.insert(1);
     REQUIRE(!lhs.is_in_lang(one));
     REQUIRE(lhs.is_in_lang(zero));
 
-    Nfa rhs(2);
+    Cntnfa rhs(2);
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, 1);
     rhs.final.insert(1);
@@ -3424,7 +3424,7 @@ TEST_CASE("mata::cntnfa::union_norename()") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result = union_nondet(lhs, rhs);
+        Cntnfa result = union_nondet(lhs, rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
@@ -3434,14 +3434,14 @@ TEST_CASE("mata::cntnfa::union_inplace") {
     Run one{{1},{}};
     Run zero{{0}, {}};
 
-    Nfa lhs(2);
+    Cntnfa lhs(2);
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, 1);
     lhs.final.insert(1);
     REQUIRE(!lhs.is_in_lang(one));
     REQUIRE(lhs.is_in_lang(zero));
 
-    Nfa rhs(2);
+    Cntnfa rhs(2);
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, 1);
     rhs.final.insert(1);
@@ -3449,13 +3449,13 @@ TEST_CASE("mata::cntnfa::union_inplace") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result = lhs.unite_nondet_with(rhs);
+        Cntnfa result = lhs.unite_nondet_with(rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
 
     SECTION("same automata") {
-        const Nfa lhs_copy{ lhs };
+        const Cntnfa lhs_copy{ lhs };
         CHECK(are_equivalent(lhs.unite_nondet_with(lhs), lhs_copy));
     }
 }
@@ -3466,7 +3466,7 @@ TEST_CASE("mata::cntnfa::union_product()") {
     Run two{ { 2 },{} };
     Run two_three{ { 2, 3 },{} };
 
-    Nfa lhs(4);
+    Cntnfa lhs(4);
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, 1);
     lhs.delta.add(0, 2, 2);
@@ -3478,7 +3478,7 @@ TEST_CASE("mata::cntnfa::union_product()") {
     REQUIRE(!lhs.is_in_lang(two));
     REQUIRE(lhs.is_in_lang(two_three));
 
-    Nfa rhs(4);
+    Cntnfa rhs(4);
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, 1);
     rhs.delta.add(0, 2, 2);
@@ -3491,7 +3491,7 @@ TEST_CASE("mata::cntnfa::union_product()") {
     REQUIRE(!rhs.is_in_lang(two_three));
 
     SECTION("Minimal example") {
-        Nfa result = mata::cntnfa::union_product(lhs, rhs);
+        Cntnfa result = mata::cntnfa::union_product(lhs, rhs);
         CHECK(!result.is_in_lang(one));
         CHECK(!result.is_in_lang(zero));
         CHECK(result.is_in_lang(two));
@@ -3501,7 +3501,7 @@ TEST_CASE("mata::cntnfa::union_product()") {
 
 TEST_CASE("mata::cntnfa::remove_final()")
 {
-    Nfa aut('q' + 1);
+    Cntnfa aut('q' + 1);
 
     SECTION("Automaton B")
     {
@@ -3516,7 +3516,7 @@ TEST_CASE("mata::cntnfa::remove_final()")
 
 TEST_CASE("mata::cntnfa::delta.remove()")
 {
-    Nfa aut('q' + 1);
+    Cntnfa aut('q' + 1);
 
     SECTION("Automaton B")
     {
@@ -3568,7 +3568,7 @@ TEST_CASE("mata::cntnfa::delta.remove()")
 }
 
 TEST_CASE("mata::cntnfa::get_trans_as_sequence(}") {
-    Nfa aut('q' + 1);
+    Cntnfa aut('q' + 1);
     std::vector<Transition> expected{};
 
     aut.delta.add(1, 2, 3);
@@ -3585,7 +3585,7 @@ TEST_CASE("mata::cntnfa::get_trans_as_sequence(}") {
 
 TEST_CASE("mata::cntnfa::remove_epsilon()")
 {
-    Nfa aut{20};
+    Cntnfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.remove_epsilon('c');
     REQUIRE(aut.delta.contains(10, 'a', 7));
@@ -3604,7 +3604,7 @@ TEST_CASE("mata::cntnfa::remove_epsilon()")
 TEST_CASE("Profile mata::cntnfa::remove_epsilon()", "[.profiling]")
 {
     for (size_t n{}; n < 100000; ++n) {
-        Nfa aut{20};
+        Cntnfa aut{20};
         FILL_WITH_AUT_A(aut);
         aut.remove_epsilon('c');
     }
@@ -3612,18 +3612,18 @@ TEST_CASE("Profile mata::cntnfa::remove_epsilon()", "[.profiling]")
 
 TEST_CASE("mata::cntnfa::get_num_of_trans()")
 {
-    Nfa aut{20};
+    Cntnfa aut{20};
     FILL_WITH_AUT_A(aut);
     REQUIRE(aut.delta.num_of_transitions() == 15);
 }
 
 TEST_CASE("mata::cntnfa::get_one_letter_aut()")
 {
-    Nfa aut(11);
+    Cntnfa aut(11);
     Symbol abstract_symbol{'x'};
     FILL_WITH_AUT_A(aut);
 
-    Nfa digraph{aut.get_one_letter_aut() };
+    Cntnfa digraph{aut.get_one_letter_aut() };
 
     REQUIRE(digraph.num_of_states() == aut.num_of_states());
     REQUIRE(digraph.delta.num_of_transitions() == 12);
@@ -3635,7 +3635,7 @@ TEST_CASE("mata::cntnfa::get_one_letter_aut()")
 }
 
 TEST_CASE("mata::cntnfa::get_reachable_states()") {
-    Nfa aut{20};
+    Cntnfa aut{20};
 
     SECTION("Automaton A") {
         FILL_WITH_AUT_A(aut);
@@ -3703,12 +3703,12 @@ TEST_CASE("mata::cntnfa::get_reachable_states()") {
 
 TEST_CASE("mata::cntnfa::trim() for profiling", "[.profiling],[trim]")
 {
-    Nfa aut{20};
+    Cntnfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Nfa new_aut{ aut };
+        Cntnfa new_aut{ aut };
         new_aut.trim();
     }
 }
@@ -3716,7 +3716,7 @@ TEST_CASE("mata::cntnfa::trim() for profiling", "[.profiling],[trim]")
 // TODO: Make this a test for the new version.
 TEST_CASE("mata::cntnfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
 {
-    Nfa aut{20};
+    Cntnfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
@@ -3726,7 +3726,7 @@ TEST_CASE("mata::cntnfa::get_useful_states() for profiling", "[.profiling],[usef
 }
 
 TEST_CASE("mata::cntnfa::trim() trivial") {
-    Nfa aut{1};
+    Cntnfa aut{1};
     aut.initial.insert(0);
     aut.final.insert(0);
     aut.trim();
@@ -3735,13 +3735,13 @@ TEST_CASE("mata::cntnfa::trim() trivial") {
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa::trim()")
 // {
-//     Nfa orig_aut{20};
+//     Cntnfa orig_aut{20};
 //     FILL_WITH_AUT_A(orig_aut);
 //     orig_aut.delta.remove(1, 'a', 10);
 
 
 //     SECTION("Without state map") {
-//         Nfa aut{orig_aut};
+//         Cntnfa aut{orig_aut};
 //         aut.trim();
 //         CHECK(aut.initial.size() == orig_aut.initial.size());
 //         CHECK(aut.final.size() == orig_aut.final.size());
@@ -3758,7 +3758,7 @@ TEST_CASE("mata::cntnfa::trim() trivial") {
 //     }
 
 //     SECTION("With state map") {
-//         Nfa aut{orig_aut};
+//         Cntnfa aut{orig_aut};
 //         StateRenaming state_map{};
 //         aut.trim(&state_map);
 //         CHECK(aut.initial.size() == orig_aut.initial.size());
@@ -3782,9 +3782,9 @@ TEST_CASE("mata::cntnfa::trim() trivial") {
 //     }
 // }
 
-TEST_CASE("mata::cntnfa::Nfa::delta.empty()")
+TEST_CASE("mata::cntnfa::Cntnfa::delta.empty()")
 {
-    Nfa aut{};
+    Cntnfa aut{};
 
     SECTION("Empty automaton")
     {
@@ -3834,7 +3834,7 @@ TEST_CASE("mata::cntnfa::Nfa::delta.empty()")
 
 TEST_CASE("mata::cntnfa::delta.operator[]")
 {
-    Nfa aut{20};
+    Cntnfa aut{20};
     FILL_WITH_AUT_A(aut);
     REQUIRE(aut.delta.num_of_transitions() == 15);
     aut.delta[25];
@@ -3848,20 +3848,20 @@ TEST_CASE("mata::cntnfa::delta.operator[]")
     REQUIRE(aut.num_of_states() == 51);
     REQUIRE(aut.delta[50].empty());
 
-    Nfa aut1 = aut;
+    Cntnfa aut1 = aut;
     aut1.delta.mutable_state_post(60);
     REQUIRE(aut1.num_of_states() == 61);
     REQUIRE(aut1.delta[60].empty());
 
-    const Nfa aut2 = aut;
+    const Cntnfa aut2 = aut;
     aut2.delta[60];
     REQUIRE(aut2.num_of_states() == 51);
     REQUIRE(aut2.delta[60].empty());
 }
 
 /// TODO: Update this test for cntnfa.
-// TEST_CASE("mata::cntnfa::Nfa::unify_(initial/final)()") {
-//     Nfa nfa{10};
+// TEST_CASE("mata::cntnfa::Cntnfa::unify_(initial/final)()") {
+//     Cntnfa nfa{10};
 
 //     SECTION("No initial") {
 //         nfa.unify_initial();
@@ -3968,7 +3968,7 @@ TEST_CASE("mata::cntnfa::delta.operator[]")
 //     }
 
 //     SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         mata::parser::create_nfa(&aut, "a*b*");
 //         for (size_t i{ 0 }; i < 8; ++i) {
 //             aut.unify_initial();
@@ -3978,8 +3978,8 @@ TEST_CASE("mata::cntnfa::delta.operator[]")
 //     }
 // }
 
-TEST_CASE("mata::cntnfa::Nfa::get_delta.epsilon_symbol_posts()") {
-    Nfa aut{20};
+TEST_CASE("mata::cntnfa::Cntnfa::get_delta.epsilon_symbol_posts()") {
+    Cntnfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.add(0, EPSILON, 3);
     aut.delta.add(3, EPSILON, 3);
@@ -4021,12 +4021,12 @@ TEST_CASE("mata::cntnfa::Nfa::get_delta.epsilon_symbol_posts()") {
     CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
 }
 
-TEST_CASE("mata::cntnfa::Nfa::delta()") {
+TEST_CASE("mata::cntnfa::Cntnfa::delta()") {
     Delta delta(6);
 }
 
-TEST_CASE("CntNfa: A segmentation fault in the make_complement") {
-    Nfa r(1);
+TEST_CASE("Cntnfa: A segmentation fault in the make_complement") {
+    Cntnfa r(1);
     OnTheFlyAlphabet alph{};
     alph["a"];
     alph["b"];
@@ -4040,7 +4040,7 @@ TEST_CASE("CntNfa: A segmentation fault in the make_complement") {
 
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa:: create simple automata") {
-//     Nfa nfa{ builder::create_empty_string_nfa() };
+//     Cntnfa nfa{ builder::create_empty_string_nfa() };
 //     CHECK(nfa.is_in_lang(Word{}));
 //     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
@@ -4058,7 +4058,7 @@ TEST_CASE("CntNfa: A segmentation fault in the make_complement") {
 // }
 
 TEST_CASE("mata::cntnfa:: print_to_mata") {
-    Nfa aut_big;
+    Cntnfa aut_big;
     aut_big.initial = {1, 2};
     aut_big.delta.add(1, 'a', 2);
     aut_big.delta.add(1, 'a', 3);
@@ -4077,13 +4077,13 @@ TEST_CASE("mata::cntnfa:: print_to_mata") {
     std::string aut_big_mata = aut_big.print_to_mata();
     // for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
     IntAlphabet int_alph;
-    Nfa aut_big_from_mata = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
+    Cntnfa aut_big_from_mata = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
     CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
 
-TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
-	Nfa aut(5, {0}, {4});
+TEST_CASE("mata::cntnfa::Cntnfa::trim() bug") {
+	Cntnfa aut(5, {0}, {4});
 	aut.delta.add(0, 122, 1);
 	aut.delta.add(1, 98, 1);
 	aut.delta.add(1, 122, 1);
@@ -4093,14 +4093,14 @@ TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
 	aut.delta.add(1, 97, 4);
 	aut.delta.add(3, 97, 4);
 
-	Nfa aut_copy {aut};
+	Cntnfa aut_copy {aut};
 	CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
 /// TODO: Update this test for cntnfa.
 // TEST_CASE("mata::cntnfa::get_useful_states_tarjan") {
-// 	SECTION("Nfa 1") {
-// 		Nfa aut(5, {0}, {4});
+// 	SECTION("Cntnfa 1") {
+// 		Cntnfa aut(5, {0}, {4});
 // 		aut.delta.add(0, 122, 1);
 // 		aut.delta.add(1, 98, 1);
 // 		aut.delta.add(1, 122, 1);
@@ -4116,25 +4116,25 @@ TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
 // 	}
 
 // 	SECTION("Empty NFA") {
-// 		Nfa aut;
+// 		Cntnfa aut;
 // 		mata::BoolVector bv = aut.get_useful_states();
 // 		CHECK(bv == mata::BoolVector({}));
 // 	}
 
 // 	SECTION("Single-state NFA") {
-// 		Nfa aut(1, {0}, {});
+// 		Cntnfa aut(1, {0}, {});
 // 		mata::BoolVector bv = aut.get_useful_states();
 // 		CHECK(bv == mata::BoolVector({ 0}));
 // 	}
 
 // 	SECTION("Single-state NFA acc") {
-// 		Nfa aut(1, {0}, {0});
+// 		Cntnfa aut(1, {0}, {0});
 // 		mata::BoolVector bv = aut.get_useful_states();
 // 		CHECK(bv == mata::BoolVector({ 1}));
 // 	}
 
-// 	SECTION("Nfa 2") {
-// 		Nfa aut(5, {0, 1}, {2});
+// 	SECTION("Cntnfa 2") {
+// 		Cntnfa aut(5, {0, 1}, {2});
 // 		aut.delta.add(0, 122, 2);
 // 		aut.delta.add(2, 98, 3);
 // 		aut.delta.add(1, 98, 4);
@@ -4145,8 +4145,8 @@ TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
 // 		CHECK(bv == ref);
 // 	}
 
-// 	SECTION("Nfa 3") {
-// 		Nfa aut(2, {0, 1}, {0, 1});
+// 	SECTION("Cntnfa 3") {
+// 		Cntnfa aut(2, {0, 1}, {0, 1});
 // 		aut.delta.add(0, 122, 0);
 // 		aut.delta.add(1, 98, 1);
 
@@ -4155,8 +4155,8 @@ TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
 // 		CHECK(bv == ref);
 // 	}
 
-// 	SECTION("Nfa no final") {
-// 		Nfa aut(5, {0}, {});
+// 	SECTION("Cntnfa no final") {
+// 		Cntnfa aut(5, {0}, {});
 // 		aut.delta.add(0, 122, 1);
 // 		aut.delta.add(1, 98, 1);
 // 		aut.delta.add(1, 122, 1);
@@ -4172,7 +4172,7 @@ TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
 // 	}
 
 //     SECTION("from regex (a+b*a*)") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         mata::parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
 
 //         mata::BoolVector bv = aut.get_useful_states();
@@ -4185,30 +4185,30 @@ TEST_CASE("mata::cntnfa::Nfa::trim() bug") {
 //     }
 
 //     SECTION("more initials") {
-//         Nfa aut(4, {0, 1, 2}, {0, 3});
+//         Cntnfa aut(4, {0, 1, 2}, {0, 3});
 //         aut.delta.add(1, 48, 0);
 //         aut.delta.add(2, 53, 3);
 //         CHECK(aut.get_useful_states() == mata::BoolVector{ 1, 1, 1, 1});
 //     }
 // }
 
-TEST_CASE("mata::cntnfa::Nfa::get_words") {
+TEST_CASE("mata::cntnfa::Cntnfa::get_words") {
     SECTION("empty") {
-        Nfa aut;
+        Cntnfa aut;
         CHECK(aut.get_words(0) == std::set<mata::Word>());
         CHECK(aut.get_words(1) == std::set<mata::Word>());
         CHECK(aut.get_words(5) == std::set<mata::Word>());
     }
 
     SECTION("empty word") {
-        Nfa aut(1, {0}, {0});
+        Cntnfa aut(1, {0}, {0});
         CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
         CHECK(aut.get_words(1) == std::set<mata::Word>{{}});
         CHECK(aut.get_words(5) == std::set<mata::Word>{{}});
     }
 
     SECTION("noodle - one final") {
-        Nfa aut(3, {0}, {2});
+        Cntnfa aut(3, {0}, {2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
         CHECK(aut.get_words(0) == std::set<mata::Word>{});
@@ -4219,7 +4219,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_words") {
     }
 
     SECTION("noodle - two finals") {
-        Nfa aut(3, {0}, {1,2});
+        Cntnfa aut(3, {0}, {1,2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
         CHECK(aut.get_words(0) == std::set<mata::Word>{});
@@ -4230,7 +4230,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_words") {
     }
 
     SECTION("noodle - three finals") {
-        Nfa aut(3, {0}, {0,1,2});
+        Cntnfa aut(3, {0}, {0,1,2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
         CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
@@ -4241,7 +4241,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_words") {
     }
 
     SECTION("more complex") {
-        Nfa aut(6, {0,1}, {1,3,4,5});
+        Cntnfa aut(6, {0,1}, {1,3,4,5});
         aut.delta.add(0, 0, 3);
         aut.delta.add(3, 1, 4);
         aut.delta.add(0, 2, 2);
@@ -4257,7 +4257,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_words") {
     }
 
     SECTION("cycle") {
-        Nfa aut(6, {0,1}, {0,1});
+        Cntnfa aut(6, {0,1}, {0,1});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 0);
         CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
@@ -4269,40 +4269,40 @@ TEST_CASE("mata::cntnfa::Nfa::get_words") {
     }
 }
 
-TEST_CASE("mata::cntnfa::Nfa::get_word()") {
+TEST_CASE("mata::cntnfa::Cntnfa::get_word()") {
    SECTION("empty") {
-       Nfa aut;
+       Cntnfa aut;
        CHECK(aut.get_word(0) == std::nullopt);
    }
 
    SECTION("empty word") {
-       Nfa aut(1, { 0 }, { 0 });
+       Cntnfa aut(1, { 0 }, { 0 });
        CHECK(aut.get_word() == Word{});
    }
 
    SECTION("noodle - one final") {
-       Nfa aut(3, { 0 }, { 2 });
+       Cntnfa aut(3, { 0 }, { 2 });
        aut.delta.add(0, 0, 1);
        aut.delta.add(1, 1, 2);
        CHECK(aut.get_word() == Word{ 0, 1 });
    }
 
    SECTION("noodle - two finals") {
-       Nfa aut(3, { 0 }, { 1, 2 });
+       Cntnfa aut(3, { 0 }, { 1, 2 });
        aut.delta.add(0, 0, 1);
        aut.delta.add(1, 1, 2);
        CHECK(aut.get_word() == Word{ 0 });
    }
 
    SECTION("noodle - three finals") {
-       Nfa aut(3, { 0 }, { 0, 1, 2 });
+       Cntnfa aut(3, { 0 }, { 0, 1, 2 });
        aut.delta.add(0, 0, 1);
        aut.delta.add(1, 1, 2);
        CHECK(aut.get_word() == Word{});
    }
 
    SECTION("more complex initial final") {
-       Nfa aut(6, { 0, 1 }, { 1, 3, 4, 5 });
+       Cntnfa aut(6, { 0, 1 }, { 1, 3, 4, 5 });
        aut.delta.add(0, 0, 3);
        aut.delta.add(3, 1, 4);
        aut.delta.add(0, 2, 2);
@@ -4313,7 +4313,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
    }
 
    SECTION("more complex") {
-       Nfa aut(6, { 0, 1 }, { 5 });
+       Cntnfa aut(6, { 0, 1 }, { 5 });
        aut.delta.add(0, 0, 3);
        aut.delta.add(3, 1, 4);
        aut.delta.add(0, 2, 2);
@@ -4324,7 +4324,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
    }
 
    SECTION("cycle") {
-       Nfa aut(6, { 0, 2 }, { 4 });
+       Cntnfa aut(6, { 0, 2 }, { 4 });
        aut.delta.add(2, 2, 3);
        aut.delta.add(3, 3, 2);
        aut.delta.add(0, 0, 1);
@@ -4333,7 +4333,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
    }
 
    SECTION("epsilons") {
-       Nfa aut(6, { 0, 2 }, { 4 });
+       Cntnfa aut(6, { 0, 2 }, { 4 });
        aut.delta.add(2, 2, 3);
        aut.delta.add(3, 3, 2);
        aut.delta.add(0, EPSILON, 1);
@@ -4342,7 +4342,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
    }
 
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states") {
-        Nfa aut{};
+        Cntnfa aut{};
         aut.initial = { 0 };
         aut.final = { 4 };
         aut.delta.add(0, 'a', 0);
@@ -4360,7 +4360,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
     }
 
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states, one separate final") {
-        Nfa aut{};
+        Cntnfa aut{};
         aut.initial = { 0, 6 };
         aut.final = { 7 };
         aut.delta.add(6, 'd', 7);
@@ -4379,7 +4379,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
     }
 
     SECTION("Break after finding the first final without iterating over other initial states") {
-        Nfa aut{};
+        Cntnfa aut{};
         aut.initial = { 0, 1 };
         aut.final = { 4, 5 };
         aut.delta.add(0, 'a', 2);
@@ -4390,7 +4390,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
    }
 
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states, no reachable final") {
-        Nfa aut{};
+        Cntnfa aut{};
         aut.initial = { 0 };
         aut.final = { 6 };
         aut.delta.add(0, 'a', 0);
@@ -4408,7 +4408,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
     }
 
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states, first initial nonterminating") {
-        Nfa aut{};
+        Cntnfa aut{};
         aut.initial = { 1, 2 };
         aut.final = { 4 };
         aut.delta.add(0, 'a', 0);
@@ -4426,7 +4426,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
     }
 
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states, long nonterminating sequence") {
-        Nfa aut{};
+        Cntnfa aut{};
         aut.initial = { 0 };
         aut.final = { 2 };
         aut.delta.add(0, 'a', 0);
@@ -4444,7 +4444,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 }
 
 /// TODO: Update this test for cntnfa.
-// TEST_CASE("mata::cntnfa::Nfa::insert_word()") {
+// TEST_CASE("mata::cntnfa::Cntnfa::insert_word()") {
 //     Delta delta;
 //     delta.add(0, 0, 1);
 //     delta.add(0, 4, 0);
@@ -4455,37 +4455,37 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //     delta.add(3, 3, 4);
 //     delta.add(3, 7, 3);
 
-//     Nfa nfa, expected;
+//     Cntnfa nfa, expected;
 
 //     SECTION("Insert 'a'") {
 //         SECTION("src < tgt") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(1, {'a'}, 3);
 //             CHECK(new_tgt == 3);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(1, 'a', 3);
 
 //             CHECK(are_equivalent(nfa, expected));
 //         }
 
 //         SECTION("src < tgt && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(1, {'a'}, 4);
 //             CHECK(new_tgt == 4);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(1, 'a', 4);
 
 //             CHECK(are_equivalent(nfa, expected));
 //         }
 
 //         SECTION("tgt < src") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(3, {'a'}, 1);
 //             CHECK(new_tgt == 1);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(3, 'a', 1);
 
 //             CHECK(are_equivalent(nfa, expected));
@@ -4493,44 +4493,44 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt < src && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(4, {'a'}, 1);
 //             CHECK(new_tgt == 1);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(4, 'a', 1);
 
 //             CHECK(are_equivalent(nfa, expected));
 //         }
 
 //         SECTION("self-loop") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(3, {'a'}, 3);
 //             CHECK(new_tgt == 3);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(3, 'a', 3);
 
 //             CHECK(are_equivalent(nfa, expected));
 //         }
 
 //         SECTION("self-loop && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(4, {'a'}, 4);
 //             CHECK(new_tgt == 4);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(4, 'a', 4);
 
 //             CHECK(are_equivalent(nfa, expected));
 //         }
 
 //         SECTION("tgt is not specified") {
-//             nfa = Nfa(delta, { 0 });
+//             nfa = Cntnfa(delta, { 0 });
 //             State new_tgt = nfa.insert_word(1, {'a'});
 //             nfa.final.insert(new_tgt);
 
-//             expected = Nfa(3, { 0 }, { 2 });
+//             expected = Cntnfa(3, { 0 }, { 2 });
 //             expected.delta.add(0, 0, 1);
 //             expected.delta.add(0, 4, 0);
 //             expected.delta.add(1, 5, 1);
@@ -4542,11 +4542,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 
 //     SECTION("Insert 'ab'") {
 //         SECTION("src < tgt") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(1, {'a', 'b'}, 3);
 //             CHECK(new_tgt == 3);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(1, 'a', 5);
 //             expected.delta.add(5, 'b', 3);
 
@@ -4554,11 +4554,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("src < tgt && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(1, {'a', 'b'}, 4);
 //             CHECK(new_tgt == 4);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(1, 'a', 5);
 //             expected.delta.add(5, 'b', 4);
 
@@ -4566,11 +4566,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt < src") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(3, {'a', 'b'}, 1);
 //             CHECK(new_tgt == 1);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(3, 'a', 5);
 //             expected.delta.add(5, 'b', 1);
 
@@ -4579,11 +4579,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt < src && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(4, {'a', 'b'}, 1);
 //             CHECK(new_tgt == 1);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(4, 'a', 5);
 //             expected.delta.add(5, 'b', 1);
 
@@ -4591,11 +4591,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("self-loop") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(3, {'a', 'b'}, 3);
 //             CHECK(new_tgt == 3);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(3, 'a', 5);
 //             expected.delta.add(5, 'b', 3);
 
@@ -4603,11 +4603,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("self-loop && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(4, {'a', 'b'}, 4);
 //             CHECK(new_tgt == 4);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(4, 'a', 5);
 //             expected.delta.add(5, 'b', 4);
 
@@ -4615,11 +4615,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt is not specified") {
-//             nfa = Nfa(delta, { 0 });
+//             nfa = Cntnfa(delta, { 0 });
 //             State new_tgt = nfa.insert_word(1, {'a', 'b'});
 //             nfa.final.insert(new_tgt);
 
-//             expected = Nfa(4, { 0 }, { 3 });
+//             expected = Cntnfa(4, { 0 }, { 3 });
 //             expected.delta.add(0, 0, 1);
 //             expected.delta.add(0, 4, 0);
 //             expected.delta.add(1, 5, 1);
@@ -4633,11 +4633,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 
 //     SECTION("Insert 'abcd'") {
 //         SECTION("src < tgt") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
 //             CHECK(new_tgt == 3);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(1, 'a', 5);
 //             expected.delta.add(5, 'b', 6);
 //             expected.delta.add(6, 'c', 7);
@@ -4647,11 +4647,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("src < tgt && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(1, {'a', 'b', 'c', 'd'}, 4);
 //             CHECK(new_tgt == 4);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(1, 'a', 5);
 //             expected.delta.add(5, 'b', 6);
 //             expected.delta.add(6, 'c', 7);
@@ -4661,11 +4661,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt < src") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(3, {'a', 'b', 'c', 'd'}, 1);
 //             CHECK(new_tgt == 1);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(3, 'a', 5);
 //             expected.delta.add(5, 'b', 6);
 //             expected.delta.add(6, 'c', 7);
@@ -4676,11 +4676,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt < src && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(4, {'a', 'b', 'c', 'd'}, 1);
 //             CHECK(new_tgt == 1);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(4, 'a', 5);
 //             expected.delta.add(5, 'b', 6);
 //             expected.delta.add(6, 'c', 7);
@@ -4690,11 +4690,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("self-loop") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
 //             CHECK(new_tgt == 3);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(3, 'a', 5);
 //             expected.delta.add(5, 'b', 6);
 //             expected.delta.add(6, 'c', 7);
@@ -4704,11 +4704,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("self-loop && final.contains(tgt)") {
-//             nfa = Nfa(delta, { 0 }, { 4 });
+//             nfa = Cntnfa(delta, { 0 }, { 4 });
 //             State new_tgt = nfa.insert_word(4, {'a', 'b', 'c', 'd'}, 4);
 //             CHECK(new_tgt == 4);
 
-//             expected = Nfa(delta, { 0 }, { 4 });
+//             expected = Cntnfa(delta, { 0 }, { 4 });
 //             expected.delta.add(4, 'a', 5);
 //             expected.delta.add(5, 'b', 6);
 //             expected.delta.add(6, 'c', 7);
@@ -4718,11 +4718,11 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         }
 
 //         SECTION("tgt is not specified") {
-//             nfa = Nfa(delta, { 0 });
+//             nfa = Cntnfa(delta, { 0 });
 //             State new_tgt = nfa.insert_word(1, {'a', 'b', 'c', 'd'});
 //             nfa.final.insert(new_tgt);
 
-//             expected = Nfa(6, { 0 }, { 5 });
+//             expected = Cntnfa(6, { 0 }, { 5 });
 //             expected.delta.add(0, 0, 1);
 //             expected.delta.add(0, 4, 0);
 //             expected.delta.add(1, 5, 1);
@@ -4737,19 +4737,19 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 // }
 
 /// TODO: Update this test for cntnfa.
-// TEST_CASE("mata::cntnfa::Nfa::decode_utf8") {
+// TEST_CASE("mata::cntnfa::Cntnfa::decode_utf8") {
 //     SECTION("Empty") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         CHECK(are_equivalent(aut, aut.decode_utf8()));
 //     }
 
 //     SECTION("Empty language") {
-//         Nfa aut(1, {0}, {0});
+//         Cntnfa aut(1, {0}, {0});
 //         CHECK(are_equivalent(aut, aut.decode_utf8()));
 //     }
 
 //     SECTION("between 0x00 and 0x7F") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.delta.add(0, 0x01, 1);
 //         aut.delta.add(1, 0x10, 2);
@@ -4762,7 +4762,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         aut.delta.add(8, 0x7f, 9);
 //         aut.final.insert(9);
 
-//         Nfa result;
+//         Cntnfa result;
 //         result.initial.insert(0);
 //         result.delta.add(0, 0x01, 1);
 //         result.delta.add(1, 0x10, 2);
@@ -4778,7 +4778,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //     }
 
 //     SECTION("between 0x80 and 0x7ff") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.delta.add(0, 0xc2, 1);
 //         aut.delta.add(1, 0x80, 2);
@@ -4800,7 +4800,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         aut.delta.add(17, 0xbf, 18);
 //         aut.final.insert(18);
 
-//         Nfa result;
+//         Cntnfa result;
 //         result.initial.insert(0);
 //         result.delta.add(0, 0x80, 1);
 //         result.delta.add(1, 0x90, 2);
@@ -4816,7 +4816,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //     }
 
 //     SECTION("between 0x800 and 0x7FFF") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.delta.add(0, 0xe0, 1);
 //         aut.delta.add(1, 0xa0, 2);
@@ -4847,7 +4847,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         aut.delta.add(26, 0xbf, 27);
 //         aut.final.insert(27);
 
-//         Nfa result;
+//         Cntnfa result;
 //         result.initial.insert(0);
 //         result.delta.add(0, 0x800, 1);
 //         result.delta.add(1, 0x900, 2);
@@ -4863,7 +4863,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //     }
 
 //     SECTION("between 0x10000 and 0x10FFFF") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.delta.add(0, 0xf0, 1);
 //         aut.delta.add(1, 0x90, 2);
@@ -4903,7 +4903,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         aut.delta.add(35, 0xbf, 36);
 //         aut.final.insert(36);
 
-//         Nfa result;
+//         Cntnfa result;
 //         result.initial.insert(0);
 //         result.delta.add(0, 0x10000, 1);
 //         result.delta.add(1, 0x20000, 2);
@@ -4919,7 +4919,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //     }
 
 //     SECTION("mix") {
-//         Nfa aut;
+//         Cntnfa aut;
 //         aut.initial.insert(0);
 //         aut.delta.add(0, 0x01, 1);
 //         aut.delta.add(1, 0xc2, 2);
@@ -4933,7 +4933,7 @@ TEST_CASE("mata::cntnfa::Nfa::get_word()") {
 //         aut.delta.add(9, 0x8c, 10);
 //         aut.final.insert(10);
 
-//         Nfa result;
+//         Cntnfa result;
 //         result.initial.insert(0);
 //         result.delta.add(0, 0x01, 1);
 //         result.delta.add(1, 0x90, 2);

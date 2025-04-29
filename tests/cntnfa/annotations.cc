@@ -9,8 +9,8 @@
 using namespace mata;
 using namespace mata::cntnfa;
 
-TEST_CASE("CntNfa: Allocate annotation collection for counter NFA") {
-    Nfa cntnfa{};
+TEST_CASE("Cntnfa: Allocate annotation collection for counter NFA") {
+    Cntnfa cntnfa{};
     cntnfa.annotation_collection.allocate(3);
     CHECK(cntnfa.num_of_annotation_sets() == 3);
 }

@@ -11,11 +11,11 @@ using namespace mata::utils;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool mata::cntnfa::algorithms::is_included_naive(
-        const Nfa &smaller,
-        const Nfa &bigger,
+        const Cntnfa &smaller,
+        const Cntnfa &bigger,
         const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
         Run *cex) { // {{{
-    Nfa bigger_cmpl;
+    Cntnfa bigger_cmpl;
     if (alphabet == nullptr) {
         bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
     } else {
@@ -23,7 +23,7 @@ bool mata::cntnfa::algorithms::is_included_naive(
     }
 
     std::unordered_map<std::pair<State,State>,State> prod_map;
-    Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, &prod_map);
+    Cntnfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, &prod_map);
 
     bool result = nfa_isect.is_lang_empty(cex);
     if (cex != nullptr && !result) {
@@ -42,8 +42,8 @@ bool mata::cntnfa::algorithms::is_included_naive(
 /// language inclusion check using Antichains
 // TODO, what about to construct the separator from this?
 bool mata::cntnfa::algorithms::is_included_antichains(
-    const Nfa&             smaller,
-    const Nfa&             bigger,
+    const Cntnfa&             smaller,
+    const Cntnfa&             bigger,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
     Run*                   cex)
 { // {{{
@@ -243,7 +243,7 @@ bool mata::cntnfa::algorithms::is_included_antichains(
 namespace {
     using AlgoType = decltype(algorithms::is_included_naive)*;
 
-    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const mata::Alphabet *const alphabet, const AlgoType &algo) {
+    bool compute_equivalence(const Cntnfa &lhs, const Cntnfa &rhs, const mata::Alphabet *const alphabet, const AlgoType &algo) {
         //alphabet should not be needed as input parameter
         if (algo(lhs, rhs, alphabet, nullptr)) {
             if (algo(rhs, lhs, alphabet, nullptr)) {
@@ -279,8 +279,8 @@ namespace {
 
 // The dispatching method that calls the correct one based on parameters
 bool mata::cntnfa::is_included(
-        const Nfa &smaller,
-        const Nfa &bigger,
+        const Cntnfa &smaller,
+        const Cntnfa &bigger,
         Run *cex,
         const Alphabet *const alphabet,
         const ParameterMap &params) { // {{{
@@ -288,7 +288,7 @@ bool mata::cntnfa::is_included(
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
-bool mata::cntnfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
+bool mata::cntnfa::are_equivalent(const Cntnfa& lhs, const Cntnfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
@@ -303,6 +303,6 @@ bool mata::cntnfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet
     return compute_equivalence(lhs, rhs, alphabet, algo);
 }
 
-bool mata::cntnfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
+bool mata::cntnfa::are_equivalent(const Cntnfa& lhs, const Cntnfa& rhs, const ParameterMap& params) {
     return are_equivalent(lhs, rhs, nullptr, params);
 }

@@ -16,7 +16,7 @@
  */
 namespace mata::strings {
 
-using Nfa = cntnfa::Nfa;
+using Cntnfa = cntnfa::Cntnfa;
 using State = cntnfa::State;
 using StateSet = cntnfa::StateSet;
 using Transition = cntnfa::Transition;
@@ -32,7 +32,7 @@ public:
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
      * @param aut Automaton to compute shortest words for.
      */
-    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
+    explicit ShortestWordsMap(const Cntnfa& aut) : reversed_automaton(revert(aut)) {
         insert_initial_lengths();
         compute();
     }
@@ -59,7 +59,7 @@ private:
     std::unordered_map<State, LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
     std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const Nfa reversed_automaton; ///< Reversed input automaton.
+    const Cntnfa reversed_automaton; ///< Reversed input automaton.
 
     /**
      * @brief Inserts initial lengths into the shortest words map.
@@ -101,12 +101,12 @@ private:
  * Get shortest words (regarding their length) of the automaton using BFS.
  * @return Set of shortest words.
  */
-std::set<Word> get_shortest_words(const Nfa& nfa);
+std::set<Word> get_shortest_words(const Cntnfa& nfa);
 
 /**
  * @brief Get all the one symbol words accepted by @p nfa.
  */
-std::set<Symbol> get_accepted_symbols(const Nfa& nfa);
+std::set<Symbol> get_accepted_symbols(const Cntnfa& nfa);
 
 /**
  * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each
@@ -116,7 +116,7 @@ std::set<Symbol> get_accepted_symbols(const Nfa& nfa);
  * @param aut Input automaton
  * @return Set of pairs describing lengths
  */
-std::set<std::pair<int, int>> get_word_lengths(const Nfa& aut);
+std::set<std::pair<int, int>> get_word_lengths(const Cntnfa& aut);
 
 /**
  * @brief Checks if the automaton @p nfa accepts only a single word \eps.
@@ -124,7 +124,7 @@ std::set<std::pair<int, int>> get_word_lengths(const Nfa& aut);
  * @param nfa Input automaton
  * @return true iff L(nfa) = {\eps}
  */
-bool is_lang_eps(const Nfa& nfa);
+bool is_lang_eps(const Cntnfa& nfa);
 
 /**
  * Segment Automata including structs and algorithms.
@@ -133,9 +133,9 @@ bool is_lang_eps(const Nfa& nfa);
  * No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
  * Segment automaton can have initial states only in the first segment and final states only in the last segment.
  */
-namespace seg_nfa {
+namespace seg_cntnfa {
 
-using SegNfa = Nfa;
+using SegCntnfa = Cntnfa;
 using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 
 /// Number of visited epsilons.
@@ -159,7 +159,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    explicit Segmentation(const SegNfa& aut, const std::set<Symbol>& epsilons) : epsilons(epsilons), automaton(aut) {
+    explicit Segmentation(const SegCntnfa& aut, const std::set<Symbol>& epsilons) : epsilons(epsilons), automaton(aut) {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
 
@@ -181,25 +181,25 @@ public:
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton).
      */
-    const std::vector<Nfa>& get_segments();
+    const std::vector<Cntnfa>& get_segments();
 
     /**
      * Get raw segment automata.
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
      */
-    const std::vector<Nfa>& get_untrimmed_segments();
+    const std::vector<Cntnfa>& get_untrimmed_segments();
 
     const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
 
 private:
     const std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
-    const SegNfa& automaton;
+    const SegCntnfa& automaton;
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
     EpsilonDepthTransitionMap eps_depth_trans_map{}; /// Epsilon depths with mapping of states to epsilon transitions
-    std::vector<SegNfa> segments{}; ///< Segments for @p automaton.
-    std::vector<SegNfa> segments_raw{}; ///< Raw segments for @p automaton.
+    std::vector<SegCntnfa> segments{}; ///< Segments for @p automaton.
+    std::vector<SegCntnfa> segments_raw{}; ///< Raw segments for @p automaton.
     VisitedEpsMap visited_eps{}; /// number of visited eps for each state
 
     /**
@@ -283,9 +283,9 @@ private:
 
 /// A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly
 ///  one ε-transition between each two consecutive segments.
-using Noodle = std::vector<std::shared_ptr<SegNfa>>;
+using Noodle = std::vector<std::shared_ptr<SegCntnfa>>;
 /// Segment with a counter of visited epsilons.
-using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<Nfa>, VisitedEpsilonsCounterVector>;
+using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<Cntnfa>, VisitedEpsilonsCounterVector>;
 /// Noodles as segments enriched with EpsCntMap
 using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
 
@@ -301,8 +301,8 @@ using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
  * TODO: should we use unordered_map? then we need hash
  */
 void segs_one_initial_final(
-    const std::vector<Nfa>& segments, bool include_empty, const State& unused_state,
-    std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out);
+    const std::vector<Cntnfa>& segments, bool include_empty, const State& unused_state,
+    std::map<std::pair<State, State>, std::shared_ptr<Cntnfa>>& out);
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -316,7 +316,7 @@ void segs_one_initial_final(
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+std::vector<Noodle> noodlify(const SegCntnfa& aut, Symbol epsilon, bool include_empty = false);
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -330,7 +330,7 @@ std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_emp
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
+std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegCntnfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -352,8 +352,8 @@ std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegNfa& aut, cons
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
-                                     const Nfa& rhs_automaton,
+std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapper<Cntnfa>>& lhs_automata,
+                                     const Cntnfa& rhs_automaton,
                                      bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
@@ -377,7 +377,7 @@ std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapp
  * @return A list of all (non-empty) noodles.
  */
 std::vector<Noodle> noodlify_for_equation(
-                const std::vector<Nfa*>& lhs_automata, const Nfa& rhs_automaton, bool include_empty = false,
+                const std::vector<Cntnfa*>& lhs_automata, const Cntnfa& rhs_automaton, bool include_empty = false,
                 const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
@@ -392,8 +392,8 @@ std::vector<Noodle> noodlify_for_equation(
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
  */
 std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
-   const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
-   const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+   const std::vector<std::shared_ptr<Cntnfa>>& lhs_automata,
+   const std::vector<std::shared_ptr<Cntnfa>>& rhs_automata,
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
@@ -404,7 +404,7 @@ std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
  */
 VisitedEpsilonsCounterVector process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt);
 
-} // namespace SegNfa.
+} // namespace SegCntnfa.
 
 } // namespace mata::strings.
 

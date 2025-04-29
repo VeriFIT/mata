@@ -8,14 +8,14 @@
 using namespace mata::cntnfa;
 using namespace mata::utils;
 
-Nfa mata::cntnfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols) {
+Cntnfa mata::cntnfa::algorithms::complement_classical(const Cntnfa& aut, const OrdVector<Symbol>& symbols) {
     return determinize(aut)
         .trim()
         .complement_deterministic(symbols);
 }
 
-Nfa algorithms::complement_brzozowski(const Nfa& aut, const OrdVector<Symbol>& symbols) {
-    Nfa result{ minimize_brzozowski(aut) }; // Brzozowski minimization makes it deterministic.
+Cntnfa algorithms::complement_brzozowski(const Cntnfa& aut, const OrdVector<Symbol>& symbols) {
+    Cntnfa result{ minimize_brzozowski(aut) }; // Brzozowski minimization makes it deterministic.
     if (result.final.empty() && !result.initial.empty()) {
         assert(result.initial.size() == 1);
         // If the DFA does not accept anything, then there is only one (initial) state which can be the sink state (so
@@ -25,11 +25,11 @@ Nfa algorithms::complement_brzozowski(const Nfa& aut, const OrdVector<Symbol>& s
     return result.complement_deterministic(symbols);
 }
 
-Nfa mata::cntnfa::complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
+Cntnfa mata::cntnfa::complement(const Cntnfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
     return mata::cntnfa::complement(aut, alphabet.get_alphabet_symbols(), params);
 }
 
-Nfa mata::cntnfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
+Cntnfa mata::cntnfa::complement(const Cntnfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
     // Setting the requested algorithm.
     decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
     if (!haskey(params, "algorithm")) {

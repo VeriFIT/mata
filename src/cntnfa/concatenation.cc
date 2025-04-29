@@ -9,12 +9,12 @@ using namespace mata::cntnfa;
 
 namespace mata::cntnfa {
 
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
+Cntnfa concatenate(const Cntnfa& lhs, const Cntnfa& rhs, bool use_epsilon,
                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
     return algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming);
 }
 
-Nfa& Nfa::concatenate(const Nfa& aut) {
+Cntnfa& Cntnfa::concatenate(const Cntnfa& aut) {
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;
@@ -57,24 +57,24 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     return *this;
 }
 
-Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
+Cntnfa algorithms::concatenate_eps(const Cntnfa& lhs, const Cntnfa& rhs, const Symbol& epsilon, bool use_epsilon,
                                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
     if (lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
-        return Nfa{};
+        return Cntnfa{};
     }
 
     const unsigned long lhs_states_num{lhs.num_of_states() };
     const unsigned long rhs_states_num{rhs.num_of_states() };
-    Nfa result{}; // Concatenated automaton.
+    Cntnfa result{}; // Concatenated automaton.
     StateRenaming _lhs_states_renaming{}; // Map mapping rhs states to result states.
     StateRenaming _rhs_states_renaming{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-    if (result_num_of_states == 0) { return Nfa{}; }
+    if (result_num_of_states == 0) { return Cntnfa{}; }
 
     // Map lhs states to result states.
     _lhs_states_renaming.reserve(lhs_states_num);
@@ -90,7 +90,7 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
         ++result_state_index;
     }
 
-    result = Nfa();
+    result = Cntnfa();
     result.delta = lhs.delta;
     result.initial = lhs.initial;
     result.add_state(result_num_of_states-1);

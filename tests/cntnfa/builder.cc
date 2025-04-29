@@ -17,9 +17,9 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 using Word = std::vector<Symbol>;
 
-TEST_CASE("CntNfa: construct_counter_nfa()") {
+TEST_CASE("Cntnfa: construct_counter_nfa()") {
     SECTION("Empty automaton - No initial and final states, no registers") {
-        Nfa nfa;
+        Cntnfa nfa;
 
         std::string input = R"(@CNTNFA-explicit
             %Alphabet-auto
@@ -29,7 +29,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             auto section = mata::parser::parse_mf_section(input);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -47,7 +47,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             std::filesystem::remove(file_path);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -58,7 +58,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
     }
 
     SECTION("Empty automaton - Empty initial and final states, empty registers") {
-        Nfa nfa;
+        Cntnfa nfa;
 
         std::string input = R"(@CNTNFA-explicit
             %Alphabet-auto
@@ -71,7 +71,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             auto section = mata::parser::parse_mf_section(input);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -89,7 +89,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             std::filesystem::remove(file_path);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -100,7 +100,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
     }
 
     SECTION("Simple automaton - Empty registers") {
-        Nfa nfa;
+        Cntnfa nfa;
         nfa.initial = { 0 };
         nfa.delta.add(0, 0, 0);
         nfa.delta.add(0, 1, 1);
@@ -121,7 +121,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             auto section = mata::parser::parse_mf_section(input);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -139,7 +139,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             std::filesystem::remove(file_path);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -150,7 +150,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
     }
 
     SECTION("Larget automaton - Empty registers") {
-        Nfa nfa;
+        Cntnfa nfa;
         nfa.initial = { 1, 2, 50 };
         nfa.delta.add(1, 'a', 2);
         nfa.delta.add(1, 'a', 3);
@@ -195,7 +195,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             mata::parser::ParsedSection section = mata::parser::parse_mf_section(input);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -213,7 +213,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             std::filesystem::remove(file_path);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -224,7 +224,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
     }
 
     SECTION("Simple automaton - With annotations (only test and increment)") {
-        Nfa nfa;
+        Cntnfa nfa;
         nfa.initial = { 0 };
         nfa.final = { 1 };
 
@@ -257,7 +257,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             auto section = mata::parser::parse_mf_section(input);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -278,7 +278,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             std::filesystem::remove(file_path);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -292,7 +292,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
     }
 
     SECTION("Larger automaton - With annotations (only test and increment)") {
-        Nfa nfa;
+        Cntnfa nfa;
         nfa.initial = { 0, 5 };
         nfa.final = { 8, 10 };
 
@@ -356,7 +356,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             auto section = mata::parser::parse_mf_section(input);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -377,7 +377,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             std::filesystem::remove(file_path);
 
             OnTheFlyAlphabet alphabet;
-            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+            Cntnfa parsed = builder::construct_counter_nfa(section, &alphabet);
 
             CHECK(parsed.initial == nfa.initial);
             CHECK(parsed.final == nfa.final);
@@ -391,14 +391,14 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
     }
 }
 
-TEST_CASE("CntNfa: parse_from_mata()") {
+TEST_CASE("Cntnfa: parse_from_mata()") {
     Delta delta;
 
     SECTION("Empty automaton - No initial and final") {
-        Nfa nfa{ delta, {}, {} };
+        Cntnfa nfa{ delta, {}, {} };
         SECTION("from String") {
             std::string empty_nfa_str = "@NFA-explicit\n%Alphabet-auto\n";
-            Nfa empty_nfa{ mata::cntnfa::builder::parse_from_mata(empty_nfa_str) };
+            Cntnfa empty_nfa{ mata::cntnfa::builder::parse_from_mata(empty_nfa_str) };
             CHECK(are_equivalent(empty_nfa, nfa));
         }
 
@@ -407,7 +407,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
             std::fstream file{ nfa_file, std::fstream::in | std::fstream::out | std::fstream::trunc };
             file << "@NFA-explicit\n%Alphabet-auto\n";
             file.close();
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
             std::filesystem::remove(nfa_file);
             CHECK(are_equivalent(parsed, nfa));
         }
@@ -415,10 +415,10 @@ TEST_CASE("CntNfa: parse_from_mata()") {
     }
 
     SECTION("Empty automaton with empty final and initial") {
-        Nfa nfa{ delta, {}, {} };
+        Cntnfa nfa{ delta, {}, {} };
         SECTION("from String") {
             std::string empty_nfa_str = "@NFA-explicit\n%Alphabet-auto\n%Initial\n%Final\n";
-            Nfa empty_nfa{ mata::cntnfa::builder::parse_from_mata(empty_nfa_str) };
+            Cntnfa empty_nfa{ mata::cntnfa::builder::parse_from_mata(empty_nfa_str) };
             CHECK(are_equivalent(empty_nfa, nfa));
         }
         SECTION("from file") {
@@ -426,7 +426,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
             std::fstream file{ nfa_file, std::fstream::in | std::fstream::out | std::fstream::trunc };
             file << "@NFA-explicit\n%Alphabet-auto\n%Initial\n%Final\n";
             file.close();
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
             std::filesystem::remove(nfa_file);
             CHECK(are_equivalent(parsed, nfa));
         }
@@ -436,17 +436,17 @@ TEST_CASE("CntNfa: parse_from_mata()") {
         delta.add(0, 0, 0);
         delta.add(0, 1, 1);
         delta.add(1, 2, 0);
-        Nfa nfa{ delta, { 0 }, { 1 } };
+        Cntnfa nfa{ delta, { 0 }, { 1 } };
 
         SECTION("from string") {
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa.print_to_mata()) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa.print_to_mata()) };
             CHECK(are_equivalent(parsed, nfa));
         }
 
         SECTION("from stream") {
             std::stringstream nfa_stream;
             nfa.print_to_mata(nfa_stream);
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_stream) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_stream) };
             CHECK(are_equivalent(parsed, nfa));
         }
 
@@ -454,7 +454,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
             std::filesystem::path nfa_file{ "./temp-test-parse_from_mata-simple_nfa.mata" };
             std::fstream file{ nfa_file, std::fstream::in | std::fstream::out | std::fstream::trunc};
             nfa.print_to_mata(file);
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
             file.close();
             std::filesystem::remove(nfa_file);
 
@@ -464,7 +464,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
     }
 
     SECTION("larger automaton") {
-        Nfa nfa;
+        Cntnfa nfa;
         nfa.initial = { 1, 2, 50 };
         nfa.delta.add(1, 'a', 2);
         nfa.delta.add(1, 'a', 3);
@@ -484,7 +484,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
         nfa.final = { 3, 103 };
 
         SECTION("from string") {
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa.print_to_mata()) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa.print_to_mata()) };
             parsed.final.contains(103);
             parsed.initial.contains(50);
             parsed.delta.contains(51, 'z', 42);
@@ -494,7 +494,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
         SECTION("from stream") {
             std::stringstream nfa_stream;
             nfa.print_to_mata(nfa_stream);
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_stream) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_stream) };
             parsed.final.contains(103);
             parsed.initial.contains(50);
             parsed.delta.contains(51, 'z', 42);
@@ -505,7 +505,7 @@ TEST_CASE("CntNfa: parse_from_mata()") {
             std::filesystem::path nfa_file{ "./temp-test-parse_from_mata-larger_nfa.mata" };
             std::fstream file{ nfa_file, std::fstream::in | std::fstream::out | std::fstream::trunc };
             nfa.print_to_mata(file);
-            Nfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
+            Cntnfa parsed{ mata::cntnfa::builder::parse_from_mata(nfa_file) };
             file.close();
             std::filesystem::remove(nfa_file);
 
