@@ -73,7 +73,7 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
           cache: 'pip'
@@ -140,7 +140,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
           cache: 'pip'
@@ -219,6 +219,6 @@ jobs:
       - name: Test the library
         run: make test
       - name: Upload coverage to codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           gcov: true
