@@ -86,13 +86,13 @@ void Nft::remove_epsilon(Symbol epsilon) {
     *this = mata::nft::remove_epsilon(*this, epsilon);
 }
 
-std::string Nft::print_to_dot(const bool ascii, const bool use_intervals, const int max_label_len) const {
+std::string Nft::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
     std::stringstream output;
-    print_to_dot(output, ascii, use_intervals, max_label_len);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
     return output.str();
 }
 
-void Nft::print_to_dot(std::ostream &output, const bool ascii, const bool use_intervals, const int max_label_len) const {
+void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
     auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
         switch (symbol) {
             case EPSILON:      return "<eps>";
@@ -115,7 +115,7 @@ void Nft::print_to_dot(std::ostream &output, const bool ascii, const bool use_in
     };
 
     auto translate_symbol = [&](const Symbol symbol) {
-        if (ascii) {
+        if (decode_ascii_chars) {
             return to_ascii(symbol);
         }
         return translate_special_symbols(symbol);
@@ -178,7 +178,7 @@ void Nft::print_to_dot(std::ostream &output, const bool ascii, const bool use_in
             }
         }
         for (const auto& [target, symbols]: tgt_symbols_map) {
-            if (max_label_len == 0) {
+            if (max_label_length == 0) {
                 output << source << " -> " << target << ";" << std::endl;
                 continue;
             }
@@ -186,8 +186,8 @@ void Nft::print_to_dot(std::ostream &output, const bool ascii, const bool use_in
             std::string label = (use_intervals) ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
             std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
             bool is_shortened = false;
-            if (max_label_len > 0 && label.length() > static_cast<size_t>(max_label_len)) {
-                label = label.substr(0, static_cast<size_t>(max_label_len)) + "...";
+            if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
+                label = label.substr(0, static_cast<size_t>(max_label_length)) + "...";
                 is_shortened = true;
             }
 
@@ -211,12 +211,12 @@ void Nft::print_to_dot(std::ostream &output, const bool ascii, const bool use_in
     output << "}" << std::endl;
 }
 
-void Nft::print_to_dot(const std::string& filename,  const bool ascii, const bool use_intervals, const int max_label_len) const {
+void Nft::print_to_dot(const std::string& filename,  const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_dot(output, ascii, use_intervals, max_label_len);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
 }
 
 std::string Nft::print_to_mata() const {
