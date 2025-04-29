@@ -12,7 +12,7 @@ runs:
       shell: sh
       run: make release > build_log
     - name: Cache file with warnings
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ./build_log
         key: build-log-${{ inputs.build-log-output-file }}-${{ runner.os }}-${{ github.sha }}
