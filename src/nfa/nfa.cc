@@ -449,18 +449,24 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
         }
     };
 
+    BoolVector is_state_drawn(num_of_states(), false);
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
+    // Double circle for final states
     for (State final_state: final) {
+        is_state_drawn[final_state] = true;
         output << final_state << " [shape=doublecircle];" << std::endl;
     }
 
+    // Print transitions
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
         for (const SymbolPost &move: delta[source]) {
             output << source << " -> {";
+            is_state_drawn[source] = true;
             for (State target: move.targets) {
+                is_state_drawn[target] = true;
                 output << target << " ";
             }
             if (ascii) {
@@ -471,6 +477,14 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
         }
     }
 
+    // Circle for isolated states with no transitions
+    for (State state{ 0 }; state < is_state_drawn.size(); ++state) {
+        if (!is_state_drawn[state]) {
+            output << state << " [shape=circle];" << std::endl;
+        }
+    }
+
+    // Arrow for initial states
     output << "node [shape=none, label=\"\"];" << std::endl;
     for (State init_state: initial) {
         output << "i" << init_state << " -> " << init_state << ";" << std::endl;
