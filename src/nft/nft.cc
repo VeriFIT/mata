@@ -186,7 +186,7 @@ void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
             std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
             bool is_shortened = false;
             if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
-                label = label.substr(0, static_cast<size_t>(max_label_length)) + "...";
+                label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
                 is_shortened = true;
             }
 
