@@ -13,7 +13,7 @@ runs:
       run: echo "0.0.0" > VERSION
 
     - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
         cache: 'pip'
@@ -27,5 +27,5 @@ runs:
     - name: Install Unix dependencies
       shell: sh
       run: |
-        sudo apt-get -qq update 
+        sudo apt-get -qq update
         sudo apt-get -qq install -y graphviz graphviz-dev
