@@ -66,17 +66,19 @@ void RegisterSet::set(size_t index, const Register& counter) {
     name_to_index[counter.name] = index;
 }
 
-size_t RegisterSet::insert(const RegisterName& name, RegisterValue value) {
-    // Note: If a counter with the same name exists, reuse it.
-    // This assumes all counters with the same name represent the same logical counter.
-    auto it = name_to_index.find(name);
-    if (it != name_to_index.end()) {
-        return it->second;
+size_t RegisterSet::add(const RegisterName& name, RegisterValue value) {
+    if (name_to_index.contains(name)) {
+        throw std::invalid_argument("RegisterSet: A register with the same name already exists.");
     }
     size_t index = counters.size();
     counters.emplace_back(value, name);
     name_to_index[name] = index;
     return index;
+}
+
+size_t RegisterSet::add_with_prefix(const std::string& prefix, RegisterValue value) {
+    std::string name = prefix + std::to_string(counters.size());
+    return add(name, value);
 }
 
 bool RegisterSet::has(const RegisterName& name) const {

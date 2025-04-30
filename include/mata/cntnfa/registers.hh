@@ -72,7 +72,8 @@ public:
     void clear();
 
     void set(size_t index, const Register& counter);
-    size_t insert(const RegisterName& name, RegisterValue value = 0);
+    size_t add(const RegisterName& name, RegisterValue value = 0);
+    size_t add_with_prefix(const std::string& prefix, RegisterValue value = 0);
 
     bool has(const RegisterName& name) const;
     const RegisterName& get_name(size_t index) const;
