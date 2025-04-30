@@ -616,7 +616,7 @@ cdef class Nfa:
     def __repr__(self):
         return str(self)
 
-    def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
+    def to_dot_file(self, output_file='aut.dot', output_format='pdf', decode_ascii_chars=False, use_intervals=False, max_label_length=-1):
         """Transforms the automaton to dot format.
 
         By default, the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
@@ -625,11 +625,14 @@ cdef class Nfa:
 
         :param str output_file: name of the output file where the automaton will be stored
         :param str output_format: format of the output file (pdf/png/etc)
+        :param bool decode_ascii_chars: whether to decode ascii codes
+        :param bool use_intervals: whether to use intervals ([1-3] instead of [1,2,3])
+        :param int max_label_lenght: maximum label length (-1 means no limit, 0 means no label)
         """
         cdef mata_nfa.ofstream* output
         output = new mata_nfa.ofstream(output_file.encode('utf-8'))
         try:
-            self.thisptr.get().print_to_dot(dereference(output))
+            self.thisptr.get().print_to_dot(dereference(output), decode_ascii_chars, use_intervals, max_label_length)
         finally:
             del output
 
@@ -638,17 +641,20 @@ cdef class Nfa:
         if err:
             print(f"error while dot file: {err}")
 
-    def to_dot_str(self, encoding='utf-8'):
+    def to_dot_str(self, encoding='utf-8', decode_ascii_chars=False, use_intervals=False, max_label_lenght=-1):
         """Transforms the automaton to dot format string
 
         :param str encoding: encoding of the dot string
+        :param bool decode_ascii_chars: whether to decode ascii codes
+        :param bool use_intervals: whether to use intervals ([1-3] instead of [1,2,3])
+        :param int max_label_lenght: maximum label length (-1 means no limit, 0 means no label)
         :return: string with dot representation of the automaton
         """
         cdef mata_nfa.stringstream* output_stream
         output_stream = new mata_nfa.stringstream("".encode('ascii'))
         cdef string result
         try:
-            self.thisptr.get().print_to_dot(dereference(output_stream))
+            self.thisptr.get().print_to_dot(dereference(output_stream), decode_ascii_chars, use_intervals, max_label_lenght)
             result = output_stream.str()
         finally:
             del output_stream
