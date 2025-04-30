@@ -570,7 +570,7 @@ Cntnfa mata::cntnfa::remove_epsilon(const Cntnfa& aut, Symbol epsilon) {
 
     // Construct the automaton without epsilon transitions.
     Cntnfa result{ Delta{}, aut.initial, aut.final,
-                AnnotationCollection{}, CounterRegisterSet{},
+                AnnotationCollection{}, CounterSet{},
                 aut.alphabet };
     for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
@@ -886,7 +886,7 @@ bool mata::cntnfa::Cntnfa::is_in_lang_of_counter_nfa(const Run& run) const {
                     bool passed = true;
                     for (const auto& ann : anns) {
                         // Perform the annotation operation (execution or test using apply)
-                        passed &= ann->apply(next_cfg.counters);
+                        passed &= ann->apply(next_cfg.registers);
 
                         // Stop early if a test fails
                         if (!passed) {
@@ -955,8 +955,8 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
     struct ConfigHasher {
         std::size_t operator()(const Config& cfg) const {
             std::size_t seed = std::hash<State>()(cfg.state);
-            for (size_t i = 0; i < cfg.counters.size(); ++i) {
-                seed ^= std::hash<CounterValue>()(cfg.counters.get(i)) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            for (size_t i = 0; i < cfg.registers.size(); ++i) {
+                seed ^= std::hash<CounterValue>()(cfg.registers.get(i)) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
             }
             return seed;
         }
@@ -1021,7 +1021,7 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
                     for (const auto& ann : anns) {
                         const std::string& type = ann->get_type();
                         if (type == "CounterAssign" || type == "CounterIncrement") {
-                            ann->update(next_cfg.counters);
+                            ann->update(next_cfg.registers);
                         }
                     }
 
@@ -1029,7 +1029,7 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
                     for (const auto& ann : anns) {
                         const std::string& type = ann->get_type();
                         if (type == "CounterTest" || type == "CounterGreater" || type == "CounterLess") {
-                            if (!ann->guard(next_cfg.counters)) {
+                            if (!ann->guard(next_cfg.registers)) {
                                 passed = false;
                                 break;
                             }

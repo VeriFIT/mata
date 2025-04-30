@@ -3,15 +3,15 @@
 #ifndef MATA_TYPES_HH
 #define MATA_TYPES_HH
 
-#include "mata/cntnfa/counters.hh"
-#include "mata/alphabet.hh"
-
 #include <limits>
+
+#include "mata/alphabet.hh"
+#include "mata/cntnfa/registers.hh"
 
 // Use this for undefined annotations
 #define MAX_SIZE_T (std::numeric_limits<size_t>::max())
 #define UNDEFINED_ANNOTATIONS MAX_SIZE_T
-#define UNDEFINED_COUNTER MAX_SIZE_T
+#define UNDEFINED_REGISTER MAX_SIZE_T
 
 namespace mata::cntnfa {
 
@@ -19,6 +19,11 @@ extern const std::string TYPE_CNTNFA;
 
 using State = unsigned long;
 using StateSet = mata::utils::OrdVector<State>;
+
+using Counter = Register;
+using CounterSet = RegisterSet;
+using CounterValue = RegisterValue;
+using CounterName = RegisterName;
 
 struct Run {
     Word word{}; ///< A finite-length word.
@@ -28,14 +33,14 @@ struct Run {
 // Configuration of the counter automaton.
 struct Configuration {
     State state; ///< The current state of the automaton.
-    CounterSet counters; ///< The current values of the counters.
+    RegisterSet registers; ///< The current values of the registers.
 
-    Configuration() : state(), counters() {}
-    Configuration(State state, CounterSet counters)
-        : state(state), counters(counters) {}
+    Configuration() : state(), registers() {}
+    Configuration(State state, RegisterSet registers)
+        : state(state), registers(registers) {}
 
     bool operator==(const Configuration& other) const {
-        return state == other.state && counters == other.counters;
+        return state == other.state && registers == other.registers;
     }
 };
 

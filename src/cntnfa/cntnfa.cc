@@ -680,7 +680,7 @@ Cntnfa& Cntnfa::unite_nondet_shared_counters_nfa_with(const Cntnfa &aut) {
     // Copy counters from the other automaton and store their new IDs
     std::unordered_map<CounterName, size_t> remapped_counter_ids;
     for (size_t i = 0; i < aut.counter_set.size(); ++i) {
-        const CounterRegister& counter = aut.counter_set.get(i);
+        const Counter& counter = aut.counter_set.get(i);
         size_t counter_id = this->counter_set.insert(counter.name, counter.value);
         remapped_counter_ids[counter.name] = counter_id;
     }
@@ -689,7 +689,7 @@ Cntnfa& Cntnfa::unite_nondet_shared_counters_nfa_with(const Cntnfa &aut) {
     auto remap_annotation_counters = [&](const std::shared_ptr<TransitionAnnotation>& ann)
         -> std::shared_ptr<TransitionAnnotation>
     {
-        size_t old_id = ann->get_counter_id();
+        size_t old_id = ann->get_register_id();
         CounterValue val = ann->get_value();
         const auto& name = aut.counter_set.get_name(old_id);
         size_t new_id = remapped_counter_ids.at(name);

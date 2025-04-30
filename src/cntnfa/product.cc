@@ -73,8 +73,8 @@ Cntnfa mata::cntnfa::algorithms::product_counter_nfas(const Cntnfa& lhs, const C
     }
 
     // Helper to remap annotation from lhs or rhs to result using shared counter names
-    auto remap_annotation = [&](const std::shared_ptr<TransitionAnnotation>& ann, const CounterRegisterSet& from_set) -> std::shared_ptr<TransitionAnnotation> {
-        std::string name = from_set.get_name(ann->get_counter_id());
+    auto remap_annotation = [&](const std::shared_ptr<TransitionAnnotation>& ann, const CounterSet& from_set) -> std::shared_ptr<TransitionAnnotation> {
+        std::string name = from_set.get_name(ann->get_register_id());
         size_t new_id = counter_id_map.at(name);
         CounterValue val = ann->get_value();
 

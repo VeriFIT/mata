@@ -7,7 +7,6 @@
 
 #include "mata/utils/ord-vector.hh"
 #include "types.hh"
-#include "counters.hh"
 
 using namespace mata::utils;
 
@@ -100,17 +99,17 @@ using TargetSet = AnnotationStateSet;
 // Note: This is convenient to implement various operations during transitions.
 class TransitionAnnotation {
 protected:
-    size_t counter_id = UNDEFINED_COUNTER; ///< The ID of the counter to be used in the annotation.
-    CounterValue value = 0; ///< The value to be used in the annotation.
+    size_t register_id = UNDEFINED_REGISTER; ///< The ID of the register to be used in the annotation.
+    RegisterValue value = 0; ///< The value to be used in the annotation.
 
 public:
     TransitionAnnotation() = default;
-    TransitionAnnotation(size_t counter_id, CounterValue value)
-        : counter_id(counter_id), value(value) {}
+    TransitionAnnotation(size_t register_id, RegisterValue value)
+        : register_id(register_id), value(value) {}
     virtual ~TransitionAnnotation() = default;
 
-    size_t get_counter_id() const { return counter_id; }
-    CounterValue get_value() const { return value; }
+    size_t get_register_id() const { return register_id; }
+    RegisterValue get_value() const { return value; }
 
     virtual void update(CounterSet& counters) const = 0;
     virtual bool guard(const CounterSet& counters) const = 0;
@@ -128,10 +127,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterAssign& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterAssign& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) {
             return cmp;
         }
         return value <=> other.value;
@@ -152,10 +151,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterIncrement& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterIncrement& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) {
             return cmp;
         }
         return value <=> other.value;
@@ -176,10 +175,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterEqual& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterEqual& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) {
             return cmp;
         }
         return value <=> other.value;
@@ -200,10 +199,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterNotEqual& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterNotEqual& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) {
             return cmp;
         }
         return value <=> other.value;
@@ -224,10 +223,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterGreater& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterGreater& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) return cmp;
         return value <=> other.value;
     }
 
@@ -246,10 +245,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterLess& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterLess& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) return cmp;
         return value <=> other.value;
     }
 
@@ -268,10 +267,10 @@ CounterGreaterEqual() = default;
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterGreaterEqual& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterGreaterEqual& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) return cmp;
         return value <=> other.value;
     }
 
@@ -290,10 +289,10 @@ public:
         : TransitionAnnotation(counter_id, value) {}
 
     bool operator==(const CounterLessEqual& other) const {
-        return counter_id == other.counter_id && value == other.value;
+        return register_id == other.register_id && value == other.value;
     }
     auto operator<=>(const CounterLessEqual& other) const {
-        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        if (auto cmp = register_id <=> other.register_id; cmp != 0) return cmp;
         return value <=> other.value;
     }
 

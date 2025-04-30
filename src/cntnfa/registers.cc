@@ -1,62 +1,64 @@
 // TODO: Insert header file.
 
 #include <limits>
+#include <stdexcept>
+#include <cassert>
 
-#include "mata/cntnfa/counters.hh"
+#include "mata/cntnfa/registers.hh"
 
 namespace mata::cntnfa {
 
 /*
-    Methods for CounterRegister.
+    Methods for Register.
 */
 
-void CounterRegister::increment(CounterValue value) {
-    if (this->value > std::numeric_limits<CounterValue>::max() - value) {
-        throw std::overflow_error("CounterRegister: Increment operation would result in overflow.");
+void Register::increment(RegisterValue value) {
+    if (this->value > std::numeric_limits<RegisterValue>::max() - value) {
+        throw std::overflow_error("Register: Increment operation would result in overflow.");
     }
     this->value += value;
 }
 
-void CounterRegister::decrement(CounterValue value) {
+void Register::decrement(RegisterValue value) {
     if (value > this->value) {
-        throw std::underflow_error("CounterRegister: Decrement operation would result in a negative value.");
+        throw std::underflow_error("Register: Decrement operation would result in a negative value.");
     }
     this->value -= value;
 }
 
-void CounterRegister::set(CounterValue value) {
+void Register::set(RegisterValue value) {
     if (value < 0) {
-        throw std::invalid_argument("CounterRegister: Value cannot be negative.");
+        throw std::invalid_argument("Register: Value cannot be negative.");
     }
     this->value = value;
 }
 
-void CounterRegister::reset() {
+void Register::reset() {
     this->value = this->initial_value;
 }
 
 /*
-    Methods for CounterRegisterSet.
+    Methods for RegisterSet.
 */
 
-void CounterRegisterSet::reserve(const size_t n) {
+void RegisterSet::reserve(const size_t n) {
     counters.reserve(n);
 }
 
-void CounterRegisterSet::allocate(const size_t new_size) {
+void RegisterSet::allocate(const size_t new_size) {
     assert(new_size >= counters.size());
     counters.resize(new_size);
 }
 
-size_t CounterRegisterSet::size() const {
+size_t RegisterSet::size() const {
     return counters.size();
 }
 
-void CounterRegisterSet::clear() {
+void RegisterSet::clear() {
     counters.clear();
 }
 
-void CounterRegisterSet::set(size_t index, const CounterRegister& counter) {
+void RegisterSet::set(size_t index, const Register& counter) {
     if (index >= counters.size()) {
         this->allocate(index + 1);
     }
@@ -64,7 +66,7 @@ void CounterRegisterSet::set(size_t index, const CounterRegister& counter) {
     name_to_index[counter.name] = index;
 }
 
-size_t CounterRegisterSet::insert(const CounterName& name, CounterValue value) {
+size_t RegisterSet::insert(const RegisterName& name, RegisterValue value) {
     // Note: If a counter with the same name exists, reuse it.
     // This assumes all counters with the same name represent the same logical counter.
     auto it = name_to_index.find(name);
@@ -77,16 +79,16 @@ size_t CounterRegisterSet::insert(const CounterName& name, CounterValue value) {
     return index;
 }
 
-bool CounterRegisterSet::has(const CounterName& name) const {
+bool RegisterSet::has(const RegisterName& name) const {
     return name_to_index.contains(name);
 }
 
-const CounterName& CounterRegisterSet::get_name(size_t index) const {
+const RegisterName& RegisterSet::get_name(size_t index) const {
     return counters.at(index).name;
 }
 
-std::vector<CounterName> CounterRegisterSet::get_names() const {
-    std::vector<CounterName> names;
+std::vector<RegisterName> RegisterSet::get_names() const {
+    std::vector<RegisterName> names;
     names.reserve(counters.size());
     for (size_t i = 0; i < counters.size(); ++i) {
         names.push_back(get_name(i));
@@ -94,7 +96,7 @@ std::vector<CounterName> CounterRegisterSet::get_names() const {
     return names;
 }
 
-size_t CounterRegisterSet::get_index(const CounterName& name) const {
+size_t RegisterSet::get_index(const RegisterName& name) const {
     auto it = name_to_index.find(name);
     if (it != name_to_index.end()) {
         return it->second;
@@ -103,9 +105,9 @@ size_t CounterRegisterSet::get_index(const CounterName& name) const {
     }
 }
 
-const CounterRegister& CounterRegisterSet::get(size_t index) const {
+const Register& RegisterSet::get(size_t index) const {
     if (index >= counters.size()) {
-        throw std::out_of_range("CounterRegisterSet: Index out of range.");
+        throw std::out_of_range("RegisterSet: Index out of range.");
     }
     return counters[index];
 }

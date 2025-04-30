@@ -16,7 +16,6 @@
 #include <optional>
 
 #include "mata/alphabet.hh"
-#include "mata/cntnfa/counters.hh"
 #include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
@@ -52,7 +51,7 @@ public:
     utils::SparseSet<State> final{};
 
     AnnotationCollection annotation_collection; ///< Annotation collection for storing annotations.
-    CounterRegisterSet counter_set; ///< Counter register set for storing counters.
+    CounterSet counter_set; ///< Counter register set for storing counters.
 
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
@@ -66,7 +65,7 @@ public:
 
 public:
     explicit Cntnfa(Delta delta = {}, utils::SparseSet<State> initial_states = {}, utils::SparseSet<State> final_states = {},
-                 AnnotationCollection annotation_collection = {}, CounterRegisterSet counter_set = {},
+                 AnnotationCollection annotation_collection = {}, CounterSet counter_set = {},
                  Alphabet* alphabet = nullptr)
         : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)),
           annotation_collection(std::move(annotation_collection)), counter_set(std::move(counter_set)),
@@ -78,7 +77,7 @@ public:
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Cntnfa(const unsigned long num_of_states, StateSet initial_states = {}, StateSet final_states = {},
-                 AnnotationCollection annotation_collection = {}, CounterRegisterSet counter_set = {},
+                 AnnotationCollection annotation_collection = {}, CounterSet counter_set = {},
                  Alphabet* alphabet = nullptr)
         : delta(num_of_states), initial(initial_states), final(final_states),
           annotation_collection(annotation_collection), counter_set(counter_set),
