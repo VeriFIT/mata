@@ -1075,7 +1075,7 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 
 Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, ReductionAlgorithm reduction_algorithm, ReductionDirection direction) {
     static unsigned next_file_id = 0;
-    aut.print_to_dot(std::string(next_file_id++) + std::string(".mata"));
+    aut.print_to_dot(std::to_string(next_file_id++) + std::string(".mata"));
 
     Nfa result;
     std::unordered_map<State,State> reduced_state_map;
