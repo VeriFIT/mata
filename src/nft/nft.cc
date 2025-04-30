@@ -93,31 +93,27 @@ std::string Nft::print_to_dot(const bool decode_ascii_chars, const bool use_inte
 }
 
 void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
-    auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
-        switch (symbol) {
-            case EPSILON:      return "<eps>";
-            case DONT_CARE:    return "<dcare>";
-            default:           return "<" + std::to_string(symbol) + ">";
-        }
-    };
-
-    auto to_ascii = [&](const Symbol symbol) {
+    auto to_ascii = [&](const Symbol symbol) -> std::string {
         // Translate only printable ASCII characters.
         if (symbol < 33 || symbol >= 127) {
-            return translate_special_symbols(symbol);
+            return "<" + std::to_string(symbol) + ">";
         }
         switch (symbol) {
-            case '"':  return std::string("\\\"");
-            case '\\': return std::string("\\\\");
-            default:   return std::string(1, static_cast<char>(symbol));
+            case '"':     return "\\\"";
+            case '\\':    return "\\\\";
+            default:      return std::string(1, static_cast<char>(symbol));
         }
     };
 
-    auto translate_symbol = [&](const Symbol symbol) {
+    auto translate_symbol = [&](const Symbol symbol) -> std::string {
+        switch (symbol) {
+            case EPSILON:      return "<eps>";
+            default:           break;
+        }
         if (decode_ascii_chars) {
             return to_ascii(symbol);
         }
-        return translate_special_symbols(symbol);
+        return std::to_string(symbol);
     };
 
     auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
