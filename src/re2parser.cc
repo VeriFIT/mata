@@ -137,13 +137,12 @@ namespace {
             this->outgoingEdges = std::vector<std::vector<std::pair<mata::Symbol, mata::nfa::State>>> (prog_size);
 
             // We traverse all the states and create corresponding states and edges in Nfa
-            for (State current_state = start_state, re2_state = start_state; re2_state < prog_size; ++
-                 re2_state) {
+            for (State current_state = start_state, re2_state = start_state; re2_state < prog_size; ++re2_state) {
                 /// Whether to increment the current state @c current_state when the @c re2_state increments.
                 bool increment_current_state{true};
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(re2_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
-                if (this->state_cache.is_final_state[re2_state]) {
+                 if (this->state_cache.is_final_state[re2_state]) {
                     this->make_state_final(re2_state, explicit_nfa);
                 }
                 switch (inst->opcode()) {
@@ -178,7 +177,8 @@ namespace {
                         }
                         // \A - beginning of text
                         if (empty_flag & re2::kEmptyBeginText) {
-                            increment_current_state = false;
+                            // increment_current_state = false;
+                            this->create_explicit_nfa_transitions(current_state, inst, {epsilon_value}, explicit_nfa, use_epsilon, epsilon_value);
                         }
                         // \z - end of text
                         if (empty_flag & re2::kEmptyEndText) {
