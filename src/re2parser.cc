@@ -78,7 +78,6 @@ namespace {
             const auto prog_size = static_cast<size_t>(prog->size());
             // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
             const int ascii_shift_value = 32;
-            int empty_flag;
             std::vector<mata::Symbol> symbols;
             Nfa explicit_nfa(prog_size);
 
@@ -137,13 +136,10 @@ namespace {
             this->outgoingEdges = std::vector<std::vector<std::pair<mata::Symbol, mata::nfa::State>>> (prog_size);
 
             // We traverse all the states and create corresponding states and edges in Nfa
-            for (State current_state = start_state, re2_state = start_state; re2_state < prog_size; ++
-                 re2_state) {
-                /// Whether to increment the current state @c current_state when the @c re2_state increments.
-                bool increment_current_state{true};
+            for (State re2_state = start_state; re2_state < prog_size; ++re2_state) {
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(re2_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
-                if (this->state_cache.is_final_state[re2_state]) {
+                 if (this->state_cache.is_final_state[re2_state] && inst->opcode() == re2::kInstMatch) {
                     this->make_state_final(re2_state, explicit_nfa);
                 }
                 switch (inst->opcode()) {
@@ -160,43 +156,13 @@ namespace {
                     case re2::kInstCapture:
                         if (use_epsilon) {
                             symbols.push_back(epsilon_value);
-                            this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                            this->create_explicit_nfa_transitions(re2_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
                             symbols.clear();
                         }
                         break;
                     case re2::kInstEmptyWidth:
-                        empty_flag = static_cast<int>(inst->empty());
-                        // ^ - beginning of line
-                        if (empty_flag & re2::kEmptyBeginLine) {
-                            increment_current_state = false;
-                        }
-                        // $ - end of line
-                        if (empty_flag & re2::kEmptyEndLine) {
-                            // TODO How to handle?
-                            // symbols.push_back(301);
-                            increment_current_state = false;
-                        }
-                        // \A - beginning of text
-                        if (empty_flag & re2::kEmptyBeginText) {
-                            increment_current_state = false;
-                        }
-                        // \z - end of text
-                        if (empty_flag & re2::kEmptyEndText) {
-                            // TODO How to handle?
-                            // symbols.push_back(302);
-                            increment_current_state = false;
-                        }
-                        // \b - word boundary
-                        if (empty_flag & re2::kEmptyWordBoundary) {
-                            // TODO How to handle?
-                            // symbols.push_back(303);
-                            increment_current_state = false;
-                        }
-                        // \B - not \b
-                        if (empty_flag & re2::kEmptyNonWordBoundary) {
-                            // TODO How to handle?
-                            // symbols.push_back(304);
-                            increment_current_state = false;
+                        if (use_epsilon) {
+                            this->create_explicit_nfa_transitions(re2_state, inst, {epsilon_value}, explicit_nfa, use_epsilon, epsilon_value);
                         }
                         break;
                     // kInstByteRange represents states with a "byte range" on the outgoing transition(s)
@@ -213,7 +179,7 @@ namespace {
                                 }
                             }
                         }
-                        this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                        this->create_explicit_nfa_transitions(re2_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
 
                         if (!use_epsilon) {
                             // There is an epsilon transition to the currentState+1 we will need to copy transitions of
@@ -227,8 +193,6 @@ namespace {
                         symbols.clear();
                         break;
                 }
-
-                if (increment_current_state) { ++current_state; }
             }
             if (!use_epsilon) {
                 // We will traverse the vector in reversed order. Like that, we will also handle chains of epsilon transitions
