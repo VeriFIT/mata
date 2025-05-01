@@ -136,8 +136,7 @@ namespace {
             this->outgoingEdges = std::vector<std::vector<std::pair<mata::Symbol, mata::nfa::State>>> (prog_size);
 
             // We traverse all the states and create corresponding states and edges in Nfa
-            for (State current_state = start_state, re2_state = start_state; re2_state < prog_size; ++re2_state, ++current_state) {
-                /// Whether to increment the current state @c current_state when the @c re2_state increments.
+            for (State re2_state = start_state; re2_state < prog_size; ++re2_state) {
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(re2_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
                  if (this->state_cache.is_final_state[re2_state] && inst->opcode() == re2::kInstMatch) {
@@ -157,13 +156,13 @@ namespace {
                     case re2::kInstCapture:
                         if (use_epsilon) {
                             symbols.push_back(epsilon_value);
-                            this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                            this->create_explicit_nfa_transitions(re2_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
                             symbols.clear();
                         }
                         break;
                     case re2::kInstEmptyWidth:
                         if (use_epsilon) {
-                            this->create_explicit_nfa_transitions(current_state, inst, {epsilon_value}, explicit_nfa, use_epsilon, epsilon_value);
+                            this->create_explicit_nfa_transitions(re2_state, inst, {epsilon_value}, explicit_nfa, use_epsilon, epsilon_value);
                         }
                         break;
                     // kInstByteRange represents states with a "byte range" on the outgoing transition(s)
@@ -180,7 +179,7 @@ namespace {
                                 }
                             }
                         }
-                        this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                        this->create_explicit_nfa_transitions(re2_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
 
                         if (!use_epsilon) {
                             // There is an epsilon transition to the currentState+1 we will need to copy transitions of
