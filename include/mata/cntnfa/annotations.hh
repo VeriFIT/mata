@@ -12,6 +12,19 @@ using namespace mata::utils;
 
 namespace mata::cntnfa {
 
+/// All existing annotation types.
+enum class AnnotationType {
+    CounterAssign,
+    CounterIncrement,
+    CounterEqual,
+    CounterNotEqual,
+    CounterGreater,
+    CounterLess,
+    CounterGreaterEqual,
+    CounterLessEqual,
+    Unknown
+};
+
 /// State with an annotation (@c State @c state and @c size_t @c annotation_id).
 struct AnnotationState {
     State state; ///< Automaton state.
@@ -114,8 +127,7 @@ public:
     virtual void update(CounterSet& counters) const = 0;
     virtual bool guard(const CounterSet& counters) const = 0;
     virtual bool apply(CounterSet&) const = 0;
-    // TODO: Change type to enum or something similar.
-    virtual std::string get_type() const = 0;
+    virtual AnnotationType get_type() const = 0;
 };
 
 /// Class for assigning a value to a counter by its ID.
@@ -139,7 +151,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for incrementing and decrementing a counter by its ID.
@@ -163,7 +175,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for checking if a counter's value is equal to the value.
@@ -187,7 +199,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for checking if a counter's value is NOT equal to the value.
@@ -211,7 +223,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for checking if a counter's value is greater than a threshold.
@@ -233,7 +245,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for checking if a counter's value is less than a threshold.
@@ -255,7 +267,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for checking if a counter's value is greater than a threshold or equal to it.
@@ -277,7 +289,7 @@ CounterGreaterEqual() = default;
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 /// Class for checking if a counter's value is less than a threshold or equal to it.
@@ -299,7 +311,7 @@ public:
     void update(CounterSet& counters) const override;
     bool guard(const CounterSet& counters) const override;
     bool apply(CounterSet& counters) const override;
-    std::string get_type() const override;
+    AnnotationType get_type() const override;
 };
 
 class AnnotationCollection {

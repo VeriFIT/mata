@@ -691,16 +691,16 @@ Cntnfa& Cntnfa::unite_nondet_counter_nfa_with(const Cntnfa &aut) {
         CounterValue val = ann->get_value();
 
         // Handle each annotation type individually
-        if (ann->get_type() == "CounterAssign") return std::make_shared<CounterAssign>(new_id, val);
-        if (ann->get_type() == "CounterIncrement") return std::make_shared<CounterIncrement>(new_id, val);
-        if (ann->get_type() == "CounterEqual") return std::make_shared<CounterEqual>(new_id, val);
-        if (ann->get_type() == "CounterNotEqual") return std::make_shared<CounterNotEqual>(new_id, val);
-        if (ann->get_type() == "CounterGreater") return std::make_shared<CounterGreater>(new_id, val);
-        if (ann->get_type() == "CounterLess") return std::make_shared<CounterLess>(new_id, val);
-        if (ann->get_type() == "CounterGreaterEqual") return std::make_shared<CounterGreaterEqual>(new_id, val);
-        if (ann->get_type() == "CounterLessEqual") return std::make_shared<CounterLessEqual>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterAssign) return std::make_shared<CounterAssign>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterIncrement) return std::make_shared<CounterIncrement>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterEqual) return std::make_shared<CounterEqual>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterNotEqual) return std::make_shared<CounterNotEqual>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterGreater) return std::make_shared<CounterGreater>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterLess) return std::make_shared<CounterLess>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterGreaterEqual) return std::make_shared<CounterGreaterEqual>(new_id, val);
+        if (ann->get_type() == AnnotationType::CounterLessEqual) return std::make_shared<CounterLessEqual>(new_id, val);
 
-        throw std::runtime_error("Unknown annotation type: " + ann->get_type());
+        throw std::runtime_error("Unknown annotation type");
     };
 
     // Copy and remap annotation sets

@@ -1,7 +1,5 @@
 // TODO: Insert header file.
 
-#include <string>
-
 #include "mata/cntnfa/annotations.hh"
 
 namespace mata::cntnfa {
@@ -33,8 +31,8 @@ bool CounterAssign::apply(CounterSet& counters) const {
     return true;
 }
 
-std::string CounterAssign::get_type() const {
-    return "CounterAssign";
+AnnotationType CounterAssign::get_type() const {
+    return AnnotationType::CounterAssign;
 }
 
 /* CounterIncrement */
@@ -62,8 +60,8 @@ bool CounterIncrement::apply(CounterSet& counters) const {
     return true;
 }
 
-std::string CounterIncrement::get_type() const {
-    return "CounterIncrement";
+AnnotationType CounterIncrement::get_type() const {
+    return AnnotationType::CounterIncrement;
 }
 
 /* CounterEqual */
@@ -83,8 +81,8 @@ bool CounterEqual::apply(CounterSet& counters) const {
     return guard(counters);
 }
 
-std::string CounterEqual::get_type() const {
-    return "CounterEqual";
+AnnotationType CounterEqual::get_type() const {
+    return AnnotationType::CounterEqual;
 }
 
 /* CounterNotEqual */
@@ -104,8 +102,8 @@ bool CounterNotEqual::apply(CounterSet& counters) const {
     return guard(counters);
 }
 
-std::string CounterNotEqual::get_type() const {
-    return "CounterNotEqual";
+AnnotationType CounterNotEqual::get_type() const {
+    return AnnotationType::CounterNotEqual;
 }
 
 /* CounterGreater */
@@ -125,8 +123,8 @@ bool CounterGreater::apply(CounterSet& counters) const {
     return guard(counters);
 }
 
-std::string CounterGreater::get_type() const {
-    return "CounterGreater";
+AnnotationType CounterGreater::get_type() const {
+    return AnnotationType::CounterGreater;
 }
 
 /* CounterLess */
@@ -146,8 +144,8 @@ bool CounterLess::apply(CounterSet& counters) const {
     return guard(counters);
 }
 
-std::string CounterLess::get_type() const {
-    return "CounterLess";
+AnnotationType CounterLess::get_type() const {
+    return AnnotationType::CounterLess;
 }
 
 /* CounterGreaterEqual */
@@ -167,8 +165,8 @@ bool CounterGreaterEqual::apply(CounterSet& counters) const {
     return guard(counters);
 }
 
-std::string CounterGreaterEqual::get_type() const {
-    return "CounterGreaterEqual";
+AnnotationType CounterGreaterEqual::get_type() const {
+    return AnnotationType::CounterGreaterEqual;
 }
 
 /* CounterLessEqual */
@@ -188,8 +186,8 @@ bool CounterLessEqual::apply(CounterSet& counters) const {
     return guard(counters);
 }
 
-std::string CounterLessEqual::get_type() const {
-    return "CounterLessEqual";
+AnnotationType CounterLessEqual::get_type() const {
+    return AnnotationType::CounterLessEqual;
 }
 
 /* AnnotationCollection */

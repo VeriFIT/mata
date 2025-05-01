@@ -1017,18 +1017,23 @@ bool mata::cntnfa::Cntnfa::is_counter_nfa_lang_empty(Run* cex) const {
                 if (tgt.annotations_id != UNDEFINED_ANNOTATIONS) {
                     const auto& anns = annotation_collection[tgt.annotations_id];
 
-                    // First: apply counter updates
+                    // Apply counter updates
                     for (const auto& ann : anns) {
-                        const std::string& type = ann->get_type();
-                        if (type == "CounterAssign" || type == "CounterIncrement") {
+                        AnnotationType type = ann->get_type();
+                        if (type == AnnotationType::CounterAssign ||
+                            type == AnnotationType::CounterIncrement)
+                        {
                             ann->update(next_cfg.registers);
                         }
                     }
 
-                    // Then: check counter guards
+                    // Check counter guards
                     for (const auto& ann : anns) {
-                        const std::string& type = ann->get_type();
-                        if (type == "CounterTest" || type == "CounterGreater" || type == "CounterLess") {
+                        AnnotationType type = ann->get_type();
+                        if (type == AnnotationType::CounterEqual ||
+                            type == AnnotationType::CounterGreater ||
+                            type == AnnotationType::CounterLess)
+                        {
                             if (!ann->guard(next_cfg.registers)) {
                                 passed = false;
                                 break;
