@@ -671,8 +671,8 @@ Cntnfa& Cntnfa::unite_nondet_counter_nfa_with(const Cntnfa &aut) {
     this->delta.reserve(total_states);
     // Allocate space for initial and final states from 'this' which might be missing in Delta
     this->delta.allocate(state_offset);
-    // Reserve space for new counters
-    this->counter_set.reserve(total_counters);
+    // Allocate space for new counters
+    this->counter_set.allocate(total_counters);
     // Allocate space for new annotation sets
     this->annotation_collection.allocate(total_annotation_sets);
 
