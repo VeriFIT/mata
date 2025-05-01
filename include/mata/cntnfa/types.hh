@@ -9,6 +9,7 @@
 #include "mata/cntnfa/registers.hh"
 
 // Use this for undefined annotations
+// TODO: Use std::optional instead of this?
 #define MAX_SIZE_T (std::numeric_limits<size_t>::max())
 #define UNDEFINED_ANNOTATIONS MAX_SIZE_T
 #define UNDEFINED_REGISTER MAX_SIZE_T

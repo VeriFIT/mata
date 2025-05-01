@@ -107,7 +107,8 @@ Cntnfa mata::cntnfa::algorithms::product_counter_nfas(const Cntnfa& lhs, const C
         auto it2 = rhs.delta[s2].begin();
 
         // Merge transitions by synchronizing on the same symbol
-        while (it1 != lhs.delta[s1].end() && it2 != rhs.delta[s2].end()) { // predelat toto na synchronized iterator ? TODO
+        // TODO: Change this to use a synchronized iterator?
+        while (it1 != lhs.delta[s1].end() && it2 != rhs.delta[s2].end()) {
             if (it1->symbol < it2->symbol) {
                 ++it1;
             } else if (it1->symbol > it2->symbol) {
@@ -124,7 +125,7 @@ Cntnfa mata::cntnfa::algorithms::product_counter_nfas(const Cntnfa& lhs, const C
 
                         // Merge annotations from both automata
                         std::vector<std::shared_ptr<TransitionAnnotation>> all_anns;
-                        if (tgt1.annotations_id != UNDEFINED_ANNOTATIONS) { // std::optional ? TODO
+                        if (tgt1.annotations_id != UNDEFINED_ANNOTATIONS) {
                             for (const auto& ann : lhs.annotation_collection[tgt1.annotations_id]) {
                                 all_anns.push_back(remap_annotation(ann, lhs.counter_set));
                             }

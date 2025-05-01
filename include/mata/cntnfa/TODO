@@ -1,13 +1,13 @@
 2. Register transducer annotation, trida je podtridou (?)
 
-3. Udelat override pro intersection a union
+3. Udelat override pro intersection a union (?)
 
 6. Predelat na synchronized iterator (?)
 
 7. Argumentovat ten test prazdnosti protoze je hodne slozity najit clanek a odkaz na clanek (?)
 
-8. Pouzit regex a benchmark na regexovani a opakovat to 50000 krat nebo velmi velke cislo
+8. Pouzit regex a benchmark na regexovani a opakovat to 50000 krat nebo velmi velke cislo (?)
 
-9. Udelat prunik s velkym poctem stavu
+9. Udelat prunik s velkym poctem stavu (?)
 
-10. Udelat prunik a test nalezitosti jazyka
+10. Udelat prunik a test nalezitosti jazyka (?)
