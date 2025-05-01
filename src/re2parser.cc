@@ -142,7 +142,7 @@ namespace {
                 bool increment_current_state{true};
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(re2_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
-                 if (this->state_cache.is_final_state[re2_state]) {
+                 if (this->state_cache.is_final_state[re2_state] && inst->opcode() == re2::kInstMatch) {
                     this->make_state_final(re2_state, explicit_nfa);
                 }
                 switch (inst->opcode()) {
@@ -184,7 +184,8 @@ namespace {
                         if (empty_flag & re2::kEmptyEndText) {
                             // TODO How to handle?
                             // symbols.push_back(302);
-                            increment_current_state = false;
+                            this->create_explicit_nfa_transitions(current_state, inst, {epsilon_value}, explicit_nfa, use_epsilon, epsilon_value);
+                            // increment_current_state = false;
                         }
                         // \b - word boundary
                         if (empty_flag & re2::kEmptyWordBoundary) {
