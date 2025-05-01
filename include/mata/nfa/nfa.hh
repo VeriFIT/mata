@@ -136,14 +136,20 @@ public:
      size_t num_of_states() const;
 
     /**
-     * Unify initial states into a single new initial state.
+     * @brief Unify initial states into a single new initial state.
+     *
+     * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+     * @return @c this after unification.
      */
-    void unify_initial();
+    Nfa& unify_initial(bool force_new_state = false);
 
     /**
-     * Unify final states into a single new final state.
+     * @brief Unify final states into a single new final state.
+     *
+     * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+     * @return @c this after unification.
      */
-    void unify_final();
+    Nfa& unify_final(bool force_new_state = false);
 
     /**
      * Swap final and non-final states in-place.
@@ -302,21 +308,31 @@ public:
     /**
      * @brief Prints the automaton in DOT format
      *
-     * @param[in] ascii Whether to use ASCII characters for the output.
+     * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
+     * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
+     * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
+     * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
      * @return automaton in DOT format
      */
-    std::string print_to_dot(const bool ascii = false) const;
+    std::string print_to_dot(bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1) const;
     /**
      * @brief Prints the automaton to the output stream in DOT format
      *
-     * @param[in] ascii Whether to use ASCII characters for the output.
+     * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
+     * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
+     * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
+     * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
      */
-    void print_to_dot(std::ostream &output, const bool ascii = false) const;
+    void print_to_dot(std::ostream &output, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1) const;
     /**
      * @brief Prints the automaton to the file in DOT format
      * @param filename Name of the file to print the automaton to
+     * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
+     * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
+     * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
+     * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
      */
-    void print_to_dot(const std::string& filename) const;
+    void print_to_dot(const std::string& filename, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1) const;
 
     /**
      * @brief Prints the automaton in mata format
@@ -347,8 +363,28 @@ public:
      */
     void print_to_mata(const std::string& filename, const Alphabet* alphabet = nullptr) const;
 
-    // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
-    StateSet post(const StateSet& states, const Symbol& symbol) const;
+    /**
+     * @brief Get the set of states reachable from the given set of states over the given symbol.
+     * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+     *
+     * @param states Set of states to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @return Set of states reachable from the given set of states over the given symbol.
+     */
+    StateSet post(const StateSet& states, const Symbol& symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
+
+    /**
+     * @brief Get the set of states reachable from the given state over the given symbol.
+     *
+     * @param state A state to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @return Set of states reachable from the given state over the given symbol.
+     */
+    StateSet post(const State state, const Symbol& symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const {
+        return post(StateSet{ state }, symbol, epsilon_closure_opt);
+    }
 
     /**
      * Check whether the language of NFA is empty.
@@ -405,19 +441,75 @@ public:
      */
     void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
 
-    /// Is the language of the automaton universal?
+    /**
+     * @brief Check whether the language of the automaton is universal.
+     *
+     * @param alphabet Alphabet to use for checking the universality.
+     * @param cex Counterexample path for a case the language is not universal.
+     * @param params Optional parameters to control the universality check algorithm:
+     * - "algorithm":
+     *      - "antichains": The algorithm uses antichains to check the universality.
+     *      - "naive": The algorithm uses the naive approach to check the universality.
+     *
+     * @return True if the language of the automaton is universal, false otherwise.
+     */
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
-    /// Is the language of the automaton universal?
+
+    /**
+     * @brief Check whether the language of the automaton is universal.
+     *
+     * @param alphabet Alphabet to use for checking the universality.
+     * @param params Optional parameters to control the universality check algorithm:
+     * - "algorithm":
+     *     - "antichains": The algorithm uses antichains to check the universality.
+     *     - "naive": The algorithm uses the naive approach to check the universality.
+     *
+     * @return True if the language of the automaton is universal, false otherwise.
+     */
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
 
-    /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Run& word) const;
-    /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Word& word) { return is_in_lang(Run{ word, {} }); }
+    /**
+     * @brief Check whether a run over the word (or its prefix) is in the language of an automaton.
+     *
+     * @param word The run to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prefix Whether to also match the prefix of the word.
+     *
+     * @return True if the run (or its prefix) is in the language of the automaton, false otherwise.
+     */
+    bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prefix = false) const;
 
-    /// Checks whether the prefix of a string is in the language of an automaton
-    bool is_prfx_in_lang(const Run& word) const;
+    /**
+     * @brief Check whether a word (or its prefix) is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prefix Whether to also match the prefix of the word.
+     *
+     * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
+     */
+    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) { return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix); }
+
+    /**
+     * @brief Check whether a prefix of a run is in the language of an automaton.
+     *
+     * @param word The run to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return True if the prefix of the run is in the language of the automaton, false otherwise.
+     */
+    bool is_prefix_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+
+    /**
+     * @brief Check whether a prefix of a word is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return True if the prefix of the word is in the language of the automaton, false otherwise.
+     */
+    bool is_prefix_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prefix_in_lang(Run{ word, {} }, use_epsilon); }
 
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
@@ -561,15 +653,28 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 
 /**
- * @brief Compute union by product construction.
+ * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
  *
- * Preserves determinism.
- * @param[in] first_epsilon The first symbol to handle as an epsilon.
- * @param[out] prod_map Map mapping product states to the original states.
- * @return Union by product construction of @p lhs and @p rhs.
+ * The union is computed by product construction with OR condition on the final states.
+ * @param lhs First complete deterministic automaton.
+ * @param rhs Second complete deterministic automaton.
  */
-Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
-                  std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
+
+/**
+ * @brief Compute product of two NFAs with OR condition on the final states.
+ *
+ * Automata must share alphabets. //TODO: this is not implemented yet.
+ * @param lhs First NFA.
+ * @param rhs Second NFA.
+ * @param final_condition Condition for a product state to be final.
+ *  - AND: both original states have to be final.
+ *  - OR: at least one of the original states has to be final.
+ * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
+ * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ */
+Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalStateCondition final_condition = ProductFinalStateCondition::AND,
+            Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
  * @brief Compute a language difference as @p nfa_included \ @p nfa_excluded.

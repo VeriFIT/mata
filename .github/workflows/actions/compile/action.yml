@@ -10,9 +10,9 @@ runs:
   steps:
     - name: Compile base version of the static and shared libraries
       shell: sh
-      run: make release 2>build_log
+      run: make release > build_log
     - name: Cache file with warnings
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ./build_log
         key: build-log-${{ inputs.build-log-output-file }}-${{ runner.os }}-${{ github.sha }}

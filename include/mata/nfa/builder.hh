@@ -105,6 +105,31 @@ Nfa parse_from_mata(const std::string& nfa_in_mata);
  */
 Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 
+/**
+ * @brief Create NFA from @p regex
+ * 
+ * The created NFA does not contain epsilons, is trimmed and reduced.
+ * It uses the parser from RE2, see mata/parser/re2praser.hh for more
+ * details and options.
+ * 
+ * At https://github.com/google/re2/wiki/Syntax, you can find the syntax
+ * of @p regex with following futher limitations:
+ *  1) The allowed characters are the first 256 characters of Unicode,
+ *     i.e., Latin1 encoding (ASCII + 128 more characters). For the 
+ *     full Unicode, check mata/parser/re2praser.hh.
+ *  2) The created automaton represents the language of the regex and
+ *     is not expected to be used in regex matching. Therefore, stuff
+ *     like ^, $, \b, etc. are ignored in the regex. For example, the
+ *     regular expressions a*b and ^a*b will both result in the same
+ *     NFA accepting the language of multiple 'a's followed by one 'b'.
+ *     See also issue #494.
+ * 
+ * @sa mata::parser::create_nfa()
+ * 
+ * @param regex regular expression
+ */
+Nfa create_from_regex(const std::string& regex);
+
 } // namespace mata::nfa::builder.
 
 #endif //LIBMATA_BUILDER_HH

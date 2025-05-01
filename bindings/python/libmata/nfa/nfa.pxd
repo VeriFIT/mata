@@ -152,13 +152,13 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool has_final(State)
         void remove_final(State)
         void clear_final()
-        void unify_initial()
-        void unify_final()
+        void unify_initial(bool)
+        void unify_final(bool)
         bool is_state(State)
         StateSet post(StateSet&, Symbol)
         State add_state()
         State add_state(State)
-        void print_to_dot(ostream)
+        void print_to_dot(ostream, bool, bool, int)
         CNfa& trim(StateRenaming*)
         CNfa& concatenate(CNfa&)
         CNfa& unite_nondet_with(CNfa&)
@@ -176,7 +176,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_complete() except +
         bool is_universal(CAlphabet&, ParameterMap&) except +
         bool is_in_lang(CRun&)
-        bool is_prfx_in_lang(CRun&)
+        bool is_in_lang(CRun&, bool)
+        bool is_in_lang(CRun&, bool, bool)
         pair[CRun, bool] get_word_for_path(CRun&)
         void make_complete(CAlphabet*, optional[State]) except +
 
@@ -204,8 +205,10 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
     cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&)
     cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
-    cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&)
+    cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&)
     cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&)
+    cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&)
+    cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&)
 
 
 

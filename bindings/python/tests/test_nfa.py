@@ -402,8 +402,8 @@ def test_in_language(
     assert fa_one_divisible_by_two.is_in_lang([1, 1])
     assert not fa_one_divisible_by_two.is_in_lang([1, 1, 1])
 
-    assert fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 1, 0])
-    assert not fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 0, 0])
+    assert fa_one_divisible_by_four.is_in_lang([1, 1, 1, 1, 0], match_prefix=True)
+    assert not fa_one_divisible_by_four.is_in_lang([1, 1, 1, 0, 0], match_prefix=True)
     assert not mata_nfa.accepts_epsilon(fa_one_divisible_by_four)
 
     lhs = mata_nfa.Nfa(2)
@@ -621,6 +621,10 @@ def test_minimize(
 
     minimized = mata_nfa.minimize(lhs)
     assert minimized.get_num_of_transitions() == 1
+
+    lhs.trim()
+    minimized_hopcroft = mata_nfa.minimize(lhs, {"algorithm": "hopcroft"})
+    assert minimized_hopcroft.get_num_of_transitions() == 1
 
 
 def test_to_dot():
@@ -948,6 +952,18 @@ def test_reduce():
     nfa.add_transition(9, ord('b'), 2)
     nfa.add_transition(9, ord('c'), 0)
     nfa.add_transition(0, ord('a'), 4)
+
+    result = mata_nfa.reduce(nfa, params={"algorithm": "residual", "type": "after", "direction": "forward"})
+    assert result.num_of_states() < nfa.num_of_states()
+
+    result = mata_nfa.reduce(nfa, params={"algorithm": "residual", "type": "after", "direction": "backward"})
+    assert result.num_of_states() < nfa.num_of_states()
+
+    result = mata_nfa.reduce_residual_after(mata_nfa.determinize(nfa))
+    assert result.num_of_states() < nfa.num_of_states()
+
+    result = mata_nfa.reduce_residual_with(mata_nfa.determinize(nfa))
+    assert result.num_of_states() < nfa.num_of_states()
 
     result, state_map = mata_nfa.reduce_with_state_map(nfa)
     assert result.num_of_states() == 6

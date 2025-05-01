@@ -429,43 +429,128 @@ bool Nfa::is_flat() const {
     return flat;
 }
 
-std::string Nfa::print_to_dot(const bool ascii) const {
+std::string Nfa::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
     std::stringstream output;
-    print_to_dot(output, ascii);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
     return output.str();
 }
 
-void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
-    auto to_ascii = [&](const Symbol symbol) {
+void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+    auto to_ascii = [&](const Symbol symbol) -> std::string {
         // Translate only printable ASCII characters.
-        if (symbol < 33) {
-            return std::to_string(symbol);
+        if (symbol < 33 || symbol >= 127) {
+            return "<" + std::to_string(symbol) + ">";
         }
-        return "\\'" + std::string(1, static_cast<char>(symbol)) + "\\'";
+        switch (symbol) {
+            case '"':     return "\\\"";
+            case '\\':    return "\\\\";
+            default:      return std::string(1, static_cast<char>(symbol));
+        }
     };
 
+    auto translate_symbol = [&](const Symbol symbol) -> std::string {
+        switch (symbol) {
+            case EPSILON:      return "<eps>";
+            default:           break;
+        }
+        if (decode_ascii_chars) {
+            return to_ascii(symbol);
+        }
+        return std::to_string(symbol);
+    };
+
+    auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+        std::string result;
+        for (const Symbol& symbol: symbols) {
+            result += translate_symbol(symbol) + ",";
+        }
+        result.pop_back(); // Remove last comma
+        return result;
+    };
+
+    auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+        std::string result;
+
+        std::vector<std::pair<Symbol, Symbol>> intervals;
+        auto symbols_it = symbols.begin();
+        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
+        ++symbols_it;
+        for (; symbols_it != symbols.end(); ++symbols_it) {
+            if (*symbols_it == interval.second + 1) {
+                interval.second = *symbols_it;
+            } else {
+                intervals.push_back(interval);
+                interval = {*symbols_it, *symbols_it};
+            }
+        }
+        intervals.push_back(interval);
+
+        for (const auto& interval: intervals) {
+            const size_t interval_size = interval.second - interval.first + 1;
+            if (interval_size == 1) {
+                result += translate_symbol(interval.first) + ",";
+            } else if (interval_size == 2) {
+                result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
+            } else {
+                result += "[" + translate_symbol(interval.first) + "-" + translate_symbol(interval.second) + "],";
+            }
+        }
+
+        result.pop_back(); // Remove last comma
+        return result;
+    };
+
+    BoolVector is_state_drawn(num_of_states(), false);
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
+    // Double circle for final states
     for (State final_state: final) {
+        is_state_drawn[final_state] = true;
         output << final_state << " [shape=doublecircle];" << std::endl;
     }
 
+    // Print transitions
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
+        std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
         for (const SymbolPost &move: delta[source]) {
-            output << source << " -> {";
+            is_state_drawn[source] = true;
             for (State target: move.targets) {
-                output << target << " ";
+                is_state_drawn[target] = true;
+                tgt_symbols_map[target].insert(move.symbol);
             }
-            if (ascii) {
-                output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
+        }
+        for (const auto& [target, symbols]: tgt_symbols_map) {
+            if (max_label_length == 0) {
+                output << source << " -> " << target << ";" << std::endl;
+                continue;
+            }
+
+            std::string label = (use_intervals) ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
+            std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
+            bool is_shortened = false;
+            if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
+                label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
+                is_shortened = true;
+            }
+
+            if (is_shortened) {
+                output << source << " -> " << target << " [label=\"" << label << "\", tooltip=\"" << on_hover_label << "\"];" << std::endl;
             } else {
-                output << "} [label=\"" << move.symbol << "\"];" << std::endl;
+                output << source << " -> " << target << " [label=\"" << label << "\"];" << std::endl;
             }
         }
     }
 
+    // Circle for isolated states with no transitions
+    for (State state{ 0 }; state < is_state_drawn.size(); ++state) {
+        if (!is_state_drawn[state]) {
+            output << state << " [shape=circle];" << std::endl;
+        }
+    }
+
+    // Arrow for initial states
     output << "node [shape=none, label=\"\"];" << std::endl;
     for (State init_state: initial) {
         output << "i" << init_state << " -> " << init_state << ";" << std::endl;
@@ -474,12 +559,12 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
     output << "}" << std::endl;
 }
 
-void Nfa::print_to_dot(const std::string& filename) const {
+void Nfa::print_to_dot(const std::string& filename, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_dot(output);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
 }
 
 std::string Nfa::print_to_mata(const Alphabet* alphabet) const {
@@ -540,51 +625,97 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
+StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+    auto get_epsilon_closure = [&](const StateSet& states) {
+        StateSet closure{ states };
+        std::queue<State> worklist;
+        for (const State state: states) {
+            worklist.push(state);
+        }
+        while (!worklist.empty()) {
+            const State state = worklist.front();
+            worklist.pop();
+            auto move_it{ delta[state].find(EPSILON) };
+            if (move_it != delta[state].end()) {
+                for (const State target: move_it->targets) {
+                    if (!closure.contains(target)) {
+                        closure.insert(target);
+                        worklist.push(target);
+                    }
+                }
+            }
+        }
+        return closure;
+    };
+
     StateSet res{};
+
+    // If the symbol is EPSILON, we can stay in the same state.
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::NONE) {
+        res = states;
+    }
+
     if (delta.empty()) {
         return res;
     }
 
-    for (const State state: states) {
+    StateSet from_states = states;
+    if (epsilon_closure_opt == EpsilonClosureOpt::BEFORE) {
+        // Before making the step using the symbol, we compute the epsilon closure.
+        from_states = get_epsilon_closure(states);
+    }
+
+    // Now, we can make the step using the symbol.
+    for (const State state: from_states) {
         const StatePost& post{ delta[state] };
-        // TODO: This does not handle epsilons.
         const auto move_it{ post.find(symbol) };
         if (move_it != post.end()) {
             res.insert(move_it->targets);
         }
     }
+
+    if (epsilon_closure_opt == EpsilonClosureOpt::AFTER) {
+        // We need to compute the epsilon closure of the resulting states.
+        res = get_epsilon_closure(res);
+    }
+
     return res;
 }
 
- void Nfa::unify_initial() {
-    if (initial.empty() || initial.size() == 1) { return; }
-    const State new_initial_state{add_state() };
+ Nfa& Nfa::unify_initial(const bool force_new_state) {
+    if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
+
+    const State new_initial_state{ add_state() };
     for (const State orig_initial_state: initial) {
-        const StatePost& moves{ delta.state_post(orig_initial_state) };
-        for (const auto& transitions: moves) {
-            for (const State state_to: transitions.targets) {
-                delta.add(new_initial_state, transitions.symbol, state_to);
+        const StatePost& state_post{ delta.state_post(orig_initial_state) };
+        for (const auto& symbol_post: state_post) {
+            for (const State target: symbol_post.targets) {
+                delta.add(new_initial_state, symbol_post.symbol, target);
             }
         }
         if (final[orig_initial_state]) { final.insert(new_initial_state); }
     }
+
     initial.clear();
     initial.insert(new_initial_state);
+    return *this;
 }
 
-void Nfa::unify_final() {
-    if (final.empty() || final.size() == 1) { return; }
+Nfa& Nfa::unify_final(const bool force_new_state) {
+    if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
+
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
         const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
-        for (const auto& transitions: transitions_to) {
-            delta.add(transitions.source, transitions.symbol, new_final_state);
+        for (const auto& transition: transitions_to) {
+            delta.add(transition.source, transition.symbol, new_final_state);
         }
         if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
+
     final.clear();
     final.insert(new_final_state);
+    return *this;
 }
 
 Nfa& Nfa::operator=(Nfa&& other) noexcept {

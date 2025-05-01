@@ -326,17 +326,19 @@ cdef class Nfa:
         """
         self.thisptr.get().final.erase(state)
 
-    def clear_final(self):
+    def clear_final(self) -> Self:
         """Clears final state set of the automaton."""
         self.thisptr.get().final.clear()
+        return self
 
-    def unify_initial(self):
+    def unify_initial(self, bool force_new_state = False) -> Self:
         """Unify initial states into a single new initial state."""
-        self.thisptr.get().unify_initial()
+        self.thisptr.get().unify_initial(force_new_state)
+        return self
 
-    def unify_final(self):
+    def unify_final(self, bool force_new_state = False) -> Self:
         """Unify final states into a single new final state."""
-        self.thisptr.get().unify_final()
+        self.thisptr.get().unify_final(force_new_state)
 
     def add_transition_object(self, Transition tr):
         """Adds transition to automaton
@@ -614,7 +616,7 @@ cdef class Nfa:
     def __repr__(self):
         return str(self)
 
-    def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
+    def to_dot_file(self, output_file='aut.dot', output_format='pdf', decode_ascii_chars=False, use_intervals=False, max_label_length=-1):
         """Transforms the automaton to dot format.
 
         By default, the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
@@ -623,11 +625,14 @@ cdef class Nfa:
 
         :param str output_file: name of the output file where the automaton will be stored
         :param str output_format: format of the output file (pdf/png/etc)
+        :param bool decode_ascii_chars: whether to decode ascii codes
+        :param bool use_intervals: whether to use intervals ([1-3] instead of [1,2,3])
+        :param int max_label_lenght: maximum label length (-1 means no limit, 0 means no label)
         """
         cdef mata_nfa.ofstream* output
         output = new mata_nfa.ofstream(output_file.encode('utf-8'))
         try:
-            self.thisptr.get().print_to_dot(dereference(output))
+            self.thisptr.get().print_to_dot(dereference(output), decode_ascii_chars, use_intervals, max_label_length)
         finally:
             del output
 
@@ -636,17 +641,20 @@ cdef class Nfa:
         if err:
             print(f"error while dot file: {err}")
 
-    def to_dot_str(self, encoding='utf-8'):
+    def to_dot_str(self, encoding='utf-8', decode_ascii_chars=False, use_intervals=False, max_label_lenght=-1):
         """Transforms the automaton to dot format string
 
         :param str encoding: encoding of the dot string
+        :param bool decode_ascii_chars: whether to decode ascii codes
+        :param bool use_intervals: whether to use intervals ([1-3] instead of [1,2,3])
+        :param int max_label_lenght: maximum label length (-1 means no limit, 0 means no label)
         :return: string with dot representation of the automaton
         """
         cdef mata_nfa.stringstream* output_stream
         output_stream = new mata_nfa.stringstream("".encode('ascii'))
         cdef string result
         try:
-            self.thisptr.get().print_to_dot(dereference(output_stream))
+            self.thisptr.get().print_to_dot(dereference(output_stream), decode_ascii_chars, use_intervals, max_label_lenght)
             result = output_stream.str()
         finally:
             del output_stream
@@ -750,25 +758,17 @@ cdef class Nfa:
             }
         )
 
-    def is_in_lang(self, vector[Symbol] word):
+    def is_in_lang(self, vector[Symbol] word, use_epsilon = False, match_prefix = False):
         """Tests if word is in language.
 
         :param vector[Symbol] word: tested word.
+        :param bool use_epsilon: whether the automaton uses epsilon transitions.
+        :param bool match_prefix: whether to match prefix of the word.
         :return: true if word is in language of the NFA.
         """
         run = Run()
         run.thisptr.word = word
-        return self.thisptr.get().is_in_lang(dereference(run.thisptr))
-
-    def is_prefix_in_lang(self, vector[Symbol] word):
-        """Test if any prefix of the word is in the language.
-
-        :param vector[Symbol] word: tested word
-        :return: true if any prefix of word is in language of the NFA.
-        """
-        run = Run()
-        run.thisptr.word = word
-        return self.thisptr.get().is_prfx_in_lang(dereference(run.thisptr))
+        return self.thisptr.get().is_in_lang(dereference(run.thisptr), use_epsilon, match_prefix)
 
     def get_word_for_path(self, path):
         """For a given path (set of states) returns a corresponding word
@@ -970,14 +970,23 @@ def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
     mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
     return result
 
-def minimize(Nfa lhs):
+def minimize(Nfa lhs, params = None):
     """Minimizes the automaton lhs
 
     :param Nfa lhs: automaton to be minimized
+    :param Dict params: Additional parameters for the minimization operation:
+      - "algorithm":
+        - "brzozowski": The Brzozowski minimization algorithm.
+        - "hopcroft": The Hopcroft minimization algorithm, only works on trimmed (no useless states) DFAs as input.
     :return: minimized automaton
     """
+    params = params or {"algorithm": "brzozowski"}
     result = Nfa()
-    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
+    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()),
+        {
+            k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+        }
+    )
     return result
 
 def reduce_with_state_map(Nfa aut, params = None):
@@ -985,7 +994,8 @@ def reduce_with_state_map(Nfa aut, params = None):
 
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
-        - "algorithm": "simulation"
+        - "algorithm":
+          - "simulation": Reduce size by simulation.
     :return: (Reduced automaton, state map of original to new states)
     """
     params = params or {"algorithm": "simulation"}
@@ -1004,8 +1014,16 @@ def reduce(Nfa aut, params = None):
 
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
-        - "algorithm": "simulation"
-    :return: Reduced automaton
+        - "algorithm":
+          - "simulation": Reduce size by simulation.
+          - "residual": Reduce size by residual construction.
+        - "type":
+          - "after": (Only for "algorithm": "residual") Residual construction after the last determinization.
+          - "with": (Only for "algorithm": "residual") Residual construction during the last determinization.
+        - "direction":
+          - "forward": (Only for "algorithm": "residual") Forward residual construction.
+          - "backward": (Only for "algorithm": "residual") Backward residual construction.
+    :return: Reduced automaton.
     """
     params = params or {"algorithm": "simulation"}
     result = Nfa()
@@ -1014,6 +1032,26 @@ def reduce(Nfa aut, params = None):
                         k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
                     }
                     )
+    return result
+
+def reduce_residual_after(Nfa aut):
+    """Reduce the automaton by residual construction after the last determinization.
+
+    :param Nfa aut: Original automaton to reduce.
+    :return: Reduced automaton.
+    """
+    result = Nfa()
+    mata_nfa.c_reduce_residual_after(result.thisptr.get(), dereference(aut.thisptr.get()))
+    return result
+
+def reduce_residual_with(Nfa aut):
+    """Reduce the automaton by residual construction during the last determinization.
+
+    :param Nfa aut: Original automaton to reduce.
+    :return: Reduced automaton.
+    """
+    result = Nfa()
+    mata_nfa.c_reduce_residual_with(result.thisptr.get(), dereference(aut.thisptr.get()))
     return result
 
 def compute_relation(Nfa lhs, params = None):

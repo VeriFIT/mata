@@ -5,6 +5,8 @@
 #include <list>
 #include <optional>
 #include <iterator>
+#include <fstream>
+#include <string>
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
@@ -22,6 +24,10 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 const std::string mata::nft::TYPE_NFT = "NFT";
 
+
+size_t Nft::num_of_states_with_level(const Level level) const {
+    return levels.count(level);
+}
 
 Nft& Nft::trim(StateRenaming* state_renaming) {
 
@@ -76,68 +82,153 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-std::string Nft::print_to_dot(const bool ascii) const {
+void Nft::remove_epsilon(Symbol epsilon) {
+    *this = mata::nft::remove_epsilon(*this, epsilon);
+}
+
+std::string Nft::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
     std::stringstream output;
-    print_to_dot(output, ascii);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
     return output.str();
 }
 
-void Nft::print_to_dot(std::ostream &output, const bool ascii) const {
-    auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
-        if (symbol == EPSILON) {
-            return "<eps>";
+void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+    auto to_ascii = [&](const Symbol symbol) -> std::string {
+        // Translate only printable ASCII characters.
+        if (symbol < 33 || symbol >= 127) {
+            return "<" + std::to_string(symbol) + ">";
         }
-        if (symbol == EPSILON - 99) {
-            return "<marker>";
+        switch (symbol) {
+            case '"':     return "\\\"";
+            case '\\':    return "\\\\";
+            default:      return std::string(1, static_cast<char>(symbol));
         }
-        if (symbol == DONT_CARE) {
-            return "<dcare>";
+    };
+
+    auto translate_symbol = [&](const Symbol symbol) -> std::string {
+        switch (symbol) {
+            case EPSILON:      return "<eps>";
+            default:           break;
+        }
+        if (decode_ascii_chars) {
+            return to_ascii(symbol);
         }
         return std::to_string(symbol);
     };
 
-    auto to_ascii = [&](const Symbol symbol) {
-        // Translate only printable ASCII characters.
-        if (symbol < 33) {
-            return std::to_string(symbol);
+    auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+        std::string result;
+        for (const Symbol& symbol: symbols) {
+            result += translate_symbol(symbol) + ",";
         }
-        return std::string(1, static_cast<char>(symbol));
+        result.pop_back(); // Remove last comma
+        return result;
     };
+
+    auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+        std::string result;
+
+        std::vector<std::pair<Symbol, Symbol>> intervals;
+        auto symbols_it = symbols.begin();
+        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
+        ++symbols_it;
+        for (; symbols_it != symbols.end(); ++symbols_it) {
+            if (*symbols_it == interval.second + 1) {
+                interval.second = *symbols_it;
+            } else {
+                intervals.push_back(interval);
+                interval = {*symbols_it, *symbols_it};
+            }
+        }
+        intervals.push_back(interval);
+
+        for (const auto& interval: intervals) {
+            const size_t interval_size = interval.second - interval.first + 1;
+            if (interval_size == 1) {
+                result += translate_symbol(interval.first) + ",";
+            } else if (interval_size == 2) {
+                result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
+            } else {
+                result += "[" + translate_symbol(interval.first) + "-" + translate_symbol(interval.second) + "],";
+            }
+        }
+
+        result.pop_back(); // Remove last comma
+        return result;
+    };
+
+
+    BoolVector is_state_drawn(num_of_states(), false);
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
+    // Double circle for final states
     for (State final_state: final) {
+        is_state_drawn[final_state] = true;
         output << final_state << " [shape=doublecircle];" << std::endl;
     }
 
+    // Print transitions
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
+        std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
         for (const SymbolPost &move: delta[source]) {
-            output << source << " -> {";
+            is_state_drawn[source] = true;
             for (State target: move.targets) {
-                output << target << " ";
+                is_state_drawn[target] = true;
+                tgt_symbols_map[target].insert(move.symbol);
+            }
+        }
+        for (const auto& [target, symbols]: tgt_symbols_map) {
+            if (max_label_length == 0) {
+                output << source << " -> " << target << ";" << std::endl;
+                continue;
             }
 
-            if (ascii && move.symbol < 128) {
-                output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
-            } else if (ascii && move.symbol >= 128) {
-                output << "} [label=\"" << translate_special_symbols(move.symbol) << "\"];" << std::endl;
+            std::string label = (use_intervals) ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
+            std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
+            bool is_shortened = false;
+            if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
+                label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
+                is_shortened = true;
+            }
+
+            if (is_shortened) {
+                output << source << " -> " << target << " [label=\"" << label << "\", tooltip=\"" << on_hover_label << "\"];" << std::endl;
             } else {
-                output << "} [label=\"" << translate_special_symbols(move.symbol) << "\"];" << std::endl;
+                output << source << " -> " << target << " [label=\"" << label << "\"];" << std::endl;
             }
         }
     }
 
+    // Circle for isolated states with no transitions
+    for (State state{ 0 }; state < is_state_drawn.size(); ++state) {
+        if (!is_state_drawn[state]) {
+            output << state << " [shape=circle];" << std::endl;
+        }
+    }
+
+    // Levels for each state
     output << "node [shape=none, label=\"\"];" << std::endl;
     output << "forcelabels=true;" << std::endl;
     for (State s{ 0 }; s < levels.size(); s++) {
         output << s << " [label=\"" << s << ":" << levels[s] << "\"];" << std::endl;
     }
+
+    // Arrow for initial states
     for (State init_state: initial) {
         output << "i" << init_state << " -> " << init_state << ";" << std::endl;
     }
 
     output << "}" << std::endl;
+}
+
+void Nft::print_to_dot(const std::string& filename,  const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::ios_base::failure("Failed to open file: " + filename);
+    }
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
 }
 
 std::string Nft::print_to_mata() const {
@@ -195,12 +286,25 @@ void Nft::print_to_mata(std::ostream &output) const {
     }
 }
 
+void Nft::print_to_mata(const std::string& filename) const {
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::ios_base::failure("Failed to open file: " + filename);
+    }
+    print_to_mata(output);
+}
+
 Nft Nft::get_one_letter_aut(Symbol abstract_symbol) const {
     return Nft(mata::nfa::Nfa::get_one_letter_aut(abstract_symbol));
 }
 
 void Nft::get_one_letter_aut(Nft& result) const {
     result = get_one_letter_aut();
+}
+
+StateSet Nft::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+    std::cerr << "Warning: Nft::post uses Nfa::post, which is not designed for NFT's jump transitions" << std::endl;
+    return nfa::Nfa::post(states, symbol, epsilon_closure_opt);
 }
 
 void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) {
@@ -287,6 +391,58 @@ Nft& Nft::operator=(Nft&& other) noexcept {
         num_of_levels = other.num_of_levels;
     }
     return *this;
+}
+
+
+Nft& Nft::operator=(const mata::nfa::Nfa& other) noexcept {
+    if (this != &other) {
+        mata::nfa::Nfa::operator=(other);
+        levels = Levels(num_of_states(), DEFAULT_LEVEL);
+        num_of_levels = 1;
+    }
+    return *this;
+}
+
+Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
+    if (this != &other) {
+        mata::nfa::Nfa::operator=(other);
+        levels = Levels(num_of_states(), DEFAULT_LEVEL);
+        num_of_levels = 1;
+    }
+    return *this;
+}
+
+Nft Nft::from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels) {
+    Nft result{ std::move(nfa) };
+    result.levels = Levels(result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
+    result.num_of_levels = num_of_levels;
+
+    // We apply simple DFS
+    StateSet worklist; // worklist for DFS
+    for (State initial_state : result.initial) {
+        // start with initial states, which should be level 0
+        result.levels[initial_state] = 0;
+        worklist.insert(initial_state);
+    }
+
+    while (!worklist.empty()) {
+        State state_to_process = worklist.back();
+        worklist.pop_back();
+        for (State tgt : result.delta[state_to_process].get_successors()) {
+            Level next_level = result.levels[state_to_process] + 1;
+            if (next_level == num_of_levels) {
+                next_level = 0;
+            }
+            if (result.levels[tgt] == num_of_levels) { // tgt does not have a level yet
+                result.levels[tgt] = next_level;
+                worklist.insert(tgt);
+            } else if (result.levels[tgt] != next_level) {
+                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft in mata::nft::Nft::from_nfa_leveled()");
+            }
+        }
+    }
+
+    return result;
 }
 
 State Nft::add_state() {
@@ -426,6 +582,23 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
         insert_word(state, Word(num_of_levels, symbol), state);
 //    }
     return *this;
+}
+
+bool Nft::contains_jump_transitions() {
+    if (num_of_levels == 1) { return false; }
+
+    for (const Transition& transition : delta.transitions()) {
+        Level src_level = levels[transition.source];
+        Level tgt_level = levels[transition.target];
+        if (tgt_level == 0) {
+            // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
+            tgt_level = tgt_level + static_cast<Level>(num_of_levels);
+        }
+        if (tgt_level - src_level != 1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Nft::clear() {

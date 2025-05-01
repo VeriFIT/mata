@@ -20,6 +20,18 @@ struct Run {
     std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
+enum class EpsilonClosureOpt : unsigned {
+    NONE   = 1 << 0,   ///< No epsilon closure.
+    BEFORE = 1 << 1,   ///< Epsilon closure before the transition.
+    AFTER  = 1 << 2,    ///< Epsilon closure after the transition.
+    BEFORE_AND_AFTER = BEFORE | AFTER ///< Epsilon closure before and after the transition.
+};
+
+enum class ProductFinalStateCondition {
+    AND, ///< Both original states have to be final.
+    OR,  ///< At least one of the original states has to be final.
+};
+
 using StateRenaming = std::unordered_map<State, State>;
 
 /**

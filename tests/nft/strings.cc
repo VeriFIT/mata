@@ -1,14 +1,11 @@
 // TODO: some header
 
 #include <vector>
-#include <fstream>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/builder.hh"
-#include "mata/parser/re2parser.hh"
-#include "mata/parser/parser.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/strings.hh"
@@ -245,7 +242,7 @@ TEST_CASE("nft::reluctant_replacement()") {
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
     ReluctantReplaceSUT reluctant_replace{};
     SECTION("nft::end_marker_dfa()") {
-        parser::create_nfa(&regex, "cb+a+");
+        regex = nfa::builder::create_from_regex("cb+a+");
         nfa::Nfa dfa_end_marker{ reluctant_replace.end_marker_dfa(regex) };
         nfa::Nfa dfa_expected_end_marker{};
         dfa_expected_end_marker.initial = { 0 };
@@ -523,11 +520,7 @@ TEST_CASE("mata::nft::strings::reluctant_nfa_with_marker()") {
     ReluctantReplaceSUT reluctant_replace{};
 
     SECTION("regex cb+a+") {
-        nfa::Nfa nfa{ [&]() {
-            nfa::Nfa nfa{};
-            mata::parser::create_nfa(&nfa, "cb+a+");
-            return reluctant_replace.reluctant_nfa_with_marker(nfa, BEGIN_MARKER, &alphabet);
-        }() };
+        nfa::Nfa nfa{ reluctant_replace.reluctant_nfa_with_marker(nfa::builder::create_from_regex("cb+a+"), BEGIN_MARKER, &alphabet) };
         nfa::Nfa expected{ nfa::builder::parse_from_mata(std::string(
             "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q3\nq0 99 q1\nq0 4294967195 q0\nq1 98 q2\nq1 4294967195 q1\nq2 97 q3\nq2 98 q2\nq2 4294967195 q2\n")) };
         CHECK(nfa::are_equivalent(nfa, expected));
@@ -617,6 +610,22 @@ TEST_CASE("mata::nft::strings::replace_reluctant_literal()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
+
+    SECTION("'' replace with 'abc' replace single") {
+        nft = nft::strings::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::Single);
+        CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
+                                   { 'a', 'b', 'c', 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'b' },
+                                   { 'a', 'b', 'c', 'a', 'b' } }));
+     }
+
+    SECTION("'' replace with 'abc' replace all") {
+        nft = nft::strings::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
+        CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
+                                   { 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'b' },
+                                   { 'a', 'b' } }));
+     }
 
     SECTION("'abcc' replace with 'a' replace all") {
         nft = nft::strings::replace_reluctant_literal(Word{ 'a', 'b', 'c', 'c' }, Word{ 'a' },  &alphabet, ReplaceMode::All);
@@ -808,6 +817,22 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
+
+    SECTION("'' replace with 'abc' replace single") {
+        nft = nft::strings::replace_reluctant_regex("a*", Word{ 'b', 'b', 'b' },  &alphabet, ReplaceMode::Single);
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'b', 'b' },
+                                   { 'b', 'b', 'b', 'a', 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'c', 'c' },
+                                   { 'b', 'b', 'b', 'c', 'c' } }));
+     }
+
+    SECTION("'' replace with 'abc' replace all") {
+        nft = nft::strings::replace_reluctant_regex("a*", Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
+        CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
+                                   { 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'b' },
+                                   { 'a', 'b', 'c', 'a', 'b', 'c', 'b' } }));
+     }
 
     SECTION("'a+b+c' replace with 'dd' replace all") {
         // Use replace symbol with symbol.

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout latest version
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: devel
 
@@ -52,10 +52,10 @@ jobs:
         python-version: ["3.9"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -83,7 +83,7 @@ jobs:
         python-version: ["3.9"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Infer the new version (without tagging)
         id: tagger
@@ -99,7 +99,7 @@ jobs:
           echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -117,7 +117,7 @@ jobs:
 
       - name: Install Unix dependencies
         run: |
-          sudo apt-get -qq update 
+          sudo apt-get -qq update
           sudo apt-get -qq install -y graphviz graphviz-dev
 
       - name: Verify that the Binding can be installed
@@ -132,13 +132,13 @@ jobs:
         run: |
           make -C bindings/python pypi-release
 
-      - name: Upload to TestPypi
-        run: |
-          python3 -m twine upload bindings/python/dist/*.tar.gz
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
-          TWINE_REPOSITORY: testpypi
+      # - name: Upload to TestPypi
+      #   run: |
+      #     python3 -m twine upload bindings/python/dist/*.tar.gz
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
+      #     TWINE_REPOSITORY: testpypi
 
       - name: Upload to Pypi
         run: |
@@ -154,7 +154,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
@@ -178,7 +178,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}

@@ -41,12 +41,18 @@ namespace {
             LTSforSimulation.add_transition(finalState, maxSymbol + 1, finalState);
         }
 
+        // similarly, states on different levels cannot be simulated by each other, we add self loops over the same fresh symbol for each state of the same level
+        for (State state = 0; state < state_num; ++state) {
+            LTSforSimulation.add_transition(state, maxSymbol + 2 + aut.levels[state], state);
+        }
+
         LTSforSimulation.init();
         return LTSforSimulation.compute_simulation();
     }
 
     Nft reduce_size_by_simulation(const Nft& aut, StateRenaming &state_renaming) {
         Nft result;
+        result.num_of_levels = aut.num_of_levels;
         const auto sim_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
@@ -63,7 +69,8 @@ namespace {
         for (State q = 0; q < num_of_states; ++q) {
             const State qReprState = quot_proj[q];
             if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
-                const State qClass = result.add_state();
+                assert(aut.levels[q] == aut.levels[qReprState]);
+                const State qClass = result.add_state_with_level(aut.levels[qReprState]);
                 state_renaming[qReprState] = qClass;
                 state_renaming[q] = qClass;
             } else {
@@ -118,61 +125,120 @@ namespace {
     }
 }
 
-//TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
-    // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    std::unordered_map<State, StateSet> eps_closure;
-
-    // TODO: grossly inefficient
-    // first we compute the epsilon closure
     const size_t num_of_states{aut.num_of_states() };
-    for (size_t i{ 0 }; i < num_of_states; ++i)
-    {
-        for (const auto& trans: aut.delta[i])
-        { // initialize
-            const auto it_ins_pair = eps_closure.insert({i, {i}});
-            if (trans.symbol == epsilon)
-            {
-                StateSet& closure = it_ins_pair.first->second;
-                // TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to resize each time);
-                closure.insert(trans.targets);
-            }
-        }
-    }
+    mata::nfa::Nfa reversed_nfa{ mata::nfa::revert(aut) };
 
-    bool changed = true;
-    while (changed) { // Compute the fixpoint.
-        changed = false;
-        for (size_t i = 0; i < num_of_states; ++i) {
-            const StatePost& post{ aut.delta[i] };
-            const auto eps_move_it { post.find(epsilon) };//TODO: make faster if default epsilon
-            if (eps_move_it != post.end()) {
-                StateSet& src_eps_cl = eps_closure[i];
-                for (const State tgt: eps_move_it->targets) {
-                    const StateSet& tgt_eps_cl = eps_closure[tgt];
-                    for (const State st: tgt_eps_cl) {
-                        if (src_eps_cl.count(st) == 0) {
-                            changed = true;
-                            break;
+    // this vector will collect epsilon run from level 0 state to level 0 state
+    // that contains only epsilon transitions, and all states inbetween (i.e.
+    // not-level-0 states) will have only one epsilon transition going to it
+    // and one epsilon transition going from it
+    std::vector<std::vector<State>> safe_epsilon_runs;
+
+    // for each level 0 state q, eps_delta[q] represents all states to which
+    // we can get to by some safe epsilon run
+    std::vector<StateSet> eps_delta(num_of_states);
+    // its inverse
+    std::vector<StateSet> eps_delta_inverse(num_of_states);
+
+    for (State state = 0; state != num_of_states; ++state) {
+        if (aut.levels[state] == DEFAULT_LEVEL) {
+            std::vector<std::vector<State>> state_safe_epsilon_runs{ {state} };
+            for (Level cur_level = 0; cur_level < aut.num_of_levels; ++cur_level) {
+                std::vector<std::vector<State>> new_state_safe_epsilon_runs;
+                for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
+                    State state_s = safe_epsilon_run.back();
+                    const StatePost& post_s{ aut.delta[state_s] };
+                    const auto eps_move_it_s { post_s.find(epsilon) };
+                    if (eps_move_it_s != post_s.end()) {
+                        if (cur_level != DEFAULT_LEVEL && aut.delta[state_s].size() != 1) {
+                            // for levels > DEFAULT_LEVEL we do not want to have transitions that are not with empty symbol
+                            continue;
+                        }
+                        for (State target : eps_move_it_s->targets) {
+                            if (cur_level == aut.num_of_levels-1) {
+                                // we are at the last level, next level will be 0
+                                assert(aut.levels[target] == DEFAULT_LEVEL);
+                                std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
+                                new_safe_epsilon_run.push_back(target);
+                                // we finish with generating this safe epsilon run and push it to safe_epsilon_runs directly
+                                safe_epsilon_runs.push_back(new_safe_epsilon_run);
+                                eps_delta[state].insert(target);
+                                eps_delta_inverse[target].insert(state);
+                            } else if (reversed_nfa.delta[target].size() == 1) {
+                                // we are not at the last level, next state must be level incremented by one (assuming no jumps)
+                                assert(aut.levels[target] == cur_level + 1);
+                                std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
+                                new_safe_epsilon_run.push_back(target);
+                                // this safe epsilon run is not finished yet, we save new_state_safe_epsilon_runs to return to it
+                                new_state_safe_epsilon_runs.push_back(new_safe_epsilon_run);
+                            }
                         }
                     }
-                    src_eps_cl.insert(tgt_eps_cl);
+                }
+                if (new_state_safe_epsilon_runs.empty()) {
+                    break;
+                } else {
+                    state_safe_epsilon_runs = new_state_safe_epsilon_runs;
                 }
             }
         }
     }
 
+    // compute the transition closure of the epsilon delta
+    // by using simplified Floyd-Warshall algorithm, see
+    // https://stackoverflow.com/a/76173280
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        // for every pair of transitions
+        //       before_state -epsilon-> state -epsilon-> after_state
+        // we add transition
+        //       before_state -epsilon-> after_state
+        const StateSet& after_states = eps_delta[state];
+        const StateSet& before_states = eps_delta_inverse[state];
+
+        if (after_states.empty() || before_states.empty()) {
+            // there is no such pair of transitions
+            continue;
+        }
+
+        for (State before_state : before_states) {
+            if (before_state != state) {
+                eps_delta[before_state].insert(after_states);
+            }
+        }
+        for (State after_state : after_states) {
+            if (after_state != state) {
+                eps_delta_inverse[after_state].insert(before_states);
+            }
+        }
+    }
+
+    // At this point eps_delta represents epsilon closure of level 0 states, but it might not be reflexive
+
     // Construct the automaton without epsilon transitions.
-    Nft result{ Delta{}, aut.initial, aut.final, aut.levels, aut.num_of_levels, aut.alphabet };
-    for (const auto& state_closure_pair : eps_closure) { // For every state.
-        State src_state = state_closure_pair.first;
-        for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
-            if (aut.final[eps_cl_state]) result.final.insert(src_state);
-            for (const SymbolPost& move : aut.delta[eps_cl_state]) {
-                if (move.symbol == epsilon) continue;
-                // TODO: this could be done more efficiently if we had a better add method
-                for (State tgt_state : move.targets) {
-                    result.delta.add(src_state, move.symbol, tgt_state);
+    Nft result{ aut };
+    result.delta.allocate(num_of_states); // just to be safe
+
+    // we first remove all epsilon transitions
+    std::set<Transition> safe_epsilon_runs_transitions;
+    for (const auto& safe_epsilon_run : safe_epsilon_runs) {
+        for (size_t i = 0; i < safe_epsilon_run.size()-1; ++i) {
+            Transition safe_epsilon_run_transition{ safe_epsilon_run[i], epsilon, safe_epsilon_run[i+1] };
+            if (!safe_epsilon_runs_transitions.contains(safe_epsilon_run_transition)) {
+                result.delta.remove(safe_epsilon_run_transition);
+                safe_epsilon_runs_transitions.insert(safe_epsilon_run_transition);
+            }
+        }
+    }
+
+    // we add new transitions using epsilon closure
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        for (State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
+            if (eps_cl_state != state) { // transitions from state are already in result
+                if (aut.final[eps_cl_state]) { result.final.insert(state); }
+                // we only need to add the first transition to level 1 state
+                for (const SymbolPost& move : result.delta[eps_cl_state]) {
+                    result.delta.add(state, move.symbol, move.targets);
                 }
             }
         }
@@ -347,14 +413,13 @@ Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const JumpMode
     return project_to(nft, OrdVector<Level>{ level_to_project }, jump_mode);
 }
 
-Nft Nft::apply(const nfa::Nfa& nfa, Level level_to_apply_on, JumpMode jump_mode) const {
-    Nft nft_from_nfa{ nft::builder::create_from_nfa(nfa, this->num_of_levels) };
-    return compose(nft_from_nfa, *this, static_cast<Level>(this->num_of_levels) - 1, level_to_apply_on, jump_mode);
+Nft Nft::apply(const nfa::Nfa& nfa, Level level_to_apply_on, bool project_out_applied_level, JumpMode jump_mode) const {
+    Nft nft_from_nfa{ nfa };
+    return compose(nft_from_nfa, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
 }
 
-Nft Nft::apply_backward(const nfa::Nfa& nfa, Level level_to_apply_on, JumpMode jump_mode) const {
-    Nft nft_from_nfa{ nft::builder::create_from_nfa(nfa, this->num_of_levels) };
-    return compose(*this, nft_from_nfa, level_to_apply_on, 0, jump_mode);
+Nft Nft::apply(const Word& word, Level level_to_apply_on, bool project_out_applied_level, JumpMode jump_mode) const {
+    return apply(nfa::builder::create_single_word_nfa(word), level_to_apply_on, project_out_applied_level, jump_mode);
 }
 
 Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
@@ -677,6 +742,153 @@ Nft mata::nft::revert(const Nft& aut) {
     //return somewhat_simple_revert(aut);
 }
 
+Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
+    const size_t num_of_states = aut.num_of_states();
+
+    // Find states with level zero and rename them.
+    std::vector<State> renaming(num_of_states, Limits::max_state);
+    size_t num_of_zerostates = 0;
+    for (State s = 0; s < num_of_states; ++s) {
+        if (aut.levels[s] == 0) {
+            renaming[s] = num_of_zerostates++;
+        }
+    }
+
+    // Rename initial states
+    SparseSet<State> new_initial;
+    for (const State s: aut.initial) {
+        new_initial.insert(renaming[s]);
+    }
+    // Rename final states
+    SparseSet<State> new_final;
+    for (const State s: aut.final) {
+        new_final.insert(renaming[s]);
+    }
+    // Create new automaton
+    Nft aut_inv = Nft(num_of_zerostates, std::move(new_initial), std::move(new_final), Levels(num_of_zerostates, 0), aut.num_of_levels, aut.alphabet);
+
+    // Creates new states with inverted levels for each inner state in the path.
+    auto create_states_with_inverted_levels = [&](const std::vector<State>& path_states) {
+        for (const State s: path_states) {
+            if (aut.levels[s] == 0) { continue; }
+            renaming[s] = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - aut.levels[s]));
+        }
+    };
+
+    // Returns transitions of the path.
+    auto get_path_transitions = [&](const std::vector<State>& path_states) {
+        std::vector<Transition> path_transitions;
+        for (size_t i = 0; i < path_states.size() - 1; ++i) {
+            const State src = path_states[i];
+            const State tgt = path_states[i + 1];
+            std::vector<Transition> transitions_between = aut.delta.get_transitions_between(src, tgt);
+            path_transitions.insert(path_transitions.end(), transitions_between.begin(), transitions_between.end());
+        }
+
+        return path_transitions;
+    };
+
+    // Creates inverted transitions for each transition in the path.
+    // Can work with different jump modes.
+    auto map_inverted_transitions = [&](const std::vector<Transition>& path, const State head, const State tail) {
+        // Auxiliary state between two states can be reused for transitions over different symbols.
+        // The key is a pair of source and target states.
+        // auxiliary_states map will be used only if the jump_mode is JumpMode::AppendDontCares.
+        std::unordered_map<std::pair<State, State>, State> auxiliary_states;
+        auto get_aux_state = [&](const State src, const State tgt, const Level level) {
+            const std::pair<State, State> key{ src, tgt };
+            if (auxiliary_states.find(key) == auxiliary_states.end()) {
+                auxiliary_states[key] = aut_inv.add_state_with_level(level);
+            }
+            return auxiliary_states[key];
+        };
+        for (const auto &[src, symbol, tgt]: path) {
+            const bool is_src_head = src == head;
+            const bool is_tgt_tail = tgt == tail;
+            if (is_src_head && is_tgt_tail) {
+                // It is a direct transition between two zero-states (the head and the tail).
+                // Just copy it.
+                if (jump_mode == JumpMode::AppendDontCares && aut.num_of_levels > 1) {
+                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.num_of_levels - 1));
+                    aut_inv.delta.add(renaming[src], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[tgt]);
+                } else {
+                    aut_inv.delta.add(renaming[src], symbol, renaming[tgt]);
+                }
+            } else if (is_src_head) {
+                // It is a transition from a zero-state (head) to a nonzero-state (inner state).
+                // Map it as transition from that nonzero-state (inner state) to the tail (zero-states).
+                if (jump_mode == JumpMode::AppendDontCares && aut.levels[tgt] > 1) {
+                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.num_of_levels - 1));
+                    aut_inv.delta.add(renaming[tgt], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[tail]);
+                } else {
+                    aut_inv.delta.add(renaming[tgt], symbol, renaming[tail]);
+                }
+
+            } else if (is_tgt_tail) {
+                // It is a transition from a nonzero-state (inner state) to a zero-state (tail).
+                // Map it as transition from the zero-state (head) to that nonzero-state (inner state).
+                if (jump_mode == JumpMode::AppendDontCares && (aut.num_of_levels - aut.levels[src]) > 1) {
+                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
+                    aut_inv.delta.add(renaming[head], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[src]);
+                } else {
+                    aut_inv.delta.add(renaming[head], symbol, renaming[src]);
+                }
+            } else {
+                // It is a transition between two nonzero-states (inner states).
+                // Just swap the source and target.
+                if (jump_mode == JumpMode::AppendDontCares && (aut.levels[tgt] - aut.levels[src]) > 1) {
+                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
+                    aut_inv.delta.add(renaming[tgt], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[src]);
+                } else {
+                    aut_inv.delta.add(renaming[tgt], symbol, renaming[src]);
+                }
+            }
+        }
+    };
+
+    // Main loop of the algorithm.
+    for (State path_head = 0; path_head < num_of_states; ++path_head) {
+        // Test if the state is a head of some path.
+        if (aut.levels[path_head] != 0) {
+            continue;   // Not a head.
+        }
+        // Process all paths using dfs.
+        std::stack<std::pair<State, std::vector<State>>> stack;
+        stack.push({ path_head, { path_head } });
+        while (!stack.empty()) {
+            auto [src, path] = stack.top();
+            stack.pop();
+
+            if (aut.levels[src] == 0 && path.size() > 1) {
+                // A tail of the path (src) has been reached.
+                create_states_with_inverted_levels(path);
+                const std::vector<Transition> path_transitions = get_path_transitions(path);
+                map_inverted_transitions(path_transitions, path.front(), path.back());
+                continue;
+            }
+
+            for (const State tgt: aut.delta[src].get_successors()) {
+                // Extend the path.
+                std::vector<State> new_path = path;
+                new_path.push_back(tgt);
+                stack.push({ tgt, std::move(new_path) });
+            }
+        }
+    }
+
+    return aut_inv;
+}
+
+//TODO: Implement for NFT
+bool mata::nft::Nft::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+    std::cerr << "Warning: Nft::is_in_lang uses Nfa::is_in_lang, which is not designed for NFT's jump transitions" << std::endl;
+    return nfa::Nfa::is_in_lang(run, use_epsilon, match_prefix);
+}
+
 std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
     if (run.path.empty()) { return {{}, true}; }
 
@@ -701,28 +913,6 @@ std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
         cur = newSt;    // update current state
     }
     return {word, true};
-}
-
-//TODO: this is not efficient
-bool mata::nft::Nft::is_in_lang(const Run& run) const {
-    StateSet current_post(this->initial);
-    for (const Symbol sym : run.word) {
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
-}
-
-/// Checks whether the prefix of a string is in the language of an automaton
-// TODO: slow and it should share code with is_in_lang
-bool mata::nft::Nft::is_prfx_in_lang(const Run& run) const {
-    StateSet current_post{ this->initial };
-    for (const Symbol sym : run.word) {
-        if (this->final.intersects_with(current_post)) { return true; }
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
 }
 
 Nft mata::nft::algorithms::minimize_brzozowski(const Nft& aut) {
@@ -753,12 +943,12 @@ Nft mata::nft::minimize(
     return algo(aut);
 }
 
-Nft mata::nft::uni(const Nft &lhs, const Nft &rhs) {
+Nft mata::nft::union_nondet(const Nft &lhs, const Nft &rhs) {
     Nft union_nft{ lhs };
-    return union_nft.uni(rhs);
+    return union_nft.unite_nondet_with(rhs);
 }
 
-Nft& Nft::uni(const Nft& aut) {
+Nft& Nft::unite_nondet_with(const Nft& aut) {
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;

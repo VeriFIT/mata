@@ -1,10 +1,9 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
-#include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/types.hh"
-#include "mata/parser/re2parser.hh"
+#include "mata/nfa/builder.hh"
 
 int main() {
     using namespace mata;
@@ -31,13 +30,12 @@ int main() {
     // NFT nft transduces a sequence of 'abcd' to 'ABCDEF', accepting the same suffix on all tapes.
 
     // Create NFA from a regex, each character mapping to its UTF-8 value.
-    Nfa nfa{};
-    parser::create_nfa(&nfa, "ABCDEFggg");
+    Nfa nfa = nfa::builder::create_from_regex("ABCDEFggg");
 
-    // Compute the pre-image of an NFA as an NFT, identical to nft || Id(nfa).
-    Nft backward_applied_nft = nft.apply_backward(nfa);
-    // Extract a pre-image NFA for the tape 0.
-    Nfa nfa_pre_image{ project_to(backward_applied_nft, 0) };
+    // Compute the pre-image of an NFA (applies NFA to the image tape, i.e., tape 1)
+    Nft backward_applied_nft = nft.apply(nfa, 1);
+    // Extract a pre-image NFA.
+    Nfa nfa_pre_image{ backward_applied_nft.to_nfa_move() };
     // Minimize the result pre-image using hopcroft minimization.
     nfa_pre_image = determinize(remove_epsilon(nfa_pre_image).trim());
     assert(nfa_pre_image.is_deterministic());

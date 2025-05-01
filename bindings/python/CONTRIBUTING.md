@@ -52,10 +52,10 @@ may arise during development.
 ## Getting started
 
 The following shows minimal example of relation between C++ library source files and Cython binding
-files. It shows link between (1) Cython binding files (`nfa.pxd`, `nfa.pyx`) and C++ library files 
-(`nfa-plumbing.h`), (2) Cython binding class (`Nfa`) and C++ library class (`mata::nfa::Nfa`; 
-in binding refered as `CNfa`), and (3) Cython binding function (`union` that takes Python 
-classes `Nfa`) and C++ library function (`uni` that takes C++ classes `mata::nfa::Nfa`, 
+files. It shows link between (1) Cython binding files (`nfa.pxd`, `nfa.pyx`) and C++ library files
+(`nfa-plumbing.h`), (2) Cython binding class (`Nfa`) and C++ library class (`mata::nfa::Nfa`;
+in binding refered as `CNfa`), and (3) Cython binding function (`union` that takes Python
+classes `Nfa`) and C++ library function (`uni` that takes C++ classes `mata::nfa::Nfa`,
 in binding refered as `c_uni` and `CNfa` respectively)
 
 ```c++
@@ -63,7 +63,7 @@ in binding refered as `c_uni` and `CNfa` respectively)
 
 // Minimal specification of C++ function, we want to wrap in Binding
 namespace mata::nfa::plumbing {
-    inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
+    inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
 //              ^-- C++ function signature with C++ types
 }
 ```
@@ -82,7 +82,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CNfa()
 #       ^-- constructor of C++ class using alias `CNfa`
 #           (everything listed here will be visible in binding)
-    
+
 cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 #                 ^-- source C++ header and namespace, where the function is defined
     cdef void c_uni "mata::nfa::plumbing::uni" (CNfa*, CNfa&, CNfa&)
@@ -93,7 +93,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 ```cython
 # @file: nfa.pyx
 
-# Minimal example of implementation of Python binding. 
+# Minimal example of implementation of Python binding.
 # These classes and function will be visible and callable in Python.
 
 cdef class Nfa:
@@ -108,12 +108,12 @@ cdef class Nfa:
 #       ^-- creating C++ object, that is wrapped in Python class Nfa
 
 def union(Nfa lhs, Nfa rhs):
-#   ^-- Python function; wrapper for mata::nfa::plumbing::uni()
+#   ^-- Python function; wrapper for mata::nfa::plumbing::union_nondet()
     result = Nfa()
-    mata_nfa.c_uni(
+    mata_nfa.union_nondet(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
     )
-#   ^-- call to C++ function `uni()` (it is named as c_uni to avoid collisions with Python)
+#   ^-- call to C++ function `union_nondet()` (it is named as c_uni to avoid collisions with Python)
     return result
 #   ^-- function returns wrapper Python object Nfa, that holds instance of `mata::nfa::Nfa` C++ object
 ```
@@ -122,8 +122,8 @@ def union(Nfa lhs, Nfa rhs):
 
 There are two types of files:
 
-- `*.pxd`: Cython files containing declarations/definitions of the C/C++ API, i.e., symbols one 
-  wants to specifically import and use in the binding (naturally, you do not need to import 
+- `*.pxd`: Cython files containing declarations/definitions of the C/C++ API, i.e., symbols one
+  wants to specifically import and use in the binding (naturally, you do not need to import
   everything).
 - `*.pyx`: Cython files containing the implementation of the Python binding.
 
@@ -150,7 +150,7 @@ The directory structure is as follows:
 ## Adding a new function
 
   1. Declare the function in `.pxd` file:
-    
+
      - For a class function, declare it within the class definition:
 
 ```cython
@@ -169,13 +169,13 @@ cdef extern from "mata/nfa.hh" namespace "mata::nfa":
 cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
 #                ^-- source file                  ^-- namespace
     cdef void get_elements(StateSet*, CBoolVector)
-    #    ^-- function signature using previously defined 
+    #    ^-- function signature using previously defined
     #         Cython types from C/C++ API as parameters
 ```
 
-   - You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh), 
-     (2) the namespace where the function is a member, and (3) the signature of the function. 
-     The signature can be partial; the binding will only use the number of defined parameters. 
+   - You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh),
+     (2) the namespace where the function is a member, and (3) the signature of the function.
+     The signature can be partial; the binding will only use the number of defined parameters.
      The typing can be conservative, e.g., const references do not have to be kept.
 
   2. Implement the function in the `.pyx` file:
@@ -224,10 +224,10 @@ extensions = [
 cdef extern from "mata/alphabet.hh" namespace "mata":
 #                ^-- source file              ^-- namespace
     cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
-        
-        #         ^-- name in bind  ^-- full name           ^-- inheritance (previously defined) 
+
+        #         ^-- name in bind  ^-- full name           ^-- inheritance (previously defined)
         StringToSymbolMap symbol_map
-        # ^-- previously defined type in binding        
+        # ^-- previously defined type in binding
         #                 ^--- property name
         COnTheFlyAlphabet(StringToSymbolMap) except +
         # ^-- constructor                    ^-- can fire exception
@@ -278,7 +278,7 @@ cdef extern from "mata/re2parser.hh" namespace "mata::parser":
     cdef void create_nfa(CNfa*, string) except +
     #         ^-- function signature    ^-- can fire exceptions
 ```
-   
+
   2. Now, you can add new parameter to the function:
 
 ```cython
@@ -304,15 +304,15 @@ cdef extern from "mata/re2parser.hh" namespace "mata::parser":
 
   * **Problem**: You want C/C++ function `func()` to be named the same in Python wrapping
   * **Solution**: You can define the name of the function any way you want, but you need to follow
-    it with its full name in quotes (i.e. you can name the function in the `.pxd` as `c_my_func` 
+    it with its full name in quotes (i.e. you can name the function in the `.pxd` as `c_my_func`
     followed by full name `"Namespace::my_func"`; the function is then called as `c_my_func(..)`
-    in Python). 
+    in Python).
 
 ```cython
 cdef NoodleSequence c_noodlify "mata::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
 #                   ^-- name visible in Cython
 #                              ^-- original full C/C++ name
-``` 
+```
 
 ## Declaring function returning complex type
 
@@ -340,7 +340,7 @@ def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
     mata_nfa.intersection(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
     #   ^-- pointer to mata::nfa::Nfa object
-    #                         ^-- equivalent of *lhs 
+    #                         ^-- equivalent of *lhs
     )
     return result
 ```
@@ -368,7 +368,7 @@ cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
 ```cython
 cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
 #    ^-- unordered_map    ^-- C/C++ var  ^-- calling wrapper function through C/C++ object in thisptr
-``` 
+```
 
 * **Problem**: You want to declare some method as class function in Python.
 * **Solution**: You implement the method in `pyx` file with `@classmethod` decorator.
@@ -381,7 +381,7 @@ def determinize_with_subset_map(cls, Nfa lhs):
 ```
 
 * The function is then called as `module.Class.method`.
- 
+
 ## Declaring class attributes, getters and  setters
 
 * **Problem**: You want to declare an attribute to be visible in class.
@@ -506,7 +506,7 @@ cdef class SymbolPost:
 
 ## Dereferencing and retyping the object
 
-* **Problem**: You have a pointer (e.g., returned from function) and need to dereference it and 
+* **Problem**: You have a pointer (e.g., returned from function) and need to dereference it and
   retype as well, as Cython cannot infer the type.
 * **Solution**: You `cimport` the `dereference` operator and then explicitly retype using `<CType>` notation.
 
@@ -554,7 +554,7 @@ dereference(it).symbol
 ## Defining C variables in code
 
 * **Problem**: In `pyx` code you need to work with variables of C/C++ types.
-* **Solution**: You define the variable together with its types using `cdef` keyword. 
+* **Solution**: You define the variable together with its types using `cdef` keyword.
   Note: the type needs to be specified so that Cython can infer it. You can also help
   Cython with Python variables and parameters by using the typing notations (i.e., `var : type`)
 
@@ -591,7 +591,7 @@ cdef extern from "<sstream>" namespace "std":
 ```
 
 * Then, you can call function that takes `ofstream` as follows:
- 
+
 ```cython
 cimport libmata.nfa.nfa as mata_nfa
 cdef mata_nfa.ofstream* output
@@ -709,7 +709,7 @@ result.decode('utf-8')
 ## Helping Cython to infer types
 
 * **Problem**: Cython fails to infer types for the variables and cannot compile the binding.
-* **Solution**: You need to help Cython a little: add types to parameters, add types to cdefined 
+* **Solution**: You need to help Cython a little: add types to parameters, add types to cdefined
   variables, or manually retype the variable.
 
 ```cython
@@ -735,7 +735,7 @@ void add(CTrans) except -1
 void add(CTrans) except +
 #                ^-- function may fire exception; C/C++ exceptions will be translated to Python exceptions
 void add(CTrans) except +MemoryError
-#                ^-- function may fire MemoryError (corresponds to bad_alloc) 
+#                ^-- function may fire MemoryError (corresponds to bad_alloc)
 void add(CTrans) noexcept +
 #                ^-- function will not fire exception
 ```
@@ -746,7 +746,7 @@ void add(CTrans) noexcept +
 
 ## Importing C/C++ defined functions and symbols
 
-* **Problem**: You want to import symbols visible from wrapped `libmata` library. 
+* **Problem**: You want to import symbols visible from wrapped `libmata` library.
 * **Solution**: You need to use `cimport`, which tells Cython to import C/C++ typed definitions.
 
 ```cython
@@ -789,7 +789,7 @@ from libcpp.vector cimport vector
 * **Problem**: You imported some other Cython module and want to use non-C/C++ class. The Cython,
   however, says that it does not know the requested member.
 * **Solution**: You have to forward-declare the Python class in `.pxd` file.
- 
+
 * An example of such error is as below:
 
 ```shell
@@ -819,7 +819,7 @@ cdef class Transition:
 
 ## A weird error when Cython cannot retype C/C++ object to Python object
 
-* **Problem**: You want to store some C/C++ type to a C/C++ member of the Python object. Cython, 
+* **Problem**: You want to store some C/C++ type to a C/C++ member of the Python object. Cython,
   however, treats the object as Python object and cannot infer types.
 * **Solution**: You have to explicitly retype the underlying Python object to help Cython with the rest.
 
@@ -860,12 +860,12 @@ for c_noodle in c_noodle_segments:
 ## An error when Cython cannot find cimported function, even if it is defined
 
 * **Problem**: You defined some function `f` you wish to use in binding, you implement the function
-  with same name in the binding, but Cython first says, that 
+  with same name in the binding, but Cython first says, that
   you are redefining the function `f` and then says it cannot `cimport` it.
 * **Solution**: You have to explicitly name the function `f` to, e.g.. `c_f`.
 
 * The following is an example of the error.
- 
+
 ```shell
 warning: libmata/nfa/nfa.pyx:690:0: Overriding cdef method with def method.
 
@@ -893,8 +893,8 @@ libmata/nfa/nfa.pyx:687:12: cimported module has no attribute 'determinize'
 
 # Quick glossary
 
-  - `cdef` = function available in C code; 
-  - `cpdef` = function available in C/C++ and Python, 
+  - `cdef` = function available in C code;
+  - `cpdef` = function available in C/C++ and Python,
   - `def` = function available in Python code.
   - `cimport module` = import C/C++ visible functions; use `module.` prefix to access.
   - `from module cimport func, Class, type` = import selected classes, types or functions; juse no prefix to access.

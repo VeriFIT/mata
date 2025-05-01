@@ -4,14 +4,12 @@
 #include <algorithm>
 #include <list>
 #include <unordered_set>
-#include <iterator>
 
 // MATA headers
 #include "mata/nfa/delta.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
-#include "mata/nfa/builder.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;
@@ -54,78 +52,6 @@ namespace {
 
         lts_for_simulation.init();
         return lts_for_simulation.compute_simulation();
-    }
-
-    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
-        Nfa result;
-        const auto sim_relation = algorithms::compute_relation(
-                aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
-
-        auto sim_relation_symmetric = sim_relation;
-        sim_relation_symmetric.restrict_to_symmetric();
-
-        // for State q, quot_proj[q] should be the representative state representing the symmetric class of states in simulation
-        std::vector<size_t> quot_proj;
-        sim_relation_symmetric.get_quotient_projection(quot_proj);
-
-        const size_t num_of_states = aut.num_of_states();
-
-        // map each state q of aut to the state of the reduced automaton representing the simulation class of q
-        for (State q = 0; q < num_of_states; ++q) {
-            const State qReprState = quot_proj[q];
-            if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
-                const State qClass = result.add_state();
-                state_renaming[qReprState] = qClass;
-                state_renaming[q] = qClass;
-            } else {
-                state_renaming[q] = state_renaming[qReprState];
-            }
-        }
-
-        for (State q = 0; q < num_of_states; ++q) {
-            const State q_class_state = state_renaming.at(q);
-
-            if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
-                result.initial.insert(q_class_state);
-            }
-
-            if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
-                for (const auto &q_trans : aut.delta.state_post(q)) {
-                    const StateSet representatives_of_states_to = [&]{
-                        StateSet state_set;
-                        for (auto s : q_trans.targets) {
-                            state_set.insert(quot_proj[s]);
-                        }
-                        return state_set;
-                    }();
-
-                    // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
-                    StateSet representatives_class_states;
-                    for (const State s : representatives_of_states_to) {
-                        bool is_state_important = true; // if true, we need to keep the transition from q to s
-                        for (const State p : representatives_of_states_to) {
-                            if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
-                                is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
-                                break;
-                            }
-                        }
-                        if (is_state_important) {
-                            representatives_class_states.insert(state_renaming.at(s));
-                        }
-                    }
-
-                    // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
-                    // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
-                }
-
-                if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
-                    result.final.insert(q_class_state);
-                }
-            }
-        }
-
-        return result;
     }
 
     void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
@@ -218,106 +144,6 @@ namespace {
         }
     }
 
-    Nfa residual_with(const Nfa& aut) {         // modified algorithm of determinization
-
-        Nfa result;
-
-        //assuming all sets targets are non-empty
-        std::vector<std::pair<State, StateSet>> worklist;
-        std::unordered_map<StateSet, State> subset_map;
-
-        std::vector<StateSet> covering_states;          // check covering set
-        std::vector<StateSet> covering_indexes;         // indexes of covering macrostates
-        std::unordered_map<StateSet, State> covered;    // map of covered states for transfering new transitions
-
-        result.clear();
-        const StateSet S0 =  StateSet(aut.initial);
-        const State S0id = result.add_state();
-        result.initial.insert(S0id);
-
-        if (aut.final.intersects_with(S0)) {
-            result.final.insert(S0id);
-        }
-        worklist.emplace_back(S0id, S0);
-
-        (subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
-        covering_states.emplace_back();
-        covering_indexes.emplace_back();
-
-        if (aut.delta.empty()){
-            return result;
-        }
-
-        using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
-        SynchronizedExistentialSymbolPostIterator synchronized_iterator;
-
-        while (!worklist.empty()) {
-            const auto Spair = worklist.back();
-            worklist.pop_back();
-            const StateSet S = Spair.second;
-            const State Sid = Spair.first;
-            if (S.empty()) {
-                // This should not happen assuming all sets targets are non-empty.
-                break;
-            }
-
-            // add moves of S to the sync ex iterator
-            synchronized_iterator.reset();
-            for (State q: S) {
-                mata::utils::push_back(synchronized_iterator, aut.delta[q]);
-            }
-
-            while (synchronized_iterator.advance()) {
-                bool add = false;               // check whether to add transitions
-
-                // extract post from the sychronized_iterator iterator
-                const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-                Symbol currentSymbol = (*moves.begin())->symbol;
-                StateSet T = synchronized_iterator.unify_targets(); // new state unify
-
-                auto existingTitr = subset_map.find(T);        // check if state was alredy discovered
-                State Tid;
-                if (existingTitr != subset_map.end()) {        // already visited state
-                    Tid = existingTitr->second;
-                    add = true;
-                }
-                else if ((existingTitr = covered.find(T)) != covered.end()) {
-                    Tid = existingTitr->second;
-                } else {                                        // add new state
-                    Tid = result.add_state();
-                    check_covered_and_covering(covering_states, covering_indexes, covered, subset_map, Tid, T, result);
-
-                    if (T != covering_states[Tid]){     // new state is not covered, replace transitions
-                        subset_map[mata::utils::OrdVector<State>(T)] = Tid;      // add to map
-
-                        if (aut.final.intersects_with(T))                      // add to final
-                            result.final.insert(Tid);
-
-                        worklist.emplace_back(Tid, T);
-                        add  = true;
-
-                    } else {            // new state is covered
-                        covered[mata::utils::OrdVector<State>(T)] = Tid;
-                    }
-                }
-
-                if (covered.find(S) != covered.end()) {
-                    continue;           // skip generationg any transitions as the source state was covered right now
-                }
-
-                if (add) {
-                    result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
-                } else {
-                    for (State switch_target: covering_indexes[Tid]){
-                            result.delta.add(Sid, currentSymbol, switch_target);
-                    }
-                }
-            }
-        }
-
-        return result;
-    }
-
     void residual_recurse_coverable(const std::vector <StateSet>& macrostate_vec,   // vector of nfa macrostates
                                     const std::vector <State>& covering_indexes,    // sub-vector of macrostates indexes
                                     std::vector <bool>& covered,                    // flags of covered states
@@ -372,120 +198,6 @@ namespace {
 
 
     }
-
-    Nfa residual_after(const Nfa&  aut) {
-        std::unordered_map<StateSet, State> subset_map{};
-        Nfa result;
-        result = determinize(aut, &subset_map);
-
-        std::vector <StateSet> macrostate_vec;              // ordered vector of macrostates
-        macrostate_vec.reserve(subset_map.size());
-        for (const auto& pair: subset_map) {                   // order by size from largest to smallest
-            macrostate_vec.insert(std::upper_bound(macrostate_vec.begin(), macrostate_vec.end(), pair.first,
-                                [](const StateSet & a, const StateSet & b){ return a.size() > b.size(); }), pair.first);
-        }
-
-        std::vector <bool> covered(subset_map.size(), false);          // flag of covered states, removed from nfa
-        std::vector <bool> visited(subset_map.size(), false);          // flag of processed state
-
-        StateSet covering_set;                // doesn't contain duplicates
-        std::vector<State> covering_indexes;        // indexes of covering states
-        size_t macrostate_size = macrostate_vec.size();
-        for (size_t i = 0; i < macrostate_size-1; i++) {
-            if (macrostate_vec[i].size() == 1)      // end searching on single-sized macrostates
-                break;
-
-            if (visited[i])                         // was already processed
-                continue;
-
-            covering_set.clear();
-            covering_indexes.clear();
-            visited[i] = true;
-
-            for (size_t j = i+1; j < macrostate_size; j++) {        // find covering macrostates
-                if (covered[j])     // if covered there are smaller macrostates, skip
-                    continue;
-
-                if (macrostate_vec[j].is_subset_of(macrostate_vec[i])) {           // found covering state
-                    covering_set.insert(macrostate_vec[j]);               // is not covered
-                    covering_indexes.push_back(j);
-                }
-            }
-
-            if (covering_set == macrostate_vec[i]) {
-                size_t covering_size = covering_indexes.size()-1;
-                for (size_t k = 0; k < covering_size; k++) {      // check resurse coverability
-                    if (macrostate_vec[covering_indexes[k]].size() == 1)            // end on single-sized
-                        break;
-
-                    if (visited[covering_indexes[k]])                               // already processed
-                        continue;
-
-                    visited[covering_indexes[k]] = true;
-
-                    residual_recurse_coverable(macrostate_vec, covering_indexes, covered, visited, k, &subset_map, result);
-                }
-
-                covering_set.clear();                 // clear variable to store only needed macrostates
-                for (auto index : covering_indexes) {
-                    if (covered[index] == 0) {
-                        auto macrostate_ptr = subset_map.find(macrostate_vec[index]);
-                        if (macrostate_ptr == subset_map.end())        // should never happen
-                             throw std::runtime_error(std::to_string(__func__) + " couldn't find expected element in a map.");
-
-                        covering_set.insert(macrostate_ptr->second);
-                    }
-                }
-
-                remove_covered_state(covering_set, subset_map.find(macrostate_vec[i])->second, result);
-                covered[i] = true;
-            }
-        }
-
-        return result;
-    }
-
-    Nfa reduce_size_by_residual(const Nfa& aut, StateRenaming &state_renaming, const std::string& type, const std::string& direction){
-        Nfa back_determinized = aut;
-        Nfa result;
-
-        if (direction != "forward" && direction != "backward"){
-            throw std::runtime_error(std::to_string(__func__) +
-                                 " received an unknown value of the \"direction\" key: " + direction);
-        }
-
-        // forward canonical residual automaton is firstly backward determinized and
-        // then the residual construction is done forward, for backward residual automaton
-        // is it the opposite, so the automaton is reverted once more before and after
-        // construction, however the first two reversion negate each other out
-        if (direction == "forward")
-            back_determinized = revert(back_determinized);
-        back_determinized = revert(determinize(back_determinized));          // backward deteminization
-
-        // not relly sure how to handle state_renaming
-        (void) state_renaming;
-
-        // two different implementations of the same algorithm, for type "after" the
-        // residual automaton and removal of covering states is done after the final
-        // determinization if finished, for type "with" this residual construction is
-        // done during the last determinization, both types had similar results in
-        // effectivity, their output is almost the same expect the transitions, those
-        // may slightly differ, but number of states is the same for both types
-        if (type == "with") {
-            result = residual_with(back_determinized);
-        }
-        else if (type == "after") {
-            result = residual_after(back_determinized);
-        } else {
-            throw std::runtime_error(std::to_string(__func__) +
-                                 " received an unknown value of the \"type\" key: " + type);
-        }
-
-        if (direction == "backward")
-            result = revert(result);
-
-        return result.trim();
-    }
 }
 
 std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &trans) { // {{{
@@ -528,7 +240,7 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    std::unordered_map<State, StateSet> eps_closure;
+    std::unordered_map<State, StateSet> epsilon_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
@@ -537,7 +249,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     {
         for (const auto& trans: aut.delta[i])
         { // initialize
-            const auto it_ins_pair = eps_closure.insert({i, {i}});
+            const auto it_ins_pair = epsilon_closure.insert({i, {i}});
             if (trans.symbol == epsilon)
             {
                 StateSet& closure = it_ins_pair.first->second;
@@ -554,9 +266,9 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
             const StatePost& post{ aut.delta[i] };
             const auto eps_move_it { post.find(epsilon) };//TODO: make faster if default epsilon
             if (eps_move_it != post.end()) {
-                StateSet& src_eps_cl = eps_closure[i];
+                StateSet& src_eps_cl = epsilon_closure[i];
                 for (const State tgt: eps_move_it->targets) {
-                    const StateSet& tgt_eps_cl = eps_closure[tgt];
+                    const StateSet& tgt_eps_cl = epsilon_closure[tgt];
                     for (const State st: tgt_eps_cl) {
                         if (src_eps_cl.count(st) == 0) {
                             changed = true;
@@ -571,7 +283,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
 
     // Construct the automaton without epsilon transitions.
     Nfa result{ Delta{}, aut.initial, aut.final, aut.alphabet };
-    for (const auto& state_closure_pair : eps_closure) { // For every state.
+    for (const auto& state_closure_pair : epsilon_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
             if (aut.final[eps_cl_state]) result.final.insert(src_state);
@@ -848,24 +560,21 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 }
 
 //TODO: this is not efficient
-bool mata::nfa::Nfa::is_in_lang(const Run& run) const {
+bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
     StateSet current_post(this->initial);
-    for (const Symbol sym : run.word) {
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
-}
 
-/// Checks whether the prefix of a string is in the language of an automaton
-// TODO: slow and it should share code with is_in_lang
-bool mata::nfa::Nfa::is_prfx_in_lang(const Run& run) const {
-    StateSet current_post{ this->initial };
+    if (use_epsilon) {
+        // Compute epsilon closure from the initial states.
+        current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::BEFORE);
+    }
+
+    const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
     for (const Symbol sym : run.word) {
-        if (this->final.intersects_with(current_post)) { return true; }
-        current_post = this->post(current_post, sym);
+        if (match_prefix && this->final.intersects_with(current_post)) { return true; }
+        current_post = this->post(current_post, sym, epsilon_closure_opt);
         if (current_post.empty()) { return false; }
     }
+
     return this->final.intersects_with(current_post);
 }
 
@@ -942,7 +651,9 @@ Nfa mata::nfa::minimize(
 
     const std::string& str_algo = params.at("algorithm");
     if ("brzozowski" == str_algo) {  /* default */ }
-    else {
+    else if ("hopcroft" == str_algo) {
+        algo = algorithms::minimize_hopcroft;
+    } else {
         throw std::runtime_error(std::to_string(__func__) +
             " received an unknown value of the \"algorithm\" key: " + str_algo);
     }
@@ -1181,7 +892,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         return Nfa{ dfa_trimmed };
     }
     assert(dfa_trimmed.is_deterministic());
-    assert(dfa_trimmed.get_useful_states().size() == dfa_trimmed.num_of_states());
+    assert(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
 
     // Initialize equivalence classes. The initial partition is {Q}.
     RefinablePartition<State> brp(dfa_trimmed.num_of_states());
@@ -1302,30 +1013,42 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
     return result;
 }
 
+Nfa mata::nfa::product(const Nfa &lhs, const Nfa &rhs, const ProductFinalStateCondition final_condition,
+                       const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
 
-Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+    std::function<bool(const State, const State)> is_productstate_final_func;
+    if (final_condition == ProductFinalStateCondition::OR) {
+        if (lhs.initial.empty() || lhs.final.empty()) { return rhs; }
+        if (rhs.initial.empty() || rhs.final.empty()) { return lhs; }
+        is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
+            return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
+        };
+    } else if (final_condition == ProductFinalStateCondition::AND) {
+        if (lhs.initial.empty() || lhs.final.empty()) { return Nfa{}; }
+        if (rhs.initial.empty() || rhs.final.empty()) { return Nfa{}; }
+        is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
+            return lhs.final.contains(lhs_state)&& rhs.final.contains(rhs_state);
+        };
+    } else {
+        throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"final_condition\"");
+    }
 
-    auto both_final = [&](const State lhs_state,const State rhs_state) {
-        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
-    };
-
-    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
-        return Nfa{};
-
-    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
+    return algorithms::product(lhs, rhs, std::move(is_productstate_final_func), first_epsilon, prod_map);
 }
 
-Nfa mata::nfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
-    auto one_final = [&](const State lhs_state,const State rhs_state) {
-        return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
-    };
-
-    if (lhs.final.empty() || lhs.initial.empty()) { return rhs; }
-    if (rhs.final.empty() || rhs.initial.empty()) { return lhs; }
-    return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
+Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+    return product(lhs, rhs, ProductFinalStateCondition::AND, first_epsilon, prod_map);
 }
 
 Nfa mata::nfa::union_nondet(const Nfa &lhs, const Nfa &rhs) { return Nfa{ lhs }.unite_nondet_with(rhs); }
+
+Nfa mata::nfa::union_det_complete(const Nfa &lhs, const Nfa &rhs) {
+    assert(lhs.is_deterministic());
+    assert(rhs.is_deterministic());
+    assert(lhs.is_complete());
+    assert(rhs.is_complete());
+    return product(lhs, rhs, ProductFinalStateCondition::OR, EPSILON);
+}
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
@@ -1361,7 +1084,7 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
     std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        result = reduce_size_by_simulation(aut, reduced_state_map);
+        result = algorithms::reduce_simulation(aut, reduced_state_map);
     }
     else if ("residual" == algorithm) {
         // reduce type either 'after' or 'with' creation of residual automaton
@@ -1380,7 +1103,7 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
         const std::string& residual_type = params.at("type");
         const std::string& residual_direction = params.at("direction");
 
-        result = reduce_size_by_residual(aut, reduced_state_map, residual_type, residual_direction);
+        result = algorithms::reduce_residual(aut, reduced_state_map, residual_type, residual_direction);
     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
@@ -1820,4 +1543,290 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & n
             (void)macrostate;
             return nfa_lang_difference.final.empty();
         }).get_word();
+}
+
+Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &state_renaming) {
+    Nfa result;
+    const auto sim_relation = algorithms::compute_relation(
+            aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+
+    auto sim_relation_symmetric = sim_relation;
+    sim_relation_symmetric.restrict_to_symmetric();
+
+    // for State q, quot_proj[q] should be the representative state representing the symmetric class of states in simulation
+    std::vector<size_t> quot_proj;
+    sim_relation_symmetric.get_quotient_projection(quot_proj);
+
+    const size_t num_of_states = aut.num_of_states();
+
+    // map each state q of aut to the state of the reduced automaton representing the simulation class of q
+    for (State q = 0; q < num_of_states; ++q) {
+        const State qReprState = quot_proj[q];
+        if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
+            const State qClass = result.add_state();
+            state_renaming[qReprState] = qClass;
+            state_renaming[q] = qClass;
+        } else {
+            state_renaming[q] = state_renaming[qReprState];
+        }
+    }
+
+    for (State q = 0; q < num_of_states; ++q) {
+        const State q_class_state = state_renaming.at(q);
+
+        if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
+            result.initial.insert(q_class_state);
+        }
+
+        if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
+            for (const auto &q_trans : aut.delta.state_post(q)) {
+                const StateSet representatives_of_states_to = [&]{
+                    StateSet state_set;
+                    for (auto s : q_trans.targets) {
+                        state_set.insert(quot_proj[s]);
+                    }
+                    return state_set;
+                }();
+
+                // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
+                StateSet representatives_class_states;
+                for (const State s : representatives_of_states_to) {
+                    bool is_state_important = true; // if true, we need to keep the transition from q to s
+                    for (const State p : representatives_of_states_to) {
+                        if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
+                            is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
+                            break;
+                        }
+                    }
+                    if (is_state_important) {
+                        representatives_class_states.insert(state_renaming.at(s));
+                    }
+                }
+
+                // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
+                // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
+                result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
+            }
+
+            if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
+                result.final.insert(q_class_state);
+            }
+        }
+    }
+
+    return result;
+}
+
+Nfa mata::nfa::algorithms::reduce_residual(const Nfa& nfa, StateRenaming &state_renaming, const std::string& type, const std::string& direction) {
+    Nfa back_determinized = nfa;
+    Nfa result;
+
+    if (direction != "forward" && direction != "backward"){
+        throw std::runtime_error(std::to_string(__func__) +
+                             " received an unknown value of the \"direction\" key: " + direction);
+    }
+
+    // forward canonical residual automaton is firstly backward determinized and
+    // then the residual construction is done forward, for backward residual automaton
+    // is it the opposite, so the automaton is reverted once more before and after
+    // construction, however the first two reversion negate each other out
+    if (direction == "forward")
+        back_determinized = revert(back_determinized);
+    back_determinized = revert(determinize(back_determinized));          // backward deteminization
+
+    // not relly sure how to handle state_renaming
+    (void) state_renaming;
+
+    // two different implementations of the same algorithm, for type "after" the
+    // residual automaton and removal of covering states is done after the final
+    // determinization if finished, for type "with" this residual construction is
+    // done during the last determinization, both types had similar results in
+    // effectivity, their output is almost the same expect the transitions, those
+    // may slightly differ, but number of states is the same for both types
+    if (type == "with") {
+        result = reduce_residual_with(back_determinized);
+    }
+    else if (type == "after") {
+        result = reduce_residual_after(back_determinized);
+    } else {
+        throw std::runtime_error(std::to_string(__func__) +
+                             " received an unknown value of the \"type\" key: " + type);
+    }
+
+    if (direction == "backward")
+        result = revert(result);
+
+    return result.trim();
+}
+
+Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& aut) {
+
+    Nfa result;
+
+    //assuming all sets targets are non-empty
+    std::vector<std::pair<State, StateSet>> worklist;
+    std::unordered_map<StateSet, State> subset_map;
+
+    std::vector<StateSet> covering_states;          // check covering set
+    std::vector<StateSet> covering_indexes;         // indexes of covering macrostates
+    std::unordered_map<StateSet, State> covered;    // map of covered states for transfering new transitions
+
+    result.clear();
+    const StateSet S0 =  StateSet(aut.initial);
+    const State S0id = result.add_state();
+    result.initial.insert(S0id);
+
+    if (aut.final.intersects_with(S0)) {
+        result.final.insert(S0id);
+    }
+    worklist.emplace_back(S0id, S0);
+
+    (subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
+    covering_states.emplace_back();
+    covering_indexes.emplace_back();
+
+    if (aut.delta.empty()){
+        return result;
+    }
+
+    using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator;
+
+    while (!worklist.empty()) {
+        const auto Spair = worklist.back();
+        worklist.pop_back();
+        const StateSet S = Spair.second;
+        const State Sid = Spair.first;
+        if (S.empty()) {
+            // This should not happen assuming all sets targets are non-empty.
+            break;
+        }
+
+        // add moves of S to the sync ex iterator
+        synchronized_iterator.reset();
+        for (State q: S) {
+            mata::utils::push_back(synchronized_iterator, aut.delta[q]);
+        }
+
+        while (synchronized_iterator.advance()) {
+            bool add = false;               // check whether to add transitions
+
+            // extract post from the sychronized_iterator iterator
+            const std::vector<Iterator>& moves = synchronized_iterator.get_current();
+            Symbol currentSymbol = (*moves.begin())->symbol;
+            StateSet T = synchronized_iterator.unify_targets(); // new state unify
+
+            auto existingTitr = subset_map.find(T);        // check if state was alredy discovered
+            State Tid;
+            if (existingTitr != subset_map.end()) {        // already visited state
+                Tid = existingTitr->second;
+                add = true;
+            }
+            else if ((existingTitr = covered.find(T)) != covered.end()) {
+                Tid = existingTitr->second;
+            } else {                                        // add new state
+                Tid = result.add_state();
+                check_covered_and_covering(covering_states, covering_indexes, covered, subset_map, Tid, T, result);
+
+                if (T != covering_states[Tid]){     // new state is not covered, replace transitions
+                    subset_map[mata::utils::OrdVector<State>(T)] = Tid;      // add to map
+
+                    if (aut.final.intersects_with(T))                      // add to final
+                        result.final.insert(Tid);
+
+                    worklist.emplace_back(Tid, T);
+                    add  = true;
+
+                } else {            // new state is covered
+                    covered[mata::utils::OrdVector<State>(T)] = Tid;
+                }
+            }
+
+            if (covered.find(S) != covered.end()) {
+                continue;           // skip generationg any transitions as the source state was covered right now
+            }
+
+            if (add) {
+                result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
+            } else {
+                for (State switch_target: covering_indexes[Tid]){
+                        result.delta.add(Sid, currentSymbol, switch_target);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
+    std::unordered_map<StateSet, State> subset_map{};
+    Nfa result;
+    result = determinize(nfa, &subset_map);
+
+    std::vector <StateSet> macrostate_vec;              // ordered vector of macrostates
+    macrostate_vec.reserve(subset_map.size());
+    for (const auto& pair: subset_map) {                   // order by size from largest to smallest
+        macrostate_vec.insert(std::upper_bound(macrostate_vec.begin(), macrostate_vec.end(), pair.first,
+                            [](const StateSet & a, const StateSet & b){ return a.size() > b.size(); }), pair.first);
+    }
+
+    std::vector <bool> covered(subset_map.size(), false);          // flag of covered states, removed from nfa
+    std::vector <bool> visited(subset_map.size(), false);          // flag of processed state
+
+    StateSet covering_set;                // doesn't contain duplicates
+    std::vector<State> covering_indexes;        // indexes of covering states
+    size_t macrostate_size = macrostate_vec.size();
+    for (size_t i = 0; i < macrostate_size-1; i++) {
+        if (macrostate_vec[i].size() == 1)      // end searching on single-sized macrostates
+            break;
+
+        if (visited[i])                         // was already processed
+            continue;
+
+        covering_set.clear();
+        covering_indexes.clear();
+        visited[i] = true;
+
+        for (size_t j = i+1; j < macrostate_size; j++) {        // find covering macrostates
+            if (covered[j])     // if covered there are smaller macrostates, skip
+                continue;
+
+            if (macrostate_vec[j].is_subset_of(macrostate_vec[i])) {           // found covering state
+                covering_set.insert(macrostate_vec[j]);               // is not covered
+                covering_indexes.push_back(j);
+            }
+        }
+
+        if (covering_set == macrostate_vec[i]) {
+            size_t covering_size = covering_indexes.size()-1;
+            for (size_t k = 0; k < covering_size; k++) {      // check resurse coverability
+                if (macrostate_vec[covering_indexes[k]].size() == 1)            // end on single-sized
+                    break;
+
+                if (visited[covering_indexes[k]])                               // already processed
+                    continue;
+
+                visited[covering_indexes[k]] = true;
+
+                residual_recurse_coverable(macrostate_vec, covering_indexes, covered, visited, k, &subset_map, result);
+            }
+
+            covering_set.clear();                 // clear variable to store only needed macrostates
+            for (auto index : covering_indexes) {
+                if (covered[index] == 0) {
+                    auto macrostate_ptr = subset_map.find(macrostate_vec[index]);
+                    if (macrostate_ptr == subset_map.end())        // should never happen
+                         throw std::runtime_error(std::to_string(__func__) + " couldn't find expected element in a map.");
+
+                    covering_set.insert(macrostate_ptr->second);
+                }
+            }
+
+            remove_covered_state(covering_set, subset_map.find(macrostate_vec[i])->second, result);
+            covered[i] = true;
+        }
+    }
+
+    return result;
 }

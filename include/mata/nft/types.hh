@@ -20,6 +20,7 @@ using State = mata::nfa::State;
 using StateSet = mata::nfa::StateSet;
 
 using Run = mata::nfa::Run;
+using EpsilonClosureOpt = mata::nfa::EpsilonClosureOpt;
 
 using StateRenaming = mata::nfa::StateRenaming;
 
@@ -44,6 +45,8 @@ enum class JumpMode {
     RepeatSymbol, ///< Repeat the symbol on the jump.
     AppendDontCares ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 };
+
+using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = mata::nfa::EPSILON;

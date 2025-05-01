@@ -27,6 +27,33 @@ size_t get_num_of_permutations(const seg_nfa::Segmentation::EpsilonDepthTransiti
     return num_of_permutations;
 }
 
+/**
+ * @brief Unify (as best as possible) the initial states and the final states of NFAs in @p nfas
+ * 
+ * The unification happens only if the given automaton is not already unified, i.e. it is in @p unified_nfas.
+ * We also add the newly unified automata to @p unified_nfas.
+ * 
+ * @param[in] nfas The automata to unify
+ * @param[in,out] unified_nfas The set of already unified automata
+ */
+void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfas, std::unordered_set<std::shared_ptr<Nfa>>& unified_nfas) {
+    for (std::shared_ptr<Nfa> nfa : nfas) {
+        if (!unified_nfas.contains(nfa)) {
+            nfa->unify_initial();
+            nfa->unify_final();
+            unified_nfas.insert(nfa);
+        }
+    }
+}
+
+Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol delimiter) {
+    Nfa concatenation{*nfas[0]};
+    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < nfas.size(); ++i) {
+        concatenation = concatenate_eps(concatenation, *nfas[i], delimiter, true);
+    }
+    return concatenation;
+}
+
 } // namespace
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
@@ -337,38 +364,13 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     const std::vector<std::shared_ptr<Nfa>>& rhs_automata, bool include_empty, const ParameterMap& params) {
     if (lhs_automata.empty() || rhs_automata.empty()) { return {}; }
 
-    const auto lhs_aut_begin{ lhs_automata.begin() };
-    const auto lhs_aut_end{ lhs_automata.end() };
-    const auto rhs_aut_begin{ rhs_automata.begin() };
-    const auto rhs_aut_end{ rhs_automata.end() };
-
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas; // Unify each automaton only once.
-    for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end; ++lhs_aut_iter) {
-        if (unified_nfas.find(*lhs_aut_iter) == unified_nfas.end()) {
-            lhs_aut_iter->get()->unify_initial();
-            lhs_aut_iter->get()->unify_final();
-            unified_nfas.insert(*lhs_aut_iter);
-        }
-    }
-    for (auto rhs_aut_iter{ rhs_aut_begin }; rhs_aut_iter != rhs_aut_end; ++rhs_aut_iter) {
-        if (unified_nfas.find(*rhs_aut_iter) == unified_nfas.end()) {
-            rhs_aut_iter->get()->unify_initial();
-            rhs_aut_iter->get()->unify_final();
-            unified_nfas.insert(*rhs_aut_iter);
-        }
-    }
+    unify_initial_and_final_states(lhs_automata, unified_nfas);
+    unify_initial_and_final_states(rhs_automata, unified_nfas);
 
-    // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa concatenated_lhs{ **lhs_aut_begin };
-    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
-         ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate_eps(concatenated_lhs, **next_lhs_aut_it, EPSILON, true);
-    }
-    Nfa concatenated_rhs{ **rhs_aut_begin };
-    for (auto next_rhs_aut_it{ rhs_aut_begin + 1 }; next_rhs_aut_it != rhs_aut_end;
-         ++next_rhs_aut_it) {
-        concatenated_rhs = concatenate_eps(concatenated_rhs, **next_rhs_aut_it, EPSILON-1, true); // we use EPSILON-1
-    }
+    // Automata representing the left/rigth side concatenated over different epsilon transitions.
+    Nfa concatenated_lhs = concatenate_with(lhs_automata, EPSILON);
+    Nfa concatenated_rhs = concatenate_with(rhs_automata, EPSILON-1);
 
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
@@ -396,4 +398,170 @@ seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsi
         ret.push_back(it->second);
     }
     return ret;
+}
+
+std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
+    std::shared_ptr<Nft> nft,
+    const std::vector<std::shared_ptr<Nfa>>& input_automata,
+    const std::vector<std::shared_ptr<Nfa>>& output_automata,
+    bool reduce_intersection
+) {
+    if (input_automata.empty() || output_automata.empty()) { return {}; }
+
+    // delimiters, we cannot use EPSILON, because that is normal EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and EPSILON-1 is DONT_CARE
+    constexpr Symbol INPUT_DELIMITER = EPSILON-2;
+    constexpr Symbol OUTPUT_DELIMITER = EPSILON-3;
+
+    // to have less noodles, we try to have one initial and one final state for each input/output automaton
+    std::unordered_set<std::shared_ptr<Nfa>> unified_nfas;
+    unify_initial_and_final_states(input_automata, unified_nfas);
+    unify_initial_and_final_states(output_automata, unified_nfas);
+
+    // concatenate input and output automata to one input/output automaton connected with INPUT_DELIMITER/OUTPUT_DELIMITER
+    Nfa concatenated_input = concatenate_with(input_automata, INPUT_DELIMITER);
+    Nfa concatenated_output = concatenate_with(output_automata, OUTPUT_DELIMITER);
+
+    // we will work with nfts, so we just transfer nfas to nfts
+    Nft concatenated_input_nft(std::move(concatenated_input));
+    Nft concatenated_output_nft(std::move(concatenated_output));
+
+    auto add_self_loop_for_every_default_state = [](Nft& nft, Symbol symbol) {
+        Word sym_word(nft.num_of_levels, symbol);
+        
+        size_t original_num_of_states = nft.num_of_states();
+        for (State s{ 0 }; s < original_num_of_states; s++) {
+            if (nft.levels[s] == 0) {
+                nft.insert_word(s, sym_word, s);
+            }
+        }
+    };
+
+    // We will now construct a concatenation of nft with the input automaton on the input track
+    // and then continue by intersecting with the output automaton on the output track.
+    // We want to keep the delimiter in the concatenation in such a way, that if it is there,
+    // then it is on both tracks of intersection together. We therefore add self loops with
+    // INPUT_DELIMITER/INPUT_DELIMITER or OUTPUT_DELIMITER/OUTPUT_DELIMITER for each state
+    // of the transducer, so that intersection works correctly (i.e. the delimiters behave
+    // as epsilon transitions).
+
+    Nft intersection = *nft;
+
+    // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
+    add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
+    intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+    intersection.trim();
+
+    if(intersection.final.empty()) {
+        return {};
+    }
+
+    // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
+    // and, we also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it
+    add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
+    add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
+    intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
+    intersection.trim();
+
+    if(intersection.final.empty()) {
+        return {};
+    }
+
+    // we assume that the operations did not add jump transitions
+    assert(!intersection.contains_jump_transitions());
+
+    if (reduce_intersection) {
+        intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim()).trim();
+    }
+
+    // Delimiters are always on both tracks together, but we want it to become
+    // a jump transition, so that noodlify_mult_eps works correctly.
+    // To be more precise, in the nfa represenation of the transducer, we will
+    // have transitions of the form
+    //     source ---DELIMITER---> middle ---DELIMITER---> target
+    // where source and target are level 0 states (input track) and middle
+    // will be a level 1 state (output track).
+    // We assume that middle connects always only one type of delimiter,
+    // the previous intersection should work that way.
+    std::map<State,Transition> middle_state_to_delimiter_transition_as_target; // maps middle state to "source ---DELIMITER---> middle" transition
+    std::map<State,Transition> middle_state_to_delimiter_transition_as_source; // maps middle state to "middle ---DELIMITER---> target" transition
+    for (const Transition& trans : intersection.delta.transitions()) {
+        if (trans.symbol == INPUT_DELIMITER || trans.symbol == OUTPUT_DELIMITER) {
+            if (intersection.levels[trans.source] == nft::DEFAULT_LEVEL) {
+                // source ---DELIMITER---> middle
+                assert(!middle_state_to_delimiter_transition_as_target.contains(trans.target));
+                middle_state_to_delimiter_transition_as_target[trans.target] = trans;
+            } else {
+                //middle ---DELIMITER---> target
+                assert(!middle_state_to_delimiter_transition_as_source.contains(trans.source));
+                middle_state_to_delimiter_transition_as_source[trans.source] = trans;
+            }
+        }
+    }
+
+    // we now take the nfa representation and remove all the transitions
+    //     source ---DELIMITER---> middle
+    //     middle ---DELIMITER---> target
+    // and replace it with one transition
+    //     source ---DELIMITER---> target
+    Nfa intersection_nfa{intersection.to_nfa_move()};
+    // add "source ---DELIMITER---> target" transitions
+    for (const auto& [middle_state,first_trans] : middle_state_to_delimiter_transition_as_target) {
+        Transition second_trans = middle_state_to_delimiter_transition_as_source.at(middle_state);
+        assert(first_trans.symbol == second_trans.symbol);
+        intersection_nfa.delta.add(first_trans.source, first_trans.symbol, second_trans.target);
+    }
+    // remove "source ---DELIMITER---> middle" transitions
+    for (const auto& [middle_state,trans] : middle_state_to_delimiter_transition_as_target) {
+        intersection_nfa.delta.remove(trans);
+    }
+    // remove "middle ---DELIMITER---> target" transitions
+    for (const auto& [middle_state,trans] : middle_state_to_delimiter_transition_as_source) {
+        intersection_nfa.delta.remove(trans);
+    }
+
+    // intersection_nfa should now be an NFA that has NFT segments, where segments are divided by
+    // delimiters. We would have something like
+    //    NFT1  ----possibly multiple transitions with the same delimiter symbols---> NFT2 --->....
+    // We can therefore use noodlify_mult_eps, to get noodles, where each NFTi is connected with the
+    // next one by one selected delimiter transition. Furthermore, we have only the nfa represenation
+    // NFAi of NFTi, therefore, we need to add the levels. That is easy because we assume each NFTi
+    // does not contain long jumps, therefore every other state of NFAi should have the same level.
+    // That is, it should be either 0 or 1, starting with 0 for initials.
+
+    std::vector<TransducerNoodle> result;
+    std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el; // we create for each segment NFAi only one NFTi and keep it here
+    for (const auto& noodle : noodlify_mult_eps(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false)) {
+        TransducerNoodle new_noodle;
+        for (const auto& element : noodle) {
+            // element.first is NFAi
+            std::shared_ptr<Nfa> element_aut = element.first;
+
+            // element.second then keeps the index representing which input/output automaton it is connected with
+            
+            if (seg_nfa_to_transducer_el.contains(element_aut)) {
+                // we already processed this NFAi so we can find NFTi in seg_nfa_to_transducer_el
+                TransducerNoodleElement transd_el = seg_nfa_to_transducer_el.at(element_aut);
+                // however, we need to update the indexes of input/output automaton
+                transd_el.input_index = element.second[0];
+                transd_el.output_index= element.second[1];
+                new_noodle.push_back(transd_el);
+                continue;
+            }
+
+            // We need to create NFTi, therefore we add levels to NFAi by simple DFS which adds to each state
+            // the level opposite of the level of the previous state.
+            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(Nft::from_nfa_leveled(std::move(*element_aut), 2));
+
+            TransducerNoodleElement transd_el{element_nft,
+                // the language of the input automaton is the projection to input track
+                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))), element.second[0],
+                // the language of the output automaton is the projection to output track
+                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))), element.second[1]
+            };
+            seg_nfa_to_transducer_el.insert({element_aut, transd_el});
+            new_noodle.push_back(transd_el);
+        }
+        result.push_back(new_noodle);
+    }
+    return result;
 }

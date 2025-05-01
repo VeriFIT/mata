@@ -78,7 +78,6 @@ namespace {
             const auto prog_size = static_cast<size_t>(prog->size());
             // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
             const int ascii_shift_value = 32;
-            int empty_flag;
             std::vector<mata::Symbol> symbols;
             Nfa explicit_nfa(prog_size);
 
@@ -137,13 +136,10 @@ namespace {
             this->outgoingEdges = std::vector<std::vector<std::pair<mata::Symbol, mata::nfa::State>>> (prog_size);
 
             // We traverse all the states and create corresponding states and edges in Nfa
-            for (State current_state = start_state, re2_state = start_state; re2_state < prog_size; ++
-                 re2_state) {
-                /// Whether to increment the current state @c current_state when the @c re2_state increments.
-                bool increment_current_state{true};
+            for (State re2_state = start_state; re2_state < prog_size; ++re2_state) {
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(re2_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
-                if (this->state_cache.is_final_state[re2_state]) {
+                 if (this->state_cache.is_final_state[re2_state] && inst->opcode() == re2::kInstMatch) {
                     this->make_state_final(re2_state, explicit_nfa);
                 }
                 switch (inst->opcode()) {
@@ -160,43 +156,13 @@ namespace {
                     case re2::kInstCapture:
                         if (use_epsilon) {
                             symbols.push_back(epsilon_value);
-                            this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                            this->create_explicit_nfa_transitions(re2_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
                             symbols.clear();
                         }
                         break;
                     case re2::kInstEmptyWidth:
-                        empty_flag = static_cast<int>(inst->empty());
-                        // ^ - beginning of line
-                        if (empty_flag & re2::kEmptyBeginLine) {
-                            increment_current_state = false;
-                        }
-                        // $ - end of line
-                        if (empty_flag & re2::kEmptyEndLine) {
-                            // TODO How to handle?
-                            // symbols.push_back(301);
-                            increment_current_state = false;
-                        }
-                        // \A - beginning of text
-                        if (empty_flag & re2::kEmptyBeginText) {
-                            increment_current_state = false;
-                        }
-                        // \z - end of text
-                        if (empty_flag & re2::kEmptyEndText) {
-                            // TODO How to handle?
-                            // symbols.push_back(302);
-                            increment_current_state = false;
-                        }
-                        // \b - word boundary
-                        if (empty_flag & re2::kEmptyWordBoundary) {
-                            // TODO How to handle?
-                            // symbols.push_back(303);
-                            increment_current_state = false;
-                        }
-                        // \B - not \b
-                        if (empty_flag & re2::kEmptyNonWordBoundary) {
-                            // TODO How to handle?
-                            // symbols.push_back(304);
-                            increment_current_state = false;
+                        if (use_epsilon) {
+                            this->create_explicit_nfa_transitions(re2_state, inst, {epsilon_value}, explicit_nfa, use_epsilon, epsilon_value);
                         }
                         break;
                     // kInstByteRange represents states with a "byte range" on the outgoing transition(s)
@@ -213,7 +179,7 @@ namespace {
                                 }
                             }
                         }
-                        this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                        this->create_explicit_nfa_transitions(re2_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
 
                         if (!use_epsilon) {
                             // There is an epsilon transition to the currentState+1 we will need to copy transitions of
@@ -227,8 +193,6 @@ namespace {
                         symbols.clear();
                         break;
                 }
-
-                if (increment_current_state) { ++current_state; }
             }
             if (!use_epsilon) {
                 // We will traverse the vector in reversed order. Like that, we will also handle chains of epsilon transitions
@@ -498,36 +462,31 @@ namespace {
         };
 }
 
- /**
- * The main method, it creates NFA from regex.
- * @param pattern regex as string
- * @param use_epsilon whether to create NFA with epsilon transitions or not
- * @param epsilon_value value, that will represent epsilon on transitions
- * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
- * @param encoding encoding of the regex, default is Latin1
- * @return Nfa corresponding to pattern
- */
-void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
-    if (nfa == nullptr) {
-        throw std::runtime_error("create_nfa: nfa should not be NULL");
-    }
-
+mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
+    mata::nfa::Nfa result;
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern, encoding);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
     // FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
     //  pass the argument use_epsilon to convert_pro_to_nfa().
-    regexParser.convert_pro_to_nfa(nfa, program, true, epsilon_value);
+    regexParser.convert_pro_to_nfa(&result, program, true, epsilon_value);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();
+
      //TODO: should this really be done implicitly?
     if(!use_epsilon) {
-        *nfa = mata::nfa::remove_epsilon(*nfa, epsilon_value);
+        result = mata::nfa::remove_epsilon(result, epsilon_value);
     }
     //TODO: in fact, maybe parser should not do trimming and reducing, maybe these operations should be done transparently.
     if(use_reduce) {
         //TODO: trimming might be unnecessary, regex->nfa construction should not produce useless states. Or does it?
-        *nfa = mata::nfa::reduce(nfa->trim());
+        result = mata::nfa::reduce(result.trim());
     }
+
+    return result;
+}
+
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
+    *nfa = create_nfa(pattern, use_epsilon, epsilon_value, use_reduce, encoding);
 }

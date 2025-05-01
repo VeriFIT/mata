@@ -8,14 +8,13 @@
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
-#include "mata/parser/re2parser.hh"
 #include "mata/nfa/builder.hh"
 
 using namespace mata::nfa;
 using namespace mata::strings;
 using namespace mata::strings::seg_nfa;
 using namespace mata::utils;
-using namespace mata::parser;
+using namespace mata::nfa::builder;
 
 using Symbol = mata::Symbol;
 using Word = mata::Word;
@@ -197,51 +196,44 @@ TEST_CASE("mata::nfa::get_shortest_words() for profiling", "[.profiling][shortes
 TEST_CASE("mata::strings::get_lengths()") {
 
     SECTION("basic") {
-        Nfa x;
-        create_nfa(&x, "(abcde)*");
+        Nfa x = create_from_regex("(abcde)*");
         x.trim();
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,5}}));
     }
 
     SECTION("basic2") {
-        Nfa x;
-        create_nfa(&x, "a+");
+        Nfa x = create_from_regex("a+");
         x.trim();
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{1,1}}));
     }
 
     SECTION("basic3") {
-        Nfa x;
-        create_nfa(&x, "a*");
+        Nfa x = create_from_regex("a*");
         x.trim();
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,1}}));
     }
 
     SECTION("empty") {
-        Nfa x;
-        create_nfa(&x, "");
+        Nfa x = create_from_regex("");
         x.trim();
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,0}}));
     }
 
     SECTION("finite") {
-        Nfa x;
-        create_nfa(&x, "abcd");
+        Nfa x = create_from_regex("abcd");
         x.trim();
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{4,0}}));
     }
 
     SECTION("advanced 1") {
-        Nfa x;
-        create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
+        Nfa x = create_from_regex("(cd(abcde)*)|(a(aaa)*)");
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
             {1,0}, {2,15}, {4,15}, {7,15}, {10,15}, {12,15}, {13,15}, {16,15}
         }));
     }
 
     SECTION("advanced 2") {
-        Nfa x;
-        create_nfa(&x, "a(aaaa|aaaaaaa)*");
+        Nfa x = create_from_regex("a(aaaa|aaaaaaa)*");
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
             {1,0}, {5,0}, {8,0}, {9,0}, {12,0}, {13,0}, {15,0}, {16,0},
             {17,0}, {19,0}, {20,0}, {21,0}, {22,0}, {23,0}, {24,0}, {25,0},
@@ -253,14 +245,12 @@ TEST_CASE("mata::strings::get_lengths()") {
 TEST_CASE("mata::strings::is_lang_eps()") {
 
     SECTION("basic") {
-        Nfa x;
-        create_nfa(&x, "(abcde)*");
+        Nfa x = create_from_regex("(abcde)*");
         CHECK(!is_lang_eps(x));
     }
 
     SECTION("basic 2") {
-        Nfa x;
-        create_nfa(&x, "");
+        Nfa x = create_from_regex("");
         CHECK(is_lang_eps(x));
     }
 
@@ -332,13 +322,13 @@ TEST_CASE("mata::strings::get_accepted_symbols()") {
     std::set<mata::Symbol> symbols;
 
     SECTION("basic") {
-        create_nfa(&x, "a|bc");
+        x = create_from_regex("a|bc");
         symbols = {'a'};
         CHECK(get_accepted_symbols(x) == symbols);
     }
 
     SECTION("basic 2") {
-        create_nfa(&x, "");
+        x = create_from_regex("");
         CHECK(get_accepted_symbols(x).empty());
     }
 
@@ -347,7 +337,7 @@ TEST_CASE("mata::strings::get_accepted_symbols()") {
     }
 
     SECTION("advanced 1") {
-        create_nfa(&x, "a*|c+|(db)*");
+        x = create_from_regex("a*|c+|(db)*");
         symbols = {'a', 'c'};
         CHECK(get_accepted_symbols(x) == symbols);
     }

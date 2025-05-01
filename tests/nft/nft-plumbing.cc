@@ -34,6 +34,7 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
     x.delta.add(7, 'a', 5); \
     x.delta.add(5, 'a', 5); \
     x.delta.add(5, 'c', 9); \
+	x.levels.set(10); \
 
 
 // Automaton B
@@ -52,6 +53,7 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
     x.delta.add(2, 'c', 12); \
     x.delta.add(12, 'a', 14); \
     x.delta.add(14, 'b', 12); \
+	x.levels.set(14); \
 
 // }}}
 
@@ -75,10 +77,10 @@ TEST_CASE("Mata::nft::Plumbing") {
         CHECK(result.is_lang_empty());
     }
 
-    SECTION("Mata::nft::Plumbing::union") {
+    SECTION("Mata::nft::Plumbing::union_nondet") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        mata::nft::plumbing::uni(&result, lhs, rhs);
+        mata::nft::plumbing::union_nondet(&result, lhs, rhs);
         CHECK(!result.is_lang_empty());
     }
 

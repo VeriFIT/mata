@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base_ref }}
       - uses: ./.github/workflows/actions/setup
@@ -30,7 +30,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
@@ -45,7 +45,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
@@ -60,12 +60,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 
-        #ubuntu-latest, 
-        macos-latest 
+        os: [
+        #ubuntu-latest,
+        macos-latest
       ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base_ref }}
       - uses: ./.github/workflows/actions/setup
@@ -73,7 +73,7 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
           cache: 'pip'
@@ -85,7 +85,7 @@ jobs:
       - name: Test the library
         run: make test-performance
       - name: Cache performance results
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -97,18 +97,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 
-        #ubuntu-latest, 
-          macos-latest 
+        os: [
+        #ubuntu-latest,
+          macos-latest
         ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
           cache: 'pip'
@@ -120,7 +120,7 @@ jobs:
       - name: Test the library
         run: make test-performance
       - name: Cache performance results
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -132,15 +132,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 
+        os: [
           #ubuntu-latest,
-          macos-latest 
+          macos-latest
         ]
     needs: [ run-test-performance, run-test-performance-base ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
           cache: 'pip'
@@ -150,7 +150,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install tabulate pandas
       - name: Restore target profiles
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -159,7 +159,7 @@ jobs:
       - run: mv ./tests-integration/results/corr-single-param-jobs.csv single-param-target.csv
       - run: mv ./tests-integration/results/corr-double-param-jobs.csv double-param-target.csv
       - name: Restore baseline profiles
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -181,13 +181,13 @@ jobs:
     needs: [ warnings-base, warnings-new ]
     steps:
       - name: Restore new cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: ./build_log
           key: build-log-warnings-new-${{ runner.os }}-${{ github.sha }}
       - run: mv build_log new_warnings
       - name: Restore base cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: ./build_log
           key: build-log-warnings-base-${{ runner.os }}-${{ github.sha }}
@@ -212,13 +212,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: run-tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
       - name: Build library for coverage
         run: make coverage
       - name: Test the library
         run: make test
       - name: Upload coverage to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           gcov: true

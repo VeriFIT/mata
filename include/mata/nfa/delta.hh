@@ -129,12 +129,25 @@ public:
     using super::erase;
 
     using super::find;
-    iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
-    const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
+    iterator find(const Symbol symbol) {
+        static SymbolPost symbol_post{};
+        symbol_post.symbol = symbol;
+        return super::find(symbol_post);
+    }
+    const_iterator find(const Symbol symbol) const {
+        static SymbolPost symbol_post{};
+        symbol_post.symbol = symbol;
+        return super::find(symbol_post);
+    }
 
     ///returns an iterator to the smallest epsilon, or end() if there is no epsilon
     const_iterator first_epsilon_it(Symbol first_epsilon) const;
 
+    /**
+     * @brief Get the set of all target states in the @c StatePost.
+     * @return Set of all target states in the @c StatePost.
+     */
+    StateSet get_successors() const;
 
     /**
      * @brief Iterator over moves represented as @c Move instances.
@@ -166,7 +179,7 @@ public:
         StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
         /// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
         ///  end()).
-        StatePost::const_iterator symbol_post_end_{}; 
+        StatePost::const_iterator symbol_post_end_{};
     }; // class Moves.
 
     /**
@@ -221,7 +234,7 @@ public:
     /// Const all moves iterator.
     const_iterator(const StatePost& state_post);
     /// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
-    const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it, 
+    const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it,
                    StatePost::const_iterator symbol_post_it_end);
     const_iterator(const const_iterator& other) noexcept = default;
     const_iterator(const_iterator&&) = default;
@@ -456,6 +469,23 @@ public:
      * Operation is slow, traverses over all symbol posts.
      */
     std::vector<Transition> get_transitions_to(State state_to) const;
+
+    /**
+     * Get transitions from @p state_from to @p state_to.
+     * @param state_from[in] Source state.
+     * @param state_from[in] Target state.
+     * @return Transitions from @p source to @p state_to.
+     *
+     * Operation is slow, traverses over all symbol posts.
+     */
+    std::vector<Transition> get_transitions_between(State state_from, State state_to) const;
+
+    /**
+     * Get the set of states that are successors of the given @p state.
+     * @param[in] state State from which successors are checked.
+     * @return Set of states that are successors of the given @p state.
+     */
+    StateSet get_successors(State state) const;
 
     /**
      * Iterate over @p epsilon symbol posts under the given @p state.
