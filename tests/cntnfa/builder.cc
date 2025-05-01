@@ -223,14 +223,14 @@ TEST_CASE("Cntnfa: construct_counter_nfa()") {
         }
     }
 
-    SECTION("Simple automaton - With annotations (only test and increment)") {
+    SECTION("Simple automaton - With annotations (only equal and increment)") {
         Cntnfa nfa;
         nfa.initial = { 0 };
         nfa.final = { 1 };
 
         // Counters
-        size_t c0 = nfa.counter_set.insert("c0");
-        size_t c1 = nfa.counter_set.insert("c1");
+        size_t c0 = nfa.counter_set.add("c0");
+        size_t c1 = nfa.counter_set.add("c1");
 
         // Annotations
         size_t ann0 = nfa.create_annotation_set();
@@ -291,15 +291,15 @@ TEST_CASE("Cntnfa: construct_counter_nfa()") {
         }
     }
 
-    SECTION("Larger automaton - With annotations (only test and increment)") {
+    SECTION("Larger automaton - With annotations (only equal and increment)") {
         Cntnfa nfa;
         nfa.initial = { 0, 5 };
         nfa.final = { 8, 10 };
 
         // Counters
-        size_t c0 = nfa.counter_set.insert("c0");
-        size_t c1 = nfa.counter_set.insert("c1");
-        size_t c2 = nfa.counter_set.insert("c2");
+        size_t c0 = nfa.counter_set.add("c0");
+        size_t c1 = nfa.counter_set.add("c1");
+        size_t c2 = nfa.counter_set.add("c2");
 
         // Annotations
         size_t ann0 = nfa.create_annotation_set();

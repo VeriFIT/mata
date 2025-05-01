@@ -63,7 +63,7 @@ Cntnfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec,
     // Parse the registers
     if (parsec.haskey("Registers")) {
         for (const auto& name : parsec["Registers"]) {
-            aut.counter_set.insert(name);
+            aut.counter_set.add(name);
         }
     }
 

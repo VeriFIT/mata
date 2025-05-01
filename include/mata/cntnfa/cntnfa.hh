@@ -282,7 +282,7 @@ public:
      * @brief In-place nondeterministic union of counter NFA with @p aut.
      * Counter with the same name are shared between the two automata.
      */
-    Cntnfa& unite_nondet_shared_counters_nfa_with(const Cntnfa &aut);
+    Cntnfa& unite_nondet_counter_nfa_with(const Cntnfa &aut);
 
     /**
      * @brief In-place nondeterministic union with @p aut.
@@ -564,11 +564,10 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Cntnfa*>& nfas);
 
 /**
  * @brief Compute non-deterministic union of two counter NFAs.
- * Counters are shared between the two NFAs in this implementation.
- * It means that counters with the same name in both NFAs will be merged into one.
+ * 
  * Counter NFAs are unnecessarily contain counters or annotations.
  */
-Cntnfa union_nondet_counter_nfas_shared_counters(const Cntnfa &lhs, const Cntnfa &rhs);
+Cntnfa union_nondet_counter_nfas(const Cntnfa &lhs, const Cntnfa &rhs);
 
 /**
  * @brief Compute non-deterministic union of two NFAs (no counters or annotations).

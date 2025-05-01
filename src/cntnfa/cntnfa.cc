@@ -645,12 +645,11 @@ Cntnfa& Cntnfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::
     return *this;
 }
 
-Cntnfa& Cntnfa::unite_nondet_shared_counters_nfa_with(const Cntnfa &aut) {
+Cntnfa& Cntnfa::unite_nondet_counter_nfa_with(const Cntnfa &aut) {
     // Edge cases
     if (this == &aut) {
         return *this;
     }
-
     if (final.empty() || initial.empty()) {
         *this = aut;
         return *this;
@@ -677,22 +676,19 @@ Cntnfa& Cntnfa::unite_nondet_shared_counters_nfa_with(const Cntnfa &aut) {
     // Allocate space for new annotation sets
     this->annotation_collection.allocate(total_annotation_sets);
 
-    // Copy counters from the other automaton and store their new IDs
-    std::unordered_map<CounterName, size_t> remapped_counter_ids;
+    // Add new counters from 'aut' to this automaton
     for (size_t i = 0; i < aut.counter_set.size(); ++i) {
-        const Counter& counter = aut.counter_set.get(i);
-        size_t counter_id = this->counter_set.insert(counter.name, counter.value);
-        remapped_counter_ids[counter.name] = counter_id;
+        const auto& c = aut.counter_set.get(i);
+        this->counter_set.add_with_prefix("c", c.value);
     }
 
-    // Lambda function for remapping annotation counter IDs using name mapping
-    auto remap_annotation_counters = [&](const std::shared_ptr<TransitionAnnotation>& ann)
+    // Helper to remap annotation from lhs or rhs to result using new counter names
+    auto remap_annotation_counters = [&](const std::shared_ptr<TransitionAnnotation>& ann, const CounterSet& from_set)
         -> std::shared_ptr<TransitionAnnotation>
     {
-        size_t old_id = ann->get_register_id();
+        std::string name = from_set.get_name(ann->get_register_id());
+        size_t new_id = this->counter_set.get_index(name);
         CounterValue val = ann->get_value();
-        const auto& name = aut.counter_set.get_name(old_id);
-        size_t new_id = remapped_counter_ids.at(name);
 
         // Handle each annotation type individually
         if (ann->get_type() == "CounterAssign") return std::make_shared<CounterAssign>(new_id, val);
@@ -712,7 +708,7 @@ Cntnfa& Cntnfa::unite_nondet_shared_counters_nfa_with(const Cntnfa &aut) {
         const auto& anns = aut.annotation_collection[i];
         size_t new_index = i + annotation_set_offset;
         for (const auto& ann : anns) {
-            this->annotation_collection.insert(remap_annotation_counters(ann), new_index);
+            this->annotation_collection.insert(remap_annotation_counters(ann, aut.counter_set), new_index);
         }
     }
 

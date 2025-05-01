@@ -1165,8 +1165,8 @@ Cntnfa mata::cntnfa::union_product(const Cntnfa &lhs, const Cntnfa &rhs, const S
 }
 
 // TODO: Do we need this function? It can be useful if we want counters to be shared.
-Cntnfa mata::cntnfa::union_nondet_counter_nfas_shared_counters(const Cntnfa &lhs, const Cntnfa &rhs) {
-    return Cntnfa{lhs}.unite_nondet_shared_counters_nfa_with(rhs);
+Cntnfa mata::cntnfa::union_nondet_counter_nfas(const Cntnfa &lhs, const Cntnfa &rhs) {
+    return Cntnfa{lhs}.unite_nondet_counter_nfa_with(rhs);
 }
 
 Cntnfa mata::cntnfa::union_nondet(const Cntnfa &lhs, const Cntnfa &rhs) {

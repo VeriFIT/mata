@@ -3311,14 +3311,14 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
     }
 }
 
-TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
+TEST_CASE("mata::cntnfa::union_nondet_counter_nfas()") {
     // Define runs for testing
     Run zero{{0}, {}};
     Run one{{1}, {}};
 
     // First automaton
     Cntnfa lhs(2);
-    size_t c0_id_lhs = lhs.counter_set.insert("c0");
+    size_t c0_id_lhs = lhs.counter_set.add("c0");
     size_t ann_set_lhs = lhs.annotation_collection.insert(std::make_shared<CounterIncrement>(c0_id_lhs, 1));
 
     lhs.initial.insert(0);
@@ -3330,7 +3330,7 @@ TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
 
     // Second automaton
     Cntnfa rhs(2);
-    size_t c1_id_rhs = rhs.counter_set.insert("c1");
+    size_t c1_id_rhs = rhs.counter_set.add("c1");
     size_t ann_set_rhs = rhs.annotation_collection.insert(std::make_shared<CounterIncrement>(c1_id_rhs, 2));
 
     rhs.initial.insert(0);
@@ -3341,7 +3341,7 @@ TEST_CASE("mata::cntnfa::union_nondet_counter_nfas_shared_counters()") {
     REQUIRE_FALSE(rhs.is_in_lang_of_counter_nfa(zero));
 
     SECTION("Union accepts both languages") {
-        Cntnfa result = union_nondet_counter_nfas_shared_counters(lhs, rhs);
+        Cntnfa result = union_nondet_counter_nfas(lhs, rhs);
         CHECK(result.is_in_lang_of_counter_nfa(zero));
         CHECK(result.is_in_lang_of_counter_nfa(one));
     }
@@ -3357,7 +3357,7 @@ TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
     a.delta.add(1, 'b', 2);
 
     // Add a counter and an annotation to A
-    size_t c_a = a.counter_set.insert("c0", 0);
+    size_t c_a = a.counter_set.add("c0", 0);
     size_t ann_id_a = a.annotation_collection.insert(std::make_shared<CounterIncrement>(c_a, 1));
     a.delta.add(2, 'c', AnnotationState(2, ann_id_a));
 
@@ -3368,8 +3368,8 @@ TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
     b.delta.add(0, 'a', 1);
     b.delta.add(1, 'b', 2);
 
-    // Add the same counter name to B to ensure shared semantics
-    size_t c_b = b.counter_set.insert("c0", 0);
+    // Add a counter and an annotation to B
+    size_t c_b = b.counter_set.add("c1", 0);
     size_t ann_id_b = b.annotation_collection.insert(std::make_shared<CounterEqual>(c_b, 1));
     b.delta.add(2, 'c', AnnotationState(2, ann_id_b));
 
@@ -3396,10 +3396,11 @@ TEST_CASE("mata::cntnfa::intersection_counter_nfas() - simple intersection")
     REQUIRE(has_c);
 
     // Check the counter set size
-    REQUIRE(result.counter_set.size() == 1);
+    REQUIRE(result.counter_set.size() == 2);
 
-    // Check the counter name
+    // Check the counter names
     REQUIRE(result.counter_set.get_name(0) == "c0");
+    REQUIRE(result.counter_set.get_name(1) == "c1");
 
     // Check the number of states
     REQUIRE(result.num_of_states() == 3);

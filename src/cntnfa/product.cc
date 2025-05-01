@@ -57,25 +57,22 @@ Cntnfa mata::cntnfa::algorithms::product_counter_nfas(const Cntnfa& lhs, const C
         return new_state;
     };
 
-    // Merge shared counters from both automata (by name)
-    std::unordered_map<std::string, size_t> counter_id_map;
+    // Create new counters for both automata in the result automaton
     for (size_t i = 0; i < lhs.counter_set.size(); ++i) {
         const auto& c = lhs.counter_set.get(i);
-        size_t new_id = result.counter_set.insert(c.name, c.value);
-        counter_id_map[c.name] = new_id;
+        result.counter_set.add_with_prefix("c", c.value);
     }
     for (size_t i = 0; i < rhs.counter_set.size(); ++i) {
         const auto& c = rhs.counter_set.get(i);
-        if (counter_id_map.count(c.name) == 0) {
-            size_t new_id = result.counter_set.insert(c.name, c.value);
-            counter_id_map[c.name] = new_id;
-        }
+        result.counter_set.add_with_prefix("c", c.value);
     }
 
-    // Helper to remap annotation from lhs or rhs to result using shared counter names
-    auto remap_annotation = [&](const std::shared_ptr<TransitionAnnotation>& ann, const CounterSet& from_set) -> std::shared_ptr<TransitionAnnotation> {
+    // Helper to remap annotation from lhs or rhs to result using new counter names
+    auto remap_annotation = [&](const std::shared_ptr<TransitionAnnotation>& ann, const CounterSet& from_set)
+        -> std::shared_ptr<TransitionAnnotation>
+    {
         std::string name = from_set.get_name(ann->get_register_id());
-        size_t new_id = counter_id_map.at(name);
+        size_t new_id = result.counter_set.get_index(name);
         CounterValue val = ann->get_value();
 
         // Create a new annotation of the same type with remapped counter ID
