@@ -166,6 +166,7 @@ public:
      * takes Nfa as input.
      *
      * @throws std::runtime_error if some state should be assigned two different levels
+     *                            or if the final state is not at level 0.
      */
     static Nft from_nfa_with_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_levels);
 

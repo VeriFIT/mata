@@ -434,10 +434,13 @@ Nft Nft::from_nfa_with_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_level
                 next_level = 0;
             }
             if (result.levels[tgt] == num_of_levels) { // tgt does not have a level yet
+                if (next_level != 0 && result.final.contains(tgt)) {
+                    throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (final state is not at level 0) in mata::nft::Nft::from_nfa_with_increasing_levels()");
+                }
                 result.levels[tgt] = next_level;
                 worklist.insert(tgt);
             } else if (result.levels[tgt] != next_level) {
-                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft in mata::nft::Nft::from_nfa_with_increasing_levels()");
+                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (a state has more possible levels) in mata::nft::Nft::from_nfa_with_increasing_levels()");
             }
         }
     }
