@@ -149,8 +149,8 @@ public:
     Nft& operator=(Nft&& other) noexcept;
 
     // Construct NFT from NFA
-    explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
-    explicit Nft(mata::nfa::Nfa&& other): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
+    explicit Nft(const mata::nfa::Nfa& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(other), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
+    explicit Nft(mata::nfa::Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
     Nft& operator=(const mata::nfa::Nfa& other) noexcept;
     Nft& operator=(mata::nfa::Nfa&& other) noexcept;
 
