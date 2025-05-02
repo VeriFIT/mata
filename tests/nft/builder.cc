@@ -83,7 +83,7 @@ TEST_CASE("nft::from_nfa_with_zero_levels()") {
         nfa.delta.add(1, 'b', 2);
         nfa.delta.add(2, 'a', 2);
         nfa.delta.add(2, 'a', 3);
-        nft = builder::from_nfa_with_zero_levels(nfa, NUM_OF_LEVELS, { EPSILON }, { EPSILON });
+        nft = builder::from_nfa_with_zero_levels(nfa, NUM_OF_LEVELS, true, { EPSILON });
         expected = mata::nft::builder::parse_from_mata(
             std::string("@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q6\n%Levels q0:0 q1:1 q2:0 q3:1 q4:0 q5:1 q6:0\n%LevelsNum 2\nq0 99 q1\nq1 4294967295 q2\nq2 98 q3\nq3 4294967295 q2\nq3 4294967295 q4\nq4 97 q5\nq5 4294967295 q4\nq5 4294967295 q6\n")
         );
