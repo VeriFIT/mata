@@ -275,7 +275,7 @@ nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
 }
 
 Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, Symbol marker) {
-    Nft dft_marker{ nft::builder::create_from_nfa(marker_dfa) };
+    Nft dft_marker{ nft::builder::from_nfa_with_zero_levels(marker_dfa) };
     const size_t dft_marker_num_of_states{ dft_marker.num_of_states() };
     for (State source{ 0 }; source < dft_marker_num_of_states; ++source) {
         StatePost& state_post = dft_marker.delta.mutable_state_post(source);
@@ -392,7 +392,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
                                          const Word& replacement, ReplaceMode replace_mode) {
     nfa = reluctant_nfa_with_marker(std::move(nfa), begin_marker, alphabet);
     Nft nft_reluctant_leftmost{
-        nft::builder::create_from_nfa(nfa, 2, { EPSILON }, { EPSILON }) };
+        nft::builder::from_nfa_with_zero_levels(nfa, 2, { EPSILON }, { EPSILON }) };
     const size_t regex_num_of_states{ nft_reluctant_leftmost.num_of_states() };
     const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
     nft_reluctant_leftmost.levels.resize(regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);

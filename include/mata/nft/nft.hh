@@ -167,7 +167,7 @@ public:
      *
      * @throws std::runtime_error if some state should be assigned two different levels
      */
-    static Nft from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels);
+    static Nft from_nfa_with_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_levels);
 
     /**
      * Add a new (fresh) state to the automaton.

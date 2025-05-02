@@ -412,7 +412,7 @@ Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
     return *this;
 }
 
-Nft Nft::from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels) {
+Nft Nft::from_nfa_with_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_levels) {
     Nft result{ std::move(nfa) };
     result.levels = Levels(result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
     result.num_of_levels = num_of_levels;
@@ -437,7 +437,7 @@ Nft Nft::from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels) {
                 result.levels[tgt] = next_level;
                 worklist.insert(tgt);
             } else if (result.levels[tgt] != next_level) {
-                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft in mata::nft::Nft::from_nfa_leveled()");
+                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft in mata::nft::Nft::from_nfa_with_increasing_levels()");
             }
         }
     }
