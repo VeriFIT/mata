@@ -275,18 +275,14 @@ nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
 }
 
 Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, Symbol marker) {
-    marker_dfa.print_to_dot(std::string("marker_dfa.dot"));
     Nft dft_marker{ nft::builder::from_nfa_with_zero_levels(marker_dfa) };
-    dft_marker.print_to_dot(std::string("marker_nft.dot"));
     const size_t dft_marker_num_of_states{ dft_marker.num_of_states() };
     for (State source{ 0 }; source < dft_marker_num_of_states; ++source) {
-        StatePost& state_post = dft_marker.delta.mutable_state_post(source);
-        for (const Move& move: state_post.moves_epsilons()) {
+        for (const Move& move: dft_marker.delta[source].moves_epsilons()) {
             const State marker_state{ dft_marker.add_state() };
-            state_post = dft_marker.delta.mutable_state_post(source);
             dft_marker.levels.resize(marker_state + 1);
             dft_marker.levels[marker_state] = 1;
-            SymbolPost& symbol_post{ *state_post.find(move.symbol) };
+            SymbolPost& symbol_post{ *dft_marker.delta.mutable_state_post(source).find(move.symbol) };
             symbol_post.targets.erase(move.target);
             symbol_post.targets.insert(marker_state);
             dft_marker.delta.add(marker_state, marker, move.target);
