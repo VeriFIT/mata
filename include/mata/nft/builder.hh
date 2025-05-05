@@ -108,7 +108,23 @@ Nft parse_from_mata(const std::filesystem::path& nft_file);
  * @param epsilons Which symbols handle as epsilons.
  * @return NFT representing @p nfa_state with @p num_of_levels number of levels.
  */
-Nft from_nfa_with_zero_levels(const nfa::Nfa& nfa_state, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS, bool explicit_transitions = true, std::optional<Symbol> next_levels_symbol = {});
+Nft from_nfa_zero_levels(const nfa::Nfa& nfa_state, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS, bool explicit_transitions = true, std::optional<Symbol> next_levels_symbol = {});
+
+/**
+ * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.
+ *
+ * It assumes that @p nfa is a representation of an nft without jump transitions.
+ * It assign to each state the level based on the distance from the initial state.
+ * For example, if there are 2 levels, the initial states are level 0, the following
+ * states are level 1, the states after that level 0, etc.
+ *
+ * If you only have one level, then it is more efficient to call the constructor that
+ * takes Nfa as input.
+ *
+ * @throws std::runtime_error if some state should be assigned two different levels
+ *                            or if the final state is not at level 0.
+ */
+Nft from_nfa_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_levels);
 
 } // namespace mata::nft::builder.
 

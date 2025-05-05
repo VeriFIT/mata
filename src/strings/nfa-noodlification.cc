@@ -3,6 +3,7 @@
 
 #include "mata/utils/utils.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nft/builder.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/algorithms.hh"
 
@@ -550,7 +551,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
             // We need to create NFTi, therefore we add levels to NFAi by simple DFS which adds to each state
             // the level opposite of the level of the previous state.
-            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(Nft::from_nfa_with_increasing_levels(std::move(*element_aut), 2));
+            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(nft::builder::from_nfa_increasing_levels(std::move(*element_aut), 2));
 
             TransducerNoodleElement transd_el{element_nft,
                 // the language of the input automaton is the projection to input track
