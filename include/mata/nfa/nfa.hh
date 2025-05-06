@@ -527,7 +527,7 @@ public:
      *
      * The automaton is searched using DFS, returning a word for the first reached final state.
      */
-    std::optional<Word> get_word(Symbol first_epsilon = EPSILON) const;
+    std::optional<Word> get_word(const bool keep_epsilon = false, Symbol first_epsilon = EPSILON) const;
 
     /**
      * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
