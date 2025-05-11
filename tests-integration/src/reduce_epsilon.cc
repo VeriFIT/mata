@@ -10,8 +10,6 @@
 #include <string>
 #include <cstring>
 
-using namespace mata::nfa;
-
 int main() {
     Nfa b{10};
     b.initial.insert(0);

@@ -11,8 +11,6 @@
 #include <iostream>
 #include <string>
 
-using namespace mata::nfa;
-
 const bool MINTERMIZE_AUTOMATA = true;
 
 int main(int argc, char *argv[]) {

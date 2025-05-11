@@ -12,9 +12,7 @@
 #include <chrono>
 #include <string>
 
-using namespace mata::nfa;
-
-const bool MINTERMIZE_AUTOMATA{ true};
+const bool MINTERMIZE_AUTOMATA = true;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {

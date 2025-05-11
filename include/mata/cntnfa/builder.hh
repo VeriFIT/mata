@@ -5,7 +5,7 @@
 
 #include <filesystem>
 
-#include "cntnfa.hh"
+#include "mata/cntnfa/cntnfa.hh"
 #include "mata/parser/inter-aut.hh"
 
 /**

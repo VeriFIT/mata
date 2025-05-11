@@ -7,7 +7,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/types.hh"
-#include "nfa.hh"
+#include "mata/nfa/nfa.hh"
 
 /**
  * NFA algorithms usable for solving string constraints.

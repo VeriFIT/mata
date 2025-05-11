@@ -7,9 +7,9 @@
 #include <memory>
 
 #include "mata/alphabet.hh"
-#include "delta.hh"
-#include "types.hh"
-#include "cntnfa.hh"
+#include "mata/cntnfa/delta.hh"
+#include "mata/cntnfa/types.hh"
+#include "mata/cntnfa/cntnfa.hh"
 
 /**
  * NFA algorithms usable for solving string constraints.

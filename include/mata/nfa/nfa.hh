@@ -28,8 +28,8 @@
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/utils/sparse-set.hh"
-#include "types.hh"
-#include "delta.hh"
+#include "mata/nfa/types.hh"
+#include "mata/nfa/delta.hh"
 
 /**
  * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.

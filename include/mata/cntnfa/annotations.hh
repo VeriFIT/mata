@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "mata/utils/ord-vector.hh"
-#include "types.hh"
+#include "mata/cntnfa/types.hh"
 
 using namespace mata::utils;
 
