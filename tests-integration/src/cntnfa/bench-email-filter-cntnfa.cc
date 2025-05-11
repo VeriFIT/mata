@@ -14,7 +14,7 @@
  *  - If you want to skip mintermization, set the variable `MINTERMIZE_AUTOMATA` below to `false`
  */
 
-#include "utils/utils.hh"
+#include "../utils/utils.hh"
 
 constexpr bool MINTERMIZE_AUTOMATA = true;
 
@@ -27,9 +27,9 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> filenames {
         argv[1], argv[2], argv[3], argv[4], argv[5]
     };
-    std::vector<Nfa> automata;
+    std::vector<Cntnfa> automata;
     mata::OnTheFlyAlphabet alphabet;
-    if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
+    if (load_counter_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    Nfa intersect_aut;
+    Cntnfa intersect_aut;
     params["algorithm"] = "naive";
     TIME_BEGIN(automata_inclusion_naive);
     intersect_aut = intersection(intersection(intersection(automata[0], automata[1]), automata[2]), automata[3]);

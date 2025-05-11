@@ -1,8 +1,7 @@
 /* cntnfa-strings.hh -- Operations on NFAs for string solving.
  */
 
-#ifndef MATA_NFA_STRING_SOLVING_HH_
-#define MATA_NFA_STRING_SOLVING_HH_
+#pragma once
 
 #include <memory>
 
@@ -407,5 +406,3 @@ VisitedEpsilonsCounterVector process_eps_map(const VisitedEpsilonsCounterMap& ep
 } // namespace SegCntnfa.
 
 } // namespace mata::strings.
-
-#endif // MATA_NFA_STRING_SOLVING_HH_.

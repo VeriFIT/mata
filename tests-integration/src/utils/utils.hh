@@ -7,18 +7,18 @@
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
 
-// #include "mata/cntnfa/cntnfa.hh"
-// #include "mata/cntnfa/plumbing.hh"
-// #include "mata/cntnfa/algorithms.hh"
+#include "mata/cntnfa/cntnfa.hh"
+#include "mata/cntnfa/plumbing.hh"
+#include "mata/cntnfa/algorithms.hh"
 
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
 
+#include <string>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <chrono>
-#include <string>
 #include <cstring>
 
 namespace mata::nfa {
@@ -72,38 +72,38 @@ int load_intermediate_automaton(
 
 } // namespace mata::nfa
 
-// namespace mata::cntnfa {
+namespace mata::cntnfa {
 
-// /**
-//  * @brief Load counter automaton from file at @p filename into @p aut, using @p alphabet for symbols on transitions.
-//  */
-// int load_counter_automaton(
-//         const std::string& filename,
-//         Cntnfa& aut,
-//         mata::OnTheFlyAlphabet& alphabet,
-//         const bool mintermize_automata = true
-// );
+/**
+ * @brief Load counter automaton from file at @p filename into @p aut, using @p alphabet for symbols on transitions.
+ */
+int load_counter_automaton(
+        const std::string& filename,
+        Cntnfa& aut,
+        mata::OnTheFlyAlphabet& alphabet,
+        const bool mintermize_automata = true
+);
 
-// /**
-//  * @brief Load counter automata from list of files at @p filename into list of counter automata @p aut,
-//  * using @p alphabet for symbols on transitions.
-//  */
-// int load_counter_automata(
-//         std::vector<std::string>& filenames,
-//         std::vector<Cntnfa>& auts,
-//         mata::OnTheFlyAlphabet& alphabet,
-//         const bool mintermize_automata = true
-// );
+/**
+ * @brief Load counter automata from list of files at @p filename into list of counter automata @p aut,
+ * using @p alphabet for symbols on transitions.
+ */
+int load_counter_automata(
+        std::vector<std::string>& filenames,
+        std::vector<Cntnfa>& auts,
+        mata::OnTheFlyAlphabet& alphabet,
+        const bool mintermize_automata = true
+);
 
-// /**
-//  * @brief Load counter automaton from file at @p filename into @p inter_aut
-//  */
-// int load_intermediate_counter_automaton(
-//         const std::string& filename,
-//         std::vector<mata::IntermediateAut>& out_inter_auts
-// );
+/**
+ * @brief Load counter automaton from file at @p filename into @p inter_aut
+ */
+int load_intermediate_counter_automaton(
+        const std::string& filename,
+        std::vector<mata::IntermediateAut>& out_inter_auts
+);
 
-// } // namepace mata::cntnfa
+} // namepace mata::cntnfa
 
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`

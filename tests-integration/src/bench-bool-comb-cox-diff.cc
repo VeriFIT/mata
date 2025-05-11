@@ -10,7 +10,6 @@
  */
 
 #include "utils/utils.hh"
-#include "mata/nfa/algorithms.hh"
 
 constexpr bool MINTERMIZE_AUTOMATA = true;
 

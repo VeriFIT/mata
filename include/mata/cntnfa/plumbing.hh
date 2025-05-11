@@ -1,8 +1,7 @@
 /* nfa-plumbings.hh -- Wrapping up different supporting functions.
  */
 
-#ifndef MATA_NFA_PLUMBING_HH_
-#define MATA_NFA_PLUMBING_HH_
+#pragma once
 
 #include "mata/cntnfa/cntnfa.hh"
 #include "mata/cntnfa/builder.hh"
@@ -92,5 +91,3 @@ inline void concatenate(Cntnfa* res, const Cntnfa& lhs, const Cntnfa& rhs, bool 
 }
 
 } // namespace mata::cntnfa::Plumbing.
-
-#endif // MATA_NFA_PLUMBING_HH_

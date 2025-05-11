@@ -9,7 +9,7 @@
  *  - If you want to skip mintermization, set the variable `MINTERMIZE_AUTOMATA` below to `false`
  */
 
-#include "utils/utils.hh"
+#include "../utils/utils.hh"
 
 constexpr bool MINTERMIZE_AUTOMATA = true;
 
@@ -23,9 +23,9 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         filenames.emplace_back(argv[i]);
     }
-    std::vector<Nfa> automata;
+    std::vector<Cntnfa> automata;
     mata::OnTheFlyAlphabet alphabet;
-    if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
+    if (load_counter_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(4);
 
     TIME_BEGIN(intersection_emptiness);
-    Nfa result = automata[0];
+    Cntnfa result = automata[0];
     auto uargc = static_cast<unsigned int>(argc - 1);
     for (unsigned int i = 1; i < uargc; ++i) {
         result = intersection(result, automata[i]);

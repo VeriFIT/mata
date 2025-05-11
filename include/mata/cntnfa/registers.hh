@@ -1,7 +1,6 @@
 // TODO: Insert file header.
 
-#ifndef REGISTERS_HH
-#define REGISTERS_HH
+#pragma once
 
 #include <string>
 #include <vector>
@@ -84,5 +83,3 @@ public:
 };
 
 } // namespace mata::cntnfa.
-
-#endif // REGISTERS_HH

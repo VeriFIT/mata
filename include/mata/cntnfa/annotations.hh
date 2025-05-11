@@ -1,7 +1,6 @@
 // TODO: Insert file header.
 
-#ifndef ANNOTATIONS_HH
-#define ANNOTATIONS_HH
+#pragma once
 
 #include <memory>
 
@@ -373,5 +372,3 @@ namespace std {
         }
     };
 } // namespace std.
-
-#endif // ANNOTATIONS_HH

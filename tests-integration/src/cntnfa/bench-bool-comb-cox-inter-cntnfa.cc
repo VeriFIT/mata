@@ -9,37 +9,34 @@
  *  - If you want to skip mintermization, set the variable `MINTERMIZE_AUTOMATA` below to `false`
  */
 
-#include "utils/utils.hh"
+#include "../utils/utils.hh"
 
 constexpr bool MINTERMIZE_AUTOMATA = true;
 
 int main(int argc, char *argv[]) {
-    if (argc <= 2) {
+    if (argc != 3) {
         std::cerr << "Input files missing\n";
         return EXIT_FAILURE;
     }
 
-    std::vector<std::string> filenames;
-    for (int i = 1; i < argc; ++i) {
-        filenames.emplace_back(argv[i]);
-    }
-    std::vector<Nfa> automata;
+    std::vector<std::string> filenames {argv[1], argv[2]};
+    std::vector<Cntnfa> automata;
     mata::OnTheFlyAlphabet alphabet;
-    if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
+    if (load_counter_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
+    // This might be less-efficient, but more readable.
+    Cntnfa lhs = automata[0];
+    Cntnfa rhs = automata[1];
 
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    TIME_BEGIN(intersection_emptiness);
-    Nfa result = automata[0];
-    auto uargc = static_cast<unsigned int>(argc - 1);
-    for (unsigned int i = 1; i < uargc; ++i) {
-        result = intersection(result, automata[i]);
-    }
-    result.is_lang_empty();
-    TIME_END(intersection_emptiness);
-
+    TIME_BEGIN(intersection);
+    Cntnfa intersect_aut = intersection(rhs, rhs);
+    TIME_END(intersection);
+    TIME_BEGIN(emptiness_check);
+    intersect_aut.is_lang_empty();
+    TIME_END(emptiness_check);
     return EXIT_SUCCESS;
 }

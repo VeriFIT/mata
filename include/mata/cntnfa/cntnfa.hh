@@ -1,8 +1,7 @@
 /* cntnfa.hh -- Nondeterministic finite automaton (over finite words) with annotations.
  */
 
-#ifndef MATA_CNTNFA_HH
-#define MATA_CNTNFA_HH
+#pragma once
 
 // Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
 //  fragile_revert).
@@ -860,5 +859,3 @@ struct hash<mata::cntnfa::Transition> {
 std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Transition& trans);
 std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Cntnfa& nfa);
 } // namespace std.
-
-#endif /* MATA_CNTNFA_HH */
