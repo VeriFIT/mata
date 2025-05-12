@@ -32,11 +32,11 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    TIME_BEGIN(emptiness_check);
+    TIME_BEGIN(cntnfa_emptiness_check);
     Cntnfa compl_rhs = complement(rhs, alphabet);
     Cntnfa intersect_aut = intersection(lhs, compl_rhs);
     intersect_aut.is_lang_empty();
-    TIME_END(emptiness_check);
+    TIME_END(cntnfa_emptiness_check);
 
     return EXIT_SUCCESS;
 }

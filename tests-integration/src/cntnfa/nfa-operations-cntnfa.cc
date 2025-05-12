@@ -31,9 +31,9 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(5);
 
     Cntnfa trimmed_aut = aut;
-    TIME_BEGIN(trim);
+    TIME_BEGIN(cntnfa_trim);
     trimmed_aut.trim();
-    TIME_END(trim);
+    TIME_END(cntnfa_trim);
 
     return EXIT_SUCCESS;
 }

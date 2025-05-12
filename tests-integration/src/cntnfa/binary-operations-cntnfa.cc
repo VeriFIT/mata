@@ -27,27 +27,27 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(4);
 
     Cntnfa intersect_aut;
-    TIME_BEGIN(intersection);
+    TIME_BEGIN(cntnfa_intersection);
     mata::cntnfa::plumbing::intersection(&intersect_aut, lhs, rhs);
-    TIME_END(intersection);
+    TIME_END(cntnfa_intersection);
 
     Cntnfa concat_aut;
-    TIME_BEGIN(concatenation);
+    TIME_BEGIN(cntnfa_concatenation);
     mata::cntnfa::plumbing::concatenate(&concat_aut, lhs, rhs);
-    TIME_END(concatenation);
+    TIME_END(cntnfa_concatenation);
 
     Cntnfa union_aut;
-    TIME_BEGIN(union);
+    TIME_BEGIN(cntnfa_union);
     mata::cntnfa::plumbing::union_nondet(&union_aut, lhs, rhs);
-    TIME_END(union);
+    TIME_END(cntnfa_union);
 
-    TIME_BEGIN(naive_inclusion);
+    TIME_BEGIN(cntnfa_naive_inclusion);
     mata::cntnfa::algorithms::is_included_naive(lhs, rhs, &alphabet);
-    TIME_END(naive_inclusion);
+    TIME_END(cntnfa_naive_inclusion);
 
-    TIME_BEGIN(antichain_inclusion);
+    TIME_BEGIN(cntnfa_antichain_inclusion);
     mata::cntnfa::algorithms::is_included_antichains(lhs, rhs, &alphabet);
-    TIME_END(antichain_inclusion);
+    TIME_END(cntnfa_antichain_inclusion);
 
     return EXIT_SUCCESS;
 }

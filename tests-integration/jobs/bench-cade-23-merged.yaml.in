@@ -1,0 +1,2 @@
+b-armc-incl-merged:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/bench-automata-inclusion-merged $1 $2

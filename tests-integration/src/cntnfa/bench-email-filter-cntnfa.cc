@@ -40,16 +40,16 @@ int main(int argc, char *argv[]) {
 
     Cntnfa intersect_aut;
     params["algorithm"] = "naive";
-    TIME_BEGIN(automata_inclusion_naive);
+    TIME_BEGIN(cntnfa_automata_inclusion_naive);
     intersect_aut = intersection(intersection(intersection(automata[0], automata[1]), automata[2]), automata[3]);
     is_included(automata[4], intersect_aut, &alphabet, params);
-    TIME_END(automata_inclusion_naive);
+    TIME_END(cntnfa_automata_inclusion_naive);
 
     params["algorithm"] = "antichains";
-    TIME_BEGIN(automata_inclusion_antichain);
+    TIME_BEGIN(cntnfa_automata_inclusion_antichain);
     intersect_aut = intersection(intersection(intersection(automata[0], automata[1]), automata[2]), automata[3]);
     is_included(automata[4], intersect_aut, &alphabet, params);
-    TIME_END(automata_inclusion_antichain);
+    TIME_END(cntnfa_automata_inclusion_antichain);
 
     return EXIT_SUCCESS;
 }

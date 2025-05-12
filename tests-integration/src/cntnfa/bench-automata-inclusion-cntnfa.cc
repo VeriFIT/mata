@@ -40,14 +40,14 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(4);
 
     params["algorithm"] = "naive";
-    TIME_BEGIN(automata_inclusion_naive);
+    TIME_BEGIN(cntnfa_inclusion_naive);
     mata::cntnfa::is_included(lhs, rhs, &alphabet, params);
-    TIME_END(automata_inclusion_naive);
+    TIME_END(cntnfa_inclusion_naive);
 
     params["algorithm"] = "antichains";
-    TIME_BEGIN(automata_inclusion_antichain);
+    TIME_BEGIN(cntnfa_inclusion_antichain);
     mata::cntnfa::is_included(lhs, rhs, &alphabet, params);
-    TIME_END(automata_inclusion_antichain);
+    TIME_END(cntnfa_inclusion_antichain);
 
     return EXIT_SUCCESS;
 }

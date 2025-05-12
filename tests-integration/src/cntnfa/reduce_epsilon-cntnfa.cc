@@ -21,7 +21,7 @@ int main() {
     b.delta.add(6, 'b', 7);
 
     Cntnfa c;
-    TIME_BLOCK(reduce,
+    TIME_BLOCK(cntnfa_reduce,
         for (size_t i{ 0 }; i < 1'000; ++i) {
             c = reduce(b);
         }

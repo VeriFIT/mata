@@ -32,11 +32,13 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    TIME_BEGIN(intersection);
+    TIME_BEGIN(cntnfa_intersection);
     Cntnfa intersect_aut = intersection(rhs, rhs);
-    TIME_END(intersection);
-    TIME_BEGIN(emptiness_check);
+    TIME_END(cntnfa_intersection);
+
+    TIME_BEGIN(cntnfa_emptiness_check);
     intersect_aut.is_lang_empty();
-    TIME_END(emptiness_check);
+    TIME_END(cntnfa_emptiness_check);
+
     return EXIT_SUCCESS;
 }
