@@ -64,7 +64,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
 
     cdef cppclass CDelta "mata::nfa::Delta":
         vector[CStatePost] state_posts
-        CTransitions transitions
 
         void reserve(size_t)
         CStatePost& state_post(State)
