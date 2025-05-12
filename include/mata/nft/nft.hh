@@ -148,8 +148,30 @@ public:
     Nft& operator=(const Nft& other) = default;
     Nft& operator=(Nft&& other) noexcept;
 
-    // Construct NFT from NFA
+    /**
+     * @brief Construct a new NFT with @p num_of_levels levels from NFA.
+     * All states levels are set to the @p default_level. The transition function
+     * remains the same as in the NFA.
+     *
+     * Note: Constructor functions with more options are available in mata::nft::builder.
+     *
+     * @param other NFA to be converted to NFT.
+     * @param num_of_levels Number of levels for the NFT. (default: 1)
+     * @param default_level Default level for the states. (default: 0)
+     */
     explicit Nft(const mata::nfa::Nfa& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(other), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
+
+    /**
+     * @brief Construct a new NFT with @p num_of_levels levels from NFA.
+     * All states levels are set to the @p default_level. The transition function
+     * remains the same as in the NFA.
+     *
+     * Note: Constructor functions with more options are available in mata::nft::builder.
+     *
+     * @param other NFA to be converted to NFT.
+     * @param num_of_levels Number of levels for the NFT. (default: 1)
+     * @param default_level Default level for the states. (default: 0)
+     */
     explicit Nft(mata::nfa::Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
     Nft& operator=(const mata::nfa::Nfa& other) noexcept;
     Nft& operator=(mata::nfa::Nfa&& other) noexcept;

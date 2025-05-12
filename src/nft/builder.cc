@@ -279,7 +279,7 @@ Nft builder::parse_from_mata(const std::string& nft_in_mata) {
     return parse_from_mata(nft_stream);
 }
 
-Nft builder::from_nfa_zero_levels(const mata::nfa::Nfa& nfa, const size_t num_of_levels, const bool explicit_transitions, std::optional<Symbol> next_levels_symbol) {
+Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t num_of_levels, const bool explicit_transitions, std::optional<Symbol> next_levels_symbol) {
     if (num_of_levels == 1 || (!explicit_transitions && !next_levels_symbol.has_value())) {
         return Nft(nfa, num_of_levels, 0);
     }
@@ -323,7 +323,7 @@ Nft builder::from_nfa_zero_levels(const mata::nfa::Nfa& nfa, const size_t num_of
     return nft.trim();
 }
 
-Nft builder::from_nfa_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_levels) {
+Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_levels) {
     Nft result{ std::move(nfa) };
     result.levels = Levels(result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
     result.num_of_levels = num_of_levels;
@@ -346,12 +346,12 @@ Nft builder::from_nfa_increasing_levels(mata::nfa::Nfa nfa, size_t num_of_levels
             }
             if (result.levels[tgt] == num_of_levels) { // tgt does not have a level yet
                 if (next_level != 0 && result.final.contains(tgt)) {
-                    throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (final state is not at level 0) in mata::nft::Nft::from_nfa_increasing_levels()");
+                    throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (final state is not at level 0) in mata::nft::Nft::from_nfa_with_levels_advancing()");
                 }
                 result.levels[tgt] = next_level;
                 worklist.insert(tgt);
             } else if (result.levels[tgt] != next_level) {
-                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (a state has more possible levels) in mata::nft::Nft::from_nfa_increasing_levels()");
+                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (a state has more possible levels) in mata::nft::Nft::from_nfa_with_levels_advancing()");
             }
         }
     }
