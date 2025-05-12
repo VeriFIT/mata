@@ -526,8 +526,11 @@ public:
      * @brief Get any arbitrary accepted word in the language of the automaton.
      *
      * The automaton is searched using DFS, returning a word for the first reached final state.
+     * 
+     * @param first_epsilon If defined, all symbols >=first_epsilon are assumed to be epsilon and therefore are not in the returned word.
+     * @return std::optional<Word> Some word from the language. If the language is empty, returns std::nullopt.
      */
-    std::optional<Word> get_word(const bool keep_epsilon = false, Symbol first_epsilon = EPSILON) const;
+    std::optional<Word> get_word(const std::optional<Symbol> first_epsilon = EPSILON) const;
 
     /**
      * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
