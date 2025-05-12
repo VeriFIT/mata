@@ -1279,7 +1279,7 @@ OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata
     else { return nfa.delta.get_used_symbols(); }
 }
 
-std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
+std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilon) const {
     if (initial.empty() || final.empty()) { return std::nullopt; }
     if (initial.intersects_with(final)) { return Word{}; }
 
@@ -1343,7 +1343,7 @@ std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
     Word word;
     word.reserve(worklist.size());
     for (const auto& [symbol_post_it, symbol_post_end, _targets_it]: worklist) {
-        if (symbol_post_it->symbol < first_epsilon) { word.push_back(symbol_post_it->symbol); }
+        if (!first_epsilon.has_value() || symbol_post_it->symbol < first_epsilon) { word.push_back(symbol_post_it->symbol); }
     }
     return word;
 }
