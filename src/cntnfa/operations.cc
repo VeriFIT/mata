@@ -848,12 +848,13 @@ std::pair<Run, bool> mata::cntnfa::Cntnfa::get_word_for_path(const Run& run) con
     return {word, true};
 }
 
+// TODO: this behavior is correct? it can be chaged (generic counter automaton)
 bool mata::cntnfa::Cntnfa::is_in_lang_of_counter_nfa(const Run& run) const {
     std::vector<Configuration> configs;
 
     // For each initial state, create a configuration that includes the current counter set state
     for (State s : this->initial) {
-        configs.push_back(Configuration{ s, this->counter_set }); // Clearer
+        configs.push_back(Configuration{ s, this->counter_set.copy() });
     }
 
     // Process each symbol in the input word one-by-one
@@ -875,6 +876,8 @@ bool mata::cntnfa::Cntnfa::is_in_lang_of_counter_nfa(const Run& run) const {
             for (const auto& tgt : symbol_it->targets) {
                 // Copy the current configuration
                 Configuration next_cfg = cfg;
+                next_cfg.registers = cfg.registers.copy();
+
                 // Update the state to the target state
                 next_cfg.state = tgt.state;
 
@@ -884,19 +887,21 @@ bool mata::cntnfa::Cntnfa::is_in_lang_of_counter_nfa(const Run& run) const {
 
                     // Check if all annotations pass
                     bool passed = true;
-                    for (const auto& ann : anns) {
-                        // Perform the annotation operation (execution or test using apply)
-                        passed &= ann->apply(next_cfg.registers);
 
-                        // Stop early if a test fails
-                        if (!passed) {
-                            break;
-                        }
+                    // Perform the annotation guard
+                    for (const auto& ann : anns) {
+                        passed &= ann->guard(next_cfg.registers);
+                        if (!passed) break;
                     }
 
-                    // Skip this transition if any annotation test fails
+                    // Skip this transition if any guard fails
                     if (!passed) {
                         continue;
+                    }
+
+                    // Perform the annotation update
+                    for (const auto& ann : anns) {
+                        ann->update(next_cfg.registers);
                     }
                 }
 

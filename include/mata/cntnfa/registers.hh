@@ -55,12 +55,18 @@ private:
 public:
     RegisterSet() : counters(), name_to_index() {}
 
+    RegisterSet copy() const {
+        RegisterSet copy = *this;
+        return copy;
+    }
+
     bool operator==(const RegisterSet& other) const {
         return counters == other.counters;
     }
 
     Register& operator[](size_t id) { return counters[id]; }
     const Register& operator[](size_t id) const { return counters[id]; }
+    RegisterValue get_value(size_t index) const { return counters[index].value; }
 
     void reserve(const size_t n);
 

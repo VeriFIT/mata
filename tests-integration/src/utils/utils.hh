@@ -103,6 +103,16 @@ int load_intermediate_counter_automaton(
         std::vector<mata::IntermediateAut>& out_inter_auts
 );
 
+/**
+ * @brief Load counter automaton with counters from file at @p filename into @p aut,
+ * using @p alphabet for symbols on transitions.
+ */
+int load_cntnfa_with_counters(
+        const std::string& filename,
+        Cntnfa& aut,
+        mata::OnTheFlyAlphabet& alphabet
+);
+
 } // namepace mata::cntnfa
 
 /*

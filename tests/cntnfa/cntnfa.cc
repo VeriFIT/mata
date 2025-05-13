@@ -173,6 +173,48 @@ TEST_CASE("mata::cntnfa::Delta.transform/append")
 
 } // }}}
 
+TEST_CASE("mata::cntnfa::is_in_lang_of_counter_nfa() for anbn example")
+{
+    std::string input = R"(@CNTNFA-explicit
+        %States q0 q1 q2 q3
+        %Alphabet a b
+        %Initial q0
+        %Final q3
+        %Registers c0
+        q0 a (+ c0 1) q0
+        q0 b (= c0 0) q2
+        q0 b (= c0 1) (+ c0 -1) q3
+        q0 b (> c0 1) (+ c0 -1) q1
+        q1 b (> c0 1) (+ c0 -1) q1
+        q1 b (= c0 1) (+ c0 -1) q3
+    )";
+
+    auto section = mata::parser::parse_mf_section(input);
+    OnTheFlyAlphabet alphabet;
+    Cntnfa aut = builder::construct_counter_nfa(section, &alphabet);
+
+    auto make_word = [&](const std::string& str) -> Word {
+        Word w;
+        for (char c : str)
+            w.push_back(alphabet.translate_symb(std::string(1, c)));
+        return w;
+    };
+
+    SECTION("Should be accepted") {
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("ab")) == true);          // a^1 b^1
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("aabb")) == true);        // a^2 b^2
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("aaabbb")) == true);      // a^3 b^3
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("aaaaabbbbb")) == true);  // a^5 b^5
+    }
+
+    SECTION("Should be rejected") {
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("")) == false);           // empty input
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("a")) == false);          // incomplete
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("ba")) == false);         // wrong order
+        CHECK(aut.is_in_lang_of_counter_nfa(make_word("bbaa")) == false);       // wrong order
+    }
+}
+
 // TODO: Uncomment when is_counter_nfa_lang_empty() is implemented correctly.
 // TEST_CASE("mata::cntnfa::is_counter_nfa_lang_empty()")
 // {

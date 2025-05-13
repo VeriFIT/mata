@@ -224,4 +224,29 @@ int load_intermediate_counter_automaton(
     return EXIT_SUCCESS;
 }
 
+int load_cntnfa_with_counters(
+        const std::string& filename,
+        Cntnfa& aut,
+        mata::OnTheFlyAlphabet& alphabet
+) {
+    // Open the file
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Could not open CNTNFA file: " << filename << "\n";
+        return EXIT_FAILURE;
+    }
+
+    try {
+        // Parse the CNTNFA section
+        mata::parser::ParsedSection section = mata::parser::parse_mf_section(file);
+        file.close();
+        // Construct the CNTNFA
+        aut = builder::construct_counter_nfa(section, &alphabet);
+        return EXIT_SUCCESS;
+    } catch (const std::exception& ex) {
+        std::cerr << "Failed to load CNTNFA: " << ex.what() << "\n";
+        return EXIT_FAILURE;
+    }
+}
+
 } // namespace mata::cntnfa

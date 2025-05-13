@@ -11,19 +11,17 @@ def generate_anbn_nfa(n: int, output_path: str):
 
     for i in range(0, n):
         # add transitions with a
-        transitions.append(f"q{i} a q{i + 1}")
+        transitions.append(f"q{i} 0 q{i + 1}")
         # add transitions with b
-        transitions.append(f"q{i + n} b q{i + n + 1}")
+        transitions.append(f"q{i + n} 1 q{i + n + 1}")
 
     if n > 1:
         # add middle transitions with b
         for i in range(0, n - 1):
-            transitions.append(f"q{i + 1} b q{n * 2 - i}")
+            transitions.append(f"q{i + 1} 1 q{n * 2 - i}")
 
     with open(output_path, "w") as file:
         file.write("@NFA-explicit\n")
-        file.write("%States " + " ".join(sorted(states)) + "\n")
-        file.write("%Alphabet a b\n")
         file.write("%Initial q0\n")
         file.write("%Final " + " ".join(sorted(final_states)) + "\n")
 
@@ -32,7 +30,7 @@ def generate_anbn_nfa(n: int, output_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n", type=int, required=True, help="Maximum n for a^n b^n")
+    parser.add_argument("--n", type=int, required=True, help="Maximum n for a^nb^n")
     parser.add_argument("--output", type=str, required=True, help="Output .nfa file path")
     args = parser.parse_args()
 
