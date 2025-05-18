@@ -1,2 +1,0 @@
-binary:
-  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/binary-operations-cntnfa $1 $2
