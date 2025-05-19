@@ -15,6 +15,7 @@
 #include <string>
 
 const bool MINTERMIZE_AUTOMATA = true;
+constexpr int NUM_ITERATIONS = 200;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -39,14 +40,18 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(5);
 
-    Nfa trimmed_nfa = nfa;
     TIME_BEGIN(trim_nfa);
-    trimmed_nfa.trim();
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Nfa trimmed_nfa = nfa;
+        trimmed_nfa.trim();
+    }
     TIME_END(trim_nfa);
 
-    Cntnfa trimmed_cntnfa = cntnfa;
     TIME_BEGIN(trim_cntnfa);
-    trimmed_cntnfa.trim();
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Cntnfa trimmed_cntnfa = cntnfa;
+        trimmed_cntnfa.trim();
+    }
     TIME_END(trim_cntnfa);
 
     return EXIT_SUCCESS;
