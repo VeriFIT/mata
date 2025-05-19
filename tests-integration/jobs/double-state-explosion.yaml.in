@@ -1,2 +1,2 @@
 binary:
-  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/nfa-state-explosion $1 $2
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/state-explosion $1 $2

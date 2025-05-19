@@ -12,20 +12,20 @@ int load_automaton(
         const bool mintermize_automata
 ) {
     std::vector<mata::IntermediateAut> inter_auts;
-    TIME_BEGIN(parsing);
+    TIME_BEGIN(parsing_nfa);
     if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
         std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
         return EXIT_FAILURE;
     }
-    TIME_END(parsing);
+    TIME_END(parsing_nfa);
     try {
         if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             aut = mata::nfa::builder::construct(inter_auts[0], &alphabet);
         } else {
             mata::Mintermization mintermization;
-            TIME_BEGIN(mintermization);
+            TIME_BEGIN(mintermization_nfa);
             mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
-            TIME_END(mintermization);
+            TIME_END(mintermization_nfa);
             aut = mata::nfa::builder::construct(mintermized, &alphabet);
         }
         return EXIT_SUCCESS;
@@ -43,14 +43,14 @@ int load_automata(
         const bool mintermize_automata
 ) {
     std::vector<mata::IntermediateAut> inter_auts;
-    TIME_BEGIN(parsing);
+    TIME_BEGIN(parsing_nfa);
     for (const std::string& filename : filenames) {
         if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
             std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
             return EXIT_FAILURE;
         }
     }
-    TIME_END(parsing);
+    TIME_END(parsing_nfa);
     try {
         if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             // This is not foolproof and assumes, that everything is BITVECTOR
@@ -60,9 +60,9 @@ int load_automata(
             }
         } else {
             mata::Mintermization mintermization;
-            TIME_BEGIN(mintermization);
+            TIME_BEGIN(mintermization_nfa);
             std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
-            TIME_END(mintermization);
+            TIME_END(mintermization_nfa);
             for (mata::IntermediateAut& inter_aut : mintermized) {
                 assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
                 auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
@@ -123,20 +123,20 @@ int load_counter_automaton(
         const bool mintermize_automata
 ) {
     std::vector<mata::IntermediateAut> inter_auts;
-    TIME_BEGIN(cntnfa_parsing);
-    if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
+    TIME_BEGIN(parsing_cntnfa);
+    if (load_intermediate_counter_automaton(filename, inter_auts) != EXIT_SUCCESS) {
         std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
         return EXIT_FAILURE;
     }
-    TIME_END(cntnfa_parsing);
+    TIME_END(parsing_cntnfa);
     try {
         if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             aut = mata::cntnfa::builder::construct(inter_auts[0], &alphabet);
         } else {
             mata::Mintermization mintermization;
-            TIME_BEGIN(cntnfa_mintermization);
+            TIME_BEGIN(mintermization_cntnfa);
             mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
-            TIME_END(cntnfa_mintermization);
+            TIME_END(mintermization_cntnfa);
             aut = mata::cntnfa::builder::construct(mintermized, &alphabet);
         }
         return EXIT_SUCCESS;
@@ -154,14 +154,14 @@ int load_counter_automata(
         const bool mintermize_automata
 ) {
     std::vector<mata::IntermediateAut> inter_auts;
-    TIME_BEGIN(cntnfa_parsing);
+    TIME_BEGIN(parsing_cntnfa);
     for (const std::string& filename : filenames) {
-        if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
+        if (load_intermediate_counter_automaton(filename, inter_auts) != EXIT_SUCCESS) {
             std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
             return EXIT_FAILURE;
         }
     }
-    TIME_END(cntnfa_parsing);
+    TIME_END(parsing_cntnfa);
     try {
         if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             // This is not foolproof and assumes, that everything is BITVECTOR
@@ -171,9 +171,9 @@ int load_counter_automata(
             }
         } else {
             mata::Mintermization mintermization;
-            TIME_BEGIN(cntnfa_mintermization);
+            TIME_BEGIN(mintermization_cntnfa);
             std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
-            TIME_END(cntnfa_mintermization);
+            TIME_END(mintermization_cntnfa);
             for (mata::IntermediateAut& inter_aut : mintermized) {
                 assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
                 auts.push_back(mata::cntnfa::builder::construct(inter_aut, &alphabet));
