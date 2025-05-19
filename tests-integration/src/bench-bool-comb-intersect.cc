@@ -10,9 +10,8 @@
  */
 
 #include "utils/utils.hh"
-#include "mata/nfa/algorithms.hh"
 
-constexpr bool MINTERMIZE_AUTOMATA{ true};
+constexpr bool MINTERMIZE_AUTOMATA = true;
 
 int main(int argc, char *argv[]) {
     if (argc <= 2) {

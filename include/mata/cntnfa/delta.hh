@@ -1,7 +1,6 @@
 // TODO: Insert file header.
 
-#ifndef MATA_DELTA_HH
-#define MATA_DELTA_HH
+#pragma once
 
 #include <iterator>
 
@@ -573,5 +572,3 @@ public:
 }; // class Delta::Transitions::const_iterator.
 
 } // namespace mata::cntnfa.
-
-#endif //MATA_DELTA_HH

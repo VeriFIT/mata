@@ -5,10 +5,7 @@
 #include "mata/nfa/algorithms.hh"
 
 #include <iostream>
-#include <chrono>
 #include <string>
-
-using namespace mata::nfa;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {

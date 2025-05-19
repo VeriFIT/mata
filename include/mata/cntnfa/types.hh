@@ -1,7 +1,6 @@
 // TODO: Insert file header.
 
-#ifndef MATA_TYPES_HH
-#define MATA_TYPES_HH
+#pragma once
 
 #include <limits>
 
@@ -74,5 +73,3 @@ struct Cntnfa; ///< A non-deterministic finite automaton with counters.
 constexpr Symbol EPSILON = Limits::max_symbol;
 
 } // namespace mata::cntnfa.
-
-#endif //MATA_TYPES_HH

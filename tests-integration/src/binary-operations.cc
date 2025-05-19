@@ -5,7 +5,7 @@
 
 #include "utils/utils.hh"
 
-constexpr bool MINTERMIZE_AUTOMATA{ true};
+constexpr bool MINTERMIZE_AUTOMATA = true;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {

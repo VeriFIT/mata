@@ -3,7 +3,7 @@
 #ifndef LIBMATA_BUILDER_HH
 #define LIBMATA_BUILDER_HH
 
-#include "nfa.hh"
+#include "mata/nfa/nfa.hh"
 
 #include <filesystem>
 

@@ -1,12 +1,11 @@
 // TODO: Insert file header.
 
-#ifndef ANNOTATIONS_HH
-#define ANNOTATIONS_HH
+#pragma once
 
 #include <memory>
 
 #include "mata/utils/ord-vector.hh"
-#include "types.hh"
+#include "mata/cntnfa/types.hh"
 
 using namespace mata::utils;
 
@@ -373,5 +372,3 @@ namespace std {
         }
     };
 } // namespace std.
-
-#endif // ANNOTATIONS_HH

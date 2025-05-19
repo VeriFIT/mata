@@ -1,0 +1,5 @@
+nfa:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/test-cntnfa-operations $1
+
+unary:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/test-cntnfa-unary-operations $1

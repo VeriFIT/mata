@@ -1,15 +1,14 @@
 /* cntnfa-strings.hh -- Operations on NFAs for string solving.
  */
 
-#ifndef MATA_NFA_STRING_SOLVING_HH_
-#define MATA_NFA_STRING_SOLVING_HH_
+#pragma once
 
 #include <memory>
 
 #include "mata/alphabet.hh"
-#include "delta.hh"
-#include "types.hh"
-#include "cntnfa.hh"
+#include "mata/cntnfa/delta.hh"
+#include "mata/cntnfa/types.hh"
+#include "mata/cntnfa/cntnfa.hh"
 
 /**
  * NFA algorithms usable for solving string constraints.
@@ -407,5 +406,3 @@ VisitedEpsilonsCounterVector process_eps_map(const VisitedEpsilonsCounterMap& ep
 } // namespace SegCntnfa.
 
 } // namespace mata::strings.
-
-#endif // MATA_NFA_STRING_SOLVING_HH_.

@@ -1,8 +1,7 @@
 /* cntnfa.hh -- Nondeterministic finite automaton (over finite words) with annotations.
  */
 
-#ifndef MATA_CNTNFA_HH
-#define MATA_CNTNFA_HH
+#pragma once
 
 // Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
 //  fragile_revert).
@@ -420,11 +419,17 @@ public:
 
     /// This method checks whether a given run (input word) is accepted by a counter NFA.
     bool is_in_lang_of_counter_nfa(const Run& run) const;
+    /// Checks whether a word is in the language of the counter NFA.
+    bool is_in_lang_of_counter_nfa(const Word& word) {
+        return is_in_lang_of_counter_nfa(Run{ word, {} });
+    }
 
     /// Checks whether a word is in the language of an automaton.
     bool is_in_lang(const Run& word) const;
     /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Word& word) { return is_in_lang(Run{ word, {} }); }
+    bool is_in_lang(const Word& word) {
+        return is_in_lang(Run{ word, {} });
+    }
 
     /// Checks whether the prefix of a string is in the language of an automaton
     bool is_prfx_in_lang(const Run& word) const;
@@ -860,5 +865,3 @@ struct hash<mata::cntnfa::Transition> {
 std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Transition& trans);
 std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Cntnfa& nfa);
 } // namespace std.
-
-#endif /* MATA_CNTNFA_HH */

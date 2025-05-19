@@ -3,14 +3,7 @@
 #include "mata/nfa/nfa.hh"
 
 #include <cstdlib>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <chrono>
-#include <string>
 #include <cstring>
-
-using namespace mata::nfa;
 
 int main() {
     Nfa b{10};
@@ -19,11 +12,11 @@ int main() {
     b.delta.add(0, 'b', 1);
     b.delta.add(0, 'a', 2);
     b.delta.add(2, 'a', 4);
-    b.delta.add(2, EPSILON, 3);
+    b.delta.add(2, mata::nfa::EPSILON, 3);
     b.delta.add(3, 'b', 4);
     b.delta.add(0, 'c', 5);
     b.delta.add(5, 'a', 8);
-    b.delta.add(5, EPSILON, 6);
+    b.delta.add(5, mata::nfa::EPSILON, 6);
     b.delta.add(6, 'a', 9);
     b.delta.add(6, 'b', 7);
 

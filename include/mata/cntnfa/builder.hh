@@ -1,11 +1,10 @@
 // TODO: Insert file header.
 
-#ifndef LIBMATA_BUILDER_HH
-#define LIBMATA_BUILDER_HH
+#pragma once
 
 #include <filesystem>
 
-#include "cntnfa.hh"
+#include "mata/cntnfa/cntnfa.hh"
 #include "mata/parser/inter-aut.hh"
 
 /**
@@ -95,5 +94,3 @@ Cntnfa parse_from_mata(const std::string& nfa_in_mata);
 Cntnfa parse_from_mata(const std::filesystem::path& nfa_file);
 
 } // namespace mata::cntnfa::builder.
-
-#endif // LIBMATA_BUILDER_HH

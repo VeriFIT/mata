@@ -6,8 +6,8 @@
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/types.hh"
-#include "nfa.hh"
-#include "builder.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/builder.hh"
 
 using namespace mata::nfa::builder;
 

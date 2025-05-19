@@ -1,0 +1,6 @@
+@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/nfa-anbn-n1.mata;@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/cntnfa-anbn.mata
+@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/nfa-anbn-n2.mata;@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/cntnfa-anbn.mata
+@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/nfa-anbn-n3.mata;@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/cntnfa-anbn.mata
+@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/nfa-anbn-n4.mata;@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/cntnfa-anbn.mata
+@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/nfa-anbn-n5.mata;@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/cntnfa-anbn.mata
+@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/nfa-anbn-n1000.mata;@CMAKE_CURRENT_SOURCE_DIR@/cntnfa-bench/benchmarks/state_explosion/cntnfa-anbn.mata

@@ -1,10 +1,9 @@
 /* algorithms.hh -- Wrapping up algorithms for Cntnfa manipulation which would be otherwise in anonymous namespaces.
  */
 
-#ifndef MATA_NFA_INTERNALS_HH_
-#define MATA_NFA_INTERNALS_HH_
+#pragma once
 
-#include "cntnfa.hh"
+#include "mata/cntnfa/cntnfa.hh"
 #include "mata/simlib/util/binary_relation.hh"
 
 /**
@@ -134,5 +133,3 @@ Cntnfa concatenate_eps(const Cntnfa& lhs, const Cntnfa& rhs, const Symbol& epsil
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 } // namespace mata::cntnfa::algorithms.
-
-#endif // MATA_NFA_INTERNALS_HH_
