@@ -1,0 +1,2 @@
+binary:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/large-sequence $1 $2
