@@ -7,6 +7,7 @@
 #include "../utils/utils.hh"
 
 constexpr bool MINTERMIZE_AUTOMATA = true;
+constexpr int NUM_ITERATIONS = 100;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -43,59 +44,79 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(4);
 
     // NFA intersection
-    Nfa intersect_nfa;
     TIME_BEGIN(intersection_nfa);
-    mata::nfa::plumbing::intersection(&intersect_nfa, nfa_lhs, nfa_rhs);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Nfa intersect_nfa;
+        mata::nfa::plumbing::intersection(&intersect_nfa, nfa_lhs, nfa_rhs);
+    }
     TIME_END(intersection_nfa);
 
     // CNTNFA intersection
-    Cntnfa intersect_cntnfa;
     TIME_BEGIN(intersection_cntnfa);
-    mata::cntnfa::plumbing::intersection(&intersect_cntnfa, cntnfa_lhs, cntnfa_rhs);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Cntnfa intersect_cntnfa;
+        mata::cntnfa::plumbing::intersection(&intersect_cntnfa, cntnfa_lhs, cntnfa_rhs);
+    }
     TIME_END(intersection_cntnfa);
 
     // NFA concatenation
-    Nfa concat_nfa;
     TIME_BEGIN(concatenation_nfa);
-    mata::nfa::plumbing::concatenate(&concat_nfa, nfa_lhs, nfa_rhs);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Nfa concat_nfa;
+        mata::nfa::plumbing::concatenate(&concat_nfa, nfa_lhs, nfa_rhs);
+    }
     TIME_END(concatenation_nfa);
 
     // CNTNFA concatenation
-    Cntnfa concat_cntnfa;
     TIME_BEGIN(concatenation_cntnfa);
-    mata::cntnfa::plumbing::concatenate(&concat_cntnfa, cntnfa_lhs, cntnfa_rhs);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Cntnfa concat_cntnfa;
+        mata::cntnfa::plumbing::concatenate(&concat_cntnfa, cntnfa_lhs, cntnfa_rhs);
+    }
     TIME_END(concatenation_cntnfa);
 
     // NFA union
-    Nfa union_nfa;
     TIME_BEGIN(union_nfa);
-    mata::nfa::plumbing::union_nondet(&union_nfa, nfa_lhs, nfa_rhs);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Nfa union_nfa;
+        mata::nfa::plumbing::union_nondet(&union_nfa, nfa_lhs, nfa_rhs);
+    }
     TIME_END(union_nfa);
 
     // CNTNFA union
-    Cntnfa union_cntnfa;
     TIME_BEGIN(union_cntnfa);
-    mata::cntnfa::plumbing::union_nondet(&union_cntnfa, cntnfa_lhs, cntnfa_rhs);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        Cntnfa union_cntnfa;
+        mata::cntnfa::plumbing::union_nondet(&union_cntnfa, cntnfa_lhs, cntnfa_rhs);
+    }
     TIME_END(union_cntnfa);
 
     // NFA naive inclusion
     TIME_BEGIN(naive_inclusion_nfa);
-    mata::nfa::algorithms::is_included_naive(nfa_lhs, nfa_rhs, &nfa_alphabet);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        mata::nfa::algorithms::is_included_naive(nfa_lhs, nfa_rhs, &nfa_alphabet);
+    }
     TIME_END(naive_inclusion_nfa);
 
     // CNTNFA naive inclusion
     TIME_BEGIN(naive_inclusion_cntnfa);
-    mata::cntnfa::algorithms::is_included_naive(cntnfa_lhs, cntnfa_rhs, &cntnfa_alphabet);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        mata::cntnfa::algorithms::is_included_naive(cntnfa_lhs, cntnfa_rhs, &cntnfa_alphabet);
+    }
     TIME_END(naive_inclusion_cntnfa);
 
     // NFA antichain inclusion
     TIME_BEGIN(antichain_inclusion_nfa);
-    mata::nfa::algorithms::is_included_antichains(nfa_lhs, nfa_rhs, &nfa_alphabet);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        mata::nfa::algorithms::is_included_antichains(nfa_lhs, nfa_rhs, &nfa_alphabet);
+    }
     TIME_END(antichain_inclusion_nfa);
 
     // CNTNFA antichain inclusion
     TIME_BEGIN(antichain_inclusion_cntnfa);
-    mata::cntnfa::algorithms::is_included_antichains(cntnfa_lhs, cntnfa_rhs, &cntnfa_alphabet);
+    for (int i = 0; i < NUM_ITERATIONS; ++i) {
+        mata::cntnfa::algorithms::is_included_antichains(cntnfa_lhs, cntnfa_rhs, &cntnfa_alphabet);
+    }
     TIME_END(antichain_inclusion_cntnfa);
 
     return EXIT_SUCCESS;
