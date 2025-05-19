@@ -7,7 +7,7 @@
 #include "../utils/utils.hh"
 
 constexpr bool MINTERMIZE_AUTOMATA = true;
-constexpr int NUM_ITERATIONS = 100;
+constexpr int NUM_ITERATIONS = 200;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
