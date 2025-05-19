@@ -1,2 +1,0 @@
-binary:
-  cmd: @CMAKE_CURRENT_BINARY_DIR@/cntnfa/state-explosion $1 $2
