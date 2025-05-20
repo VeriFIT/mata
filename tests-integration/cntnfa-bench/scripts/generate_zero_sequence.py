@@ -22,7 +22,7 @@ def generate_cntnfa(n):
     ]
     return "\n".join(lines)
 
-for n in range(1, 101):
+for n in range(1, 10001):
     nfa_text = generate_nfa(n)
     cntnfa_text = generate_cntnfa(n)
 
