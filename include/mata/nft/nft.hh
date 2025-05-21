@@ -148,26 +148,33 @@ public:
     Nft& operator=(const Nft& other) = default;
     Nft& operator=(Nft&& other) noexcept;
 
-    // Construct NFT from NFA
-    explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
-    explicit Nft(mata::nfa::Nfa&& other): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
-    Nft& operator=(const mata::nfa::Nfa& other) noexcept;
-    Nft& operator=(mata::nfa::Nfa&& other) noexcept;
+    /**
+     * @brief Construct a new NFT with @p num_of_levels levels from NFA.
+     * All states levels are set to the @p default_level. The transition function
+     * remains the same as in the NFA.
+     *
+     * Note: Constructor functions with more options are available in mata::nft::builder.
+     *
+     * @param other NFA to be converted to NFT.
+     * @param num_of_levels Number of levels for the NFT. (default: 1)
+     * @param default_level Default level for the states. (default: 0)
+     */
+    explicit Nft(const mata::nfa::Nfa& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(other), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
 
     /**
-     * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.
+     * @brief Construct a new NFT with @p num_of_levels levels from NFA.
+     * All states levels are set to the @p default_level. The transition function
+     * remains the same as in the NFA.
      *
-     * It assumes that @p nfa is a representation of an nft without jump transitions.
-     * It assign to each state the level based on the distance from the initial state.
-     * For example, if there are 2 levels, the initial states are level 0, the following
-     * states are level 1, the states after that level 0, etc.
+     * Note: Constructor functions with more options are available in mata::nft::builder.
      *
-     * If you only have one level, then it is more efficient to call the constructor that
-     * takes Nfa as input.
-     *
-     * @throws std::runtime_error if some state should be assigned two different levels
+     * @param other NFA to be converted to NFT.
+     * @param num_of_levels Number of levels for the NFT. (default: 1)
+     * @param default_level Default level for the states. (default: 0)
      */
-    static Nft from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels);
+    explicit Nft(mata::nfa::Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
+    Nft& operator=(const mata::nfa::Nfa& other) noexcept;
+    Nft& operator=(mata::nfa::Nfa&& other) noexcept;
 
     /**
      * Add a new (fresh) state to the automaton.

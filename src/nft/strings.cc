@@ -275,15 +275,14 @@ nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
 }
 
 Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, Symbol marker) {
-    Nft dft_marker{ nft::builder::create_from_nfa(marker_dfa) };
+    Nft dft_marker{ nft::builder::from_nfa_with_levels_zero(marker_dfa) };
     const size_t dft_marker_num_of_states{ dft_marker.num_of_states() };
     for (State source{ 0 }; source < dft_marker_num_of_states; ++source) {
-        StatePost& state_post = dft_marker.delta.mutable_state_post(source);
-        for (const Move& move: state_post.moves_epsilons()) {
+        for (const Move& move: dft_marker.delta[source].moves_epsilons()) {
             const State marker_state{ dft_marker.add_state() };
             dft_marker.levels.resize(marker_state + 1);
             dft_marker.levels[marker_state] = 1;
-            SymbolPost& symbol_post{ *state_post.find(move.symbol) };
+            SymbolPost& symbol_post{ *dft_marker.delta.mutable_state_post(source).find(move.symbol) };
             symbol_post.targets.erase(move.target);
             symbol_post.targets.insert(marker_state);
             dft_marker.delta.add(marker_state, marker, move.target);
@@ -392,7 +391,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
                                          const Word& replacement, ReplaceMode replace_mode) {
     nfa = reluctant_nfa_with_marker(std::move(nfa), begin_marker, alphabet);
     Nft nft_reluctant_leftmost{
-        nft::builder::create_from_nfa(nfa, 2, { EPSILON }, { EPSILON }) };
+        nft::builder::from_nfa_with_levels_zero(nfa, 2, true, { EPSILON }) };
     const size_t regex_num_of_states{ nft_reluctant_leftmost.num_of_states() };
     const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
     nft_reluctant_leftmost.levels.resize(regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
@@ -491,9 +490,9 @@ Nft ReluctantReplace::replace_regex(nfa::Nfa regex, const Word& replacement, Alp
     // SMT-LIB theory Strings (Unicode Strings): Semantics for matching empty words in replace regex functions:
     // ; (str.replace_re s r t) is the string obtained by replacing the
     // ; shortest leftmost match of r in s, if any, by t.
-    // ; Note that if the language of r contains the empty string, 
+    // ; Note that if the language of r contains the empty string,
     // ; the result is to prepend t to s.
-    // (str.replace_re String RegLan String String) 
+    // (str.replace_re String RegLan String String)
     //
     // ; (str.replace_re_all s r t) is the string obtained by replacing,
     // ; left-to right, each shortest *non-empty* match of r in s by t.
@@ -502,7 +501,7 @@ Nft ReluctantReplace::replace_regex(nfa::Nfa regex, const Word& replacement, Alp
         // Removing the empty string from the regex.
         regex.unify_initial(true).final.erase(*regex.initial.begin());
     }
-    
+
     ReluctantReplace reluctant_replace{};
     // TODO(nft): Add optional bool parameter to revert whether to swap initial and final states.
     Nft dft_begin_marker{ reluctant_replace.begin_marker_nft(reluctant_replace.begin_marker_nfa(regex, alphabet), begin_marker) };
@@ -514,7 +513,7 @@ Nft ReluctantReplace::replace_regex(nfa::Nfa regex, const Word& replacement, Alp
 Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
                                                 ReplaceMode replace_mode, Symbol end_marker) {
     // SMT-LIB theory Strings (Unicode Strings): Semantics for matching empty words in replace literal functions:
-    // ; Replace 
+    // ; Replace
     // ; (str.replace s t t') is the string obtained by replacing the first
     // ; occurrence of t in s, if any, by t'. Note that if t is empty, the
     // ; result is to prepend t' to s; also, if t does not occur in s then
@@ -524,12 +523,12 @@ Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replaceme
     // ; (str.replace_all s t t’) is s if t is the empty string. Otherwise, it
     // ; is the string obtained from s by replacing all occurrences of t in s
     // ; by t’, starting with the first occurrence and proceeding in
-    // ; left-to-right order. 
+    // ; left-to-right order.
     // (str.replace_all String String String String)
     if (replace_mode == ReplaceMode::All && literal == Word{}) {
         return nft::strings::create_identity(alphabet);
     }
-    
+
     ReluctantReplace reluctant_replace{};
     Nft nft_end_marker{ [&]() {
         Nft nft_end_marker{ create_identity(alphabet) };
