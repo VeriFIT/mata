@@ -294,8 +294,27 @@ void Nft::print_to_mata(const std::string& filename) const {
     print_to_mata(output);
 }
 
-Nft Nft::get_one_letter_aut(Symbol abstract_symbol) const {
-    return Nft(mata::nfa::Nfa::get_one_letter_aut(abstract_symbol));
+Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, Symbol abstract_symbol) const {
+    mata::nft::Nft one_symbol_transducer{num_of_states(), initial, final, levels, num_of_levels};
+    for (mata::nfa::State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
+        mata::nfa::StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
+        if (levels_to_keep.contains(levels[source_state])) {
+            state_post_of_new_source_state = delta[source_state];
+        } else {
+            mata::nfa::SymbolPost new_transition{abstract_symbol};
+            for (const mata::nfa::SymbolPost& symbol_post : delta[source_state]) {
+                if (symbol_post.symbol == mata::nft::EPSILON) {
+                    state_post_of_new_source_state.insert(symbol_post);
+                } else {
+                    new_transition.targets.insert(symbol_post.targets);
+                }
+            }
+            if (!new_transition.targets.empty()) {
+                state_post_of_new_source_state.insert(new_transition);
+            }
+        }
+    }
+    return one_symbol_transducer;
 }
 
 void Nft::get_one_letter_aut(Nft& result) const {
