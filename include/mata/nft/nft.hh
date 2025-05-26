@@ -388,7 +388,18 @@ public:
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.
      */
-    Nft get_one_letter_aut(Symbol abstract_symbol = 'x') const;
+
+     /**
+      * @brief Get NFT where transitions of @c this are replaced with transitions over one symbol @p abstract_symbol
+      * 
+      * The transitions over EPSILON are not replaced, neither are the transitions coming from a state with a level
+      * from @p levels_to_keep.
+      * 
+      * @param[in] levels_to_keep Transitions coming from states with any of these levels are not replaced.
+      * @param[in] abstract_symbol The symbol to replace with.
+      * @return Nft 
+      */
+    Nft get_one_letter_aut(const std::set<Level>& levels_to_keep = {}, Symbol abstract_symbol = 'x') const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
