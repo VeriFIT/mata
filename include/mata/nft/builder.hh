@@ -101,14 +101,21 @@ Nft parse_from_mata(const std::string& nft_in_mata);
 Nft parse_from_mata(const std::filesystem::path& nft_file);
 
 /**
- * Create NFT from NFA.
- * @param nfa_state NFA to create NFT from.
+ * Create Nft from @p nfa with specified @p num_of_levels.
+ *
+ * This function takes transition from @p nfa as transitions between zero level and the first level of NFT.
+ * All transition between the remaining levels are created based on the function parameters: @p explicit_transitions
+ * and @p next_levels_symbol.
+ *
+ * @param nfa NFA to create NFT from.
  * @param num_of_levels Number of levels of NFT.
- * @param next_levels_symbol Symbol to use on non-NFA levels. std::nullopt means using the same symbol on all levels.
- * @param epsilons Which symbols handle as epsilons.
- * @return NFT representing @p nfa_state with @p num_of_levels number of levels.
+ * @param explicit_transitions If true, the transitions between levels are explicit (i.e., no jump transitions,
+ *                             except for the epsilon transitions over all levels).)
+ * @param next_levels_symbol If specified, it is used as a symbol on transitions after the first level.
+ *                           If not specified, the symbol of the transition is reused.
+ * @return NFT representing @p nfa with @p num_of_levels number of levels.
  */
-Nft from_nfa_with_levels_zero(const nfa::Nfa& nfa_state, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS, bool explicit_transitions = true, std::optional<Symbol> next_levels_symbol = {});
+Nft from_nfa_with_levels_zero(const nfa::Nfa& nfa, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS, bool explicit_transitions = true, std::optional<Symbol> next_levels_symbol = {});
 
 /**
  * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.

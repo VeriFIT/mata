@@ -320,7 +320,7 @@ Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t n
         }
     }
 
-    return nft.trim();
+    return nft;
 }
 
 Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_levels) {
