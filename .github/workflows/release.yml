@@ -45,7 +45,6 @@ jobs:
           bump: minor
 
   build-and-deploy-doc:
-    needs: release
     runs-on: ubuntu-latest
     strategy:
       matrix:
