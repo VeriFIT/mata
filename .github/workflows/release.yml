@@ -68,6 +68,8 @@ jobs:
       - name: Compile the documentation
         run: |
           python -m pip install --upgrade pip
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+          make doc
           make -C doc html
 
       - name: Deploy to gh pages
