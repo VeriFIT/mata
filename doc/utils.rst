@@ -1,4 +1,22 @@
 Utils
 ===================================
 
-dsfagasdfg
+Closed Set
+----------
+.. doxygenfile:: utils/closed-set.hh
+
+Sparse Set
+----------
+.. doxygenfile:: utils/sparse-set.hh
+
+OrdVector
+---------
+.. doxygenfile:: utils/ord-vector.hh
+
+Synchronized Iterator
+---------------------
+.. doxygenfile:: utils/synchronized-iterator.hh
+
+Other Utils
+-----------
+.. doxygenfile:: utils/utils.hh
