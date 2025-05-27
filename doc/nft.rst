@@ -5,7 +5,7 @@ Nondeterministic Finite Transducers
 
 Types
 -----
-Typedefs and enums used by algorithms operating on NFTs.
+All typedefs and enums used by algorithms operating on NFTs.
 
 .. doxygenfile:: nft/types.hh
    ::
