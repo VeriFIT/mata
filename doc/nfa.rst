@@ -3,7 +3,7 @@ Nondeterministic Finite automata
 
 Types
 -----
-Typedefs and enums used by algorithms operating on NFAs.
+All typedefs and enums used by algorithms operating on NFAs.
 
 .. doxygenfile:: nfa/types.hh
 
