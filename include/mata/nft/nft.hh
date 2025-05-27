@@ -32,7 +32,7 @@
 #include "mata/nfa/nfa.hh"
 
 /**
- * Nondeterministic Finite Automata including structures, transitions and algorithms.
+ * Nondeterministic Finite Transducers including structures, transitions and algorithms.
  *
  * In particular, this includes:
  *   1. Structures (Automaton, Transitions, Results, Delta),
@@ -391,13 +391,13 @@ public:
 
      /**
       * @brief Get NFT where transitions of @c this are replaced with transitions over one symbol @p abstract_symbol
-      * 
+      *
       * The transitions over EPSILON are not replaced, neither are the transitions coming from a state with a level
       * from @p levels_to_keep.
-      * 
+      *
       * @param[in] levels_to_keep Transitions coming from states with any of these levels are not replaced.
       * @param[in] abstract_symbol The symbol to replace with.
-      * @return Nft 
+      * @return Nft
       */
     Nft get_one_letter_aut(const std::set<Level>& levels_to_keep = {}, Symbol abstract_symbol = 'x') const;
 
