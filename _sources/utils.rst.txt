@@ -1,27 +1,22 @@
 Utils
 ===================================
 
-
 Closed Set
 ----------
-.. doxygenstruct:: mata::ClosedSet
-   :members:
+.. doxygenfile:: utils/closed-set.hh
 
 Sparse Set
 ----------
-.. doxygenclass:: mata::utils::SparseSet
-   :members:
+.. doxygenfile:: utils/sparse-set.hh
 
 OrdVector
-----------
-.. doxygenclass:: mata::utils::OrdVector
-   :members:
+---------
+.. doxygenfile:: utils/ord-vector.hh
 
 Synchronized Iterator
-----------------------
-.. doxygenclass:: mata::utils::SynchronizedIterator
-   :members:
-.. doxygenclass:: mata::utils::SynchronizedUniversalIterator
-   :members:
-.. doxygenclass:: mata::utils::SynchronizedExistentialIterator
-   :members:
+---------------------
+.. doxygenfile:: utils/synchronized-iterator.hh
+
+Other Utils
+-----------
+.. doxygenfile:: utils/utils.hh
