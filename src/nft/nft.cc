@@ -321,7 +321,7 @@ void Nft::get_one_letter_aut(Nft& result) const {
     result = get_one_letter_aut();
 }
 
-StateSet Nft::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
     std::cerr << "Warning: Nft::post uses Nfa::post, which is not designed for NFT's jump transitions" << std::endl;
     return nfa::Nfa::post(states, symbol, epsilon_closure_opt);
 }
