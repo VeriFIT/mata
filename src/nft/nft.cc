@@ -326,7 +326,7 @@ StateSet Nft::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
     return nfa::Nfa::post(states, symbol, epsilon_closure_opt);
 }
 
-void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) {
+void Nft::unwind_jumps(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) {
     const bool dcare_for_dcare = dont_care_symbol_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
     std::vector<Transition> transitions_to_del;
     std::vector<Transition> transitions_to_add;
@@ -389,18 +389,18 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_re
     }
 }
 
-Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
+Nft Nft::unwind_jump(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
     Nft result{ *this };
     // HACK. Works only for automata without levels.
     if (result.levels.size() != result.num_of_states()) {
         return result;
     }
-    result.make_one_level_aut(dont_care_symbol_replacements, jump_mode);
+    result.unwind_jumps(dont_care_symbol_replacements, jump_mode);
     return result;
 }
 
-void Nft::get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
-    result = get_one_level_aut(dont_care_symbol_replacements, jump_mode);
+void Nft::unwind_jump(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
+    result = unwind_jump(dont_care_symbol_replacements, jump_mode);
 }
 
 Nft& Nft::operator=(Nft&& other) noexcept {
@@ -604,11 +604,11 @@ Levels& Levels::set(State state, Level level) {
 
 mata::nfa::Nfa Nft::to_nfa_update_copy(
     const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
-    return get_one_level_aut(dont_care_symbol_replacements, jump_mode).to_nfa_copy();
+    return unwind_jump(dont_care_symbol_replacements, jump_mode).to_nfa_copy();
 }
 
 mata::nfa::Nfa Nft::to_nfa_update_move(
     const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
-    make_one_level_aut(dont_care_symbol_replacements, jump_mode);
+    unwind_jumps(dont_care_symbol_replacements, jump_mode);
     return to_nfa_move();
 }

@@ -50,8 +50,8 @@ bool mata::nft::algorithms::is_included_antichains(
         symbols = alphabet->get_alphabet_symbols();
     }
 
-    return nfa::algorithms::is_included_antichains(smaller.get_one_level_aut(symbols, jump_mode),
-                                                   bigger.get_one_level_aut(symbols, jump_mode),
+    return nfa::algorithms::is_included_antichains(smaller.unwind_jump(symbols, jump_mode),
+                                                   bigger.unwind_jump(symbols, jump_mode),
                                                    alphabet,
                                                    cex);
 } // }}}
@@ -108,8 +108,8 @@ bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet *a
         symbols = alphabet->get_alphabet_symbols();
     }
 
-    return nfa::are_equivalent(lhs.get_one_level_aut(symbols, jump_mode),
-                               rhs.get_one_level_aut(symbols, jump_mode),
+    return nfa::are_equivalent(lhs.unwind_jump(symbols, jump_mode),
+                               rhs.unwind_jump(symbols, jump_mode),
                                alphabet,
                                params);
 }
