@@ -69,8 +69,22 @@ StateSet StatePost::get_successors() const {
     return successors;
 }
 
+const StateSet& StatePost::get_successors(Symbol symbol) const {
+    const auto symbol_post_it = find(symbol);
+    if (symbol_post_it == this->end()) {
+        static StateSet empty_set{};
+        return empty_set;
+    }
+    return symbol_post_it->targets;
+}
+
+
 StateSet Delta::get_successors(const State state) const {
     return state_post(state).get_successors();
+}
+
+const StateSet& Delta::get_successors(State state, Symbol symbol) const {
+    return state_post(state).get_successors(symbol);
 }
 
 std::vector<Transition> Delta::get_transitions_to(const State state_to) const {

@@ -372,7 +372,7 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given set of states over the given symbol.
      */
-    StateSet post(const StateSet& states, const Symbol& symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
+    StateSet post(const StateSet& states, const Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
@@ -382,8 +382,21 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given state over the given symbol.
      */
-    StateSet post(const State state, const Symbol& symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const {
+    StateSet post(const State state, const Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const {
         return post(StateSet{ state }, symbol, epsilon_closure_opt);
+    }
+
+    /**
+     * @brief Returns a reference to targets (states) reachable from the given state over the given symbol.
+     *
+     * This is an optimized shortcut for post(state, symbol, EpsilonClosureOpt::NONE).
+     *
+     * @param state A state to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @return Set of states reachable from the given state over the given symbol.
+     */
+    const StateSet& post(const State state, const Symbol symbol) const {
+        return delta.get_successors(state, symbol);
     }
 
     /**
@@ -526,7 +539,7 @@ public:
      * @brief Get any arbitrary accepted word in the language of the automaton.
      *
      * The automaton is searched using DFS, returning a word for the first reached final state.
-     * 
+     *
      * @param first_epsilon If defined, all symbols >=first_epsilon are assumed to be epsilon and therefore are not in the returned word.
      * @return std::optional<Word> Some word from the language. If the language is empty, returns std::nullopt.
      */

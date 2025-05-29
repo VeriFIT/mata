@@ -625,7 +625,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
     auto get_epsilon_closure = [&](const StateSet& states) {
         StateSet closure{ states };
         std::queue<State> worklist;

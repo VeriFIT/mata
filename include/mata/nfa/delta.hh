@@ -150,6 +150,16 @@ public:
     StateSet get_successors() const;
 
     /**
+     * @brief Returns a reference to target states for a given symbol in the @c StatePost.
+     *
+     * If there is no such symbol, a static empty set is returned.
+     *
+     * @param symbol Symbol to get the successors for.
+     * @return Set of target states for the given symbol.
+     */
+    const StateSet& get_successors(Symbol symbol) const;
+
+    /**
      * @brief Iterator over moves represented as @c Move instances.
      *
      * It iterates over pairs (symbol, target) for the given @c StatePost.
@@ -486,6 +496,10 @@ public:
      * @return Set of states that are successors of the given @p state.
      */
     StateSet get_successors(State state) const;
+
+    const StateSet& get_successors(State state, Symbol symbol) const;
+
+    StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
     /**
      * Iterate over @p epsilon symbol posts under the given @p state.
