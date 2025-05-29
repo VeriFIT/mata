@@ -419,7 +419,7 @@ public:
     void unwind_jumps(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-     * @brief Creates a transduce with unwinded jump transitions from the current one.
+     * @brief Creates a transducer with unwinded jump transitions from the current one.
      *
      * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
      * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
