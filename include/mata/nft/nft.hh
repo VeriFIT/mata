@@ -416,7 +416,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void unwind_jumps(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    void unwind_jumps_inplace(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * @brief Creates a transducer with unwinded jump transitions from the current one.
@@ -426,7 +426,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    Nft unwind_jump(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    Nft unwind_jumps(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Unwinds jump transitions in the given transducer.
@@ -437,7 +437,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void unwind_jump(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    void unwind_jumps(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Prints the automaton in DOT format

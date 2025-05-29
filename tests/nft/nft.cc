@@ -3705,8 +3705,8 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
         expected.delta.add(4, 1, 2);
         REPLACE_DONT_CARE(expected.delta, 4, 4);
 
-        CHECK(nfa::are_equivalent(aut.unwind_jump({0, 1}, JumpMode::AppendDontCares), expected));
-        CHECK(nfa::are_equivalent(aut.unwind_jump({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jump({ 0, 1 }, JumpMode::AppendDontCares), expected));
+        CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+        CHECK(nfa::are_equivalent(aut.unwind_jumps({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jumps({ 0, 1 }, JumpMode::AppendDontCares), expected));
         CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
     }
 
@@ -3739,8 +3739,8 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
         SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 14, 6);
         SPLIT_TRANSITION(expected.delta, 6, 1, 11, 4);
 
-        CHECK(nfa::are_equivalent(aut.unwind_jump({ 0, 1 }, JumpMode::AppendDontCares), expected));
-        CHECK(nfa::are_equivalent(aut.unwind_jump({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jump({0, 1}, JumpMode::AppendDontCares), expected));
+        CHECK(nfa::are_equivalent(aut.unwind_jumps({ 0, 1 }, JumpMode::AppendDontCares), expected));
+        CHECK(nfa::are_equivalent(aut.unwind_jumps({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
         CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
 
     }
@@ -3792,8 +3792,8 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
         SPLIT_TRANSITION(expected.delta, 13, 0, 23, 15);
         SPLIT_TRANSITION(expected.delta, 14, DONT_CARE, 28, 16);
 
-        CHECK(nfa::are_equivalent(aut.unwind_jump({ 0, 1 }, JumpMode::AppendDontCares), expected));
-        CHECK(nfa::are_equivalent(aut.unwind_jump({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jump({ 0, 1 }, JumpMode::AppendDontCares), expected));
+        CHECK(nfa::are_equivalent(aut.unwind_jumps({ 0, 1 }, JumpMode::AppendDontCares), expected));
+        CHECK(nfa::are_equivalent(aut.unwind_jumps({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jumps({ 0, 1 }, JumpMode::AppendDontCares), expected));
         CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
     }
 
