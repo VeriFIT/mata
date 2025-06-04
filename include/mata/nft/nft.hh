@@ -409,27 +409,27 @@ public:
     void get_one_letter_aut(Nft& result) const;
 
     /**
-     * @brief Modifies transducer to have only one level.
+     * @brief Unwinds jump transitions in the transducer.
      *
      * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
      * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    void unwind_jumps_inplace(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-     * @brief Creates transducer from the current one with only one level.
+     * @brief Creates a transducer with unwinded jump transitions from the current one.
      *
      * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
      * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    Nft get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    Nft unwind_jumps(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
-     * @brief Modifies transducer to have only one level.
+     * @brief Unwinds jump transitions in the given transducer.
      *
      * @param[out] result A transducer with only one level.
      * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
@@ -437,7 +437,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    void unwind_jumps(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Prints the automaton in DOT format
