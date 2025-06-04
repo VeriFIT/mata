@@ -6,20 +6,16 @@ Symbol = int
 
 class Alphabet:
     """Base class for alphabets."""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         ...
-    def __new__(self, *args, **kwargs):
-        ...
-    def translate_symbol(self, symbol: str):
+    def translate_symbol(self, symbol: str) -> None:
         pass
-    def reverse_translate_symbol(self, symbol: Symbol):
+    def reverse_translate_symbol(self, symbol: Symbol) -> None:
         pass
 
 class OnTheFlyAlphabet(Alphabet):
     """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
-    def __init__(self, initial_symbol: State = 0):
-        ...
-    def __new__(self, initial_symbol: State = 0):
+    def __init__(self, initial_symbol: State = 0) -> None:
         ...
     @classmethod
     def from_symbol_map(cls, symbol_map: dict[str, int]) -> Self:
@@ -74,9 +70,7 @@ class OnTheFlyAlphabet(Alphabet):
 
 class IntAlphabet(Alphabet):
     """IntAlphabet represents integer alphabet that directly maps integer string to their values."""
-    def __init__(self, *args, **kwargs):
-        ...
-    def __new__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         ...
     def translate_symbol(self, symbol: str) -> Symbol:
         """Translates symbol to the position of the seen values

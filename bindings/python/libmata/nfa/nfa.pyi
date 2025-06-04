@@ -14,15 +14,7 @@ def epsilon() -> Symbol:
 
 class Run:
     """Wrapper over the run in NFA."""
-    def __init__(self, *args, **kwargs):
-        """Constructor of the transition
-
-        :param State source: source state
-        :param Symbol s: symbol
-        :param State target: target state
-        """
-        ...
-    def __new__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """Constructor of the transition
 
         :param State source: source state
@@ -34,13 +26,13 @@ class Run:
     def word(self) -> list[Symbol]:
         ...
     @word.setter
-    def word(self, value: list[Symbol]):
+    def word(self, value: list[Symbol]) -> None:
         ...
     @property
     def path(self) -> list[State]:
         ...
     @path.setter
-    def path(self, value : list[State]):
+    def path(self, value : list[State]) -> None:
         ...
 
 class Transition:
@@ -63,15 +55,7 @@ class Transition:
         :return: target state of the transition
         """
         ...
-    def __init__(self, source: State = 0, s: Symbol = 0, target: State = 0):
-        """Constructor of the transition
-
-        :param State source: source state
-        :param Symbol s: symbol
-        :param State target: target state
-        """
-        ...
-    def __new__(self, source: State = 0, s: Symbol = 0, target: State = 0):
+    def __init__(self, source: State = 0, s: Symbol = 0, target: State = 0) -> None:
         """Constructor of the transition
 
         :param State source: source state
@@ -94,17 +78,15 @@ class SymbolPost:
     def symbol(self) -> Symbol:
         ...
     @symbol.setter
-    def symbol(self, value: Symbol):
+    def symbol(self, value: Symbol) -> None:
         ...
     @property
     def targets(self) -> list[State]:
         ...
     @targets.setter
-    def targets(self, value):
+    def targets(self, value) -> None:
         ...
-    def __init__(self, symbol: Symbol, states: list[State]):
-        ...
-    def __new__(self, symbol: Symbol, states: list[State]):
+    def __init__(self, symbol: Symbol, states: list[State]) -> None:
         ...
     def __lt__(self, other: Self) -> bool:
         ...
@@ -128,14 +110,7 @@ class Nfa:
 
     Note: In order to add more properties to Nfa, see `nfa.pxd`, where there is forward declaration
     """
-    def __init__(self, state_number: int = 0, alphabet: alph.Alphabet = None, label: Any = None):
-        """Constructor of the NFA.
-
-        :param int state_number: number of states in automaton
-        :param alph.Alphabet alphabet: alphabet corresponding to the automaton
-        """
-        ...
-    def __new__(self, state_number: int = 0, alphabet: alph.Alphabet = None, label: Any = None):
+    def __init__(self, state_number: int = 0, alphabet: alph.Alphabet = None, label: Any = None) -> None:
         """Constructor of the NFA.
 
         :param int state_number: number of states in automaton
@@ -149,19 +124,19 @@ class Nfa:
     def label(self) -> Any:
         ...
     @label.setter
-    def label(self, value: Any):
+    def label(self, value: Any) -> None:
         ...
     @property
     def initial_states(self) -> list[State]:
         ...
     @initial_states.setter
-    def initial_states(self, value: list[State]):
+    def initial_states(self, value: list[State]) -> None:
         ...
     @property
     def final_states(self) -> list[State]:
         ...
     @final_states.setter
-    def final_states(self, value: list[State]):
+    def final_states(self, value: list[State]) -> None:
         ...
     def is_state(self, state: State) -> bool:
         """Tests if state is in the automaton
@@ -182,13 +157,13 @@ class Nfa:
         :return: number of the state
         """
         ...
-    def make_initial_state(self, state: State):
+    def make_initial_state(self, state: State) -> None:
         """Makes specified state from the automaton initial.
 
         :param State state: State to be made initial.
         """
         ...
-    def make_initial_states(self, states: list[State]):
+    def make_initial_states(self, states: list[State]) -> None:
         """Makes specified states from the automaton initial.
 
         :param list states: List of states to be made initial.
@@ -201,22 +176,22 @@ class Nfa:
         :return: true if automaton contains given state
         """
         ...
-    def remove_initial_state(self, state: State):
+    def remove_initial_state(self, state: State) -> None:
         """Removes state from initial state set of the automaton.
 
         :param State state: State to be removed from initial states.
         """
         ...
-    def clear_initial(self):
+    def clear_initial(self) -> None:
         """Clears initial state set of the automaton."""
         ...
-    def make_final_state(self, state: State):
+    def make_final_state(self, state: State) -> None:
         """Makes specified state from the automaton final.
 
         :param State state: State to be made final.
         """
         ...
-    def make_final_states(self, states: vector[State]):
+    def make_final_states(self, states: vector[State]) -> None:
         """Makes specified states from the automaton final.
 
         :param vector[State] states: List of states to be made final.
@@ -229,7 +204,7 @@ class Nfa:
         :return: true if automaton contains given state
         """
         ...
-    def remove_final_state(self, state: State):
+    def remove_final_state(self, state: State) -> None:
         """Removes state from final state set of the automaton.
 
         :param State state: State to be removed from final states.
@@ -244,14 +219,14 @@ class Nfa:
     def unify_final(self, force_new_state: bool = False) -> Self:
         """Unify final states into a single new final state."""
         ...
-    def add_transition_object(self, tr: Transition):
+    def add_transition_object(self, tr: Transition) -> None:
         """Adds transition to automaton
 
         :param Transition tr: added transition
         """
         ...
     @overload
-    def add_transition(self, source: State, symbol: Symbol, target: State, alphabet: alph.Alphabet = None):
+    def add_transition(self, source: State, symbol: Symbol, target: State, alphabet: alph.Alphabet = None) -> None:
         """Constructs transition and adds it to automaton
 
         :param State source: source state
@@ -261,7 +236,7 @@ class Nfa:
         """
         ...
     @overload
-    def add_transition(self, source: State, symbol: str, target: State, alphabet: alph.Alphabet):
+    def add_transition(self, source: State, symbol: str, target: State, alphabet: alph.Alphabet) -> None:
         """Constructs transition and adds it to automaton
 
         :param State source: source state
@@ -270,13 +245,13 @@ class Nfa:
         :param alph.Alphabet alphabet: alphabet of the transition
         """
         ...
-    def remove_trans(self, tr: Transition):
+    def remove_trans(self, tr: Transition) -> None:
         """Removes transition from the automaton.
 
         :param Transition tr: Transition to be removed.
         """
         ...
-    def remove_trans_raw(self, source: State, symbol: Symbol, target: State):
+    def remove_trans_raw(self, source: State, symbol: Symbol, target: State) -> None:
         """Constructs transition and removes it from the automaton.
 
         :param State source: Source state of the transition to be removed.
@@ -299,7 +274,7 @@ class Nfa:
         :return: number of transitions in automaton
         """
         ...
-    def clear(self):
+    def clear(self) -> None:
         """Clears all of the internals in the automaton"""
         ...
     def num_of_states(self) -> int:
@@ -429,7 +404,7 @@ class Nfa:
         ...
     def __repr__(self) -> str:
         ...
-    def to_dot_file(self, output_file: str = 'aut.dot', output_format: str = 'pdf', decode_ascii_chars: bool = False, use_intervals: bool = False, max_label_length: int = -1):
+    def to_dot_file(self, output_file: str = 'aut.dot', output_format: str = 'pdf', decode_ascii_chars: bool = False, use_intervals: bool = False, max_label_length: int = -1) -> None:
         """Transforms the automaton to dot format.
 
         By default, the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
@@ -492,7 +467,7 @@ class Nfa:
         :return: set of reachable states
         """
         ...
-    def remove_epsilon_inplace(self, epsilon: Symbol = _CEPSILON):
+    def remove_epsilon_inplace(self, epsilon: Symbol = _CEPSILON) -> None:
         """Removes transitions which contain epsilon symbol.
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
@@ -537,7 +512,7 @@ class Nfa:
         :return: pair of word (list of symbols) and true or false, whether the search was successful
         """
         ...
-    def make_complete(self, sink_state: State, alphabet: alph.Alphabet):
+    def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> None:
         """Makes NFA complete.
 
         :param Symbol sink_state: sink state of the automaton

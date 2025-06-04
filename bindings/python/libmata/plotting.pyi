@@ -9,7 +9,7 @@ def plot(
         node_highlight: list = None,
         edge_highlight: list = None,
         alphabet: alph.Alphabet = None
-):
+) -> None:
     """Plots the stream of automata
 
     :param bool with_scc: whether the SCC should be displayed
@@ -20,7 +20,7 @@ def plot(
     """
     ...
 
-def get_configuration_for(default: dict, rules: list, *args):
+def get_configuration_for(default: dict, rules: list, *args) -> None:
     """For given node or edge, processes the list of rules and applies them.
 
     :param dict default: default style of the primitive
@@ -58,7 +58,7 @@ def get_interactive_mode() -> Literal['none'] | Literal['notebook'] | Literal['t
     """
     ...
 
-def display_inline(*args, per_row=None, show=None):
+def display_inline(*args, per_row=None, show=None) -> None:
     """
     This is a wrapper around IPython's `display()` to display multiple
     elements in a row, without forced line break between them.
@@ -73,7 +73,7 @@ def display_inline(*args, per_row=None, show=None):
     """
     ...
 
-def setup(**kwargs):
+def setup(**kwargs) -> None:
     """
     Provides the setup of the configuration of the mata library
     """

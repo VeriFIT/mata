@@ -3,14 +3,7 @@ from libmata.alphabets import Symbol
 
 class Segmentation:
     """Wrapper over Segmentation."""
-    def __init__(self, aut: mata_nfa.Nfa, symbols: set[Symbol]):
-        """Compute segmentation.
-
-        :param aut: Segment automaton to compute epsilon depths for.
-        :param symbol: Symbol to execute segmentation for.
-        """
-        ...
-    def __new__(self, aut: mata_nfa.Nfa, symbols: set[Symbol]):
+    def __init__(self, aut: mata_nfa.Nfa, symbols: set[Symbol]) -> None:
         """Compute segmentation.
 
         :param aut: Segment automaton to compute epsilon depths for.
@@ -48,7 +41,7 @@ def get_shortest_words(nfa: mata_nfa.Nfa) -> list[list[Symbol]]:
     """Returns set of the shortest words accepted by the automaton."""
     ...
 
-def noodlify_for_equation(left_side_automata: list[mata_nfa.Nfa], right_side_automaton: mata_nfa.Nfa, include_empty: bool = False, params: dict[Literal['reduce'], Literal['false'] | Literal['forward'] | Literal['backward'] | Literal['bidirectional']] = None):
+def noodlify_for_equation(left_side_automata: list[mata_nfa.Nfa], right_side_automaton: mata_nfa.Nfa, include_empty: bool = False, params: dict[Literal['reduce'], Literal['false'] | Literal['forward'] | Literal['backward'] | Literal['bidirectional']] = None) -> None:
     """Create noodles for equation.
 
     Segment automaton is a chain of finite automata (segments) connected via ε-transitions.

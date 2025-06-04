@@ -2,9 +2,7 @@ from typing import Self
 
 class BinaryRelation:
     """Wrapper for binary relation."""
-    def __init__(self, size: int = 0, defVal: bool = False, rowSize: int = 16):
-        ...
-    def __new__(self, size: int = 0, defVal: bool = False, rowSize: int = 16):
+    def __init__(self, size: int = 0, defVal: bool = False, rowSize: int = 16) -> None:
         ...
     def size(self) -> int:
         """Returns the size of the relation
@@ -12,7 +10,7 @@ class BinaryRelation:
         :return: size of the relation
         """
         ...
-    def resize(self, size: int, defValue: bool = False):
+    def resize(self, size: int, defValue: bool = False) -> None:
         """Resizes the binary relation to size
 
         :param size_t size: new size of the binary relation
@@ -27,7 +25,7 @@ class BinaryRelation:
         :return: value of the binary relation at [row, col]
         """
        ...
-    def set(self, row: size_t, col: size_t, value: bool):
+    def set(self, row: size_t, col: size_t, value: bool) -> None:
         """Sets the value of the relation at [row, col]
 
         :param size_t row: row of the relation
@@ -41,13 +39,13 @@ class BinaryRelation:
         :return: relation of list of lists to booleans
         """
         ...
-    def reset(self, defValue: bool = False):
+    def reset(self, defValue: bool = False) -> None:
        """Resets the relation to defValue
 
        :param bool defValue: value to which the relation will be reset
        """
        ...
-    def split(self, at: size_t, reflexive: bool =True):
+    def split(self, at: size_t, reflexive: bool =True) -> None:
         """Creates new row corresponding to the row/col at given index (i think)
 
         :param size_t at: where the splitting will commence
@@ -68,7 +66,7 @@ class BinaryRelation:
         :return: true if [row, col] and [col, row] are symmetric
         """
         ...
-    def restrict_to_symmetric(self):
+    def restrict_to_symmetric(self) -> None:
         """Restricts the relation to its symmetric fragment"""
         ...
     def build_equivalence_classes(self) -> tuple[list[int], list[int]]:
