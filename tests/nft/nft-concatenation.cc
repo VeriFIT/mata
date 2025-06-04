@@ -353,7 +353,9 @@ TEST_CASE("mata::nft::concatenate()") {
 
 TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
     Nft lhs{};
+    lhs.num_of_levels = 1;
     Nft rhs{};
+    rhs.num_of_levels = 1;
     Nft result{};
 
     SECTION("Empty automaton") {
