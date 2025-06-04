@@ -1,14 +1,14 @@
-from typing import Self, Itarable
+from typing import Self, Iterable, Any, overload, Literal, TypedDict
 
 from libmata.alphabets import Symbol
 import libmata.alphabets as alph
+from libmata.utils import BinaryRelation
 
 import pandas
 import networkx
 
 State = int
 
-_CEPSILON: Symbol
 def epsilon() -> Symbol:
     ...
 
@@ -117,7 +117,7 @@ class Nfa:
         :param alph.Alphabet alphabet: alphabet corresponding to the automaton
         """
         ...
-    def deepcopy(self) -> Self
+    def deepcopy(self) -> Self:
         """Deepcopy Nfa using C++ copy constructor."""
         ...
     @property
@@ -191,7 +191,7 @@ class Nfa:
         :param State state: State to be made final.
         """
         ...
-    def make_final_states(self, states: vector[State]) -> None:
+    def make_final_states(self, states: list[State]) -> None:
         """Makes specified states from the automaton final.
 
         :param vector[State] states: List of states to be made final.
@@ -459,7 +459,7 @@ class Nfa:
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
         ...
-    def post_of(self, states: vector[State], symbol: Symbol) -> set[State]:
+    def post_of(self, states: list[State], symbol: Symbol) -> set[State]:
         """Returns sets of reachable states from set of states through a symbol
 
         :param StateSet states: set of states
@@ -467,7 +467,7 @@ class Nfa:
         :return: set of reachable states
         """
         ...
-    def remove_epsilon_inplace(self, epsilon: Symbol = _CEPSILON) -> None:
+    def remove_epsilon_inplace(self, epsilon: Symbol = epsilon()) -> None:
         """Removes transitions which contain epsilon symbol.
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
@@ -475,7 +475,7 @@ class Nfa:
         :param Symbol epsilon: Symbol representing the epsilon symbol.
         """
         ...
-    def epsilon_symbol_posts(self, state: State, epsilon: Symbol = _CEPSILON) -> SymbolPost | None:
+    def epsilon_symbol_posts(self, state: State, epsilon: Symbol = epsilon()) -> SymbolPost | None:
         """Get epsilon transitions for a state.
 
         :param state: State to get epsilon transitions for.
@@ -492,7 +492,7 @@ class Nfa:
         :return: true if NFA is universal.
         """
         ...
-    def is_in_lang(self, word: vector[Symbol], use_epsilon: bool = False, match_prefix: bool = False) -> bool:
+    def is_in_lang(self, word: list[Symbol], use_epsilon: bool = False, match_prefix: bool = False) -> bool:
         """Tests if word is in language.
 
         :param vector[Symbol] word: tested word.
@@ -552,7 +552,7 @@ def union(lhs: Nfa, rhs: Nfa) -> Nfa:
     """
     ...
 
-def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = _CEPSILON) -> Nfa:
+def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> Nfa:
     """Performs intersection of lhs and rhs.
 
     Supports epsilon symbols when preserve_epsilon is set to True.
@@ -570,7 +570,7 @@ def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = _CEPSILON) -> Nfa:
     :return: Intersection of lhs and rhs.
     """
 
-def intersection_with_product_map(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = _CEPSILON) -> tuple[Nfa, dict[tuple[State, State], State]]:
+def intersection_with_product_map(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> tuple[Nfa, dict[tuple[State, State], State]]:
     """Performs intersection of lhs and rhs.
 
     Supports epsilon symbols when preserve_epsilon is set to True.
@@ -611,7 +611,7 @@ def concatenate_with_result_state_maps(lhs: Nfa, rhs: Nfa, use_epsilon: bool = F
     """
     ...
 
-def complement(nfa: Nfa, alphabet: alph.Alphabet, params: dict[Literal['algorithm'], Literal['classical'] | Literal['brzozowski']] = None) -> Nfa:
+def complement(nfa: Nfa, alphabet: alph.Alphabet, params: dict[Literal['algorithm'], Literal['classical', 'brzozowski']] = None) -> Nfa:
     """Computes the complement of the nfa.
 
     :param Nfa nfa: The automaton to complement.
@@ -634,7 +634,7 @@ def revert(lhs: Nfa) -> Nfa:
     """
     ...
 
-def remove_epsilon(lhs: Nfa, epsilon: Symbol = _CEPSILON) -> Nfa:
+def remove_epsilon(lhs: Nfa, epsilon: Symbol = epsilon()) -> Nfa:
     """Removes transitions that contain epsilon symbol.
 
     :param Nfa lhs: Automaton, where epsilon transitions will be removed.
@@ -643,7 +643,7 @@ def remove_epsilon(lhs: Nfa, epsilon: Symbol = _CEPSILON) -> Nfa:
     """
     ...
 
-def minimize(lhs: Nfa, params: dict[Literal['algorithm'], Literal['brzozowski'] | Literal['hopcroft']] = None) -> Nfa:
+def minimize(lhs: Nfa, params: dict[Literal['algorithm'], Literal['brzozowski', 'hopcroft']] = None) -> Nfa:
     """Minimizes the automaton lhs
 
     :param Nfa lhs: automaton to be minimized
@@ -666,7 +666,12 @@ def reduce_with_state_map(aut: Nfa, params: dict[Literal['algorithm'], Literal['
     """
     ...
 
-def reduce(aut: Nfa, params: dict[Literal['algorithm'] | Literal['type'] | Literal['direction'], str] = None) -> Nfa:
+class _ResidualReduceParams(TypedDict):
+    algorithm: Literal['residual']
+    type: Literal['after', 'with']
+    direction: Literal['forward', 'backward']
+
+def reduce(aut: Nfa, params: dict[Literal['algorithm'], Literal['simulation']] | _ResidualReduceParams = None) -> Nfa:
     """Reduce the automaton.
 
     :param Nfa aut: Original automaton to reduce.

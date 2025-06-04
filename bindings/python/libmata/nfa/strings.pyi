@@ -1,3 +1,5 @@
+from typing import Literal
+
 import libmata.nfa.nfa as mata_nfa
 from libmata.alphabets import Symbol
 
@@ -41,7 +43,7 @@ def get_shortest_words(nfa: mata_nfa.Nfa) -> list[list[Symbol]]:
     """Returns set of the shortest words accepted by the automaton."""
     ...
 
-def noodlify_for_equation(left_side_automata: list[mata_nfa.Nfa], right_side_automaton: mata_nfa.Nfa, include_empty: bool = False, params: dict[Literal['reduce'], Literal['false'] | Literal['forward'] | Literal['backward'] | Literal['bidirectional']] = None) -> None:
+def noodlify_for_equation(left_side_automata: list[mata_nfa.Nfa], right_side_automaton: mata_nfa.Nfa, include_empty: bool = False, params: dict[Literal['reduce'], Literal['false', 'forward', 'backward', 'bidirectional']] = None) -> None:
     """Create noodles for equation.
 
     Segment automaton is a chain of finite automata (segments) connected via ε-transitions.

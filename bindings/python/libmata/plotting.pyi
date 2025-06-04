@@ -1,5 +1,6 @@
 from typing import Literal, Any
 
+import libmata.alphabets as alph
 import libmata.nfa.nfa as mata_nfa
 import graphviz
 
@@ -46,7 +47,7 @@ def plot_using_graphviz(
     """
     ...
 
-def get_interactive_mode() -> Literal['none'] | Literal['notebook'] | Literal['terminal']:
+def get_interactive_mode() -> Literal['none', 'notebook', 'terminal']:
     """Checks and returns, which interactive mode (if any) the code is run in
 
     The function returns:
@@ -84,7 +85,7 @@ class Style:
     Collection of helper styles for coloring nodes and edges in automata
     """
     @classmethod
-    def filled(cls, fillcolor, edgecolor=None) -> dict[Literal['fillcolor'] | Literal['color'], Any]:
+    def filled(cls, fillcolor, edgecolor=None) -> dict[Literal['fillcolor', 'color'], Any]:
         """Style that fills the primitive with color"""
         ...
     @classmethod
@@ -92,7 +93,7 @@ class Style:
         """Style that make primitive colored"""
         ...
     @classmethod
-    def dashed(cls, color=None) -> dict[Literal['style'] | Literal['color'], Any]:
+    def dashed(cls, color=None) -> dict[Literal['style', 'color'], Any]:
         """Style that makes lines dashed"""
         ...
     @classmethod

@@ -17,15 +17,15 @@ class BinaryRelation:
         :param bool defValue: default value that is set after resize
         """
         ...
-    def get(self, row: size_t, col: size_t) -> bool:
-         """Gets the value of the relation at [row, col]
+    def get(self, row: int, col: int) -> bool:
+        """Gets the value of the relation at [row, col]
 
         :param size_t row: row of the relation
         :param size_t col: col of the relation
         :return: value of the binary relation at [row, col]
         """
-       ...
-    def set(self, row: size_t, col: size_t, value: bool) -> None:
+        ...
+    def set(self, row: int, col: int, value: bool) -> None:
         """Sets the value of the relation at [row, col]
 
         :param size_t row: row of the relation
@@ -45,7 +45,7 @@ class BinaryRelation:
        :param bool defValue: value to which the relation will be reset
        """
        ...
-    def split(self, at: size_t, reflexive: bool =True) -> None:
+    def split(self, at: int, reflexive: bool = True) -> None:
         """Creates new row corresponding to the row/col at given index (i think)
 
         :param size_t at: where the splitting will commence
@@ -58,7 +58,7 @@ class BinaryRelation:
         :return: previsous size of the relation
         """
         ...
-    def is_symmetric_at(self, row: size_t, col: size_t) -> bool:
+    def is_symmetric_at(self, row: int, col: int) -> bool:
         """Checks if the relation is symmetric at [row, col] and [col, row]
 
         :param size_t row: checked row
