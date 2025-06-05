@@ -2,7 +2,6 @@
  */
 
 #include <algorithm>
-#include <ostream>
 #include <string>
 
 // MATA headers
@@ -135,9 +134,7 @@ namespace {
         for (size_t i = 0; i < num_of_states; i++){
             for (size_t j = 0; j < num_of_states; j++){
                 work_relation.set(i, j, bw_relation.get(i, j) & fw_relation.get(i, j));
-                //std::cerr << work_relation.get(i, j) << " ";
             }
-            //std::cerr << std::endl;
         }
 
         // Set the state renaming
@@ -258,7 +255,6 @@ namespace {
             // MERGE IN FORWARD DIRECTION
             state_map_dummy.clear();
             
-            // Compute the forward simulation TODO take out into a function
             const auto sim_relation_fw = algorithms::compute_relation(
                     tmp, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
             result = merge_in_one_direction(tmp, state_map_dummy, sim_relation_fw, false);
@@ -275,7 +271,6 @@ namespace {
             // MERGE IN BACKWARD DIRECTION
             state_map_dummy.clear();
 
-            // Compute the backward simulation TODO take out into a function
             Nfa aut_r = revert(tmp);
             const auto sim_relation_bw = algorithms::compute_relation(
                     aut_r, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
@@ -322,7 +317,6 @@ Nfa mata::nfa::algorithms::reduce_size_by_simulation(const Nfa& aut, StateRenami
         return revert(result);
     }
     else if (simulation_direction == "bidirect"){
-        // TODO this does not support state renaming
         // Compute the forward simulation
         const auto sim_fw_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
@@ -337,13 +331,11 @@ Nfa mata::nfa::algorithms::reduce_size_by_simulation(const Nfa& aut, StateRenami
         return result;
     }
     else if (simulation_direction == "fixpoint"){
-        // TODO this does not support state renaming
         result = simulation_fixpoint(aut);
         return result;
     }
     else {
-        // TODO throw some error
-        std::cerr << "TODO error" << std::endl;
+        throw std::runtime_error("invalid reduction algorithm selected");
     }
 
     return result;
