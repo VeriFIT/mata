@@ -776,6 +776,9 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  */
 Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
+Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels,
+            bool are_sync_levels_unwinded = false, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
 /**
  * @brief Concatenate two NFTs.
  *

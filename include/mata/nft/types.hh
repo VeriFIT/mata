@@ -43,7 +43,8 @@ class Nft; ///< A non-deterministic finite transducer.
 
 enum class JumpMode {
     RepeatSymbol, ///< Repeat the symbol on the jump.
-    AppendDontCares ///< Append a sequence of DONT_CAREs to the symbol on the jump.
+    AppendDontCares, ///< Append a sequence of DONT_CAREs to the symbol on the jump.
+    NoJump ///< No jumps are allowed.
 };
 
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
