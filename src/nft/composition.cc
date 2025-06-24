@@ -12,7 +12,7 @@ using namespace mata::utils;
 namespace mata::nft
 {
 
-Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, const bool are_sync_levels_unwinded, const JumpMode jump_mode) {
+Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, const bool are_sync_levels_unwinded, const JumpMode jump_mode) {
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
 
     // Number of Levels
@@ -44,8 +44,8 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
     rhs_between[num_of_sync_levels] = rhs_num_of_levels - *rhs_sync_levels_it - 1;
 
     // Is level a sync level?
-    BoolVector lhs_is_sync_level(result_num_of_levels, false);
-    BoolVector rhs_is_sync_level(result_num_of_levels, false);
+    BoolVector lhs_is_sync_level(lhs_num_of_levels, false);
+    BoolVector rhs_is_sync_level(rhs_num_of_levels, false);
     for (const Level level : lhs_sync_levels) {
         lhs_is_sync_level[level] = true;
     }
@@ -55,8 +55,8 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
 
     // Sync levels inverted
     // Element on index i (level i) tells the index of the level in sync_levels vector.
-    std::vector<size_t> lhs_sync_levels_inv(lhs_num_of_levels, 0);
-    std::vector<size_t> rhs_sync_levels_inv(rhs_num_of_levels, 0);
+    std::vector<size_t> lhs_sync_levels_inv(lhs_num_of_levels, std::numeric_limits<size_t>::max());
+    std::vector<size_t> rhs_sync_levels_inv(rhs_num_of_levels, std::numeric_limits<size_t>::max());
     size_t idx = 0;
     const auto lhs_end_it = lhs_sync_levels.cend();
     for (auto lhs_it = lhs_sync_levels.cbegin(), rhs_it = rhs_sync_levels.cbegin();
@@ -70,19 +70,19 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
     // Initialize the result NFT, state map, and worklist
     Nft result;
     result.num_of_levels = result_num_of_levels;
-    std::unordered_map<std::pair<State, State>, State> state_map;
+    std::unordered_map<std::pair<State, State>, State> main_state_map;
     std::unordered_map<State, StateSet> pred_map;
     std::stack<std::pair<State, State>> worklist;
 
     // Function: adds a new state to the result and puts it to the worklist
     auto try_to_map_state_add_to_wordlist = [&](const State state, const State orig_a, const State orig_b, const bool is_a_lhs) {
         const auto key = is_a_lhs ? std::make_pair(orig_a, orig_b) : std::make_pair(orig_b, orig_a);
-        auto it = state_map.find(key);
-        if (it != state_map.end()) {
+        auto it = main_state_map.find(key);
+        if (it != main_state_map.end()) {
             assert(it->second == state);
             return;
         }
-        state_map[key] = state;
+        main_state_map[key] = state;
         result.levels[state] = 0;
         worklist.push(key);
         if ((is_a_lhs && lhs.final.contains(orig_a) && rhs.final.contains(orig_b)) ||
@@ -92,18 +92,33 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
     };
 
     // Function: returns existing zero-level state or adds a new one and puts it to the worklist
-    auto get_state_or_add_and_put_to_worklist = [&](const State orig_a, const State orig_b, const bool is_a_lhs) {
+    auto get_state_or_add_and_put_to_worklist = [&](const State orig_a, const State orig_b, const bool is_a_lhs, std::stack<std::pair<State, State>>& worklist) {
         const auto key = is_a_lhs ? std::make_pair(orig_a, orig_b) : std::make_pair(orig_b, orig_a);
-        auto it = state_map.find(key);
-        if (it != state_map.end()) {
+        auto it = main_state_map.find(key);
+        if (it != main_state_map.end()) {
             return it->second;
         }
         const State new_state = result.add_state_with_level(0);
-        state_map[key] = new_state;
-        result.levels[new_state] = 0;
+        main_state_map[key] = new_state;
         worklist.push(key);
         if ((is_a_lhs && lhs.final.contains(orig_a) && rhs.final.contains(orig_b)) ||
             (!is_a_lhs && rhs.final.contains(orig_a) && lhs.final.contains(orig_b))) {
+            result.final.insert(new_state);
+        }
+        return new_state;
+    };
+
+    auto get_state = [&](const State lhs_state, const State rhs_state, const Level level) {
+        // Get the state from the map or add a new one.
+        const auto key = std::make_pair(lhs_state, rhs_state);
+        auto it = main_state_map.find(key);
+        if (it != main_state_map.end()) {
+            return it->second;
+        }
+        const State new_state = result.add_state_with_level(level);
+        main_state_map[key] = new_state;
+        worklist.push(key);
+        if (lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state)) {
             result.final.insert(new_state);
         }
         return new_state;
@@ -124,7 +139,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
         }
         State inner_src = src;
         for (size_t i = 0; i < trans_len - 1; ++i) {
-            assert(result.levels[src] + 1 < result_num_of_levels);
+            assert(result.levels[inner_src] + 1 < result_num_of_levels);
             const State tgt = result.add_state_with_level(result.levels[inner_src] + 1);
             result.delta.add(inner_src, symbol, tgt);
             inner_src = tgt;
@@ -169,14 +184,15 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
         }
     };
 
-    // MAP EPSILON ON SYNC PATH function
+    // Function: maps epsilon transitions on the sync path
     auto map_epsilon_on_sync_path = [&](const State res_root, const State orig_root, const State wait_root, const bool is_orig_lhs) {
         const Nft& orig_nft = is_orig_lhs ? lhs : rhs;
         const OrdVector<Level>& sync_levels = is_orig_lhs ? lhs_sync_levels : rhs_sync_levels;
         const std::vector<size_t>& sync_levels_inv = is_orig_lhs ? lhs_sync_levels_inv : rhs_sync_levels_inv;
-        const std::vector<size_t>& between = is_orig_lhs ? rhs_between : lhs_between;
+        const std::vector<size_t>& between = is_orig_lhs ? rhs_between : lhs_between;   // Use rhs_between if we are in lhs NFT, and vice versa.
         const BoolVector& is_sync_level = is_orig_lhs ? lhs_is_sync_level : rhs_is_sync_level;
-        const bool add_before = !is_orig_lhs;
+        const bool add_before = !is_orig_lhs;   // On each section within sync levels, lhs transitions go begore rhs transitions.
+        static std::stack<std::pair<State, State>>& main_worklist = worklist;
 
         // Worklist contains pairs of (state in the result NFT, and state in the original lhs/rhs NFT).
         std::stack<std::pair<State, State>> worklist;
@@ -185,11 +201,24 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
         visited.insert(orig_root);
         pred_map.clear();
 
+        std::unordered_map<State, State> local_state_map;
+        auto get_state = [&](const State orig_state, const Level level) {
+            // Get the state from the map or add a new one.
+            auto it = local_state_map.find(orig_state);
+            if (it != local_state_map.end()) {
+                assert(orig_nft.levels[it->second] == level);
+                return it->second;
+            }
+            const State new_state = result.add_state_with_level(level);
+            local_state_map[orig_state] = new_state;
+            return new_state;
+        };
+
         while (!worklist.empty()) {
             auto [res_src, orig_src] = worklist.top();
             worklist.pop();
 
-            // Add EPSILON transition from lhs BEFORE the first transition (we are in rhs).
+            // Add EPSILON transition for those in lhs BEFORE the first transition (we are in rhs).
             if (result.levels[res_src] == 0 && add_before) {
                 res_src = repeat_transition(res_src, between[0], EPSILON);
             }
@@ -201,11 +230,11 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
                     continue;
                 }
                 const size_t sync_level_idx = sync_levels_inv[orig_nft.levels[orig_src]];
-                // Add EPSILON transitions from rhs AFTER this last transition before the sync level (we are in lhs).
+                // Add EPSILON transitions for those in rhs AFTER this last transition before the sync level (we are in lhs).
                 if (!add_before) {
                     res_src = repeat_transition(res_src, between[sync_level_idx], EPSILON);
                 }
-                // Add EPSILON transitions from lhs BEFORE first transition after the sync level (we are in rhs).
+                // Add EPSILON transitions for those in lhs BEFORE first transition after the sync level (we are in rhs).
                 if (add_before) {
                     res_src = repeat_transition(res_src, between[sync_level_idx + 1], EPSILON);
                 }
@@ -214,16 +243,16 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
                 for (const State orig_tgt: epsilon_post_it->targets) {
                     if (orig_nft.levels[orig_tgt] == 0) {
                         // We are connecting to a zero-level state.
-                        // Add EPSILON transitions from rhs AFTER this last transition (we are in lhs).
+                        // Add EPSILON transitions for those in rhs AFTER this last transition (we are in lhs).
                         if (!add_before && between[num_of_sync_levels] != 0) {
-                            const State tgt_res = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs);
-                            repeat_transition_with_tgt(res_src, tgt_res, between[num_of_sync_levels], EPSILON);
+                            const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
+                            repeat_transition_with_tgt(res_src, res_tgt, between[num_of_sync_levels], EPSILON);
                         } else {
-                            // There is nothink to add.
+                            // There is nothing to add.
                             // Try to find if there is already a mapping for this state.
                             const auto key = is_orig_lhs ? std::make_pair(orig_tgt, wait_root) : std::make_pair(wait_root, orig_tgt);
-                            auto it = state_map.find(key);
-                            if (it != state_map.end()) {
+                            auto it = main_state_map.find(key);
+                            if (it != main_state_map.end()) {
                                 // The mapping exists, redirect transition goig to orig_src to the existing state.
                                 redirect(res_src, it->second);
                             } else {
@@ -234,7 +263,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
                     } else {
                         // We are connecting to a non-zero-level state.
                         if (!visited.contains(orig_tgt)) {
-                            // Let's contiinue the traversal.
+                            // Let's continue the traversal.
                             // Project out the transition. Merge orig_scr and orig_tgt, while staying in res_src.
                             worklist.push({res_src, orig_tgt});
                             visited.insert(orig_tgt);
@@ -254,23 +283,25 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
                             if (!add_before && between[num_of_sync_levels] != 0) {
                                 // We will add EPSILON transitions from rhs AFTER this last transition (we are in lhs).
                                 assert(result.levels[res_src] + level_diff < result_num_of_levels);
-                                const State tgt_res_inner = result.add_state_with_level(result.levels[res_src] + level_diff);
+                                const State res_tgt_inner = get_state(orig_tgt, result.levels[res_src] + level_diff);
                                 // First process the transition with the symbol_post.symbol.
-                                result.delta.add(res_src, symbol_post.symbol, tgt_res_inner);
+                                result.delta.add(res_src, symbol_post.symbol, res_tgt_inner);
                                 // Then add the EPSILON transitions.
-                                State tgt_res = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs);
-                                repeat_transition_with_tgt(tgt_res_inner, tgt_res, between[num_of_sync_levels], EPSILON);
+                                const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
+                                repeat_transition_with_tgt(res_tgt_inner, res_tgt, between[num_of_sync_levels], EPSILON);
                             } else {
-                                State tgt_res = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs);
-                                result.delta.add(res_src, symbol_post.symbol, tgt_res);
+                                assert(result.levels[res_src] + level_diff == result_num_of_levels);
+                                const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
+                                result.delta.add(res_src, symbol_post.symbol, res_tgt);
                             }
                         } else {
                             // We are connecting to a non-zero-level state.
                             // Just copy the transition.
                             const Level level_diff = orig_tgt_level - orig_src_level;
                             assert(result.levels[res_src] + level_diff < result_num_of_levels);
-                            const State tgt_res = result.add_state_with_level(result.levels[res_src] + level_diff);
+                            const State tgt_res = get_state(orig_tgt, result.levels[res_src] + level_diff);
                             result.delta.add(res_src, symbol_post.symbol, tgt_res);
+                            pred_map[tgt_res].insert(res_src);
                             if (!visited.contains(orig_tgt)) {
                                 // Not visited, add to the worklist
                                 worklist.push({tgt_res, orig_tgt});
@@ -282,6 +313,175 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_syn
             }
         }
     };
+
+    auto map_combination_path = [&](const State res_root, const State lhs_root, const State rhs_root) {
+        static std::stack<std::pair<State, State>>& main_worklist = worklist;
+        pred_map.clear();
+        std::stack<std::tuple<State, State, State>> worklist;
+        worklist.push({res_root, lhs_root, rhs_root});
+        std::unordered_set<std::pair<State, State>> visited;
+        visited.insert({lhs_root, rhs_root});
+
+        while (!worklist.empty()) {
+            auto [res_src, lhs_src, rhs_src] = worklist.top();
+            worklist.pop();
+
+            const Level res_src_level = result.levels[res_src];
+            const Level lhs_src_level = lhs.levels[lhs_src];
+            const Level rhs_src_level = rhs.levels[rhs_src];
+
+            // Go in lhs all the way down to the sync level.
+            if (!lhs_is_sync_level[lhs_src_level]) {
+                for (const SymbolPost& symbol_post: lhs.delta[lhs_src]) {
+                    for (const State lhs_tgt: symbol_post.targets) {
+                        const Level lhs_tgt_level = lhs.levels[lhs_tgt];
+                        if (lhs_tgt_level == 0) {
+                            const size_t trans_len = lhs_num_of_levels - lhs_src_level;
+                            // We are connecting to a zero-level state.
+                            if (rhs_between[num_of_sync_levels] != 0) {
+                                // There is no transition in rhs.
+                                const State res_tgt = get_state_or_add_and_put_to_worklist(lhs_tgt, rhs_root, true, main_worklist);
+                            } else {
+                                // There is a transition in rhs.
+                                const State res_tgt = get_state(lhs_tgt, rhs_src, trans_len + res_src_level);
+                                result.delta.add(res_src, symbol_post.symbol, res_tgt);
+                                pred_map[res_tgt].insert(res_src);
+                            }
+                        } else {
+                            // We are connecting to a non-zero-level state.
+                            const Level level_diff = lhs_tgt_level - lhs_src_level;
+                            assert(res_src_level + level_diff < result_num_of_levels);
+                            const State res_tgt = get_state(lhs_tgt, rhs_src, res_src_level + level_diff);
+                            result.delta.add(res_src, symbol_post.symbol, res_tgt);
+                            pred_map[res_tgt].insert(res_src);
+                            if (!visited.contains({lhs_tgt, rhs_src})) {
+                                // Not visited, add to the worklist
+                                worklist.push({res_tgt, lhs_tgt, rhs_src});
+                                visited.insert({lhs_tgt, rhs_src});
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Go in rhs all the way down to the sync level.
+            if (!rhs_is_sync_level[rhs_src_level]) {
+                for (const SymbolPost& symbol_post: rhs.delta[rhs_src]) {
+                    for (const State rhs_tgt: symbol_post.targets) {
+                        const Level rhs_tgt_level = rhs.levels[rhs_tgt];
+                        if (rhs_tgt_level == 0) {
+                            const State res_tgt = get_state_or_add_and_put_to_worklist(lhs_src, rhs_tgt, true, main_worklist);
+                            result.delta.add(res_src, symbol_post.symbol, res_tgt);
+                        } else {
+                            // We are connecting to a non-zero-level state.
+                            const Level level_diff = rhs_tgt_level - rhs_src_level;
+                            assert(res_src_level + level_diff < result_num_of_levels);
+                            const State res_tgt = get_state(lhs_src, rhs_tgt, res_src_level + level_diff);
+                            result.delta.add(res_src, symbol_post.symbol, res_tgt);
+                            pred_map[res_tgt].insert(res_src);
+                            if (!visited.contains({lhs_src, rhs_tgt})) {
+                                // Not visited, add to the worklist
+                                worklist.push({res_tgt, lhs_src, rhs_tgt});
+                                visited.insert({lhs_src, rhs_tgt});
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Everythink is on sync level.
+            const bool epsilon_in_lhs = lhs.delta[lhs_src].find(EPSILON) != lhs.delta[lhs_src].end();
+            const bool epsilon_in_rhs = rhs.delta[rhs_src].find(EPSILON) != rhs.delta[rhs_src].end();
+
+            auto process_intersection = [&](const StateSet lhs_targets, const StateSet rhs_targets, const std::vector<Level> levels) {
+                for (const State lhs_tgt: lhs_targets) {
+                    const Level tgt_level = levels[lhs_tgt];
+                    for (const State rhs_tgt: rhs_targets) {
+                        if (tgt_level == 0) {
+                            const auto key = std::make_pair(lhs_tgt, rhs_tgt);
+                            auto it = main_state_map.find(key);
+                            if (it != main_state_map.end()) {
+                                // The mapping exists, redirect transition goig to orig_src to the existing state.
+                                redirect(res_src, it->second);
+                            } else {
+                                // The mapping does not exist. Update it.
+                                try_to_map_state_add_to_wordlist(res_src, lhs_tgt, rhs_tgt, true);
+                            }
+                        } else {
+                            if (!visited.contains({lhs_tgt, rhs_tgt})) {
+                                // We have not visited this pair yet.
+                                visited.insert({lhs_tgt, rhs_tgt});
+                                main_state_map[std::make_pair(lhs_tgt, rhs_tgt)] = res_src;
+                                worklist.push({res_src, lhs_tgt, rhs_tgt});
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Intersection
+            mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
+            mata::utils::push_back(sync_iterator, lhs.delta[lhs_src]);
+            mata::utils::push_back(sync_iterator, rhs.delta[rhs_src]);
+            while (sync_iterator.advance()) {
+                const std::vector<StatePost::const_iterator>& same_symbol_posts{ sync_iterator.get_current() };
+                assert(same_symbol_posts.size() == 2); // One move per state in the pair.
+
+                process_intersection(
+                    same_symbol_posts[0]->targets,
+                    same_symbol_posts[1]->targets,
+                    lhs.levels
+                );
+            }
+
+            if (lhs.delta[lhs_src].find(DONT_CARE) != lhs.delta[lhs_src].end()) {
+                for (const SymbolPost& symbol_post: rhs.delta[rhs_src]) {
+                    process_intersection(
+                        lhs.delta[lhs_src].find(DONT_CARE)->targets,
+                        symbol_post.targets,
+                        lhs.levels
+                    );
+                }
+            }
+
+            if (rhs.delta[rhs_src].find(DONT_CARE) != rhs.delta[rhs_src].end()) {
+                for (const SymbolPost& symbol_post: lhs.delta[lhs_src]) {
+                    process_intersection(
+                        symbol_post.targets,
+                        rhs.delta[rhs_src].find(DONT_CARE)->targets,
+                        lhs.levels
+                    );
+                }
+            }
+
+        }
+
+
+    };
+
+    // // Test epsilon transition on lhs
+    // for (const State lhs_root: lhs.initial) {
+    //     for (const State rhs_root: rhs.initial) {
+    //         // Get the root state in the result NFT
+    //         const State res_root = get_state_or_add_and_put_to_worklist(lhs_root, rhs_root, true);
+    //     }
+    // }
+    // while (!worklist.empty()) {
+    //     auto [orig_a, orig_b] = worklist.top();
+    //     worklist.pop();
+
+    //     // Get the state in the result NFT
+    //     const State res_root = state_map.at({orig_a, orig_b});
+
+    //     // Map epsilon transitions on the sync path
+    //     map_epsilon_on_sync_path(res_root, orig_a, orig_b, true);
+    // }
+
+
+
+    return result;
 }
 
 
