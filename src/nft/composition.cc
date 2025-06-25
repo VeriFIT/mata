@@ -329,6 +329,9 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
         std::unordered_set<std::pair<State, State>> visited;
         visited.insert({lhs_root, rhs_root});
 
+        bool perform_lhs_wait = false;
+        bool perform_rhs_wait = false;
+
         while (!worklist.empty()) {
             auto [res_src, lhs_src, rhs_src] = worklist.top();
             worklist.pop();
@@ -411,6 +414,8 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             // Everythink is on sync level.
             const bool epsilon_in_lhs = lhs.delta[lhs_src].find(EPSILON) != lhs.delta[lhs_src].end();
             const bool epsilon_in_rhs = rhs.delta[rhs_src].find(EPSILON) != rhs.delta[rhs_src].end();
+            perform_lhs_wait ||= (epsilon_in_rhs && !epsilon_in_lhs);
+            perform_rhs_wait ||= (epsilon_in_lhs && !epsilon_in_rhs);
 
             auto process_intersection = [&](const StateSet& lhs_targets, const StateSet& rhs_targets) {
                 for (const State lhs_tgt: lhs_targets) {
@@ -472,9 +477,16 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 }
             }
         }
+
+        if (perform_lhs_wait) {
+            map_epsilon_on_sync_path(res_root, rhs_root, lhs_root, false);
+        }
+        if (perform_rhs_wait) {
+            map_epsilon_on_sync_path(res_root, lhs_root, rhs_root, true);
+        }
     };
 
-    // Test common transitions mapping
+    // INITIALIZATION
     for (const State lhs_root: lhs.initial) {
         for (const State rhs_root: rhs.initial) {
             // Get the root state in the result NFT
@@ -482,23 +494,22 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             commited_states.insert(res_root);
         }
     }
+
+    // MAIN LOOP
     while (!worklist.empty()) {
         auto [orig_a, orig_b] = worklist.top();
         worklist.pop();
 
         // Get the state in the result NFT
         const State res_root = main_state_map.at({orig_a, orig_b});
+        if (!commited_states.contains(res_root)) {
+            final.erase(res_root);
+            continue;
+        }
 
         // Map epsilon transitions on the sync path
         map_combination_path(res_root, orig_a, orig_b);
-        break;
     }
-
-    // Print main_state_map
-    // for (const auto [key, value]: main_state_map) {
-    //     const auto [lhs_s, rhs_s] = key;
-    //     std::cout << "[" << lhs_s << "," << rhs_s << "] -> " << value << std::endl;
-    // }
 
     return result;
 }
