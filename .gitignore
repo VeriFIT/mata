@@ -51,7 +51,8 @@ VERSION
 .vscode/
 .idea/
 .venv
-.cache/*
+.cache
+.ccls-cache
 
 # Python binding related
 bindings/python/**/*.cpp
