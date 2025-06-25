@@ -12,7 +12,7 @@ using namespace mata::utils;
 namespace mata::nft
 {
 
-Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, const bool are_sync_levels_unwinded, const JumpMode jump_mode) {
+Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels, const bool are_sync_levels_unwinded, const JumpMode jump_mode) {
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
 
     // Number of Levels
@@ -177,7 +177,7 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
         for (const State pred: it->second) {
             for (SymbolPost& symbol_post: result.delta.mutable_state_post(pred)) {
                 if (symbol_post.targets.contains(old_tgt)) {
-                    symbol_post.targets.erase(old_tgt);
+                    // symbol_post.targets.erase(old_tgt);
                     symbol_post.targets.insert(new_tgt);
                 }
             }
@@ -206,7 +206,7 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
             // Get the state from the map or add a new one.
             auto it = local_state_map.find(orig_state);
             if (it != local_state_map.end()) {
-                assert(orig_nft.levels[it->second] == level);
+                assert(result.levels[it->second] == level);
                 return it->second;
             }
             const State new_state = result.add_state_with_level(level);
@@ -283,12 +283,15 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
                             if (!add_before && between[num_of_sync_levels] != 0) {
                                 // We will add EPSILON transitions from rhs AFTER this last transition (we are in lhs).
                                 assert(result.levels[res_src] + level_diff < result_num_of_levels);
+                                const bool exist_res_tgt_inner = local_state_map.contains(orig_tgt);
                                 const State res_tgt_inner = get_state(orig_tgt, result.levels[res_src] + level_diff);
                                 // First process the transition with the symbol_post.symbol.
                                 result.delta.add(res_src, symbol_post.symbol, res_tgt_inner);
-                                // Then add the EPSILON transitions.
-                                const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
-                                repeat_transition_with_tgt(res_tgt_inner, res_tgt, between[num_of_sync_levels], EPSILON);
+                                if (!exist_res_tgt_inner) {
+                                    // Then add the EPSILON transitions.
+                                    const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
+                                    repeat_transition_with_tgt(res_tgt_inner, res_tgt, between[num_of_sync_levels], EPSILON);
+                                }
                             } else {
                                 assert(result.levels[res_src] + level_diff == result_num_of_levels);
                                 const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
@@ -298,7 +301,7 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
                             // We are connecting to a non-zero-level state.
                             // Just copy the transition.
                             const Level level_diff = orig_tgt_level - orig_src_level;
-                            assert(result.levels[res_src] + level_diff < result_num_of_levels);
+                            assert(result.levels[res_src] + level_diff <= result_num_of_levels);
                             const State tgt_res = get_state(orig_tgt, result.levels[res_src] + level_diff);
                             result.delta.add(res_src, symbol_post.symbol, tgt_res);
                             pred_map[tgt_res].insert(res_src);
@@ -330,8 +333,10 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
             const Level lhs_src_level = lhs.levels[lhs_src];
             const Level rhs_src_level = rhs.levels[rhs_src];
 
+            const bool lhs_in_target_and_rhs_remains = lhs_src_level == 0 || rhs_src_level != 0;
+
             // Go in lhs all the way down to the sync level.
-            if (!lhs_is_sync_level[lhs_src_level]) {
+            if (!lhs_is_sync_level[lhs_src_level] && !lhs_in_target_and_rhs_remains) {
                 for (const SymbolPost& symbol_post: lhs.delta[lhs_src]) {
                     for (const State lhs_tgt: symbol_post.targets) {
                         const Level lhs_tgt_level = lhs.levels[lhs_tgt];
@@ -341,11 +346,17 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
                             if (rhs_between[num_of_sync_levels] != 0) {
                                 // There is no transition in rhs.
                                 const State res_tgt = get_state_or_add_and_put_to_worklist(lhs_tgt, rhs_root, true, main_worklist);
+                                result.delta.add(res_src, symbol_post.symbol, res_tgt);
                             } else {
                                 // There is a transition in rhs.
                                 const State res_tgt = get_state(lhs_tgt, rhs_src, trans_len + res_src_level);
                                 result.delta.add(res_src, symbol_post.symbol, res_tgt);
                                 pred_map[res_tgt].insert(res_src);
+                                if (!visited.contains({lhs_tgt, rhs_src})) {
+                                    // Not visited, add to the worklist
+                                    worklist.push({res_tgt, lhs_tgt, rhs_src});
+                                    visited.insert({lhs_tgt, rhs_src});
+                                }
                             }
                         } else {
                             // We are connecting to a non-zero-level state.
@@ -395,11 +406,12 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
             const bool epsilon_in_lhs = lhs.delta[lhs_src].find(EPSILON) != lhs.delta[lhs_src].end();
             const bool epsilon_in_rhs = rhs.delta[rhs_src].find(EPSILON) != rhs.delta[rhs_src].end();
 
-            auto process_intersection = [&](const StateSet lhs_targets, const StateSet rhs_targets, const std::vector<Level> levels) {
+            auto process_intersection = [&](const StateSet& lhs_targets, const StateSet& rhs_targets) {
                 for (const State lhs_tgt: lhs_targets) {
-                    const Level tgt_level = levels[lhs_tgt];
+                    const Level lhs_tgt_level = lhs.levels[lhs_tgt];
                     for (const State rhs_tgt: rhs_targets) {
-                        if (tgt_level == 0) {
+                        const Level rhs_tgt_level = rhs.levels[rhs_tgt];
+                        if (lhs_tgt_level == 0 && rhs_tgt_level == 0) {
                             const auto key = std::make_pair(lhs_tgt, rhs_tgt);
                             auto it = main_state_map.find(key);
                             if (it != main_state_map.end()) {
@@ -431,8 +443,7 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
 
                 process_intersection(
                     same_symbol_posts[0]->targets,
-                    same_symbol_posts[1]->targets,
-                    lhs.levels
+                    same_symbol_posts[1]->targets
                 );
             }
 
@@ -440,8 +451,7 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
                 for (const SymbolPost& symbol_post: rhs.delta[rhs_src]) {
                     process_intersection(
                         lhs.delta[lhs_src].find(DONT_CARE)->targets,
-                        symbol_post.targets,
-                        lhs.levels
+                        symbol_post.targets
                     );
                 }
             }
@@ -450,36 +460,38 @@ Nft compose_fast(Nft& lhs, Nft& rhs, const OrdVector<Level>& lhs_sync_levels, co
                 for (const SymbolPost& symbol_post: lhs.delta[lhs_src]) {
                     process_intersection(
                         symbol_post.targets,
-                        rhs.delta[rhs_src].find(DONT_CARE)->targets,
-                        lhs.levels
+                        rhs.delta[rhs_src].find(DONT_CARE)->targets
                     );
                 }
             }
-
         }
-
-
     };
 
-    // // Test epsilon transition on lhs
-    // for (const State lhs_root: lhs.initial) {
-    //     for (const State rhs_root: rhs.initial) {
-    //         // Get the root state in the result NFT
-    //         const State res_root = get_state_or_add_and_put_to_worklist(lhs_root, rhs_root, true);
-    //     }
-    // }
-    // while (!worklist.empty()) {
-    //     auto [orig_a, orig_b] = worklist.top();
-    //     worklist.pop();
+    // Test epsilon transition on lhs
+    for (const State lhs_root: lhs.initial) {
+        for (const State rhs_root: rhs.initial) {
+            // Get the root state in the result NFT
+            const State res_root = get_state_or_add_and_put_to_worklist(lhs_root, rhs_root, true, worklist);
+        }
+    }
+    while (!worklist.empty()) {
+        auto [orig_a, orig_b] = worklist.top();
+        worklist.pop();
 
-    //     // Get the state in the result NFT
-    //     const State res_root = state_map.at({orig_a, orig_b});
+        // Get the state in the result NFT
+        const State res_root = main_state_map.at({orig_a, orig_b});
 
-    //     // Map epsilon transitions on the sync path
-    //     map_epsilon_on_sync_path(res_root, orig_a, orig_b, true);
-    // }
+        // Map epsilon transitions on the sync path
+        map_epsilon_on_sync_path(res_root, orig_a, orig_b, true);
+        // map_epsilon_on_sync_path(res_root, orig_b, orig_a, false);
+        break;
+    }
 
-
+    // Print main_state_map
+    for (const auto [key, value]: main_state_map) {
+        const auto [lhs_s, rhs_s] = key;
+        std::cout << "[" << lhs_s << "," << rhs_s << "] -> " << value << std::endl;
+    }
 
     return result;
 }
