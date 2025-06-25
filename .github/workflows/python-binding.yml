@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout latest version
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Checkout latest version
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
