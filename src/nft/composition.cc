@@ -9,6 +9,86 @@
 using namespace mata::utils;
 
 
+namespace {
+    using mata::Symbol;
+    using namespace mata::nft;
+
+    template<typename T>
+    mata::BoolVector create_mask(const OrdVector<T>& entries, const size_t universum_size) {
+        mata::BoolVector mask(universum_size, false);
+        for (const auto& entry : entries) {
+            mask[entry] = true;
+        }
+        return mask;
+    }
+
+    template<typename T>
+    std::vector<size_t> invert(const OrdVector<T>& entries, const size_t universum_size) {
+        std::vector<size_t> inverted(universum_size, std::numeric_limits<T>::max());
+        size_t idx = 0;
+        for (const auto& entry : entries) {
+            inverted[entry] = idx++;
+        }
+        return inverted;
+    }
+
+    template<typename T>
+    std::vector<size_t> get_partition_sizes(const OrdVector<T>& border_indices, const size_t universum_size) {
+        assert(!border_indices.empty());
+        const size_t num_partitions = border_indices.size();
+        std::vector<size_t> sizes(num_partitions + 1, 0);
+        auto partition_borders_it = border_indices.cbegin();
+        sizes[0] = *partition_borders_it;
+        for (size_t i = 1; i < num_partitions; ++i) {
+            const size_t prev_border = *partition_borders_it;
+            ++partition_borders_it;
+            sizes[i] = *partition_borders_it - prev_border - 1;
+        }
+        sizes[num_partitions] = universum_size - *partition_borders_it - 1;
+        return sizes;
+    }
+
+    State add_transition(Nft& nft, const State source, const Symbol symbol, const size_t len, const JumpMode jump_mode) {
+        assert(nft.levels[source] + len <= nft.num_of_levels);
+        if (len == 0) { return source; }
+
+        const State target = nft.add_state_with_level((nft.levels[source] + len) % static_cast<Level>(nft.num_of_levels));
+        if (len == 1 || jump_mode == JumpMode::RepeatSymbol) {
+            nft.delta.add(source, symbol, target);
+            return target;
+        }
+        State inner_src = source;
+        for (size_t i = 0; i < len - 1; ++i) {
+            const State inner_target = nft.add_state_with_level(nft.levels[inner_src] + 1);
+            nft.delta.add(inner_src, symbol, inner_target);
+            inner_src = inner_target;
+        }
+        nft.delta.add(inner_src, symbol, target);
+        return target;
+    }
+
+    State add_transition(Nft& nft, const State source, const Symbol symbol, const State target, const JumpMode jump_mode) {
+        if (source == target) { return source;}
+        assert(nft.levels[source] < nft.levels[target] || nft.levels[target] == 0);
+
+        const size_t trans_len = nft.levels[target] == 0 ? nft.num_of_levels - nft.levels[source] : nft.levels[target] - nft.levels[source];
+        assert(trans_len > 0);
+        if (trans_len == 1 || jump_mode == JumpMode::RepeatSymbol) {
+            nft.delta.add(source, symbol, target);
+            return target;
+        }
+        State inner_src = source;
+        for (size_t i = 0; i < trans_len - 1; ++i) {
+            const State inner_target = nft.add_state_with_level(nft.levels[inner_src] + 1);
+            nft.delta.add(inner_src, symbol, inner_target);
+            inner_src = inner_target;
+        }
+        nft.delta.add(inner_src, symbol, target);
+        return target;
+    }
+}
+
+
 namespace mata::nft
 {
 
@@ -21,52 +101,6 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
     const size_t rhs_num_of_levels = rhs.num_of_levels;
     const size_t result_num_of_levels = lhs_num_of_levels + rhs_num_of_levels - (project_out_sync_levels ? (2 * num_of_sync_levels) : num_of_sync_levels);
 
-    // Calculate number of lhs/rhs transitions before/between/after sync levels
-    auto lhs_sync_levels_it = lhs_sync_levels.cbegin();
-    auto rhs_sync_levels_it = rhs_sync_levels.cbegin();
-    // Sync levels are on on borders between vector elements.
-    std::vector<size_t> lhs_between(num_of_sync_levels + 1, 0);
-    std::vector<size_t> rhs_between(num_of_sync_levels + 1, 0);
-    // Before the first sync level
-    lhs_between[0] = *lhs_sync_levels_it;
-    rhs_between[0] = *rhs_sync_levels_it;
-    // Between sync levels
-    for (size_t i = 1; i < num_of_sync_levels; ++i) {
-        const size_t lhs_prev = *lhs_sync_levels_it;
-        const size_t rhs_prev = *rhs_sync_levels_it;
-        ++lhs_sync_levels_it;
-        ++rhs_sync_levels_it;
-        lhs_between[i] = *lhs_sync_levels_it - lhs_prev - 1;
-        rhs_between[i] = *rhs_sync_levels_it - rhs_prev - 1;
-    }
-    // After the last sync level
-    lhs_between[num_of_sync_levels] = lhs_num_of_levels - *lhs_sync_levels_it - 1;
-    rhs_between[num_of_sync_levels] = rhs_num_of_levels - *rhs_sync_levels_it - 1;
-
-    // Is level a sync level?
-    BoolVector lhs_is_sync_level(lhs_num_of_levels, false);
-    BoolVector rhs_is_sync_level(rhs_num_of_levels, false);
-    for (const Level level : lhs_sync_levels) {
-        lhs_is_sync_level[level] = true;
-    }
-    for (const Level level : rhs_sync_levels) {
-        rhs_is_sync_level[level] = true;
-    }
-
-    // Sync levels inverted
-    // Element on index i (level i) tells the index of the level in sync_levels vector.
-    std::vector<size_t> lhs_sync_levels_inv(lhs_num_of_levels, std::numeric_limits<size_t>::max());
-    std::vector<size_t> rhs_sync_levels_inv(rhs_num_of_levels, std::numeric_limits<size_t>::max());
-    size_t idx = 0;
-    const auto lhs_end_it = lhs_sync_levels.cend();
-    for (auto lhs_it = lhs_sync_levels.cbegin(), rhs_it = rhs_sync_levels.cbegin();
-         lhs_it != lhs_end_it;
-         ++lhs_it, ++rhs_it, ++idx)
-    {
-        lhs_sync_levels_inv[*lhs_it] = idx;
-        rhs_sync_levels_inv[*rhs_it] = idx;
-    }
-
     // Initialize the result NFT, state map, and worklist
     Nft result;
     result.num_of_levels = result_num_of_levels;
@@ -74,6 +108,16 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
     std::unordered_map<State, StateSet> pred_map;
     std::stack<std::pair<State, State>> worklist;
     std::unordered_set<State> commited_states;
+
+    // Calculate number of lhs/rhs transitions before/between/after sync levels
+    const std::vector<size_t> lhs_between = get_partition_sizes(lhs_sync_levels, lhs_num_of_levels);
+    const std::vector<size_t> rhs_between = get_partition_sizes(rhs_sync_levels, rhs_num_of_levels);
+
+    BoolVector lhs_is_sync_level = create_mask(lhs_sync_levels, lhs_num_of_levels);
+    BoolVector rhs_is_sync_level = create_mask(rhs_sync_levels, rhs_num_of_levels);
+
+    const std::vector<size_t> lhs_sync_levels_inv = invert(lhs_sync_levels, lhs_num_of_levels);
+    const std::vector<size_t> rhs_sync_levels_inv = invert(rhs_sync_levels, rhs_num_of_levels);
 
     // Function: adds a new state to the result and puts it to the worklist
     auto try_to_map_state_add_to_wordlist = [&](const State state, const State orig_a, const State orig_b, const bool is_a_lhs) {
