@@ -424,6 +424,10 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             perform_rhs_wait = perform_rhs_wait || (epsilon_in_lhs && !epsilon_in_rhs);
 
             auto process_intersection = [&](const StateSet& lhs_targets, const StateSet& rhs_targets, const Symbol symbol) {
+                State local_res_src = res_src;
+                if (!project_out_sync_levels && !lhs_targets.empty() && !rhs_targets.empty()) {
+                    local_res_src = repeat_transition(local_res_src, 1, symbol);
+                }
                 for (const State lhs_tgt: lhs_targets) {
                     const Level lhs_tgt_level = lhs.levels[lhs_tgt];
                     for (const State rhs_tgt: rhs_targets) {
@@ -431,45 +435,45 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                         if (lhs_tgt_level == 0 && rhs_tgt_level == 0) {
                             const auto key = std::make_pair(lhs_tgt, rhs_tgt);
                             auto it = main_state_map.find(key);
-                            if (!project_out_sync_levels) {
-                                if (it != main_state_map.end()) {
-                                    const State res_tgt = it->second;
-                                    // The mapping exists, redirect transition going to orig_src to the existing state.
-                                    result.delta.add(res_src, symbol, res_tgt);
-                                } else {
-                                    // The mapping does not exist. Update it.
-                                    const State res_tgt = get_state_or_add_and_put_to_worklist(lhs_tgt, rhs_tgt, true, main_worklist);
-                                    result.delta.add(res_src, symbol, res_tgt);
-                                    commited_states.insert(res_tgt);
-                                }
-                            } else {
+                            // if (!project_out_sync_levels) {
+                            //     if (it != main_state_map.end()) {
+                            //         const State res_tgt = it->second;
+                            //         // The mapping exists, redirect transition going to orig_src to the existing state.
+                            //         result.delta.add(res_src, symbol, res_tgt);
+                            //     } else {
+                            //         // The mapping does not exist. Update it.
+                            //         const State res_tgt = get_state_or_add_and_put_to_worklist(lhs_tgt, rhs_tgt, true, main_worklist);
+                            //         result.delta.add(res_src, symbol, res_tgt);
+                            //         commited_states.insert(res_tgt);
+                            //     }
+                            // } else {
                                 if (it != main_state_map.end()) {
                                     // The mapping exists, redirect transition goig to orig_src to the existing state.
-                                    redirect(res_src, it->second);
+                                    redirect(local_res_src, it->second);
                                 } else {
                                     // The mapping does not exist. Update it.
-                                    try_to_map_state_add_to_wordlist(res_src, lhs_tgt, rhs_tgt, true);
-                                    commited_states.insert(res_src);
+                                    try_to_map_state_add_to_wordlist(local_res_src, lhs_tgt, rhs_tgt, true);
+                                    commited_states.insert(local_res_src);
                                 }
-                            }
+                            // }
                         } else {
-                            if (!project_out_sync_levels) {
-                                const State res_tgt = get_state(lhs_tgt, rhs_tgt, (res_src_level + 1) % result_num_of_levels);
-                                result.delta.add(res_src, symbol, res_tgt);
-                                pred_map[res_tgt].insert(res_src);
+                            // if (!project_out_sync_levels) {
+                            //     const State res_tgt = get_state(lhs_tgt, rhs_tgt, (res_src_level + 1) % result_num_of_levels);
+                            //     result.delta.add(res_src, symbol, res_tgt);
+                            //     pred_map[res_tgt].insert(res_src);
+                            //     if (!visited.contains({lhs_tgt, rhs_tgt})) {
+                            //         // We have not visited this pair yet.
+                            //         visited.insert({lhs_tgt, rhs_tgt});
+                            //         worklist.push({res_tgt, lhs_tgt, rhs_tgt});
+                            //     }
+                            // } else {
                                 if (!visited.contains({lhs_tgt, rhs_tgt})) {
                                     // We have not visited this pair yet.
                                     visited.insert({lhs_tgt, rhs_tgt});
-                                    worklist.push({res_tgt, lhs_tgt, rhs_tgt});
+                                    main_state_map[std::make_pair(lhs_tgt, rhs_tgt)] = local_res_src;
+                                    worklist.push({local_res_src, lhs_tgt, rhs_tgt});
                                 }
-                            } else {
-                                if (!visited.contains({lhs_tgt, rhs_tgt})) {
-                                    // We have not visited this pair yet.
-                                    visited.insert({lhs_tgt, rhs_tgt});
-                                    main_state_map[std::make_pair(lhs_tgt, rhs_tgt)] = res_src;
-                                    worklist.push({res_src, lhs_tgt, rhs_tgt});
-                                }
-                            }
+                            // }
                         }
                     }
                 }
