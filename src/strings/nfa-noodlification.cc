@@ -461,7 +461,6 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
     add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
     intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
-    intersection.trim();
 
     if(intersection.final.empty()) {
         return {};

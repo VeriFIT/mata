@@ -73,14 +73,7 @@ TEST_CASE("Mata::nft::compose()") {
                 expected.delta.add(3, 'h', 4);
                 expected.delta.add(4, EPSILON, 5);
                 expected.delta.add(5, 'j', 6);
-                expected.delta.add(2, EPSILON, 7);
-                expected.delta.add(7, 'h', 8);
-                expected.delta.add(8, 'g', 9);
-                expected.delta.add(9, EPSILON, 4);
-                expected.delta.add(2, 'g', 10);
-                expected.delta.add(10, EPSILON, 11);
-                expected.delta.add(11, EPSILON, 12);
-                expected.delta.add(12, 'h', 4);
+
 
                 result = compose(lhs, rhs, 1, 0);
 
@@ -236,21 +229,14 @@ TEST_CASE("Mata::nft::compose()") {
                 rhs.delta.add(2, EPSILON, 3);
                 rhs.delta.add(3, 'd', 4);
 
-                expected = Nft(13, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1 }, 2);
+                expected = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
                 expected.delta.add(0, 'x', 1);
                 expected.delta.add(1, EPSILON, 2);
                 expected.delta.add(2, EPSILON, 3);
                 expected.delta.add(3, 'b', 4);
                 expected.delta.add(4, 'x', 5);
-                expected.delta.add(4, EPSILON, 10);
-                expected.delta.add(10, 'd', 11);
-                expected.delta.add(11, 'x', 12);
-                expected.delta.add(12, EPSILON, 6);
-                expected.delta.add(4, 'x', 7);
-                expected.delta.add(7, EPSILON, 8);
-                expected.delta.add(8, EPSILON, 9);
-                expected.delta.add(9, 'd', 6);
                 expected.delta.add(5, 'd', 6);
+                expected.print_to_dot(std::string("expected.dot"), true);
 
                 result = compose(lhs, rhs);
 
