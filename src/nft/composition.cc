@@ -117,7 +117,9 @@ namespace {
 namespace mata::nft
 {
 
-Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels, const bool are_sync_levels_unwinded, const bool project_out_sync_levels, const JumpMode jump_mode) {
+// TODO: Refactor this function to be more readable and maintainable.
+//       There is a shitton of code duplication in this function.
+Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels, const bool project_out_sync_levels, const bool are_sync_levels_unwinded, const JumpMode jump_mode) {
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
 
     // Number of Levels and States
@@ -227,6 +229,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
     };
 
     // Function: maps epsilon transitions on the sync path
+    // TODO: Refactor - too many similarities in the code and with the code of map_combination_path.
     auto map_epsilon_on_sync_path = [&](const State res_root, const State orig_root, const State wait_root, const bool is_orig_lhs) {
         const Nft& orig_nft = is_orig_lhs ? lhs : rhs;
         const OrdVector<Level>& sync_levels = is_orig_lhs ? lhs_sync_levels : rhs_sync_levels;
@@ -234,7 +237,6 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
         const std::vector<size_t>& between = is_orig_lhs ? rhs_between : lhs_between;   // Use rhs_between if we are in lhs NFT, and vice versa.
         const BoolVector& is_sync_level = is_orig_lhs ? lhs_is_sync_level : rhs_is_sync_level;
         const bool add_before = !is_orig_lhs;   // On each section within sync levels, lhs transitions go begore rhs transitions.
-        std::stack<std::pair<State, State>>& main_worklist = worklist;
 
         // Worklist contains pairs of (state in the result NFT, and state in the original lhs/rhs NFT).
         std::stack<std::pair<State, State>> worklist;
@@ -243,6 +245,9 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
         visited.insert(orig_root);
         pred_map.clear();
 
+        // TODO: Use more optimal date structure.
+        // TODO: I can maybe use the main memory storage (matrix),
+        //       I'll just look up the pair (root, orig_state). Maybe.
         std::unordered_map<State, State> local_state_map;
         auto get_state = [&](const State orig_state, const Level level) {
             // Get the state from the map or add a new one.
@@ -288,6 +293,11 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 // Process targets of the epsilon transitions (this transition will be projected out).
                 for (const State orig_tgt: epsilon_post_it->targets) {
                     if (orig_nft.levels[orig_tgt] == 0) {
+                        if (orig_src == orig_root && orig_nft.num_of_levels > 1) {
+                            // This is an NFA-like epsilon transition going from zero-level state to another zero-level state.
+                            // It has been already handled in the main loop.
+                            continue;
+                        }
                         // We are connecting to a zero-level state.
                         // Add EPSILON transitions for those in rhs AFTER this last transition (we are in lhs).
                         if (!add_before && between[num_of_sync_levels] != 0) {
@@ -326,8 +336,13 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 for (const SymbolPost& symbol_post: orig_nft.delta[orig_src]) {
                     for (const State orig_tgt: symbol_post.targets) {
                         const Level orig_tgt_level = orig_nft.levels[orig_tgt];
-
                         if (orig_tgt_level == 0) {
+                            if (orig_src == orig_root && symbol_post.symbol == EPSILON && orig_nft.num_of_levels > 1) {
+                                // This is an NFA-like epsilon transition going from zero-level state to another zero-level state.
+                                // It has been already handled in the main loop.
+                                continue;
+                            }
+
                             // We are connecting to a zero-level state.
                             const Level level_diff = orig_nft.num_of_levels - orig_src_level;
                             if (!add_before && between[num_of_sync_levels] != 0) {
@@ -340,7 +355,6 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                                 if (!exist_res_tgt_inner) {
                                     // Then add the EPSILON transitions.
                                     const State res_tgt = create_composition_state(orig_tgt, wait_root, 0, is_orig_lhs);
-                                    // const State res_tgt = get_state_or_add_and_put_to_worklist(orig_tgt, wait_root, is_orig_lhs, main_worklist);
                                     assert((result.levels[res_tgt_inner] + between[num_of_sync_levels]) % result_num_of_levels == result.levels[res_tgt]);
                                     add_transition_with_target(result, res_tgt_inner, EPSILON, res_tgt, jump_mode, pred_map);
                                     commited_states.insert(res_tgt);
@@ -371,13 +385,12 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
         }
     };
 
+    // Maps result of a composition starting from zero-level states lhs_root and rhs_root.
+    // This mapping ends in next zero-level states.
     auto map_combination_path = [&](const State res_root, const State lhs_root, const State rhs_root) {
-        std::stack<std::pair<State, State>>& main_worklist = worklist;
         pred_map.clear();
         std::stack<std::tuple<State, State, State>> worklist;
         worklist.push({res_root, lhs_root, rhs_root});
-        std::unordered_set<std::pair<State, State>> visited;
-        visited.insert({lhs_root, rhs_root});
 
         bool perform_lhs_wait = false;
         bool perform_rhs_wait = false;
@@ -389,7 +402,6 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             const Level res_src_level = result.levels[res_src];
             const Level lhs_src_level = lhs.levels[lhs_src];
             const Level rhs_src_level = rhs.levels[rhs_src];
-
             const bool lhs_in_target_and_rhs_remains = lhs_src_level == 0 && rhs_src_level != 0;
 
             // Go in lhs all the way down to the sync level.
@@ -397,6 +409,12 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 for (const SymbolPost& symbol_post: lhs.delta[lhs_src]) {
                     for (const State lhs_tgt: symbol_post.targets) {
                         const Level lhs_tgt_level = lhs.levels[lhs_tgt];
+                        if (symbol_post.symbol == EPSILON && lhs_src_level == 0 && lhs_tgt_level == 0 && lhs_num_of_levels > 1) {
+                            // This is an NFA-like epsilon transition going from zero-level state to another zero-level state.
+                            // It has been already handled in the main loop.
+                            continue;
+                        }
+
                         if (lhs_tgt_level == 0) {
                             const size_t trans_len = lhs_num_of_levels - lhs_src_level;
                             // We are connecting to a zero-level state.
@@ -404,29 +422,31 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                                 // There is no transition in rhs.
                                 const State res_tgt = create_composition_state(lhs_tgt, rhs_src, 0);
                                 result.delta.add(res_src, symbol_post.symbol, res_tgt);
+                                // There are no unprocessed synchronization transitions, so we can commit the state.
+                                // TODO: is it really necessary?
                                 commited_states.insert(res_tgt);
                             } else {
                                 // There is a transition in rhs.
+                                const bool visited = get_state_from_product_storage(lhs_tgt, rhs_src) != Limits::max_state;
                                 const State res_tgt = create_composition_state(lhs_tgt, rhs_src, trans_len + res_src_level);
                                 result.delta.add(res_src, symbol_post.symbol, res_tgt);
                                 pred_map[res_tgt].insert(res_src);
-                                if (!visited.contains({lhs_tgt, rhs_src})) {
+                                if (!visited) {
                                     // Not visited, add to the worklist
                                     worklist.push({res_tgt, lhs_tgt, rhs_src});
-                                    visited.insert({lhs_tgt, rhs_src});
                                 }
                             }
                         } else {
                             // We are connecting to a non-zero-level state.
                             const Level level_diff = lhs_tgt_level - lhs_src_level;
                             assert(res_src_level + level_diff <= result_num_of_levels);
+                            bool visited = get_state_from_product_storage(lhs_tgt, rhs_src) != Limits::max_state;
                             const State res_tgt = create_composition_state(lhs_tgt, rhs_src, (res_src_level + level_diff) % result_num_of_levels);
                             result.delta.add(res_src, symbol_post.symbol, res_tgt);
                             pred_map[res_tgt].insert(res_src);
-                            if (!visited.contains({lhs_tgt, rhs_src})) {
+                            if (!visited) {
                                 // Not visited, add to the worklist
                                 worklist.push({res_tgt, lhs_tgt, rhs_src});
-                                visited.insert({lhs_tgt, rhs_src});
                             }
                         }
                     }
@@ -439,7 +459,14 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 for (const SymbolPost& symbol_post: rhs.delta[rhs_src]) {
                     for (const State rhs_tgt: symbol_post.targets) {
                         const Level rhs_tgt_level = rhs.levels[rhs_tgt];
+                        if (symbol_post.symbol == EPSILON && rhs_src_level == 0 && rhs_tgt_level == 0 && rhs_num_of_levels > 1) {
+                            // This is an NFA-like epsilon transition going from zero-level state to another zero-level state.
+                            // It has been already handled in the main loop.
+                            continue;
+                        }
+
                         if (rhs_tgt_level == 0) {
+                            // We are connecting to a zero-level state.
                             const State res_tgt = create_composition_state(lhs_src, rhs_tgt, 0);
                             result.delta.add(res_src, symbol_post.symbol, res_tgt);
                             commited_states.insert(res_tgt);
@@ -447,13 +474,13 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                             // We are connecting to a non-zero-level state.
                             const Level level_diff = rhs_tgt_level - rhs_src_level;
                             assert(res_src_level + level_diff <= result_num_of_levels);
+                            const bool visited = get_state_from_product_storage(lhs_src, rhs_tgt) != Limits::max_state;
                             const State res_tgt = create_composition_state(lhs_src, rhs_tgt, (res_src_level + level_diff) % result_num_of_levels);
                             result.delta.add(res_src, symbol_post.symbol, res_tgt);
                             pred_map[res_tgt].insert(res_src);
-                            if (!visited.contains({lhs_src, rhs_tgt})) {
+                            if (!visited) {
                                 // Not visited, add to the worklist
                                 worklist.push({res_tgt, lhs_src, rhs_tgt});
-                                visited.insert({lhs_src, rhs_tgt});
                             }
                         }
                     }
@@ -467,6 +494,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             perform_lhs_wait = perform_lhs_wait || (epsilon_in_rhs && !epsilon_in_lhs);
             perform_rhs_wait = perform_rhs_wait || (epsilon_in_lhs && !epsilon_in_rhs);
 
+            // Processes the intersection of transitions in lhs and rhs.
             auto process_intersection = [&](const StateSet& lhs_targets, const StateSet& rhs_targets, const Symbol symbol) {
                 State local_res_src = res_src;
                 if (!project_out_sync_levels && !lhs_targets.empty() && !rhs_targets.empty()) {
@@ -474,24 +502,34 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 }
                 for (const State lhs_tgt: lhs_targets) {
                     const Level lhs_tgt_level = lhs.levels[lhs_tgt];
+                    if (symbol == EPSILON && lhs_src_level == 0 && lhs_tgt_level == 0 && lhs_num_of_levels > 1) {
+                        // This is an NFA-like epsilon transition going from zero-level state to another zero-level state.
+                        // It has been already handled in the main loop.
+                        continue;
+                    }
                     for (const State rhs_tgt: rhs_targets) {
                         const Level rhs_tgt_level = rhs.levels[rhs_tgt];
+                        if (symbol == EPSILON && rhs_src_level == 0 && rhs_tgt_level == 0 && rhs_num_of_levels > 1) {
+                            // This is an NFA-like epsilon transition going from zero-level state to another zero-level state.
+                            // It has been already handled in the main loop.
+                            continue;
+                        }
+
                         if (lhs_tgt_level == 0 && rhs_tgt_level == 0) {
-                            const auto key = std::make_pair(lhs_tgt, rhs_tgt);
+                            // We are connecting to a zero-level state.
                             const State found_state = get_state_from_product_storage(lhs_tgt, rhs_tgt);
                             if (found_state != Limits::max_state) {
-                                    // The mapping exists, redirect transition goig to orig_src to the existing state.
-                                    redirect_transitions(result, local_res_src, found_state, pred_map);
-                                } else {
-                                    assert(found_state == Limits::max_state);
-                                    // The mapping does not exist. Update it.
-                                    create_composition_state(lhs_tgt, rhs_tgt, 0, true, local_res_src);
-                                    commited_states.insert(local_res_src);
-                                }
+                                // The mapping exists, redirect transition goig to orig_src to the existing state.
+                                redirect_transitions(result, local_res_src, found_state, pred_map);
+                            } else {
+                                assert(found_state == Limits::max_state);
+                                // The mapping does not exist. Update it.
+                                create_composition_state(lhs_tgt, rhs_tgt, 0, true, local_res_src);
+                                commited_states.insert(local_res_src);
+                            }
                         } else {
-                            if (!visited.contains({lhs_tgt, rhs_tgt})) {
+                            if (get_state_from_product_storage(lhs_tgt, rhs_tgt) == Limits::max_state) {
                                 // We have not visited this pair yet.
-                                visited.insert({lhs_tgt, rhs_tgt});
                                 insert_to_product_storage(lhs_tgt, rhs_tgt, local_res_src);
                                 worklist.push({local_res_src, lhs_tgt, rhs_tgt});
                             }
@@ -500,7 +538,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 }
             };
 
-            // Intersection
+            // Process symbol intersection
             mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
             mata::utils::push_back(sync_iterator, lhs.delta[lhs_src]);
             mata::utils::push_back(sync_iterator, rhs.delta[rhs_src]);
@@ -515,6 +553,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 );
             }
 
+            // Process DONT_CARE symbol in lhs.
             if (lhs.delta[lhs_src].find(DONT_CARE) != lhs.delta[lhs_src].end()) {
                 for (const SymbolPost& symbol_post: rhs.delta[rhs_src]) {
                     process_intersection(
@@ -525,6 +564,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                 }
             }
 
+            // Process DONT_CARE symbol in rhs.
             if (rhs.delta[rhs_src].find(DONT_CARE) != rhs.delta[rhs_src].end()) {
                 for (const SymbolPost& symbol_post: lhs.delta[lhs_src]) {
                     process_intersection(
@@ -536,6 +576,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             }
         }
 
+        // Perform waiting if necessary.
         if (perform_lhs_wait) {
             map_epsilon_on_sync_path(res_root, rhs_root, lhs_root, false);
         }
@@ -544,7 +585,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
         }
     };
 
-    // INITIALIZATION
+    // INITIALIZATION on a worklist (side effect of a create_composition_state)
     for (const State lhs_root: lhs.initial) {
         for (const State rhs_root: rhs.initial) {
             // Get the root state in the result NFT
@@ -556,142 +597,60 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
 
     // MAIN LOOP
     while (!worklist.empty()) {
-        auto [orig_a, orig_b] = worklist.top();
+        auto [orig_lhs, orig_rhs] = worklist.top();
         worklist.pop();
 
         // Get the state in the result NFT
-        const State res_root = get_state_from_product_storage(orig_a, orig_b);
+        const State res_root = get_state_from_product_storage(orig_lhs, orig_rhs);
+        // TODO - is commited_states really necessary?
         if (!commited_states.contains(res_root)) {
             result.final.erase(res_root);
             continue;
         }
 
-        // Map epsilon transitions on the sync path
-        map_combination_path(res_root, orig_a, orig_b);
+        // Process "long" EPSILON transitions leading from zero-level state to zero-level state.
+        auto epsilon_post_a = lhs.delta[orig_lhs].find(EPSILON);
+        if (epsilon_post_a != lhs.delta[orig_lhs].end()) {
+            for (const State target: epsilon_post_a->targets) {
+                if (lhs.levels[target] == 0) {
+                    const State res_tgt = create_composition_state(target, orig_rhs, 0);
+                    result.delta.add(res_root, EPSILON, res_tgt);
+                    commited_states.insert(res_tgt);
+                }
+            }
+        }
+        auto epsilon_post_b = rhs.delta[orig_rhs].find(EPSILON);
+        if (epsilon_post_b != rhs.delta[orig_rhs].end()) {
+            for (const State target: epsilon_post_b->targets) {
+                if (rhs.levels[target] == 0) {
+                    const State res_tgt = create_composition_state(orig_lhs, target, 0);
+                    result.delta.add(res_root, EPSILON, res_tgt);
+                    commited_states.insert(res_tgt);
+                }
+            }
+        }
+
+        // Map path created by the composition of lhs and rhs NFTs.
+        // Each iteration starts in zero-level states orig_lhs and orig_rhs
+        // and ends in next zero-level states.
+        map_combination_path(res_root, orig_lhs, orig_rhs);
     }
 
     return result.trim();
 }
 
-
-
 Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(!lhs_sync_levels.empty());
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
 
-
-    return compose_fast(lhs.unwind_jumps({ DONT_CARE }, jump_mode), rhs.unwind_jumps({ DONT_CARE }, jump_mode), lhs_sync_levels, rhs_sync_levels, true, project_out_sync_levels, JumpMode::NoJump);
-
-    // Inserts loop into the given Nft for each state with level 0.
-    // The loop word is constructed using the EPSILON symbol for all levels, except for the levels
-    // where is_dcare_on_transition is true, in which case the DONT_CARE symbol is used.
-    auto insert_self_loops = [&](Nft &nft, const BoolVector &is_dcare_on_transition) {
-        Word loop_word(nft.num_of_levels, EPSILON);
-        for (size_t i{ 0 }; i < nft.num_of_levels; i++) {
-            if (is_dcare_on_transition[i]) {
-                loop_word[i] = DONT_CARE;
-            }
-        }
-
-        size_t original_num_of_states = nft.num_of_states();
-        for (State s{ 0 }; s < original_num_of_states; s++) {
-            if (nft.levels[s] == 0) {
-                nft.insert_word(s, loop_word, s);
-            }
-        }
-    };
-
-    // Calculate the number of non-synchronization levels in lhs and rhs before/after each/last synchronization level.
-    // Example:
-    //    Lets suppose we have 2 synchnonization levels.
-    //    The vector lhs_nonsync_levels_cnt = { 2, 0, 1 } indicates that
-    //    - before the first synchronization level (i == 0) there are 2 non-synchronization levels
-    //    - before the second synchronization level (i == 1) there are 0 non-synchronization levels
-    //    - after the last synchronization level (i == |sync|) there is 1 non-synchronization level
-    std::vector<unsigned> lhs_nonsync_levels_cnt;
-    std::vector<unsigned> rhs_nonsync_levels_cnt;
-    const size_t num_of_sync_levels = lhs_sync_levels.size();
-    lhs_nonsync_levels_cnt.reserve(num_of_sync_levels + 1);
-    rhs_nonsync_levels_cnt.reserve(num_of_sync_levels + 1);
-    auto lhs_sync_levels_it = lhs_sync_levels.cbegin();
-    auto rhs_sync_levels_it = rhs_sync_levels.cbegin();
-    // Before the first synchronization level (i == 0)
-    lhs_nonsync_levels_cnt.push_back(*lhs_sync_levels_it++);
-    rhs_nonsync_levels_cnt.push_back(*rhs_sync_levels_it++);
-    // Before each synchronization level (i < |sync|)
-    for (size_t i = 1; i < num_of_sync_levels; ++i) {
-        lhs_nonsync_levels_cnt.push_back(*lhs_sync_levels_it - *(lhs_sync_levels_it - 1) - 1);
-        rhs_nonsync_levels_cnt.push_back(*rhs_sync_levels_it - *(rhs_sync_levels_it - 1) - 1);
-        ++lhs_sync_levels_it;
-        ++rhs_sync_levels_it;
-    }
-    // After the last synchronization level (i == |sync|)
-    lhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(lhs.num_of_levels) - *(lhs_sync_levels_it - 1) - 1);
-    rhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(rhs.num_of_levels) - *(rhs_sync_levels_it - 1) - 1);
-
-    // Construct a mask for new levels in lhs and rhs.
-    // For each synchronization block (non-synchronization levels up to a synchronization transition),
-    // first insert the non-synchronization levels from lhs, then from rhs, and finally the synchronization level itself.
-    // For the last block of non-synchronization levels after the last synchronization level,
-    // insert the non-synchronization levels from lhs first, followed by the levels from rhs.
-    // Example:
-    //                 LHS                         |                    RHS
-    // --------------------------------------------+---------------------------------------------
-    //            num_of_levels = 5                |             num_of_levels = 4
-    //          sync_levels = { 2, 4 }             |            sync_levels = { 1, 2 }
-    // --------------------------------------------|---------------------------------------------
-    //       nonsync_levels_cnt = { 2, 1, 0 }      |       nonsync_levels_cnt = { 1, 0, 1 }
-    //  new_levels_mask = { 0, 0, 1, 0, 0, 0, 1 }  |  new_levels_mask = { 1, 1, 0, 0, 1, 0, 0 }
-    auto lhs_nonsync_levels_cnt_it = lhs_nonsync_levels_cnt.cbegin();
-    auto rhs_nonsync_levels_cnt_it = rhs_nonsync_levels_cnt.cbegin();
-    BoolVector lhs_new_levels_mask;
-    BoolVector rhs_new_levels_mask;
-    OrdVector<Level> sync_levels_to_project_out;
-    Level level = 0;
-    const size_t nonsync_levels_cnt_size = lhs_nonsync_levels_cnt.size();
-    for (size_t i = 0; i < nonsync_levels_cnt_size; ++i) {
-        // LHS goes first -> make space (insert new levels) in RHS
-        for (unsigned j = 0; j < *lhs_nonsync_levels_cnt_it; ++j, ++level) {
-            lhs_new_levels_mask.push_back(false);
-            rhs_new_levels_mask.push_back(true);
-        }
-        // RHS goes first -> make space (insert new levels) in LHS
-        for (unsigned j = 0; j < *rhs_nonsync_levels_cnt_it; ++j, ++level) {
-            lhs_new_levels_mask.push_back(true);
-            rhs_new_levels_mask.push_back(false);
-        }
-        // The synchronization level goes last
-        if (i < num_of_sync_levels) {
-            sync_levels_to_project_out.push_back(level);
-            lhs_new_levels_mask.push_back(false);
-            rhs_new_levels_mask.push_back(false);
-            ++level;
-        }
-        ++lhs_nonsync_levels_cnt_it;
-        ++rhs_nonsync_levels_cnt_it;
+    if (jump_mode == JumpMode::NoJump) {
+        // If we are not jumping, we can use the fast composition.
+        return compose_fast(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, true, jump_mode);
     }
 
-    // Insert new levels into lhs and rhs.
-    Nft lhs_synced = insert_levels(lhs, lhs_new_levels_mask, jump_mode);
-    Nft rhs_synced = insert_levels(rhs, rhs_new_levels_mask, jump_mode);
-
-    // Two auxiliary states (states from inserted loops) can not create a product state.
-    const State lhs_first_aux_state = lhs_synced.num_of_states();
-    const State rhs_first_aux_state = rhs_synced.num_of_states();
-
-    // Insert self-loops into lhs and rhs to ensure synchronization on epsilon transitions.
-    insert_self_loops(lhs_synced, lhs_new_levels_mask);
-    insert_self_loops(rhs_synced, rhs_new_levels_mask);
-
-    Nft result{ intersection(lhs_synced, rhs_synced, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state) };
-    if (project_out_sync_levels) {
-        result = project_out(result, sync_levels_to_project_out, jump_mode);
-    }
-    return result;
-}
-
-Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, bool project_out_sync_levels, const JumpMode jump_mode) {
-    return compose(lhs, rhs, OrdVector{ lhs_sync_level }, OrdVector{ rhs_sync_level }, project_out_sync_levels, jump_mode);
+    // TODO - add better unwinding
+    // throw std::runtime_error("Noodler should not go here. Noodler should always use JumpMode::NoJump.");
+    return compose_fast(lhs.unwind_jumps({ DONT_CARE }, jump_mode), rhs.unwind_jumps({ DONT_CARE }, jump_mode), lhs_sync_levels, rhs_sync_levels,  project_out_sync_levels, true, JumpMode::NoJump);
 }
 
 } // mata::nft

@@ -787,7 +787,7 @@ TEST_CASE("nft::compose_fast()") {
             rhs.delta.add(3, 'g', 4);
             rhs.delta.add(3, 'h', 4);
 
-            Nft result = compose_fast(lhs, rhs, { 0 }, { 0 }, true, false, JumpMode::NoJump);
+            Nft result = compose_fast(lhs, rhs, { 0 }, { 0 }, false, true, JumpMode::NoJump);
 
             Nft expected;
             expected.num_of_levels = 3;
@@ -840,7 +840,7 @@ TEST_CASE("nft::compose_fast()") {
             rhs.delta.add(3, 'y', 0);
             rhs.print_to_dot(std::string("rhs.dot"), true, true);
 
-            Nft result = compose_fast(lhs, rhs, { 0, 2 }, { 1, 3 }, true, false, JumpMode::NoJump);
+            Nft result = compose_fast(lhs, rhs, { 0, 2 }, { 1, 3 }, false, true, JumpMode::NoJump);
             result.print_to_dot(std::string("result.dot"), true, true);
 
             Nft expected;
@@ -903,7 +903,7 @@ TEST_CASE("nft::compose_fast()") {
             rhs.delta.add(11, 'x', 13);
             rhs.delta.add(13, 'y', 15);
 
-            Nft result = compose_fast(lhs, rhs, { 1, 2 }, { 2, 3 }, true, false, JumpMode::NoJump);
+            Nft result = compose_fast(lhs, rhs, { 1, 2 }, { 2, 3 }, false, true, JumpMode::NoJump);
 
             Nft expected;
             expected.num_of_levels = 5;
@@ -962,7 +962,7 @@ TEST_CASE("nft::compose_fast()") {
             rhs.delta.add(8, 'x', 10);
             rhs.delta.add(10, 'y', 12);
 
-            Nft result = compose_fast(lhs, rhs, { 1, 2 }, { 1, 2 }, true, false, JumpMode::NoJump);
+            Nft result = compose_fast(lhs, rhs, { 1, 2 }, { 1, 2 }, false, true, JumpMode::NoJump);
 
             Nft expected;
             expected.num_of_levels = 4;
