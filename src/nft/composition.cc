@@ -649,7 +649,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     }
 
     // TODO - add better unwinding
-    // throw std::runtime_error("Noodler should not go here. Noodler should always use JumpMode::NoJump.");
+    throw std::runtime_error("Noodler should not go here. Noodler should always use JumpMode::NoJump.");
     return compose_fast(lhs.unwind_jumps({ DONT_CARE }, jump_mode), rhs.unwind_jumps({ DONT_CARE }, jump_mode), lhs_sync_levels, rhs_sync_levels,  project_out_sync_levels, true, JumpMode::NoJump);
 }
 
