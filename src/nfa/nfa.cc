@@ -181,8 +181,8 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
 
 // Nfa mata::nfa::trimmed(const Nfa& nfa, StateRenaming* state_renaming, SparseSet<State> initial_states, SparseSet<State> final_states) {
 Nfa mata::nfa::trimmed(const Nfa &nfa, StateRenaming *state_renaming,
-                       std::optional<std::reference_wrapper<const SparseSet<State>> > initial_states,
-                       std::optional<std::reference_wrapper<const SparseSet<State>> > final_states) {
+                       std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states,
+                       std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) {
     if (!initial_states) { initial_states = nfa.initial; }
     if (!final_states) { final_states = nfa.final; }
 

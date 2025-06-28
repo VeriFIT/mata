@@ -7,11 +7,12 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/delta.hh"
 
-
 #include <algorithm>
-#include <list>
 #include <iterator>
 #include <queue>
+#include <functional>
+#include <utility>
+
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -342,9 +343,6 @@ StatePost& Delta::mutable_state_post(State q) {
 }
 
 
-#include <functional>
-#include <utility>
-
 template <typename T>
 std::vector<T> filterMap(const std::vector<T>& V, const std::function<std::pair<bool, T>(const T&)>& NewElem) {
     std::vector<T> result;
@@ -369,7 +367,7 @@ StateSet filterMap(const StateSet& V, const std::function<std::pair<bool, State>
 StatePost filterMap(const StatePost& V, const std::function<SymbolPost(const SymbolPost&)>& NewElem) {
     StatePost result;
     for (const SymbolPost& elem: V) {
-        auto symbol_post = NewElem(elem);
+        SymbolPost symbol_post{ NewElem(elem) };
         if (symbol_post.empty()) {
            continue;
         }
@@ -390,14 +388,15 @@ Delta mata::nfa::defragmented_delta(const Delta &delta, const BoolVector &is_sta
         };
 
     auto renameStatePost = [&](const State src) {
-        if (!is_staying[src]) { return std::make_pair(false, StatePost{}); }
-        return std::make_pair(static_cast<bool>(is_staying[src]), StatePost{filterMap(delta.state_posts_[src], renameSymbolPost)});
+        // if (!is_staying[src]) { return std::make_pair(false, StatePost{}); }
+        // return std::make_pair(static_cast<bool>(is_staying[src]), StatePost{filterMap(delta.state_posts_[src], renameSymbolPost)});
+        return StatePost{filterMap(delta.state_posts_[src], renameSymbolPost)};
     };
 
     for (State src{0}; src < delta.state_posts_.size(); ++src) {
         if (is_staying[src]) {
-            auto [_, state_post] = renameStatePost(src);
-            delta_defragmented.state_posts_.push_back(std::move(state_post));
+            // auto [_, state_post] = renameStatePost(src);
+            delta_defragmented.state_posts_.push_back(std::move(renameStatePost(src)));
         }
     }
 

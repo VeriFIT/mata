@@ -1311,28 +1311,34 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
         }
 
         // Try to recursively walk through the NFA transitions from the current @p initial_state until a final state is
-        //  encountered or all states reachable from @p initial_state are searched without finding any final state.
+        //  encountered, or all states reachable from @p initial_state are searched without finding any final state.
         while (!worklist.empty()) {
             // Using references to iterators to be able to increment the top-most element in the worklist in place.
-            auto& [state_post_it, state_post_end, targets_it]{ worklist.back() };
-            if (state_post_it != state_post_end) {
+            if (auto &[state_post_it, state_post_end, targets_it]{worklist.back()}; state_post_it != state_post_end) {
                 if (targets_it != state_post_it->targets.cend()) {
-                    if (searched[*targets_it]) { ++targets_it; continue; }
-                    if (final.contains(*targets_it)) { final_found = true; break; }
+                    if (searched[*targets_it]) {
+                        ++targets_it;
+                        continue;
+                    }
+                    if (final.contains(*targets_it)) {
+                        final_found = true;
+                        break;
+                    }
                     searched[*targets_it] = true;
-                    const StatePost& state_post{ delta[*targets_it] };
-                    if (!state_post.empty()) {
-                        auto new_state_post_it{ state_post.cbegin() };
-                        auto new_targets_it{ new_state_post_it->cbegin() };
+                    if (const StatePost &state_post{delta[*targets_it]}; !state_post.empty()) {
+                        auto new_state_post_it{state_post.cbegin()};
+                        auto new_targets_it{new_state_post_it->cbegin()};
                         worklist.emplace_back(new_state_post_it, state_post.cend(), new_targets_it);
                     } else { ++targets_it; }
-                } else { // targets_it == state_post_it->targets.cend().
+                } else {
+                    // targets_it == state_post_it->targets.cend().
                     ++state_post_it;
                     if (state_post_it != state_post_end) { targets_it = state_post_it->cbegin(); }
                 }
-            } else { // state_post_it == state_post_end.
+            } else {
+                // state_post_it == state_post_end.
                 worklist.pop_back();
-                auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{ worklist.back() };
+                auto &[_prev_state_post_it, _prev_state_post_end, prev_targets_it]{worklist.back()};
                 ++prev_targets_it;
             }
         }
@@ -1342,8 +1348,10 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
     if (!final_found) { return std::nullopt; }
     Word word;
     word.reserve(worklist.size());
-    for (const auto& [symbol_post_it, symbol_post_end, _targets_it]: worklist) {
-        if (!first_epsilon.has_value() || symbol_post_it->symbol < first_epsilon) { word.push_back(symbol_post_it->symbol); }
+    for (const auto &[symbol_post_it, symbol_post_end, _targets_it]: worklist) {
+        if (!first_epsilon.has_value() || symbol_post_it->symbol < first_epsilon) {
+            word.push_back(symbol_post_it->symbol);
+        }
     }
     return word;
 }
