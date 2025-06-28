@@ -370,6 +370,7 @@ public:
     StatePost& mutable_state_post(State source);
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    friend Delta defragmented_delta(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
@@ -542,9 +543,12 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
+
 protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+Delta defragmented_delta(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
 /**
  * @brief Iterator over transitions represented as @c Transition instances.

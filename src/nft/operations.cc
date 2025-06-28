@@ -885,7 +885,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 
 //TODO: Implement for NFT
 bool mata::nft::Nft::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
-    std::cerr << "Warning: Nft::is_in_lang uses Nfa::is_in_lang, which is not designed for NFT's jump transitions" << std::endl;
+    // std::cerr << "Warning: Nft::is_in_lang uses Nfa::is_in_lang, which is not designed for NFT's jump transitions" << std::endl;
     return nfa::Nfa::is_in_lang(run, use_epsilon, match_prefix);
 }
 

@@ -341,6 +341,69 @@ StatePost& Delta::mutable_state_post(State q) {
     return state_posts_[q];
 }
 
+
+#include <functional>
+#include <utility>
+
+template <typename T>
+std::vector<T> filterMap(const std::vector<T>& V, const std::function<std::pair<bool, T>(const T&)>& NewElem) {
+    std::vector<T> result;
+    for (const T& elem: V) {
+        if (auto&&[stay, transformed] = NewElem(elem); stay) {
+            result.push_back(std::move(transformed));
+        }
+    }
+    return result;
+}
+
+StateSet filterMap(const StateSet& V, const std::function<std::pair<bool, State>(const State&)>& NewElem) {
+    StateSet result;
+    for (const State& elem: V) {
+        if (auto[stay, transformed] = NewElem(elem); stay) {
+            result.push_back(transformed);
+        }
+    }
+    return result;
+}
+
+StatePost filterMap(const StatePost& V, const std::function<SymbolPost(const SymbolPost&)>& NewElem) {
+    StatePost result;
+    for (const SymbolPost& elem: V) {
+        auto symbol_post = NewElem(elem);
+        if (symbol_post.empty()) {
+           continue;
+        }
+        result.push_back(std::move(symbol_post));
+    }
+    return result;
+}
+
+Delta mata::nfa::defragmented_delta(const Delta &delta, const BoolVector &is_staying, const std::vector<State> &renaming) {
+    Delta delta_defragmented;
+
+    auto renamedTargetState = [&](const State& state) {
+        return std::pair{is_staying[state], renaming[state]};
+    };
+
+    auto renameSymbolPost = [&](const SymbolPost& symbol_post) {
+        return SymbolPost{symbol_post.symbol, filterMap(symbol_post.targets, renamedTargetState)};
+        };
+
+    auto renameStatePost = [&](const State src) {
+        if (!is_staying[src]) { return std::make_pair(false, StatePost{}); }
+        return std::make_pair(static_cast<bool>(is_staying[src]), StatePost{filterMap(delta.state_posts_[src], renameSymbolPost)});
+    };
+
+    for (State src{0}; src < delta.state_posts_.size(); ++src) {
+        if (is_staying[src]) {
+            auto [_, state_post] = renameStatePost(src);
+            delta_defragmented.state_posts_.push_back(std::move(state_post));
+        }
+    }
+
+    return delta_defragmented;
+}
+
 void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
     //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
 
@@ -377,10 +440,10 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 }
 
 bool Delta::operator==(const Delta& other) const {
-    Delta::Transitions this_transitions{ transitions() };
+    const Delta::Transitions this_transitions{ transitions() };
     Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
     const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
-    Delta::Transitions other_transitions{ other.transitions() };
+    const Delta::Transitions other_transitions{ other.transitions() };
     Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
     const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
     while (this_transitions_it != this_transitions_end) {

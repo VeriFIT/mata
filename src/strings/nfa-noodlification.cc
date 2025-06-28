@@ -6,6 +6,8 @@
 #include "mata/nft/builder.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/algorithms.hh"
+#include <optional>
+#include <ranges>
 
 using namespace mata::nfa;
 using namespace mata::strings;
@@ -38,7 +40,7 @@ size_t get_num_of_permutations(const seg_nfa::Segmentation::EpsilonDepthTransiti
  * @param[in,out] unified_nfas The set of already unified automata
  */
 void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfas, std::unordered_set<std::shared_ptr<Nfa>>& unified_nfas) {
-    for (std::shared_ptr<Nfa> nfa : nfas) {
+    for (const std::shared_ptr<Nfa>& nfa : nfas) {
         if (!unified_nfas.contains(nfa)) {
             nfa->unify_initial();
             nfa->unify_final();
@@ -66,9 +68,8 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
     if (segments.size() == 1) {
-        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
-        segment->trim();
-        if (segment->num_of_states() > 0 || include_empty) {
+        if (std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(trimmed(segments[0]));
+            segment->num_of_states() > 0 || include_empty) {
             return {{ segment }};
         } else {
             return {};
@@ -147,35 +148,42 @@ void seg_nfa::segs_one_initial_final(
     std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out) {
 
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
-        if (iter == segments.begin()) { // first segment will always have all initial states in noodles
+        if (iter == segments.begin()) { // The first segment will always have all initial states in noodles.
             for (const State final_state: iter->final) {
-                Nfa segment_one_final = *iter;
-                segment_one_final.final = {final_state };
-                segment_one_final = reduce(segment_one_final.trim());
-
-                if (segment_one_final.num_of_states() > 0 || include_empty) {
-                    out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(segment_one_final);
+                // Nfa segment_one_final = *iter;
+                // segment_one_final.final = {final_state };
+                // segment_one_final = reduce(segment_one_final.trim());
+                if (Nfa segment_one_final = reduce(trimmed(*iter, nullptr,
+                                                    std::nullopt,
+                                                     std::make_optional(utils::SparseSet<State>{final_state})));
+                    segment_one_final.num_of_states() > 0 || include_empty) {
+                    out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(std::move(segment_one_final));
                 }
             }
-        } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
+        } else if (iter + 1 == segments.end()) { // The last segment will always have all final states in noodles.
             for (const State init_state: iter->initial) {
-                Nfa segment_one_init = *iter;
-                segment_one_init.initial = {init_state };
-                segment_one_init = reduce(segment_one_init.trim());
-
-                if (segment_one_init.num_of_states() > 0 || include_empty) {
-                    out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(segment_one_init);
+                // Nfa segment_one_init = *iter;
+                // segment_one_init.initial = {init_state };
+                // segment_one_init = reduce(segment_one_init.trim());
+                if (Nfa segment_one_init = reduce(trimmed(*iter, nullptr,
+                                              std::make_optional(utils::SparseSet<State>{init_state}),
+                                              std::nullopt));
+                    segment_one_init.num_of_states() > 0 || include_empty) {
+                    out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(std::move(segment_one_init));
                 }
             }
         } else { // the segments in-between
             for (const State init_state: iter->initial) {
                 for (const State final_state: iter->final) {
-                    Nfa segment_one_init_final = *iter;
-                    segment_one_init_final.initial = {init_state };
-                    segment_one_init_final.final = {final_state };
-                    segment_one_init_final = reduce(segment_one_init_final.trim());
-                    if (segment_one_init_final.num_of_states() > 0 || include_empty) {
-                        out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(segment_one_init_final);
+                    // Nfa segment_one_init_final = *iter;
+                    // segment_one_init_final.initial = {init_state };
+                    // segment_one_init_final.final = {final_state };
+                    // segment_one_init_final = reduce(segment_one_init_final.trim());
+                    if (Nfa segment_one_init_final = reduce(trimmed(*iter, nullptr,
+                                                         std::make_optional(utils::SparseSet<State>{init_state}),
+                                                         std::make_optional(utils::SparseSet<State>{final_state})));
+                        segment_one_init_final.num_of_states() > 0 || include_empty) {
+                        out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(std::move(segment_one_init_final));
                     }
                 }
             }
@@ -194,9 +202,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
     VisitedEpsilonsCounterVector def_eps_vector = process_eps_map(def_eps_map);
 
     if (segments.size() == 1) {
-        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
-        segment->trim();
-        if (segment->num_of_states() > 0 || include_empty) {
+        // segment->trim();
+        if (std::shared_ptr<Nfa> segment { std::make_shared<Nfa>(std::move(trimmed(segments[0]))) }; segment->num_of_states() > 0 || include_empty) {
             return {{ {segment, def_eps_vector} } };
         } else {
             return {};
@@ -220,8 +227,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        std::shared_ptr<Nfa> seg = segments_one_initial_final[{unused_state, fn}];
-        if(seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+        if(std::shared_ptr<Nfa> seg = segments_one_initial_final[{unused_state, fn}]; seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
             new_item.noodle.emplace_back(seg, def_eps_vector);
         }
         new_item.seg_id = 0;
@@ -402,7 +408,7 @@ seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsi
 }
 
 std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
-    std::shared_ptr<Nft> nft,
+    const std::shared_ptr<Nft>& nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
     bool reduce_intersection
@@ -533,9 +539,8 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el; // we create for each segment NFAi only one NFTi and keep it here
     for (const auto& noodle : noodlify_mult_eps(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false)) {
         TransducerNoodle new_noodle;
-        for (const auto& element : noodle) {
+        for (const auto& [element_aut, indices] : noodle) {
             // element.first is NFAi
-            std::shared_ptr<Nfa> element_aut = element.first;
 
             // element.second then keeps the index representing which input/output automaton it is connected with
 
@@ -543,21 +548,21 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
                 // we already processed this NFAi so we can find NFTi in seg_nfa_to_transducer_el
                 TransducerNoodleElement transd_el = seg_nfa_to_transducer_el.at(element_aut);
                 // however, we need to update the indexes of input/output automaton
-                transd_el.input_index = element.second[0];
-                transd_el.output_index= element.second[1];
+                transd_el.input_index = indices[0];
+                transd_el.output_index= indices[1];
                 new_noodle.push_back(transd_el);
                 continue;
             }
 
             // We need to create NFTi, therefore we add levels to NFAi by simple DFS which adds to each state
             // the level opposite of the level of the previous state.
-            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(nft::builder::from_nfa_with_levels_advancing(std::move(*element_aut), 2));
+            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(std::move(nft::builder::from_nfa_with_levels_advancing(std::move(*element_aut), 2)));
 
             TransducerNoodleElement transd_el{element_nft,
                 // the language of the input automaton is the projection to input track
-                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))), element.second[0],
+                std::make_shared<Nfa>(std::move(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0))))), indices[0],
                 // the language of the output automaton is the projection to output track
-                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))), element.second[1]
+                std::make_shared<Nfa>(std::move(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1))))), indices[1]
             };
             seg_nfa_to_transducer_el.insert({element_aut, transd_el});
             new_noodle.push_back(transd_el);

@@ -263,8 +263,8 @@ private:
 
     /**
      * Add states with non-epsilon transitions to the @p worklist.
-     * @param move[in] Move from current state.
-     * @param depth[in] Current depth.
+     * @param state_depth_pair[in] Current depth for a state.
+     * @param move[in] Move from the current state.
      * @param worklist[out] Worklist of state and depth pairs to process.
      */
     void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const SymbolPost& move,
@@ -318,7 +318,7 @@ void segs_one_initial_final(
  * A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition
  *  between each two consecutive segments.
  *
- * @param[in] automaton Segment automaton to noodlify.
+ * @param[in] aut Segment automaton to noodlify.
  * @param[in] epsilon Epsilon symbol to noodlify for.
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
@@ -332,7 +332,7 @@ std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_emp
  * A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition
  *  between each two consecutive segments.
  *
- * @param[in] automaton Segment automaton to noodlify.
+ * @param[in] aut Segment automaton to noodlify.
  * @param[in] epsilons Epsilon symbols to noodlify for.
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
@@ -410,14 +410,14 @@ struct TransducerNoodleElement {
     std::shared_ptr<Nfa> output_aut;
     unsigned output_index;
 
-    TransducerNoodleElement(std::shared_ptr<Nft> transducer, std::shared_ptr<Nfa> input_aut, unsigned input_index, std::shared_ptr<Nfa> output_aut, unsigned output_index)
-                : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
+    TransducerNoodleElement(const std::shared_ptr<Nft>& transducer, const std::shared_ptr<Nfa>& input_aut, const unsigned input_index, const std::shared_ptr<Nfa>& output_aut, const unsigned output_index)
+        : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
 std::vector<TransducerNoodle> noodlify_for_transducer(
-    std::shared_ptr<Nft> nft,
+    const std::shared_ptr<Nft>& nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
     bool reduce_intersection = false
