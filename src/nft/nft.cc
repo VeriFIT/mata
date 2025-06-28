@@ -400,6 +400,7 @@ Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol 
 
 void Nft::get_one_letter_aut(Nft& result) const { result = get_one_letter_aut(); }
 
+// TODO(nft): Implement for NFTs.
 StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
     StateSet res{};
 
