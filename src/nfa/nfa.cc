@@ -50,9 +50,8 @@ namespace {
             }
         }
 
-        State state;
         while (!worklist.empty()) {
-            state = worklist.back();
+            const State state{ worklist.back() };
             worklist.pop_back();
             for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
@@ -73,19 +72,16 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = mata::nfa::remove_epsilon(*this, epsilon);
 }
 
-StateSet Nfa::get_reachable_states() const {
+StateSet Nfa::get_reachable_states(const std::function<bool(State)> &filter) const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{ this->num_of_states() };
-    for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
-    {
-        if (reachable_bool_array[original_state])
-        {
-            reachable_states.insert(original_state);
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (reachable_bool_array[state] && (filter == nullptr || filter(state))) {
+            reachable_states.insert(state);
         }
     }
-
     return reachable_states;
 }
 
@@ -529,21 +525,20 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
 
         std::vector<std::pair<Symbol, Symbol>> intervals;
         auto symbols_it = symbols.begin();
-        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
+        std::pair<Symbol, Symbol> symbols_interval{*symbols_it, *symbols_it};
         ++symbols_it;
         for (; symbols_it != symbols.end(); ++symbols_it) {
-            if (*symbols_it == interval.second + 1) {
-                interval.second = *symbols_it;
+            if (*symbols_it == symbols_interval.second + 1) {
+                symbols_interval.second = *symbols_it;
             } else {
-                intervals.push_back(interval);
-                interval = {*symbols_it, *symbols_it};
+                intervals.push_back(symbols_interval);
+                symbols_interval = {*symbols_it, *symbols_it};
             }
         }
-        intervals.push_back(interval);
+        intervals.push_back(symbols_interval);
 
         for (const auto& interval: intervals) {
-            const size_t interval_size = interval.second - interval.first + 1;
-            if (interval_size == 1) {
+            if (const size_t interval_size = interval.second - interval.first + 1; interval_size == 1) {
                 result += translate_symbol(interval.first) + ",";
             } else if (interval_size == 2) {
                 result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
@@ -682,17 +677,16 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    auto get_epsilon_closure = [&](const StateSet& states) {
-        StateSet closure{ states };
+    auto get_epsilon_closure = [&](const StateSet& source_states) {
+        StateSet closure{ source_states };
         std::queue<State> worklist;
-        for (const State state: states) {
+        for (const State state: source_states) {
             worklist.push(state);
         }
         while (!worklist.empty()) {
             const State state = worklist.front();
             worklist.pop();
-            auto move_it{ delta[state].find(EPSILON) };
-            if (move_it != delta[state].end()) {
+            if (auto move_it{ delta[state].find(EPSILON) }; move_it != delta[state].end()) {
                 for (const State target: move_it->targets) {
                     if (!closure.contains(target)) {
                         closure.insert(target);

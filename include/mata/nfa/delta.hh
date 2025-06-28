@@ -255,7 +255,7 @@ public:
     // Prefix increment
     const_iterator& operator++();
     // Postfix increment
-    const const_iterator operator++(int);
+    const_iterator operator++(int);
 
     const_iterator& operator=(const const_iterator& other) noexcept = default;
     const_iterator& operator=(const_iterator&&) = default;
@@ -500,6 +500,7 @@ public:
 
     const StateSet& get_successors(State state, Symbol symbol) const;
 
+    // TODO(nfa): Implement.
     StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
     /**
@@ -603,7 +604,7 @@ public:
     // Prefix increment
     const_iterator& operator++();
     // Postfix increment
-    const const_iterator operator++(int);
+    const_iterator operator++(int);
 
     const_iterator& operator=(const const_iterator& other) noexcept = default;
     const_iterator& operator=(const_iterator&&) = default;

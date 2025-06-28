@@ -172,7 +172,10 @@ void seg_nfa::segs_one_initial_final(
             }
         } else { // the segments in-between
             for (const State init_state: iter->initial) {
-                for (const State final_state: iter->final) {
+                for (auto useful_final_states{ iter->get_useful_states(std::make_optional(utils::SparseSet{init_state})) };
+                    const State final_state : filter_indices(useful_final_states, [&](const bool is_useful) {
+                         return is_useful;
+                     })) {
                     // Nfa segment_one_init_final = *iter;
                     // segment_one_init_final.initial = {init_state };
                     // segment_one_init_final.final = {final_state };
@@ -250,12 +253,12 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
         for(const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
             //TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise what about StateSet?
-            mata::utils::SparseSet<mata::nfa::State> fins = segments[item.seg_id + 1].final; // final states of the segment
-            if(item.seg_id + 1 == segments.size() - 1) { // last segment
-                fins = mata::utils::SparseSet<mata::nfa::State>({ unused_state});
-            }
+            const utils::SparseSet<State>& final_states =
+                (item.seg_id + 1 == segments.size() - 1) ?
+                    utils::SparseSet{ unused_state } : // The last segment has no final states, so we use unused_state.
+                    segments[item.seg_id + 1].final; // Final states of the segment.
 
-            for(const State& fn : fins) {
+            for(const State& fn : final_states) {
                 auto seg_iter = segments_one_initial_final.find({ tr.target, fn});
                 if(seg_iter == segments_one_initial_final.end())
                     continue;
