@@ -102,13 +102,9 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
     if (segments.size() == 1) {
-        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
-        segment->trim();
-        if (segment->num_of_states() > 0 || include_empty) {
-            return {{ segment }};
-        } else {
-            return {};
-        }
+        if (auto segment{ std::make_shared<Nfa>(trim(segments[0])) }; segment->num_of_states() > 0 || include_empty) {
+            return { { segment } };
+        } else { return {}; }
     }
 
     State unused_state = aut.num_of_states(); // get some State not used in aut
@@ -185,33 +181,40 @@ void seg_nfa::segs_one_initial_final(
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) { // first segment will always have all initial states in noodles
             for (const State final_state: iter->final) {
-                Nfa segment_one_final = *iter;
-                segment_one_final.final = {final_state };
-                segment_one_final = reduce(segment_one_final.trim());
-
-                if (segment_one_final.num_of_states() > 0 || include_empty) {
-                    out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(segment_one_final);
-                }
+                // Nfa segment_one_final = *iter;
+                // segment_one_final.final = {final_state };
+                // segment_one_final = reduce(segment_one_final.trim());
+                if (Nfa segment_one_final = reduce(trim(*iter, nullptr,
+                                                    std::nullopt,
+                                                     std::make_optional(utils::SparseSet<State>{final_state})));
+                    segment_one_final.num_of_states() > 0 || include_empty) {
+                    out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(std::move(segment_one_final));
+                    }
             }
         } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
             for (const State init_state: iter->initial) {
-                Nfa segment_one_init = *iter;
-                segment_one_init.initial = {init_state };
-                segment_one_init = reduce(segment_one_init.trim());
-
-                if (segment_one_init.num_of_states() > 0 || include_empty) {
-                    out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(segment_one_init);
+                // Nfa segment_one_init = *iter;
+                // segment_one_init.initial = {init_state };
+                // segment_one_init = reduce(segment_one_init.trim());
+                if (Nfa segment_one_init = reduce(trim(*iter, nullptr,
+                                              std::make_optional(utils::SparseSet<State>{init_state}),
+                                              std::nullopt));
+                    segment_one_init.num_of_states() > 0 || include_empty) {
+                    out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(std::move(segment_one_init));
                 }
             }
         } else { // the segments in-between
             for (const State init_state: iter->initial) {
                 for (const State final_state: iter->final) {
-                    Nfa segment_one_init_final = *iter;
-                    segment_one_init_final.initial = {init_state };
-                    segment_one_init_final.final = {final_state };
-                    segment_one_init_final = reduce(segment_one_init_final.trim());
-                    if (segment_one_init_final.num_of_states() > 0 || include_empty) {
-                        out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(segment_one_init_final);
+                    // Nfa segment_one_init_final = *iter;
+                    // segment_one_init_final.initial = {init_state };
+                    // segment_one_init_final.final = {final_state };
+                    // segment_one_init_final = reduce(segment_one_init_final.trim());
+                    if (Nfa segment_one_init_final = reduce(trim(*iter, nullptr,
+                                                         std::make_optional(utils::SparseSet<State>{init_state}),
+                                                         std::make_optional(utils::SparseSet<State>{final_state})));
+                        segment_one_init_final.num_of_states() > 0 || include_empty) {
+                        out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(std::move(segment_one_init_final));
                     }
                 }
             }
@@ -230,11 +233,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
     VisitedEpsilonsCounterVector def_eps_vector = process_eps_map(def_eps_map);
 
     if (segments.size() == 1) {
-        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
-        segment->trim();
-        if (segment->num_of_states() > 0 || include_empty) {
-            return {{ {segment, def_eps_vector} } };
-        } else {
+        if (auto segment{ std::make_shared<Nfa>(trim(segments[0])) };
+            segment->num_of_states() > 0 || include_empty) { return { { { segment, def_eps_vector } } }; } else {
             return {};
         }
     }
