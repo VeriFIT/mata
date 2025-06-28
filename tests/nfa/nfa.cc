@@ -3967,7 +3967,7 @@ TEST_CASE("mata::nfa::trim()") {
         Nfa aut{1};
         aut.initial.insert(0);
         aut.final.insert(0);
-        aut.trim();
+        CHECK(nfa::are_equivalent(trim(aut), aut));
     }
 
     SECTION("Without state map") {
