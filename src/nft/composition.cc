@@ -101,8 +101,16 @@ namespace {
     void redirect_transitions(Nft& nft, const State old_target, const State new_target, const PredMap& pred_map) {
         if (old_target == new_target) { return; }
 
+        if (nft.initial.contains(old_target)) {
+            nft.initial.insert(new_target);
+        }
+
         auto it = pred_map.find(old_target);
-        assert(it != pred_map.end());
+        if (it == pred_map.end()) {
+            // No predecessors for the old target, nothing to redirect.
+            return;
+        }
+        // assert(it != pred_map.end());
         for (const State pred: it->second) {
             for (SymbolPost& symbol_post: nft.delta.mutable_state_post(pred)) {
                 if (symbol_post.targets.contains(old_target)) {
