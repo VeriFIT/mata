@@ -1,5 +1,9 @@
 /** @file
- * @brief Operations on @c mata::nfa::Delta.
+ * @brief Implementation of the @c mata::nfa::Delta class and related functions.
+ *
+ * This file contains the implementation of the Delta class, which represents the transition relation of
+ *  a non-deterministic finite automaton (NFA). It includes methods for adding, removing, and querying transitions, as
+ *  well as iterating over transitions.
  */
 
 #include "mata/nfa/types.hh"
@@ -11,6 +15,7 @@
 #include <algorithm>
 #include <list>
 #include <iterator>
+#include <list>
 #include <queue>
 
 using namespace mata::utils;
@@ -33,16 +38,15 @@ void SymbolPost::insert(State s) {
         return;
     }
     // Find the place where to put the element (if not present).
-    // insert to OrdVector without the searching of a proper position inside insert(const Key&x).
-    auto it = std::lower_bound(targets.begin(), targets.end(), s);
-    if (it == targets.end() || *it != s) {
+    // Insert to OrdVector without the searching of a proper position inside insert(const Key&x).
+    if (const auto it = std::ranges::lower_bound(targets, s); it == targets.end() || *it != s) {
         targets.insert(it, s);
     }
 }
 
 //TODO: slow! This should be doing merge, not inserting one by one.
 void SymbolPost::insert(const StateSet& states) {
-    for (State s : states) {
+    for (const State s : states) {
         insert(s);
     }
 }
@@ -54,8 +58,7 @@ StatePost::const_iterator Delta::epsilon_symbol_posts(const State state, const S
 StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_post, const Symbol epsilon) {
     if (!state_post.empty()) {
         if (epsilon == EPSILON) {
-            const auto& back = state_post.back();
-            if (back.symbol == epsilon) { return std::prev(state_post.end()); }
+            if (const auto& back = state_post.back(); back.symbol == epsilon) { return std::prev(state_post.end()); }
         } else { return state_post.find(SymbolPost(epsilon)); }
     }
     return state_post.end();
@@ -69,7 +72,7 @@ StateSet StatePost::get_successors() const {
     return successors;
 }
 
-const StateSet& StatePost::get_successors(Symbol symbol) const {
+const StateSet& StatePost::get_successors(const Symbol symbol) const {
     const auto symbol_post_it = find(symbol);
     if (symbol_post_it == this->end()) {
         static StateSet empty_set{};
@@ -83,7 +86,7 @@ StateSet Delta::get_successors(const State state) const {
     return state_post(state).get_successors();
 }
 
-const StateSet& Delta::get_successors(State state, Symbol symbol) const {
+const StateSet& Delta::get_successors(const State state, const Symbol symbol) const {
     return state_post(state).get_successors(symbol);
 }
 
@@ -92,8 +95,8 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
     const size_t num_of_states{ this->num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const SymbolPost& state_from_move: state_post(state_from)) {
-            const auto target_state{ state_from_move.targets.find(state_to) };
-            if (target_state != state_from_move.targets.end()) {
+            if (const auto target_state{ state_from_move.targets.find(state_to) };
+                target_state != state_from_move.targets.end()) {
                 transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to);
             }
         }
@@ -103,10 +106,10 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
 
 std::vector<Transition> Delta::get_transitions_between(const State state_from, const State state_to) const {
     std::vector<Transition> transitions_between{};
-    for (const SymbolPost& symbol_post: state_post(state_from)) {
-        const StateSet::const_iterator state_to_find_it = symbol_post.targets.find(state_to);
-        if (state_to_find_it != symbol_post.targets.end()) {
-            transitions_between.push_back({ state_from, symbol_post.symbol, state_to });
+    for (const SymbolPost& symbol_post : state_post(state_from)) {
+        if (const auto state_to_find_it = symbol_post.targets.find(state_to);
+            state_to_find_it != symbol_post.targets.end()) {
+            transitions_between.emplace_back(state_from, symbol_post.symbol, state_to);
         }
     }
     return transitions_between;
@@ -295,7 +298,7 @@ Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator
     return *this;
 }
 
-const Delta::Transitions::const_iterator Delta::Transitions::const_iterator::operator++(int) {
+Delta::Transitions::const_iterator Delta::Transitions::const_iterator::operator++(int) {
     const Delta::Transitions::const_iterator tmp{ *this };
     ++(*this);
     return tmp;
@@ -322,7 +325,7 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
             StateSet copied_targets;
             copied_targets.reserve(symbol_post.num_of_targets());
             for(const State& state: symbol_post.targets) {
-                copied_targets.push_back(std::move(target_renumberer(state)));
+                copied_targets.push_back(target_renumberer(state));
             }
             copied_state_post.push_back(SymbolPost(symbol_post.symbol, copied_targets));
         }
@@ -377,10 +380,10 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 }
 
 bool Delta::operator==(const Delta& other) const {
-    Delta::Transitions this_transitions{ transitions() };
+    const Delta::Transitions this_transitions{ transitions() };
     Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
     const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
-    Delta::Transitions other_transitions{ other.transitions() };
+    const Delta::Transitions other_transitions{ other.transitions() };
     Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
     const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
     while (this_transitions_it != this_transitions_end) {
@@ -395,8 +398,8 @@ bool Delta::operator==(const Delta& other) const {
 
 ///Returns an iterator to the smallest epsilon, or end() if there is no epsilon
 ///Searches from the end of the vector of SymbolPosts, since epsilons are at the end and they are typically few, mostly 1.
-StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) const {
-    auto end_it = end();
+StatePost::const_iterator StatePost::first_epsilon_it(const Symbol first_epsilon) const {
+    const auto end_it = cend();
     auto it = end_it;
     while (it != begin()) {
         --it;
@@ -405,9 +408,10 @@ StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) cons
         }
     }
 
-    if (it != end_it && it->symbol >= first_epsilon) //special case when begin is the smallest epsilon (since the while loop ended before the step back)
+    if (it != end_it && it->symbol >= first_epsilon) {
+        // The special case when begin is the smallest epsilon (since the while loop ended before the step back)
         return it;
-
+    }
     return end_it;
 }
 
@@ -458,7 +462,7 @@ StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++()
     return *this;
 }
 
-const StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(int) {
+StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(int) {
     const StatePost::Moves::const_iterator tmp{ *this };
     ++(*this);
     return tmp;
@@ -485,8 +489,8 @@ size_t StatePost::num_of_moves() const {
 StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept {
     if (&other != this) {
         state_post_ = other.state_post_;
-        symbol_post_it_ = std::move(other.symbol_post_it_);
-        symbol_post_end_ = std::move(other.symbol_post_end_);
+        symbol_post_it_ = other.symbol_post_it_;
+        symbol_post_end_ = other.symbol_post_end_;
     }
     return *this;
 }
@@ -530,7 +534,7 @@ StatePost::Moves::Moves(
     : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_end_{ symbol_post_end } {}
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
-    size_t aut_num_of_states{ num_of_states() };
+    const size_t aut_num_of_states{ num_of_states() };
     for (mata::nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const SymbolPost& move: state_post(state)) {
             target_alphabet.update_next_symbol_value(move.symbol);

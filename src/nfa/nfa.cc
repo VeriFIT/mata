@@ -159,7 +159,7 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&](State q){return q < useful_states.size() && useful_states[q];};
+    auto is_state_useful = [&](State q){return q < useful_states_size && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
     auto rename_state = [&](State q){return renaming[q];};
@@ -479,18 +479,18 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
 
         const auto intervals{
             [&]() {
-                std::vector<std::pair<Symbol, Symbol>> intervals_;
+                std::vector<std::pair<Symbol, Symbol>> intervals_val;
                 auto symbols_it = symbols.begin();
                 std::pair<Symbol, Symbol> interval{ *symbols_it, *symbols_it };
                 ++symbols_it;
                 for (; symbols_it != symbols.end(); ++symbols_it) {
                     if (*symbols_it == interval.second + 1) { interval.second = *symbols_it; } else {
-                        intervals_.push_back(interval);
+                        intervals_val.push_back(interval);
                         interval = { *symbols_it, *symbols_it };
                     }
                 }
-                intervals_.push_back(interval);
-                return intervals_;
+                intervals_val.push_back(interval);
+                return intervals_val;
             }()
         };
 
@@ -635,10 +635,10 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    auto get_epsilon_closure = [&](const StateSet& states_for) {
-        StateSet closure{ states_for };
+    auto get_epsilon_closure = [&](const StateSet& source_states) {
+        StateSet closure{ source_states };
         std::queue<State> worklist;
-        for (const State state: states_for) {
+        for (const State state: source_states) {
             worklist.push(state);
         }
         while (!worklist.empty()) {
@@ -676,8 +676,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
     // Now, we can make the step using the symbol.
     for (const State state: from_states) {
         const StatePost& post{ delta[state] };
-        const auto move_it{ post.find(symbol) };
-        if (move_it != post.end()) {
+        if (const auto move_it{ post.find(symbol) }; move_it != post.end()) {
             res.insert(move_it->targets);
         }
     }

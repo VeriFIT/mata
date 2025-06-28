@@ -132,7 +132,7 @@ public:
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     template <typename... Args>
     reference emplace_back(Args&&... args) {
-	// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+    // Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
         return vec_.emplace_back(std::forward<Args>(args)...);
     }
 
@@ -170,25 +170,25 @@ public:
         //size_t last = vec_.size();
 
         //if ((last != 0) && (vec_.back() < x))
-        //{	// for the case which would be prevalent
+        //{ // for the case which would be prevalent
         //    // that is, the added thing can is larger than the largest thing and can be just bushed back
         //    vec_.push_back(x);
         //    return;
         //}
 
         //while (first < last)
-        //{	// while the pointers do not overlap
+        //{ // while the pointers do not overlap
         //    size_t middle = first + (last - first) / 2;
         //    if (vec_[middle] == x)
-        //    {	// in case we found x
+        //    { // in case we found x
         //        return;
         //    }
         //    else if (vec_[middle] < x)
-        //    {	// in case middle is less than x
+        //    { // in case middle is less than x
         //        first = middle + 1;
         //    }
         //    else
-        //    {	// in case middle is greater than x
+        //    { // in case middle is greater than x
         //        last = middle;
         //    }
         //}
@@ -354,36 +354,36 @@ public:
     virtual inline iterator begin() { return vec_.begin(); }
     virtual inline iterator end() { return vec_.end(); }
 
-	virtual inline const_iterator cbegin() const { return begin(); }
-	virtual inline const_iterator cend() const { return end(); }
+    virtual inline const_iterator cbegin() const { return begin(); }
+    virtual inline const_iterator cend() const { return end(); }
 
-	/**
-	 * @brief  Overloaded << operator
-	 *
-	 * Overloaded << operator for output stream.
-	 *
-	 * @see  to_str()
-	 *
-	 * @param[in]  os    The output stream
-	 * @param[in]  vec   Assignment to the variables
-	 *
-	 * @returns  Modified output stream
-	 */
-	friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec) {
-		std::string result = "{";
+    /**
+     * @brief  Overloaded << operator
+   *
+  * Overloaded << operator for output stream.
+    *
+  * @see  to_str()
+   *
+  * @param[in]  os    The output stream
+  * @param[in]  vec   Assignment to the variables
+    *
+  * @returns  Modified output stream
+     */
+    friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec) {
+        std::string result = "{";
 
-		for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
-			result += ((it != vec.begin())? ", " : " ") + to_str(*it);
-		}
+        for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
+            result += ((it != vec.begin())? ", " : " ") + to_str(*it);
+        }
 
-		return os << (result + "}");
-	}
+        return os << (result + "}");
+    }
 
-	bool operator==(const OrdVector& rhs) const {
-		assert(is_sorted());
-		assert(rhs.is_sorted());
-		return (vec_ == rhs.vec_);
-	}
+    bool operator==(const OrdVector& rhs) const {
+        assert(is_sorted());
+        assert(rhs.is_sorted());
+        return (vec_ == rhs.vec_);
+    }
 
     bool operator<(const OrdVector& rhs) const {
         assert(is_sorted());
@@ -405,17 +405,17 @@ public:
         const_iterator itRhs = rhs.begin();
 
         while ((itLhs != end()) && (itRhs != rhs.end()))
-        {	// until we drop out of the array (or find a common element)
+        {   // until we drop out of the array (or find a common element)
             if (*itLhs == *itRhs)
-            {	// in case there exists a common element
+            {   // in case there exists a common element
                 return false;
             }
             else if (*itLhs < *itRhs)
-            {	// in case the element in lhs is smaller
+            {   // in case the element in lhs is smaller
                 ++itLhs;
             }
             else
-            {	// in case the element in rhs is smaller
+            {   // in case the element in rhs is smaller
                 assert(*itLhs > *itRhs);
                 ++itRhs;
             }
@@ -518,7 +518,7 @@ public:
         auto lhs_it = lhs.begin();
         auto rhs_it = rhs.vec_.begin();
 
-        while ((lhs_it != lhs.end()) && (rhs_it != rhs.end())) {	// Until we get to the end of both vectors.
+        while ((lhs_it != lhs.end()) && (rhs_it != rhs.end())) {    // Until we get to the end of both vectors.
             if (*lhs_it == *rhs_it) {
                 result.push_back(*lhs_it);
                 ++lhs_it;

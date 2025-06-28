@@ -158,7 +158,7 @@ public:
 
     std::weak_ordering operator<=>(const Levels& other) const = default;
     bool operator==(const Levels& other) const = default;
-    bool operator==(const std::vector<Level>& other) const { return static_cast<std::vector<Level>>(*this) == other; }
+    bool operator==(const std::vector<Level>& other) const { return static_cast<const std::vector<Level>&>(*this) == other; }
 
     Levels& set(State state, Level level = DEFAULT_LEVEL);
     Levels& set(const std::vector<Level>& levels);
@@ -251,4 +251,4 @@ private:
 
 } // namespace mata::nft.
 
-#endif //MATA_TYPES_HH
+#endif
