@@ -231,13 +231,15 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  */
-void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
+void Nfa::tarjan_scc_discover(
+    const TarjanDiscoverCallback& callback,
+    const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::vector<State> program_stack;
     std::vector<State> tarjan_stack;
     unsigned long index_cnt = 0;
 
-    for(const State& q0 : initial) {
+    for(const State& q0 : (initial_states.value_or(this->initial)).get()) {
         program_stack.push_back(q0);
     }
 
@@ -311,13 +313,16 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
     }
 }
 
-BoolVector Nfa::get_useful_states() const {
+BoolVector Nfa::get_useful_states(const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states, const std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) const {
     BoolVector useful(this->num_of_states(), false);
     bool final_scc = false;
 
+    const SparseSet<State>& used_initial_states{ initial_states.value_or(initial) };
+    const SparseSet<State>& used_final_states{ final_states.value_or(this->final) };
+
     TarjanDiscoverCallback callback {};
-    callback.state_discover = [&](State state) -> bool {
-        if(this->final.contains(state)) {
+    callback.state_discover = [&](const State state) -> bool {
+        if(used_final_states.contains(state)) {
             useful[state] = true;
         }
         return false;
@@ -336,18 +341,18 @@ BoolVector Nfa::get_useful_states() const {
         final_scc = false;
         return false;
     };
-    callback.scc_state_discover = [&](State state) {
+    callback.scc_state_discover = [&](const State state) {
         if(useful[state]) {
             final_scc = true;
         }
     };
-    callback.succ_state_discover = [&](State act_state, State next_state) {
+    callback.succ_state_discover = [&](const State act_state, const State next_state) {
         if(useful[next_state]) {
             useful[act_state] = true;
         }
     };
 
-    tarjan_scc_discover(callback);
+    tarjan_scc_discover(callback, used_initial_states);
     return useful;
 }
 
