@@ -74,19 +74,16 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = mata::nfa::remove_epsilon(*this, epsilon);
 }
 
-StateSet Nfa::get_reachable_states() const {
+StateSet Nfa::get_reachable_states(const std::function<bool(State)>& filter) const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{ this->num_of_states() };
-    for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
-    {
-        if (reachable_bool_array[original_state])
-        {
-            reachable_states.insert(original_state);
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (reachable_bool_array[state] && (not filter || filter(state))) {
+            reachable_states.insert(state);
         }
     }
-
     return reachable_states;
 }
 

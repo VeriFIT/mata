@@ -231,7 +231,7 @@ public:
      * @return Set of reachable states.
      * TODO: with the new get_useful_states, it might be useless now.
      */
-    StateSet get_reachable_states() const;
+    StateSet get_reachable_states(const std::function<bool(State)>& filter = nullptr) const;
 
     /**
      * @brief Get set of terminating states.
