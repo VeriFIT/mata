@@ -248,7 +248,7 @@ public:
      *
      * @return BoolVector Bool vector whose `i`-th value is true iff the state `i` is useful.
      */
-    BoolVector get_useful_states() const;
+    BoolVector get_useful_states(std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt) const;
 
     /**
      * @brief Structure for storing callback functions (event handlers) utilizing
@@ -268,9 +268,9 @@ public:
     /**
      * @brief Tarjan's SCC discover algorithm.
      *
-     * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
+     * @param callback Callback class to instantiate callbacks for the Tarjan's algorithm.
      */
-    void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
+    void tarjan_scc_discover(const TarjanDiscoverCallback& callback, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
