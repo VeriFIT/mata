@@ -528,10 +528,13 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                                 commited_states.insert(local_res_src);
                             }
                         } else {
-                            if (get_state_from_product_storage(lhs_tgt, rhs_tgt) == Limits::max_state) {
+                            const State found_state = get_state_from_product_storage(lhs_tgt, rhs_tgt);
+                            if (found_state == Limits::max_state) {
                                 // We have not visited this pair yet.
                                 insert_to_product_storage(lhs_tgt, rhs_tgt, local_res_src);
                                 worklist.push({local_res_src, lhs_tgt, rhs_tgt});
+                            } else {
+                                redirect_transitions(result, local_res_src, found_state, pred_map);
                             }
                         }
                     }
