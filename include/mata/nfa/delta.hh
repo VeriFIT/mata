@@ -293,7 +293,7 @@ public:
 /**
  * @brief Delta is a data structure for representing transition relation.
  *
- * Transition is represented as a triple Trans(source state, symbol, target state). Move is the part (symbol, target
+ * Transition is represented as a triple Transition(source state, symbol, target state). Move is the part (symbol, target
  *  state), specified for a single source state.
  * Its underlying data structure is vector of StatePost classes. Each index to the vector corresponds to one source
  *  state, that is, a number for a certain state is an index to the vector of state posts.

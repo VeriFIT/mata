@@ -158,7 +158,7 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&](State q){return q < useful_states.size() && useful_states[q];};
+    auto is_state_useful = [&](State q){return q < useful_states_size && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
     auto rename_state = [&](State q){return renaming[q];};

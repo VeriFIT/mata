@@ -1,6 +1,11 @@
-/* delta.cc -- Operations on Delta.
+/**
+ * @file delta.cc
+ * @brief Implementation of the Delta class and related functions.
+ *
+ * This file contains the implementation of the Delta class, which represents the transition relation of
+ *  a non-deterministic finite automaton (NFA). It includes methods for adding, removing, and querying transitions, as
+ *  well as iterating over transitions.
  */
-// TODO: Add file header.
 
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
@@ -377,10 +382,10 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 }
 
 bool Delta::operator==(const Delta& other) const {
-    Delta::Transitions this_transitions{ transitions() };
+    const Delta::Transitions this_transitions{ transitions() };
     Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
     const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
-    Delta::Transitions other_transitions{ other.transitions() };
+    const Delta::Transitions other_transitions{ other.transitions() };
     Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
     const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
     while (this_transitions_it != this_transitions_end) {
