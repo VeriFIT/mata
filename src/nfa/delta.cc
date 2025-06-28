@@ -6,17 +6,20 @@
  *  well as iterating over transitions.
  */
 
+#include "mata/nfa/delta.hh"
+#include "mata/nfa/nfa.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/delta.hh"
 
 
 #include <algorithm>
-#include <list>
+#include <functional>
 #include <iterator>
 #include <list>
 #include <queue>
+#include <utility>
+#include <ranges>
+
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -334,6 +337,33 @@ StatePost& Delta::mutable_state_post(const State q) {
     }
 
     return state_posts_[q];
+}
+
+Delta mata::nfa::defragment(const Delta &delta, const BoolVector &is_staying, const std::vector<State> &renaming) {
+    auto filter_rename_symbol_post = [&](const SymbolPost& symbol_post) {
+        SymbolPost new_symbol_post{ symbol_post.symbol };
+        for (const State& target : symbol_post.targets) {
+            if (!is_staying[target]) { continue; }
+            new_symbol_post.push_back(renaming[target]);
+        }
+        return new_symbol_post;
+    };
+    auto filter_rename_state_post = [&](const StatePost& state_post, const std::function<SymbolPost(const SymbolPost&)>& transform_symbol_post) {
+        StatePost result{};
+        for (const SymbolPost& symbol_post : state_post) {
+            SymbolPost new_symbol_post = transform_symbol_post(symbol_post);
+            if (new_symbol_post.empty()) { continue; }
+            result.push_back(std::move(new_symbol_post));
+        }
+        return result;
+    };
+
+    Delta delta_defragmented{};
+    for (State source{ 0 }; source < delta.num_of_states(); ++source) {
+        if (!is_staying[source]) { continue; }
+        delta_defragmented.emplace_back(filter_rename_state_post(delta[source], filter_rename_symbol_post));
+    }
+    return delta_defragmented;
 }
 
 void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
