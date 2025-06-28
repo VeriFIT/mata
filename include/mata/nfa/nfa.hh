@@ -1062,6 +1062,19 @@ utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alp
  */
 std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const Nfa &nfa_excluded);
 
+/**
+ * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
+ *
+ * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+ * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+ * the starting point of a path ending in a final state).
+ *
+ * @param nfa NFA to trim.
+ * @param[out] state_renaming Mapping of trimmed states to new states.
+ * @return @c this after trimming.
+ */
+Nfa trim(const Nfa& nfa, StateRenaming* state_renaming = nullptr, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt);
+
 } // namespace mata::nfa.
 
 namespace std {
