@@ -372,7 +372,17 @@ public:
      */
     StatePost& mutable_state_post(State source);
 
+    /**
+     * @brief Defragment the Delta.
+     *
+     * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
+     * according to @p renaming.
+     *
+     * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+     * @param[in] renaming Vector of states to rename the remaining state posts to.
+     */
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
@@ -562,9 +572,23 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
+
 protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+/**
+ * @brief Defragment the Delta.
+ *
+ * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
+ * according to @p renaming.
+ *
+ * @param[in] delta Delta to defragment.
+ * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+ * @param[in] renaming Vector of states to rename the remaining state posts to.
+ * @return The defragmented Delta.
+ */
+Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
 /**
  * @brief Iterator over transitions represented as @c Transition instances.
