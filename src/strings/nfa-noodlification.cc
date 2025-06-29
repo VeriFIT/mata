@@ -204,11 +204,10 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
     if (segments.size() == 1) {
         // segment->trim();
-        if (std::shared_ptr<Nfa> segment { std::make_shared<Nfa>(std::move(trimmed(segments[0]))) }; segment->num_of_states() > 0 || include_empty) {
+        if (auto segment { std::make_shared<Nfa>(std::move(trimmed(segments[0]))) }; segment->num_of_states() > 0 || include_empty) {
             return {{ {segment, def_eps_vector} } };
-        } else {
-            return {};
         }
+        return {};
     }
 
     State unused_state = aut.num_of_states(); // get some State not used in aut
@@ -252,22 +251,22 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
         }
 
         for(const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
-            //TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise what about StateSet?
             const utils::SparseSet<State>& final_states =
                 (item.seg_id + 1 == segments.size() - 1) ?
                     utils::SparseSet{ unused_state } : // The last segment has no final states, so we use unused_state.
                     segments[item.seg_id + 1].final; // Final states of the segment.
 
-            for(const State& fn : final_states) {
+            for (const State& fn : final_states) {
                 auto seg_iter = segments_one_initial_final.find({ tr.target, fn});
-                if(seg_iter == segments_one_initial_final.end())
-                    continue;
+                if (seg_iter == segments_one_initial_final.end()) { continue; }
 
                 SegItem new_item = item; // deep copy
-                new_item.seg_id++;
-                // do not include segmets with trivial epsilon language
-                if(seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
-                    new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
+                ++new_item.seg_id;
+                // Do not include segments with trivial epsilon language.
+                if (const auto &seg_iter_nfa{seg_iter->second};
+                    seg_iter_nfa->final.size() != 1 || seg_iter_nfa->delta.num_of_transitions() > 0) {
+                    // L(seg_iter) != {epsilon}
+                    new_item.noodle.emplace_back(seg_iter_nfa, process_eps_map(visited_eps[tr.target]));
                 }
                 new_item.fin = fn;
                 lifo.push_back(new_item);
