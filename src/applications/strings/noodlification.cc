@@ -184,9 +184,15 @@ void seg_nfa::segs_one_initial_final(
                 // Nfa segment_one_final = *iter;
                 // segment_one_final.final = {final_state };
                 // segment_one_final = reduce(segment_one_final.trim());
-                if (Nfa segment_one_final = reduce(trim(*iter, nullptr,
-                                                    std::nullopt,
-                                                     std::make_optional(utils::SparseSet<State>{final_state})));
+                if (Nfa segment_one_final =
+                            // reduce(
+                                trim(
+                                    *iter, nullptr,
+                                    std::nullopt,
+                                    std::make_optional(utils::SparseSet<State>{ final_state })
+                                )
+                            // )
+                            ;
                     segment_one_final.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(std::move(segment_one_final));
                     }
@@ -196,9 +202,15 @@ void seg_nfa::segs_one_initial_final(
                 // Nfa segment_one_init = *iter;
                 // segment_one_init.initial = {init_state };
                 // segment_one_init = reduce(segment_one_init.trim());
-                if (Nfa segment_one_init = reduce(trim(*iter, nullptr,
-                                              std::make_optional(utils::SparseSet<State>{init_state}),
-                                              std::nullopt));
+                if (Nfa segment_one_init =
+                            // reduce(
+                            trim(
+                                *iter, nullptr,
+                                std::make_optional(utils::SparseSet<State>{ init_state }),
+                                std::nullopt
+                            )
+                    // )
+                    ;
                     segment_one_init.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(std::move(segment_one_init));
                 }
