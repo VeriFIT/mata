@@ -183,6 +183,104 @@ void seg_nfa::segs_one_initial_final(
     }
 }
 
+seg_nfa::EquationNoodlificator::EquationNoodlificator(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
+    this->include_empty = include_empty;
+    Segmentation segmentation{ aut, epsilons };
+    segmentation.get_untrimmed_segments();
+    this->segments = std::move(segmentation.segments_raw);
+
+    VisitedEpsilonsCounterMap def_eps_map;
+    for(const Symbol& eps : epsilons) {
+        def_eps_map[eps] = 0;
+    }
+    def_eps_vector = process_eps_map(def_eps_map);
+
+    if (segments.size() == 1) {
+        return;
+    }
+
+    epsilon_depths_map = std::move(segmentation.get_epsilon_depth_trans_map());
+    /// Number of visited epsilons for each state.
+    visited_eps = std::move(segmentation.get_visited_eps());
+
+    unused_state = aut.num_of_states(); // get some State not used in aut
+    segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
+
+
+
+    for(const State& fn : segments[0].final) {
+        SegItem new_item;
+        std::shared_ptr<Nfa> seg = segments_one_initial_final[{unused_state, fn}];
+        if(seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+            new_item.noodle.emplace_back(seg, def_eps_vector);
+        }
+        new_item.seg_id = 0;
+        new_item.fin = fn;
+        lifo.push_back(new_item);
+    }
+}
+
+bool seg_nfa::EquationNoodlificator::has_next_noodle() {
+    if (finished_producing) { return false; }
+    if (segments.size() == 1) {
+        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
+        segment->trim();
+        finished_producing = true;
+        if (segment->num_of_states() > 0 || include_empty) {
+            noodles.push_back({{segment, def_eps_vector}});
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    while(!lifo.empty()) {
+        SegItem item = lifo.front();
+        lifo.pop_front();
+
+        if(item.seg_id + 1 == segments.size()) {
+            // check if the noodle is already there
+            if(!std::any_of(noodles.begin(), noodles.end(),
+                [&](NoodleWithEpsilonsCounter &s) {
+                    return s == item.noodle;
+            } )) {
+                noodles.push_back(item.noodle);
+            }
+            return true;
+        }
+
+        for(const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
+            //TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise what about StateSet?
+            mata::utils::SparseSet<mata::nfa::State> fins = segments[item.seg_id + 1].final; // final states of the segment
+            if(item.seg_id + 1 == segments.size() - 1) { // last segment
+                fins = mata::utils::SparseSet<mata::nfa::State>({ unused_state});
+            }
+
+            for(const State& fn : fins) {
+                auto seg_iter = segments_one_initial_final.find({ tr.target, fn});
+                if(seg_iter == segments_one_initial_final.end())
+                    continue;
+
+                SegItem new_item = item; // deep copy
+                new_item.seg_id++;
+                // do not include segmets with trivial epsilon language
+                if(seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+                    new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
+                }
+                new_item.fin = fn;
+                lifo.push_back(new_item);
+            }
+        }
+    }
+    finished_producing = true;
+    return false;
+}
+
+
+seg_nfa::NoodleWithEpsilonsCounter& seg_nfa::EquationNoodlificator::get_next_noodle() {
+    return noodles.back();
+}
+
 std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
@@ -360,10 +458,14 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 }
 
 
-std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
+seg_nfa::EquationNoodlificator seg_nfa::noodlify_for_equation(
     const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
     const std::vector<std::shared_ptr<Nfa>>& rhs_automata, bool include_empty, const ParameterMap& params) {
-    if (lhs_automata.empty() || rhs_automata.empty()) { return {}; }
+    if (lhs_automata.empty() || rhs_automata.empty()) {
+        EquationNoodlificator ret;
+        ret.finished_producing = true;
+        return ret;
+    }
 
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas; // Unify each automaton only once.
     unify_initial_and_final_states(lhs_automata, unified_nfas);
@@ -377,7 +479,9 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
             intersection(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
 
     if (product_pres_eps_trans.is_lang_empty()) {
-        return {};
+        EquationNoodlificator ret;
+        ret.finished_producing = true;
+        return ret;
     }
     if (utils::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
@@ -390,7 +494,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify_mult_eps(product_pres_eps_trans, { EPSILON, EPSILON-1 }, include_empty);
+    return EquationNoodlificator(product_pres_eps_trans, { EPSILON, EPSILON-1 }, include_empty);
 }
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
@@ -401,13 +505,17 @@ seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsi
     return ret;
 }
 
-std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
+seg_nfa::TransducerNoodlificator seg_nfa::noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
     bool reduce_intersection
 ) {
-    if (input_automata.empty() || output_automata.empty()) { return {}; }
+    if (input_automata.empty() || output_automata.empty()) {
+        TransducerNoodlificator ret;
+        ret.eq_noodlificator.finished_producing = true;
+        return ret;
+    }
 
     // delimiters, we cannot use EPSILON, because that is normal EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and EPSILON-1 is DONT_CARE
     constexpr Symbol INPUT_DELIMITER = EPSILON-2;
@@ -453,7 +561,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     intersection.trim();
 
     if(intersection.final.empty()) {
-        return {};
+        TransducerNoodlificator ret;
+        ret.eq_noodlificator.finished_producing = true;
+        return ret;
     }
 
     // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
@@ -464,7 +574,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     intersection.trim();
 
     if(intersection.final.empty()) {
-        return {};
+        TransducerNoodlificator ret;
+        ret.eq_noodlificator.finished_producing = true;
+        return ret;
     }
 
     // we assume that the operations did not add jump transitions
@@ -529,40 +641,49 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // does not contain long jumps, therefore every other state of NFAi should have the same level.
     // That is, it should be either 0 or 1, starting with 0 for initials.
 
-    std::vector<TransducerNoodle> result;
-    std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el; // we create for each segment NFAi only one NFTi and keep it here
-    for (const auto& noodle : noodlify_mult_eps(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false)) {
-        TransducerNoodle new_noodle;
-        for (const auto& element : noodle) {
-            // element.first is NFAi
-            std::shared_ptr<Nfa> element_aut = element.first;
+    return TransducerNoodlificator(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false);
+}
 
-            // element.second then keeps the index representing which input/output automaton it is connected with
 
-            if (seg_nfa_to_transducer_el.contains(element_aut)) {
-                // we already processed this NFAi so we can find NFTi in seg_nfa_to_transducer_el
-                TransducerNoodleElement transd_el = seg_nfa_to_transducer_el.at(element_aut);
-                // however, we need to update the indexes of input/output automaton
-                transd_el.input_index = element.second[0];
-                transd_el.output_index= element.second[1];
-                new_noodle.push_back(transd_el);
-                continue;
-            }
+seg_nfa::TransducerNoodlificator::TransducerNoodlificator(const seg_nfa::SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty)
+    : eq_noodlificator(aut, epsilons, include_empty)
+{ }
 
-            // We need to create NFTi, therefore we add levels to NFAi by simple DFS which adds to each state
-            // the level opposite of the level of the previous state.
-            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(nft::builder::from_nfa_with_levels_advancing(std::move(*element_aut), 2));
+bool seg_nfa::TransducerNoodlificator::has_next_noodle() {
+    return eq_noodlificator.has_next_noodle();
+}
 
-            TransducerNoodleElement transd_el{element_nft,
-                // the language of the input automaton is the projection to input track
-                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))), element.second[0],
-                // the language of the output automaton is the projection to output track
-                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))), element.second[1]
-            };
-            seg_nfa_to_transducer_el.insert({element_aut, transd_el});
+seg_nfa::TransducerNoodle seg_nfa::TransducerNoodlificator::get_next_noodle() {
+    const NoodleWithEpsilonsCounter& noodle = eq_noodlificator.get_next_noodle();
+    TransducerNoodle new_noodle;
+    for (const auto& element : noodle) {
+        // element.first is NFAi
+        std::shared_ptr<Nfa> element_aut = element.first;
+
+        // element.second then keeps the index representing which input/output automaton it is connected with
+
+        if (seg_nfa_to_transducer_el.contains(element_aut)) {
+            // we already processed this NFAi so we can find NFTi in seg_nfa_to_transducer_el
+            TransducerNoodleElement transd_el = seg_nfa_to_transducer_el.at(element_aut);
+            // however, we need to update the indexes of input/output automaton
+            transd_el.input_index = element.second[0];
+            transd_el.output_index= element.second[1];
             new_noodle.push_back(transd_el);
+            continue;
         }
-        result.push_back(new_noodle);
+
+        // We need to create NFTi, therefore we add levels to NFAi by simple DFS which adds to each state
+        // the level opposite of the level of the previous state.
+        std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(nft::builder::from_nfa_with_levels_advancing(std::move(*element_aut), 2));
+
+        TransducerNoodleElement transd_el{element_nft,
+            // the language of the input automaton is the projection to input track
+            std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))), element.second[0],
+            // the language of the output automaton is the projection to output track
+            std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))), element.second[1]
+        };
+        seg_nfa_to_transducer_el.insert({element_aut, transd_el});
+        new_noodle.push_back(transd_el);
     }
-    return result;
+    return new_noodle;
 }

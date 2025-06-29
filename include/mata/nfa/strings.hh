@@ -199,7 +199,7 @@ public:
 
     const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
 
-private:
+public:
     const std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
     const SegNfa& automaton;
@@ -387,6 +387,29 @@ std::vector<Noodle> noodlify_for_equation(
                 const std::vector<Nfa*>& lhs_automata, const Nfa& rhs_automaton, bool include_empty = false,
                 const ParameterMap& params = {{ "reduce", "false"}});
 
+struct EquationNoodlificator {
+    struct SegItem {
+        NoodleWithEpsilonsCounter noodle{};
+        State fin{};
+        size_t seg_id{};
+    };
+    std::vector<Nfa> segments;
+    bool finished_producing = false;
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
+    State unused_state;
+    std::vector<NoodleWithEpsilonsCounter> noodles{};
+    std::deque<SegItem> lifo;
+    VisitedEpsilonsCounterVector def_eps_vector;
+    bool include_empty = false;
+    std::unordered_map<size_t, std::unordered_map<State, std::vector<Transition>>> epsilon_depths_map;
+    std::map<State, std::map<Symbol, unsigned>> visited_eps;
+
+    EquationNoodlificator() = default;
+    EquationNoodlificator(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
+    bool has_next_noodle();
+    NoodleWithEpsilonsCounter& get_next_noodle();
+};
+
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
  *
@@ -398,7 +421,7 @@ std::vector<Noodle> noodlify_for_equation(
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
  */
-std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
+EquationNoodlificator noodlify_for_equation(
    const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
    const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
@@ -416,7 +439,17 @@ struct TransducerNoodleElement {
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
-std::vector<TransducerNoodle> noodlify_for_transducer(
+struct TransducerNoodlificator {
+    EquationNoodlificator eq_noodlificator;
+    std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el;
+
+    TransducerNoodlificator() = default;
+    TransducerNoodlificator(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
+    bool has_next_noodle();
+    TransducerNoodle get_next_noodle();
+};
+
+TransducerNoodlificator noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
