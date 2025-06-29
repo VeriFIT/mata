@@ -151,7 +151,7 @@ void seg_nfa::segs_one_initial_final(
             for (const State final_state: iter->final) {
                 Nfa segment_one_final = *iter;
                 segment_one_final.final = {final_state };
-                segment_one_final = reduce(segment_one_final.trim());
+                segment_one_final = (segment_one_final.trim());
 
                 if (segment_one_final.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(segment_one_final);
@@ -161,7 +161,7 @@ void seg_nfa::segs_one_initial_final(
             for (const State init_state: iter->initial) {
                 Nfa segment_one_init = *iter;
                 segment_one_init.initial = {init_state };
-                segment_one_init = reduce(segment_one_init.trim());
+                segment_one_init = (segment_one_init.trim());
 
                 if (segment_one_init.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(segment_one_init);
@@ -173,7 +173,7 @@ void seg_nfa::segs_one_initial_final(
                     Nfa segment_one_init_final = *iter;
                     segment_one_init_final.initial = {init_state };
                     segment_one_init_final.final = {final_state };
-                    segment_one_init_final = reduce(segment_one_init_final.trim());
+                    segment_one_init_final = (segment_one_init_final.trim());
                     if (segment_one_init_final.num_of_states() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(segment_one_init_final);
                     }
