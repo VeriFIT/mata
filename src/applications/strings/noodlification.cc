@@ -222,7 +222,8 @@ void seg_nfa::segs_one_initial_final(
     }
 }
 
-std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
+std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(
+    const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
@@ -234,9 +235,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
     if (segments.size() == 1) {
         if (auto segment{ std::make_shared<Nfa>(trim(segments[0])) };
-            segment->num_of_states() > 0 || include_empty) { return { { { segment, def_eps_vector } } }; } else {
-            return {};
-        }
+            segment->num_of_states() > 0 || include_empty) { return { { { segment, def_eps_vector } } }; }
+        return {};
     }
 
     State unused_state = aut.num_of_states(); // get some State not used in aut
@@ -289,13 +289,13 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
             for(const State& fn : fins) {
                 auto seg_iter = segments_one_initial_final.find({ tr.target, fn});
-                if(seg_iter == segments_one_initial_final.end())
-                    continue;
+                if (seg_iter == segments_one_initial_final.end()) { continue; }
 
                 SegItem new_item = item; // deep copy
                 new_item.seg_id++;
                 // do not include segments with trivial epsilon language
-                if(seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+                if (seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) {
+                    // L(seg_iter) != {epsilon}
                     new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
                 }
                 new_item.fin = fn;
