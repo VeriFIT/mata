@@ -1,4 +1,5 @@
-/* nfa.cc -- operations for NFA
+/** @file
+ * @brief Operations on NFAs.
  */
 
 #include <algorithm>

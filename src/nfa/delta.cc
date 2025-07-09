@@ -116,10 +116,7 @@ std::vector<Transition> Delta::get_transitions_between(const State state_from, c
 }
 
 void Delta::add(const State source, Symbol symbol, const State target) {
-    if (const State max_state{ std::max(source, target) }; max_state >= state_posts_.size()) {
-        reserve_on_insert(state_posts_, max_state);
-        state_posts_.resize(max_state + 1);
-    }
+    resize_for_states(source, target);
 
     if (StatePost& state_transitions{ state_posts_[source] }; state_transitions.empty()) {
         state_transitions.insert({ symbol, target });
@@ -140,11 +137,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 
 void Delta::add(const State source, const Symbol symbol, const StateSet& targets) {
     if(targets.empty()) { return; }
-
-    if (const State max_state{ std::max(source, targets.back()) }; max_state >= state_posts_.size()) {
-        reserve_on_insert(state_posts_, max_state + 1);
-        state_posts_.resize(max_state + 1);
-    }
+    resize_for_states(source, targets.back());
 
     if (StatePost& state_transitions{ state_posts_[source] }; state_transitions.empty()) {
         state_transitions.insert({ symbol, targets });

@@ -25,7 +25,7 @@ using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-constexpr std::string mata::nft::TYPE_NFT = "NFT";
+const std::string mata::nft::TYPE_NFT = "NFT";
 
 Levels::Levels(const size_t num_of_levels, const size_t count, const Level value)
     : super(count, value), num_of_levels{ num_of_levels } {

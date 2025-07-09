@@ -494,6 +494,22 @@ public:
     std::vector<Transition> get_transitions_between(State state_from, State state_to) const;
 
     /**
+     * @brief Resize the delta to fit the given @p states.
+     * @tparam States A variadic parameter pack of states to resize the delta for.
+     * @param states States to resize the delta for.
+     */
+    template<typename... States> requires utils::AllOfType<State, States...>
+    Delta& resize_for_states(States... states) {
+        if constexpr (sizeof...(states) > 0) {
+            if (const State max_state{ std::max({ static_cast<State>(states)... }) }; max_state >= num_of_states()) {
+                reserve_on_insert(state_posts_, max_state);
+                state_posts_.resize(max_state + 1);
+            }
+        }
+        return *this;
+    }
+
+    /**
      * Get the set of states that are successors of the given @p state.
      * @param[in] state State from which successors are checked.
      * @return Set of states that are successors of the given @p state.
