@@ -366,39 +366,24 @@ Delta mata::nfa::defragment(const Delta &delta, const BoolVector &is_staying, co
     return delta_defragmented;
 }
 
-void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
-    //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
-
-    //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
-    size_t move_index{ 0 };
-    std::erase_if(state_posts_,
-         [&](StatePost&) -> bool {
-             size_t prev{ move_index };
-             ++move_index;
-             return !is_staying[prev];
-         }
-    );
-
-    //this iterates through every post and every move, filters and renames states,
-    //and then removes moves that became empty.
-    for (State q=0,size=state_posts_.size(); q < size; ++q) {
-        StatePost & p = mutable_state_post(q);
-        for (auto move = p.begin(); move < p.end(); ++move) {
-            move->targets.erase(
-                    std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
-                        return !is_staying[q];
-                    }),
-                    move->targets.end()
-            );
-            move->targets.rename(renaming);
+Delta& Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+    size_t source_new{ 0 };
+    for (size_t source_orig{ 0 }, num_of_states{ this->num_of_states() }; source_orig < num_of_states; ++source_orig) {
+        if (!is_staying[source_orig]) { continue; } // Skip source states not staying.
+        StatePost& state_post = state_posts_[source_orig];
+        for (auto state_post_it{ state_post.begin() }; state_post_it != state_post.end();) {
+            StateSet& targets{ state_post_it->targets };
+            targets.erase_if([&is_staying](const State& target) { return !is_staying[target]; });
+            targets.rename(renaming);
+            if (targets.empty()) { state_post_it = state_post.erase(state_post_it); } else { ++state_post_it; }
         }
-        p.erase(
-                std::remove_if(p.begin(), p.end(), [&](SymbolPost& move) -> bool {
-                    return move.targets.empty();
-                }),
-                p.end()
-        );
+        // Move the filtered state post to the new position, if needed.
+        if (source_new != source_orig) { state_posts_[source_new] = std::move(state_post); }
+        ++source_new;
     }
+    // Resize to remove filtered-out state posts.
+    state_posts_.resize(source_new);
+    return *this;
 }
 
 bool Delta::operator==(const Delta& other) const {
