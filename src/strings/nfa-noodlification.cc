@@ -506,7 +506,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         const std::vector<Transition>& second_transitions = middle_state_to_delimiter_transition_as_source.at(middle_state);
         for (const Transition& first_transition : first_transitions) {
             for (const Transition& second_transition : second_transitions) {
-                assert(first_trans.symbol == second_trans.symbol);
+                assert(first_transition.symbol == second_transition.symbol);
                 intersection_nfa.delta.add(first_transition.source, first_transition.symbol, second_transition.target);
             }
         }
