@@ -169,8 +169,16 @@ namespace {
     void duplicate_transitions(Nft& nft, const State old_target, const State new_target, const PredMap& pred_map) {
         if (old_target == new_target) { return; }
 
+        if (nft.initial.contains(old_target)) {
+            nft.initial.insert(new_target);
+        }
+
         auto it = pred_map.find(old_target);
-        assert(it != pred_map.end());
+        if (it == pred_map.end()) {
+            // No predecessors for the old target, nothing to redirect.
+            return;
+        }
+        // assert(it != pred_map.end());
         for (const State pred: it->second) {
             for (SymbolPost& symbol_post: nft.delta.mutable_state_post(pred)) {
                 if (symbol_post.targets.contains(old_target)) {
@@ -596,10 +604,13 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                                 commited_states.insert(local_res_src);
                             }
                         } else {
-                            if (get_state_from_product_storage(lhs_tgt, rhs_tgt) == Limits::max_state) {
+                            const State found_state = get_state_from_product_storage(lhs_tgt, rhs_tgt);
+                            if (found_state == Limits::max_state) {
                                 // We have not visited this pair yet.
                                 insert_to_product_storage(lhs_tgt, rhs_tgt, local_res_src);
                                 worklist.push({local_res_src, lhs_tgt, rhs_tgt});
+                            } else {
+                                redirect_transitions(result, local_res_src, found_state, pred_map);
                             }
                         }
                     }
@@ -682,7 +693,8 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             for (const State target: epsilon_post_a->targets) {
                 if (lhs.levels[target] == 0) {
                     const State res_tgt = create_composition_state(target, orig_rhs, 0);
-                    result.delta.add(res_root, EPSILON, res_tgt);
+                    add_transition_with_target(result, res_root, EPSILON, res_tgt, jump_mode, pred_map);
+                    // result.delta.add(res_root, EPSILON, res_tgt);
                     commited_states.insert(res_tgt);
                 }
             }
@@ -692,7 +704,8 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
             for (const State target: epsilon_post_b->targets) {
                 if (rhs.levels[target] == 0) {
                     const State res_tgt = create_composition_state(orig_lhs, target, 0);
-                    result.delta.add(res_root, EPSILON, res_tgt);
+                    add_transition_with_target(result, res_root, EPSILON, res_tgt, jump_mode, pred_map);
+                    // result.delta.add(res_root, EPSILON, res_tgt);
                     commited_states.insert(res_tgt);
                 }
             }
