@@ -265,6 +265,22 @@ public:
     virtual const Key& front() const { return vec_[0]; }
     virtual Key& front() { return vec_[0]; }
 
+    virtual const Key& min() const {
+        if (vec_.empty()) {
+            throw std::out_of_range("Cannot get min from an empty OrdVector");
+        }
+        return vec_.front();
+    }
+    virtual const Key& max() const {
+        if (vec_.empty()) {
+            throw std::out_of_range("Cannot get max from an empty OrdVector");
+        }
+        return vec_.back();
+    }
+
+    virtual const Key& at(const size_t index) const { return vec_.at(index); }
+    virtual Key& at(const size_t index) { return vec_.at(index); }
+
     /**
      * Check whether @p key exists in the ordered vector.
      */
