@@ -19,8 +19,16 @@ namespace {
     using VecMapProductStorage = std::vector<std::unordered_map<State,State>>;
     using InvertedProductStorage = std::vector<State>;
 
+    /**
+     * Create a mask from the given entries and universum size.
+     * The mask will have `true` for each entry in @p entries and `false` for all other indices.
+     * @param entries The entries to be set in the mask.
+     * @param universum_size The size of the universum.
+     * @return A BoolVector representing the mask.
+     */
     template<typename T>
     mata::BoolVector create_mask(const OrdVector<T>& entries, const size_t universum_size) {
+        assert(entries.empty() || entries.back() < universum_size);
         mata::BoolVector mask(universum_size, false);
         for (const auto& entry : entries) {
             mask[entry] = true;
@@ -28,77 +36,137 @@ namespace {
         return mask;
     }
 
+    /**
+     * Get a vector of indices for the entries in the given OrdVector.
+     * This is useful for quickly finding the position of an entry in the OrdVector.
+     *
+     * @param entries The OrdVector containing the entries.
+     * @param universum_size The size of the universum.
+     * @return A vector of indices where each index corresponds to the position of the entry in @p entries.
+     *         If an entry is not present, its index will be set to `std::numeric_limits<T>::max()`.
+     */
     template<typename T>
-    std::vector<size_t> invert(const OrdVector<T>& entries, const size_t universum_size) {
-        std::vector<size_t> inverted(universum_size, std::numeric_limits<T>::max());
+    std::vector<size_t> get_entry_indices_vec(const OrdVector<T>& entries, const size_t universum_size) {
+        assert(entries.empty() || entries.back() < universum_size);
+        std::vector<size_t> entry_indices_vec(universum_size, std::numeric_limits<T>::max());
         size_t idx = 0;
         for (const auto& entry : entries) {
-            inverted[entry] = idx++;
+            entry_indices_vec[entry] = idx++;
         }
-        return inverted;
+        return entry_indices_vec;
     }
 
+    /**
+     * Get the sizes of intervals between borders in the given OrdVector. The border on index 0 is before
+     * the first element, the border on index 1 is after the first element, and so on.
+     *
+     * @param border_indices The OrdVector containing the indices of the borders.
+     * @param universum_size The size of the universum.
+     * @return A vector containing the sizes of intervals between the entries in @p border_indices.
+     */
     template<typename T>
-    std::vector<size_t> get_partition_sizes(const OrdVector<T>& border_indices, const size_t universum_size) {
+    std::vector<size_t> get_interval_sizes(const OrdVector<T>& border_indices, const size_t universum_size) {
         assert(!border_indices.empty());
-        const size_t num_partitions = border_indices.size();
-        std::vector<size_t> sizes(num_partitions + 1, 0);
-        auto partition_borders_it = border_indices.cbegin();
-        sizes[0] = *partition_borders_it;
-        for (size_t i = 1; i < num_partitions; ++i) {
-            const size_t prev_border = *partition_borders_it;
-            ++partition_borders_it;
-            sizes[i] = *partition_borders_it - prev_border - 1;
+        const size_t num_of_intervals = border_indices.size() + 1;
+        std::vector<size_t> sizes(num_of_intervals, 0);
+        auto border_indices_it = border_indices.cbegin();
+
+        sizes[0] = *border_indices_it;
+        const size_t last_interval_idx = num_of_intervals - 1;
+        for (size_t i = 1; i < last_interval_idx; ++i) {
+            const size_t prev_border = *border_indices_it;
+            ++border_indices_it;
+            sizes[i] = *border_indices_it - prev_border - 1;
         }
-        sizes[num_partitions] = universum_size - *partition_borders_it - 1;
+        sizes[num_of_intervals - 1] = universum_size - *border_indices_it - 1;
+
         return sizes;
     }
 
+    /** Add a transition to the NFT from source state over symbol and length len to a new target state.
+     *
+     * @param nft The NFT to which the transition will be added.
+     * @param source The source state of the transition.
+     * @param symbol The symbol of the transition.
+     * @param len The length of the transition.
+     * @param jump_mode The mode of the jump.
+     * @param pred_map A map to keep track of predecessors for each target state.
+     * @return The target state of the transition.
+     */
     State add_transition(Nft& nft, const State source, const Symbol symbol, const size_t len, const JumpMode jump_mode, PredMap& pred_map) {
-        assert(nft.levels[source] + len <= nft.num_of_levels);
         if (len == 0) { return source; }
+        
+        assert(nft.levels[source] + len <= nft.num_of_levels);
+        const Level target_level = static_cast<Level>((nft.levels[source] + len) % nft.num_of_levels);
+        const State target = nft.add_state_with_level(target_level);
 
-        const State target = nft.add_state_with_level((nft.levels[source] + len) % static_cast<Level>(nft.num_of_levels));
         if (len == 1 || jump_mode == JumpMode::RepeatSymbol) {
             nft.delta.add(source, symbol, target);
             pred_map[target].insert(source);
             return target;
         }
+
         State inner_src = source;
-        for (size_t i = 0; i < len - 1; ++i) {
-            const State inner_target = nft.add_state_with_level(nft.levels[inner_src] + 1);
+        Level inner_level = nft.levels[inner_src] + 1;
+        for (size_t i = 0; i < len - 1; ++i, ++inner_level) {
+            assert(inner_level < nft.num_of_levels);
+            const State inner_target = nft.add_state_with_level(inner_level);
             nft.delta.add(inner_src, symbol, inner_target);
             // pred_map[inner_target].insert(inner_src);    // Optimization: we do not need to track inner states in pred_map.
             inner_src = inner_target;
         }
+        assert(inner_level == nft.levels[source] + len);
         nft.delta.add(inner_src, symbol, target);
         pred_map[target].insert(inner_src);
+
         return target;
     }
 
+    /**
+     * Add a transition from source state to target state with the given symbol.
+     *
+     * @param nft The NFT to which the transition will be added.
+     * @param source The source state of the transition.
+     * @param symbol The symbol of the transition.
+     * @param target The target state of the transition.
+     * @param jump_mode The mode of the jump transitions.
+     * @param pred_map A map to keep track of predecessors for each target state.
+     */
     void add_transition_with_target(Nft& nft, const State source, const Symbol symbol, const State target, const JumpMode jump_mode, PredMap& pred_map) {
-        if (source == target) { return;}
-        assert(nft.levels[source] < nft.levels[target] || nft.levels[target] == 0);
+        if (source == target) { return; }
 
-        const size_t trans_len = nft.levels[target] == 0 ? nft.num_of_levels - nft.levels[source] : nft.levels[target] - nft.levels[source];
+        assert(nft.levels[source] < nft.levels[target] || nft.levels[target] == 0);
+        const size_t trans_len = (nft.levels[target] == 0 ? nft.num_of_levels : nft.levels[target]) - nft.levels[source];
         assert(trans_len > 0);
+
         if (trans_len == 1 || jump_mode == JumpMode::RepeatSymbol) {
             nft.delta.add(source, symbol, target);
             pred_map[target].insert(source);
             return;
         }
+
         State inner_src = source;
-        for (size_t i = 0; i < trans_len - 1; ++i) {
-            const State inner_target = nft.add_state_with_level(nft.levels[inner_src] + 1);
+        Level inner_level = nft.levels[inner_src] + 1;
+        for (size_t i = 0; i < trans_len - 1; ++i, ++inner_level) {
+            assert(inner_level < nft.num_of_levels);
+            const State inner_target = nft.add_state_with_level(inner_level);
             nft.delta.add(inner_src, symbol, inner_target);
             // pred_map[inner_target].insert(inner_src);    // Optimization: we do not need to track inner states in pred_map.
             inner_src = inner_target;
         }
+        assert(inner_level == nft.levels[source] + trans_len);
         nft.delta.add(inner_src, symbol, target);
         pred_map[target].insert(inner_src);
     }
 
-    void redirect_transitions(Nft& nft, const State old_target, const State new_target, const PredMap& pred_map) {
+    /** Duplicate transitions that lead to the old target state and map them to the new target state.
+     *
+     * @param nft The NFT in which the transitions will be duplicated.
+     * @param old_target The original target state of the transitions.
+     * @param new_target The new target state to which the transitions will be duplicated.
+     * @param pred_map A map that keeps track of predecessors for each target state.
+     */
+    void duplicate_transitions(Nft& nft, const State old_target, const State new_target, const PredMap& pred_map) {
         if (old_target == new_target) { return; }
 
         auto it = pred_map.find(old_target);
@@ -189,14 +257,14 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
     std::unordered_set<State> commited_states;
 
     // Calculate number of lhs/rhs transitions before/between/after sync levels
-    const std::vector<size_t> lhs_between = get_partition_sizes(lhs_sync_levels, lhs_num_of_levels);
-    const std::vector<size_t> rhs_between = get_partition_sizes(rhs_sync_levels, rhs_num_of_levels);
+    const std::vector<size_t> lhs_between = get_interval_sizes(lhs_sync_levels, lhs_num_of_levels);
+    const std::vector<size_t> rhs_between = get_interval_sizes(rhs_sync_levels, rhs_num_of_levels);
 
     BoolVector lhs_is_sync_level = create_mask(lhs_sync_levels, lhs_num_of_levels);
     BoolVector rhs_is_sync_level = create_mask(rhs_sync_levels, rhs_num_of_levels);
 
-    const std::vector<size_t> lhs_sync_levels_inv = invert(lhs_sync_levels, lhs_num_of_levels);
-    const std::vector<size_t> rhs_sync_levels_inv = invert(rhs_sync_levels, rhs_num_of_levels);
+    const std::vector<size_t> lhs_sync_levels_inv = get_entry_indices_vec(lhs_sync_levels, lhs_num_of_levels);
+    const std::vector<size_t> rhs_sync_levels_inv = get_entry_indices_vec(rhs_sync_levels, rhs_num_of_levels);
 
     auto create_composition_state = [&](const State state_a, const State state_b, const Level level, const bool is_a_lhs = true, const State composition_state_to_add = Limits::max_state) {
         assert(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
@@ -312,7 +380,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                             const State found_state = get_state_from_product_storage(key.first, key.second);
                             if (found_state != Limits::max_state) {
                                 // The mapping exists, redirect transition goig to orig_src to the existing state.
-                                redirect_transitions(result, res_src, found_state, pred_map);
+                                duplicate_transitions(result, res_src, found_state, pred_map);
                             } else {
                                 assert(found_state == Limits::max_state);
                                 // The mapping does not exist. Update it.
@@ -520,7 +588,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                             const State found_state = get_state_from_product_storage(lhs_tgt, rhs_tgt);
                             if (found_state != Limits::max_state) {
                                 // The mapping exists, redirect transition goig to orig_src to the existing state.
-                                redirect_transitions(result, local_res_src, found_state, pred_map);
+                                duplicate_transitions(result, local_res_src, found_state, pred_map);
                             } else {
                                 assert(found_state == Limits::max_state);
                                 // The mapping does not exist. Update it.
