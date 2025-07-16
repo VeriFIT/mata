@@ -481,20 +481,16 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     //     source ---DELIMITER---> middle ---DELIMITER---> target
     // where source and target are level 0 states (input track) and middle
     // will be a level 1 state (output track).
-    // We assume that middle connects always only one type of delimiter,
-    // the previous intersection should work that way.
-    std::map<State,Transition> middle_state_to_delimiter_transition_as_target; // maps middle state to "source ---DELIMITER---> middle" transition
-    std::map<State,Transition> middle_state_to_delimiter_transition_as_source; // maps middle state to "middle ---DELIMITER---> target" transition
+    std::map<State,std::vector<Transition>> middle_state_to_delimiter_transition_as_target; // maps middle state to each "source ---DELIMITER---> middle" transition
+    std::map<State,std::vector<Transition>> middle_state_to_delimiter_transition_as_source; // maps middle state to each "middle ---DELIMITER---> target" transition
     for (const Transition& trans : intersection.delta.transitions()) {
         if (trans.symbol == INPUT_DELIMITER || trans.symbol == OUTPUT_DELIMITER) {
             if (intersection.levels[trans.source] == nft::DEFAULT_LEVEL) {
                 // source ---DELIMITER---> middle
-                assert(!middle_state_to_delimiter_transition_as_target.contains(trans.target));
-                middle_state_to_delimiter_transition_as_target[trans.target] = trans;
+                middle_state_to_delimiter_transition_as_target[trans.target].push_back(trans);
             } else {
                 //middle ---DELIMITER---> target
-                assert(!middle_state_to_delimiter_transition_as_source.contains(trans.source));
-                middle_state_to_delimiter_transition_as_source[trans.source] = trans;
+                middle_state_to_delimiter_transition_as_source[trans.source].push_back(trans);
             }
         }
     }
@@ -506,18 +502,26 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     //     source ---DELIMITER---> target
     Nfa intersection_nfa{intersection.to_nfa_move()};
     // add "source ---DELIMITER---> target" transitions
-    for (const auto& [middle_state,first_trans] : middle_state_to_delimiter_transition_as_target) {
-        Transition second_trans = middle_state_to_delimiter_transition_as_source.at(middle_state);
-        assert(first_trans.symbol == second_trans.symbol);
-        intersection_nfa.delta.add(first_trans.source, first_trans.symbol, second_trans.target);
+    for (const auto& [middle_state,first_transitions] : middle_state_to_delimiter_transition_as_target) {
+        const std::vector<Transition>& second_transitions = middle_state_to_delimiter_transition_as_source.at(middle_state);
+        for (const Transition& first_transition : first_transitions) {
+            for (const Transition& second_transition : second_transitions) {
+                assert(first_trans.symbol == second_trans.symbol);
+                intersection_nfa.delta.add(first_transition.source, first_transition.symbol, second_transition.target);
+            }
+        }
     }
     // remove "source ---DELIMITER---> middle" transitions
-    for (const auto& [middle_state,trans] : middle_state_to_delimiter_transition_as_target) {
-        intersection_nfa.delta.remove(trans);
+    for (const auto& [middle_state,first_transitions] : middle_state_to_delimiter_transition_as_target) {
+        for (const Transition& first_transition : first_transitions) {
+            intersection_nfa.delta.remove(first_transition);
+        }
     }
     // remove "middle ---DELIMITER---> target" transitions
-    for (const auto& [middle_state,trans] : middle_state_to_delimiter_transition_as_source) {
-        intersection_nfa.delta.remove(trans);
+    for (const auto& [middle_state,second_transitions] : middle_state_to_delimiter_transition_as_source) {
+        for (const Transition& second_transition : second_transitions) {
+            intersection_nfa.delta.remove(second_transition);
+        }
     }
 
     // intersection_nfa should now be an NFA that has NFT segments, where segments are divided by
