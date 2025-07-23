@@ -505,6 +505,32 @@ public:
     bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) { return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix); }
 
     /**
+     * @brief Read a word and return the set of states the automaton ends up in.
+     *
+     * @param word The word to read.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prefix Whether to match prefix of the word.
+     *
+     * @return Set of all reachable states after reading the word (or its prefix). Note: This returns
+     *         all reachable states, not just final states. Use is_in_lang() if you need to check
+     *         language membership, or intersect the result with final states manually if needed.
+     */
+    StateSet read_word(const Run& word, bool use_epsilon = false, bool match_prefix = false) const;
+
+    /**
+     * @brief Read a word and return the set of states the automaton ends up in.
+     *
+     * @param word The word to read.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prefix Whether to match prefix of the word.
+     *
+     * @return Set of all reachable states after reading the word (or its prefix). Note: This returns
+     *         all reachable states, not just final states. Use is_in_lang() if you need to check
+     *         language membership, or intersect the result with final states manually if needed.
+     */
+    StateSet read_word(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const { return read_word(Run{ word, {} }, use_epsilon, match_prefix); }
+
+    /**
      * @brief Check whether a prefix of a run is in the language of an automaton.
      *
      * @param word The run to check.
@@ -948,12 +974,12 @@ std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const
 namespace std {
 template <>
 struct hash<mata::nfa::Transition> {
-	inline size_t operator()(const mata::nfa::Transition& trans) const {
-		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
-		accum = mata::utils::hash_combine(accum, trans.symbol);
-		accum = mata::utils::hash_combine(accum, trans.target);
-		return accum;
-	}
+    inline size_t operator()(const mata::nfa::Transition& trans) const {
+        size_t accum = std::hash<mata::nfa::State>{}(trans.source);
+        accum = mata::utils::hash_combine(accum, trans.symbol);
+        accum = mata::utils::hash_combine(accum, trans.target);
+        return accum;
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const mata::nfa::Transition& trans);

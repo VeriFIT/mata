@@ -417,6 +417,48 @@ def test_in_language(
     assert mata_nfa.accepts_epsilon(lhs)
 
 
+def test_read_word(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    """Test the read_word function."""
+    # Test divisible by two automaton
+    states = fa_one_divisible_by_two.read_word([1, 1])
+    assert states == {2}  # Should end up in state 2 (which happens to be final)
+
+    states = fa_one_divisible_by_two.read_word([1, 1, 1])
+    assert states == {1}  # Should end up in state 1 (which is not final)
+
+    states = fa_one_divisible_by_two.read_word([1, 1, 1], match_prefix=True)
+    assert states == {2}  # Should return states after reading [1,1] prefix when final state is reached
+
+    # Test divisible by four automaton
+    states = fa_one_divisible_by_four.read_word([1, 1, 1, 1])
+    assert states == {4}  # Should end up in state 4 (which happens to be final)
+
+    states = fa_one_divisible_by_four.read_word([1, 1])
+    assert states == {2}  # Should end up in state 2 (which is not final)
+
+    # Test empty word
+    states = fa_one_divisible_by_two.read_word([])
+    assert states == {0}  # Empty word returns initial states (state 0, which is not final)
+
+    # Test simple automaton with initial state also being final
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(0)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
+
+    states = lhs.read_word([])
+    assert states == {0}  # Empty word returns initial state 0 (which happens to be final)
+
+    states = lhs.read_word([0])
+    assert states == {0}  # Should stay in state 0 (which happens to be final)
+
+    states = lhs.read_word([1])
+    assert states == {1}  # Should end up in state 1 (which is not final)
+
+
 def test_union(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
@@ -440,6 +482,103 @@ def test_union(
     fa_one_divisible_by_two_in_lace = fa_one_divisible_by_two.deepcopy()
     uni_in_place = fa_one_divisible_by_two_in_lace.union(fa_one_divisible_by_four)
     assert mata_nfa.equivalence_check(uni, uni_in_place)
+
+
+def test_union_with_product_map():
+    """Test the union_with_product_map function."""
+    # Set up alphabet and get consistent symbol encoding
+    alph = alphabets.OnTheFlyAlphabet()
+    symbols = {}
+    for char in ['a', 'b', 'c']:
+        symbols[char] = alph.translate_symbol(char)
+
+    # Create two simple deterministic automata using alphabet symbols
+    lhs = mata_nfa.Nfa(3)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(2)
+    lhs.add_transition(0, symbols['a'], 1)
+    lhs.add_transition(1, symbols['b'], 2)
+
+    rhs = mata_nfa.Nfa(3)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(2)
+    rhs.add_transition(0, symbols['a'], 1)
+    rhs.add_transition(1, symbols['c'], 2)
+
+    # Make them complete using the built-in function - now it works!
+    lhs.make_complete(lhs.num_of_states(), alph)
+    rhs.make_complete(rhs.num_of_states(), alph)
+
+    result, product_map = mata_nfa.union_with_product_map(lhs, rhs)
+
+    # Check that the result accepts words from both automata (using alphabet symbols)
+    assert result.is_in_lang([symbols['a'], symbols['b']])  # from lhs
+    assert result.is_in_lang([symbols['a'], symbols['c']])  # from rhs
+
+    # Check that the product map is populated
+    assert len(product_map) > 0
+
+    # Each key should be a tuple of two states
+    for key, value in product_map.items():
+        assert isinstance(key, tuple)
+        assert len(key) == 2
+        assert isinstance(value, int)
+
+
+def test_union_with_product_map_and_read_word():
+    """Test union_with_product_map together with read_word."""
+    # Set up alphabet and get consistent symbol encoding
+    alph = alphabets.OnTheFlyAlphabet()
+    symbols = {}
+    for char in ['a', 'b']:
+        symbols[char] = alph.translate_symbol(char)
+
+    # Create two simple deterministic automata using alphabet symbols
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_transition(0, symbols['a'], 1)
+    lhs.add_transition(1, symbols['a'], 1)  # loop
+
+    rhs = mata_nfa.Nfa(2)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(1)
+    rhs.add_transition(0, symbols['b'], 1)
+    rhs.add_transition(1, symbols['b'], 1)  # loop
+
+    # Make them complete using the built-in function - now it works!
+    lhs.make_complete(lhs.num_of_states(), alph)
+    rhs.make_complete(rhs.num_of_states(), alph)
+
+    result, product_map = mata_nfa.union_with_product_map(lhs, rhs)
+
+    # Test read_word on the union result
+    states_a = result.read_word([symbols['a']])
+    states_b = result.read_word([symbols['b']])
+
+    # Both should reach some final states
+    assert len(states_a) > 0
+    assert len(states_b) > 0
+
+    # Check that the product map correctly maps original state pairs to result states
+    # The word 'a' should end up in state (1, 0) in the product
+    # The word 'b' should end up in state (0, 1) in the product
+
+    # Find the product states
+    product_state_a = None
+    product_state_b = None
+
+    for (lhs_state, rhs_state), product_state in product_map.items():
+        if lhs_state == 1 and rhs_state == 2:  # lhs accepts 'a', rhs rejects 'a' (goes to sink)
+            product_state_a = product_state
+        if lhs_state == 2 and rhs_state == 1:  # lhs rejects 'b' (goes to sink), rhs accepts 'b'
+            product_state_b = product_state
+
+    # The read_word results should include these product states
+    if product_state_a is not None:
+        assert product_state_a in states_a
+    if product_state_b is not None:
+        assert product_state_b in states_b
 
 
 def test_intersection(

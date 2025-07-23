@@ -501,6 +501,17 @@ class Nfa:
         :return: true if word is in language of the NFA.
         """
         ...
+    def read_word(self, word: list[Symbol], use_epsilon: bool = False, match_prefix: bool = False) -> set[State]:
+        """Read word and return the set of states the automaton ends up in.
+
+        :param word: word to read.
+        :param use_epsilon: whether the automaton uses epsilon transitions.
+        :param match_prefix: whether to match prefix of the word.
+        :return: set of all reachable states after reading the word (or its prefix).
+                 Note: Returns all reachable states, not just final states. Use is_in_lang()
+                 if you need to check language membership.
+        """
+        ...
     def get_word_for_path(self, path: list[State]) -> tuple[list[Symbol], bool]:
         """For a given path (set of states) returns a corresponding word
 
@@ -549,6 +560,21 @@ def union(lhs: Nfa, rhs: Nfa) -> Nfa:
     :param Nfa lhs: first automaton
     :param Nfa rhs: second automaton
     :return: union of lhs and rhs
+    """
+    ...
+
+def union_with_product_map(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> tuple[Nfa, dict[tuple[State, State], State]]:
+    """Performs union of lhs and rhs with product map.
+
+    The union is computed by product construction with OR condition on the final states.
+    Both automata should be complete and deterministic for optimal results.
+
+    Automata must share alphabets.
+
+    :param lhs: First automaton.
+    :param rhs: Second automaton.
+    :param first_epsilon: Smallest epsilon symbol.
+    :return: Union of lhs and rhs, product map of original pairs of states to new states.
     """
     ...
 

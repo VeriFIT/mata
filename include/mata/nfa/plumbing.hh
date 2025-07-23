@@ -38,7 +38,7 @@ inline void complement(
 }
 
 inline void minimize(Nfa* res, const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski"}}) { *res = minimize(aut, params); }
- 
+
 inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
     *result = determinize(aut, subset_map);
 }
@@ -62,6 +62,22 @@ void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nul
 }
 
 inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
+
+/**
+ * @brief Compute union of two complete deterministic NFAs with product map.
+ *
+ * The union is computed by product construction with OR condition on the final states.
+ * @param[out] res The resulting union NFA.
+ * @param[in] lhs First complete deterministic automaton.
+ * @param[in] rhs Second complete deterministic automaton.
+ * @param[in] first_epsilon smallest epsilon.
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+inline void union_with_product_map(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
+                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
+    *res = product(lhs, rhs, ProductFinalStateCondition::OR, first_epsilon, prod_map);
+}
 
 /**
  * @brief Compute intersection of two NFAs.

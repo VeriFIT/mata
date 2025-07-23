@@ -560,7 +560,7 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 }
 
 //TODO: this is not efficient
-bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+StateSet mata::nfa::Nfa::read_word(const Run& run, const bool use_epsilon, const bool match_prefix) const {
     StateSet current_post(this->initial);
 
     if (use_epsilon) {
@@ -570,12 +570,17 @@ bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bo
 
     const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
     for (const Symbol sym : run.word) {
-        if (match_prefix && this->final.intersects_with(current_post)) { return true; }
+        if (match_prefix && this->final.intersects_with(current_post)) { return current_post; }
         current_post = this->post(current_post, sym, epsilon_closure_opt);
-        if (current_post.empty()) { return false; }
+        if (current_post.empty()) { return current_post; }
     }
 
-    return this->final.intersects_with(current_post);
+    return current_post;
+}
+
+//TODO: this is not efficient
+bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+    return this->final.intersects_with(read_word(run, use_epsilon, match_prefix));
 }
 
 bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {

@@ -766,9 +766,25 @@ cdef class Nfa:
         :param bool match_prefix: whether to match prefix of the word.
         :return: true if word is in language of the NFA.
         """
-        run = Run()
-        run.thisptr.word = word
-        return self.thisptr.get().is_in_lang(dereference(run.thisptr), use_epsilon, match_prefix)
+        input = Run()
+        input.word = word
+        return self.thisptr.get().is_in_lang(dereference(input.thisptr), use_epsilon, match_prefix)
+
+    def read_word(self, vector[Symbol] word, use_epsilon = False, match_prefix = False):
+        """Read word and return the set of states the automaton ends up in.
+
+        :param vector[Symbol] word: word to read.
+        :param bool use_epsilon: whether the automaton uses epsilon transitions.
+        :param bool match_prefix: whether to match prefix of the word.
+        :return: set of all reachable states after reading the word (or its prefix).
+                 Note: Returns all reachable states, not just final states. Use is_in_lang()
+                 if you need to check language membership.
+        """
+        input = Run()
+        input.word = word
+        cdef StateSet result = self.thisptr.get().read_word(dereference(input.thisptr), use_epsilon, match_prefix)
+        cdef vector[State] result_vec = result.to_vector()
+        return {state for state in result_vec}
 
     def get_word_for_path(self, path):
         """For a given path (set of states) returns a corresponding word
@@ -838,6 +854,25 @@ def union(Nfa lhs, Nfa rhs):
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
     )
     return result
+
+def union_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
+    """Performs union of lhs and rhs with product map.
+
+    The union is computed by product construction with OR condition on the final states.
+    Both automata should be complete and deterministic for optimal results.
+
+    Automata must share alphabets.
+
+    :param Nfa lhs: First automaton.
+    :param Nfa rhs: Second automaton.
+    :param Symbol first_epsilon: Smallest epsilon symbol.
+    :return: Union of lhs and rhs, product map of original pairs of states to new states.
+    """
+    result = Nfa()
+    cdef umap[pair[State, State], State] c_product_map
+    mata_nfa.c_union_with_product_map(
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
+    return result, {tuple(k): v for k, v in c_product_map}
 
 def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
     """Performs intersection of lhs and rhs.
