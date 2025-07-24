@@ -225,4 +225,293 @@ Nfa mata::nfa::algorithms::product(
     return product;
 } // intersection().
 
+//TODO: move this method to nfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
+Nfa mata::nfa::algorithms::product_incomplete(
+        const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,
+        State lhs_null_state, State rhs_null_state, 
+        const Symbol first_epsilon, ProductMap *product_map) {
+
+    Nfa product{}; // The product automaton.
+
+    // Set of product states to process.
+    std::deque<State> worklist{};
+
+    //The largest matrix (product_matrix) of pairs of states we are brave enough to allocate.
+    // Let's say we are fine with allocating large_product * (about 8 Bytes) space.
+    // So ten million cells is close to 100 MB.
+    // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (product_vec_map).
+    // The unordered_map seems to be about twice slower.
+    constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 50'000'000;
+    //constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 0;
+    
+    // For incomplete automata, we might need to create implicit null states
+    size_t lhs_states = lhs.num_of_states();
+    size_t rhs_states = rhs.num_of_states();
+    
+    // If using implicit null states, we need to account for them
+    if (lhs_null_state == Limits::max_state) {
+        lhs_states += 1; // Add space for implicit null state
+    }
+    if (rhs_null_state == Limits::max_state) {
+        rhs_states += 1; // Add space for implicit null state
+    }
+    
+    const bool large_product = lhs_states * rhs_states > MAX_PRODUCT_MATRIX_SIZE;
+    assert(lhs.num_of_states() < Limits::max_state);
+    assert(rhs.num_of_states() < Limits::max_state);
+
+    //Two variants of storage for the mapping from pairs of lhs and rhs states to product state, for large and non-large products.
+    MatrixProductStorage matrix_product_storage;
+    VecMapProductStorage vec_map_product_storage;
+    InvertedProductStorage product_to_lhs(lhs_states + rhs_states);
+    InvertedProductStorage product_to_rhs(lhs_states + rhs_states);
+
+    //Initialize the storage, according to the number of possible state pairs.
+    if (!large_product)
+        matrix_product_storage = MatrixProductStorage(lhs_states, std::vector<State>(rhs_states, Limits::max_state));
+    else
+        vec_map_product_storage = VecMapProductStorage(lhs_states);
+
+    /// Give me the product state for the pair of lhs and rhs states.
+    /// Returns Limits::max_state if not found.
+    auto get_state_from_product_storage = [&](State lhs_state, State rhs_state) {
+        if (!large_product)
+            return matrix_product_storage[lhs_state][rhs_state];
+        else {
+            if (lhs_state >= vec_map_product_storage.size()) return Limits::max_state;
+            auto it = vec_map_product_storage[lhs_state].find(rhs_state);
+            if (it == vec_map_product_storage[lhs_state].end())
+                return Limits::max_state;
+            else
+                return it->second;
+        }
+    };
+
+    /// Insert new mapping lhs rhs state pair to product state.
+    auto insert_to_product_storage = [&](State lhs_state, State rhs_state, State product_state) {
+        if (!large_product)
+            matrix_product_storage[lhs_state][rhs_state] = product_state;
+        else
+            vec_map_product_storage[lhs_state][rhs_state] = product_state;
+
+        product_to_lhs.resize(product_state+1);
+        product_to_rhs.resize(product_state+1);
+        product_to_lhs[product_state] = lhs_state;
+        product_to_rhs[product_state] = rhs_state;
+
+        //this thing is not used internally. It is only used if we want to return the mapping. But it is expensive.
+        if (product_map != nullptr)
+            (*product_map)[std::pair<State,State>(lhs_state,rhs_state)] = product_state;
+    };
+
+    /// Get the effective null state for LHS
+    auto get_lhs_null = [&]() {
+        return lhs_null_state == Limits::max_state ? lhs.num_of_states() : lhs_null_state;
+    };
+
+    /// Get the effective null state for RHS  
+    auto get_rhs_null = [&]() {
+        return rhs_null_state == Limits::max_state ? rhs.num_of_states() : rhs_null_state;
+    };
+
+    /// Check if a state is a null state for LHS
+    auto is_lhs_null = [&](State state) {
+        return state == get_lhs_null();
+    };
+
+    /// Check if a state is a null state for RHS
+    auto is_rhs_null = [&](State state) {
+        return state == get_rhs_null();
+    };
+
+/**
+ * Add symbol_post for the product state (lhs,rhs) to the product, used for epsilons only (it is simpler for normal symbols).
+ * @param[in] pair_to_process Currently processed pair of original states.
+ * @param[in] new_product_symbol_post State transitions to add to the product.
+ */
+    auto add_product_e_post = [&](const State lhs_source, const State rhs_source, SymbolPost& new_product_symbol_post)
+    {
+        if (new_product_symbol_post.targets.empty()) { return; }
+
+        State product_source = get_state_from_product_storage(lhs_source, rhs_source);
+
+        StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
+
+        if (product_state_post.empty() || new_product_symbol_post.symbol > product_state_post.back().symbol) {
+            product_state_post.push_back(std::move(new_product_symbol_post));
+        }
+        else {
+            auto symbol_post_it = product_state_post.find(new_product_symbol_post.symbol);
+            if (symbol_post_it == product_state_post.end()) {
+                product_state_post.insert(std::move(new_product_symbol_post));
+            }
+            //Epsilons are not inserted in order, we insert all lhs epsilons and then all rhs epsilons.
+            // It can happen that we insert an e-transition from lhs and then another with the same e from rhs.
+            else {
+                symbol_post_it->insert(new_product_symbol_post.targets);
+            }
+        }
+    };
+
+/**
+ * Create product state if it does not exist in storage yet and fill in its symbol_post from lhs and rhs targets.
+ * @param[in] lhs_target Target state in NFA @c lhs.
+ * @param[in] rhs_target Target state in NFA @c rhs.
+ * @param[out] product_symbol_post New SymbolPost of the product state.
+ */
+    auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
+    {
+        State product_target = get_state_from_product_storage(lhs_target, rhs_target);
+
+        if ( product_target == Limits::max_state )
+        {
+            product_target = product.add_state();
+            assert(product_target < Limits::max_state);
+
+            insert_to_product_storage(lhs_target, rhs_target, product_target);
+
+            worklist.push_back(product_target);
+
+            // For null states, apply special final condition logic
+            bool lhs_final = is_lhs_null(lhs_target) ? false : lhs.final.contains(lhs_target);
+            bool rhs_final = is_rhs_null(rhs_target) ? false : rhs.final.contains(rhs_target);
+            
+            if (final_condition(lhs_final ? lhs_target : Limits::max_state, 
+                               rhs_final ? rhs_target : Limits::max_state)) {
+                product.final.insert(product_target);
+            }
+        }
+        //TODO: Push_back all of them and sort at the could be faster.
+        product_symbol_post.targets.insert(product_target);
+    };
+
+    // Initialize pairs to process with initial state pairs.
+    for (const State lhs_initial_state : lhs.initial) {
+        for (const State rhs_initial_state : rhs.initial) {
+            // Update product with initial state pairs.
+            const State product_initial_state = product.add_state();
+            insert_to_product_storage(lhs_initial_state, rhs_initial_state, product_initial_state);
+            worklist.push_back(product_initial_state);
+            product.initial.insert(product_initial_state);
+            if (final_condition(lhs_initial_state, rhs_initial_state)) {
+                product.final.insert(product_initial_state);
+            }
+        }
+    }
+
+    while (!worklist.empty()) {
+        State product_source = worklist.back();
+        worklist.pop_back();
+        State lhs_source = product_to_lhs[product_source];
+        State rhs_source = product_to_rhs[product_source];
+
+        // Skip processing if both are null states
+        if (is_lhs_null(lhs_source) && is_rhs_null(rhs_source)) {
+            continue;
+        }
+
+        // Collect all symbols from both automata
+        std::set<Symbol> all_symbols;
+        
+        // Add symbols from LHS (if not null state)
+        if (!is_lhs_null(lhs_source)) {
+            for (const auto& symbol_post : lhs.delta[lhs_source]) {
+                if (symbol_post.symbol < first_epsilon) {
+                    all_symbols.insert(symbol_post.symbol);
+                }
+            }
+        }
+        
+        // Add symbols from RHS (if not null state)
+        if (!is_rhs_null(rhs_source)) {
+            for (const auto& symbol_post : rhs.delta[rhs_source]) {
+                if (symbol_post.symbol < first_epsilon) {
+                    all_symbols.insert(symbol_post.symbol);
+                }
+            }
+        }
+
+        // Process each symbol found in either automaton
+        for (Symbol symbol : all_symbols) {
+            SymbolPost product_symbol_post{ symbol };
+            
+            // Get transitions from LHS
+            StateSet lhs_targets;
+            if (!is_lhs_null(lhs_source)) {
+                auto lhs_symbol_it = lhs.delta[lhs_source].find(symbol);
+                if (lhs_symbol_it != lhs.delta[lhs_source].end()) {
+                    lhs_targets = lhs_symbol_it->targets;
+                }
+            }
+            
+            // Get transitions from RHS
+            StateSet rhs_targets;
+            if (!is_rhs_null(rhs_source)) {
+                auto rhs_symbol_it = rhs.delta[rhs_source].find(symbol);
+                if (rhs_symbol_it != rhs.delta[rhs_source].end()) {
+                    rhs_targets = rhs_symbol_it->targets;
+                }
+            }
+
+            // Create product transitions
+            if (!lhs_targets.empty() && !rhs_targets.empty()) {
+                // Both automata have transitions for this symbol
+                for (const State lhs_target : lhs_targets) {
+                    for (const State rhs_target : rhs_targets) {
+                        create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
+                    }
+                }
+            } else if (!lhs_targets.empty()) {
+                // Only LHS has transitions for this symbol, RHS goes to null
+                for (const State lhs_target : lhs_targets) {
+                    create_product_state_and_symbol_post(lhs_target, get_rhs_null(), product_symbol_post);
+                }
+            } else if (!rhs_targets.empty()) {
+                // Only RHS has transitions for this symbol, LHS goes to null
+                for (const State rhs_target : rhs_targets) {
+                    create_product_state_and_symbol_post(get_lhs_null(), rhs_target, product_symbol_post);
+                }
+            }
+            
+            // Add the symbol post to the product if it has targets
+            if (!product_symbol_post.targets.empty()) {
+                StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
+                product_state_post.push_back(std::move(product_symbol_post));
+            }
+        }
+
+        // Add epsilon transitions, from lhs e-transitions.
+        if (!is_lhs_null(lhs_source)) {
+            const StatePost& lhs_state_post{lhs.delta[lhs_source]};
+            auto lhs_first_epsilon_it = lhs_state_post.first_epsilon_it(first_epsilon);
+            if (lhs_first_epsilon_it != lhs_state_post.end()) {
+                for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end(); ++lhs_symbol_post) {
+                    SymbolPost prod_symbol_post{lhs_symbol_post->symbol};
+                    for (const State lhs_target: lhs_symbol_post->targets) {
+                        create_product_state_and_symbol_post(lhs_target, rhs_source, prod_symbol_post);
+                    }
+                    add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
+                }
+            }
+        }
+
+        // Add epsilon transitions, from rhs e-transitions.
+        if (!is_rhs_null(rhs_source)) {
+            const StatePost& rhs_state_post{rhs.delta[rhs_source]};
+            auto rhs_first_epsilon_it = rhs_state_post.first_epsilon_it(first_epsilon);
+            if (rhs_first_epsilon_it != rhs_state_post.end()) {
+                for (auto rhs_symbol_post = rhs_first_epsilon_it; rhs_symbol_post < rhs_state_post.end(); ++rhs_symbol_post) {
+                    SymbolPost prod_symbol_post{rhs_symbol_post->symbol};
+                    for (const State rhs_target: rhs_symbol_post->targets) {
+                        create_product_state_and_symbol_post(lhs_source, rhs_target, prod_symbol_post);
+                    }
+                    add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
+                }
+            }
+        }
+    }
+    
+    return product;
+} // product_incomplete().
+
 } // namespace mata::nfa.

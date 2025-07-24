@@ -117,6 +117,26 @@ Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State
             const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
 /**
+ * @brief Compute product of two NFAs supporting incomplete automata, especially useful for OR operations.
+ *
+ * This variant can handle incomplete automata by processing disjoint symbol sets. When only one automaton
+ * has a transition for a symbol, the other automaton is treated as having an implicit null/sink state.
+ * This allows union operations to work correctly with incomplete automata.
+ *
+ * @param[in] lhs First NFA to compute product for.
+ * @param[in] rhs Second NFA to compute product for.
+ * @param[in] final_condition The predicate that tells whether a pair of states is final.
+ * @param[in] lhs_null_state State to use when LHS has no transition for a symbol (use max_state for implicit).
+ * @param[in] rhs_null_state State to use when RHS has no transition for a symbol (use max_state for implicit).
+ * @param[in] first_epsilon The smallest epsilon.
+ * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with support for incomplete automata.
+ */
+Nfa product_incomplete(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
+                      State lhs_null_state = Limits::max_state, State rhs_null_state = Limits::max_state,
+                      const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+
+/**
  * @brief Concatenate two NFAs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.

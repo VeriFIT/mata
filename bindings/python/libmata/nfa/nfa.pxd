@@ -203,6 +203,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
     cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&)
     cdef void c_union_with_product_map "mata::nfa::plumbing::union_with_product_map" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State]*)
+    cdef void c_union_incomplete_with_product_map "mata::nfa::plumbing::union_incomplete_with_product_map" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State]*)
     cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State]*)
     cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
     cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +

@@ -578,6 +578,23 @@ def union_with_product_map(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()
     """
     ...
 
+def union_incomplete_with_product_map(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> tuple[Nfa, dict[tuple[State, State], State]]:
+    """Performs union of lhs and rhs with product map, supporting incomplete automata.
+
+    The union is computed by product construction with OR condition on the final states.
+    Unlike union_with_product_map, this variant can handle incomplete automata by processing
+    disjoint symbol sets properly - when only one automaton has a transition for a symbol,
+    the other is treated as having an implicit null/sink state.
+
+    Automata must share alphabets.
+
+    :param lhs: First automaton.
+    :param rhs: Second automaton.
+    :param first_epsilon: Smallest epsilon symbol.
+    :return: Union of lhs and rhs, product map of original pairs of states to new states.
+    """
+    ...
+
 def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> Nfa:
     """Performs intersection of lhs and rhs.
 

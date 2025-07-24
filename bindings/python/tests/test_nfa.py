@@ -1230,3 +1230,191 @@ def test_is_epsilon():
     assert not nfa.is_epsilon(0)
 
     # TODO: Add checks for user-specified epsilons when user-specified epsilons are implemented.
+
+
+def test_union_incomplete_basic():
+    """Test basic union of incomplete automata."""
+    # Create first automaton: accepts strings ending with 'a' (symbol 0)
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_transition(0, 0, 1)  # 0 -a-> 1 (final)
+
+    # Create second automaton: accepts strings ending with 'b' (symbol 1)  
+    rhs = mata_nfa.Nfa(2)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(1)
+    rhs.add_transition(0, 1, 1)  # 0 -b-> 1 (final)
+
+    # Test the new incomplete union
+    result, product_map = mata_nfa.union_incomplete_with_product_map(lhs, rhs)
+
+    # Check that the result accepts both 'a' and 'b'
+    assert result.is_in_lang([0])  # accepts 'a'
+    assert result.is_in_lang([1])  # accepts 'b'
+    
+    # Check that product map is populated
+    assert len(product_map) > 0
+    
+    # Verify the result doesn't accept other symbols
+    assert not result.is_in_lang([2])  # doesn't accept symbol 2
+
+
+def test_union_incomplete_vs_complete():
+    """Test union of incomplete automata vs completing them first."""
+    # Set up alphabet
+    alph = alphabets.OnTheFlyAlphabet()
+    symbols = {}
+    for char in ['a', 'b', 'c']:
+        symbols[char] = alph.translate_symbol(char)
+
+    # Create first incomplete automaton: accepts only 'a'
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_transition(0, symbols['a'], 1)
+
+    # Create second incomplete automaton: accepts only 'b'
+    rhs = mata_nfa.Nfa(2)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(1)
+    rhs.add_transition(0, symbols['b'], 1)
+
+    # Test incomplete union
+    result_incomplete, _ = mata_nfa.union_incomplete_with_product_map(lhs, rhs)
+
+    # Verify it accepts both 'a' and 'b'
+    assert result_incomplete.is_in_lang([symbols['a']])
+    assert result_incomplete.is_in_lang([symbols['b']])
+    # Should not accept 'c' or empty string
+    assert not result_incomplete.is_in_lang([symbols['c']])
+    assert not result_incomplete.is_in_lang([])
+
+    # Compare with completing first, then doing regular union
+    lhs_complete = lhs.deepcopy()
+    rhs_complete = rhs.deepcopy()
+    lhs_complete.make_complete(lhs_complete.num_of_states(), alph)
+    rhs_complete.make_complete(rhs_complete.num_of_states(), alph)
+    
+    result_complete, _ = mata_nfa.union_with_product_map(lhs_complete, rhs_complete)
+
+    # Both should accept 'a' and 'b'
+    assert result_complete.is_in_lang([symbols['a']])
+    assert result_complete.is_in_lang([symbols['b']])
+
+
+def test_union_incomplete_disjoint_symbols():
+    """Test union with completely disjoint symbol sets."""
+    # Create first automaton using symbols 0, 1
+    lhs = mata_nfa.Nfa(3)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(2)
+    lhs.add_transition(0, 0, 1)
+    lhs.add_transition(1, 1, 2)
+
+    # Create second automaton using symbols 2, 3
+    rhs = mata_nfa.Nfa(3)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(2)
+    rhs.add_transition(0, 2, 1)
+    rhs.add_transition(1, 3, 2)
+
+    # Test incomplete union
+    result, product_map = mata_nfa.union_incomplete_with_product_map(lhs, rhs)
+
+    # Should accept sequences from both automata
+    assert result.is_in_lang([0, 1])  # from lhs
+    assert result.is_in_lang([2, 3])  # from rhs
+    
+    # Should not accept mixed sequences
+    assert not result.is_in_lang([0, 3])
+    assert not result.is_in_lang([2, 1])
+    
+    # Check product map contains expected state pairs
+    assert len(product_map) > 0
+
+
+def test_union_incomplete_empty_automata():
+    """Test union with empty automata."""
+    # Create empty automaton
+    empty = mata_nfa.Nfa(1)
+    empty.make_initial_state(0)
+    # No final states
+
+    # Create simple automaton
+    simple = mata_nfa.Nfa(2)
+    simple.make_initial_state(0)
+    simple.make_final_state(1)
+    simple.add_transition(0, 0, 1)
+
+    # Union with empty should give the simple automaton
+    result1, _ = mata_nfa.union_incomplete_with_product_map(empty, simple)
+    result2, _ = mata_nfa.union_incomplete_with_product_map(simple, empty)
+
+    # Both should accept what simple accepts
+    assert result1.is_in_lang([0])
+    assert result2.is_in_lang([0])
+    
+    # Neither should accept empty string
+    assert not result1.is_in_lang([])
+    assert not result2.is_in_lang([])
+
+
+def test_union_incomplete_overlapping_symbols():
+    """Test union with overlapping symbol sets."""
+    # Create first automaton: accepts 'a' or 'ab'
+    lhs = mata_nfa.Nfa(3)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.make_final_state(2)
+    lhs.add_transition(0, 0, 1)  # a -> final
+    lhs.add_transition(1, 1, 2)  # ab -> final
+
+    # Create second automaton: accepts 'b' or 'ba'  
+    rhs = mata_nfa.Nfa(3)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(1)
+    rhs.make_final_state(2)
+    rhs.add_transition(0, 1, 1)  # b -> final
+    rhs.add_transition(1, 0, 2)  # ba -> final
+
+    # Test incomplete union
+    result, product_map = mata_nfa.union_incomplete_with_product_map(lhs, rhs)
+
+    # Should accept strings from both automata
+    assert result.is_in_lang([0])     # 'a' from lhs
+    assert result.is_in_lang([1])     # 'b' from rhs  
+    assert result.is_in_lang([0, 1])  # 'ab' from lhs
+    assert result.is_in_lang([1, 0])  # 'ba' from rhs
+
+    # Product map should be populated
+    assert len(product_map) > 0
+
+
+def test_union_incomplete_equivalence_check():
+    """Test that incomplete union produces equivalent results to naive union for some cases."""
+    # Create two simple automata that we can also union with nondeterministic union
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_transition(0, 0, 1)
+
+    rhs = mata_nfa.Nfa(2)
+    rhs.make_initial_state(0) 
+    rhs.make_final_state(1)
+    rhs.add_transition(0, 1, 1)
+
+    # Get results from both methods
+    result_incomplete, _ = mata_nfa.union_incomplete_with_product_map(lhs, rhs)
+    result_nondet = mata_nfa.union(lhs, rhs)
+
+    # Both should accept the same basic words
+    test_words = [[0], [1], [0, 0], [1, 1]]
+    for word in test_words:
+        assert result_incomplete.is_in_lang(word) == result_nondet.is_in_lang(word)
+
+    # Test some words they should not accept
+    reject_words = [[], [2], [0, 1], [1, 0]]
+    for word in reject_words:
+        assert not result_incomplete.is_in_lang(word)
+        assert not result_nondet.is_in_lang(word)

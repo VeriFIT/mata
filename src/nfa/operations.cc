@@ -1055,6 +1055,25 @@ Nfa mata::nfa::union_det_complete(const Nfa &lhs, const Nfa &rhs) {
     return product(lhs, rhs, ProductFinalStateCondition::OR, EPSILON);
 }
 
+Nfa mata::nfa::union_incomplete(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>, State> *prod_map) {
+    auto is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
+        // Handle special case where one of the states is max_state (indicating null/sink state)
+        if (lhs_state == Limits::max_state && rhs_state == Limits::max_state) {
+            return false; // Both null states - not final
+        }
+        if (lhs_state == Limits::max_state) {
+            return rhs.final.contains(rhs_state); // Only RHS is valid
+        }
+        if (rhs_state == Limits::max_state) {
+            return lhs.final.contains(lhs_state); // Only LHS is valid
+        }
+        return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state); // Standard OR
+    };
+
+    return algorithms::product_incomplete(lhs, rhs, std::move(is_productstate_final_func), 
+                                         Limits::max_state, Limits::max_state, first_epsilon, prod_map);
+}
+
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +

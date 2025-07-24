@@ -874,6 +874,27 @@ def union_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
     return result, {tuple(k): v for k, v in c_product_map}
 
+def union_incomplete_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
+    """Performs union of lhs and rhs with product map, supporting incomplete automata.
+
+    The union is computed by product construction with OR condition on the final states.
+    Unlike union_with_product_map, this variant can handle incomplete automata by processing
+    disjoint symbol sets properly - when only one automaton has a transition for a symbol,
+    the other is treated as having an implicit null/sink state.
+
+    Automata must share alphabets.
+
+    :param Nfa lhs: First automaton.
+    :param Nfa rhs: Second automaton.
+    :param Symbol first_epsilon: Smallest epsilon symbol.
+    :return: Union of lhs and rhs, product map of original pairs of states to new states.
+    """
+    result = Nfa()
+    cdef umap[pair[State, State], State] c_product_map
+    mata_nfa.c_union_incomplete_with_product_map(
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
+    return result, {tuple(k): v for k, v in c_product_map}
+
 def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
     """Performs intersection of lhs and rhs.
 

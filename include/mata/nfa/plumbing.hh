@@ -80,6 +80,22 @@ inline void union_with_product_map(Nfa* res, const Nfa& lhs, const Nfa& rhs, Sym
 }
 
 /**
+ * @brief Compute union of two potentially incomplete NFAs with product map.
+ *
+ * The union is computed by product construction with OR condition on the final states,
+ * but supports incomplete automata by handling disjoint symbol sets properly.
+ * @param[out] res The resulting union NFA.
+ * @param[in] lhs First NFA.
+ * @param[in] rhs Second NFA.
+ * @param[in] first_epsilon smallest epsilon.
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
+ */
+inline void union_incomplete_with_product_map(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
+                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
+    *res = union_incomplete(lhs, rhs, first_epsilon, prod_map);
+}
+
+/**
  * @brief Compute intersection of two NFAs.
  *
  * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,

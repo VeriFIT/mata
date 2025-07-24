@@ -704,6 +704,20 @@ Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
 
 /**
+ * @brief Compute union of two potentially incomplete NFAs.
+ *
+ * The union is computed by product construction with OR condition on the final states,
+ * but supports incomplete automata by handling disjoint symbol sets properly.
+ * @param lhs First NFA.
+ * @param rhs Second NFA.
+ * @param first_epsilon Smallest epsilon symbol.
+ * @param prod_map Optional mapping of pairs of original states to product states.
+ */
+Nfa union_incomplete(const Nfa &lhs, const Nfa &rhs, 
+                     const Symbol first_epsilon = EPSILON, 
+                     std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+
+/**
  * @brief Compute product of two NFAs with OR condition on the final states.
  *
  * Automata must share alphabets. //TODO: this is not implemented yet.
