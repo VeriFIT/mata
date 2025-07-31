@@ -417,6 +417,65 @@ def test_in_language(
     assert mata_nfa.accepts_epsilon(lhs)
 
 
+def test_read_word():
+    """Test the read_word function."""
+    lhs = mata_nfa.Nfa(3)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(0)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
+    lhs.add_transition(0, 1, 2)
+    lhs.add_transition(2, 0, 0)
+
+    lhs_det, lhs_map = mata_nfa.determinize_with_subset_map(lhs)
+
+    states = lhs.read_word([])
+    state = lhs_det.read_word_det([])
+    assert states == {0}  # Empty word returns initial state 0 (which happens to be final)
+    assert state == lhs_map[(0,)]
+
+    states = lhs.read_word([0])
+    state = lhs_det.read_word_det([0])
+    assert states == {0}  # Should stay in state 0 (which happens to be final)
+    assert state == lhs_map[(0,)]
+
+    states = lhs.read_word([1])
+    state = lhs_det.read_word_det([1])
+    assert states == {1, 2}  # Should end up in state 1 (which is not final)
+    assert state == lhs_map[(1, 2)]
+
+    states = lhs.read_word([1, 1])
+    state = lhs_det.read_word_det([1, 1])
+    assert states == set()  # Empty set, because one cannot get anywhere from {1, 2} via 1
+    assert state == -1
+
+    states = lhs.read_word([1, 0])
+    state = lhs_det.read_word_det([1, 0])
+    assert states == {0}
+    assert state == lhs_map[(0,)]
+
+
+def test_read_word_epsilon():
+    lhs = mata_nfa.Nfa(4)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(0)
+    lhs.add_transition(0, mata_nfa.epsilon(), 1)
+    lhs.add_transition(1, 0, 2)
+    lhs.add_transition(2, mata_nfa.epsilon(), 3)
+
+    states = lhs.read_word([], use_epsilon=True)
+    assert states == {0, 1}
+    states = lhs.read_word([])  # Here, epsilon is considered as a common symbol
+    assert states == {0}
+
+    states = lhs.read_word([0], use_epsilon=True)
+    assert states == {2, 3}
+    states = lhs.read_word([0])
+    assert states == set()
+    states = lhs.read_word([mata_nfa.epsilon(), 0, mata_nfa.epsilon()])
+    assert states == {3}
+
+
 def test_union(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):

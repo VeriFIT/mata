@@ -21,7 +21,7 @@ cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
-    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
+    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON, CMAX_STATE
 
 from libmata.alphabets cimport CAlphabet
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
@@ -769,6 +769,38 @@ cdef class Nfa:
         run = Run()
         run.thisptr.word = word
         return self.thisptr.get().is_in_lang(dereference(run.thisptr), use_epsilon, match_prefix)
+
+    def read_word(self, vector[Symbol] word, use_epsilon = False):
+        """Read word and return the set of states the automaton ends up in.
+
+        :param word: word to read.
+        :param use_epsilon: whether the automaton uses epsilon transitions.
+        :return: set of all reachable states after reading the word.
+                 If the word cannot be read, the returned set is empty.
+                 Note: Returns all reachable states, not just final states.
+                 Use is_in_lang() if you need to check language membership.
+
+        """
+        run = Run()
+        run.word = word
+        cdef StateSet result = self.thisptr.get().read_word(dereference(run.thisptr), use_epsilon)
+        cdef vector[State] result_vec = result.to_vector()
+        return set(result_vec)
+
+    def read_word_det(self, vector[Symbol] word):
+        """Read word and return the state the deterministic automaton ends up in.
+
+        The automaton must be deterministic, otherwise the result is undefined.
+
+        :param word: word to read.
+        :return: The reached state or -1 if the word cannot be read.
+        """
+        run = Run()
+        run.word = word
+        cdef State result = self.thisptr.get().read_word_det(dereference(run.thisptr))
+        if result == CMAX_STATE:
+            return -1
+        return result
 
     def get_word_for_path(self, path):
         """For a given path (set of states) returns a corresponding word

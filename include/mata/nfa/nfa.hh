@@ -505,6 +505,54 @@ public:
     bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) { return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix); }
 
     /**
+     * @brief Read a word and return the set of states the automaton ends up in.
+     *
+     * @param word The word to read.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return Set of all reachable states after reading the word. Note: This returns
+     *         all reachable states, not just final states. Use is_in_lang() if you need to check
+     *         language membership, or intersect the result with final states manually if needed.
+     *         Note: The returned set is empty if the word cannot be read.
+     */
+    StateSet read_word(const Run& word, const bool use_epsilon = false) const;
+
+    /**
+     * @brief Read a word and return the set of states the automaton ends up in.
+     *
+     * @param word The word to read.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return Set of all reachable states after reading the word. Note: This returns
+     *         all reachable states, not just final states. Use is_in_lang() if you need to check
+     *         language membership, or intersect the result with final states manually if needed.
+     *         Note: The returned set is empty if the word cannot be read.
+     */
+    StateSet read_word(const Word& word, const bool use_epsilon = false) const { return read_word(Run{ word, {} }, use_epsilon); }
+
+    /**
+     * @brief Read a word and return the state the deterministic automaton ends up in.
+     *
+     * If the automaton is nondeterministic, the result is undefined.
+     *
+     * @param word The word to read.
+     *
+     * @return The reachable state after reading the word or Limits::max_state if the word cannot be read.
+     */
+    State read_word_det(const Run& word) const;
+
+    /**
+     * @brief Read a word and return the state the deterministic automaton ends up in.
+     *
+     * If the automaton is nondeterministic, the result is undefined.
+     *
+     * @param word The word to read.
+     *
+     * @return The reachable state after reading the word or Limits::max_state if the word cannot be read.
+     */
+    State read_word_det(const Word& word) const { return read_word_det(Run{ word, {} }); }
+
+    /**
      * @brief Check whether a prefix of a run is in the language of an automaton.
      *
      * @param word The run to check.
