@@ -537,9 +537,9 @@ public:
      *
      * @param word The word to read.
      *
-     * @return The reachable state after reading the word or Limits::max_state if the word cannot be read.
+     * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
      */
-    State read_word_det(const Run& word) const;
+    std::optional<State> read_word_det(const Run& word) const;
 
     /**
      * @brief Read a word and return the state the deterministic automaton ends up in.
@@ -548,9 +548,9 @@ public:
      *
      * @param word The word to read.
      *
-     * @return The reachable state after reading the word or Limits::max_state if the word cannot be read.
+     * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
      */
-    State read_word_det(const Word& word) const { return read_word_det(Run{ word, {} }); }
+    std::optional<State> read_word_det(const Word& word) const { return read_word_det(Run{ word, {} }); }
 
     /**
      * @brief Check whether a prefix of a run is in the language of an automaton.

@@ -577,13 +577,13 @@ StateSet mata::nfa::Nfa::read_word(const Run& run, const bool use_epsilon) const
     return current_post;
 }
 
-State mata::nfa::Nfa::read_word_det(const Run& run) const {
-    if (initial.empty()) return Limits::max_state;
+std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
+    if (initial.empty()) return std::nullopt;
     State current_post = *initial.begin();
 
     for (const Symbol sym : run.word) {
         const StateSet& successors = delta.get_successors(current_post, sym);
-        if (successors.empty()) return Limits::max_state;
+        if (successors.empty()) return std::nullopt;
         current_post = *successors.begin();
     }
 

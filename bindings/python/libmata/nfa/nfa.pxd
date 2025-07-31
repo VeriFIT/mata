@@ -39,10 +39,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     ctypedef umap[string, string] ParameterMap
 
     cdef const Symbol CEPSILON "mata::nfa::EPSILON"
-    cdef const State CMAX_STATE "mata::nfa::Limits::max_state"
-    cdef const State CMIN_STATE "mata::nfa::Limits::min_state"
-    cdef const Symbol CMAX_SYMBOL "mata::nfa::Limits::max_symbol"
-    cdef const Symbol CMIN_SYMBOL "mata::nfa::Limits::min_symbol"
 
     cdef cppclass CStatePost "mata::nfa::StatePost":
         void insert(CSymbolPost&)
@@ -183,7 +179,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_in_lang(CRun&, bool, bool)
         StateSet read_word(CRun&)
         StateSet read_word(CRun&, bool)
-        State read_word_det(CRun&)
+        optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
         void make_complete(CAlphabet*, optional[State]) except +
 

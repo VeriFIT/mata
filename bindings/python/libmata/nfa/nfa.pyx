@@ -21,7 +21,7 @@ cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
-    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON, CMAX_STATE
+    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
 
 from libmata.alphabets cimport CAlphabet
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
@@ -793,14 +793,12 @@ cdef class Nfa:
         The automaton must be deterministic, otherwise the result is undefined.
 
         :param word: word to read.
-        :return: The reached state or -1 if the word cannot be read.
+        :return: The reached state or None if the word cannot be read.
         """
         run = Run()
         run.word = word
-        cdef State result = self.thisptr.get().read_word_det(dereference(run.thisptr))
-        if result == CMAX_STATE:
-            return -1
-        return result
+        cdef optional[State] result = self.thisptr.get().read_word_det(dereference(run.thisptr))
+        return result.value() if result.has_value() else None
 
     def get_word_for_path(self, path):
         """For a given path (set of states) returns a corresponding word

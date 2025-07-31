@@ -447,7 +447,7 @@ def test_read_word():
     states = lhs.read_word([1, 1])
     state = lhs_det.read_word_det([1, 1])
     assert states == set()  # Empty set, because one cannot get anywhere from {1, 2} via 1
-    assert state == -1
+    assert state is None
 
     states = lhs.read_word([1, 0])
     state = lhs_det.read_word_det([1, 0])
