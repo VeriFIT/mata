@@ -271,7 +271,22 @@ public:
         }
         return vec_.front();
     }
+
+    virtual Key& min() {
+        if (vec_.empty()) {
+            throw std::out_of_range("Cannot get min from an empty OrdVector");
+        }
+        return vec_.front();
+    }
+
     virtual const Key& max() const {
+        if (vec_.empty()) {
+            throw std::out_of_range("Cannot get max from an empty OrdVector");
+        }
+        return vec_.back();
+    }
+
+    virtual Key& max() {
         if (vec_.empty()) {
             throw std::out_of_range("Cannot get max from an empty OrdVector");
         }
