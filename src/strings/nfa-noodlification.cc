@@ -57,101 +57,21 @@ Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol
 
 } // namespace
 
-std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
-
-    const std::set<Symbol> epsilons({epsilon});
-    // return noodlify_reach(aut, epsilons, include_empty);
-
-    Segmentation segmentation{ aut, epsilons };
-    const auto& segments{ segmentation.get_untrimmed_segments() };
-
-    if (segments.size() == 1) {
-        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
-        segment->trim();
-        if (segment->num_of_states() > 0 || include_empty) {
-            return {{ segment }};
-        } else {
-            return {};
-        }
-    }
-
-    State unused_state = aut.num_of_states(); // get some State not used in aut
-    std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
-    segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
-
-    const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
-
-    // Compute number of all combinations of ε-transitions with one ε-transitions from each depth.
-    size_t num_of_permutations{ get_num_of_permutations(epsilon_depths) };
-    size_t epsilon_depths_size{ epsilon_depths.size() };
-
-    std::vector<Noodle> noodles{};
-    // noodle of epsilon transitions (each from different depth)
-    std::vector<Transition> epsilon_noodle(epsilon_depths_size);
-    // for each combination of ε-transitions, create the automaton.
-    // based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
-    for (size_t index{ 0 }; index < num_of_permutations; ++index) {
-        size_t temp{ index };
-        for (size_t depth{ 0 }; depth < epsilon_depths_size; ++depth) {
-            size_t num_of_trans_at_cur_depth = epsilon_depths.at(depth).size();
-            size_t computed_index = temp % num_of_trans_at_cur_depth;
-            temp /= num_of_trans_at_cur_depth;
-            epsilon_noodle[depth] = epsilon_depths.at(depth)[computed_index];
-        }
-
-        Noodle noodle;
-
-        // epsilon_noodle[0] for sure exists, as we sorted out the case of only one segment at the beginning
-        auto first_segment_iter = segments_one_initial_final.find(std::make_pair(unused_state, epsilon_noodle[0].source));
-        if (first_segment_iter != segments_one_initial_final.end()) {
-            noodle.push_back(first_segment_iter->second);
-        } else {
-            continue;
-        }
-
-        bool all_segments_exist = true;
-        for (auto iter = epsilon_noodle.begin(); iter + 1 != epsilon_noodle.end(); ++iter) {
-            auto next_iter = iter + 1;
-            auto segment_iter = segments_one_initial_final.find(std::make_pair(iter->target, next_iter->source));
-            if (segment_iter != segments_one_initial_final.end()) {
-                noodle.push_back(segment_iter->second);
-            } else {
-                all_segments_exist = false;
-                break;
-            }
-        }
-
-        if (!all_segments_exist) {
-            continue;
-        }
-
-        auto last_segment_iter = segments_one_initial_final.find(
-                std::make_pair(epsilon_noodle.back().target, unused_state));
-        if (last_segment_iter != segments_one_initial_final.end()) {
-            noodle.push_back(last_segment_iter->second);
-        } else {
-            continue;
-        }
-
-        noodles.push_back(noodle);
-    }
-    return noodles;
-}
-
 //todo: is this taking all final times all initial?
 // can it be done more efficiently? (only connected combinations through dfs)
 void seg_nfa::segs_one_initial_final(
     const std::vector<Nfa>& segments,
     bool include_empty,
     const State& unused_state,
-    std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out) {
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out,
+    ReductionAlgorithm red_alg) {
 
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) { // first segment will always have all initial states in noodles
             for (const State final_state: iter->final) {
                 Nfa segment_one_final = *iter;
                 segment_one_final.final = {final_state };
-                segment_one_final = reduce(segment_one_final.trim());
+                segment_one_final = reduce(segment_one_final.trim(), nullptr, red_alg);
 
                 if (segment_one_final.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(segment_one_final);
@@ -161,7 +81,7 @@ void seg_nfa::segs_one_initial_final(
             for (const State init_state: iter->initial) {
                 Nfa segment_one_init = *iter;
                 segment_one_init.initial = {init_state };
-                segment_one_init = reduce(segment_one_init.trim());
+                segment_one_init = reduce(segment_one_init.trim(), nullptr, red_alg);
 
                 if (segment_one_init.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(segment_one_init);
@@ -173,7 +93,7 @@ void seg_nfa::segs_one_initial_final(
                     Nfa segment_one_init_final = *iter;
                     segment_one_init_final.initial = {init_state };
                     segment_one_init_final.final = {final_state };
-                    segment_one_init_final = reduce(segment_one_init_final.trim());
+                    segment_one_init_final = reduce(segment_one_init_final.trim(), nullptr, red_alg);
                     if (segment_one_init_final.num_of_states() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(segment_one_init_final);
                     }
@@ -183,7 +103,7 @@ void seg_nfa::segs_one_initial_final(
     }
 }
 
-std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
+std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, ReductionAlgorithm red_alg, bool include_empty) {
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
@@ -205,7 +125,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
     State unused_state = aut.num_of_states(); // get some State not used in aut
     std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
-    segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
+    segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final, red_alg);
 
     const auto& epsilon_depths_map{ segmentation.get_epsilon_depth_trans_map() };
 
@@ -272,97 +192,11 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
     return noodles;
 }
 
-std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
-    const std::vector<std::reference_wrapper<Nfa>>& lhs_automata, const Nfa& rhs_automaton,
-    bool include_empty, const ParameterMap& params) {
-    const auto lhs_aut_begin{ lhs_automata.begin() };
-    const auto lhs_aut_end{ lhs_automata.end() };
-    for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end;
-         ++lhs_aut_iter) {
-        (*lhs_aut_iter).get().unify_initial();
-        (*lhs_aut_iter).get().unify_final();
-    }
-
-    if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
-
-    // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa concatenated_lhs{ *lhs_aut_begin };
-    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
-         ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, EPSILON);
-    }
-
-    auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton).trim() };
-    if (product_pres_eps_trans.is_lang_empty()) {
-        return {};
-    }
-    if (utils::haskey(params, "reduce")) {
-        const std::string& reduce_value = params.at("reduce");
-        if (reduce_value == "forward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = reduce(product_pres_eps_trans);
-        }
-        if (reduce_value == "backward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = revert(product_pres_eps_trans);
-            product_pres_eps_trans = reduce(product_pres_eps_trans);
-            product_pres_eps_trans = revert(product_pres_eps_trans);
-        }
-    }
-    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
-}
-
-std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
-    const std::vector<Nfa*>& lhs_automata, const Nfa& rhs_automaton, bool include_empty,
-    const ParameterMap& params) {
-    const auto lhs_aut_begin{ lhs_automata.begin() };
-    const auto lhs_aut_end{ lhs_automata.end() };
-
-    std::string reduce_value{};
-    if (utils::haskey(params, "reduce")) {
-        reduce_value = params.at("reduce");
-    }
-
-    if (!reduce_value.empty()) {
-        if (reduce_value == "forward" || reduce_value == "backward" || reduce_value == "bidirectional") {
-            for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end;
-                 ++lhs_aut_iter) {
-                (*lhs_aut_iter)->unify_initial();
-                (*lhs_aut_iter)->unify_final();
-            }
-        }
-    }
-
-    if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
-
-    // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa concatenated_lhs{ *(*lhs_aut_begin) };
-    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
-         ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), EPSILON);
-    }
-
-    auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton).trim() };
-    if (product_pres_eps_trans.is_lang_empty()) {
-        return {};
-    }
-    if (!reduce_value.empty()) {
-        if (reduce_value == "forward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = reduce(product_pres_eps_trans);
-        }
-        if (reduce_value == "backward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = revert(product_pres_eps_trans);
-            product_pres_eps_trans = reduce(product_pres_eps_trans);
-            product_pres_eps_trans = revert(product_pres_eps_trans);
-        }
-    }
-    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
-}
-
-
 std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
-    const std::vector<std::shared_ptr<Nfa>>& rhs_automata, bool include_empty, const ParameterMap& params) {
+    const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+    ReductionAlgorithm red_alg,
+    bool reduce_intersection) {
     if (lhs_automata.empty() || rhs_automata.empty()) { return {}; }
 
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas; // Unify each automaton only once.
@@ -379,18 +213,10 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
-    if (utils::haskey(params, "reduce")) {
-        const std::string& reduce_value = params.at("reduce");
-        if (reduce_value == "forward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = reduce(product_pres_eps_trans);
-        }
-        if (reduce_value == "backward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = revert(product_pres_eps_trans);
-            product_pres_eps_trans = reduce(product_pres_eps_trans);
-            product_pres_eps_trans = revert(product_pres_eps_trans);
-        }
+    if (reduce_intersection) {
+        product_pres_eps_trans = reduce(product_pres_eps_trans, nullptr, red_alg);
     }
-    return noodlify_mult_eps(product_pres_eps_trans, { EPSILON, EPSILON-1 }, include_empty);
+    return noodlify_mult_eps(product_pres_eps_trans, { EPSILON, EPSILON-1 }, red_alg);
 }
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
@@ -405,6 +231,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
+    ReductionAlgorithm red_alg,
     bool reduce_intersection
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
@@ -535,7 +362,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
     std::vector<TransducerNoodle> result;
     std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el; // we create for each segment NFAi only one NFTi and keep it here
-    for (const auto& noodle : noodlify_mult_eps(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false)) {
+    for (const auto& noodle : noodlify_mult_eps(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, red_alg)) {
         TransducerNoodle new_noodle;
         for (const auto& element : noodle) {
             // element.first is NFAi
@@ -559,9 +386,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
             TransducerNoodleElement transd_el{element_nft,
                 // the language of the input automaton is the projection to input track
-                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))), element.second[0],
+                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)), nullptr, red_alg)), element.second[0],
                 // the language of the output automaton is the projection to output track
-                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))), element.second[1]
+                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)), nullptr, red_alg)), element.second[1]
             };
             seg_nfa_to_transducer_el.insert({element_aut, transd_el});
             new_noodle.push_back(transd_el);

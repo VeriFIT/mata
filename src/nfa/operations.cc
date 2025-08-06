@@ -1073,40 +1073,26 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const ParameterMap& params) {
-    if (!haskey(params, "algorithm")) {
-        throw std::runtime_error(std::to_string(__func__) +
-                                 " requires setting the \"algorithm\" key in the \"params\" argument; "
-                                 "received: " + std::to_string(params));
-    }
+Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, ReductionAlgorithm reduction_algorithm, ReductionDirection direction) {
+    static unsigned next_file_id = 0;
+    aut.print_to_mata(std::to_string(next_file_id++) + std::string(".mata"));
 
     Nfa result;
     std::unordered_map<State,State> reduced_state_map;
-    const std::string& algorithm = params.at("algorithm");
-    if ("simulation" == algorithm) {
-        result = algorithms::reduce_simulation(aut, reduced_state_map);
-    }
-    else if ("residual" == algorithm) {
-        // reduce type either 'after' or 'with' creation of residual automaton
-        if (!haskey(params, "type")) {
-            throw std::runtime_error(std::to_string(__func__) +
-                                    " requires setting the \"type\" key in the \"params\" argument; "
-                                    "received: " + std::to_string(params));
-        }
-        // forward or backward canonical residual automaton
-        if (!haskey(params, "direction")) {
-            throw std::runtime_error(std::to_string(__func__) +
-                                    " requires setting the \"direction\" key in the \"params\" argument; "
-                                    "received: " + std::to_string(params));
-        }
 
-        const std::string& residual_type = params.at("type");
-        const std::string& residual_direction = params.at("direction");
-
-        result = algorithms::reduce_residual(aut, reduced_state_map, residual_type, residual_direction);
-    } else {
-        throw std::runtime_error(std::to_string(__func__) +
-                                 " received an unknown value of the \"algorithm\" key: " + algorithm);
+    switch(reduction_algorithm) {
+        case ReductionAlgorithm::SIMULATION:
+            result = algorithms::reduce_simulation(aut, reduced_state_map, direction);
+            break;
+        case ReductionAlgorithm::RESIDUAL_AFTER:
+            result = algorithms::reduce_residual(aut, reduced_state_map, "after", direction);
+            break;
+        case ReductionAlgorithm::RESIDUAL_WITH:
+            result = algorithms::reduce_residual(aut, reduced_state_map, "with", direction);
+            break;
+        default:
+            throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"reduction_algorithm\" key");
     }
 
     if (state_renaming) {
@@ -1545,10 +1531,13 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & n
         }).get_word();
 }
 
-Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &state_renaming) {
+Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &state_renaming, ReductionDirection direction) {
     Nfa result;
-    const auto sim_relation = algorithms::compute_relation(
-            aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+    if (direction != ReductionDirection::FORWARD) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " can only reduce simulation by forward direction (for now)");
+    }
+    const auto sim_relation = algorithms::compute_relation(aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
     auto sim_relation_symmetric = sim_relation;
     sim_relation_symmetric.restrict_to_symmetric();
@@ -1617,20 +1606,15 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &stat
     return result;
 }
 
-Nfa mata::nfa::algorithms::reduce_residual(const Nfa& nfa, StateRenaming &state_renaming, const std::string& type, const std::string& direction) {
+Nfa mata::nfa::algorithms::reduce_residual(const Nfa& nfa, StateRenaming &state_renaming, const std::string& type, ReductionDirection direction) {
     Nfa back_determinized = nfa;
     Nfa result;
-
-    if (direction != "forward" && direction != "backward"){
-        throw std::runtime_error(std::to_string(__func__) +
-                             " received an unknown value of the \"direction\" key: " + direction);
-    }
 
     // forward canonical residual automaton is firstly backward determinized and
     // then the residual construction is done forward, for backward residual automaton
     // is it the opposite, so the automaton is reverted once more before and after
     // construction, however the first two reversion negate each other out
-    if (direction == "forward")
+    if (direction == ReductionDirection::FORWARD)
         back_determinized = revert(back_determinized);
     back_determinized = revert(determinize(back_determinized));          // backward deteminization
 
@@ -1653,7 +1637,7 @@ Nfa mata::nfa::algorithms::reduce_residual(const Nfa& nfa, StateRenaming &state_
                              " received an unknown value of the \"type\" key: " + type);
     }
 
-    if (direction == "backward")
+    if (direction == ReductionDirection::BACKWARD)
         result = revert(result);
 
     return result.trim();

@@ -309,21 +309,7 @@ using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
  */
 void segs_one_initial_final(
     const std::vector<Nfa>& segments, bool include_empty, const State& unused_state,
-    std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out);
-
-/**
- * @brief Create noodles from segment automaton @p aut.
- *
- * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
- * A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition
- *  between each two consecutive segments.
- *
- * @param[in] automaton Segment automaton to noodlify.
- * @param[in] epsilon Epsilon symbol to noodlify for.
- * @param[in] include_empty Whether to also include empty noodles.
- * @return A list of all (non-empty) noodles.
- */
-std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out, nfa::ReductionAlgorithm red_alg);
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -337,55 +323,7 @@ std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_emp
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
-
-/**
- * @brief Create noodles for left and right side of equation.
- *
- * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
- * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
- *
- * Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
- *  the equation in a way that libMata understands. The left side automata represent the left side of the equation
- *  and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
- *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
- *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
- *
- * @param[in] lhs_automata Sequence of segment automata for left side of an equation to noodlify.
- * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
- * @param[in] include_empty Whether to also include empty noodles.
- * @param[in] params Additional parameters for the noodlification:
- *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
- *                 minimization before noodlification.
- * @return A list of all (non-empty) noodles.
- */
-std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
-                                     const Nfa& rhs_automaton,
-                                     bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
-
-/**
- * @brief Create noodles for left and right side of equation.
- *
- * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
- * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
- *
- * Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
- *  the equation in a way that libMata understands. The left side automata represent the left side of the equation
- *  and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
- *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
- *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
- *
- * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
- * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
- * @param[in] include_empty Whether to also include empty noodles.
- * @param[in] params Additional parameters for the noodlification:
- *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
- *                 minimization before noodlification.
- * @return A list of all (non-empty) noodles.
- */
-std::vector<Noodle> noodlify_for_equation(
-                const std::vector<Nfa*>& lhs_automata, const Nfa& rhs_automaton, bool include_empty = false,
-                const ParameterMap& params = {{ "reduce", "false"}});
+std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, nfa::ReductionAlgorithm red_alg, bool include_empty = false);
 
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
@@ -401,7 +339,8 @@ std::vector<Noodle> noodlify_for_equation(
 std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
    const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
    const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
-   bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
+   nfa::ReductionAlgorithm red_alg,
+   bool reduce_intersection = true);
 
 struct TransducerNoodleElement {
     std::shared_ptr<Nft> transducer;
@@ -420,7 +359,8 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
-    bool reduce_intersection = false
+    nfa::ReductionAlgorithm red_alg,
+    bool reduce_intersection = true
 );
 
 /**
