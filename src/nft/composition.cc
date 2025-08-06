@@ -169,16 +169,20 @@ namespace {
     void duplicate_transitions(Nft& nft, const State old_target, const State new_target, const PredMap& pred_map) {
         if (old_target == new_target) { return; }
 
-        if (nft.initial.contains(old_target)) {
-            nft.initial.insert(new_target);
-        }
+        // NODE: The state new_target is a "product-like" state, so if old_target is a final state,
+        //       than new_target should already be a final state.
+        // if (nft.final.contains(old_target)) {
+        //     nft.final.insert(new_target);
+        // }
+
+        // NODE: Do we need this? Isn't it the same as the previous check?
+        //       Also, how does the state become initial? Does both states have to be initial?
+        // if (nft.initial.contains(old_target)) {
+        //     nft.initial.insert(new_target);
+        // }
 
         auto it = pred_map.find(old_target);
-        if (it == pred_map.end()) {
-            // No predecessors for the old target, nothing to redirect.
-            return;
-        }
-        // assert(it != pred_map.end());
+        assert(it != pred_map.end());
         for (const State pred: it->second) {
             for (SymbolPost& symbol_post: nft.delta.mutable_state_post(pred)) {
                 if (symbol_post.targets.contains(old_target)) {
@@ -207,10 +211,10 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
     const size_t result_num_of_levels = lhs_num_of_levels + rhs_num_of_levels - (project_out_sync_levels ? (2 * num_of_sync_levels) : num_of_sync_levels);
 
     // FAST STORAGE OF COMPOSITION STATES
-    // The largest matrix (product_matrix) of pairs of states we are brave enough to allocate.
+    // The largest matrix of pairs of states we are brave enough to allocate.
     // Let's say we are fine with allocating larget_composition * (about 8 Bytes) space.
     // So ten million cells is close to 100 MB.
-    // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (composition_vec_map).
+    // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps.
     // The unordered_map seems to be about twice slower.
     constexpr size_t MAX_COMPOSITION_MATRIX_SIZE = 50'000'000;
     // constexpr size_t MAX_COMPOSITION_MATRIX_SIZE = 0;
@@ -218,13 +222,13 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
     assert(lhs_num_of_states < Limits::max_state);
     assert(rhs_num_of_states < Limits::max_state);
 
-    //Two variants of storage for the mapping from pairs of lhs and rhs states to composition state, for large and non-large products.
+    // Two variants of storage for the mapping from pairs of lhs and rhs states to composition state, for large and non-large products.
     MatrixProductStorage matrix_composition_storage;
     VecMapProductStorage vec_map_composition_storage;
-    InvertedProductStorage composition_to_lhs(lhs_num_of_states+rhs_num_of_states);
-    InvertedProductStorage composition_to_rhs(lhs_num_of_states+rhs_num_of_states);
+    InvertedProductStorage composition_to_lhs(lhs_num_of_states + rhs_num_of_states);
+    InvertedProductStorage composition_to_rhs(lhs_num_of_states + rhs_num_of_states);
 
-    //Initialize the storage, according to the number of possible state pairs.
+    // Initialize the storage, according to the number of possible state pairs.
     if (!larget_composition)
         matrix_composition_storage = MatrixProductStorage(lhs_num_of_states, std::vector<State>(rhs_num_of_states, Limits::max_state));
     else
@@ -610,7 +614,7 @@ Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& 
                                 insert_to_product_storage(lhs_tgt, rhs_tgt, local_res_src);
                                 worklist.push({local_res_src, lhs_tgt, rhs_tgt});
                             } else {
-                                redirect_transitions(result, local_res_src, found_state, pred_map);
+                                duplicate_transitions(result, local_res_src, found_state, pred_map);
                             }
                         }
                     }
