@@ -95,7 +95,7 @@ namespace {
      */
     State add_transition(Nft& nft, const State source, const Symbol symbol, const size_t len, const JumpMode jump_mode, PredMap& pred_map) {
         if (len == 0) { return source; }
-        
+
         assert(nft.levels[source] + len <= nft.num_of_levels);
         const Level target_level = static_cast<Level>((nft.levels[source] + len) % nft.num_of_levels);
         const State target = nft.add_state_with_level(target_level);
@@ -167,6 +167,7 @@ namespace {
      * @param pred_map A map that keeps track of predecessors for each target state.
      */
     void duplicate_transitions(Nft& nft, const State old_target, const State new_target, const PredMap& pred_map) {
+        assert(nft.levels[old_target] == nft.levels[new_target]);
         if (old_target == new_target) { return; }
 
         // NODE: The state new_target is a "product-like" state, so if old_target is a final state,
@@ -191,7 +192,54 @@ namespace {
             }
         }
     }
+
+    StateSet get_epsilon_on_sync_levels_succ(const Nft& nft, const State source, const mata::BoolVector& is_sync_level) {
+        StateSet succ;
+        std::queue<State> worklist;
+        worklist.push(source);
+        while (!worklist.empty()) {
+            const State current = worklist.front();
+            const Level current_level = nft.levels[current];
+            worklist.pop();
+            for (const SymbolPost& symbol_post: nft.delta[current]) {
+                if (is_sync_level[current_level] && symbol_post.symbol != EPSILON) {
+                    continue; // Skip non-EPSILON transitions on sync levels.
+                }
+                for (const State target: symbol_post.targets) {
+                    const Level target_level = nft.levels[target];
+                    // We suppose that there are no cycles between zero levels.
+                    assert(target_level == 0 || current_level < target_level);
+                    if (target_level == 0) {
+                        succ.insert(target);
+                    } else {
+                        worklist.push(target);
+                    }
+                }
+            }
+        }
+
+        return succ;
+    }
+
+    void make_waiting_cycle(Nft& nft, const State state, const JumpMode jump_mode, PredMap& pred_map) {
+        assert(nft.levels[state] == 0);
+        add_transition_with_target(nft, state, EPSILON, state, jump_mode, pred_map);
+    }
 }
+
+// TODO
+// Use dequeue with nonzero state pairs on the left and pairs on zero levels on the right.
+// At the end ack if need to add a waiting cycle in lhs or rhs.
+// Using get_epsilon_on_sync_levels_succ() to get successors that are going to be paired with the other.
+// Potentialy there is no need to manualy do the nonwaiting path, maybe we dont even need the get_epsilonb_on_sync_level_succ function.
+// Just create waiting loop and then try to do it again. Because pairs that does not lead anywere weare already visided, we will be foreced to go
+// through the waiting loop. Although, there can be a problem with the memory storage. We can not reshape it during the computation.
+// No, we can not use those two functions. We have to do the wait in place. Meaning that the function get_epsilon_on_sync_levels_succ() is goig to need
+// an access to the memory storage and create the path.
+// We need to calculate the last level to avoid usage of pred_map.
+
+
+
 
 
 namespace mata::nft
