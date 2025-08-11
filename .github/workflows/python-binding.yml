@@ -17,11 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.12"]
 
     steps:
       - name: Checkout latest version
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
@@ -54,11 +54,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.12"]
 
     steps:
       - name: Checkout latest version
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
