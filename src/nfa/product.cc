@@ -4,88 +4,23 @@
 // MATA headers
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/utils/two-dimensional-map.hh"
 #include <cassert>
 #include <functional>
 
 
 using namespace mata::nfa;
 
-namespace {
-
-using ProductMap = std::unordered_map<std::pair<State,State>,State>;
-using MatrixProductStorage = std::vector<std::vector<State>>;
-using VecMapProductStorage = std::vector<std::unordered_map<State,State>>;
-using InvertedProductStorage = std::vector<State>;
-//Unordered map seems to be faster than ordered map here, but still very much slower than matrix.
-
-} // Anonymous namespace.
-
 namespace mata::nfa {
 
 //TODO: move this method to nfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
 Nfa mata::nfa::algorithms::product(
         const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,
-        const Symbol first_epsilon, ProductMap *product_map) {
+        const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *product_map) {
 
     Nfa product{}; // The product automaton.
-
-    // Set of product states to process.
-    std::deque<State> worklist{};
-
-    //The largest matrix (product_matrix) of pairs of states we are brave enough to allocate.
-    // Let's say we are fine with allocating large_product * (about 8 Bytes) space.
-    // So ten million cells is close to 100 MB.
-    // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (product_vec_map).
-    // The unordered_map seems to be about twice slower.
-    constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 50'000'000;
-    //constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 0;
-    const bool large_product = lhs.num_of_states() * rhs.num_of_states() > MAX_PRODUCT_MATRIX_SIZE;
-    assert(lhs.num_of_states() < Limits::max_state);
-    assert(rhs.num_of_states() < Limits::max_state);
-
-    //Two variants of storage for the mapping from pairs of lhs and rhs states to product state, for large and non-large products.
-    MatrixProductStorage matrix_product_storage;
-    VecMapProductStorage vec_map_product_storage;
-    InvertedProductStorage product_to_lhs(lhs.num_of_states()+rhs.num_of_states());
-    InvertedProductStorage product_to_rhs(lhs.num_of_states()+rhs.num_of_states());
-
-
-    //Initialize the storage, according to the number of possible state pairs.
-    if (!large_product)
-        matrix_product_storage = MatrixProductStorage(lhs.num_of_states(), std::vector<State>(rhs.num_of_states(), Limits::max_state));
-    else
-        vec_map_product_storage = VecMapProductStorage(lhs.num_of_states());
-
-    /// Give me the product state for the pair of lhs and rhs states.
-    /// Returns Limits::max_state if not found.
-    auto get_state_from_product_storage = [&](State lhs_state, State rhs_state) {
-        if (!large_product)
-            return matrix_product_storage[lhs_state][rhs_state];
-        else {
-            auto it = vec_map_product_storage[lhs_state].find(rhs_state);
-            if (it == vec_map_product_storage[lhs_state].end())
-                return Limits::max_state;
-            else
-                return it->second;
-        }
-    };
-
-    /// Insert new mapping lhs rhs state pair to product state.
-    auto insert_to_product_storage = [&](State lhs_state, State rhs_state, State product_state) {
-        if (!large_product)
-            matrix_product_storage[lhs_state][rhs_state] = product_state;
-        else
-            vec_map_product_storage[lhs_state][rhs_state] = product_state;
-
-        product_to_lhs.resize(product_state+1);
-        product_to_rhs.resize(product_state+1);
-        product_to_lhs[product_state] = lhs_state;
-        product_to_rhs[product_state] = rhs_state;
-
-        //this thing is not used internally. It is only used if we want to return the mapping. But it is expensive.
-        if (product_map != nullptr)
-            (*product_map)[std::pair<State,State>(lhs_state,rhs_state)] = product_state;
-    };
+    utils::TwoDimensionalMap<State> product_storage{lhs.num_of_states(), rhs.num_of_states()};
+    std::deque<State> worklist{}; // Set of product states to process.
 
 /**
  * Add symbol_post for the product state (lhs,rhs) to the product, used for epsilons only (it is simpler for normal symbols).
@@ -96,7 +31,7 @@ Nfa mata::nfa::algorithms::product(
     {
         if (new_product_symbol_post.empty()) { return; }
 
-        State product_source = get_state_from_product_storage(lhs_source, rhs_source);
+        State product_source = product_storage.get(lhs_source, rhs_source);
 
         StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
 
@@ -124,14 +59,17 @@ Nfa mata::nfa::algorithms::product(
  */
     auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
     {
-        State product_target = get_state_from_product_storage(lhs_target, rhs_target );
+        State product_target = product_storage.get(lhs_target, rhs_target );
 
-        if ( product_target == Limits::max_state )
+        if ( product_target == Limits::max_state)
         {
             product_target = product.add_state();
             assert(product_target < Limits::max_state);
 
-            insert_to_product_storage(lhs_target,rhs_target, product_target);
+            product_storage.insert(lhs_target,rhs_target, product_target);
+            if (product_map != nullptr) {
+                (*product_map)[{ lhs_target, rhs_target }] = product_target;
+            }
 
             worklist.push_back(product_target);
 
@@ -148,10 +86,13 @@ Nfa mata::nfa::algorithms::product(
         for (const State rhs_initial_state : rhs.initial) {
             // Update product with initial state pairs.
             const State product_initial_state = product.add_state();
-            insert_to_product_storage(lhs_initial_state,rhs_initial_state,product_initial_state);
+            product_storage.insert(lhs_initial_state, rhs_initial_state, product_initial_state);
+            if (product_map != nullptr) {
+                (*product_map)[{ lhs_initial_state, rhs_initial_state }] = product_initial_state;
+            }
             worklist.push_back(product_initial_state);
             product.initial.insert(product_initial_state);
-            if (final_condition(lhs_initial_state,rhs_initial_state)) {
+            if (final_condition(lhs_initial_state, rhs_initial_state)) {
                 product.final.insert(product_initial_state);
             }
         }
@@ -160,8 +101,8 @@ Nfa mata::nfa::algorithms::product(
     while (!worklist.empty()) {
         State product_source = worklist.back();;
         worklist.pop_back();
-        State lhs_source =  product_to_lhs[product_source];
-        State rhs_source =  product_to_rhs[product_source];
+        State lhs_source = product_storage.get_first_inverted(product_source);
+        State rhs_source = product_storage.get_second_inverted(product_source);
         // Compute classic product for current state pair.
 
         mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);

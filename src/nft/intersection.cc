@@ -4,6 +4,7 @@
 // MATA headers
 #include "mata/nft/nft.hh"
 #include "mata/nft/algorithms.hh"
+#include "mata/utils/two-dimensional-map.hh"
 
 #include <fstream>
 #include <cassert>
@@ -13,13 +14,7 @@
 using namespace mata::nft;
 
 namespace {
-
 using ProductMap = std::unordered_map<std::pair<State,State>,State>;
-using MatrixProductStorage = std::vector<std::vector<State>>;
-using VecMapProductStorage = std::vector<std::unordered_map<State,State>>;
-using InvertedProductStorage = std::vector<State>;
-//Unordered map seems to be faster than ordered map here, but still very much slower than matrix.
-
 } // Anonymous namespace.
 
 namespace mata::nft {
@@ -38,82 +33,26 @@ Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const Jum
 
 //TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
 Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map, const JumpMode jump_mode, const State lhs_first_aux_state, const State rhs_first_aux_state) {
+    assert(lhs.num_of_levels == rhs.num_of_levels);
 
     Nft product{}; // The product automaton.
     product.num_of_levels = lhs.num_of_levels;
+    utils::TwoDimensionalMap<State> product_storage{lhs.num_of_states(), rhs.num_of_states()};
+    std::deque<State> worklist{}; // Set of product states to process.
 
-    // Set of product states to process.
-    std::deque<State> worklist{};
-
-    //The largest matrix (product_matrix) of pairs of states we are brave enough to allocate.
-    // Let's say we are fine with allocating large_product * (about 8 Bytes) space.
-    // So ten million cells is close to 100 MB.
-    // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (product_vec_map).
-    // The unordered_map seems to be about twice slower.
-    constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 50'000'000;
-    //constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 0;
-    const bool large_product = lhs.num_of_states() * rhs.num_of_states() > MAX_PRODUCT_MATRIX_SIZE;
-    assert(lhs.num_of_states() < Limits::max_state);
-    assert(rhs.num_of_states() < Limits::max_state);
-    assert(lhs.num_of_levels == rhs.num_of_levels);
-
-    //Two variants of storage for the mapping from pairs of lhs and rhs states to product state, for large and non-large products.
-    MatrixProductStorage matrix_product_storage;
-    VecMapProductStorage vec_map_product_storage;
-    InvertedProductStorage product_to_lhs(lhs.num_of_states()+rhs.num_of_states());
-    InvertedProductStorage product_to_rhs(lhs.num_of_states()+rhs.num_of_states());
-
-
-    //Initialize the storage, according to the number of possible state pairs.
-    if (!large_product)
-        matrix_product_storage = MatrixProductStorage(lhs.num_of_states(), std::vector<State>(rhs.num_of_states(), Limits::max_state));
-    else
-        vec_map_product_storage = VecMapProductStorage(lhs.num_of_states());
-
-    /// Give me the product state for the pair of lhs and rhs states.
-    /// Returns Limits::max_state if not found.
-    auto get_state_from_product_storage = [&](State lhs_state, State rhs_state) {
-        if (!large_product)
-            return matrix_product_storage[lhs_state][rhs_state];
-        else {
-            auto it = vec_map_product_storage[lhs_state].find(rhs_state);
-            if (it == vec_map_product_storage[lhs_state].end())
-                return Limits::max_state;
-            else
-                return it->second;
-        }
-    };
-
-    /// Insert new mapping lhs rhs state pair to product state.
-    auto insert_to_product_storage = [&](State lhs_state, State rhs_state, State product_state) {
-        if (!large_product)
-            matrix_product_storage[lhs_state][rhs_state] = product_state;
-        else
-            vec_map_product_storage[lhs_state][rhs_state] = product_state;
-
-        product_to_lhs.resize(product_state+1);
-        product_to_rhs.resize(product_state+1);
-        product_to_lhs[product_state] = lhs_state;
-        product_to_rhs[product_state] = rhs_state;
-
-        //this thing is not used internally. It is only used if we want to return the mapping. But it is expensive.
-        if (product_map != nullptr)
-            (*product_map)[std::pair<State,State>(lhs_state,rhs_state)] = product_state;
-    };
-
-/**
- * Create product state if it does not exist in storage yet and fill in its symbol_post from lhs and rhs targets.
- * @param[in] lhs_target Target state in NFT @c lhs.
- * @param[in] rhs_target Target state in NFT @c rhs.
- * @param[out] product_symbol_post New SymbolPost of the product state.
- */
+    /**
+     * Create product state if it does not exist in storage yet and fill in its symbol_post from lhs and rhs targets.
+     * @param[in] lhs_target Target state in NFT @c lhs.
+     * @param[in] rhs_target Target state in NFT @c rhs.
+     * @param[out] product_symbol_post New SymbolPost of the product state.
+     */
     auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
     {
         // Two auxiliary states can not create a product state.
         if (lhs_first_aux_state <= lhs_target && rhs_first_aux_state <= rhs_target) {
             return;
         }
-        State product_target = get_state_from_product_storage(lhs_target, rhs_target );
+        State product_target = product_storage.get(lhs_target, rhs_target );
 
         if (product_target == Limits::max_state)
         {
@@ -122,7 +61,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                                                           std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]));
             assert(product_target < Limits::max_state);
 
-            insert_to_product_storage(lhs_target,rhs_target, product_target);
+            product_storage.insert(lhs_target,rhs_target, product_target);
+            if (product_map != nullptr) {
+                (*product_map)[{ lhs_target, rhs_target }] = product_target;
+            }
             worklist.push_back(product_target);
 
             if (final_condition(lhs_target,rhs_target)) {
@@ -197,10 +139,13 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         for (const State rhs_initial_state : rhs.initial) {
             // Update product with initial state pairs.
             const State product_initial_state = product.add_state();
-            insert_to_product_storage(lhs_initial_state,rhs_initial_state,product_initial_state);
+            product_storage.insert(lhs_initial_state, rhs_initial_state, product_initial_state);
+            if (product_map != nullptr) {
+                (*product_map)[{ lhs_initial_state, rhs_initial_state }] = product_initial_state;
+            }
             worklist.push_back(product_initial_state);
             product.initial.insert(product_initial_state);
-            if (final_condition(lhs_initial_state,rhs_initial_state)) {
+            if (final_condition(lhs_initial_state, rhs_initial_state)) {
                 product.final.insert(product_initial_state);
             }
         }
@@ -209,8 +154,8 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
     while (!worklist.empty()) {
         State product_source = worklist.back();;
         worklist.pop_back();
-        const State lhs_source =  product_to_lhs[product_source];
-        const State rhs_source =  product_to_rhs[product_source];
+        const State lhs_source = product_storage.get_first_inverted(product_source);
+        const State rhs_source = product_storage.get_second_inverted(product_source);
         const Level lhs_source_level = lhs.levels[lhs_source];
         const Level rhs_source_level = rhs.levels[rhs_source];
         const bool sources_are_on_the_same_level = lhs_source_level == rhs_source_level;
