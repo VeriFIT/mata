@@ -113,3 +113,59 @@ TEST_CASE("mata::utils::OrdVector::difference()") {
         CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{ 1, 2 });
     }
 }
+
+TEST_CASE("mata::utils::OrdVector::min()") {
+    SECTION("Empty vector") {
+        OrdVector<int> vec;
+        CHECK_THROWS_AS(vec.min(), std::out_of_range);
+    }
+
+    SECTION("One element") {
+        OrdVector<int> vec{ 42 };
+        CHECK(vec.min() == 42);
+    }
+
+    SECTION("Multiple elements") {
+        OrdVector<int> vec{ 3, 2, 4, 2, 5, 99 };
+        CHECK(vec.min() == 2);
+    }
+}
+
+TEST_CASE("mata::utils::OrdVector::max()") {
+    SECTION("Empty vector") {
+        OrdVector<int> vec;
+        CHECK_THROWS_AS(vec.max(), std::out_of_range);
+    }
+
+    SECTION("One element") {
+        OrdVector<int> vec{ 42 };
+        CHECK(vec.max() == 42);
+    }
+
+    SECTION("Multiple elements") {
+        OrdVector<int> vec{ 3, 2, 4, 2, 5, 99 };
+        CHECK(vec.max() == 99);
+    }
+}
+
+TEST_CASE("mata::utils::OrdVector::at()") {
+    SECTION("Empty vector") {
+        OrdVector<int> vec;
+        CHECK_THROWS_AS(vec.at(0), std::out_of_range);
+    }
+
+    SECTION("One element") {
+        OrdVector<int> vec{ 42 };
+        CHECK(vec.at(0) == 42);
+    }
+
+    SECTION("Multiple elements") {
+        OrdVector<int> vec{ 3, 2, 4, 2, 5, 99 };
+        CHECK(vec.at(0) == 2);
+        CHECK(vec.at(1) == 3);
+        CHECK(vec.at(2) == 4);
+        CHECK(vec.at(3) == 5);
+        CHECK(vec.at(4) == 99);
+        CHECK_THROWS_AS(vec.at(5), std::out_of_range);
+    }
+}
