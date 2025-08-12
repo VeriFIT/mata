@@ -16,11 +16,11 @@ namespace {
     using PredMap = std::unordered_map<State, StateSet>;
 
     enum class SynchronizationType : uint8_t {
-        NaN = 0,                  ///< Default initialization value
-        ONLY_ON_EPSILON = 1,      ///< Epsilon symbol for synchronization
-        ONLY_ON_SYMBOL = 2,       ///< Non-epsilon symbol for synchronization
+        UNINITIALIZED = 0,         ///< Default initialization value
+        ONLY_ON_SYMBOL = 1,        ///< Epsilon symbol for synchronization
+        ONLY_ON_EPSILON = 2,       ///< Non-epsilon symbol for synchronization
         ON_EPSILON_AND_SYMBOL = 3, ///< Both epsilon and non-epsilon
-        UNDER_COMPUTATION = 4     ///< Unknown synchronization type
+        UNDER_COMPUTATION = 4      ///< Unknown synchronization type
     };
 
     inline SynchronizationType operator|(SynchronizationType lhs, SynchronizationType rhs) {
@@ -34,6 +34,36 @@ namespace {
         return lhs;
     }
 
+    static const bool perform_synchronization[4][4] = {
+    /*                        *                            rhs_sync_type                                 */
+    /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
+    /* =======================*========================================================================= */
+    /*  UNINITIALIZED         */ {   false,          false,           false,                false        },
+    /*  ONLY_ON_SYMBOL        */ {   false,           true,           false,                 true        },
+    /*  ONLY_ON_EPSILON       */ {   false,          false,            true,                 true        },
+    /*  ON_EPSILON_AND_SYMBOL */ {   false,           true,            true,                 true        }
+    };
+
+    static const bool perform_wait_on_lhs[4][4] = {
+    /*                        *                            rhs_sync_type                                 */
+    /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
+    /* =======================*========================================================================= */
+    /*  UNINITIALIZED         */ {   false,          false,           false,                false        },
+    /*  ONLY_ON_SYMBOL        */ {   false,          false,            true,                 true        },
+    /*  ONLY_ON_EPSILON       */ {   false,          false,           false,                 false       },
+    /*  ON_EPSILON_AND_SYMBOL */ {   false,          false,            true,                 true        }
+    };
+
+    static const bool perform_wait_on_rhs[4][4] = {
+    /*                        *                            rhs_sync_type                                 */
+    /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
+    /* =======================*========================================================================= */
+    /*  UNINITIALIZED         */ {   false,          false,           false,                false        },
+    /*  ONLY_ON_SYMBOL        */ {   false,          false,           false,                false        },
+    /*  ONLY_ON_EPSILON       */ {   false,           true,           false,                 true        },
+    /*  ON_EPSILON_AND_SYMBOL */ {   false,           true,           false,                 true        }
+    };
+
     /**
      * @brief For each state sets a type of synchronization that follows.
      *
@@ -43,7 +73,7 @@ namespace {
      */
     std::vector<SynchronizationType> get_synchronization_types(const Nft& nft, const size_t sync_level) {
         const size_t num_of_states = nft.num_of_states();
-        std::vector<SynchronizationType> sync_types(num_of_states, SynchronizationType::NaN);
+        std::vector<SynchronizationType> sync_types(num_of_states, SynchronizationType::UNINITIALIZED);
 
         for (State root = 0; root < num_of_states; ++root) {
             if (nft.levels[root] != sync_level) {
@@ -57,12 +87,12 @@ namespace {
                 const Level state_level = nft.levels[state];
                 const StatePost& state_post = nft.delta[state];
                 SynchronizationType current_sync_type = sync_types[state];
-                assert(current_sync_type == SynchronizationType::NaN || current_sync_type == SynchronizationType::UNDER_COMPUTATION);
+                assert(current_sync_type == SynchronizationType::UNINITIALIZED || current_sync_type == SynchronizationType::UNDER_COMPUTATION);
                 stack.pop();
 
                 // If it has been visited, than by now we know that it has been already computed for its children.
                 if (current_sync_type == SynchronizationType::UNDER_COMPUTATION) {
-                    current_sync_type = SynchronizationType::NaN;
+                    current_sync_type = SynchronizationType::UNINITIALIZED;
                     for (const SymbolPost& symbol_post : state_post) {
                         for (const State target : symbol_post.targets) {
                             current_sync_type |= sync_types[target];
@@ -93,7 +123,7 @@ namespace {
                     for (const State target : symbol_post.targets) {
                         assert(nft.levels[target] > nft.levels[state]);
                         assert(sync_types[target] != SynchronizationType::UNDER_COMPUTATION);
-                        if (sync_types[target] != SynchronizationType::NaN) {
+                        if (sync_types[target] != SynchronizationType::UNINITIALIZED) {
                             current_sync_type |= sync_types[target];
                         } else {
                             stack.push(target); // Push the target state to visit it later.
@@ -199,6 +229,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     const size_t lhs_num_of_states = lhs.num_of_states();
     const size_t rhs_num_of_states = rhs.num_of_states();
     const size_t result_num_of_levels = lhs_num_of_levels + rhs_num_of_levels - (project_out_sync_levels ? (2) : 1);
+    assert(result_num_of_levels > 0);
+
+    Nft result;
+    result.num_of_levels = result_num_of_levels;
+    std::deque<State> worklist;
 
     // FAST STORAGE OF COMPOSITION STATES
     // The largest matrix of pairs of states we are brave enough to allocate.
@@ -251,11 +286,6 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         composition_to_rhs[composition_state] = rhs_state;
     };
 
-
-    Nft result;
-    result.num_of_levels = result_num_of_levels;
-    std::deque<State> worklist;
-
     /**
      * @brief Create a new composition state for the given pair of states, if it does not already exist.
      *
@@ -300,9 +330,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         return new_state;
     };
 
-
-
-    // INITIALIZATION on a worklist (side effect of a create_composition_state)
+    // INITIALIZATION of a worklist (side effect of a create_composition_state)
     for (const State lhs_root: lhs.initial) {
         for (const State rhs_root: rhs.initial) {
             // Get the root state in the result NFT
@@ -311,9 +339,47 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     }
 
-
+    const std::vector<SynchronizationType> lhs_sync_types = get_synchronization_types(lhs, lhs_sync_level);
+    const std::vector<SynchronizationType> rhs_sync_types = get_synchronization_types(rhs, rhs_sync_level);
 
     while (!worklist.empty()) {
+        const State composition_state = worklist.front();
+        const State lhs_state = composition_to_lhs[composition_state];
+        const State rhs_state = composition_to_rhs[composition_state];
+        const Level composition_state_level = result.levels[composition_state];
+        assert((composition_state_level == 0) == (lhs.levels[lhs_state] == 0 && rhs.levels[rhs_state] == 0));
+        const Level lhs_level = lhs.levels[lhs_state];
+        const Level rhs_level = rhs.levels[rhs_state];
+        worklist.pop_front();
+
+        if (composition_state_level == 0) {
+            // We are at the zero level.
+            // It is now time to decide is we want to continue the synchronization and/or
+            // to wait in the lhs_state and/or rhs_state, because we can not synchronize
+            // on epsilon and on a symbol at the same time.
+            // Note: Transduce that contains symbol that can not synchronize with epsilon will wait.
+            const size_t lhs_sync_type_id = static_cast<size_t>(lhs_sync_types[lhs_state]);
+            const size_t rhs_sync_type_id = static_cast<size_t>(rhs_sync_types[rhs_state]);
+
+            if (perform_wait_on_lhs[lhs_sync_type_id][rhs_sync_type_id]) {
+                // TODO: wait on lhs
+            }
+
+            if (perform_wait_on_rhs[lhs_sync_type_id][rhs_sync_type_id]) {
+                // TODO: wait on rhs
+            }
+
+            if (!perform_synchronization[lhs_sync_type_id][rhs_sync_type_id]) {
+                // No synchronization is needed.
+                // There are no symbols that would synchronize.
+                // There is total sismatch between lhs and rhs synchronization symbols.
+                continue;
+            }
+        }
+
+        assert(perform_synchronization[static_cast<size_t>(lhs_sync_types[lhs_state])][static_cast<size_t>(rhs_sync_types[rhs_state])]);
+
+        // TODO: Synchronization body.
     }
 
     return result.trim(); // Trim the result NFT to remove dead-end paths.
