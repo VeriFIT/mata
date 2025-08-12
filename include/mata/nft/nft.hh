@@ -774,12 +774,7 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
-inline Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::NoJump) {
-    return compose(lhs, rhs, utils::OrdVector{ lhs_sync_level }, utils::OrdVector{ rhs_sync_level }, project_out_sync_levels, jump_mode);
-}
-
-Nft compose_fast(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
-            bool project_out_sync_levels = true, bool are_sync_levels_unwinded = false, JumpMode jump_mode = JumpMode::NoJump);
+Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::NoJump);
 
 /**
  * @brief Concatenate two NFTs.
