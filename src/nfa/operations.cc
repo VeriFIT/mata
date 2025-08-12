@@ -560,7 +560,7 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 }
 
 //TODO: this is not efficient
-bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+StateSet mata::nfa::Nfa::read_word(const Run& run, const bool use_epsilon) const {
     StateSet current_post(this->initial);
 
     if (use_epsilon) {
@@ -570,12 +570,47 @@ bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bo
 
     const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
     for (const Symbol sym : run.word) {
-        if (match_prefix && this->final.intersects_with(current_post)) { return true; }
         current_post = this->post(current_post, sym, epsilon_closure_opt);
-        if (current_post.empty()) { return false; }
+        if (current_post.empty()) { return current_post; }
     }
 
-    return this->final.intersects_with(current_post);
+    return current_post;
+}
+
+std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
+    if (initial.empty()) return std::nullopt;
+    State current_post = *initial.begin();
+
+    for (const Symbol sym : run.word) {
+        const StateSet& successors = delta.get_successors(current_post, sym);
+        if (successors.empty()) return std::nullopt;
+        current_post = *successors.begin();
+    }
+
+    return current_post;
+}
+
+//TODO: this is not efficient
+bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+    if (match_prefix) {
+        StateSet current_post(this->initial);
+
+        if (use_epsilon) {
+            // Compute epsilon closure from the initial states.
+            current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::BEFORE);
+        }
+
+        const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
+        for (const Symbol sym : run.word) {
+            if (this->final.intersects_with(current_post)) { return true; }
+            current_post = this->post(current_post, sym, epsilon_closure_opt);
+            if (current_post.empty()) { return false; }
+        }
+
+        return this->final.intersects_with(current_post);
+    }
+
+    return this->final.intersects_with(read_word(run, use_epsilon));
 }
 
 bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
