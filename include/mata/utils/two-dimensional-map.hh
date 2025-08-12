@@ -1,6 +1,6 @@
 /**
  * @file two-dimensional-map.hh
- * @brief Implementation of a two-dimensional map from pairs to single values. *
+ * @brief Implementation of a two-dimensional map from pairs to single values.
  */
 
 #ifndef MATA_UTILS_TWO_DIMENSIONAL_MAP_HH
@@ -80,9 +80,8 @@ public:
      * @param first First key.
      * @param second Second key.
      * @param value Value to associate with the pair.
-     * @param map Optional map to store the pair-value association. Used usually for debugging or tracking. Slow.
      */
-    void insert(const T first, const T second, const T value, Map* map = nullptr) {
+    void insert(const T first, const T second, const T value) {
         if (!is_large) {
             matrix_storage[first][second] = value;
         } else {
@@ -93,9 +92,6 @@ public:
             second_dim_inverted.resize(value + 1);
             first_dim_inverted[value] = first;
             second_dim_inverted[value] = second;
-        }
-        if (map != nullptr) {
-            (*map)[std::pair<T, T>(first, second)] = value;
         }
     }
 

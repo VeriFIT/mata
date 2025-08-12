@@ -61,7 +61,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                                                           std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]));
             assert(product_target < Limits::max_state);
 
-            product_storage.insert(lhs_target,rhs_target, product_target, product_map);
+            product_storage.insert(lhs_target,rhs_target, product_target);
+            if (product_map != nullptr) {
+                (*product_map)[{ lhs_target, rhs_target }] = product_target;
+            }
             worklist.push_back(product_target);
 
             if (final_condition(lhs_target,rhs_target)) {
@@ -136,7 +139,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         for (const State rhs_initial_state : rhs.initial) {
             // Update product with initial state pairs.
             const State product_initial_state = product.add_state();
-            product_storage.insert(lhs_initial_state, rhs_initial_state, product_initial_state, product_map);
+            product_storage.insert(lhs_initial_state, rhs_initial_state, product_initial_state);
+            if (product_map != nullptr) {
+                (*product_map)[{ lhs_initial_state, rhs_initial_state }] = product_initial_state;
+            }
             worklist.push_back(product_initial_state);
             product.initial.insert(product_initial_state);
             if (final_condition(lhs_initial_state, rhs_initial_state)) {
