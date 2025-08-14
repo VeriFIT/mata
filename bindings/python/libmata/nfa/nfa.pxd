@@ -177,6 +177,9 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_in_lang(CRun&)
         bool is_in_lang(CRun&, bool)
         bool is_in_lang(CRun&, bool, bool)
+        StateSet read_word(CRun&)
+        StateSet read_word(CRun&, bool)
+        optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
         void make_complete(CAlphabet*, optional[State]) except +
 

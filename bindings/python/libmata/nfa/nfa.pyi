@@ -501,6 +501,27 @@ class Nfa:
         :return: true if word is in language of the NFA.
         """
         ...
+    def read_word(self, word: list[Symbol], use_epsilon: bool = False) -> set[State]:
+        """Read word and return the set of states the automaton ends up in.
+
+        :param word: word to read.
+        :param use_epsilon: whether the automaton uses epsilon transitions.
+        :return: set of all reachable states after reading the word.
+                 If the word cannot be read, the returned set is empty.
+                 Note: Returns all reachable states, not just final states.
+                 Use is_in_lang() if you need to check language membership.
+
+        """
+        ...
+    def read_word_det(self, word: list[Symbol]) -> State:
+        """Read word and return the state the deterministic automaton ends up in.
+
+        The automaton must be deterministic, otherwise the result is undefined.
+
+        :param word: word to read.
+        :return: The reached state or -1 if the word cannot be read.
+        """
+        ...
     def get_word_for_path(self, path: list[State]) -> tuple[list[Symbol], bool]:
         """For a given path (set of states) returns a corresponding word
 

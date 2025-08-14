@@ -2,6 +2,7 @@ add_executable(tests
 		ord-vector.cc
 		sparse-set.cc
 		synchronized-iterator.cc
+		two-dimensional-map.cc
 		alphabet.cc
 		parser.cc
 		re2parser.cc
