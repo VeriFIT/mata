@@ -31,6 +31,9 @@ namespace {
         lhs = lhs | rhs;
         return lhs;
     }
+    inline bool can_synchronize(const SynchronizationType lhs, const SynchronizationType rhs) {
+        return static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs);
+    }
 
     /**
      * @brief A class to hold properties related to synchronization during the composition of NFTs.
@@ -201,6 +204,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
     const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level, lhs_num_of_trans_to_replace_sync);
     const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level, rhs_num_of_trans_to_replace_sync);
+    const std::vector<SynchronizationType>& lhs_reachable_sync_types = lhs_sync_props.reachable_sync_types;
+    const std::vector<SynchronizationType>& rhs_reachable_sync_types = rhs_sync_props.reachable_sync_types;
 
     Nft result;
     result.num_of_levels = result_num_of_levels;
@@ -390,16 +395,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         const Level composition_target_level = (result.levels[composition_source_state] + 1) % result.num_of_levels;
         const bool vanish_sync_level = !reconnect && project_out_sync_levels;
 
-        // Do the normal synchronization on symbol.
-        mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
-        mata::utils::push_back(sync_iterator, lhs.delta[lhs_state]);
-        mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
-        while (sync_iterator.advance()) {
-            const std::vector<StatePost::const_iterator>& same_symbol_posts{ sync_iterator.get_current() };
-            assert(same_symbol_posts.size() == 2); // One move per state in the pair.
-            const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : same_symbol_posts[0]->symbol;
-            for (const State lhs_sync_target : same_symbol_posts[0]->targets) {
-                for (const State rhs_sync_target : same_symbol_posts[1]->targets) {
+        auto synchronize_targets = [&](const StateSet& lhs_sync_targets, const StateSet& rhs_sync_targets, const Symbol symbol) {
+            for (const State lhs_sync_target : lhs_sync_targets) {
+                for (const State rhs_sync_target : rhs_sync_targets) {
                     if (vanish_sync_level) {
                         worklist.push_back({ lhs_sync_target, rhs_sync_target });
                     } else {
@@ -408,6 +406,17 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                     }
                 }
             }
+        };
+
+        // Do the normal synchronization on symbol.
+        mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
+        mata::utils::push_back(sync_iterator, lhs.delta[lhs_state]);
+        mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
+        while (sync_iterator.advance()) {
+            const std::vector<StatePost::const_iterator>& same_symbol_posts{ sync_iterator.get_current() };
+            assert(same_symbol_posts.size() == 2); // One move per state in the pair.
+            const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : same_symbol_posts[0]->symbol;
+            synchronize_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
         }
 
         // Do the synchronization on DONT_CARE in the LHS.
@@ -419,17 +428,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                     continue;
                 }
                 const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : rhs_symbol_post.symbol;
-                for (const State rhs_sync_target : rhs_symbol_post.targets) {
-                    for (const State lhs_sync_target : lhs_dont_care_sync_it->targets) {
-                        // Add the transition from the LHS DONT_CARE to the RHS target.
-                        if (vanish_sync_level) {
-                            worklist.push_back({ lhs_sync_target, rhs_sync_target });
-                        } else {
-                            result.add_transition_with_target(composition_source_state, symbol,
-                                create_composition_state(lhs_sync_target, rhs_sync_target, composition_target_level, true), jump_mode);
-                        }
-                    }
-                }
+                synchronize_targets(lhs_dont_care_sync_it->targets, rhs_symbol_post.targets, symbol);
             }
         }
 
@@ -442,16 +441,48 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                     continue;
                 }
                 const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : lhs_symbol_post.symbol;
-                for (const State lhs_sync_target : lhs_symbol_post.targets) {
-                    for (const State rhs_sync_target : rhs_dont_care_sync_it->targets) {
-                        // Add the transition from the RHS DONT_CARE to the LHS target.
-                        if (vanish_sync_level) {
-                            worklist.push_back({ lhs_sync_target, rhs_sync_target });
-                        } else {
-                            result.add_transition_with_target(composition_source_state, symbol,
-                                create_composition_state(lhs_sync_target, rhs_sync_target, composition_target_level, true), jump_mode);
-                        }
-                    }
+                synchronize_targets(lhs_symbol_post.targets, rhs_dont_care_sync_it->targets, symbol);
+            }
+        }
+    };
+
+    auto copy_transition = [&](const State composition_state, const State copy_state, const State stationar_state, const bool is_symbol_post_lhs) {
+        const SynchronizationProperties& copy_sync_props = is_symbol_post_lhs ? lhs_sync_props : rhs_sync_props;
+        const SynchronizationProperties& stationar_sync_props = is_symbol_post_lhs ? rhs_sync_props : lhs_sync_props;
+        const Nft& copy_nft = copy_sync_props.nft;
+        const Level copy_state_level = copy_nft.levels[copy_state];
+        const Level composition_state_level = result.levels[composition_state];
+        const std::vector<SynchronizationType>& copy_reachable_sync_types = copy_sync_props.reachable_sync_types;
+        const SynchronizationType stationar_state_sync_type = stationar_sync_props.reachable_sync_types[stationar_state];
+        bool is_copy_state_before_sync = copy_state_level < copy_sync_props.sync_level;
+
+        for (const SymbolPost& symbol_post : copy_nft.delta[copy_state]) {
+            for (const State target : symbol_post.targets) {
+
+                if (is_copy_state_before_sync && !can_synchronize(stationar_state_sync_type, copy_reachable_sync_types[target])) {
+                    // We are still before the synchronization level and
+                    // the target does not lead to a synchronization.
+                    // We don't need to explore this.
+                    continue;
+                }
+
+                const Level target_level = copy_nft.levels[target];
+                const size_t trans_len = (target_level == 0 ? copy_nft.num_of_levels : target_level) - copy_state_level;
+                assert(target_level == 0 || target_level > copy_state_level);
+                assert(trans_len > 0);
+
+                const bool rhs_target_level_is_last = target_level == rhs.num_of_levels - 1;
+                const bool lhs_level_is_last = copy_state_level == lhs.num_of_levels - 1;
+                if (!is_symbol_post_lhs && is_copy_state_before_sync && rhs_target_level_is_last && lhs_level_is_last && project_out_sync_levels) {
+                    // LHS is at the synchronization level. There is no transition after the synchronization in LHS.
+                    // The target in RHS is at synchronization level, at there is also no transition after the synchronization in RHS.
+                    // Also we are projecting out the synchronization levels.
+                    // This means, that we need now to synchronize and make a transition to the zero-level state in the result NFT.
+                    synchronize(stationar_state, target, composition_state, true, symbol_post.symbol);
+                } else {
+                    const Level new_composition_state_level = (composition_state_level + trans_len) % result.num_of_levels;
+                    result.add_transition_with_target(composition_state, symbol_post.symbol,
+                        create_composition_state(target, stationar_state, new_composition_state_level, is_symbol_post_lhs), jump_mode);
                 }
             }
         }
@@ -465,9 +496,6 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             result.initial.insert(res_root);
         }
     }
-
-    const std::vector<SynchronizationType>& lhs_reachable_sync_types = lhs_sync_props.reachable_sync_types;
-    const std::vector<SynchronizationType>& rhs_reachable_sync_types = rhs_sync_props.reachable_sync_types;
 
     while (!worklist.empty()) {
         const auto [lhs_state, rhs_state] = worklist.front();
@@ -511,86 +539,72 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         if (is_lhs_before_sync) {
             // LHS is before the synchronization level, so we need to first get there.
-            for (const SymbolPost& lhs_symbol_post : lhs.delta[lhs_state]) {
-                for (const State lhs_target : lhs_symbol_post.targets) {
-                    const size_t lhs_target_sync_type_id = static_cast<size_t>(lhs_reachable_sync_types[lhs_target]);
-                    if (!perform_synchronization[lhs_sync_type_id][lhs_target_sync_type_id]) {
-                        // The target does not lead to a synchronization.
-                        // We don't need to explore this.
-                        continue;
-                    }
-                    const Level lhs_target_level = lhs.levels[lhs_target];
-                    const size_t trans_len = lhs_target_level - lhs_level;
-                    assert(lhs_target_level > lhs_level);
+            copy_transition(composition_state, lhs_state, rhs_state, true);
+            // for (const SymbolPost& lhs_symbol_post : lhs.delta[lhs_state]) {
+            //     for (const State lhs_target : lhs_symbol_post.targets) {
+            //         const size_t lhs_target_sync_type_id = static_cast<size_t>(lhs_reachable_sync_types[lhs_target]);
+            //         if (!perform_synchronization[lhs_sync_type_id][lhs_target_sync_type_id]) {
+            //             // The target does not lead to a synchronization.
+            //             // We don't need to explore this.
+            //             continue;
+            //         }
+            //         const Level lhs_target_level = lhs.levels[lhs_target];
+            //         const size_t trans_len = lhs_target_level - lhs_level;
+            //         assert(lhs_target_level > lhs_level);
 
-                    // We don't need to worry, if it's a last useful transition, and
-                    // doint the synchronization in place, because we are sure that there is/will be
-                    // at leas one unprocessed useful transition in the RHS.
-                    result.add_transition_with_target(composition_state, lhs_symbol_post.symbol,
-                        create_composition_state(lhs_target, rhs_state, composition_state_level + trans_len, true), jump_mode);
-                }
-            }
+            //         // We don't need to worry, if it's a last useful transition, and
+            //         // doint the synchronization in place, because we are sure that there is/will be
+            //         // at leas one unprocessed useful transition in the RHS.
+            //         result.add_transition_with_target(composition_state, lhs_symbol_post.symbol,
+            //             create_composition_state(lhs_target, rhs_state, composition_state_level + trans_len, true), jump_mode);
+            //     }
+            // }
         } else if (is_rhs_before_sync) {
             // LHS is at synchronization level, but RHS is before the synchronization level.
             // RHS needs to continue.
-            for (const SymbolPost& rhs_symbol_post : rhs.delta[rhs_state]) {
-                for (const State rhs_target : rhs_symbol_post.targets) {
-                    const size_t rhs_target_sync_type_id = static_cast<size_t>(rhs_reachable_sync_types[rhs_target]);
-                    if (!perform_synchronization[rhs_sync_type_id][rhs_target_sync_type_id]) {
-                        // The target does not lead to a synchronization.
-                        // We don't need to explore this.
-                        continue;
-                    }
-                    const Level rhs_target_level = rhs.levels[rhs_target];
-                    const size_t trans_len = rhs_target_level - rhs_level;
-                    assert(rhs_target_level > rhs_level);
+            copy_transition(composition_state, rhs_state, lhs_state, false);
+            // for (const SymbolPost& rhs_symbol_post : rhs.delta[rhs_state]) {
+            //     for (const State rhs_target : rhs_symbol_post.targets) {
+            //         const size_t rhs_target_sync_type_id = static_cast<size_t>(rhs_reachable_sync_types[rhs_target]);
+            //         if (!perform_synchronization[rhs_sync_type_id][rhs_target_sync_type_id]) {
+            //             // The target does not lead to a synchronization.
+            //             // We don't need to explore this.
+            //             continue;
+            //         }
+            //         const Level rhs_target_level = rhs.levels[rhs_target];
+            //         const size_t trans_len = rhs_target_level - rhs_level;
+            //         assert(rhs_target_level > rhs_level);
 
-                    const bool lhs_level_is_last = lhs_level == lhs.num_of_levels - 1;
-                    const bool rhs_target_level_is_last = rhs_target_level == rhs.num_of_levels - 1;
-                    if (lhs_level_is_last && rhs_target_level_is_last && project_out_sync_levels) {
-                        // LHS is at the synchronization level. There is no transition after the synchronization in LHS.
-                        // The target in RHS is at synchronization level, at there is also no transition after the synchronization in RHS.
-                        // Also we are projecting out the synchronization levels.
-                        // This means, that we need now to synchronize and make a transition to the zero-level state in the result NFT.
-                        synchronize(lhs_state, rhs_target, composition_state, true, rhs_symbol_post.symbol);
-                    } else {
-                        // Just copy the transition.
-                        result.add_transition_with_target(composition_state, rhs_symbol_post.symbol,
-                            create_composition_state(lhs_state, rhs_target, composition_state_level + trans_len, false), jump_mode);
-                    }
-                }
-            }
+            //         const bool lhs_level_is_last = lhs_level == lhs.num_of_levels - 1;
+            //         const bool rhs_target_level_is_last = rhs_target_level == rhs.num_of_levels - 1;
+            //         if (lhs_level_is_last && rhs_target_level_is_last && project_out_sync_levels) {
+            //             // LHS is at the synchronization level. There is no transition after the synchronization in LHS.
+            //             // The target in RHS is at synchronization level, at there is also no transition after the synchronization in RHS.
+            //             // Also we are projecting out the synchronization levels.
+            //             // This means, that we need now to synchronize and make a transition to the zero-level state in the result NFT.
+            //             synchronize(lhs_state, rhs_target, composition_state, true, rhs_symbol_post.symbol);
+            //         } else {
+            //             // Just copy the transition.
+            //             result.add_transition_with_target(composition_state, rhs_symbol_post.symbol,
+            //                 create_composition_state(lhs_state, rhs_target, composition_state_level + trans_len, false), jump_mode);
+            //         }
+            //     }
+            // }
 
         } else if (lhs_level == lhs_sync_level && rhs_level == rhs_sync_level) {
             // We are at the synchronization level in both NFTs.
             assert(lhs_level != lhs.num_of_levels - 1 && rhs_level != rhs.num_of_levels - 1);
-                synchronize(lhs_state, rhs_state, composition_state);
+            synchronize(lhs_state, rhs_state, composition_state);
         } else if (lhs_level != 0) {
             // LHS is past the synchronization level and there are some transitions remaining to remap.
             assert(!is_lhs_before_sync && !is_rhs_before_sync);
-            for (const SymbolPost& lhs_symbol_post : lhs.delta[lhs_state]) {
-                for (const State lhs_target : lhs_symbol_post.targets) {
-                    const Level lhs_target_level = lhs.levels[lhs_target];
-                    const size_t trans_len = (lhs_target_level == 0 ? lhs.num_of_levels : lhs_target_level) - lhs_level;
-                    assert(lhs_target_level > lhs_level || lhs_target_level == 0);
-                    result.add_transition_with_target(composition_state, lhs_symbol_post.symbol,
-                        create_composition_state(lhs_target, rhs_state, composition_state_level + trans_len, true), jump_mode);
-                }
-            }
+            copy_transition(composition_state, lhs_state, rhs_state, true);
+            
         } else {
             assert(!is_lhs_before_sync && !is_rhs_before_sync);
             assert(lhs_level == 0 && rhs_level != 0);
             // RHS is past the synchronization level and there are some transitions remaining to remap.
-            for (const SymbolPost& rhs_symbol_post : rhs.delta[rhs_state]) {
-                for (const State rhs_target : rhs_symbol_post.targets) {
-                    const Level rhs_target_level = rhs.levels[rhs_target];
-                    const size_t trans_len = (rhs_target_level == 0 ? rhs.num_of_levels : rhs_target_level) - rhs_level;
-                    assert(rhs_target_level > rhs_level || rhs_target_level == 0);
-                    result.add_transition_with_target(composition_state, rhs_symbol_post.symbol,
-                        create_composition_state(lhs_state, rhs_target, composition_state_level + trans_len, false), jump_mode);
-
-                }
-            }
+            copy_transition(composition_state, rhs_state, lhs_state, false);
         }
 
     }
