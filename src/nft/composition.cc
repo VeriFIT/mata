@@ -19,43 +19,45 @@ namespace {
     using VecMapProductStorage = std::vector<std::unordered_map<State,State>>;
     using InvertedProductStorage = std::vector<State>;
 
+    // Enum class for a state flag to indicate which synchronization 
+    //types (synchronization on epsilon or symbol) can be reached from the state.
     enum class SynchronizationType : uint8_t {
-        UNINITIALIZED = 0,         ///< Default initialization value
-        ONLY_ON_SYMBOL = 1,        ///< Epsilon symbol for synchronization
-        ONLY_ON_EPSILON = 2,       ///< Non-epsilon symbol for synchronization
-        ON_EPSILON_AND_SYMBOL = 3, ///< Both epsilon and non-epsilon
-        UNDER_COMPUTATION = 4      ///< Unknown synchronization type
+        UNINITIALIZED         = 0b0000'0000, ///< Default value.
+        ONLY_ON_SYMBOL        = 0b0000'0001, ///< Synchronization on EPSILON.
+        ONLY_ON_EPSILON       = 0b0000'0010, ///< Synchronization on symbol.
+        ON_EPSILON_AND_SYMBOL = 0b0000'0011, ///< Synchronization on EPSILON and symbol.
+        UNDER_COMPUTATION     = 0b0000'0100  ///< The synchronization is being computed (only helper value).
     };
-
     inline SynchronizationType operator|(SynchronizationType lhs, SynchronizationType rhs) {
-        return static_cast<SynchronizationType>(
-            static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs)
-        );
+        return static_cast<SynchronizationType>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
     }
-
     inline SynchronizationType& operator|=(SynchronizationType& lhs, SynchronizationType rhs) {
         lhs = lhs | rhs;
         return lhs;
     }
 
+    /**
+     * @brief A struct to hold properties related to synchronization during the composition of NFTs.
+     * This simplifies the passing of multiple synchronization-related parameters.
+     */
     struct SynchronizationProperties { 
         const Nft& nft;
-        const std::vector<SynchronizationType> reachable_sync_types; ///< Types of synchronization for each state.
-        InvertedProductStorage& composition_to_this_map; ///< Mapping from composition state to lhs state.
-        InvertedProductStorage& composition_to_other_map; ///< Mapping from composition state to rhs state.
-        const Level sync_level; ///< The synchronization level.
+        const std::vector<SynchronizationType> reachable_sync_types;
+        const Level sync_level;
         const size_t num_of_trans_to_replace_sync; ///< Number of transitions to replace synchronization.
 
         SynchronizationProperties(const Nft& nft, const Level sync_level, const size_t num_of_trans_to_replace_sync,
                                   InvertedProductStorage& composition_to_this_map, InvertedProductStorage& composition_to_other_map)
             : nft(nft),
               reachable_sync_types(get_synchronization_types(nft, sync_level)),
-              composition_to_this_map(composition_to_this_map),
-              composition_to_other_map(composition_to_other_map),
               sync_level(sync_level),
               num_of_trans_to_replace_sync(num_of_trans_to_replace_sync) {}
     };
 
+    // We can perform synchronization only if from both lhs and rhs can be reached a synchronization
+    // level, that synchronizes on EPSILON and/or symbol.
+    // For example, there is not way that we can synchronize when only synchronization on EPSILON in lhs
+    // and only on symbol in rhs is possible.
     static const bool perform_synchronization[4][4] = {
     /*                        *                            rhs_sync_type                                 */
     /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
@@ -66,6 +68,8 @@ namespace {
     /*  ON_EPSILON_AND_SYMBOL */ {   false,           true,            true,                 true        }
     };
 
+    // We need to wait in the LHS state if there is a synchronization on RHS state and a possibility 
+    // that the LHS can not synchronize on it (e.g. LHS monewhere synchronizes on a symbol).
     static const bool perform_wait_on_lhs[4][4] = {
     /*                        *                            rhs_sync_type                                 */
     /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
@@ -76,6 +80,8 @@ namespace {
     /*  ON_EPSILON_AND_SYMBOL */ {   false,          false,            true,                 true        }
     };
 
+    // We need to wait in the RHS state if there is a synchronization on LHS state and a possibility
+    // that the RHS can not synchronize on it (e.g. RHS monewhere synchronizes on a symbol).
     static const bool perform_wait_on_rhs[4][4] = {
     /*                        *                            rhs_sync_type                                 */
     /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
@@ -375,21 +381,39 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level, lhs_num_of_trans_to_replace_sync, composition_to_lhs, composition_to_rhs);
     const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level, rhs_num_of_trans_to_replace_sync, composition_to_rhs, composition_to_lhs);
 
-    auto model_waiting = [&](const State composition_root_state, const bool is_lhs_waiting) {
+    /**
+     * @brief Model the waiting in one of the NFTs if they could not synchronize due to the EPSILON or symbol transition.
+     * 
+     * For example, if there is EPSILON on the synchronization level in the RHS and LHS can not synchronize on it,
+     * then the LHS needs to wait in the root (zero-level) state that precedes the synchronization and RHS will
+     * continue in the corresponding RHS root ower the problematic EPSILON synchronization to the next zero-level state.
+     * The RHS is going to act al if it is interleaving with the LHS transitions (LHS transitions always go before RHS transitions),
+     * however it will place the EPSILON on each such a transition from the LHS.
+     * 
+     * The problem is if we want to project out the synchronization levels, but there are not transitions following them
+     * in the LHS not RHS (the synchronization level is the last level in both of them). Then one level before the
+     * synchronization level, we need to connect successors of such states to the zero-level state that lies after the synchronization level.
+     * 
+     * @param composition_root_state The root state of the composition NFT.
+     * @param waiting_root_state The root state of the NFT that is waiting (LHS or RHS).
+     * @param running_root_state The root state of the NFT that is running (LHS or RHS).
+     * @param is_lhs_waiting If true, the LHS is waiting, otherwise the RHS is waiting.
+     */
+    auto model_waiting = [&](const State composition_root_state, const State waiting_root_state, const State running_root_state, const bool is_lhs_waiting) {
         const SynchronizationProperties& running_sync_props = is_lhs_waiting ? rhs_sync_props : lhs_sync_props;
         const Level sync_level = running_sync_props.sync_level;
-        const State running_root_state = running_sync_props.composition_to_this_map[composition_root_state];
-        const State waiting_root_state = running_sync_props.composition_to_other_map[composition_root_state];
         const Levels& running_levels = running_sync_props.nft.levels;
         const Delta& running_delta = running_sync_props.nft.delta;
         const size_t num_of_trans_to_replace_sync = running_sync_props.num_of_trans_to_replace_sync;
         const std::vector<SynchronizationType>& reachable_sync_types = running_sync_props.reachable_sync_types;
         // If the synchronization level is the last level, and it cannot be replaced by any sequence of epsilon transitions
-        // (i.e., it wanishes), we need to "in place" do the synchronization step and connect previous state to the next
+        // (i.e., it wanishes), we need to do "in place" synchronization step and connect previous state to the next
         // zero-level state.
         const bool handle_sync_in_place = running_sync_props.sync_level == running_sync_props.nft.num_of_levels - 1 &&
                                           num_of_trans_to_replace_sync == 0;
 
+        // We cannot use inverted storage here, because there can be one composition state for multiple original pairs of states.
+        // Therefore we need to keep track of it in the stack instead.
         std::stack<std::pair<State, State>> stack;
         stack.push({ composition_root_state, running_root_state});
         while (!stack.empty()) {
@@ -598,11 +622,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // Note: Transduce that contains symbol that can not synchronize with epsilon will wait.
 
             if (perform_wait_on_lhs[lhs_sync_type_id][rhs_sync_type_id]) {
-                model_waiting(composition_state, true); // LHS is waiting.
+                model_waiting(composition_state, lhs_state, rhs_state, true); // LHS is waiting.
             }
             
             if (perform_wait_on_rhs[lhs_sync_type_id][rhs_sync_type_id]) {
-                model_waiting(composition_state, false); // RHS is waiting.
+                model_waiting(composition_state, rhs_state, lhs_state, false); // RHS is waiting.
             }
 
             if (!perform_synchronization[lhs_sync_type_id][rhs_sync_type_id]) {
@@ -712,8 +736,6 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
         // If we have only one synchronization level we can do it faster.
         return compose(lhs, rhs, lhs_sync_levels.front(), lhs_sync_levels.front(), project_out_sync_levels, jump_mode);
     }
-
-    throw std::runtime_error("Noodler should not go here. Noodler should always use JumpMode::NoJump.");
 
     // Inserts loop into the given Nft for each state with level 0.
     // The loop word is constructed using the EPSILON symbol for all levels, except for the levels
