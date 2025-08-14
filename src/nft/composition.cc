@@ -3,6 +3,7 @@
 
 // MATA headers
 #include "mata/nft/nft.hh"
+#include "mata/utils/two-dimensional-map.hh"
 #include <cassert>
 #include <numeric>
 
@@ -13,11 +14,6 @@ using namespace mata::utils;
 namespace {
     using mata::Symbol;
     using namespace mata::nft;
-    using PredMap = std::unordered_map<State, StateSet>;
-    using ProductMap = std::unordered_map<std::pair<State,State>,State>;
-    using MatrixProductStorage = std::vector<std::vector<State>>;
-    using VecMapProductStorage = std::vector<std::unordered_map<State,State>>;
-    using InvertedProductStorage = std::vector<State>;
 
     // Enum class for a state flag to indicate which synchronization 
     //types (synchronization on epsilon or symbol) can be reached from the state.
@@ -46,8 +42,7 @@ namespace {
         const Level sync_level;
         const size_t num_of_trans_to_replace_sync; ///< Number of transitions to replace synchronization.
 
-        SynchronizationProperties(const Nft& nft, const Level sync_level, const size_t num_of_trans_to_replace_sync,
-                                  InvertedProductStorage& composition_to_this_map, InvertedProductStorage& composition_to_other_map)
+        SynchronizationProperties(const Nft& nft, const Level sync_level, const size_t num_of_trans_to_replace_sync)
             : nft(nft),
               reachable_sync_types(get_synchronization_types(nft, sync_level)),
               sync_level(sync_level),
@@ -251,105 +246,6 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     const size_t rhs_num_of_states = rhs.num_of_states();
     const size_t result_num_of_levels = lhs.num_of_levels + rhs.num_of_levels - (project_out_sync_levels ? (2) : 1);
     assert(result_num_of_levels > 0);
-    
-    Nft result;
-    result.num_of_levels = result_num_of_levels;
-    std::deque<std::pair<State, State>> worklist;
-
-    // FAST STORAGE OF COMPOSITION STATES
-    // The largest matrix of pairs of states we are brave enough to allocate.
-    // Let's say we are fine with allocating larget_composition * (about 8 Bytes) space.
-    // So ten million cells is close to 100 MB.
-    // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps.
-    // The unordered_map seems to be about twice slower.
-    constexpr size_t MAX_COMPOSITION_MATRIX_SIZE = 50'000'000;
-    // constexpr size_t MAX_COMPOSITION_MATRIX_SIZE = 0;
-    const bool larget_composition = lhs_num_of_states * rhs_num_of_states > MAX_COMPOSITION_MATRIX_SIZE;
-    assert(lhs_num_of_states < Limits::max_state);
-    assert(rhs_num_of_states < Limits::max_state);
-
-    // Two variants of storage for the mapping from pairs of lhs and rhs states to composition state, for large and non-large products.
-    MatrixProductStorage matrix_composition_storage;
-    VecMapProductStorage vec_map_composition_storage;
-    InvertedProductStorage composition_to_lhs(lhs_num_of_states + rhs_num_of_states);
-    InvertedProductStorage composition_to_rhs(lhs_num_of_states + rhs_num_of_states);
-
-    // Initialize the storage, according to the number of possible state pairs.
-    if (!larget_composition)
-        matrix_composition_storage = MatrixProductStorage(lhs_num_of_states, std::vector<State>(rhs_num_of_states, Limits::max_state));
-    else
-        vec_map_composition_storage = VecMapProductStorage(lhs_num_of_states);
-
-    /// Give me the composition state for the pair of lhs and rhs states.
-    /// Returns Limits::max_state if not found.
-    auto get_state_from_product_storage = [&](State lhs_state, State rhs_state) {
-        if (!larget_composition)
-            return matrix_composition_storage[lhs_state][rhs_state];
-        else {
-            auto it = vec_map_composition_storage[lhs_state].find(rhs_state);
-            if (it == vec_map_composition_storage[lhs_state].end())
-                return Limits::max_state;
-            else
-                return it->second;
-        }
-    };
-
-    /// Insert new mapping lhs rhs state pair to composition state.
-    auto insert_to_product_storage = [&](State lhs_state, State rhs_state, State composition_state) {
-        if (!larget_composition)
-            matrix_composition_storage[lhs_state][rhs_state] = composition_state;
-        else
-            vec_map_composition_storage[lhs_state][rhs_state] = composition_state;
-
-        composition_to_lhs.resize(composition_state+1);
-        composition_to_rhs.resize(composition_state+1);
-        composition_to_lhs[composition_state] = lhs_state;
-        composition_to_rhs[composition_state] = rhs_state;
-    };
-
-    /**
-     * @brief Create a new composition state for the given pair of states, if it does not already exist.
-     *
-     * @param state_a The first state (lhs or rhs).
-     * @param state_b The second state (rhs or lhs).
-     * @param level The level of the new composition state.
-     * @param is_a_lhs If true, state_a is from the lhs NFT, otherwise it is from the rhs NFT.
-     * @param composition_state_to_add If provided, this is the state to be added to the result NFT.
-     *                                 If not provided, a new state will be created.
-     *
-     * @return The composition state for the given pair of states.
-     */
-    auto create_composition_state = [&](const State state_a, const State state_b, const Level level, const bool is_a_lhs = true, const State composition_state_to_add = Limits::max_state) {
-        assert(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
-
-        // Try to find the entry in the state map.
-        const auto key = is_a_lhs ? std::make_pair(state_a, state_b) : std::make_pair(state_b, state_a);
-        const State lhs_state = key.first;
-        const State rhs_state = key.second;
-        const State found_state = get_state_from_product_storage(lhs_state, rhs_state);
-        if (found_state != Limits::max_state) {
-            assert(found_state == composition_state_to_add || composition_state_to_add == Limits::max_state);
-            return found_state;
-        }
-
-        // If not found, add a new state to the result NFT.
-        State new_state = (composition_state_to_add != Limits::max_state) ? composition_state_to_add : result.add_state_with_level(level);
-        insert_to_product_storage(lhs_state, rhs_state, new_state);
-
-        // If the level is zero, we need to check for final states and add to the worklist.
-        if (level == 0) {
-            // Because the key pair was not found in the map, we are sure that the state was not in the worklist yet either.
-            worklist.push_back(key);
-            if ((is_a_lhs && lhs.final.contains(state_a) && rhs.final.contains(state_b)) ||
-                (!is_a_lhs && rhs.final.contains(state_a) && lhs.final.contains(state_b))) {
-                result.final.insert(new_state);
-            }
-        } else {
-            worklist.push_front(key); // Push to the front for non-zero levels.
-        }
-
-        return new_state;
-    };
 
     // Calculate the number of epsilon transitions that will replace one epsilon synchronization transition during waiting.
     // This depends on whether we are projecting out the synchronization level and if there are any transitions in the waiting
@@ -378,8 +274,57 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                                                     (lhs_levels_after_sync) +
                                                     (project_out_sync_levels ? 0 : 1);
      
-    const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level, lhs_num_of_trans_to_replace_sync, composition_to_lhs, composition_to_rhs);
-    const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level, rhs_num_of_trans_to_replace_sync, composition_to_rhs, composition_to_lhs);
+    const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level, lhs_num_of_trans_to_replace_sync);
+    const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level, rhs_num_of_trans_to_replace_sync);
+
+    Nft result;
+    result.num_of_levels = result_num_of_levels;
+    TwoDimensionalMap<State, false> composition_storage(lhs_num_of_states, rhs_num_of_states);
+    std::deque<std::pair<State, State>> worklist;
+
+    /**
+     * @brief Create a new composition state for the given pair of states, if it does not already exist.
+     *
+     * @param state_a The first state (lhs or rhs).
+     * @param state_b The second state (rhs or lhs).
+     * @param level The level of the new composition state.
+     * @param is_a_lhs If true, state_a is from the lhs NFT, otherwise it is from the rhs NFT.
+     * @param composition_state_to_add If provided, this is the state to be added to the result NFT.
+     *                                 If not provided, a new state will be created.
+     *
+     * @return The composition state for the given pair of states.
+     */
+    auto create_composition_state = [&](const State state_a, const State state_b, const Level level, const bool is_a_lhs = true, const State composition_state_to_add = Limits::max_state) {
+        assert(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
+
+        // Try to find the entry in the state map.
+        const auto key = is_a_lhs ? std::make_pair(state_a, state_b) : std::make_pair(state_b, state_a);
+        const State lhs_state = key.first;
+        const State rhs_state = key.second;
+        const State found_state = composition_storage.get(lhs_state, rhs_state);
+        if (found_state != Limits::max_state) {
+            assert(found_state == composition_state_to_add || composition_state_to_add == Limits::max_state);
+            return found_state;
+        }
+
+        // If not found, add a new state to the result NFT.
+        State new_state = (composition_state_to_add != Limits::max_state) ? composition_state_to_add : result.add_state_with_level(level);
+        composition_storage.insert(lhs_state, rhs_state, new_state);
+
+        // If the level is zero, we need to check for final states and add to the worklist.
+        if (level == 0) {
+            // Because the key pair was not found in the map, we are sure that the state was not in the worklist yet either.
+            worklist.push_back(key);
+            if ((is_a_lhs && lhs.final.contains(state_a) && rhs.final.contains(state_b)) ||
+                (!is_a_lhs && rhs.final.contains(state_a) && lhs.final.contains(state_b))) {
+                result.final.insert(new_state);
+            }
+        } else {
+            worklist.push_front(key); // Push to the front for non-zero levels.
+        }
+
+        return new_state;
+    };
 
     /**
      * @brief Model the waiting in one of the NFTs if they could not synchronize due to the EPSILON or symbol transition.
@@ -604,7 +549,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         worklist.pop_front();
         const Level lhs_level = lhs.levels[lhs_state];
         const Level rhs_level = rhs.levels[rhs_state];
-        const State composition_state = get_state_from_product_storage(lhs_state, rhs_state);
+        const State composition_state = composition_storage.get(lhs_state, rhs_state);
         assert(composition_state != Limits::max_state);
         const Level composition_state_level = result.levels[composition_state];
         const size_t lhs_sync_type_id = static_cast<size_t>(lhs_reachable_sync_types[lhs_state]);
