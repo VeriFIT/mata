@@ -263,6 +263,45 @@ public:
     State add_transition(State source, const std::vector<Symbol>& symbols);
 
     /**
+     * @brief Add a single NFT transition with a length @p length from a source state @p source
+     * to a newly created target state, creating as many inner states as needed for the transition
+     * @p length and the jump mode.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbol The symbol used for the transition.
+     * @param length The length of the transition.
+     * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
+     */
+    State add_transition_with_lenght(State source, Symbol symbol, size_t length, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
+     * @brief Add a single NFT transition from a source state @p source to a target state @p target
+     * creating as many inner states as needed for the transition length and the jump mode.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbol The symbol used for the transition.
+     * @param target The target state where the transition ends. @p target must already exist.
+     * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
+     */
+    void add_transition_with_target(const State source, const Symbol symbol, const State target, const JumpMode jump_mode = JumpMode::RepeatSymbol) {
+        add_transition_with_same_level_targets(source, symbol, { target }, jump_mode);
+    }
+
+    /**
+     * @brief Add a NFT transition from a source state @p source to a set of target states @p targets
+     * creating as many inner states as needed for the transition length and the jump mode.
+     *
+     * For transitions with a length `l` greater than 1, the common part (before the `l`-th symbol) of the
+     * is shared for all targets and only at the `l`-th symbol the transition branches to each target.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbol The symbol used for the transition.
+     * @param targets The set of target states where the transition ends. Each target must already exist.
+     * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
+     */
+    void add_transition_with_same_level_targets(State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
      * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT
      *  from a source state @p source to a target state @p target, creating new states along the path of @p word.
      *
