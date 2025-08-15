@@ -8,7 +8,6 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/nft/algorithms.hh"
 
-using namespace mata::nfa;
 using namespace mata::strings;
 
 namespace {
@@ -337,7 +336,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     Nfa concatenated_lhs{ *lhs_aut_begin };
     for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
          ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, EPSILON);
+        concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, mata::nfa::EPSILON);
     }
 
     auto product_pres_eps_trans{
@@ -356,7 +355,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
+    return noodlify(product_pres_eps_trans, mata::nfa::EPSILON, include_empty);
 }
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
@@ -386,7 +385,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     Nfa concatenated_lhs{ *(*lhs_aut_begin) };
     for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
          ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), EPSILON);
+        concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), mata::nfa::EPSILON);
     }
 
     auto product_pres_eps_trans{
@@ -404,7 +403,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
+    return noodlify(product_pres_eps_trans, mata::nfa::EPSILON, include_empty);
 }
 
 
@@ -418,11 +417,11 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     unify_initial_and_final_states(rhs_automata, unified_nfas);
 
     // Automata representing the left/rigth side concatenated over different epsilon transitions.
-    Nfa concatenated_lhs = concatenate_with(lhs_automata, EPSILON);
-    Nfa concatenated_rhs = concatenate_with(rhs_automata, EPSILON-1);
+    Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
+    Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON-1);
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
+            intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON-1).trim() };
 
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
@@ -438,7 +437,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify_mult_eps(product_pres_eps_trans, { EPSILON, EPSILON-1 }, include_empty);
+    return noodlify_mult_eps(product_pres_eps_trans, { mata::nfa::EPSILON, mata::nfa::EPSILON-1 }, include_empty);
 }
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
@@ -457,9 +456,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
 
-    // delimiters, we cannot use EPSILON, because that is normal EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and EPSILON-1 is DONT_CARE
-    constexpr Symbol INPUT_DELIMITER = EPSILON-2;
-    constexpr Symbol OUTPUT_DELIMITER = EPSILON-3;
+    // delimiters, we cannot use mata::nfa::EPSILON, because that is normal mata::nfa::EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and mata::nfa::EPSILON-1 is DONT_CARE
+    constexpr Symbol INPUT_DELIMITER = mata::nfa::EPSILON-2;
+    constexpr Symbol OUTPUT_DELIMITER = mata::nfa::EPSILON-3;
 
     // to have less noodles, we try to have one initial and one final state for each input/output automaton
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas;
