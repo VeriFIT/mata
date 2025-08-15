@@ -40,11 +40,17 @@ namespace {
     public:
         const Nft& nft;
         const Level sync_level;
+        const size_t num_of_levels_before_sync;
+        const size_t num_of_levels_after_sync;
         const size_t num_of_trans_to_replace_sync; ///< Number of transitions to replace synchronization.
-        const std::vector<SynchronizationType> reachable_sync_types{};
+        const std::vector<SynchronizationType> sync_types_v{};
 
         SynchronizationProperties(const Nft& nft, const Level sync_level, const size_t num_of_trans_to_replace_sync)
-            : nft(nft), sync_level(sync_level), num_of_trans_to_replace_sync(num_of_trans_to_replace_sync)
+            : nft(nft), 
+              sync_level(sync_level), 
+              num_of_levels_before_sync(sync_level),
+              num_of_levels_after_sync(nft.num_of_levels - sync_level - 1),
+              num_of_trans_to_replace_sync(num_of_trans_to_replace_sync)
         {
             get_synchronization_types();
         }
@@ -163,8 +169,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
     const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level, lhs_num_of_trans_to_replace_sync);
     const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level, rhs_num_of_trans_to_replace_sync);
-    const std::vector<SynchronizationType>& lhs_reachable_sync_types = lhs_sync_props.reachable_sync_types;
-    const std::vector<SynchronizationType>& rhs_reachable_sync_types = rhs_sync_props.reachable_sync_types;
+    const std::vector<SynchronizationType>& lhs_sync_types_v = lhs_sync_props.sync_types_v;
+    const std::vector<SynchronizationType>& rhs_sync_types_v = rhs_sync_props.sync_types_v;
 
     Nft result;
     result.num_of_levels = result_num_of_levels;
@@ -233,13 +239,17 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
      * @param running_root_state The root state of the NFT that is running (LHS or RHS).
      * @param is_lhs_waiting If true, the LHS is waiting, otherwise the RHS is waiting.
      */
-    auto model_waiting = [&](const State composition_root_state, const State waiting_root_state, const State running_root_state, const bool is_lhs_waiting) {
-        const SynchronizationProperties& running_sync_props = is_lhs_waiting ? rhs_sync_props : lhs_sync_props;
+    auto model_waiting = [&](const State waiting_root_state, const State running_root_state, const bool is_lhs_waiting) {
+        const State composition_root_state = is_lhs_waiting ? composition_storage.get(waiting_root_state, running_root_state)
+                                                       : composition_storage.get(running_root_state, waiting_root_state);
+        assert(composition_root_state != Limits::max_state);
+        const SynchronizationProperties& running_sync_props = is_lhs_waiting ? rhs_sync_props 
+                                                                             : lhs_sync_props;
         const Level sync_level = running_sync_props.sync_level;
         const Levels& running_levels = running_sync_props.nft.levels;
         const Delta& running_delta = running_sync_props.nft.delta;
         const size_t num_of_trans_to_replace_sync = running_sync_props.num_of_trans_to_replace_sync;
-        const std::vector<SynchronizationType>& reachable_sync_types = running_sync_props.reachable_sync_types;
+        const std::vector<SynchronizationType>& reachable_sync_types = running_sync_props.sync_types_v;
         // If the synchronization level is the last level, and it cannot be replaced by any sequence of epsilon transitions
         // (i.e., it wanishes), we need to do "in place" synchronization step and connect previous state to the next
         // zero-level state.
@@ -348,7 +358,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     };
 
-    auto synchronize = [&](const State lhs_state, const State rhs_state, const State composition_source_state, const bool reconnect = false, const Symbol symbol_when_reconnect = Limits::max_symbol) {
+    auto synchronize = [&](const State composition_source_state, const State lhs_state, const State rhs_state, const bool reconnect = false, const Symbol symbol_when_reconnect = Limits::max_symbol) {
+        assert(composition_source_state != Limits::max_state);
         const Level lhs_level = lhs.levels[lhs_state];
         const Level rhs_level = rhs.levels[rhs_state];
         const Level composition_target_level = (result.levels[composition_source_state] + 1) % result.num_of_levels;
@@ -405,47 +416,108 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     };
 
-    auto copy_transition = [&](const State composition_state, const State copy_state, const State stationar_state, const bool is_symbol_post_lhs) {
-        const SynchronizationProperties& copy_sync_props = is_symbol_post_lhs ? lhs_sync_props : rhs_sync_props;
-        const SynchronizationProperties& stationar_sync_props = is_symbol_post_lhs ? rhs_sync_props : lhs_sync_props;
+    /**
+     * @brief Copy transitions from the copy NFT to the composition NFT.
+     * 
+     * @param composition_state The source state in the composition NFT where the transitions will be connected to.
+     * @param copy_state The state in the copy NFT from which the transitions will be copied.
+     * @param stationar_state The state in the other NFT (stationary NFT) that does not move.
+     * @param is_copy_state_lhs If true, the copy_state is from the LHS NFT, otherwise it is from the RHS NFT.
+     * @param called_from_waiting_simulation If true, the function is called from the waiting simulation,
+                                             meaning that we are waiting in the virtual loop at the stationary state.
+     */
+    auto copy_transition = [&](const State composition_state,
+                               const State copy_state,
+                               const State stationar_state, 
+                               const bool is_copy_state_lhs,
+                               const bool called_from_waiting_simulation = false) 
+    {
+        const SynchronizationProperties& copy_sync_props = is_copy_state_lhs ? lhs_sync_props 
+                                                                             : rhs_sync_props;
+        const SynchronizationProperties& stationar_sync_props = is_copy_state_lhs ? rhs_sync_props 
+                                                                                  : lhs_sync_props;
         const Nft& copy_nft = copy_sync_props.nft;
-        const Level copy_state_level = copy_nft.levels[copy_state];
         const Level composition_state_level = result.levels[composition_state];
-        const std::vector<SynchronizationType>& copy_reachable_sync_types = copy_sync_props.reachable_sync_types;
-        const SynchronizationType stationar_state_sync_type = stationar_sync_props.reachable_sync_types[stationar_state];
-        bool is_copy_state_before_sync = copy_state_level < copy_sync_props.sync_level;
-
-        for (const SymbolPost& symbol_post : copy_nft.delta[copy_state]) {
-            for (const State target : symbol_post.targets) {
-                const SynchronizationType target_sync_type = copy_reachable_sync_types[target];
-                const bool can_synchronize_in_the_future = stationar_state_sync_type == target_sync_type ||
-                                                           stationar_state_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
-                                                           target_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL;
-
-                if (is_copy_state_before_sync && can_synchronize_in_the_future) {
-                    // We are still before the synchronization level and
-                    // the target does not lead to a synchronization.
-                    // We don't need to explore this.
+        const Level copy_state_level = copy_nft.levels[copy_state];
+        const Level stationar_state_level = stationar_sync_props.nft.levels[stationar_state];
+        const Level copy_sync_level = copy_sync_props.sync_level;
+        const std::vector<SynchronizationType>& copy_sync_types = copy_sync_props.sync_types_v;
+        const SynchronizationType stationar_state_sync_type = stationar_sync_props.sync_types_v[stationar_state];
+        
+        // We need to handle any synchronization here in place, if we want to project out
+        // the synchronization level and if there is no transition remainging after the 
+        // synchronization level in any of the NFTs.
+        const bool handle_synchronization_in_place = project_out_sync_levels &&
+                                                     stationar_sync_props.num_of_levels_after_sync == 0 &&
+                                                     copy_sync_props.num_of_levels_after_sync == 0 && (
+                                                        called_from_waiting_simulation ||                                                                                      
+                                                        stationar_state_level == stationar_sync_props.sync_level
+                                                     );
+                                                        
+        for (const SymbolPost& copy_symbol_post : copy_nft.delta[copy_state]) {
+            for (const State copy_target : copy_symbol_post.targets) {
+                const SynchronizationType copy_target_sync_type = copy_sync_types[copy_target];
+                // It makes sence to onyl continue if we beleave that we can synchronize.
+                // When the function has been called from the waiting simulation, we are
+                // interested in synchronizations on EPSILON.
+                // This should also work for the case when we are past the synchronization level.
+                const bool can_synchronize_in_the_future = (
+                    called_from_waiting_simulation ? copy_target_sync_type != SynchronizationType::ONLY_ON_SYMBOL
+                                                   : stationar_state_sync_type == copy_target_sync_type ||
+                                                     stationar_state_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
+                                                     copy_target_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL
+                );
+                if (!can_synchronize_in_the_future) {
+                    // There is no way we would be able to synchronize.
+                    // We don't need to explore this path.
                     continue;
                 }
 
-                const Level target_level = copy_nft.levels[target];
+                const Level target_level = copy_nft.levels[copy_target];
                 const size_t trans_len = (target_level == 0 ? copy_nft.num_of_levels : target_level) - copy_state_level;
                 assert(target_level == 0 || target_level > copy_state_level);
                 assert(trans_len > 0);
 
-                const bool rhs_target_level_is_last = target_level == rhs.num_of_levels - 1;
-                const bool lhs_level_is_last = copy_state_level == lhs.num_of_levels - 1;
-                if (!is_symbol_post_lhs && is_copy_state_before_sync && rhs_target_level_is_last && lhs_level_is_last && project_out_sync_levels) {
-                    // LHS is at the synchronization level. There is no transition after the synchronization in LHS.
-                    // The target in RHS is at synchronization level, at there is also no transition after the synchronization in RHS.
-                    // Also we are projecting out the synchronization levels.
-                    // This means, that we need now to synchronize and make a transition to the zero-level state in the result NFT.
-                    synchronize(stationar_state, target, composition_state, true, symbol_post.symbol);
+                if (handle_synchronization_in_place && target_level == copy_sync_level) {
+                    // The target is at the synchronization level that will be projected out.
+                    // We know that there are no transitions after the synchronization level
+                    // in any of the NFTs. Therefore, we have to do the synchronization and
+                    // make this transition go all the way to the next zero-level state.
+                    if (called_from_waiting_simulation) {
+                        // We have beed called from the simulation of the waiting.
+                        // We are waiting in the stationar state. We need to handle the waiting
+                        // synchronization over EPSILON here.
+                        const auto& copy_symbol_post_eps = copy_nft.delta[copy_target].find(EPSILON);
+                        assert(copy_symbol_post_eps != copy_nft.delta[copy_target].end());
+                        for (const State inplace_copy_target : copy_symbol_post_eps->targets) {
+                            assert(copy_nft.levels[inplace_copy_target] == 0);
+                            result.add_transition_with_target(composition_state, copy_symbol_post.symbol,
+                                create_composition_state(inplace_copy_target, stationar_state, 0, is_copy_state_lhs), jump_mode);
+                        }
+                    } else {
+                        // We encountered normal synchronization. Call the synchronization function.
+                        // The only way we can reach synchronization point in both states, while
+                        // waiting in one state them, is when the waiting state is the LHS state.
+                        // Wecause each transition in the LHS goes before the transitions in the RHS.
+                        assert(!is_copy_state_lhs);
+                        synchronize(composition_state, stationar_state, copy_target, true, copy_symbol_post.symbol);
+                    }
+
                 } else {
+                    // We are not at the synchronization point.
+                    // We just need to copy the transtion.
                     const Level new_composition_state_level = (composition_state_level + trans_len) % result.num_of_levels;
-                    result.add_transition_with_target(composition_state, symbol_post.symbol,
-                        create_composition_state(target, stationar_state, new_composition_state_level, is_symbol_post_lhs), jump_mode);
+                    // The creation of new composition state depends on whether we were
+                    // called from the waiting simulation or not.
+                    // If we were called from the waiting simulation, we need to create state that copy_target
+                    // and a virtual state over the virtual waiting loop over the stationar state.
+                    // Because the virtual state is not part of the waiting NFT, we can not use create_composition_state
+                    // function, because it uses the composition_storage that does not contain the virtual state.
+                    const State new_composition_state = (
+                        called_from_waiting_simulation ? result.add_state_with_level(new_composition_state_level)
+                                                       : create_composition_state(copy_target, stationar_state, new_composition_state_level, is_copy_state_lhs)
+                    );
+                    result.add_transition_with_target(composition_state, copy_symbol_post.symbol, new_composition_state, jump_mode);
                 }
             }
         }
@@ -463,13 +535,13 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     while (!worklist.empty()) {
         const auto [lhs_state, rhs_state] = worklist.front();
         worklist.pop_front();
+        const State composition_state = composition_storage.get(lhs_state, rhs_state);  
+        assert(composition_state != Limits::max_state);
         const Level lhs_level = lhs.levels[lhs_state];
-        const Level rhs_level = rhs.levels[rhs_state];
-        const State composition_state = composition_storage.get(lhs_state, rhs_state);
-        assert(composition_state != Limits::max_state);      
+        const Level rhs_level = rhs.levels[rhs_state];  
         
-        const SynchronizationType lhs_sync_type = lhs_reachable_sync_types[lhs_state];
-        const SynchronizationType rhs_sync_type = rhs_reachable_sync_types[rhs_state];
+        const SynchronizationType lhs_sync_type = lhs_sync_types_v[lhs_state];
+        const SynchronizationType rhs_sync_type = rhs_sync_types_v[rhs_state];
         if (lhs_level == 0 and rhs_level == 0) {
             // We are at the zero level states before any synchronization level.
             // It is now time to decide is we want to continue the synchronization and/or
@@ -490,11 +562,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                                                       rhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL;
             if (perform_wait_on_lhs) {
                 // LHS is waiting (i.e., there is an EPSILON in the RHS that we can not synchronize on).
-                model_waiting(composition_state, lhs_state, rhs_state, true);
+                model_waiting(lhs_state, rhs_state, true);
             }
             if (perform_wait_on_rhs) {
                 // RHS is waiting (i.e., there is an EPSILON in the LHS that we can not synchronize on).
-                model_waiting(composition_state, rhs_state, lhs_state, false); 
+                model_waiting(rhs_state, lhs_state, false); 
             }
             if (!can_synchronize_in_the_future) {
                 // There is no way we would be able to synchronize in the future.
@@ -535,7 +607,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             //    synchronization levels. We need to use the synchronization
             //    transition to connect to the zero-level successors of the synchronization.
             assert(lhs_level == lhs_sync_level && rhs_level == rhs_sync_level);
-            synchronize(lhs_state, rhs_state, composition_state);
+            synchronize(composition_state, lhs_state, rhs_state);
         }
     }
 
