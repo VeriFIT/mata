@@ -6,6 +6,7 @@
 #include "mata/nft/builder.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/nft/algorithms.hh"
 
 using namespace mata::nfa;
 using namespace mata::strings;
@@ -492,11 +493,25 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // of the transducer, so that intersection works correctly (i.e. the delimiters behave
     // as epsilon transitions).
 
-    Nft intersection = *nft;
+    Nft intersection;
 
-    // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
-    add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
-    intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+    if (is_nft_homomorphic(nft)) {
+        // For the case that input nft T is homomorphic, i.e., for each two words u,v, we have T(u.v) = T(u).T(v),
+        // we can do the following optimization. Let I1, ..., In be the input automata. Because T is homomorphic,
+        // we can take the concatenation T(I1).T(I2)...T(In) connected with INPUT_DELIMITER instead of computing
+        // the composition with concatenated_input_nft.
+        mata::nft::Nft concatenation{mata::nft::compose(mata::nft::Nft(*input_automata[0]), *nft, 0, 0, false)};
+        for (std::vector<std::shared_ptr<mata::nfa::Nfa>>::size_type i = 1; i < input_automata.size(); ++i) {
+            mata::nft::Nft composition = mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false);
+            concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, INPUT_DELIMITER, true);
+        }
+        intersection = std::move(concatenation);
+    } else {
+        intersection = *nft;
+        // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
+        add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
+        intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+    }
     intersection.trim();
 
     if(intersection.final.empty()) {
