@@ -31,9 +31,6 @@ namespace {
         lhs = lhs | rhs;
         return lhs;
     }
-    inline bool can_synchronize(const SynchronizationType lhs, const SynchronizationType rhs) {
-        return static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs);
-    }
 
     /**
      * @brief A class to hold properties related to synchronization during the composition of NFTs.
@@ -121,44 +118,6 @@ namespace {
             assert(std::all_of(sync_types.begin(), sync_types.end(),
                 [](SynchronizationType type) { return type != SynchronizationType::UNDER_COMPUTATION; }));
         }
-    };
-
-    // We can perform synchronization only if from both lhs and rhs can be reached a synchronization
-    // level, that synchronizes on EPSILON and/or symbol.
-    // For example, there is not way that we can synchronize when only synchronization on EPSILON in lhs
-    // and only on symbol in rhs is possible.
-    static const bool perform_synchronization[4][4] = {
-    /*                        *                            rhs_sync_type                                 */
-    /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
-    /* =======================*========================================================================= */
-    /*  UNINITIALIZED         */ {   false,          false,           false,                false        },
-    /*  ONLY_ON_SYMBOL        */ {   false,           true,           false,                 true        },
-    /*  ONLY_ON_EPSILON       */ {   false,          false,            true,                 true        },
-    /*  ON_EPSILON_AND_SYMBOL */ {   false,           true,            true,                 true        }
-    };
-
-    // We need to wait in the LHS state if there is a synchronization on RHS state and a possibility
-    // that the LHS can not synchronize on it (e.g. LHS monewhere synchronizes on a symbol).
-    static const bool perform_wait_on_lhs[4][4] = {
-    /*                        *                            rhs_sync_type                                 */
-    /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
-    /* =======================*========================================================================= */
-    /*  UNINITIALIZED         */ {   false,          false,           false,                false        },
-    /*  ONLY_ON_SYMBOL        */ {   false,          false,            true,                 true        },
-    /*  ONLY_ON_EPSILON       */ {   false,          false,           false,                 false       },
-    /*  ON_EPSILON_AND_SYMBOL */ {   false,          false,            true,                 true        }
-    };
-
-    // We need to wait in the RHS state if there is a synchronization on LHS state and a possibility
-    // that the RHS can not synchronize on it (e.g. RHS monewhere synchronizes on a symbol).
-    static const bool perform_wait_on_rhs[4][4] = {
-    /*                        *                            rhs_sync_type                                 */
-    /*     lhs_sync_type      * UNINITIALIZED | ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL */
-    /* =======================*========================================================================= */
-    /*  UNINITIALIZED         */ {   false,          false,           false,                false        },
-    /*  ONLY_ON_SYMBOL        */ {   false,          false,           false,                false        },
-    /*  ONLY_ON_EPSILON       */ {   false,           true,           false,                 true        },
-    /*  ON_EPSILON_AND_SYMBOL */ {   false,           true,           false,                 true        }
     };
 }
 
@@ -458,8 +417,12 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         for (const SymbolPost& symbol_post : copy_nft.delta[copy_state]) {
             for (const State target : symbol_post.targets) {
+                const SynchronizationType target_sync_type = copy_reachable_sync_types[target];
+                const bool can_synchronize_in_the_future = stationar_state_sync_type == target_sync_type ||
+                                                           stationar_state_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
+                                                           target_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL;
 
-                if (is_copy_state_before_sync && !can_synchronize(stationar_state_sync_type, copy_reachable_sync_types[target])) {
+                if (is_copy_state_before_sync && can_synchronize_in_the_future) {
                     // We are still before the synchronization level and
                     // the target does not lead to a synchronization.
                     // We don't need to explore this.
@@ -488,125 +451,92 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     };
 
-    // INITIALIZATION of a worklist (side effect of a create_composition_state)
+    // Initialization of the worklist.
     for (const State lhs_root: lhs.initial) {
         for (const State rhs_root: rhs.initial) {
             // Get the root state in the result NFT
-            const State res_root = create_composition_state(lhs_root, rhs_root, 0);
-            result.initial.insert(res_root);
+            result.initial.insert(create_composition_state(lhs_root, rhs_root, 0));
         }
     }
 
+    // The maing loop of the composition algorithm.
     while (!worklist.empty()) {
         const auto [lhs_state, rhs_state] = worklist.front();
         worklist.pop_front();
         const Level lhs_level = lhs.levels[lhs_state];
         const Level rhs_level = rhs.levels[rhs_state];
         const State composition_state = composition_storage.get(lhs_state, rhs_state);
-        assert(composition_state != Limits::max_state);
-        const Level composition_state_level = result.levels[composition_state];
-        const size_t lhs_sync_type_id = static_cast<size_t>(lhs_reachable_sync_types[lhs_state]);
-        const size_t rhs_sync_type_id = static_cast<size_t>(rhs_reachable_sync_types[rhs_state]);
-        // LHS can be before the synchronization level only if RHS is before the synchronization level as well.
-        // Otherwise, there are both past the synchronization level.
-        const bool is_lhs_before_sync = (lhs_level != 0 && rhs_level == 0) && lhs_level < lhs_sync_level;
-        const bool is_rhs_before_sync = (lhs_level <= lhs_sync_level) && rhs_level < rhs_sync_level;
-
+        assert(composition_state != Limits::max_state);      
+        
+        const SynchronizationType lhs_sync_type = lhs_reachable_sync_types[lhs_state];
+        const SynchronizationType rhs_sync_type = rhs_reachable_sync_types[rhs_state];
         if (lhs_level == 0 and rhs_level == 0) {
-            // We are at the zero level states.
+            // We are at the zero level states before any synchronization level.
             // It is now time to decide is we want to continue the synchronization and/or
-            // to wait in the lhs_state and/or rhs_state, because we can not synchronize
-            // on epsilon and on a symbol at the same time.
-            // Note: Transduce that contains symbol that can not synchronize with epsilon will wait.
+            // to wait in the lhs_state and/or rhs_state, because there is a synchronization,
+            // where on one of the transducers is EPSILON and on the other one is an alphabet symbol.
+            // Note that if we can not synchronize in the future due to the EPSILON,
+            // we will simulate waiting in the zero-level state of the transducer that does not
+            // have the EPSILON transition that cause the synchronization problem.
 
-            if (perform_wait_on_lhs[lhs_sync_type_id][rhs_sync_type_id]) {
-                model_waiting(composition_state, lhs_state, rhs_state, true); // LHS is waiting.
+            // You can see the table defining operations for pair of synchronization types
+            // in the documentation of the SynchronizationType enum class.
+            const bool perform_wait_on_lhs = lhs_sync_type != SynchronizationType::ONLY_ON_EPSILON &&
+                                             rhs_sync_type != SynchronizationType::ONLY_ON_SYMBOL;
+            const bool perform_wait_on_rhs = lhs_sync_type != SynchronizationType::ONLY_ON_SYMBOL &&
+                                             rhs_sync_type != SynchronizationType::ONLY_ON_EPSILON;
+            const bool can_synchronize_in_the_future = lhs_sync_type == rhs_sync_type ||
+                                                      lhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
+                                                      rhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL;
+            if (perform_wait_on_lhs) {
+                // LHS is waiting (i.e., there is an EPSILON in the RHS that we can not synchronize on).
+                model_waiting(composition_state, lhs_state, rhs_state, true);
             }
-
-            if (perform_wait_on_rhs[lhs_sync_type_id][rhs_sync_type_id]) {
-                model_waiting(composition_state, rhs_state, lhs_state, false); // RHS is waiting.
+            if (perform_wait_on_rhs) {
+                // RHS is waiting (i.e., there is an EPSILON in the LHS that we can not synchronize on).
+                model_waiting(composition_state, rhs_state, lhs_state, false); 
             }
-
-            if (!perform_synchronization[lhs_sync_type_id][rhs_sync_type_id]) {
-                // No synchronization is needed.
-                // There are no symbols that would synchronize.
-                // There is total sismatch between lhs and rhs synchronization symbols.
+            if (!can_synchronize_in_the_future) {
+                // There is no way we would be able to synchronize in the future.
+                // It does not make sence to continue exploration of this pair.
                 continue;
             }
         }
 
-        assert(perform_synchronization[lhs_sync_type_id][rhs_sync_type_id]);
+        // It makes sence to onyl continue if we beleave that we can synchronize,
+        // or we already passed the synchronization level (i.e., lhs_sync_type ==
+        // rhs_sync_type == SynchronizationType::UNINITIALIZED).
+        assert(lhs_sync_type == rhs_sync_type ||
+               lhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
+               rhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL);
+        
+        // Both LHS and RHS can do a step if they are not at the synchronization level.
+        // However, there is a special case when LHS already reached the last zero-level state,
+        // because there was no transition after the synchronization level in the LHS. Because
+        // of that, we need to not allow LHS to do a step in this case.
+        // The same does not apply to the RHS, because it always goes after the LHS.
+        const bool do_step_in_lhs = lhs_level != lhs_sync_level && (lhs_level != 0 || rhs_level == 0);
+        const bool do_step_in_rhs = rhs_level != rhs_sync_level;
 
-        if (is_lhs_before_sync) {
-            // LHS is before the synchronization level, so we need to first get there.
+        if (do_step_in_lhs) {
+            // LHS alway goes before the RHS.
             copy_transition(composition_state, lhs_state, rhs_state, true);
-            // for (const SymbolPost& lhs_symbol_post : lhs.delta[lhs_state]) {
-            //     for (const State lhs_target : lhs_symbol_post.targets) {
-            //         const size_t lhs_target_sync_type_id = static_cast<size_t>(lhs_reachable_sync_types[lhs_target]);
-            //         if (!perform_synchronization[lhs_sync_type_id][lhs_target_sync_type_id]) {
-            //             // The target does not lead to a synchronization.
-            //             // We don't need to explore this.
-            //             continue;
-            //         }
-            //         const Level lhs_target_level = lhs.levels[lhs_target];
-            //         const size_t trans_len = lhs_target_level - lhs_level;
-            //         assert(lhs_target_level > lhs_level);
-
-            //         // We don't need to worry, if it's a last useful transition, and
-            //         // doint the synchronization in place, because we are sure that there is/will be
-            //         // at leas one unprocessed useful transition in the RHS.
-            //         result.add_transition_with_target(composition_state, lhs_symbol_post.symbol,
-            //             create_composition_state(lhs_target, rhs_state, composition_state_level + trans_len, true), jump_mode);
-            //     }
-            // }
-        } else if (is_rhs_before_sync) {
-            // LHS is at synchronization level, but RHS is before the synchronization level.
-            // RHS needs to continue.
+        } else if (do_step_in_rhs) {
+            // LHS is probably at the synchronization level or at the final zero-level state.
+            // It's time for RHS to make a step.
             copy_transition(composition_state, rhs_state, lhs_state, false);
-            // for (const SymbolPost& rhs_symbol_post : rhs.delta[rhs_state]) {
-            //     for (const State rhs_target : rhs_symbol_post.targets) {
-            //         const size_t rhs_target_sync_type_id = static_cast<size_t>(rhs_reachable_sync_types[rhs_target]);
-            //         if (!perform_synchronization[rhs_sync_type_id][rhs_target_sync_type_id]) {
-            //             // The target does not lead to a synchronization.
-            //             // We don't need to explore this.
-            //             continue;
-            //         }
-            //         const Level rhs_target_level = rhs.levels[rhs_target];
-            //         const size_t trans_len = rhs_target_level - rhs_level;
-            //         assert(rhs_target_level > rhs_level);
-
-            //         const bool lhs_level_is_last = lhs_level == lhs.num_of_levels - 1;
-            //         const bool rhs_target_level_is_last = rhs_target_level == rhs.num_of_levels - 1;
-            //         if (lhs_level_is_last && rhs_target_level_is_last && project_out_sync_levels) {
-            //             // LHS is at the synchronization level. There is no transition after the synchronization in LHS.
-            //             // The target in RHS is at synchronization level, at there is also no transition after the synchronization in RHS.
-            //             // Also we are projecting out the synchronization levels.
-            //             // This means, that we need now to synchronize and make a transition to the zero-level state in the result NFT.
-            //             synchronize(lhs_state, rhs_target, composition_state, true, rhs_symbol_post.symbol);
-            //         } else {
-            //             // Just copy the transition.
-            //             result.add_transition_with_target(composition_state, rhs_symbol_post.symbol,
-            //                 create_composition_state(lhs_state, rhs_target, composition_state_level + trans_len, false), jump_mode);
-            //         }
-            //     }
-            // }
-
-        } else if (lhs_level == lhs_sync_level && rhs_level == rhs_sync_level) {
-            // We are at the synchronization level in both NFTs.
-            assert(lhs_level != lhs.num_of_levels - 1 && rhs_level != rhs.num_of_levels - 1);
-            synchronize(lhs_state, rhs_state, composition_state);
-        } else if (lhs_level != 0) {
-            // LHS is past the synchronization level and there are some transitions remaining to remap.
-            assert(!is_lhs_before_sync && !is_rhs_before_sync);
-            copy_transition(composition_state, lhs_state, rhs_state, true);
-            
         } else {
-            assert(!is_lhs_before_sync && !is_rhs_before_sync);
-            assert(lhs_level == 0 && rhs_level != 0);
-            // RHS is past the synchronization level and there are some transitions remaining to remap.
-            copy_transition(composition_state, rhs_state, lhs_state, false);
+            // Both LHS and RHS are at the synchronization level.
+            // Perform the synchronization this way is only possible if:
+            // 1) Some transition in the LHS or RHS that follows after
+            //    the synchronization level (so we can connect to the successors), or
+            // 2) There is not transition in the LHS or RHS that follows after
+            //    the synchronization level, but we are not projecting out the 
+            //    synchronization levels. We need to use the synchronization
+            //    transition to connect to the zero-level successors of the synchronization.
+            assert(lhs_level == lhs_sync_level && rhs_level == rhs_sync_level);
+            synchronize(lhs_state, rhs_state, composition_state);
         }
-
     }
 
     return result.trim(); // Trim the result NFT to remove dead-end paths.
