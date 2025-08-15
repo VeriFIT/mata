@@ -9,7 +9,6 @@
 
 using namespace mata::nfa;
 using namespace mata::strings;
-using namespace mata::nfa::algorithms;
 
 namespace {
 
@@ -50,7 +49,7 @@ void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfa
 Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol delimiter) {
     Nfa concatenation{*nfas[0]};
     for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < nfas.size(); ++i) {
-        concatenation = concatenate_eps(concatenation, *nfas[i], delimiter, true);
+        concatenation = mata::nfa::algorithms::concatenate_eps(concatenation, *nfas[i], delimiter, true);
     }
     return concatenation;
 }
