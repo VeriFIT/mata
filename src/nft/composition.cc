@@ -358,47 +358,66 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     };
 
-    auto synchronize = [&](const State composition_source_state, const State lhs_state, const State rhs_state, const bool reconnect = false, const Symbol symbol_when_reconnect = Limits::max_symbol) {
-        assert(composition_source_state != Limits::max_state);
+    /**
+     * @brief Perform the synchronization of LHS and RHS at the given state pair.
+     * 
+     * @param composition_state The state in the composition NFT from where the synchronization result will lead.
+     * @param lhs_state The state in the LHS NFT that is being synchronized.
+     * @param rhs_state The state in the RHS NFT that is being synchronized.
+     * @param reconnect If true, the synchronization will reconnect the predecessors of the synchronization level to
+     *                  its successors, otherwise it will just synchronize and keep/remove the synchronization level
+     *                  depending on the project_out_sync_levels flag.
+     * @param reconnection_symbol The symbol to use for the reconnection transition if reconnect is true. 
+     */
+    auto synchronize = [&](const State composition_state,
+                           const State lhs_state,
+                           const State rhs_state,
+                           const bool reconnect = false,
+                           const Symbol reconnection_symbol = Limits::max_symbol) 
+    {
         const Level lhs_level = lhs.levels[lhs_state];
         const Level rhs_level = rhs.levels[rhs_state];
-        const Level composition_target_level = (result.levels[composition_source_state] + 1) % result.num_of_levels;
+        const Level composition_target_level = (result.levels[composition_state] + 1) % result.num_of_levels;
+        // When we are projecting out the synchronization levels, and we don't want to connect its
+        // predecessors to its successors, we will just do the synchronization, note reached targets
+        // and remove (vanish) the synchronization level with its transition from the result NFT.
         const bool vanish_sync_level = !reconnect && project_out_sync_levels;
 
-        auto synchronize_targets = [&](const StateSet& lhs_sync_targets, const StateSet& rhs_sync_targets, const Symbol symbol) {
+        // Helper function to combine LHS and RHS targets over the given symbol.
+        auto combine_targets = [&](const StateSet& lhs_sync_targets, const StateSet& rhs_sync_targets, const Symbol symbol) {
             for (const State lhs_sync_target : lhs_sync_targets) {
                 for (const State rhs_sync_target : rhs_sync_targets) {
                     if (vanish_sync_level) {
                         worklist.push_back({ lhs_sync_target, rhs_sync_target });
                     } else {
-                        result.add_transition_with_target(composition_source_state, symbol,
+                        result.add_transition_with_target(composition_state, symbol,
                             create_composition_state(lhs_sync_target, rhs_sync_target, composition_target_level, true), jump_mode);
                     }
                 }
             }
         };
 
-        // Do the normal synchronization on symbol.
+        // Synchronization using SynchronizedUniversalIterator.
         mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
         mata::utils::push_back(sync_iterator, lhs.delta[lhs_state]);
         mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
         while (sync_iterator.advance()) {
             const std::vector<StatePost::const_iterator>& same_symbol_posts{ sync_iterator.get_current() };
             assert(same_symbol_posts.size() == 2); // One move per state in the pair.
-            const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : same_symbol_posts[0]->symbol;
-            synchronize_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
+            const Symbol symbol = project_out_sync_levels ? reconnection_symbol : same_symbol_posts[0]->symbol;
+            combine_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
         }
 
-        // Do the synchronization on DONT_CARE in the LHS.
+        // Synchronization on DONT_CARE in the LHS.
         auto lhs_dont_care_sync_it = lhs.delta[lhs_state].find(DONT_CARE);
         if (lhs_dont_care_sync_it != lhs.delta[lhs_state].end()) {
             for (const SymbolPost& rhs_symbol_post : rhs.delta[rhs_state]) {
                 if (rhs_symbol_post.symbol == EPSILON) {
-                    // We don't want to synchronize on DONT_CARE with EPSILON.
+                    // We don't want to synchronize DONT_CARE with EPSILON.
                     continue;
                 }
-                const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : rhs_symbol_post.symbol;
-                synchronize_targets(lhs_dont_care_sync_it->targets, rhs_symbol_post.targets, symbol);
+                const Symbol symbol = project_out_sync_levels ? reconnection_symbol : rhs_symbol_post.symbol;
+                combine_targets(lhs_dont_care_sync_it->targets, rhs_symbol_post.targets, symbol);
             }
         }
 
@@ -407,11 +426,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         if (rhs_dont_care_sync_it != rhs.delta[rhs_state].end()) {
             for (const SymbolPost& lhs_symbol_post : lhs.delta[lhs_state]) {
                 if (lhs_symbol_post.symbol == EPSILON) {
-                    // We don't want to synchronize on DONT_CARE with EPSILON.
+                    // We don't want to synchronize DONT_CARE with EPSILON.
                     continue;
                 }
-                const Symbol symbol = project_out_sync_levels ? symbol_when_reconnect : lhs_symbol_post.symbol;
-                synchronize_targets(lhs_symbol_post.targets, rhs_dont_care_sync_it->targets, symbol);
+                const Symbol symbol = project_out_sync_levels ? reconnection_symbol : lhs_symbol_post.symbol;
+                combine_targets(lhs_symbol_post.targets, rhs_dont_care_sync_it->targets, symbol);
             }
         }
     };
