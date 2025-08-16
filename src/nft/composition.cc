@@ -138,14 +138,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     const size_t result_num_of_levels = lhs.num_of_levels + rhs.num_of_levels - (project_out_sync_levels ? (2) : 1);
     assert(result_num_of_levels > 0);
 
-    // Calculate the number of epsilon transitions that will replace one epsilon synchronization transition during waiting.
-    // This depends on whether we are projecting out the synchronization level and if there are any transitions in the waiting
-    // transducer, that we need to place right before or right after the synchronization level.
-    const size_t lhs_levels_before_sync = lhs_sync_level;
-    const size_t rhs_levels_before_sync = rhs_sync_level;
-    const size_t lhs_levels_after_sync = lhs.num_of_levels - lhs_sync_level - 1;
-    const size_t rhs_levels_after_sync = rhs.num_of_levels - rhs_sync_level - 1;
-
+    // Initialize the synchronization properties for both NFTs.
     const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level);
     const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level);
     const std::vector<SynchronizationType>& lhs_sync_types_v = lhs_sync_props.sync_types_v;
@@ -153,6 +146,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
     Nft result;
     result.num_of_levels = result_num_of_levels;
+    // Use composition storage without tracking inverted indices,
+    // as the waiting in virtual states would spoit the inverse mapping.
     TwoDimensionalMap<State, false> composition_storage(lhs_num_of_states, rhs_num_of_states);
     std::deque<std::pair<State, State>> worklist;
 
