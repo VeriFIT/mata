@@ -16,7 +16,28 @@ namespace {
     using namespace mata::nft;
 
     // Enum class for a state flag to indicate which synchronization
-    //types (synchronization on epsilon or symbol) can be reached from the state.
+    // types (synchronization on epsilon or symbol) can be reached from the state.
+    // The synchronization type helps to determine is a state from lhs can
+    // somewhere in the next levels synchronize with a state from rhs.
+    // The wolowing table shows all possible combinations of synchronization types
+    // for lhs and rhs states and if they can synchronize of one of them will wait
+    // because there way an EPSILON on the synchronization in the other that it
+    // could not synchronize with.
+    //                       ||                   RHS sync type
+    //    LHS sync type      || ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL
+    // ======================||================|=================|======================
+    //                       ||   synchornize  |                 |      synchornize
+    //    ONLY_ON_SYMBOL     ||                |   wait on LHS   |      wait on LHS
+    //                       ||                |                 |
+    // ----------------------||----------------|-----------------|----------------------
+    //                       ||                |   synchronize   |      synchornize
+    //   ONLY_ON_EPSILON     ||                |                 |
+    //                       ||   wait on RHS  |                 |      wait on RHS
+    // ----------------------||----------------|-----------------|----------------------
+    //                       ||   synchronize  |   synchronize   |      synchornize
+    // ON_EPSILON_AND_SYMBOL ||                |   lait on LHS   |      wait on LHS
+    //                       ||   wait on RHS  |                 |      wait on RHS
+    // =================================================================================
     enum class SynchronizationType : uint8_t {
         UNINITIALIZED         = 0b0000'0000, ///< Default value.
         ONLY_ON_SYMBOL        = 0b0000'0001, ///< Synchronization on EPSILON.
