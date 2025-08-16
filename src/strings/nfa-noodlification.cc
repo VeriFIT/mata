@@ -61,7 +61,7 @@ Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol
  * initial and final state (and they are the same), and each (transducer) transition from the initial state does not contain epsilon,
  * while all other transitions contain epsilon always on the first tape and a some symbol on the second tape.
  */
-bool is_nft_homomorphic(const std::shared_ptr<Nft> nft, bool check_inverted = false) {
+bool is_nft_homomorphic(const std::shared_ptr<Nft> nft) {
     if (nft->num_of_levels != 2) {
         return false;
     }
@@ -81,14 +81,8 @@ bool is_nft_homomorphic(const std::shared_ptr<Nft> nft, bool check_inverted = fa
             for (const SymbolPost& first_tape_transition : nft->delta[q]) {
                 bool first_tape_is_epsilon = (first_tape_transition.symbol == mata::nft::EPSILON);
                 bool is_initial = (q == *nft->initial.begin());
-                if (check_inverted) {
-                    if (first_tape_is_epsilon) {
-                        return false;
-                    }
-                } else {
-                    if ((first_tape_is_epsilon && is_initial) || (!first_tape_is_epsilon && !is_initial)) {
-                        return false;
-                    }
+                if ((first_tape_is_epsilon && is_initial) || (!first_tape_is_epsilon && !is_initial)) {
+                    return false;
                 }
                 for (State interim_state : first_tape_transition.targets) {
                     if (nft->levels[interim_state] == mata::nft::DEFAULT_LEVEL) {
@@ -96,15 +90,8 @@ bool is_nft_homomorphic(const std::shared_ptr<Nft> nft, bool check_inverted = fa
                         return false;
                     }
                     for (const SymbolPost& second_tape_transition : nft->delta[interim_state]) {
-                        bool second_tape_is_epsilon = (second_tape_transition.symbol == mata::nft::EPSILON);
-                        if (check_inverted) {
-                            if ((second_tape_is_epsilon && is_initial) || (!second_tape_is_epsilon && !is_initial)) {
-                                return false;
-                            }
-                        } else {
-                            if (second_tape_is_epsilon) {
-                                return false;
-                            }
+                        if (second_tape_transition.symbol == mata::nft::EPSILON) {
+                            return false;
                         }
                     }
                 }
@@ -507,7 +494,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
     Nft intersection;
 
-    if (is_nft_homomorphic(nft, false)) {
+    if (is_nft_homomorphic(nft)) {
         // For the case that input nft T is homomorphic, i.e., for each two words u,v, we have T(u.v) = T(u).T(v),
         // we can do the following optimization. Let I1, ..., In be the input automata. Because T is homomorphic,
         // we can take the concatenation T(I1).T(I2)...T(In) connected with INPUT_DELIMITER instead of computing
@@ -518,67 +505,27 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
             concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, INPUT_DELIMITER, true);
         }
         intersection = std::move(concatenation);
-        intersection.trim();
-    
-        if(intersection.final.empty()) {
-            return {};
-        }
-
-        // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
-        // and, we also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it
-        add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
-        add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
-        intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
-        intersection.trim();
-    
-        if(intersection.final.empty()) {
-            return {};
-        }
-    } else if (is_nft_homomorphic(nft, true)) {
-        // We do the same optimization but backwards (T is homomorphic but for output)
-        mata::nft::Nft concatenation{mata::nft::compose(mata::nft::Nft(*output_automata[0]), *nft, 0, 1, false)};
-        for (std::vector<std::shared_ptr<mata::nfa::Nfa>>::size_type i = 1; i < output_automata.size(); ++i) {
-            mata::nft::Nft composition = mata::nft::compose(mata::nft::Nft(*output_automata[i]), *nft, 0, 1, false);
-            concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, OUTPUT_DELIMITER, true);
-        }
-        intersection = std::move(concatenation);
-        intersection.trim();
-
-        if(intersection.final.empty()) {
-            return {};
-        }
-
-        // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition"
-        // of nft and we also need to OUTPUT_DELIMITER as "epsilon transition" of the input nfa, so that we do not lose it
-        add_self_loop_for_every_default_state(concatenated_input_nft, OUTPUT_DELIMITER);
-        add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
-        intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
-        intersection.trim();
-
-        if(intersection.final.empty()) {
-            return {};
-        }
     } else {
         intersection = *nft;
         // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
         add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
         intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
-        intersection.trim();
+    }
+    intersection.trim();
 
-        if(intersection.final.empty()) {
-            return {};
-        }
+    if(intersection.final.empty()) {
+        return {};
+    }
 
-        // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
-        // and, we also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it
-        add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
-        add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
-        intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
-        intersection.trim();
+    // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
+    // and, we also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it
+    add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
+    add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
+    intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
+    intersection.trim();
 
-        if(intersection.final.empty()) {
-            return {};
-        }
+    if(intersection.final.empty()) {
+        return {};
     }
 
     // we assume that the operations did not add jump transitions
