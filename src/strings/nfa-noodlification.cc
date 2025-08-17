@@ -57,9 +57,11 @@ Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol
 /**
  * @brief Check if transducer @p nft T is for sure homomorphic, that is whether for each two words u,v, it holds T(u.v) = T(u).T(v).
  * 
- * The check is only a heuristic, it can return false even if T is homomorphic. We do this by checking whether there is exactly one
- * initial and final state (and they are the same), and each (transducer) transition from the initial state does not contain epsilon,
- * while all other transitions contain epsilon always on the first tape and a some symbol on the second tape.
+ * @warning The check is only a heuristic, it can return false even if T is homomorphic.
+ * 
+ * We check whether there is exactly one initial and final state (and they are the same), and each (transducer) transition from
+ * the initial state does not contain epsilon, while all other transitions contain epsilon always on the first tape and some symbol
+ * on the second tape.
  */
 bool is_nft_homomorphic(const std::shared_ptr<Nft> nft) {
     if (nft->num_of_levels != 2) {
