@@ -6,10 +6,9 @@
 #include "mata/nft/builder.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/nft/algorithms.hh"
 
-using namespace mata::nfa;
 using namespace mata::strings;
-using namespace mata::nfa::algorithms;
 
 namespace {
 
@@ -49,10 +48,46 @@ void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfa
 
 Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol delimiter) {
     Nfa concatenation{*nfas[0]};
-    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < nfas.size(); ++i) {
-        concatenation = concatenate_eps(concatenation, *nfas[i], delimiter, true);
+    for (size_t i = 1; i < nfas.size(); ++i) {
+        concatenation = mata::nfa::algorithms::concatenate_eps(concatenation, *nfas[i], delimiter, true);
     }
     return concatenation;
+}
+
+/**
+ * @brief Check if transducer @p nft T is for sure homomorphic, that is whether for each two words u,v, it holds T(u.v) = T(u).T(v).
+ * 
+ * @warning The check is only a heuristic, it can return false even if T is homomorphic.
+ * 
+ * We check whether there is exactly one initial and final state (and they are the same), and every transition other than those
+ * coming from the initial state have epsilon on the first tape.
+ */
+bool is_nft_homomorphic(const std::shared_ptr<Nft> nft) {
+    if (nft->num_of_levels != 2) {
+        return false;
+    }
+
+    // the only initial and the only final state must be the same state
+    if (nft->final.size() != 1 || nft->initial.size() != 1
+            || *nft->final.begin() != *nft->initial.begin()) {
+        return false;
+    }
+
+    size_t num_of_states = nft->num_of_states();
+    for (State q = 0; q < num_of_states; ++q) {
+        if (nft->levels[q] == mata::nft::DEFAULT_LEVEL) {
+            for (const SymbolPost& first_tape_transition : nft->delta[q]) {
+                bool first_tape_is_epsilon = (first_tape_transition.symbol == mata::nft::EPSILON);
+                bool is_initial = (q == *nft->initial.begin());
+                // there can be a concrete symbol on the first tape only on the transitions from the initial state
+                if (!first_tape_is_epsilon && !is_initial) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 } // namespace
@@ -289,7 +324,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     Nfa concatenated_lhs{ *lhs_aut_begin };
     for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
          ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, EPSILON);
+        concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, mata::nfa::EPSILON);
     }
 
     auto product_pres_eps_trans{
@@ -308,7 +343,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
+    return noodlify(product_pres_eps_trans, mata::nfa::EPSILON, include_empty);
 }
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
@@ -338,7 +373,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     Nfa concatenated_lhs{ *(*lhs_aut_begin) };
     for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
          ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), EPSILON);
+        concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), mata::nfa::EPSILON);
     }
 
     auto product_pres_eps_trans{
@@ -356,7 +391,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
+    return noodlify(product_pres_eps_trans, mata::nfa::EPSILON, include_empty);
 }
 
 
@@ -370,11 +405,11 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     unify_initial_and_final_states(rhs_automata, unified_nfas);
 
     // Automata representing the left/rigth side concatenated over different epsilon transitions.
-    Nfa concatenated_lhs = concatenate_with(lhs_automata, EPSILON);
-    Nfa concatenated_rhs = concatenate_with(rhs_automata, EPSILON-1);
+    Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
+    Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON-1);
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
+            intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON-1).trim() };
 
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
@@ -390,7 +425,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify_mult_eps(product_pres_eps_trans, { EPSILON, EPSILON-1 }, include_empty);
+    return noodlify_mult_eps(product_pres_eps_trans, { mata::nfa::EPSILON, mata::nfa::EPSILON-1 }, include_empty);
 }
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
@@ -409,9 +444,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
 
-    // delimiters, we cannot use EPSILON, because that is normal EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and EPSILON-1 is DONT_CARE
-    constexpr Symbol INPUT_DELIMITER = EPSILON-2;
-    constexpr Symbol OUTPUT_DELIMITER = EPSILON-3;
+    // delimiters, we cannot use mata::nfa::EPSILON, because that is normal mata::nfa::EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and mata::nfa::EPSILON-1 is DONT_CARE
+    constexpr Symbol INPUT_DELIMITER = mata::nfa::EPSILON-2;
+    constexpr Symbol OUTPUT_DELIMITER = mata::nfa::EPSILON-3;
 
     // to have less noodles, we try to have one initial and one final state for each input/output automaton
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas;
@@ -445,11 +480,25 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // of the transducer, so that intersection works correctly (i.e. the delimiters behave
     // as epsilon transitions).
 
-    Nft intersection = *nft;
+    Nft intersection;
 
-    // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
-    add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
-    intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+    if (is_nft_homomorphic(nft)) {
+        // For the case that input nft T is homomorphic, i.e., for each two words u,v, we have T(u.v) = T(u).T(v),
+        // we can do the following optimization. Let I1, ..., In be the input automata. Because T is homomorphic,
+        // we can take the concatenation T(I1).T(I2)...T(In) connected with INPUT_DELIMITER instead of computing
+        // the composition with concatenated_input_nft.
+        mata::nft::Nft concatenation{mata::nft::compose(mata::nft::Nft(*input_automata[0]), *nft, 0, 0, false)};
+        for (size_t i = 1; i < input_automata.size(); ++i) {
+            mata::nft::Nft composition = mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false);
+            concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, INPUT_DELIMITER, true);
+        }
+        intersection = std::move(concatenation);
+    } else {
+        intersection = *nft;
+        // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
+        add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
+        intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+    }
     intersection.trim();
 
     if(intersection.final.empty()) {
