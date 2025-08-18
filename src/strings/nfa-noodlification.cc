@@ -59,21 +59,17 @@ Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol
  * 
  * @warning The check is only a heuristic, it can return false even if T is homomorphic.
  * 
- * We check whether there is exactly one initial and final state (and they are the same), and each (transducer) transition from
- * the initial state does not contain epsilon, while all other transitions contain epsilon always on the first tape and some symbol
- * on the second tape.
+ * We check whether there is exactly one initial and final state (and they are the same), and every transition other than those
+ * coming from the initial state have epsilon on the first tape.
  */
 bool is_nft_homomorphic(const std::shared_ptr<Nft> nft) {
     if (nft->num_of_levels != 2) {
         return false;
     }
 
-    if (nft->final.size() != 1 || nft->initial.size() != 1) {
-        return false;
-    }
-
     // the only initial and the only final state must be the same state
-    if (*nft->final.begin() != *nft->initial.begin()) {
+    if (nft->final.size() != 1 || nft->initial.size() != 1
+            || *nft->final.begin() != *nft->initial.begin()) {
         return false;
     }
 
@@ -83,19 +79,9 @@ bool is_nft_homomorphic(const std::shared_ptr<Nft> nft) {
             for (const SymbolPost& first_tape_transition : nft->delta[q]) {
                 bool first_tape_is_epsilon = (first_tape_transition.symbol == mata::nft::EPSILON);
                 bool is_initial = (q == *nft->initial.begin());
-                if ((first_tape_is_epsilon && is_initial) || (!first_tape_is_epsilon && !is_initial)) {
+                // there can be a concrete symbol on the first tape only on the transitions from the initial state
+                if (!first_tape_is_epsilon && !is_initial) {
                     return false;
-                }
-                for (State interim_state : first_tape_transition.targets) {
-                    if (nft->levels[interim_state] == mata::nft::DEFAULT_LEVEL) {
-                        // there is some jump transition
-                        return false;
-                    }
-                    for (const SymbolPost& second_tape_transition : nft->delta[interim_state]) {
-                        if (second_tape_transition.symbol == mata::nft::EPSILON) {
-                            return false;
-                        }
-                    }
                 }
             }
         }
