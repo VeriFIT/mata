@@ -367,7 +367,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
                     if (is_projected_out(cls_state)) {
                         // If there are remaining levels between cls_state and tgt_state
                         // on a transition with a length greater than 1, then these levels must be preserved.
-                        if (jump_mode == JumpMode::RepeatSymbol) {
+                        if (jump_mode != JumpMode::AppendDontCares) {
                             result.delta.add(src_state, move.symbol, tgt_state);
                         } else {
                             result.delta.add(src_state, DONT_CARE, tgt_state);
@@ -467,6 +467,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     // Example:
     //  Input (new_levels_mask):               0 1 1 0 1 0 1 1  0  1  1  1
     //  Output (JumpMode::RepeatSymbol):       1 3 3 4 5 6 8 8  9 12 12 12
+    //  Output (JumpMode::NoJump):             1 3 3 4 5 6 8 8  9 12 12 12
     //  Output (JumpMode::AppendDontCares):    3 3 3 5 5 8 8 8 12 12 12 12
     const size_t mask_size = new_levels_mask.size();
     std::vector<Level> next_inner_levels(mask_size);
@@ -475,7 +476,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     for (auto it = new_levels_mask.rbegin(); it != new_levels_mask.rend(); ++it, --i) {
         next_inner_levels[i] = next_level;
         if (!*it) {
-            if (jump_mode == JumpMode::RepeatSymbol) {
+            if (jump_mode != JumpMode::AppendDontCares) {
                 next_inner_levels[i] = static_cast<Level>(i+1);
             }
             next_level = static_cast<Level>(i);
@@ -489,7 +490,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     // The transition symbol is determined based on the parameters:
     // it could be a specific symb, DONT_CARE, or a default symbol.
     auto create_transition = [&](const State src, const Symbol symb, const State tgt, const bool is_inserted_level, const bool is_old_level_processed) {
-        if (!is_inserted_level && (jump_mode == JumpMode::RepeatSymbol || !is_old_level_processed)) {
+        if (!is_inserted_level && (jump_mode != JumpMode::AppendDontCares || !is_old_level_processed)) {
             result.delta.add(src, symb, tgt);
         } else {
             result.delta.add(src, DONT_CARE, tgt);

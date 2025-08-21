@@ -56,7 +56,7 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
 
         if (product_target == Limits::max_state)
         {
-            product_target = product.add_state_with_level((jump_mode == JumpMode::RepeatSymbol || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0) ?
+            product_target = product.add_state_with_level((jump_mode != JumpMode::AppendDontCares || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0) ?
                                                           std::max(lhs.levels[lhs_target], rhs.levels[rhs_target]) :
                                                           std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]));
             assert(product_target < Limits::max_state);
@@ -161,7 +161,7 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         const bool sources_are_on_the_same_level = lhs_source_level == rhs_source_level;
         const bool rhs_source_is_deeper = (lhs_source_level < rhs_source_level && lhs_source_level != 0) || (lhs_source_level != 0 && rhs_source_level == 0);
 
-        if (sources_are_on_the_same_level || jump_mode == JumpMode::RepeatSymbol) {
+        if (sources_are_on_the_same_level || jump_mode != JumpMode::AppendDontCares) {
             // Compute classic product for current state pair.
             mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
             mata::utils::push_back(sync_iterator, lhs.delta[lhs_source]);

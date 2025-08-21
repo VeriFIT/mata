@@ -660,7 +660,7 @@ public:
      */
     Nft apply(
         const nfa::Nfa& nfa, Level level_to_apply_on = 0, bool project_out_applied_level = true,
-        JumpMode jump_mode = JumpMode::NoJump) const;
+        JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Apply @p word to @c this.
@@ -678,7 +678,7 @@ public:
      */
     Nft apply(
         const Word& word, Level level_to_apply_on = 0, bool project_out_applied_level = true,
-        JumpMode jump_mode = JumpMode::NoJump) const;
+        JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Copy NFT as NFA.
