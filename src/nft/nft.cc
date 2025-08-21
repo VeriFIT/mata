@@ -547,7 +547,7 @@ State Nft::add_transition(const State source, const std::vector<Symbol>& symbols
     return insert_word(source, symbols);
 }
 
-State Nft::add_transition_with_lenght(const State source, const Symbol symbol, const size_t length, const JumpMode jump_mode = JumpMode::RepeatSymbol) {
+State Nft::add_transition_with_lenght(const State source, const Symbol symbol, const size_t length, const JumpMode jump_mode) {
     assert(source < num_of_states());
 
     if (length == 0) { return source; }
@@ -575,31 +575,7 @@ State Nft::add_transition_with_lenght(const State source, const Symbol symbol, c
     return target;
 }
 
-void Nft::add_transition_with_target(State source, Symbol symbol, State target, JumpMode jump_mode = JumpMode::RepeatSymbol) {
-    assert(source < num_of_states());
-    assert(target < num_of_states());
-
-    assert(levels[source] < levels[target] || levels[target] == 0);
-    const size_t trans_len = (levels[target] == 0 ? num_of_levels : levels[target]) - levels[source];
-
-    if (trans_len == 1 || jump_mode == JumpMode::RepeatSymbol) {
-        delta.add(source, symbol, target);
-        return;
-    }
-
-    State inner_src = source;
-    Level inner_level = levels[inner_src] + 1;
-    for (size_t i = 0; i < trans_len - 1; ++i, ++inner_level) {
-        assert(inner_level < num_of_levels);
-        const State inner_target = add_state_with_level(inner_level);
-        delta.add(inner_src, symbol, inner_target);
-        inner_src = inner_target;
-    }
-    assert(inner_level == levels[source] + trans_len);
-    delta.add(inner_src, symbol, target);
-}
-
-void Nft::add_transition_with_same_level_targets(State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode = JumpMode::RepeatSymbol) {
+void Nft::add_transition_with_same_level_targets(State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode) {
     assert(targets.size() > 0);
     assert(source < num_of_states());
     assert(std::all_of(targets.begin(), targets.end(), [&](State target) { return target < num_of_states(); }));
