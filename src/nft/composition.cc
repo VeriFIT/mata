@@ -161,7 +161,9 @@ namespace mata::nft
 
 Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, const bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(lhs_sync_level < lhs.num_of_levels && rhs_sync_level < rhs.num_of_levels);
-    return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels, jump_mode);
+
+    // Just for testing.
+    return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels);
     throw std::invalid_argument("Synchronization levels must be less than the number of levels in the NFTs.");
 
     // Number of Levels and States
@@ -707,12 +709,15 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     }
 
-    return result.trim(); // Trim the result NFT to remove dead-end paths.
+    // Cannot do the trim to remove dead ends,
+    // because some algorithms work with useless states.
+    return result;
 }
 
 Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(!lhs_sync_levels.empty());
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
+    assert(jump_mode != JumpMode::NoJump);
 
     // if (lhs_sync_levels.size() == 1 && rhs_sync_levels.size() == 1) {
     //     // If we have only one synchronization level we can do it faster.

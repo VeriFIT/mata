@@ -49,36 +49,42 @@ TEST_CASE("Mata::nft::compose()") {
                 CHECK(are_equivalent(result, expected));
             }
 
-            SECTION("Epsilon perfectly matches.") {
-                lhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
-                lhs.delta.add(0, 'e', 1);
-                lhs.delta.add(1, 'a', 2);
-                lhs.delta.add(2, 'g', 3);
+            SECTION("Epsilon perfectly matches") {
+                lhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                lhs.delta.add(0, 'i', 1);
+                lhs.delta.add(1, 'b', 2);
+                lhs.delta.add(2, 'c', 3);
                 lhs.delta.add(3, EPSILON, 4);
-                lhs.delta.add(4, EPSILON, 5);
-                lhs.delta.add(5, 'c', 6);
+                lhs.delta.add(4, 'k', 5);
+                lhs.delta.add(5, 'f', 6);
+                lhs.delta.add(6, 'g', 7);
+                lhs.delta.add(7, 'l', 8);
 
-                rhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                rhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
                 rhs.delta.add(0, 'a', 1);
-                rhs.delta.add(1, EPSILON, 2);
+                rhs.delta.add(1, 'i', 2);
                 rhs.delta.add(2, EPSILON, 3);
-                rhs.delta.add(3, 'h', 4);
-                rhs.delta.add(4, 'c', 5);
-                rhs.delta.add(5, 'j', 6);
+                rhs.delta.add(3, EPSILON, 4);
+                rhs.delta.add(4, 'e', 5);
+                rhs.delta.add(5, 'k', 6);
+                rhs.delta.add(6, 'l', 7);
+                rhs.delta.add(7, 'h', 8);
 
-                expected = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
-                expected.delta.add(0, 'e', 1);
-                expected.delta.add(1, EPSILON, 2);
-                expected.delta.add(2, 'g', 3);
-                expected.delta.add(3, 'h', 4);
-                expected.delta.add(4, EPSILON, 5);
-                expected.delta.add(5, 'j', 6);
+                expected= Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                expected.delta.add(0, 'a', 1);
+                expected.delta.add(1, 'b', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, EPSILON, 4);
+                expected.delta.add(4, 'e', 5);
+                expected.delta.add(5, 'f', 6);
+                expected.delta.add(6, 'g', 7);
+                expected.delta.add(7, 'h', 8);
 
-
-                result = compose(lhs, rhs, 1, 0);
+                result = compose(lhs, rhs, { 0, 3 }, { 1, 2 });
 
                 CHECK(are_equivalent(result, expected));
             }
+
         }
 
         SECTION("Branching") {
@@ -222,27 +228,32 @@ TEST_CASE("Mata::nft::compose()") {
                 lhs.delta.add(3, 'a', 4);
                 lhs.delta.add(4, 'x', 5);
                 lhs.delta.add(5, EPSILON, 6);
-
                 rhs = Nft(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
                 rhs.delta.add(0, 'a', 1);
                 rhs.delta.add(1, 'b', 2);
                 rhs.delta.add(2, EPSILON, 3);
                 rhs.delta.add(3, 'd', 4);
 
-                expected = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                expected = Nft(13, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1 }, 2);
                 expected.delta.add(0, 'x', 1);
                 expected.delta.add(1, EPSILON, 2);
                 expected.delta.add(2, EPSILON, 3);
                 expected.delta.add(3, 'b', 4);
                 expected.delta.add(4, 'x', 5);
+                expected.delta.add(4, EPSILON, 10);
+                expected.delta.add(10, 'd', 11);
+                expected.delta.add(11, 'x', 12);
+                expected.delta.add(12, EPSILON, 6);
+                expected.delta.add(4, 'x', 7);
+                expected.delta.add(7, EPSILON, 8);
+                expected.delta.add(8, EPSILON, 9);
+                expected.delta.add(9, 'd', 6);
                 expected.delta.add(5, 'd', 6);
-                expected.print_to_dot(std::string("expected.dot"), true);
 
                 result = compose(lhs, rhs);
 
                 CHECK(are_equivalent(result, expected));
             }
-
         }
     }
 

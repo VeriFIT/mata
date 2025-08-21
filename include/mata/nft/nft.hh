@@ -794,7 +794,7 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
 Nft compose(const Nft& lhs, const Nft& rhs,
             const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
             bool project_out_sync_levels = true,
-            JumpMode jump_mode = JumpMode::NoJump);
+            JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
@@ -813,7 +813,7 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::NoJump);
+Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Concatenate two NFTs.
