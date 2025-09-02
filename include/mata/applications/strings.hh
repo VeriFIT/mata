@@ -424,6 +424,7 @@ VisitedEpsilonsCounterVector process_eps_map(const VisitedEpsilonsCounterMap& ep
 
 } // namespace SegNfa.
 
+// Stuff related with replace operation in string solving
 namespace replace {
 
 /**
