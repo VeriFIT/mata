@@ -111,6 +111,12 @@ namespace {
                         current_sync_type = SynchronizationType::UNDEFINED;
                         for (const SymbolPost& symbol_post : state_post) {
                             for (const State target : symbol_post.targets) {
+                                // Don't use NFA-like EPSILON transitions between zero-level states.
+                                if (symbol_post.symbol == EPSILON && nft.levels[target] == 0) {
+                                    assert(state_level == 0);
+                                    continue; 
+                                }
+                                assert(nft.levels[target] > nft.levels[state]);
                                 current_sync_type |= sync_types_v[target];
                             }
                         }
@@ -120,8 +126,23 @@ namespace {
 
                     // If we are on the sync level, we can determine the synchronization type.
                     if (state_level == sync_level) {
-                        if (state_post.find(EPSILON) != state_post.end()) {
-                            current_sync_type = SynchronizationType::ONLY_ON_EPSILON;
+                        const auto epsilon_post_it = state_post.find(EPSILON);
+                        if (epsilon_post_it != state_post.end()) {
+                            // We don't want to count NFA-like EPSILON transitions.
+                            // (i.e., transitions between zero-level states).
+                            const bool has_nft_like_epsilon_transition = (
+                                state_level != 0 ||
+                                std::any_of(
+                                    epsilon_post_it->targets.cbegin(),
+                                    epsilon_post_it->targets.cend(),
+                                    [this](State target) {
+                                        return nft.levels[target] != 0;
+                                    }
+                                )
+                            );
+                            if (has_nft_like_epsilon_transition) {
+                                current_sync_type = SynchronizationType::ONLY_ON_EPSILON;
+                            }
                             if (state_post.size() > 1) {
                                 current_sync_type |= SynchronizationType::ONLY_ON_SYMBOL;
                             }
@@ -137,6 +158,11 @@ namespace {
                     stack.push(state); // Push it back to the stack to compute it later.
                     for (const SymbolPost& symbol_post : state_post) {
                         for (const State target : symbol_post.targets) {
+                            // Don't use NFA-like EPSILON transitions between zero-level states.
+                            if (symbol_post.symbol == EPSILON && nft.levels[target] == 0) {
+                                assert(state_level == 0);
+                                continue; 
+                            }
                             assert(nft.levels[target] > nft.levels[state]);
                             assert(sync_types_v[target] != SynchronizationType::UNDER_COMPUTATION);
                             if (sync_types_v[target] != SynchronizationType::UNDEFINED) {
@@ -286,7 +312,31 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             assert(same_symbol_posts.size() == 2); // One move per state in the pair.
             const Symbol symbol = reconnect ? reconnection_symbol
                                             : same_symbol_posts[0]->symbol;
-            combine_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
+
+            if (same_symbol_posts[0]->symbol == EPSILON) {
+                // We need to be careful not to use NFA-like EPSILON transitions between zero-level states.
+                OrdVector<State> filtered_lhs_targets;
+                if (lhs.levels[lhs_state] == 0) {
+                    std::copy_if(
+                        same_symbol_posts[0]->targets.cbegin(),
+                        same_symbol_posts[0]->targets.cend(),
+                        std::back_inserter(filtered_lhs_targets),
+                        [&](State s) { return lhs.levels[s] != 0; }
+                    );
+                }
+                OrdVector<State> filtered_rhs_targets;
+                if (rhs.levels[rhs_state] == 0) {
+                    std::copy_if(
+                        same_symbol_posts[1]->targets.cbegin(),
+                        same_symbol_posts[1]->targets.cend(),
+                        std::back_inserter(filtered_rhs_targets),
+                        [&](State s) { return rhs.levels[s] != 0; }
+                    );
+                }
+                combine_targets(filtered_lhs_targets, filtered_rhs_targets, EPSILON);
+            } else {
+                combine_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
+            }
         }
 
         // Synchronization on DONT_CARE in the LHS.
@@ -363,6 +413,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         for (const SymbolPost& copy_symbol_post : copy_nft.delta[copy_state]) {
             for (const State copy_target : copy_symbol_post.targets) {
+                if (copy_symbol_post.symbol == EPSILON && copy_state_level == 0 && copy_nft.levels[copy_target] == 0) {
+                    // We do not want to use NFA-like EPSILON transitions between zero-level states.
+                    continue;
+                }
+
                 const SynchronizationType copy_target_sync_type = copy_sync_types[copy_target];
                 // It makes sense to continue only if we believe that we will not get stuck
                 // later due to an inability to synchronize. When this function is called
@@ -547,6 +602,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 // There should be an EPSILON transition. It has been told by the SynchronizationType.
                 assert(running_epsilon_post_it != running_delta[running_state].end());
                 for (const State running_epsilon_target : running_epsilon_post_it->targets) {
+                    if (running_state_level == 0 && running_levels[running_epsilon_target]) {
+                        // We do not want to use NFA-like EPSILON transitions between zero-level states.
+                        continue;
+                    }
                     assert(running_levels[running_epsilon_target] == 0 || running_levels[running_epsilon_target] > running_state_level);
                     if (num_of_epsilons_to_replace_sync == 0) {
                         // This synchronization level is being projected out (it has vanished).
@@ -610,6 +669,57 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     };
 
+    /**
+     * @brief Process the EPSILON transitions that have the NFA-like behavior
+     * (transitions between zero-level states).
+     *
+     * @param composition_state The state in the resulting composition NFT.
+     * @param lhs_src The source state of a potential EPSILON transition in the LHS NFT.
+     * @param rhs_src The source state of a potential EPSILON transition in the RHS NFT.
+     */
+    auto process_nft_like_epsilon_transitions = [&](const State composition_state, const State lhs_src, const State rhs_src) {
+        assert(lhs.levels[lhs_src] == 0 && rhs.levels[rhs_src] == 0);
+        const auto lhs_eps_post_it = lhs.delta[lhs_src].find(EPSILON);
+        const auto rhs_eps_post_it = rhs.delta[rhs_src].find(EPSILON);
+        const bool lhs_eps_exists = lhs_eps_post_it != lhs.delta[lhs_src].end();
+        const bool rhs_eps_exists = rhs_eps_post_it != rhs.delta[rhs_src].end();
+
+        // Create combinations of rhs_src with all zero-level targets of lhs_src.
+        if (lhs_eps_exists) {
+            for (const State lhs_target : lhs_eps_post_it->targets) {
+                if (lhs.levels[lhs_target] != 0) {
+                    continue;
+                }
+                create_composition_state(lhs_target, rhs_src, 0, true, composition_state);
+            }
+        }
+
+        // Create combinations of lhs_src with all zero-level targets of rhs_src.
+        if (rhs_eps_exists) {
+            for (const State rhs_target : rhs_eps_post_it->targets) {
+                if (rhs.levels[rhs_target] != 0) {
+                    continue;
+                }
+                create_composition_state(lhs_src, rhs_target, 0, true, composition_state);
+            }
+        }
+
+        // Create combinations of all zero-level targets of lhs_src with all zero-level targets of rhs_src.
+        if (lhs_eps_exists && rhs_eps_exists) {
+            for (const State lhs_target : lhs_eps_post_it->targets) {
+                if (lhs.levels[lhs_target] != 0) {
+                    continue;
+                }
+                for (const State rhs_target : rhs_eps_post_it->targets) {
+                    if (rhs.levels[rhs_target] != 0) {
+                        continue;
+                    }
+                    create_composition_state(lhs_target, rhs_target, 0, true, composition_state);
+                }
+            }
+        }
+    };
+
     // Initialization of the main worklist.
     for (const State lhs_root: lhs.initial) {
         for (const State rhs_root: rhs.initial) {
@@ -637,6 +747,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // and the other has an alphabet symbol. Note that if future synchronization
             // is impossible due to the EPSILON, we will simulate waiting in the zero-level
             // state of the transducer that does not have that EPSILON.
+
+            // Process potential NFA-like EPISLON transitions (transitions between zero-level states).
+            process_nft_like_epsilon_transitions(composition_state, lhs_state, rhs_state);
 
             // You can see the table defining operations for pair of synchronization types
             // in the documentation of the SynchronizationType enum class.
