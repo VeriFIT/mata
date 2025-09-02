@@ -10,7 +10,7 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/nft/delta.hh"
 #include "mata/nft/nft.hh"
-#include "mata/nft/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/plumbing.hh"
 #include "mata/nft/algorithms.hh"
@@ -5578,7 +5578,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
     SECTION("replace reluctant regex NFT") {
         Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{ nft::strings::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
+        Nft nft{ mata::strings::replace::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
@@ -5595,7 +5595,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
     SECTION("replace reluctant literal NFT") {
         Nfa nfa = nfa::builder::create_from_regex("dabce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{ nft::strings::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
+        Nft nft{ mata::strings::replace::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();

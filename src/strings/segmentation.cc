@@ -1,7 +1,7 @@
 /* nfa-segmentation.cc -- Segmentation of NFAs
  */
 
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 
 using namespace mata::nfa;
 using namespace mata::strings;

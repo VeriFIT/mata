@@ -10,7 +10,7 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"

@@ -38,4 +38,4 @@ Strings
 -------
 NFT algorithms and classes used for solving string constraints.
 
-.. doxygenfile:: nft/strings.hh
+.. doxygenfile:: strings.hh

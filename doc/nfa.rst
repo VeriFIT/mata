@@ -35,4 +35,4 @@ Strings
 -------
 NFA algorithms and classes used for solving string constraints.
 
-.. doxygenfile:: nfa/strings.hh
+.. doxygenfile:: strings.hh

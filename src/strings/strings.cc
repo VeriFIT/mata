@@ -1,7 +1,7 @@
 /* nfa-strings.cc -- Operations on NFAs for string solving.
  */
 
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 
 #include <optional>
@@ -209,11 +209,4 @@ bool mata::strings::is_lang_eps(const Nfa& aut) {
             return false;
     }
     return true;
-}
-
-Nfa mata::strings::reluctant_nfa(Nfa nfa) {
-    for (const State final: nfa.final) {
-        nfa.delta.mutable_state_post(final).clear();
-    }
-    return nfa;
 }

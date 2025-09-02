@@ -4,7 +4,7 @@
 #include "mata/utils/utils.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/builder.hh"
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nft/algorithms.hh"
 
