@@ -804,6 +804,10 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
  * levels are projected out from the resulting NFT.
  *
+ * NOTE: Synchronization transitions have to be explicitly presented in the NFTs and have the length of 1.
+ *       The only exception is an EPSILON transition between two zero-level states. Such a transition is
+ *       called a "fast EPSILON transition".
+ *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
