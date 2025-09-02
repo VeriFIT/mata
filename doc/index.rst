@@ -15,6 +15,7 @@ Welcome to automata-library's documentation!
    nft
    alphabet
    utils
+   applications
 
 
 Indices and tables

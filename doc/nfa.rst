@@ -31,8 +31,3 @@ Functions to operate on NFAs, such as inclusion and universality checking, minim
 
 .. doxygenfile:: nfa/algorithms.hh
 
-Strings
--------
-NFA algorithms and classes used for solving string constraints.
-
-.. doxygenfile:: strings.hh
