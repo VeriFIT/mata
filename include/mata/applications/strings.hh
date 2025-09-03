@@ -101,6 +101,8 @@ private:
  */
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
+std::optional<std::vector<Word>> get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths);
+
 /**
  * @brief Get all the one symbol words accepted by @p nfa.
  */

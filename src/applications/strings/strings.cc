@@ -210,3 +210,70 @@ bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
     }
     return true;
 }
+
+std::optional<std::vector<mata::Word>> mata::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
+    assert(nft.num_of_levels == lengths.size());
+    if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
+    if (nft.initial.intersects_with(nft.final) && std::all_of(lengths.begin(), lengths.end(), [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
+
+    std::vector<mata::Word> result(lengths.size());
+    for (const State initial_state: nft.initial) {
+        /// Current state, its state post iterator, its end iterator, and iterator in the current symbol post to target states.
+        std::vector<std::tuple<State, StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
+        std::vector<mata::Word> result(lengths.size());
+        auto is_result_correct = [&result, &lengths]() {
+            for (size_t i = 0; i < lengths.size(); ++i) {
+                if (result[i].size() != lengths[i]) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        const StatePost& initial_state_post{ nft.delta[initial_state] };
+        auto initial_symbol_post_it{ initial_state_post.cbegin() };
+        auto initial_symbol_post_end{ initial_state_post.cend() };
+
+        if (initial_symbol_post_it == initial_symbol_post_end) { continue; }
+
+        worklist.emplace_back(initial_state, initial_symbol_post_it, initial_symbol_post_end, initial_symbol_post_it->targets.cbegin());
+
+        while (!worklist.empty()) {
+            // Using references to iterators to be able to increment the top-most element in the worklist in place.
+            auto& [cur_state, state_post_it, state_post_end, targets_it]{ worklist.back() };
+            if (state_post_it != state_post_end) {
+                Symbol cur_symbol = state_post_it->symbol;
+                nft::Level cur_level = nft.levels[cur_state];
+                if (targets_it != state_post_it->targets.cend() || (cur_symbol != EPSILON && lengths[cur_level] == result[cur_level].size())) {
+                    ++state_post_it;
+                    if (state_post_it != state_post_end) { targets_it = state_post_it->cbegin(); }
+                } else {
+                    if (cur_symbol != EPSILON) {
+                        result[cur_level].push_back(cur_symbol);
+                    }
+                    if (nft.final.contains(*targets_it) && is_result_correct()) {
+                        return result;
+                    }
+                    const StatePost& state_post{ nft.delta[*targets_it] };
+                    if (!state_post.empty()) {
+                        auto new_state_post_it{ state_post.cbegin() };
+                        auto new_targets_it{ new_state_post_it->cbegin() };
+                        worklist.emplace_back(*targets_it, new_state_post_it, state_post.cend(), new_targets_it);
+                    } else { ++targets_it; }
+                }
+            } else { // state_post_it == state_post_end.
+                worklist.pop_back();
+                auto& [prev_state, prev_state_post_it, _prev_state_post_end, prev_targets_it]{ worklist.back() };
+                Symbol prev_symbol = prev_state_post_it->symbol;
+                nft::Level prev_level = nft.levels[prev_state];
+                if (prev_symbol != EPSILON) {
+                    assert(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
+                    result[prev_level].pop_back();
+                }
+                ++prev_targets_it;
+            }
+        }
+    }
+
+    return std::nullopt;
+}
