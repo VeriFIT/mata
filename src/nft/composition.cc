@@ -32,12 +32,12 @@ namespace {
      *                       ||                |                 |
      * ----------------------||----------------|-----------------|----------------------
      *                       ||                |   synchronize   |      synchornize
-     *   ONLY_ON_EPSILON     ||                |                 |
-     *                       ||   wait on RHS  |                 |      wait on RHS
+     *   ONLY_ON_EPSILON     ||                |   lait on LHS   |      lait on LHS
+     *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
      * ----------------------||----------------|-----------------|----------------------
      *                       ||   synchronize  |   synchronize   |      synchornize
-     * ON_EPSILON_AND_SYMBOL ||                |   lait on LHS   |      wait on LHS
-     *                       ||   wait on RHS  |                 |      wait on RHS
+     * ON_EPSILON_AND_SYMBOL ||                |   wait on LHS   |      wait on LHS
+     *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
      * =================================================================================
      */
     enum class SynchronizationType : uint8_t {
@@ -53,6 +53,9 @@ namespace {
     inline SynchronizationType& operator|=(SynchronizationType& lhs, SynchronizationType rhs) {
         lhs = lhs | rhs;
         return lhs;
+    }
+    inline bool exist_intersection_of_sync_types(SynchronizationType lhs, SynchronizationType rhs) {
+        return (static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)) != 0;
     }
 
     /**
@@ -780,13 +783,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
             // You can see the table defining operations for pair of synchronization types
             // in the documentation of the SynchronizationType enum class.
-            const bool perform_wait_on_lhs = lhs_sync_type != SynchronizationType::ONLY_ON_EPSILON &&
-                                             rhs_sync_type != SynchronizationType::ONLY_ON_SYMBOL;
-            const bool perform_wait_on_rhs = lhs_sync_type != SynchronizationType::ONLY_ON_SYMBOL &&
-                                             rhs_sync_type != SynchronizationType::ONLY_ON_EPSILON;
-            const bool can_synchronize_in_the_future = lhs_sync_type == rhs_sync_type ||
-                                                      lhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
-                                                      rhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL;
+            const bool perform_wait_on_lhs = exist_intersection_of_sync_types(rhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
+            const bool perform_wait_on_rhs = exist_intersection_of_sync_types(lhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
+            const bool can_synchronize_in_the_future = exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type);
             if (perform_wait_on_lhs) {
                 // LHS is waiting (i.e., there is an EPSILON in the RHS that LHS can not synchronize on).
                 model_waiting(composition_state, lhs_state, rhs_state, true);
@@ -805,9 +804,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         // It makes sense to continue only if we believe that synchronization is possible,
         // or if we have already passed the synchronization level (i.e., lhs_sync_type ==
         // rhs_sync_type == SynchronizationType::UNDEFINED).
-        assert(lhs_sync_type == rhs_sync_type ||
-               lhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
-               rhs_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL);
+        assert(exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type));
 
         // Both LHS and RHS can take a step if they are not at the synchronization level.
         // The LHS always moves before the RHS (i.e., lhs_level < rhs_level).
