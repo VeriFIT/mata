@@ -260,7 +260,12 @@ std::optional<std::vector<mata::Word>> mata::strings::get_words_of_lengths(const
                         auto new_state_post_it{ state_post.cbegin() };
                         auto new_targets_it{ new_state_post_it->cbegin() };
                         worklist.emplace_back(*targets_it, new_state_post_it, state_post.cend(), new_targets_it);
-                    } else { ++targets_it; }
+                    } else {
+                        if (cur_symbol != EPSILON) {
+                            result[cur_level].pop_back();
+                        }
+                        ++targets_it;
+                    }
                 }
             } else { // state_post_it == state_post_end.
                 worklist.pop_back();
