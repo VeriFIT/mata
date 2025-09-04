@@ -101,6 +101,16 @@ private:
  */
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
+/**
+ * @brief Get the accepting words for each tape of @p nft with specific lenghts
+ * 
+ * This function finds such an accepting word of @p nft that for each tape i,
+ * the word on this tape (on the ith index of resulting vector) has the length lengths[i].
+ * 
+ * @param nft Transducer whose accepting words we are looking for
+ * @param lengths The lengths of the words of each tape (size of lengths == the levels of @p nft)
+ * @return std::optional<std::vector<Word>> Either the resulting words of tapes, or std::nullopt if such words of specific lengths do not exist
+ */
 std::optional<std::vector<Word>> get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths);
 
 /**
