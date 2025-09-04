@@ -22,10 +22,10 @@ add_executable(tests
 		nft/nft-intersection.cc
 		nft/nft-profiling.cc
 		nft/nft-plumbing.cc
-		strings/noodlification.cc
-		strings/segmentation.cc
-		strings/string-solving.cc
-		strings/replace.cc
+		applications/strings/noodlification.cc
+		applications/strings/segmentation.cc
+		applications/strings/string-solving.cc
+		applications/strings/replace.cc
 )
 
 target_link_libraries(tests PRIVATE libmata Catch2::Catch2WithMain)
