@@ -563,11 +563,88 @@ TEST_CASE("Mata::nft::compose()") {
     }
 }
 
+#define SKIP_TESTS
+TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
+#ifndef SKIP_TESTS
+    SECTION("2 levels x 2 levels") {
+        Nft expected_full(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        expected_full.delta.add(0, 'a', 1);
+        expected_full.delta.add(1, 'b', 2);
+        expected_full.delta.add(2, 'e', 3);
+        expected_full.delta.add(3, 'c', 4);
+        expected_full.delta.add(4, 'd', 5);
+        expected_full.delta.add(5, 'f', 6);
+        Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
+
+        Nft lhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, 'b', 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+
+        Nft rhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        rhs.delta.add(0, 'b', 1);
+        rhs.delta.add(1, 'e', 2);
+        rhs.delta.add(2, 'd', 3);
+        rhs.delta.add(3, 'f', 4);
+
+        SECTION("LHS | RHS") {
+            Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+    SECTION("2 levels x 1 level") {
+        Nft expected_full(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        expected_full.delta.add(0, 'a', 1);
+        expected_full.delta.add(1, 'b', 2);
+        expected_full.delta.add(2, 'c', 3);
+        expected_full.delta.add(3, 'd', 4);
+        Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
+
+        Nft lhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, 'b', 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+
+        Nft rhs(3, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+        rhs.delta.add(0, 'b', 1);
+        rhs.delta.add(1, 'd', 2);
+
+        SECTION("LHS | RHS") {
+            Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
+            CHECK(are_equivalent(result_full, expected_full));
+            Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+
+
+#endif
+}
+
 // TEST_CASE("nft::compose_fast()") {
-//     SECTION("project_out == true") {
-//         SECTION("two levels easy match") {
-//             Nft lhs;
-//             lhs.num_of_levels = 2;
+    //     SECTION("project_out == true") {
+        //         SECTION("two levels easy match") {
+            //             Nft lhs;
+            //             lhs.num_of_levels = 2;
 //             lhs.levels = { 0, 1, 0, 1, 0 };
 //             lhs.initial.insert(0);
 //             lhs.final.insert(4);

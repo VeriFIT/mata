@@ -117,7 +117,7 @@ namespace {
                                 // Skip fast EPSILON transitions.
                                 if (symbol_post.symbol == EPSILON && nft.num_of_levels != 1 && nft.levels[target] == 0) {
                                     assert(state_level == 0);
-                                    continue; 
+                                    continue;
                                 }
                                 assert(nft.levels[target] > nft.levels[state]);
                                 current_sync_type |= sync_types_v[target];
@@ -163,7 +163,7 @@ namespace {
                             // Skip fast EPSILON transitions.
                             if (symbol_post.symbol == EPSILON && nft.num_of_levels != 1 && nft.levels[target] == 0) {
                                 assert(state_level == 0);
-                                continue; 
+                                continue;
                             }
                             assert(nft.levels[target] > nft.levels[state]);
                             assert(sync_types_v[target] != SynchronizationType::UNDER_COMPUTATION);
@@ -190,6 +190,7 @@ namespace mata::nft
 Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, const bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(lhs_sync_level < lhs.num_of_levels && rhs_sync_level < rhs.num_of_levels);
 
+    // TODO: Modify it to work even with other jump modes.
     if (jump_mode != JumpMode::NoJump) {
         return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels);
     }
@@ -199,7 +200,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         std::all_of(
             lhs.delta.transitions().begin(),
             lhs.delta.transitions().end(),
-            [&](const Transition& transition) { 
+            [&](const Transition& transition) {
                 return (lhs.levels[transition.source] < lhs_sync_level && lhs.levels[transition.target] <= lhs_sync_level && lhs.levels[transition.target] != 0) ||
                        (lhs.levels[transition.source] == lhs_sync_level && lhs.levels[transition.target] == static_cast<Level>((lhs_sync_level + 1) % lhs.num_of_levels)) ||
                        (lhs.levels[transition.source] > lhs_sync_level) ||
@@ -212,7 +213,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         std::all_of(
             rhs.delta.transitions().begin(),
             rhs.delta.transitions().end(),
-            [&](const Transition& transition) { 
+            [&](const Transition& transition) {
                 return (rhs.levels[transition.source] < rhs_sync_level && rhs.levels[transition.target] <= rhs_sync_level && rhs.levels[transition.target] != 0) ||
                        (rhs.levels[transition.source] == rhs_sync_level && rhs.levels[transition.target] == static_cast<Level>((rhs_sync_level + 1) % rhs.num_of_levels)) ||
                        (rhs.levels[transition.source] > rhs_sync_level) ||
@@ -264,10 +265,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         // Try to find the entry in the state map.
         const State found_state = composition_storage.get(key.first, key.second);
-        assert(found_state == composition_state_to_add);
         if (found_state != Limits::max_state) {
+            assert(result.levels[found_state] == level);
             return found_state;
         }
+        assert(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
 
         // If not found, add a new state to the result NFT.
         // Since the key pair was not found in the map, we can be certain that the state is not yet in the worklist.
@@ -305,7 +307,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                            const bool reconnect = false,
                            const Symbol reconnection_symbol = Limits::max_symbol)
     {
-        const Level composition_target_level = static_cast<Level>((result.levels[composition_state] + 1) % result.num_of_levels);
+        const Level composition_state_level = result.levels[composition_state];
+        const Level composition_target_level = static_cast<Level>((composition_state_level + 1) % result.num_of_levels);
         // When projecting out the synchronization levels, and we do not want to connect their
         // predecessors to their successors, we simply perform the synchronization, note the reached targets,
         // and remove (vanish) the synchronization level and its transition from the result NFT.
@@ -316,7 +319,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             for (const State lhs_sync_target : lhs_sync_targets) {
                 for (const State rhs_sync_target : rhs_sync_targets) {
                     if (vanish_sync_level) {
-                        worklist.push({ lhs_sync_target, rhs_sync_target });
+                        create_composition_state(lhs_sync_target,
+                                                 rhs_sync_target,
+                                                 composition_state_level,
+                                                 true,
+                                                 composition_state);
                     } else {
                         result.add_transition_with_target(
                             composition_state,
@@ -497,11 +504,15 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                     } else {
                         // We encountered a standard synchronization and need to synchronize the LHS and RHS.
                         // Call the synchronization function with the reconnection parameters set.
-                        // The only way to reach this synchronization point in both states, while waiting
-                        // in one of them, is when the waiting state was the LHS state.
-                        // This is because each transition in the LHS occurs before the transitions in the RHS.
-                        assert(!is_copy_state_lhs);
-                        synchronize(composition_state, stationar_state, copy_target, true, copy_symbol_post.symbol);
+                        // This point can be reached only if there is not transition in the LHS and we are
+                        // copying transitions from the RHS, or if the synchronization in the RHS occurs
+                        // on the 0-level, and we are copying transitions from the LHS.
+                        assert(!is_copy_state_lhs || rhs_sync_level == 0);
+                        if (!is_copy_state_lhs) {
+                            synchronize(composition_state, stationar_state, copy_target, true, copy_symbol_post.symbol);
+                        } else {
+                            synchronize(composition_state, copy_target, stationar_state, true, copy_symbol_post.symbol);
+                        }
                     }
                 } else {
                     // We are not at a synchronization point.
@@ -707,7 +718,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
      * @param lhs_src The source state of a potential EPSILON transition in the LHS NFT.
      * @param rhs_src The source state of a potential EPSILON transition in the RHS NFT.
      */
-    auto process_nft_like_epsilon_transitions = [&](const State composition_state, const State lhs_src, const State rhs_src) {
+    auto process_fast_epsilon_transitions = [&](const State composition_state, const State lhs_src, const State rhs_src) {
         assert(lhs.levels[lhs_src] == 0 && rhs.levels[rhs_src] == 0);
         const auto lhs_eps_post_it = lhs.delta[lhs_src].find(EPSILON);
         const auto rhs_eps_post_it = rhs.delta[rhs_src].find(EPSILON);
@@ -779,7 +790,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // state of the transducer that does not have that EPSILON.
 
             // Process potential fast EPSILON transitions.
-            process_nft_like_epsilon_transitions(composition_state, lhs_state, rhs_state);
+            process_fast_epsilon_transitions(composition_state, lhs_state, rhs_state);
 
             // You can see the table defining operations for pair of synchronization types
             // in the documentation of the SynchronizationType enum class.
@@ -804,7 +815,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         // It makes sense to continue only if we believe that synchronization is possible,
         // or if we have already passed the synchronization level (i.e., lhs_sync_type ==
         // rhs_sync_type == SynchronizationType::UNDEFINED).
-        assert(exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type));
+        assert(exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type) ||
+               (lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::UNDEFINED) ||
+               (rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::UNDEFINED)
+        );
 
         // Both LHS and RHS can take a step if they are not at the synchronization level.
         // The LHS always moves before the RHS (i.e., lhs_level < rhs_level).
