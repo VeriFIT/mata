@@ -17,10 +17,10 @@ add_library(libmata STATIC
 	nfa/complement.cc
 	nfa/product.cc
 	nfa/concatenation.cc
-	strings/noodlification.cc
-	strings/segmentation.cc
-	strings/strings.cc
-	strings/replace.cc
+	applications/strings/noodlification.cc
+	applications/strings/segmentation.cc
+	applications/strings/strings.cc
+	applications/strings/replace.cc
 	nfa/delta.cc
 	nfa/operations.cc
 	nfa/builder.cc
