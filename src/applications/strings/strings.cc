@@ -1,15 +1,15 @@
 /* nfa-strings.cc -- Operations on NFAs for string solving.
  */
 
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 
 #include <optional>
 
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 
-std::set<mata::Word> mata::strings::get_shortest_words(const Nfa& nfa) {
+std::set<mata::Word> mata::applications::strings::get_shortest_words(const Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
     return ShortestWordsMap{ nfa }.get_shortest_words_from(StateSet{ nfa.initial });
@@ -132,7 +132,7 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     act.first = dst.first + 1;
 }
 
-std::set<mata::Symbol> mata::strings::get_accepted_symbols(const Nfa& nfa) {
+std::set<mata::Symbol> mata::applications::strings::get_accepted_symbols(const Nfa& nfa) {
     std::set<mata::Symbol> accepted_symbols;
     for (State init : nfa.initial) {
         for (const SymbolPost& symbol_post_init : nfa.delta[init]) {
@@ -147,7 +147,7 @@ std::set<mata::Symbol> mata::strings::get_accepted_symbols(const Nfa& nfa) {
     return accepted_symbols;
 }
 
-std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
+std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(const Nfa& aut) {
     Nfa one_letter;
     /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions.
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
@@ -198,7 +198,7 @@ std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
     return ret;
 }
 
-bool mata::strings::is_lang_eps(const Nfa& aut) {
+bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
     Nfa tr_aut = Nfa{ aut }.trim();
     if(tr_aut.initial.size() == 0)
         return false;
@@ -209,11 +209,4 @@ bool mata::strings::is_lang_eps(const Nfa& aut) {
             return false;
     }
     return true;
-}
-
-Nfa mata::strings::reluctant_nfa(Nfa nfa) {
-    for (const State final: nfa.final) {
-        nfa.delta.mutable_state_post(final).clear();
-    }
-    return nfa;
 }

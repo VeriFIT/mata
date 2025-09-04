@@ -7,12 +7,12 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 
 using namespace mata::nfa;
-using namespace mata::strings;
-using namespace mata::strings::seg_nfa;
+using namespace mata::applications::strings;
+using namespace mata::applications::strings::seg_nfa;
 using namespace mata::utils;
 using namespace mata::nfa::builder;
 
@@ -193,7 +193,7 @@ TEST_CASE("mata::nfa::get_shortest_words() for profiling", "[.profiling][shortes
     }
 }
 
-TEST_CASE("mata::strings::get_lengths()") {
+TEST_CASE("mata::applications::strings::get_lengths()") {
 
     SECTION("basic") {
         Nfa x = create_from_regex("(abcde)*");
@@ -242,7 +242,7 @@ TEST_CASE("mata::strings::get_lengths()") {
     }
 }
 
-TEST_CASE("mata::strings::is_lang_eps()") {
+TEST_CASE("mata::applications::strings::is_lang_eps()") {
 
     SECTION("basic") {
         Nfa x = create_from_regex("(abcde)*");
@@ -268,17 +268,17 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
             CHECK(nfa.is_in_lang(word));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
-            CHECK(mata::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
+            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
         }
 
         SECTION("Empty string") {
             std::vector<mata::Symbol> word{};
             auto nfa{ builder::create_single_word_nfa(word) };
             CHECK(nfa.is_in_lang(word));
-            CHECK(mata::strings::is_lang_eps(nfa));
+            CHECK(mata::applications::strings::is_lang_eps(nfa));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
-            CHECK(mata::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
         }
     }
 
@@ -289,17 +289,17 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
             CHECK(nfa.is_in_lang(nfa.alphabet->translate_word(word)));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
-            CHECK(mata::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
+            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
         }
 
         SECTION("Empty string") {
             std::vector<mata::Symbol> word{};
             auto nfa{ builder::create_single_word_nfa(word) };
             CHECK(nfa.is_in_lang(word));
-            CHECK(mata::strings::is_lang_eps(nfa));
+            CHECK(mata::applications::strings::is_lang_eps(nfa));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
-            CHECK(mata::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
         }
 
         SECTION("Simple word with alphabet") {
@@ -312,12 +312,12 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
             CHECK(nfa.is_in_lang(nfa.alphabet->translate_word(word)));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
-            CHECK(mata::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
+            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
         }
     }
 }
 
-TEST_CASE("mata::strings::get_accepted_symbols()") {
+TEST_CASE("mata::applications::strings::get_accepted_symbols()") {
     Nfa x;
     std::set<mata::Symbol> symbols;
 

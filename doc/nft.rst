@@ -33,9 +33,3 @@ Algorithms
 Functions to operate on NFTs, such as inclusion and universality checking, etc.
 
 .. doxygenfile:: nft/algorithms.hh
-
-Strings
--------
-NFT algorithms and classes used for solving string constraints.
-
-.. doxygenfile:: nft/strings.hh

@@ -13,7 +13,6 @@
 #include "mata/nft/nft.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
-#include "mata/nft/strings.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;

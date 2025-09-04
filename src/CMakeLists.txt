@@ -17,9 +17,10 @@ add_library(libmata STATIC
 	nfa/complement.cc
 	nfa/product.cc
 	nfa/concatenation.cc
-	strings/nfa-noodlification.cc
-	strings/nfa-segmentation.cc
-	strings/nfa-strings.cc
+	applications/strings/noodlification.cc
+	applications/strings/segmentation.cc
+	applications/strings/strings.cc
+	applications/strings/replace.cc
 	nfa/delta.cc
 	nfa/operations.cc
 	nfa/builder.cc
@@ -33,7 +34,6 @@ add_library(libmata STATIC
 	nft/concatenation.cc
 	nft/operations.cc
 	nft/builder.cc
-	nft/strings.cc
 )
 
 # libmata needs at least c++20
