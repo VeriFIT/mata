@@ -460,9 +460,12 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 // from the waiting simulation, we are interested in onyl synchronizations on EPSILON.
                 const bool can_synchronize_in_the_future = (
                     waiting_worklist != nullptr ? copy_target_sync_type != SynchronizationType::ONLY_ON_SYMBOL
-                                                : stationar_state_sync_type == copy_target_sync_type ||
-                                                  stationar_state_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
-                                                  copy_target_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL
+                                                : exist_intersection_of_sync_types(stationar_state_sync_type, copy_target_sync_type) ||
+                                                stationar_state_sync_type == SynchronizationType::UNDEFINED ||
+                                                copy_target_sync_type == SynchronizationType::UNDEFINED
+                                                // : stationar_state_sync_type == copy_target_sync_type ||
+                                                //   stationar_state_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
+                                                //   copy_target_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL
                 );
                 if (!can_synchronize_in_the_future) {
                     // There is no way we would be able to synchronize in the future.
@@ -814,10 +817,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         // It makes sense to continue only if we believe that synchronization is possible,
         // or if we have already passed the synchronization level (i.e., lhs_sync_type ==
-        // rhs_sync_type == SynchronizationType::UNDEFINED).
+        // SynchronizationType::UNDEFINED or rhs_sync_type == SynchronizationType::UNDEFINED).
         assert(exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type) ||
                (lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::UNDEFINED) ||
-               (rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::UNDEFINED)
+               (rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::UNDEFINED) ||
+               (lhs_level > lhs_sync_level && rhs_level > rhs_sync_level &&lhs_sync_type == SynchronizationType::UNDEFINED && rhs_sync_type == SynchronizationType::UNDEFINED)
         );
 
         // Both LHS and RHS can take a step if they are not at the synchronization level.
