@@ -12,14 +12,14 @@
 
 using namespace mata;
 using namespace mata::nft;
-using namespace mata::strings;
-using namespace mata::strings::replace;
+using namespace mata::applications::strings;
+using namespace mata::applications::strings::replace;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 using mata::EnumAlphabet;
 
-class ReluctantReplaceSUT: public strings::replace::ReluctantReplace {
-    using super = strings::replace::ReluctantReplace;
+class ReluctantReplaceSUT: public applications::strings::replace::ReluctantReplace {
+    using super = applications::strings::replace::ReluctantReplace;
 public:
     using super::reluctant_nfa_with_marker, super::replace_literal_nft, super::generic_marker_dfa, super::end_marker_dfa,
           super::marker_nft, super::reluctant_leftmost_nft, super::begin_marker_nfa, super::begin_marker_nft,
@@ -514,7 +514,7 @@ TEST_CASE("nft::reluctant_replacement()") {
     }
 }
 
-TEST_CASE("mata::strings::reluctant_nfa_with_marker()") {
+TEST_CASE("mata::applications::strings::reluctant_nfa_with_marker()") {
     Nft nft{};
     nfa::Nfa regex{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
@@ -528,7 +528,7 @@ TEST_CASE("mata::strings::reluctant_nfa_with_marker()") {
     }
 }
 
-TEST_CASE("mata::strings::reluctant_leftmost_nft()") {
+TEST_CASE("mata::applications::strings::reluctant_leftmost_nft()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
@@ -569,7 +569,7 @@ TEST_CASE("mata::strings::reluctant_leftmost_nft()") {
     }
 }
 
-TEST_CASE("mata::strings::literal_replace_nft()") {
+TEST_CASE("mata::applications::strings::literal_replace_nft()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
@@ -607,13 +607,13 @@ TEST_CASE("mata::strings::literal_replace_nft()") {
     }
 }
 
-TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
+TEST_CASE("mata::applications::strings::replace::replace_reluctant_literal()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
 
     SECTION("'' replace with 'abc' replace single") {
-        nft = strings::replace::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
                                    { 'a', 'b', 'c', 'b', 'b' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'b' },
@@ -621,7 +621,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
      }
 
     SECTION("'' replace with 'abc' replace all") {
-        nft = strings::replace::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
                                    { 'b', 'b' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'b' },
@@ -629,7 +629,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
      }
 
     SECTION("'abcc' replace with 'a' replace all") {
-        nft = strings::replace::replace_reluctant_literal(Word{ 'a', 'b', 'c', 'c' }, Word{ 'a' },  &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_literal(Word{ 'a', 'b', 'c', 'c' }, Word{ 'a' },  &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'b', 'c', 'c' },
                                    { 'a' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'b', 'c', 'c' },
@@ -658,7 +658,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
     }
 
    SECTION("'abcc' replace with 'dd' replace single") {
-       nft = strings::replace::replace_reluctant_literal(Word{ 'a', 'b', 'c', 'c' }, Word{ 'd', 'd' },  &alphabet, ReplaceMode::Single);
+       nft = applications::strings::replace::replace_reluctant_literal(Word{ 'a', 'b', 'c', 'c' }, Word{ 'd', 'd' },  &alphabet, ReplaceMode::Single);
        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'b', 'c', 'c', 'a' },
                                   { 'a', 'a', 'a', 'b', 'a', 'a', 'd', 'd', 'a', 'a', 'b', 'c', 'c', 'a' } }));
        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c' },
@@ -670,7 +670,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
    }
 
    SECTION("'aabac' replace with 'd' replace all") {
-       nft = strings::replace::replace_reluctant_literal(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{ 'd' }, &alphabet,
+       nft = applications::strings::replace::replace_reluctant_literal(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{ 'd' }, &alphabet,
                                                    ReplaceMode::All);
        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                   { 'a', 'a', 'a', 'b', 'a', 'd', 'a' } }));
@@ -684,7 +684,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
    }
 
     SECTION("drop all 'aabac'") {
-        nft = strings::replace::replace_reluctant_literal(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{}, &alphabet,
+        nft = applications::strings::replace::replace_reluctant_literal(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{}, &alphabet,
                                                       ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'a' } }));
@@ -700,7 +700,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
     }
 
     SECTION("drop single 'aabac'") {
-        nft = strings::replace::replace_reluctant_literal(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{}, &alphabet,
+        nft = applications::strings::replace::replace_reluctant_literal(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{}, &alphabet,
                                                       ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a', 'a', 'b', 'a', 'c' },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c'} }));
@@ -714,14 +714,14 @@ TEST_CASE("mata::strings::replace::replace_reluctant_literal()") {
     }
 }
 
-TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
+TEST_CASE("mata::applications::strings::replace::replace_reluctant_single_symbol()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
 
     SECTION("'a' replace with 'b' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_single_symbol('a', 'd', &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', 'd', &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'd', 'b', 'd', 'd', 'd', 'b', 'd', 'c', 'd' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -734,7 +734,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
         CHECK(nft::are_equivalent(nft, expected));
 
         // Use replace symbol with literal containing a single symbol.
-        nft = strings::replace::replace_reluctant_single_symbol('a', Word{ 'd' }, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', Word{ 'd' }, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'd', 'b', 'd', 'd', 'd', 'b', 'd', 'c', 'd' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -746,7 +746,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
 
     SECTION("'a' replace with 'b' replace single") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_single_symbol('a', 'd', &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', 'd', &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -759,7 +759,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
         CHECK(nft::are_equivalent(nft, expected));
 
         // Use replace symbol with literal containing a single symbol.
-        nft = strings::replace::replace_reluctant_single_symbol('a', Word{ 'd' }, &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', Word{ 'd' }, &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -772,7 +772,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
     }
 
     SECTION("'a' replace with 'bb' replace all") {
-        nft = strings::replace::replace_reluctant_single_symbol('a', Word{ 'b', 'b' }, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', Word{ 'b', 'b' }, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'c', 'b', 'b' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -786,7 +786,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
     }
 
     SECTION("drop all 'a'") {
-        nft = strings::replace::replace_reluctant_single_symbol('a', Word{}, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', Word{}, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'b', 'b', 'c' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -800,7 +800,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
     }
 
     SECTION("drop single 'a'") {
-        nft = strings::replace::replace_reluctant_single_symbol('a', Word{}, &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_single_symbol('a', Word{}, &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -814,13 +814,13 @@ TEST_CASE("mata::strings::replace::replace_reluctant_single_symbol()") {
     }
 }
 
-TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
+TEST_CASE("mata::applications::strings::replace::replace_reluctant_regex()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
 
     SECTION("'' replace with 'abc' replace single") {
-        nft = strings::replace::replace_reluctant_regex("a*", Word{ 'b', 'b', 'b' },  &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_regex("a*", Word{ 'b', 'b', 'b' },  &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'b', 'b' },
                                    { 'b', 'b', 'b', 'a', 'b', 'b' } }));
         CHECK(nft.is_tuple_in_lang({ { 'c', 'c' },
@@ -828,7 +828,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
      }
 
     SECTION("'' replace with 'abc' replace all") {
-        nft = strings::replace::replace_reluctant_regex("a*", Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a*", Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
                                    { 'b', 'b' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'b' },
@@ -837,7 +837,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("'a+b+c' replace with 'dd' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a+b+c", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a+b+c", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -855,7 +855,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("'a' replace with 'd' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a", Word{ 'd' }, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a", Word{ 'd' }, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'd', 'b', 'd', 'd', 'd', 'b', 'd', 'c', 'd' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -867,7 +867,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("drop 'a' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a", Word{}, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a", Word{}, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'b', 'b', 'c' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -879,7 +879,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("drop 'a' replace single") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a", Word{}, &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_regex("a", Word{}, &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -891,7 +891,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("drop 'a+b' replace single") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a+b", Word{}, &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_regex("a+b", Word{}, &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -903,7 +903,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("drop 'a+b' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a+b", Word{}, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a+b", Word{}, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -915,7 +915,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("replace 'a+b' with 'dd' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a+b", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a+b", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'd', 'd', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -927,7 +927,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("replace 'a+b' with 'dd' replace single") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a+b", Word{ 'd', 'd' }, &alphabet, ReplaceMode::Single);
+        nft = applications::strings::replace::replace_reluctant_regex("a+b", Word{ 'd', 'd' }, &alphabet, ReplaceMode::Single);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -939,7 +939,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
 
     SECTION("replace 'a*b*c' with 'dd' replace all") {
         // Use replace symbol with symbol.
-        nft = strings::replace::replace_reluctant_regex("a*b*c", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex("a*b*c", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'd', 'd', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'a' },
@@ -959,7 +959,7 @@ TEST_CASE("mata::strings::replace::replace_reluctant_regex()") {
         ));
         mata::Word replacement{ 66, 76, 79, 67, 75, 69, 68 };
         alphabet = mata::EnumAlphabet{ 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 60, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 83, 84, 86, 87, 92, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 112, 114, 115, 116, 119, 120, 121, 196608 };
-        nft = strings::replace::replace_reluctant_regex(regex, replacement, &alphabet, ReplaceMode::All);
+        nft = applications::strings::replace::replace_reluctant_regex(regex, replacement, &alphabet, ReplaceMode::All);
 
         CHECK(nft.is_tuple_in_lang({ { '<', 'S', 'C', 'R', 'I', 'P', 'T', '<', '<', '<', '<' },
                                      { 'B', 'L', 'O', 'C', 'K', 'E', 'D', '<', '<', '<', '<' } }));

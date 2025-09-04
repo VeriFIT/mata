@@ -17,8 +17,8 @@ using namespace mata::nft;
 using mata::nft::State;
 using mata::nft::Level;
 using mata::nft::Nft;
-using strings::replace::ReplaceMode;
-using strings::replace::ReluctantReplace;
+using applications::strings::replace::ReplaceMode;
+using applications::strings::replace::ReluctantReplace;
 
 namespace {
     template<class Sequence>
@@ -181,7 +181,7 @@ namespace {
     }
 }
 
-Nfa mata::strings::replace::reluctant_nfa(Nfa nfa) {
+Nfa mata::applications::strings::replace::reluctant_nfa(Nfa nfa) {
     for (const State final: nfa.final) {
         nfa.delta.mutable_state_post(final).clear();
     }
@@ -189,7 +189,7 @@ Nfa mata::strings::replace::reluctant_nfa(Nfa nfa) {
 }
 
 
-Nft mata::strings::replace::create_identity(mata::Alphabet* alphabet, const size_t num_of_levels) {
+Nft mata::applications::strings::replace::create_identity(mata::Alphabet* alphabet, const size_t num_of_levels) {
     if (num_of_levels == 0) { throw std::runtime_error("NFT must have at least one level"); }
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
 //    const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
@@ -199,12 +199,12 @@ Nft mata::strings::replace::create_identity(mata::Alphabet* alphabet, const size
     return nft;
 }
 
-Nft mata::strings::replace::create_identity_with_single_symbol_replace(
+Nft mata::applications::strings::replace::create_identity_with_single_symbol_replace(
     Alphabet* alphabet, const Symbol from_symbol, const Symbol replacement, const ReplaceMode replace_mode) {
     return create_identity_with_single_symbol_replace(alphabet, from_symbol, Word{ replacement }, replace_mode);
 }
 
-Nft strings::replace::create_identity_with_single_symbol_replace(Alphabet* alphabet, const Symbol from_symbol,
+Nft applications::strings::replace::create_identity_with_single_symbol_replace(Alphabet* alphabet, const Symbol from_symbol,
                                                              const Word& replacement, const ReplaceMode replace_mode) {
     Nft nft{ create_identity(alphabet) };
     if (alphabet->empty()) { throw std::runtime_error("Alphabet does not contain symbol being replaced."); }
@@ -244,7 +244,7 @@ Nft strings::replace::create_identity_with_single_symbol_replace(Alphabet* alpha
     return nft;
 }
 
-Nft mata::strings::replace::replace_reluctant_regex(
+Nft mata::applications::strings::replace::replace_reluctant_regex(
     const std::string& regex,
     const Word& replacement,
     Alphabet* alphabet,
@@ -254,7 +254,7 @@ Nft mata::strings::replace::replace_reluctant_regex(
     return replace_reluctant_regex(nfa::builder::create_from_regex(regex), replacement, alphabet, replace_mode, begin_marker);
 }
 
-Nft mata::strings::replace::replace_reluctant_regex(
+Nft mata::applications::strings::replace::replace_reluctant_regex(
     nfa::Nfa regex,
     const Word& replacement,
     Alphabet* alphabet,
@@ -364,7 +364,7 @@ Nft ReluctantReplace::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbo
 
 nfa::Nfa ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol marker, Alphabet* alphabet) {
     // Convert to reluctant NFA.
-    nfa = mata::strings::replace::reluctant_nfa(nfa);
+    nfa = mata::applications::strings::replace::reluctant_nfa(nfa);
 
     // Add marker self-loops to accept begin markers inside the shortest match.
     for (State state{ 0 }; state < nfa.num_of_states(); ++state) {
@@ -387,7 +387,7 @@ nfa::Nfa ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol 
     nfa_avoid_removing_next_begin_marker.delta.add(1, marker, 1);
     // TODO(nft): Leaves a non-terminating begin_marker transitions in a form of a lasso from final states.
     //  These lassos should be removed to further optimize NFT creation.
-    return mata::strings::replace::reluctant_nfa(reduce(intersection(nfa, nfa_avoid_removing_next_begin_marker)));
+    return mata::applications::strings::replace::reluctant_nfa(reduce(intersection(nfa, nfa_avoid_removing_next_begin_marker)));
 }
 
 Nft ReluctantReplace::reluctant_leftmost_nft(const std::string& regex, Alphabet* alphabet, Symbol begin_marker,
@@ -452,8 +452,8 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
     return nft_reluctant_leftmost;
 }
 
-Nft strings::replace::replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
-                                            strings::replace::ReplaceMode replace_mode, Symbol end_marker) {
+Nft applications::strings::replace::replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
+                                            applications::strings::replace::ReplaceMode replace_mode, Symbol end_marker) {
     return ReluctantReplace::replace_literal(literal, replacement, alphabet, replace_mode, end_marker);
 }
 
@@ -483,12 +483,12 @@ Nft ReluctantReplace::replace_literal_nft(const Word& literal, const Word& repla
     return nft;
 }
 
-Nft strings::replace::replace_reluctant_single_symbol(Symbol from_symbol, const Word& replacement, mata::Alphabet* alphabet,
+Nft applications::strings::replace::replace_reluctant_single_symbol(Symbol from_symbol, const Word& replacement, mata::Alphabet* alphabet,
                                                   ReplaceMode replace_mode) {
     return ReluctantReplace::replace_symbol(from_symbol, replacement, alphabet, replace_mode);
 }
 
-Nft strings::replace::replace_reluctant_single_symbol(Symbol from_symbol, Symbol replacement, mata::Alphabet* alphabet,
+Nft applications::strings::replace::replace_reluctant_single_symbol(Symbol from_symbol, Symbol replacement, mata::Alphabet* alphabet,
                                                   ReplaceMode replace_mode) {
     return ReluctantReplace::replace_symbol(from_symbol, replacement, alphabet, replace_mode);
 }
@@ -534,7 +534,7 @@ Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replaceme
     // ; left-to-right order.
     // (str.replace_all String String String String)
     if (replace_mode == ReplaceMode::All && literal == Word{}) {
-        return strings::replace::create_identity(alphabet);
+        return applications::strings::replace::create_identity(alphabet);
     }
 
     ReluctantReplace reluctant_replace{};

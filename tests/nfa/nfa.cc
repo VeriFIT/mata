@@ -18,7 +18,7 @@
 using namespace mata;
 using namespace mata::nfa::algorithms;
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 using namespace mata::nfa::plumbing;
 using namespace mata::utils;
 using namespace mata::parser;

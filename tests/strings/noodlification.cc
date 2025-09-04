@@ -10,7 +10,7 @@
 #include "mata/nfa/builder.hh"
 
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 using namespace mata::utils;
 using namespace mata::nfa::builder;
 

@@ -20,7 +20,7 @@
 using namespace mata;
 using namespace mata::nft::algorithms;
 using namespace mata::nft;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 using namespace mata::nft::plumbing;
 using namespace mata::utils;
 using namespace mata::parser;
@@ -5578,7 +5578,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
     SECTION("replace reluctant regex NFT") {
         Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{ mata::strings::replace::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
+        Nft nft{ mata::applications::strings::replace::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
@@ -5595,7 +5595,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
     SECTION("replace reluctant literal NFT") {
         Nfa nfa = nfa::builder::create_from_regex("dabce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{ mata::strings::replace::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
+        Nft nft{ mata::applications::strings::replace::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();

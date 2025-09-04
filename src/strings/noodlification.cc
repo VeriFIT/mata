@@ -8,7 +8,7 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/nft/algorithms.hh"
 
-using namespace mata::strings;
+using namespace mata::applications::strings;
 
 namespace {
 

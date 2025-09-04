@@ -4,7 +4,7 @@
 #include "mata/applications/strings.hh"
 
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 
 void seg_nfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair,
                                                      std::deque<StateDepthTuple>& worklist) {

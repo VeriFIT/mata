@@ -10,7 +10,7 @@
 /**
  * NFA algorithms usable for solving string constraints.
  */
-namespace mata::strings {
+namespace mata::applications::strings {
 
 using Nfa = nfa::Nfa;
 using State = nfa::State;
@@ -598,8 +598,8 @@ protected:
                             ReplaceMode replace_mode = ReplaceMode::All);
 };
 
-} // namespace mata::strings::replace
+} // namespace mata::applications::strings::replace
 
-} // namespace mata::strings.
+} // namespace mata::applications::strings.
 
 #endif // MATA_STRING_SOLVING_HH_.

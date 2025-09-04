@@ -135,7 +135,7 @@ The directory structure is as follows:
     - `__init__.py`: An empty file necessary to define the package.
     - `nfa/`: Package for nondeterministic finite automata, corresponding to the `mata::nfa::` namespace.
         - `nfa.*`: Wrappers for `mata::nfa::Nfa` members and related structures or algorithms.
-        - `strings.*`: Wrappers for `mata::strings` members and related structures or algorithms.
+        - `strings.*`: Wrappers for `mata::applications::strings` members and related structures or algorithms.
     - `alphabets.*`: Wrappers for `mata::Alphabet` members and related structures or algorithms.
     - `parser.*`: Wrappers for `mata::parser` members and related structures or algorithms.
     - `plotting.*`: Helper functions for displaying `libmata` members in Python code, interpreters, Jupyter notebooks, etc.
@@ -309,7 +309,7 @@ cdef extern from "mata/re2parser.hh" namespace "mata::parser":
     in Python).
 
 ```cython
-cdef NoodleSequence c_noodlify "mata::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
+cdef NoodleSequence c_noodlify "mata::applications::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
 #                   ^-- name visible in Cython
 #                              ^-- original full C/C++ name
 ```
