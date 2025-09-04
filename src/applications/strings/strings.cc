@@ -213,6 +213,7 @@ bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
 
 std::optional<std::vector<mata::Word>> mata::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
     assert(nft.num_of_levels == lengths.size());
+    assert(!nft.contains_jump_transitions());
     if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
     if (nft.initial.intersects_with(nft.final) && std::all_of(lengths.begin(), lengths.end(), [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
 
@@ -244,7 +245,7 @@ std::optional<std::vector<mata::Word>> mata::strings::get_words_of_lengths(const
             if (state_post_it != state_post_end) {
                 Symbol cur_symbol = state_post_it->symbol;
                 nft::Level cur_level = nft.levels[cur_state];
-                if (targets_it != state_post_it->targets.cend() || (cur_symbol != EPSILON && lengths[cur_level] == result[cur_level].size())) {
+                if (targets_it == state_post_it->targets.cend() || (cur_symbol != EPSILON && lengths[cur_level] == result[cur_level].size())) {
                     ++state_post_it;
                     if (state_post_it != state_post_end) { targets_it = state_post_it->cbegin(); }
                 } else {
@@ -263,14 +264,17 @@ std::optional<std::vector<mata::Word>> mata::strings::get_words_of_lengths(const
                 }
             } else { // state_post_it == state_post_end.
                 worklist.pop_back();
-                auto& [prev_state, prev_state_post_it, _prev_state_post_end, prev_targets_it]{ worklist.back() };
-                Symbol prev_symbol = prev_state_post_it->symbol;
-                nft::Level prev_level = nft.levels[prev_state];
-                if (prev_symbol != EPSILON) {
-                    assert(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
-                    result[prev_level].pop_back();
+                if (!worklist.empty()) {
+                    auto& [prev_state, prev_state_post_it, prev_state_post_end, prev_targets_it]{ worklist.back() };
+                    assert(prev_state_post_it != prev_state_post_end);
+                    Symbol prev_symbol = prev_state_post_it->symbol;
+                    nft::Level prev_level = nft.levels[prev_state];
+                    if (prev_symbol != EPSILON) {
+                        assert(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
+                        result[prev_level].pop_back();
+                    }
+                    ++prev_targets_it;
                 }
-                ++prev_targets_it;
             }
         }
     }
