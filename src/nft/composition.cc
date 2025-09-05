@@ -459,13 +459,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 // later due to an inability to synchronize. When this function is called
                 // from the waiting simulation, we are interested in onyl synchronizations on EPSILON.
                 const bool can_synchronize_in_the_future = (
-                    waiting_worklist != nullptr ? copy_target_sync_type != SynchronizationType::ONLY_ON_SYMBOL
+                    waiting_worklist != nullptr ? copy_target_sync_type != SynchronizationType::ONLY_ON_SYMBOL ||
+                                                  copy_nft.levels[copy_target] == 0  // End of the waiting loop.
                                                 : exist_intersection_of_sync_types(stationar_state_sync_type, copy_target_sync_type) ||
-                                                stationar_state_sync_type == SynchronizationType::UNDEFINED ||
-                                                copy_target_sync_type == SynchronizationType::UNDEFINED
-                                                // : stationar_state_sync_type == copy_target_sync_type ||
-                                                //   stationar_state_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL ||
-                                                //   copy_target_sync_type == SynchronizationType::ON_EPSILON_AND_SYMBOL
+                                                  stationar_state_sync_type == SynchronizationType::UNDEFINED ||
+                                                  copy_target_sync_type == SynchronizationType::UNDEFINED
                 );
                 if (!can_synchronize_in_the_future) {
                     // There is no way we would be able to synchronize in the future.
@@ -529,11 +527,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         // but rather in virtual (nonexistent) states of the waiting loop over it.
                         const State new_composition_state = result.add_state_with_level(new_composition_state_level);
                         result.add_transition_with_target(composition_state, copy_symbol_post.symbol, new_composition_state, jump_mode);
-                        // Because we are waiting, use the waiting_worklist.
-                        waiting_worklist->push({ new_composition_state, stationar_state });
+                        // Sometimes, the running root state gets pushed to the worklist again. We need to handle it during the pop.
+                        waiting_worklist->push({ new_composition_state, copy_target });
                     } else {
                         // Just copy this transition.
-                        assert(waiting_worklist == nullptr);
                         result.add_transition_with_target(
                             composition_state,
                             copy_symbol_post.symbol,
@@ -601,28 +598,56 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             (project_out_sync_levels ? 0 : 1)
         );
 
+        // A special case we need to handle here.
+        // In some cases, the running NFT has only one level.
+        // This can happen when applying NFA to NFT. In that case,
+        // we can and need to simply add EPSILON transitions to the targets
+        // of the EPSILON transitions from the running root state.
+        if (running_num_of_levels == 1) {
+            assert(num_of_epsilons_to_replace_sync > 0);
+            const auto epsilon_target_it = running_delta[running_root_state].find(EPSILON);
+            // There has to be some EPSILON transition. Otherwise, there would be no reason to wait.
+            assert(epsilon_target_it != running_delta[running_root_state].end());
+            StateSet new_composition_targets;
+            for (const State epsilon_target : epsilon_target_it->targets) {
+                assert(running_levels[epsilon_target] == 0);
+                new_composition_targets.insert(create_composition_state(waiting_root_state,
+                                                                        epsilon_target,
+                                                                        0,
+                                                                        is_lhs_waiting));
+            }
+            // This function ensures that the transitions are added in the most optimal way.
+            // It creates one common path for all targets and then use only the last transitions of
+            // that path to connect to all targets.
+            result.add_transition_with_same_level_targets(composition_root_state, EPSILON, new_composition_targets, jump_mode);
+            return;
+        }
+
         // Initialization of the local worklist.
         // I chose to use a queue instead of a stack to help the branch predictor
         // with conditions inside the loop. With the queue, the algorithm hits the
         // same branch more ofthen, because all states being explored advance "together".
         std::queue<std::pair<State, State>> worklist;
+        State first_composition_state = composition_root_state;
         if (is_lhs_waiting && waiting_trans_before_sync > 0) {
             // Since LHS is waiting and LHS transitions have to be put before
             // RHS transitions, we now add waiting_trans_before_sync EPSILON
             // transitions. Doing this here simplifies the conditions in the loop below.
-            const State new_composition_state = result.add_transition_with_lenght(composition_root_state, EPSILON, waiting_trans_before_sync, jump_mode);
-            worklist.push({ std::move(new_composition_state), running_root_state });
-        } else {
-            worklist.push({ composition_root_state, running_root_state });
+            first_composition_state = result.add_transition_with_lenght(composition_root_state, EPSILON, waiting_trans_before_sync, jump_mode);
         }
+        worklist.push({ first_composition_state, running_root_state });
 
         // The main loop of the waiting simulation.
         while (!worklist.empty()) {
             auto [composition_state, running_state] = worklist.front();
             worklist.pop();
             const Level running_state_level = running_levels[running_state];
-
-            if (running_state_level == sync_level) {
+            const Level composition_state_level = result.levels[composition_state];
+            // If the synchronization level is on 0. Than we can be careful to not use it
+            // again when encountering next zero-level states in the running NFT.
+            const bool first_running_transition = (running_state == running_root_state && composition_state == first_composition_state);
+            const bool is_sync_level = running_state_level == sync_level && (running_state_level != 0 || first_running_transition);
+            if (is_sync_level) {
                 // We are at the synchronization level.
                 const bool is_last_running_transition = (running_state_level == running_sync_props.nft.num_of_levels - 1);
 
@@ -646,13 +671,13 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 // There should be an EPSILON transition. It has been told by the SynchronizationType.
                 assert(running_epsilon_post_it != running_delta[running_state].end());
                 for (const State running_epsilon_target : running_epsilon_post_it->targets) {
-                    if (running_state_level == 0 && running_num_of_levels != 1 && running_levels[running_epsilon_target]) {
+                    if (running_state_level == 0 && running_num_of_levels != 1 && running_levels[running_epsilon_target] == 0) {
                         // Skip fast EPSILON transitions.
                         continue;
                     }
                     assert(running_levels[running_epsilon_target] == 0 || running_levels[running_epsilon_target] > running_state_level);
                     if (num_of_epsilons_to_replace_sync == 0) {
-                        // This synchronization level is being projected out (it has vanished).
+                        // This synchronization level is being projected out (it will vanish).
                         // There are no EPSILON transitions to add before or after the synchronization level.
                         // However, we are sure, that there will be a least one "running" transition after this.
                         assert(!is_last_running_transition);
@@ -674,12 +699,12 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                     } else {
                         // We are connecting to the next state in the waiting loop,
                         // so we simply add a transition to the next state and
-                        // continue the waiting
+                        // continue the waiting.
                         const State new_composition_state = result.add_transition_with_lenght(composition_state, EPSILON, 1, jump_mode);
                         worklist.push({ new_composition_state, running_epsilon_target });
                     }
                 }
-            } else if (running_state_level == 0 && running_state != running_root_state) {
+            } else if (running_state_level == 0 && !first_running_transition) {
                 // We are at a leaf zero-level state in the running NFT.
                 // We will create a connection to the zero-level state in the composition NFT
                 // and continue exploring that state in the main composition loop
@@ -691,17 +716,16 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 assert(!is_lhs_waiting);
                 assert(sync_level != running_sync_props.nft.num_of_levels - 1);
                 assert(waiting_trans_after_sync > 0);
-                assert((running_state_level + waiting_trans_after_sync) % result.num_of_levels == 0);
+                assert((composition_state_level + waiting_trans_after_sync) == result.num_of_levels);
                 result.add_transition_with_target(
                     composition_state,
                     EPSILON,
                     create_composition_state(running_state,
-                                             running_root_state,
-                                             0,
-                                             is_lhs_waiting),
+                                             waiting_root_state,
+                                             0),
                     jump_mode
                 );
-            } else {
+            }else {
                 // We are at an internal (non-sync) level in the running NFT.
                 // We can simply copy the transitions to the next states.
                 // We do not need to worry that the target state might be at the
