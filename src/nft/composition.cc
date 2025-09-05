@@ -676,17 +676,16 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         continue;
                     }
                     assert(running_levels[running_epsilon_target] == 0 || running_levels[running_epsilon_target] > running_state_level);
-                    if (num_of_epsilons_to_replace_sync == 0) {
+                    if (num_of_epsilons_to_replace_sync == 0 && !is_last_running_transition) {
                         // This synchronization level is being projected out (it will vanish).
                         // There are no EPSILON transitions to add before or after the synchronization level.
                         // However, we are sure, that there will be a least one "running" transition after this.
-                        assert(!is_last_running_transition);
                         worklist.push({ composition_state, running_epsilon_target });
                     } else if (is_last_running_transition) {
                         // We are connecting to the zero-level state, therefore we have to
                         // create a new composition state that will be put into the main worklist
                         // (side effect of the create_composition_state).
-                        assert(result.levels[composition_state] + 1 == result.num_of_levels);
+                        assert(result.levels[composition_state] + (num_of_epsilons_to_replace_sync >= 1 ? 1 : 0) + (is_lhs_waiting ? 0 : waiting_trans_after_sync) == result.num_of_levels);
                         result.add_transition_with_target(
                             composition_state,
                             EPSILON,

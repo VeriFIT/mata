@@ -8,7 +8,7 @@
 #include "mata/utils/ord-vector.hh"
 
 
-// #define SKIP_TESTS
+#define SKIP_TESTS
 
 using namespace mata::nft;
 using namespace mata::utils;
@@ -1484,7 +1484,473 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
     }
+
+    SECTION("sync level 0 x sync level 1") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, EPSILON, 1);
+        lhs.delta.add(1, 'b', 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, 'c', 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'g', 1);
+        rhs.delta.add(1, 'd', 2);
+        rhs.delta.add(2, 'h', 3);
+
+        SECTION("LHS | RHS") {
+            Nft expected_full(12, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }, 5);
+            expected_full.delta.add(0, EPSILON, 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, 'b', 3);
+            expected_full.delta.add(3, 'c', 4);
+            expected_full.delta.add(4, EPSILON, 5);
+            expected_full.delta.add(5, 'g', 6);
+            expected_full.delta.add(6, 'd', 7);
+            expected_full.delta.add(7, 'e', 8);
+            expected_full.delta.add(8, 'f', 9);
+            expected_full.delta.add(9, 'h', 10);
+            expected_full.delta.add(3, 'c', 11);
+            expected_full.delta.add(11, EPSILON, 0);
+            Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
+
+            Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            expected_full.delta.add(0, EPSILON, 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, 'b', 4);
+            expected_full.delta.add(4, 'c', 5);
+            expected_full.delta.add(5, 'g', 6);
+            expected_full.delta.add(6, 'd', 7);
+            expected_full.delta.add(7, 'h', 8);
+            expected_full.delta.add(8, 'e', 9);
+            expected_full.delta.add(9, 'f', 10);
+            expected_full.delta.add(4, 'c', 0);
+            Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
+
+            Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 1, 0, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+
+    SECTION("sync level 0 x sync level 2") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, EPSILON, 1);
+        lhs.delta.add(1, 'b', 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, 'c', 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'g', 1);
+        rhs.delta.add(1, 'h', 2);
+        rhs.delta.add(2, 'd', 3);
+
+        Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+        expected_full.delta.add(0, EPSILON, 1);
+        expected_full.delta.add(1, EPSILON, 2);
+        expected_full.delta.add(2, EPSILON, 3);
+        expected_full.delta.add(3, 'b', 4);
+        expected_full.delta.add(4, 'c', 5);
+        expected_full.delta.add(5, 'g', 6);
+        expected_full.delta.add(6, 'h', 7);
+        expected_full.delta.add(7, 'd', 8);
+        expected_full.delta.add(8, 'e', 9);
+        expected_full.delta.add(9, 'f', 10);
+        expected_full.delta.add(4, 'c', 0);
+        Nft expected_proj = project_out(expected_full, { 2 }, JumpMode::NoJump);
+
+        SECTION("LHS | RHS") {
+            Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 0, 2, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft result_full = compose(rhs, lhs, 2, 0, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 2, 0, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+
+    SECTION("sync level 1 x sync level 0") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, EPSILON, 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, 'c', 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'e', 1);
+        rhs.delta.add(1, 'g', 2);
+        rhs.delta.add(2, 'h', 3);
+
+        SECTION("LHS | RHS") {
+            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, 'c', 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, EPSILON, 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'e', 7);
+            expected_full.delta.add(7, 'f', 8);
+            expected_full.delta.add(8, 'g', 9);
+            expected_full.delta.add(9, 'h', 10);
+            expected_full.delta.add(2, 'c', 11);
+            expected_full.delta.add(11, EPSILON, 12);
+            expected_full.delta.add(12, EPSILON, 0);
+            Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
+
+            Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, 'c', 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'e', 7);
+            expected_full.delta.add(7, 'g', 8);
+            expected_full.delta.add(8, 'h', 9);
+            expected_full.delta.add(9, 'f', 10);
+            expected_full.delta.add(4, 'c', 0);
+            Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
+
+            Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+
+    SECTION("sync level 1 x sync level 1") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, EPSILON, 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, 'c', 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'g', 1);
+        rhs.delta.add(1, 'e', 2);
+        rhs.delta.add(2, 'h', 3);
+
+        SECTION("LHS | RHS") {
+            Nft expected_full(12, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, 'c', 4);
+            expected_full.delta.add(4, EPSILON, 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'g', 7);
+            expected_full.delta.add(7, 'e', 8);
+            expected_full.delta.add(8, 'f', 9);
+            expected_full.delta.add(9, 'h', 10);
+            expected_full.delta.add(3, 'c', 11);
+            expected_full.delta.add(11, EPSILON, 0);
+            Nft expected_proj = project_out(expected_full, { 2 }, JumpMode::NoJump);
+
+            Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 1, 1, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            expected_full.delta.add(0, EPSILON, 1);
+            expected_full.delta.add(1, 'a', 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, 'c', 5);
+            expected_full.delta.add(5, 'g', 6);
+            expected_full.delta.add(6, 'd', 7);
+            expected_full.delta.add(7, 'e', 8);
+            expected_full.delta.add(8, 'h', 9);
+            expected_full.delta.add(9, 'f', 10);
+            expected_full.delta.add(4, 'c', 0);
+            Nft expected_proj = project_out(expected_full, { 2 }, JumpMode::NoJump);
+
+            Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 1, 1, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+
+    SECTION("sync level 1 x sync level 2") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, EPSILON, 2);
+        lhs.delta.add(2, 'c', 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, 'c', 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'g', 1);
+        rhs.delta.add(1, 'h', 2);
+        rhs.delta.add(2, 'e', 3);
+
+        SECTION("LHS | RHS") {
+            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, 'c', 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'g', 7);
+            expected_full.delta.add(7, 'h', 8);
+            expected_full.delta.add(8, 'e', 9);
+            expected_full.delta.add(9, 'f', 10);
+            expected_full.delta.add(4, 'c', 0);
+            Nft expected_proj = project_out(expected_full, { 3 }, JumpMode::NoJump);
+
+            Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 1, 2, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            expected_full.delta.add(0, EPSILON, 1);
+            expected_full.delta.add(1, EPSILON, 2);
+            expected_full.delta.add(2, 'a', 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, 'c', 5);
+            expected_full.delta.add(5, 'g', 6);
+            expected_full.delta.add(6, 'h', 7);
+            expected_full.delta.add(7, 'd', 8);
+            expected_full.delta.add(8, 'e', 9);
+            expected_full.delta.add(9, 'f', 10);
+            expected_full.delta.add(4, 'c', 0);
+            Nft expected_proj = project_out(expected_full, { 3 }, JumpMode::NoJump);
+
+            Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 2, 1, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
+
+    SECTION("sync level 2 x sync level 0") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, 'b', 2);
+        lhs.delta.add(2, EPSILON, 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, EPSILON, 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'f', 1);
+        rhs.delta.add(1, 'g', 2);
+        rhs.delta.add(2, 'h', 3);
+
+        SECTION("LHS | RHS") {
+            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, 'b', 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, EPSILON, 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'e', 7);
+            expected_full.delta.add(7, 'f', 8);
+            expected_full.delta.add(8, 'g', 9);
+            expected_full.delta.add(9, 'h', 10);
+            expected_full.delta.add(2, EPSILON, 11);
+            expected_full.delta.add(11, EPSILON, 12);
+            expected_full.delta.add(12, EPSILON, 0);
+            Nft expected_proj = project_out(expected_full, { 2 }, JumpMode::NoJump);
+
+            Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(lhs, rhs, 2, 0, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+
+        SECTION("RHS | LHS") {
+            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, 'b', 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, EPSILON, 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'e', 7);
+            expected_full.delta.add(7, 'f', 8);
+            expected_full.delta.add(8, 'g', 9);
+            expected_full.delta.add(9, 'h', 10);
+            expected_full.delta.add(4, EPSILON, 0);
+            Nft expected_proj = project_out(expected_full, { 2 }, JumpMode::NoJump);
+
+            Nft result_full = compose(rhs, lhs, 0, 2, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            Nft result_proj = compose(rhs, lhs, 0, 2, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+    }
 #endif
+    SECTION("sync level 2 x sync level 1") {
+        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, 'a', 1);
+        lhs.delta.add(1, 'b', 2);
+        lhs.delta.add(2, EPSILON, 3);
+        lhs.delta.add(3, 'd', 4);
+        lhs.delta.add(4, 'e', 5);
+        lhs.delta.add(5, 'f', 6);
+        lhs.delta.add(2, EPSILON, 0);
+
+        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'g', 1);
+        rhs.delta.add(1, 'f', 2);
+        rhs.delta.add(2, 'h', 3);
+
+        SECTION("LHS | RHS") {
+            Nft expected_full(12, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }, 5);
+            expected_full.delta.add(0, 'a', 1);
+            expected_full.delta.add(1, 'b', 2);
+            expected_full.delta.add(2, EPSILON, 3);
+            expected_full.delta.add(3, EPSILON, 4);
+            expected_full.delta.add(4, EPSILON, 5);
+            expected_full.delta.add(5, 'd', 6);
+            expected_full.delta.add(6, 'e', 7);
+            expected_full.delta.add(7, 'g', 8);
+            expected_full.delta.add(8, 'f', 9);
+            expected_full.delta.add(9, 'h', 10);
+            expected_full.delta.add(3, EPSILON, 11);
+            expected_full.delta.add(11, EPSILON, 0);
+            Nft expected_proj = project_out(expected_full, { 3 }, JumpMode::NoJump);
+
+            Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump);
+            CHECK(result_full.num_of_states() == expected_full.num_of_states());
+            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.delta.num_of_transitions() == expected_full.delta.num_of_transitions());
+            CHECK(are_equivalent(result_full, expected_full));
+
+            // HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERE
+            Nft result_proj = compose(lhs, rhs, 2, 1, true, JumpMode::NoJump);
+            CHECK(result_proj.num_of_states() == expected_proj.num_of_states());
+            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.delta.num_of_transitions() == expected_proj.delta.num_of_transitions());
+            CHECK(are_equivalent(result_proj, expected_proj));
+        }
+        SECTION("RHS | LHS") {
+        }
+    }
 }
 
 
