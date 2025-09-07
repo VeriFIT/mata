@@ -443,6 +443,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         const bool handle_synchronization_in_place = project_out_sync_levels &&
                                                      stationar_sync_props.num_of_levels_after_sync == 0 &&
                                                      copy_sync_props.num_of_levels_after_sync == 0 && (
+                                                        !is_copy_state_lhs ||
+                                                        stationar_sync_props.num_of_levels_before_sync == 0
+                                                    ) && (
                                                         waiting_worklist != nullptr ||
                                                         stationar_state_level == stationar_sync_props.sync_level
                                                      );
@@ -583,19 +586,30 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         const Levels& running_levels = running_sync_props.nft.levels;
         const Delta& running_delta = running_sync_props.nft.delta;
         const size_t running_num_of_levels = running_sync_props.nft.num_of_levels;
+        const size_t running_trans_after_sync = running_sync_props.num_of_levels_after_sync;
         const size_t waiting_trans_before_sync = waiting_sync_props.num_of_levels_before_sync;
         const size_t waiting_trans_after_sync = waiting_sync_props.num_of_levels_after_sync;
         // EPSILON synchronization is handled differently here than in the main loop.
-        // To avoid duplicate transitions and speed up the algorithm, we replace each
+        // To avoid redundant transitions caused by early branching, we replace each
         // EPSILON synchronization with N EPSILON transitions, where:
-        // - Add 1 to N if we are NOT projecting out synchronization levels.
-        // - Add waiting_trans_before_sync to N if waiting in RHS
+        // - Add waiting_trans_before_sync to N if NOT waiting in LHS
         //   (RHS transitions go after LHS, just before the synchronization).
-        // - Add waiting_trans_after_sync to N if waiting in LHS
-        //   (LHS transitions go before RHS, just after the synchronization).
+        // - Add waiting_trans_after_sync to N if waiting in LHS, or if there are no
+        //   running transitions after the synchronization.
+        // - Add 1 to N if synchronization levels are NOT being projected out.
+        // The first N-1 EPSILON transitions are common for all targets,
+        // and only the last EPSILON transition is used to connect to the appropriate targets.
+
         const size_t num_of_epsilons_to_replace_sync = (
-            (is_lhs_waiting ? waiting_trans_after_sync : waiting_trans_before_sync) +
-            (project_out_sync_levels ? 0 : 1)
+            (is_lhs_waiting
+                ? 0
+                : waiting_trans_before_sync) +
+            ((is_lhs_waiting || running_trans_after_sync == 0)
+                ? waiting_trans_after_sync
+                : 0) +
+            (project_out_sync_levels
+                ? 0
+                : 1)
         );
 
         // A special case we need to handle here.
@@ -652,9 +666,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 const bool is_last_running_transition = (running_state_level == running_sync_props.nft.num_of_levels - 1);
 
                 // It cannot happen that the synchronization level is projected out
-                // and there are no other transitions to addbefore reaching the next zero-level state.
+                // and there are no other transitions to add before reaching the next zero-level state.
                 // This is because such a scenario would already be handled by the copy_transition function.
-                assert(!project_out_sync_levels || !is_last_running_transition || waiting_trans_after_sync > 0);
+                assert(!project_out_sync_levels || !is_last_running_transition || waiting_trans_after_sync > 0 ||
+                       (!is_lhs_waiting && waiting_sync_props.num_of_levels_before_sync > 0));
 
                 if (num_of_epsilons_to_replace_sync > 1) {
                     // The synchronization will be replaced by an EPSILON transition anyway.
@@ -685,7 +700,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         // We are connecting to the zero-level state, therefore we have to
                         // create a new composition state that will be put into the main worklist
                         // (side effect of the create_composition_state).
-                        assert(result.levels[composition_state] + (num_of_epsilons_to_replace_sync >= 1 ? 1 : 0) + (is_lhs_waiting ? 0 : waiting_trans_after_sync) == result.num_of_levels);
+                        assert(result.levels[composition_state] + (num_of_epsilons_to_replace_sync >= 1 ? 1 : 0) == result.num_of_levels);
                         result.add_transition_with_target(
                             composition_state,
                             EPSILON,
