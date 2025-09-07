@@ -351,7 +351,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
             if (same_symbol_posts[0]->symbol == EPSILON) {
                 // We need to be careful not to use fast EPSILON transitions.
-                OrdVector<State> filtered_lhs_targets;
+                StateSet filtered_lhs_targets;
                 if (lhs.levels[lhs_state] == 0 && lhs.num_of_levels != 1) {
                     std::copy_if(
                         same_symbol_posts[0]->targets.cbegin(),
@@ -359,8 +359,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         std::back_inserter(filtered_lhs_targets),
                         [&](State s) { return lhs.levels[s] != 0; }
                     );
+                } else {
+                    filtered_lhs_targets = same_symbol_posts[0]->targets;
                 }
-                OrdVector<State> filtered_rhs_targets;
+                StateSet filtered_rhs_targets;
                 if (rhs.levels[rhs_state] == 0 && rhs.num_of_levels != 1) {
                     std::copy_if(
                         same_symbol_posts[1]->targets.cbegin(),
@@ -368,6 +370,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         std::back_inserter(filtered_rhs_targets),
                         [&](State s) { return rhs.levels[s] != 0; }
                     );
+                } else {
+                    filtered_rhs_targets = same_symbol_posts[1]->targets;
                 }
                 combine_targets(filtered_lhs_targets, filtered_rhs_targets, EPSILON);
             } else {
@@ -766,38 +770,37 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         const bool lhs_eps_exists = lhs_eps_post_it != lhs.delta[lhs_src].end();
         const bool rhs_eps_exists = rhs_eps_post_it != rhs.delta[rhs_src].end();
 
-        // Create combinations of rhs_src with all zero-level targets of lhs_src.
+        StateSet filtered_lhs_fast_eps_targets{ lhs_src };
+        StateSet filtered_rhs_fast_eps_targets{ rhs_src };
         if (lhs_eps_exists) {
-            for (const State lhs_target : lhs_eps_post_it->targets) {
-                if (lhs.levels[lhs_target] != 0) {
-                    continue;
-                }
-                create_composition_state(lhs_target, rhs_src, 0, true, composition_state);
-            }
+            std::copy_if(
+                lhs_eps_post_it->targets.cbegin(),
+                lhs_eps_post_it->targets.cend(),
+                std::back_inserter(filtered_lhs_fast_eps_targets),
+                [&](State s) { return lhs.levels[s] == 0; }
+            );
         }
-
-        // Create combinations of lhs_src with all zero-level targets of rhs_src.
         if (rhs_eps_exists) {
-            for (const State rhs_target : rhs_eps_post_it->targets) {
-                if (rhs.levels[rhs_target] != 0) {
-                    continue;
-                }
-                create_composition_state(lhs_src, rhs_target, 0, true, composition_state);
-            }
+            std::copy_if(
+                rhs_eps_post_it->targets.cbegin(),
+                rhs_eps_post_it->targets.cend(),
+                std::back_inserter(filtered_rhs_fast_eps_targets),
+                [&](State s) { return rhs.levels[s] == 0; }
+            );
         }
-
-        // Create combinations of all zero-level targets of lhs_src with all zero-level targets of rhs_src.
-        if (lhs_eps_exists && rhs_eps_exists) {
-            for (const State lhs_target : lhs_eps_post_it->targets) {
-                if (lhs.levels[lhs_target] != 0) {
+        // Create combinations of all non-zero-level targets of lhs_src with all non-zero-level targets of rhs_src.
+        for (const State lhs_target : filtered_lhs_fast_eps_targets) {
+            for (const State rhs_target : filtered_rhs_fast_eps_targets) {
+                if (lhs_target == lhs_src && rhs_target == rhs_src) {
+                    // This is the original state pair.
                     continue;
                 }
-                for (const State rhs_target : rhs_eps_post_it->targets) {
-                    if (rhs.levels[rhs_target] != 0) {
-                        continue;
-                    }
-                    create_composition_state(lhs_target, rhs_target, 0, true, composition_state);
-                }
+                result.add_transition_with_target(
+                    composition_state,
+                    EPSILON,
+                    create_composition_state(lhs_target, rhs_target, 0, true),
+                    jump_mode
+                );
             }
         }
     };
@@ -833,6 +836,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // Process potential fast EPSILON transitions.
             process_fast_epsilon_transitions(composition_state, lhs_state, rhs_state);
 
+            // TODO: Optimize/reduce the number of similar combination of waiting simulations.
             // You can see the table defining operations for pair of synchronization types
             // in the documentation of the SynchronizationType enum class.
             const bool perform_wait_on_lhs = exist_intersection_of_sync_types(rhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
