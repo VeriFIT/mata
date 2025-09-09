@@ -102,7 +102,7 @@ private:
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
- * @brief Get the accepting words for each tape of @p nft with specific lenghts
+ * @brief Get the accepting words for each tape of @p nft with specific lengths
  * 
  * This function finds such an accepting word of @p nft that for each tape i,
  * the word on this tape (on the ith index of resulting vector) has the length lengths[i].
