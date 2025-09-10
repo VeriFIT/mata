@@ -3025,6 +3025,25 @@ TEST_CASE("mata::nft::remove_epsilon()") {
         CHECK(aut.delta[3].to_vector()[0].symbol == 'c');
         CHECK(aut.delta[3].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
     }
+
+    SECTION("issue #565") {
+        Nft lhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        lhs.delta.add(0, EPSILON, 1);
+        lhs.delta.add(0, EPSILON, 3);
+        lhs.delta.add(1, 'a', 2);
+        lhs.delta.add(2, 'b', 3);
+
+        Nft rhs(4, { 0 }, { 0, 3 }, { 0, 1, 2, 0 }, 3);
+        rhs.delta.add(0, 'c', 1);
+        rhs.delta.add(1, EPSILON, 2);
+        rhs.delta.add(2, 'd', 3);
+
+        Nft result = compose(lhs, rhs, 0, 1, false, JumpMode::RepeatSymbol);
+        REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
+        result.remove_epsilon();
+        REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
+
+    }
 }
 
 TEST_CASE("Profile mata::nft::remove_epsilon()", "[.profiling]")

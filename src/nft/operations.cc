@@ -130,8 +130,8 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
     // this vector will collect epsilon run from level 0 state to level 0 state
     // that contains only epsilon transitions, and all states inbetween (i.e.
-    // not-level-0 states) will have only one epsilon transition going to it
-    // and one epsilon transition going from it
+    // not-level-0 states) will have only one transition going to it and one
+    // transition going from it (the epsilon transitions)
     std::vector<std::vector<State>> safe_epsilon_runs;
 
     // for each level 0 state q, eps_delta[q] represents all states to which
@@ -150,8 +150,14 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                     const StatePost& post_s{ aut.delta[state_s] };
                     const auto eps_move_it_s { post_s.find(epsilon) };
                     if (eps_move_it_s != post_s.end()) {
-                        if (cur_level != DEFAULT_LEVEL && aut.delta[state_s].size() != 1) {
+                        if (cur_level != DEFAULT_LEVEL && (aut.delta[state_s].size() != 1)) {
                             // for levels > DEFAULT_LEVEL we do not want to have transitions that are not with empty symbol
+                            continue;
+                        }
+                        if (cur_level != aut.num_of_levels-1 && eps_move_it_s->targets.size() > 1) {
+                            // if we are not at the last level (next level will be 0), we do not allow multiple epsilon transitions
+                            // from state_s, as one could be on the path of fully epsilon run, while the other would not be, so we
+                            // would mark something as safe epsilon run, which would not be safe
                             continue;
                         }
                         for (State target : eps_move_it_s->targets) {
