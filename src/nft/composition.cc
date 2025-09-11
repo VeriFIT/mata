@@ -317,13 +317,44 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         // Helper function to combine LHS and RHS targets over the given symbol.
         auto combine_targets = [&](const StateSet& lhs_sync_targets, const StateSet& rhs_sync_targets, const Symbol symbol) {
             for (const State lhs_sync_target : lhs_sync_targets) {
+                const Level lhs_sync_target_level = lhs.levels[lhs_sync_target];
                 for (const State rhs_sync_target : rhs_sync_targets) {
+                    const Level rhs_sync_target_level = rhs.levels[rhs_sync_target];
                     if (vanish_sync_level) {
-                        create_composition_state(lhs_sync_target,
-                                                 rhs_sync_target,
-                                                 composition_state_level,
-                                                 true,
-                                                 composition_state);
+                        // This transition will vanish, so we need to find the next
+                        // transition after the synchronization levels and use it for the connection.
+                        if (lhs_sync_target_level != 0) {
+                            // Take transition from LHS
+                            for (const Move& lhs_move : lhs.delta[lhs_sync_target].moves()) {
+                                const Level lhs_move_target_level = lhs.levels[lhs_move.target];
+                                const size_t transition_length = (lhs_move_target_level == 0 ? lhs.num_of_levels : lhs_move_target_level) - (lhs_sync_level + 1);
+                                const Level composition_target_level_adjusted = static_cast<Level>((composition_state_level + transition_length) % result.num_of_levels);
+                                result.add_transition_with_target(
+                                    composition_state,
+                                    lhs_move.symbol,
+                                    create_composition_state(lhs_move.target,
+                                                             rhs_sync_target,
+                                                             composition_target_level_adjusted),
+                                    jump_mode
+                                );
+                            }
+                        } else {
+                            assert(rhs_sync_target_level != 0);
+                            // Take transition from RHS
+                            for (const Move& rhs_move : rhs.delta[rhs_sync_target].moves()) {
+                                const Level rhs_move_target_level = rhs.levels[rhs_move.target];
+                                const size_t transition_length = (rhs_move_target_level == 0 ? rhs.num_of_levels : rhs_move_target_level) - (rhs_sync_level + 1);
+                                const Level composition_target_level_adjusted = static_cast<Level>((composition_state_level + transition_length) % result.num_of_levels);
+                                result.add_transition_with_target(
+                                    composition_state,
+                                    rhs_move.symbol,
+                                    create_composition_state(lhs_sync_target,
+                                                             rhs_move.target,
+                                                             composition_target_level_adjusted),
+                                    jump_mode
+                                );
+                            }
+                        }
                     } else {
                         result.add_transition_with_target(
                             composition_state,

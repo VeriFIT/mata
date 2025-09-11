@@ -507,7 +507,9 @@ Nft ReluctantReplace::replace_regex(nfa::Nfa regex, const Word& replacement, Alp
     Nft dft_begin_marker{ reluctant_replace.begin_marker_nft(reluctant_replace.begin_marker_nfa(regex, alphabet), begin_marker) };
     Nft nft_reluctant_replace{
         reluctant_replace.reluctant_leftmost_nft(std::move(regex), alphabet, begin_marker, replacement, replace_mode) };
-    return compose(dft_begin_marker, nft_reluctant_replace);
+    // dft_begin_marker.print_to_dot(std::string("dft_begin_marker.dot"), true);
+    // nft_reluctant_replace.print_to_dot(std::string("nft_reluctant_replace.dot"), true);
+    return compose(dft_begin_marker, nft_reluctant_replace, 1, 0, true, nft::JumpMode::NoJump);
 }
 
 Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
@@ -541,7 +543,7 @@ Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replaceme
         return nft_end_marker;
     }() };
     Nft nft_literal_replace{ reluctant_replace.replace_literal_nft(literal, replacement, alphabet, end_marker, replace_mode) };
-    return compose(nft_end_marker, nft_literal_replace);
+    return compose(nft_end_marker, nft_literal_replace, 1, 0, true, nft::JumpMode::NoJump);
 }
 
 Nft ReluctantReplace::replace_symbol(Symbol from_symbol, Symbol replacement, mata::Alphabet* alphabet,
