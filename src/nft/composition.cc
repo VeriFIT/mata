@@ -772,7 +772,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         StateSet filtered_lhs_fast_eps_targets{ lhs_src };
         StateSet filtered_rhs_fast_eps_targets{ rhs_src };
-        if (lhs_eps_exists) {
+        if (lhs_eps_exists && lhs.num_of_levels != 1) {
             std::copy_if(
                 lhs_eps_post_it->targets.cbegin(),
                 lhs_eps_post_it->targets.cend(),
@@ -780,7 +780,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 [&](State s) { return lhs.levels[s] == 0; }
             );
         }
-        if (rhs_eps_exists) {
+        if (rhs_eps_exists && rhs.num_of_levels != 1) {
             std::copy_if(
                 rhs_eps_post_it->targets.cbegin(),
                 rhs_eps_post_it->targets.cend(),
