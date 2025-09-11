@@ -215,7 +215,7 @@ std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of
     assert(nft.num_of_levels == lengths.size());
     assert(!nft.contains_jump_transitions());
     if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
-    if (nft.initial.intersects_with(nft.final) && std::all_of(lengths.begin(), lengths.end(), [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
+    if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
 
     std::vector<mata::Word> result(lengths.size());
     for (const State initial_state: nft.initial) {
