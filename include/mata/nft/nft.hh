@@ -336,7 +336,7 @@ public:
     /**
      * @brief Checks if the transducer contains any jump transition
      */
-    bool contains_jump_transitions();
+    bool contains_jump_transitions() const;
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.

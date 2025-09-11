@@ -1367,8 +1367,10 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
                 }
             } else { // state_post_it == state_post_end.
                 worklist.pop_back();
-                auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{ worklist.back() };
-                ++prev_targets_it;
+                if (!worklist.empty()) {
+                    auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{ worklist.back() };
+                    ++prev_targets_it;
+                }
             }
         }
         if (final_found) { break; }
