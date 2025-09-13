@@ -10,7 +10,7 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
@@ -18,7 +18,7 @@
 using namespace mata;
 using namespace mata::nfa::algorithms;
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 using namespace mata::nfa::plumbing;
 using namespace mata::utils;
 using namespace mata::parser;

@@ -9,10 +9,10 @@
 
 #include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
-#include "mata/nft/strings.hh"
+#include "mata/applications/strings.hh"
 
 using namespace mata::nft;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 using namespace mata::utils;
 using namespace mata::parser;
 

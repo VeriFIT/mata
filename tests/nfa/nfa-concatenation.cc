@@ -8,11 +8,11 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 using namespace mata::utils;
 using namespace mata::parser;
 

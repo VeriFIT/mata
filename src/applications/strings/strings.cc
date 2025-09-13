@@ -1,15 +1,15 @@
 /* nfa-strings.cc -- Operations on NFAs for string solving.
  */
 
-#include "mata/nfa/strings.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 
 #include <optional>
 
 using namespace mata::nfa;
-using namespace mata::strings;
+using namespace mata::applications::strings;
 
-std::set<mata::Word> mata::strings::get_shortest_words(const Nfa& nfa) {
+std::set<mata::Word> mata::applications::strings::get_shortest_words(const Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
     return ShortestWordsMap{ nfa }.get_shortest_words_from(StateSet{ nfa.initial });
@@ -132,7 +132,7 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     act.first = dst.first + 1;
 }
 
-std::set<mata::Symbol> mata::strings::get_accepted_symbols(const Nfa& nfa) {
+std::set<mata::Symbol> mata::applications::strings::get_accepted_symbols(const Nfa& nfa) {
     std::set<mata::Symbol> accepted_symbols;
     for (State init : nfa.initial) {
         for (const SymbolPost& symbol_post_init : nfa.delta[init]) {
@@ -147,7 +147,7 @@ std::set<mata::Symbol> mata::strings::get_accepted_symbols(const Nfa& nfa) {
     return accepted_symbols;
 }
 
-std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
+std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(const Nfa& aut) {
     Nfa one_letter;
     /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions.
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
@@ -198,7 +198,7 @@ std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
     return ret;
 }
 
-bool mata::strings::is_lang_eps(const Nfa& aut) {
+bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
     Nfa tr_aut = Nfa{ aut }.trim();
     if(tr_aut.initial.size() == 0)
         return false;
@@ -211,9 +211,78 @@ bool mata::strings::is_lang_eps(const Nfa& aut) {
     return true;
 }
 
-Nfa mata::strings::reluctant_nfa(Nfa nfa) {
-    for (const State final: nfa.final) {
-        nfa.delta.mutable_state_post(final).clear();
+std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
+    assert(nft.num_of_levels == lengths.size());
+    assert(!nft.contains_jump_transitions());
+    if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
+    if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
+
+    std::vector<mata::Word> result(lengths.size());
+    for (const State initial_state: nft.initial) {
+        /// Current state, its state post iterator, its end iterator, and iterator in the current symbol post to target states.
+        std::vector<std::tuple<State, StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
+        std::vector<mata::Word> result(lengths.size());
+        auto is_result_correct = [&result, &lengths]() {
+            for (size_t i = 0; i < lengths.size(); ++i) {
+                if (result[i].size() != lengths[i]) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        const StatePost& initial_state_post{ nft.delta[initial_state] };
+        auto initial_symbol_post_it{ initial_state_post.cbegin() };
+        auto initial_symbol_post_end{ initial_state_post.cend() };
+
+        if (initial_symbol_post_it == initial_symbol_post_end) { continue; }
+
+        worklist.emplace_back(initial_state, initial_symbol_post_it, initial_symbol_post_end, initial_symbol_post_it->targets.cbegin());
+
+        while (!worklist.empty()) {
+            // Using references to iterators to be able to increment the top-most element in the worklist in place.
+            auto& [cur_state, state_post_it, state_post_end, targets_it]{ worklist.back() };
+            if (state_post_it != state_post_end) {
+                Symbol cur_symbol = state_post_it->symbol;
+                nft::Level cur_level = nft.levels[cur_state];
+                if (targets_it == state_post_it->targets.cend() || (cur_symbol != EPSILON && lengths[cur_level] == result[cur_level].size())) {
+                    ++state_post_it;
+                    if (state_post_it != state_post_end) { targets_it = state_post_it->cbegin(); }
+                } else {
+                    if (cur_symbol != EPSILON) {
+                        result[cur_level].push_back(cur_symbol);
+                    }
+                    if (nft.final.contains(*targets_it) && is_result_correct()) {
+                        return result;
+                    }
+                    const StatePost& state_post{ nft.delta[*targets_it] };
+                    if (!state_post.empty()) {
+                        auto new_state_post_it{ state_post.cbegin() };
+                        auto new_targets_it{ new_state_post_it->cbegin() };
+                        worklist.emplace_back(*targets_it, new_state_post_it, state_post.cend(), new_targets_it);
+                    } else {
+                        if (cur_symbol != EPSILON) {
+                            result[cur_level].pop_back();
+                        }
+                        ++targets_it;
+                    }
+                }
+            } else { // state_post_it == state_post_end.
+                worklist.pop_back();
+                if (!worklist.empty()) {
+                    auto& [prev_state, prev_state_post_it, prev_state_post_end, prev_targets_it]{ worklist.back() };
+                    assert(prev_state_post_it != prev_state_post_end);
+                    Symbol prev_symbol = prev_state_post_it->symbol;
+                    nft::Level prev_level = nft.levels[prev_state];
+                    if (prev_symbol != EPSILON) {
+                        assert(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
+                        result[prev_level].pop_back();
+                    }
+                    ++prev_targets_it;
+                }
+            }
+        }
     }
-    return nfa;
+
+    return std::nullopt;
 }
