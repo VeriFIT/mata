@@ -501,7 +501,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                                                   copy_nft.levels[copy_target] == 0  // End of the waiting loop.
                                                 : exist_intersection_of_sync_types(stationar_state_sync_type, copy_target_sync_type) ||
                                                   stationar_state_sync_type == SynchronizationType::UNDEFINED ||
-                                                  copy_target_sync_type == SynchronizationType::UNDEFINED
+                                                  copy_target_sync_type == SynchronizationType::UNDEFINED ||
+                                                  copy_nft.levels[copy_target] == 0
                 );
                 if (!can_synchronize_in_the_future) {
                     // There is no way we would be able to synchronize in the future.
