@@ -423,7 +423,8 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
-    bool reduce_intersection = false
+    bool reduce_intersection = true,
+    bool use_homomorphic_heuristic = true
 );
 
 /**
