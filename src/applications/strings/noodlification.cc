@@ -440,7 +440,8 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
-    bool reduce_intersection
+    bool reduce_intersection,
+    bool use_homomorphic_heuristic
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
 
@@ -482,7 +483,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
     Nft intersection;
 
-    if (is_nft_homomorphic(nft)) {
+    if (use_homomorphic_heuristic && is_nft_homomorphic(nft)) {
         // For the case that input nft T is homomorphic, i.e., for each two words u,v, we have T(u.v) = T(u).T(v),
         // we can do the following optimization. Let I1, ..., In be the input automata. Because T is homomorphic,
         // we can take the concatenation T(I1).T(I2)...T(In) connected with INPUT_DELIMITER instead of computing
