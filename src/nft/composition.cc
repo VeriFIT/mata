@@ -24,6 +24,10 @@ namespace {
      * for lhs and rhs states, and whether they can synchronize or if one of them will wait
      * because there is an EPSILON on the synchronization in the other that it
      * could not synchronize with.
+     *
+     * You can nottice that we do not want to synchronize on EPSILONs.
+     * This is a part of the optimization to avoid creating redundant EPSILON transitions.
+     * For more defails, see https://cs.nyu.edu/~mohri/pub/nway.pdf Figure 3.
      *                       ||                   RHS sync type
      *    LHS sync type      || ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL
      * ======================||================|=================|======================
@@ -31,11 +35,11 @@ namespace {
      *    ONLY_ON_SYMBOL     ||                |   wait on LHS   |      wait on LHS
      *                       ||                |                 |
      * ----------------------||----------------|-----------------|----------------------
-     *                       ||                |   synchronize   |      synchornize
+     *                       ||                |                 |
      *   ONLY_ON_EPSILON     ||                |   lait on LHS   |      lait on LHS
      *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
      * ----------------------||----------------|-----------------|----------------------
-     *                       ||   synchronize  |   synchronize   |      synchornize
+     *                       ||   synchronize  |                 |      synchornize
      * ON_EPSILON_AND_SYMBOL ||                |   wait on LHS   |      wait on LHS
      *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
      * =================================================================================
@@ -54,8 +58,14 @@ namespace {
         lhs = lhs | rhs;
         return lhs;
     }
-    inline bool exist_intersection_of_sync_types(SynchronizationType lhs, SynchronizationType rhs) {
+    inline bool exist_intersection(SynchronizationType lhs, SynchronizationType rhs) {
         return (static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)) != 0;
+    }
+    inline bool exist_synchronization(SynchronizationType lhs, SynchronizationType rhs) {
+        return lhs != SynchronizationType::ONLY_ON_EPSILON && rhs != SynchronizationType::ONLY_ON_EPSILON;
+    }
+    inline bool exist_epsilon(SynchronizationType s) {
+        return s != SynchronizationType::ONLY_ON_SYMBOL;
     }
 
     /**
@@ -243,6 +253,31 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     std::queue<std::pair<State, State>> worklist;
 
     /**
+     * @brief Efficiently inserts a symbol post into the delta of the result NFT.
+     *
+     * @param source The source state of the transition.
+     * @param symbol_post The symbol post to insert.
+     */
+    auto insert_symbol_post_to_delta = [&](const State source, const SymbolPost& symbol_post) {
+        assert(!symbol_post.targets.empty());
+        auto &mutable_state_post = result.delta.mutable_state_post(source);
+        auto symbol_post_it = mutable_state_post.find(symbol_post.symbol);
+        if (symbol_post_it != mutable_state_post.end()) {
+            // The symbol post already exists, just add the targets.
+            symbol_post_it->targets.insert(symbol_post.targets);
+            return;
+        }
+        // The symbol post does not exist.
+        if (mutable_state_post.empty() || mutable_state_post.back().symbol < symbol_post.symbol) {
+            // It is the greatest symbol, just add it to the end.
+            mutable_state_post.push_back(std::move(symbol_post));
+            return;
+        }
+        // Use insert method to insert at the correct position.
+        mutable_state_post.insert(std::move(symbol_post));
+    };
+
+    /**
      * @brief Creates a new composition state for the given pair of states, if it does not already exist.
      *
      * @param first The first state (from lhs or rhs).
@@ -316,127 +351,99 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 
         // Helper function to combine LHS and RHS targets over the given symbol.
         auto combine_targets = [&](const StateSet& lhs_sync_targets, const StateSet& rhs_sync_targets, const Symbol symbol) {
-            for (const State lhs_sync_target : lhs_sync_targets) {
-                const Level lhs_sync_target_level = lhs.levels[lhs_sync_target];
-                for (const State rhs_sync_target : rhs_sync_targets) {
-                    const Level rhs_sync_target_level = rhs.levels[rhs_sync_target];
-                    if (vanish_sync_level) {
-                        // This transition will vanish, so we need to find the next
-                        // transition after the synchronization levels and use it for the connection.
-                        if (lhs_sync_target_level != 0) {
-                            // Take transition from LHS
-                            for (const Move& lhs_move : lhs.delta[lhs_sync_target].moves()) {
-                                const Level lhs_move_target_level = lhs.levels[lhs_move.target];
-                                const size_t transition_length = (lhs_move_target_level == 0 ? lhs.num_of_levels : lhs_move_target_level) - (lhs_sync_level + 1);
-                                const Level composition_target_level_adjusted = static_cast<Level>((composition_state_level + transition_length) % result.num_of_levels);
-                                result.add_transition_with_target(
-                                    composition_state,
-                                    lhs_move.symbol,
-                                    create_composition_state(lhs_move.target,
-                                                             rhs_sync_target,
-                                                             composition_target_level_adjusted),
-                                    jump_mode
-                                );
-                            }
-                        } else {
-                            assert(rhs_sync_target_level != 0);
-                            // Take transition from RHS
-                            for (const Move& rhs_move : rhs.delta[rhs_sync_target].moves()) {
-                                const Level rhs_move_target_level = rhs.levels[rhs_move.target];
-                                const size_t transition_length = (rhs_move_target_level == 0 ? rhs.num_of_levels : rhs_move_target_level) - (rhs_sync_level + 1);
-                                const Level composition_target_level_adjusted = static_cast<Level>((composition_state_level + transition_length) % result.num_of_levels);
-                                result.add_transition_with_target(
-                                    composition_state,
-                                    rhs_move.symbol,
-                                    create_composition_state(lhs_sync_target,
-                                                             rhs_move.target,
-                                                             composition_target_level_adjusted),
-                                    jump_mode
-                                );
-                            }
+            if (!vanish_sync_level) {
+                // Do a standard combination of targets.
+                SymbolPost symbol_post{ symbol };
+                for (const State lhs_sync_target : lhs_sync_targets) {
+                    for (const State rhs_sync_target : rhs_sync_targets) {
+                        symbol_post.insert(create_composition_state(lhs_sync_target,
+                                                                    rhs_sync_target,
+                                                                    composition_target_level));
+                    }
+                }
+                insert_symbol_post_to_delta(composition_state, symbol_post);
+                return;
+            }
+
+            // The synchronization level will vanish.
+            // We know that there is at least one transition in LHS or RHS after the synchronization.
+            // We are going to use those transitions to connect composition_state to their targets.
+            const bool is_remainging_transition_in_lhs = lhs_sync_level + 1 < lhs.num_of_levels;
+            const bool is_remainging_transition_in_rhs = rhs_sync_level + 1 < rhs.num_of_levels;
+            assert(is_remainging_transition_in_lhs || is_remainging_transition_in_rhs);
+
+
+            const StateSet& moving_sync_targets = is_remainging_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
+            const StateSet& static_sync_targets = is_remainging_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
+            const Nft& moving_nft = is_remainging_transition_in_lhs ? lhs : rhs;
+
+            mata::utils::SynchronizedExistentialIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> moving_sync_iterator(moving_sync_targets.size());
+            for (const State moving_sync_target : moving_sync_targets) {
+                mata::utils::push_back(moving_sync_iterator, moving_nft.delta[moving_sync_target]);
+            }
+            while (moving_sync_iterator.advance()) {
+                const std::vector<StatePost::const_iterator>& same_symbol_posts{ moving_sync_iterator.get_current() };
+                assert(!same_symbol_posts.empty());
+
+                const Symbol moving_symbol = same_symbol_posts[0]->symbol;
+                SymbolPost symbol_post{ moving_symbol };
+                for (const auto& moving_next_targets : same_symbol_posts) {
+                    for (const State moving_next_target : moving_next_targets->targets) {
+                        for (const State static_sync_target : static_sync_targets) {
+                            symbol_post.insert(create_composition_state(moving_next_target,
+                                                                        static_sync_target,
+                                                                        composition_target_level,
+                                                                        is_remainging_transition_in_lhs));
                         }
+                    }
+                }
+                insert_symbol_post_to_delta(composition_state, symbol_post);
+            }
+        };
+
+        // Helper function to perform synchronization on DONT_CARE transitions.
+        auto synchronization_on_dont_care = [&](const State dont_care_state, const State other_state, const bool is_dont_care_lhs) {
+            const Nft& dont_care_nft = is_dont_care_lhs ? lhs : rhs;
+            const Nft& other_nft = is_dont_care_lhs ? rhs : lhs;
+
+            auto dont_care_sync_it = dont_care_nft.delta[dont_care_state].find(DONT_CARE);
+            if (dont_care_sync_it != dont_care_nft.delta[dont_care_state].end()) {
+                for (const SymbolPost& symbol_post : other_nft.delta[other_state]) {
+                    if (symbol_post.symbol == EPSILON) {
+                        // We don't want to synchronize DONT_CARE with EPSILON.
+                        continue;
+                    }
+                    const Symbol symbol = reconnect ? reconnection_symbol : symbol_post.symbol;
+                    if (is_dont_care_lhs) {
+                        combine_targets(dont_care_sync_it->targets, symbol_post.targets, symbol);
                     } else {
-                        result.add_transition_with_target(
-                            composition_state,
-                            symbol,
-                            create_composition_state(lhs_sync_target,
-                                                     rhs_sync_target,
-                                                     composition_target_level,
-                                                     true),
-                            jump_mode
-                        );
+                        combine_targets(symbol_post.targets, dont_care_sync_it->targets, symbol);
                     }
                 }
             }
         };
 
-        // Synchronization using SynchronizedUniversalIterator.
+        // The body of the synchronization.
         mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
         mata::utils::push_back(sync_iterator, lhs.delta[lhs_state]);
         mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
         while (sync_iterator.advance()) {
             const std::vector<StatePost::const_iterator>& same_symbol_posts{ sync_iterator.get_current() };
             assert(same_symbol_posts.size() == 2); // One move per state in the pair.
-            const Symbol symbol = reconnect ? reconnection_symbol
-                                            : same_symbol_posts[0]->symbol;
+            const Symbol symbol = reconnect ? reconnection_symbol : same_symbol_posts[0]->symbol;
 
             if (same_symbol_posts[0]->symbol == EPSILON) {
-                // We need to be careful not to use fast EPSILON transitions.
-                StateSet filtered_lhs_targets;
-                if (lhs.levels[lhs_state] == 0 && lhs.num_of_levels != 1) {
-                    std::copy_if(
-                        same_symbol_posts[0]->targets.cbegin(),
-                        same_symbol_posts[0]->targets.cend(),
-                        std::back_inserter(filtered_lhs_targets),
-                        [&](State s) { return lhs.levels[s] != 0; }
-                    );
-                } else {
-                    filtered_lhs_targets = same_symbol_posts[0]->targets;
-                }
-                StateSet filtered_rhs_targets;
-                if (rhs.levels[rhs_state] == 0 && rhs.num_of_levels != 1) {
-                    std::copy_if(
-                        same_symbol_posts[1]->targets.cbegin(),
-                        same_symbol_posts[1]->targets.cend(),
-                        std::back_inserter(filtered_rhs_targets),
-                        [&](State s) { return rhs.levels[s] != 0; }
-                    );
-                } else {
-                    filtered_rhs_targets = same_symbol_posts[1]->targets;
-                }
-                combine_targets(filtered_lhs_targets, filtered_rhs_targets, EPSILON);
-            } else {
-                combine_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
+                // We don't want to synchronize EPSILON with EPSILON.
+                // This creates a redundant EPSILON transitions in this implementation.
+                // This is an optimization according to https://cs.nyu.edu/~mohri/pub/nway.pdf Figure 3.
+                continue;
             }
+            combine_targets(same_symbol_posts[0]->targets, same_symbol_posts[1]->targets, symbol);
+
         }
 
-        // Synchronization on DONT_CARE in the LHS.
-        auto lhs_dont_care_sync_it = lhs.delta[lhs_state].find(DONT_CARE);
-        if (lhs_dont_care_sync_it != lhs.delta[lhs_state].end()) {
-            for (const SymbolPost& rhs_symbol_post : rhs.delta[rhs_state]) {
-                if (rhs_symbol_post.symbol == EPSILON) {
-                    // We don't want to synchronize DONT_CARE with EPSILON.
-                    continue;
-                }
-                const Symbol symbol = reconnect ? reconnection_symbol
-                                                : rhs_symbol_post.symbol;
-                combine_targets(lhs_dont_care_sync_it->targets, rhs_symbol_post.targets, symbol);
-            }
-        }
-
-        // Do the synchronization on DONT_CARE in the RHS.
-        auto rhs_dont_care_sync_it = rhs.delta[rhs_state].find(DONT_CARE);
-        if (rhs_dont_care_sync_it != rhs.delta[rhs_state].end()) {
-            for (const SymbolPost& lhs_symbol_post : lhs.delta[lhs_state]) {
-                if (lhs_symbol_post.symbol == EPSILON) {
-                    // We don't want to synchronize DONT_CARE with EPSILON.
-                    continue;
-                }
-                const Symbol symbol = reconnect ? reconnection_symbol
-                                                : lhs_symbol_post.symbol;
-                combine_targets(lhs_symbol_post.targets, rhs_dont_care_sync_it->targets, symbol);
-            }
-        }
+        synchronization_on_dont_care(lhs_state, rhs_state, true);
+        synchronization_on_dont_care(rhs_state, lhs_state, false);
     };
 
 
@@ -497,9 +504,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 // later due to an inability to synchronize. When this function is called
                 // from the waiting simulation, we are interested in onyl synchronizations on EPSILON.
                 const bool can_synchronize_in_the_future = (
-                    waiting_worklist != nullptr ? copy_target_sync_type != SynchronizationType::ONLY_ON_SYMBOL ||
+                    waiting_worklist != nullptr ? exist_epsilon(copy_target_sync_type) ||
                                                   copy_nft.levels[copy_target] == 0  // End of the waiting loop.
-                                                : exist_intersection_of_sync_types(stationar_state_sync_type, copy_target_sync_type) ||
+                                                : exist_synchronization(stationar_state_sync_type, copy_target_sync_type) ||
                                                   stationar_state_sync_type == SynchronizationType::UNDEFINED ||
                                                   copy_target_sync_type == SynchronizationType::UNDEFINED ||
                                                   copy_nft.levels[copy_target] == 0
@@ -871,9 +878,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // TODO: Optimize/reduce the number of similar combination of waiting simulations.
             // You can see the table defining operations for pair of synchronization types
             // in the documentation of the SynchronizationType enum class.
-            const bool perform_wait_on_lhs = exist_intersection_of_sync_types(rhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
-            const bool perform_wait_on_rhs = exist_intersection_of_sync_types(lhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
-            const bool can_synchronize_in_the_future = exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type);
+            const bool perform_wait_on_lhs = exist_intersection(rhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
+            const bool perform_wait_on_rhs = exist_intersection(lhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
+            const bool can_synchronize_in_the_future = exist_synchronization(lhs_sync_type, rhs_sync_type);
             if (perform_wait_on_lhs) {
                 // LHS is waiting (i.e., there is an EPSILON in the RHS that LHS can not synchronize on).
                 model_waiting(composition_state, lhs_state, rhs_state, true);
@@ -892,10 +899,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         // It makes sense to continue only if we believe that synchronization is possible,
         // or if we have already passed the synchronization level (i.e., lhs_sync_type ==
         // SynchronizationType::UNDEFINED or rhs_sync_type == SynchronizationType::UNDEFINED).
-        assert(exist_intersection_of_sync_types(lhs_sync_type, rhs_sync_type) ||
+        assert(exist_synchronization(lhs_sync_type, rhs_sync_type) ||
                (lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::UNDEFINED) ||
                (rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::UNDEFINED) ||
-               (lhs_level > lhs_sync_level && rhs_level > rhs_sync_level &&lhs_sync_type == SynchronizationType::UNDEFINED && rhs_sync_type == SynchronizationType::UNDEFINED)
+               (lhs_level > lhs_sync_level && rhs_level > rhs_sync_level && lhs_sync_type == SynchronizationType::UNDEFINED && rhs_sync_type == SynchronizationType::UNDEFINED)
         );
 
         // Both LHS and RHS can take a step if they are not at the synchronization level.

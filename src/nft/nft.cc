@@ -590,10 +590,16 @@ void Nft::add_transition_with_same_level_targets(State source, Symbol symbol, co
         StatePost& mutable_state_post = delta.mutable_state_post(source);
         auto mutable_symbol_post_it = mutable_state_post.find(symbol);
         if (mutable_symbol_post_it == mutable_state_post.end()) {
-            mutable_state_post.insert(std::move(SymbolPost(symbol, targets)));
-            return;
+            if (mutable_state_post.empty() || mutable_state_post.back().symbol < symbol) {
+                // Optimization: If the new symbol is greater than the last one, we can simply push it back.
+                mutable_state_post.push_back({ symbol, targets });
+            } else {
+                // Otherwise, we need to insert it in the correct position to keep the order.
+                mutable_state_post.insert({ symbol, targets });
+            }
+        } else {
+            mutable_symbol_post_it->targets.insert(targets);
         }
-        mutable_symbol_post_it->targets.insert(targets);
         return;
     }
 

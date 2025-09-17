@@ -127,7 +127,13 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
             StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
             const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
             if (product_state_post_find_it == product_state_post.end()) {
-                product_state_post.insert(std::move(product_symbol_post));
+                if (product_state_post.empty() || product_state_post.back().symbol < product_symbol_post.symbol) {
+                    // Optimization: If the new symbol is greater than the last one, we can simply push it back.
+                    product_state_post.push_back(std::move(product_symbol_post));
+                } else {
+                    // Otherwise, we need to insert it in the correct position to keep the order.
+                    product_state_post.insert(std::move(product_symbol_post));
+                }
             } else {
                 product_state_post_find_it->targets.insert(product_symbol_post.targets);
             }
