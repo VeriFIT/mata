@@ -200,7 +200,6 @@ namespace mata::nft
 Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, const bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(lhs_sync_level < lhs.num_of_levels && rhs_sync_level < rhs.num_of_levels);
 
-    // TODO: Modify it to work even with other jump modes.
     if (jump_mode != JumpMode::NoJump) {
         return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels);
     }
@@ -211,22 +210,19 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             lhs.delta.transitions().begin(),
             lhs.delta.transitions().end(),
             [&](const Transition& transition) {
-                return (lhs.levels[transition.source] < lhs_sync_level && lhs.levels[transition.target] <= lhs_sync_level && lhs.levels[transition.target] != 0) ||
-                       (lhs.levels[transition.source] == lhs_sync_level && lhs.levels[transition.target] == static_cast<Level>((lhs_sync_level + 1) % lhs.num_of_levels)) ||
-                       (lhs.levels[transition.source] > lhs_sync_level) ||
+                return static_cast<Level>((lhs.levels[transition.source] + 1) % lhs.num_of_levels) == lhs.levels[transition.target] ||
                        (lhs.levels[transition.source] == 0 && lhs.levels[transition.target] == 0 && transition.symbol == EPSILON);
             }
         )
     );
+
     // Check that there are only explicit synchronization transitions of length 1 with exception for fast EPSILON transitions.
     assert(
         std::all_of(
             rhs.delta.transitions().begin(),
             rhs.delta.transitions().end(),
             [&](const Transition& transition) {
-                return (rhs.levels[transition.source] < rhs_sync_level && rhs.levels[transition.target] <= rhs_sync_level && rhs.levels[transition.target] != 0) ||
-                       (rhs.levels[transition.source] == rhs_sync_level && rhs.levels[transition.target] == static_cast<Level>((rhs_sync_level + 1) % rhs.num_of_levels)) ||
-                       (rhs.levels[transition.source] > rhs_sync_level) ||
+                return static_cast<Level>((rhs.levels[transition.source] + 1) % rhs.num_of_levels) == rhs.levels[transition.target] ||
                        (rhs.levels[transition.source] == 0 && rhs.levels[transition.target] == 0 && transition.symbol == EPSILON);
             }
         )
@@ -477,22 +473,20 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         const SynchronizationType stationar_state_sync_type = stationar_sync_props.sync_types_v[stationar_state];
 
 
-        // It may happen that we encounter a transition whose target is at the synchronization level,
-        // the state in the stationary NFT is also at the synchronization level (or we came from the waiting simulation),
-        // project_out_sync_levels is true, and there is no other transition that would be added
-        // before the next zero-level state. In this case, we need to handle this synchronization
-        // here in place and make the connection directly to the next zero-level state.
+        // It may happen that
+        // 1) we want to project out synchronization levels,
+        // 2) there are no transitions after the synchronization level in both NFTs, and
+        // 3) targets of the copy_state are at the synchronization level.
+        // In this case, we are going to need to perform synchronization here and use
+        // the copied transitions to connect directly to the next zero-level states.
         const bool handle_synchronization_in_place = project_out_sync_levels &&
                                                      stationar_sync_props.num_of_levels_after_sync == 0 &&
-                                                     copy_sync_props.num_of_levels_after_sync == 0 && (
-                                                        !is_copy_state_lhs ||
-                                                        stationar_sync_props.num_of_levels_before_sync == 0
-                                                    ) && (
-                                                        waiting_worklist != nullptr ||
-                                                        stationar_state_level == stationar_sync_props.sync_level
-                                                     );
+                                                     copy_sync_props.num_of_levels_after_sync == 0 &&
+                                                     (!is_copy_state_lhs || stationar_sync_props.num_of_levels_before_sync == 0) &&
+                                                     (waiting_worklist != nullptr || stationar_state_level == stationar_sync_props.sync_level);
 
         for (const SymbolPost& copy_symbol_post : copy_nft.delta[copy_state]) {
+            SymbolPost symbol_post{ copy_symbol_post.symbol };
             for (const State copy_target : copy_symbol_post.targets) {
                 if (copy_symbol_post.symbol == EPSILON && copy_state_level == 0 && copy_nft.num_of_levels != 1 && copy_nft.levels[copy_target] == 0) {
                     // Skip fast EPSILON transitions.
@@ -535,15 +529,10 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         assert(copy_eps_symbol_post != copy_nft.delta[copy_target].end());
                         for (const State sync_target : copy_eps_symbol_post->targets) {
                             assert(copy_nft.levels[sync_target] == 0);
-                            result.add_transition_with_target(
-                                composition_state,
-                                copy_symbol_post.symbol,
-                                create_composition_state(sync_target,
-                                                         stationar_state,
-                                                         0,
-                                                         is_copy_state_lhs),
-                                jump_mode
-                            );
+                            symbol_post.insert(create_composition_state(sync_target,
+                                                                        stationar_state,
+                                                                        0,
+                                                                        is_copy_state_lhs));
                         }
                         // We do not need to add new pairs to the waiting_worklist,
                         // because, if necessary, they have already been added to the main
@@ -572,22 +561,20 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         // because, while waiting in the stationary state, we are not exactly at that state,
                         // but rather in virtual (nonexistent) states of the waiting loop over it.
                         const State new_composition_state = result.add_state_with_level(new_composition_state_level);
-                        result.add_transition_with_target(composition_state, copy_symbol_post.symbol, new_composition_state, jump_mode);
+                        symbol_post.push_back(new_composition_state);
                         // Sometimes, the running root state gets pushed to the worklist again. We need to handle it during the pop.
                         waiting_worklist->push({ new_composition_state, copy_target });
                     } else {
                         // Just copy this transition.
-                        result.add_transition_with_target(
-                            composition_state,
-                            copy_symbol_post.symbol,
-                            create_composition_state(copy_target,
-                                                     stationar_state,
-                                                     new_composition_state_level,
-                                                     is_copy_state_lhs),
-                            jump_mode
-                        );
+                        symbol_post.insert(create_composition_state(copy_target,
+                                                                    stationar_state,
+                                                                    new_composition_state_level,
+                                                                    is_copy_state_lhs));
                     }
                 }
+            }
+            if (!symbol_post.targets.empty()) {
+                insert_symbol_post_to_delta(composition_state, symbol_post);
             }
         }
     };
