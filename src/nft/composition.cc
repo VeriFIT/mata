@@ -274,6 +274,44 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     };
 
     /**
+     * @brief Creates a chain of EPSILON transitions of the given length starting from the source state.    
+     * 
+     * @param source The source state from which the EPSILON transitions will start.
+     * @param common_path_length The length of the EPSILON transition chain to create.
+     * @return The last state in the created EPSILON transition chain.
+     */
+    auto create_epsilon_transition_with_common_path = [&](const State source, const size_t common_path_length) {
+        assert(source < result.num_of_states());
+        State current_source = source;
+        Level current_level = result.levels[current_source];
+        for (size_t i = 0; i < common_path_length; ++i) {
+            SymbolPost symbol_post{ EPSILON };
+            const State new_composition_state = result.add_state_with_level(++current_level);
+            assert(current_level < result.num_of_levels);
+            symbol_post.push_back(new_composition_state);
+            insert_symbol_post_to_delta(current_source, symbol_post);
+            current_source = new_composition_state;
+        }
+        return current_source;
+    };
+
+    /**
+     * @brief Creates an EPSILON transition from source to target, possibly with a common path in between.
+     * @param source The source state of the EPSILON transition.
+     * @param target The target state of the EPSILON transition.
+     */
+    auto create_epsilon_transition_with_target = [&](const State source, const State target) {
+        assert(source < result.num_of_states() && target < result.num_of_states());
+        const Level source_level = result.levels[source];
+        const Level target_level = result.levels[target];
+        const size_t common_path_length = (target_level == 0 ? result.num_of_levels : target_level) - source_level - 1;
+        State internal_state = create_epsilon_transition_with_common_path(source, common_path_length);
+        SymbolPost symbol_post{ EPSILON };
+        symbol_post.insert(target);
+        insert_symbol_post_to_delta(internal_state, symbol_post);
+    };
+
+    /**
      * @brief Creates a new composition state for the given pair of states, if it does not already exist.
      *
      * @param first The first state (from lhs or rhs).
@@ -365,8 +403,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // We know that there is at least one transition in LHS or RHS after the synchronization.
             // We are going to use those transitions to connect composition_state to their targets.
             const bool is_remainging_transition_in_lhs = lhs_sync_level + 1 < lhs.num_of_levels;
-            const bool is_remainging_transition_in_rhs = rhs_sync_level + 1 < rhs.num_of_levels;
-            assert(is_remainging_transition_in_lhs || is_remainging_transition_in_rhs);
+            assert(is_remainging_transition_in_lhs || rhs_sync_level + 1 < rhs.num_of_levels);
 
 
             const StateSet& moving_sync_targets = is_remainging_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
@@ -653,17 +690,19 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // There has to be some EPSILON transition. Otherwise, there would be no reason to wait.
             assert(epsilon_target_it != running_delta[running_root_state].end());
             StateSet new_composition_targets;
+            State new_composition_state = create_epsilon_transition_with_common_path(composition_root_state, result.num_of_levels - 1);
+            SymbolPost symbol_post{ EPSILON };
             for (const State epsilon_target : epsilon_target_it->targets) {
                 assert(running_levels[epsilon_target] == 0);
-                new_composition_targets.insert(create_composition_state(waiting_root_state,
-                                                                        epsilon_target,
-                                                                        0,
-                                                                        is_lhs_waiting));
+                symbol_post.insert(create_composition_state(waiting_root_state,
+                                                            epsilon_target,
+                                                            0,
+                                                            is_lhs_waiting));
             }
             // This function ensures that the transitions are added in the most optimal way.
             // It creates one common path for all targets and then use only the last transitions of
             // that path to connect to all targets.
-            result.add_transition_with_same_level_targets(composition_root_state, EPSILON, new_composition_targets, jump_mode);
+            insert_symbol_post_to_delta(new_composition_state, symbol_post);
             return;
         }
 
@@ -677,7 +716,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             // Since LHS is waiting and LHS transitions have to be put before
             // RHS transitions, we now add waiting_trans_before_sync EPSILON
             // transitions. Doing this here simplifies the conditions in the loop below.
-            first_composition_state = result.add_transition_with_lenght(composition_root_state, EPSILON, waiting_trans_before_sync, jump_mode);
+            first_composition_state = create_epsilon_transition_with_common_path(composition_root_state, waiting_trans_before_sync);
         }
         worklist.push({ first_composition_state, running_root_state });
 
@@ -686,7 +725,6 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
             auto [composition_state, running_state] = worklist.front();
             worklist.pop();
             const Level running_state_level = running_levels[running_state];
-            const Level composition_state_level = result.levels[composition_state];
             // If the synchronization level is on 0. Than we can be careful to not use it
             // again when encountering next zero-level states in the running NFT.
             const bool first_running_transition = (running_state == running_root_state && composition_state == first_composition_state);
@@ -706,7 +744,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                     // To reduce the number of redundant EPSILON transitions in the resulting NFT,
                     // we can add N-1 EPSILON transitions now, and then use the last one to connect
                     // to the adequate target state, where N is num_of_epsilons_to_replace_sync.
-                    composition_state = result.add_transition_with_lenght(composition_state, EPSILON, num_of_epsilons_to_replace_sync - 1, jump_mode);
+                    composition_state = create_epsilon_transition_with_common_path(composition_state, num_of_epsilons_to_replace_sync - 1);
                 }
 
                 // Do the EPSILON synchronization.
@@ -715,6 +753,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 const auto& running_epsilon_post_it = running_delta[running_state].find(EPSILON);
                 // There should be an EPSILON transition. It has been told by the SynchronizationType.
                 assert(running_epsilon_post_it != running_delta[running_state].end());
+                SymbolPost epsilon_symbol_post{ EPSILON };
                 for (const State running_epsilon_target : running_epsilon_post_it->targets) {
                     if (running_state_level == 0 && running_num_of_levels != 1 && running_levels[running_epsilon_target] == 0) {
                         // Skip fast EPSILON transitions.
@@ -730,23 +769,24 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         // We are connecting to the zero-level state, therefore we have to
                         // create a new composition state that will be put into the main worklist
                         // (side effect of the create_composition_state).
+                        assert(result.levels[composition_state] + 1 == result.num_of_levels);
                         assert(result.levels[composition_state] + (num_of_epsilons_to_replace_sync >= 1 ? 1 : 0) == result.num_of_levels);
-                        result.add_transition_with_target(
-                            composition_state,
-                            EPSILON,
-                            create_composition_state(waiting_root_state,
-                                                     running_epsilon_target,
-                                                     0,
-                                                     is_lhs_waiting),
-                            jump_mode
-                        );
+                        epsilon_symbol_post.insert(create_composition_state(waiting_root_state,
+                                                                            running_epsilon_target,
+                                                                            0,
+                                                                            is_lhs_waiting));
                     } else {
                         // We are connecting to the next state in the waiting loop,
                         // so we simply add a transition to the next state and
                         // continue the waiting.
-                        const State new_composition_state = result.add_transition_with_lenght(composition_state, EPSILON, 1, jump_mode);
+                        assert(result.levels[composition_state] + 1 < result.num_of_levels);
+                        const State new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
+                        epsilon_symbol_post.push_back(new_composition_state);
                         worklist.push({ new_composition_state, running_epsilon_target });
                     }
+                }
+                if (!epsilon_symbol_post.targets.empty()) {
+                    insert_symbol_post_to_delta(composition_state, epsilon_symbol_post);
                 }
             } else if (running_state_level == 0 && !first_running_transition) {
                 // We are at a leaf zero-level state in the running NFT.
@@ -760,15 +800,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 assert(!is_lhs_waiting);
                 assert(sync_level != running_sync_props.nft.num_of_levels - 1);
                 assert(waiting_trans_after_sync > 0);
-                assert((composition_state_level + waiting_trans_after_sync) == result.num_of_levels);
-                result.add_transition_with_target(
-                    composition_state,
-                    EPSILON,
-                    create_composition_state(running_state,
-                                             waiting_root_state,
-                                             0),
-                    jump_mode
-                );
+                assert((result.levels[composition_state] + waiting_trans_after_sync) == result.num_of_levels);
+                create_epsilon_transition_with_target(composition_state,
+                                                      create_composition_state(running_state,
+                                                                               waiting_root_state,
+                                                                               0));
             }else {
                 // We are at an internal (non-sync) level in the running NFT.
                 // We can simply copy the transitions to the next states.
@@ -825,15 +861,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         // Branch onyl at the last level of that common path.
         assert(result.num_of_levels > 0);
         const size_t common_path_len = result_num_of_levels - 1;
-        State source = composition_state;
-        for (size_t i = 0; i < common_path_len; ++i) {
-            SymbolPost symbol_post{ EPSILON };
-            State new_source = result.add_state_with_level(static_cast<Level>(i + 1));
-            symbol_post.push_back(new_source);
-            insert_symbol_post_to_delta(source, symbol_post);
-            source = new_source;
-        }
-
+        State source = create_epsilon_transition_with_common_path(composition_state, common_path_len);
+        
         SymbolPost symbol_post{ EPSILON };
         for (const State lhs_target : filtered_lhs_fast_eps_targets) {
             for (const State rhs_target : filtered_rhs_fast_eps_targets) {
