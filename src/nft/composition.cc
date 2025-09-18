@@ -814,21 +814,37 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                 [&](State s) { return rhs.levels[s] == 0; }
             );
         }
+
+        if (filtered_lhs_fast_eps_targets.size() == 1 && filtered_rhs_fast_eps_targets.size() == 1) {
+            // There are no fast EPSILON transitions to process.
+            return;
+        }
+
         // Create combinations of all non-zero-level targets of lhs_src with all non-zero-level targets of rhs_src.
+        // Create a common path of EPSILON transitions to connect to all those combinations.
+        // Branch onyl at the last level of that common path.
+        assert(result.num_of_levels > 0);
+        const size_t common_path_len = result_num_of_levels - 1;
+        State source = composition_state;
+        for (size_t i = 0; i < common_path_len; ++i) {
+            SymbolPost symbol_post{ EPSILON };
+            State new_source = result.add_state_with_level(static_cast<Level>(i + 1));
+            symbol_post.push_back(new_source);
+            insert_symbol_post_to_delta(source, symbol_post);
+            source = new_source;
+        }
+
+        SymbolPost symbol_post{ EPSILON };
         for (const State lhs_target : filtered_lhs_fast_eps_targets) {
             for (const State rhs_target : filtered_rhs_fast_eps_targets) {
                 if (lhs_target == lhs_src && rhs_target == rhs_src) {
                     // This is the original state pair.
                     continue;
                 }
-                result.add_transition_with_target(
-                    composition_state,
-                    EPSILON,
-                    create_composition_state(lhs_target, rhs_target, 0, true),
-                    jump_mode
-                );
+                symbol_post.insert(create_composition_state(lhs_target, rhs_target, 0));
             }
         }
+        insert_symbol_post_to_delta(source, symbol_post);
     };
 
     // Initialization of the main worklist.
