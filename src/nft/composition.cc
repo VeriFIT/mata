@@ -243,6 +243,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     // Use composition storage without tracking inverted indices,
     // because waiting in virtual states would spoil the inverse mapping.
     TwoDimensionalMap<State, false> composition_storage(lhs_num_of_states, rhs_num_of_states);
+    std::unordered_map<State, State> waiting_state_storage;
     // I use a queue for the worklist to process states in a breadth-first manner.
     // This helps the branch prediction in the CPU because all processed states
     // are likely to be at the same level and thus enter the same branch.
@@ -274,8 +275,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     };
 
     /**
-     * @brief Creates a chain of EPSILON transitions of the given length starting from the source state.    
-     * 
+     * @brief Creates a chain of EPSILON transitions of the given length starting from the source state.
+     *
      * @param source The source state from which the EPSILON transitions will start.
      * @param common_path_length The length of the EPSILON transition chain to create.
      * @return The last state in the created EPSILON transition chain.
@@ -597,7 +598,13 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         // that will not be tracked in the composition_storage. We cannot use composition_storage
                         // because, while waiting in the stationary state, we are not exactly at that state,
                         // but rather in virtual (nonexistent) states of the waiting loop over it.
-                        const State new_composition_state = result.add_state_with_level(new_composition_state_level);
+                        State new_composition_state;
+                        if (waiting_state_storage.contains(copy_target)) {
+                            new_composition_state = waiting_state_storage[copy_target];
+                        } else {
+                            new_composition_state = result.add_state_with_level(new_composition_state_level);
+                            waiting_state_storage[copy_target] = new_composition_state;
+                        }
                         symbol_post.push_back(new_composition_state);
                         // Sometimes, the running root state gets pushed to the worklist again. We need to handle it during the pop.
                         waiting_worklist->push({ new_composition_state, copy_target });
@@ -645,6 +652,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                              const State running_root_state,
                              const bool is_lhs_waiting)
     {
+        waiting_state_storage.clear();
         const SynchronizationProperties& running_sync_props = is_lhs_waiting ? rhs_sync_props
                                                                              : lhs_sync_props;
         const SynchronizationProperties& waiting_sync_props = is_lhs_waiting ? lhs_sync_props
@@ -780,7 +788,14 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
                         // so we simply add a transition to the next state and
                         // continue the waiting.
                         assert(result.levels[composition_state] + 1 < result.num_of_levels);
-                        const State new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
+                        State new_composition_state;
+                        if (waiting_state_storage.contains(running_epsilon_target)) {
+                            new_composition_state = waiting_state_storage[running_epsilon_target];
+                        } else {
+                            new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
+                            waiting_state_storage[running_epsilon_target] = new_composition_state;
+                        }
+                        // const State new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
                         epsilon_symbol_post.push_back(new_composition_state);
                         worklist.push({ new_composition_state, running_epsilon_target });
                     }
@@ -862,7 +877,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         assert(result.num_of_levels > 0);
         const size_t common_path_len = result_num_of_levels - 1;
         State source = create_epsilon_transition_with_common_path(composition_state, common_path_len);
-        
+
         SymbolPost symbol_post{ EPSILON };
         for (const State lhs_target : filtered_lhs_fast_eps_targets) {
             for (const State rhs_target : filtered_rhs_fast_eps_targets) {
@@ -977,8 +992,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
         }
     }
 
-    // Cannot do the trim to remove dead ends,
-    // because some algorithms work with useless states.
+    // TODO: Make trim on demand.
+    if (project_out_sync_levels) {
+        result.trim();
+    }
+
     return result;
 }
 
