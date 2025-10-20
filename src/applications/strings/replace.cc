@@ -495,6 +495,11 @@ Nft applications::strings::replace::replace_reluctant_single_symbol(Symbol from_
 
 Nft ReluctantReplace::replace_regex(nfa::Nfa aut, const Word& replacement, Alphabet* alphabet,
                                               ReplaceMode replace_mode, Symbol begin_marker) {
+    // if aut is empty, the operation does nothing -> we return identity
+    if (aut.is_lang_empty()) {
+        return create_identity(alphabet);
+    }
+
     // SMT-LIB theory Strings (Unicode Strings): Semantics for matching empty words in replace regex functions:
     // ; (str.replace_re s r t) is the string obtained by replacing the
     // ; shortest leftmost match of r in s, if any, by t.
