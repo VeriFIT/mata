@@ -507,7 +507,7 @@ Nft ReluctantReplace::replace_regex(nfa::Nfa aut, const Word& replacement, Alpha
     // (str.replace_re_all String RegLan String String)
     if (replace_mode == ReplaceMode::All) {
         // Removing the empty string from aut.
-        aut.unify_initial(true).final.erase(*regex.initial.begin());
+        aut.unify_initial(true).final.erase(*aut.initial.begin());
     }
 
     ReluctantReplace reluctant_replace{};
