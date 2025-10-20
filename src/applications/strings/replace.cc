@@ -251,7 +251,7 @@ Nft mata::applications::strings::replace::replace_reluctant_regex(
     ReplaceMode replace_mode,
     Symbol begin_marker
 ) {
-    return replace_reluctant_regex(nfa::builder::create_from_regex(regex), replacement, alphabet, replace_mode, begin_marker);
+    return replace_reluctant_regex(nfa::determinize(nfa::builder::create_from_regex(regex)), replacement, alphabet, replace_mode, begin_marker);
 }
 
 Nft mata::applications::strings::replace::replace_reluctant_regex(
@@ -300,7 +300,7 @@ Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, Symbol marker) {
 }
 
 nfa::Nfa ReluctantReplace::generic_marker_dfa(const std::string& regex, Alphabet* alphabet) {
-    return generic_marker_dfa(nfa::builder::create_from_regex(regex), alphabet);
+    return generic_marker_dfa(nfa::determinize(nfa::builder::create_from_regex(regex)), alphabet);
 }
 
 nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
@@ -336,7 +336,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet
 }
 
 nfa::Nfa ReluctantReplace::begin_marker_nfa(const std::string& regex, Alphabet* alphabet) {
-    return begin_marker_nfa(nfa::builder::create_from_regex(regex), alphabet);
+    return begin_marker_nfa(nfa::determinize(nfa::builder::create_from_regex(regex)), alphabet);
 }
 
 nfa::Nfa ReluctantReplace::begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet) {
@@ -392,7 +392,7 @@ nfa::Nfa ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol 
 
 Nft ReluctantReplace::reluctant_leftmost_nft(const std::string& regex, Alphabet* alphabet, Symbol begin_marker,
                                          const Word& replacement, ReplaceMode replace_mode) {
-    return reluctant_leftmost_nft(nfa::builder::create_from_regex(regex), alphabet, begin_marker, replacement, replace_mode);
+    return reluctant_leftmost_nft(nfa::determinize(nfa::builder::create_from_regex(regex)), alphabet, begin_marker, replacement, replace_mode);
 }
 
 Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbol begin_marker,
