@@ -255,13 +255,13 @@ Nft mata::applications::strings::replace::replace_reluctant_regex(
 }
 
 Nft mata::applications::strings::replace::replace_reluctant_regex(
-    nfa::Nfa regex,
+    nfa::Nfa aut,
     const Word& replacement,
     Alphabet* alphabet,
     ReplaceMode replace_mode,
     Symbol begin_marker
 ) {
-    return ReluctantReplace::replace_regex(std::move(regex), replacement, alphabet, replace_mode, begin_marker);
+    return ReluctantReplace::replace_regex(std::move(aut), replacement, alphabet, replace_mode, begin_marker);
 }
 
 nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
@@ -493,7 +493,7 @@ Nft applications::strings::replace::replace_reluctant_single_symbol(Symbol from_
     return ReluctantReplace::replace_symbol(from_symbol, replacement, alphabet, replace_mode);
 }
 
-Nft ReluctantReplace::replace_regex(nfa::Nfa regex, const Word& replacement, Alphabet* alphabet,
+Nft ReluctantReplace::replace_regex(nfa::Nfa aut, const Word& replacement, Alphabet* alphabet,
                                               ReplaceMode replace_mode, Symbol begin_marker) {
     // SMT-LIB theory Strings (Unicode Strings): Semantics for matching empty words in replace regex functions:
     // ; (str.replace_re s r t) is the string obtained by replacing the
@@ -506,15 +506,15 @@ Nft ReluctantReplace::replace_regex(nfa::Nfa regex, const Word& replacement, Alp
     // ; left-to right, each shortest *non-empty* match of r in s by t.
     // (str.replace_re_all String RegLan String String)
     if (replace_mode == ReplaceMode::All) {
-        // Removing the empty string from the regex.
-        regex.unify_initial(true).final.erase(*regex.initial.begin());
+        // Removing the empty string from aut.
+        aut.unify_initial(true).final.erase(*regex.initial.begin());
     }
 
     ReluctantReplace reluctant_replace{};
     // TODO(nft): Add optional bool parameter to revert whether to swap initial and final states.
-    Nft dft_begin_marker{ reluctant_replace.begin_marker_nft(reluctant_replace.begin_marker_nfa(regex, alphabet), begin_marker) };
+    Nft dft_begin_marker{ reluctant_replace.begin_marker_nft(reluctant_replace.begin_marker_nfa(aut, alphabet), begin_marker) };
     Nft nft_reluctant_replace{
-        reluctant_replace.reluctant_leftmost_nft(std::move(regex), alphabet, begin_marker, replacement, replace_mode) };
+        reluctant_replace.reluctant_leftmost_nft(std::move(aut), alphabet, begin_marker, replacement, replace_mode) };
     return compose(dft_begin_marker, nft_reluctant_replace);
 }
 

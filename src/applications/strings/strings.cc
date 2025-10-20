@@ -217,7 +217,6 @@ std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of
     if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
     if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
 
-    std::vector<mata::Word> result(lengths.size());
     for (const State initial_state: nft.initial) {
         /// Current state, its state post iterator, its end iterator, and iterator in the current symbol post to target states.
         std::vector<std::tuple<State, StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
