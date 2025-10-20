@@ -494,17 +494,17 @@ Nft replace_reluctant_regex(const std::string& regex, const Word& replacement, A
                             ReplaceMode replace_mode = ReplaceMode::All, Symbol begin_marker = BEGIN_MARKER);
 
 /**
- * @brief Create NFT modelling a reluctant leftmost replace of regex @p regex to @p replacement.
+ * @brief Create NFT modelling a reluctant leftmost replace of regex represented by deterministic automaton @p aut to @p replacement.
  *
  * The most general replace operation, handling any regex as the part to be replaced.
- * @param regex NFA representing regex to be replaced.
+ * @param aut deterministic automaton representing regex to be replaced.
  * @param replacement Literal to replace with.
  * @param alphabet Alphabet over which to create the NFT.
  * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p regex.
  * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
  * @return The reluctant leftmost replace NFT.
  */
-Nft replace_reluctant_regex(nfa::Nfa regex, const Word& replacement, Alphabet* alphabet,
+Nft replace_reluctant_regex(nfa::Nfa aut, const Word& replacement, Alphabet* alphabet,
                             ReplaceMode replace_mode = ReplaceMode::All, Symbol begin_marker = BEGIN_MARKER);
 
 /**
@@ -547,17 +547,17 @@ Nft replace_reluctant_single_symbol(Symbol from_symbol, const Word& replacement,
 class ReluctantReplace {
 public:
     /**
-     * @brief Create NFT modelling a reluctant leftmost replace of regex @p regex to @p replacement.
+     * @brief Create NFT modelling a reluctant leftmost replace of regex represented by deterministic automaton @p aut to @p replacement.
      *
      * The most general replace operation, handling any regex as the part to be replaced.
-     * @param regex NFA representing regex to be replaced.
+     * @param aut Deterministic automaton representing regex to be replaced.
      * @param replacement Literal to replace with.
      * @param alphabet Alphabet over which to create the NFT.
      * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p regex.
      * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
      * @return The reluctant leftmost replace NFT.
      */
-    static Nft replace_regex(nfa::Nfa regex, const Word& replacement, Alphabet* alphabet,
+    static Nft replace_regex(nfa::Nfa aut, const Word& replacement, Alphabet* alphabet,
                              ReplaceMode replace_mode = ReplaceMode::All, Symbol begin_marker = BEGIN_MARKER);
     /**
      * Create NFT modelling a reluctant leftmost replace of literal @p literal to @p replacement.
