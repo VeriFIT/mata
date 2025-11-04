@@ -1,9 +1,11 @@
-/* tests-mintermization.cc -- tests of Mintermization
+/** @file
+ * @brief Tests for mintermization.
  */
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/applications/strings.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
 

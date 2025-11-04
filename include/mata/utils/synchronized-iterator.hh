@@ -8,13 +8,13 @@
 
 namespace mata::utils {
 
-/**
+/** @page synchronized_iterator Synchronized Iterator
  * Two classes that provide "synchronized" iterators through a vector of ordered vectors,
  * (or of some ordered OrdContainer that have a similar iterator),
  * needed in computation of post
  * in subset construction, product, and non-determinization.
  *
- * The Type stored in OrdContainers must be comparable with <,>,==,!=,<=,>=,
+ * The Type stored in OrdContainers must be comparable with `<`,`>`,`==`,`!=`,`<=`,`>=`,
  * and it must be a total (linear) ordering.
  * The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
  * TransSymbolStates is ordered by the symbol.
@@ -32,13 +32,14 @@ namespace mata::utils {
  * ii) In determinization, it is enough that there EXISTS a position that points to the smallest class.
  * Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
  *
- * Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
+ * Usage: 0) construct, 1) fill in using @c SynchronizedIterator::push_back(), iterate using @c SynchronizedIterator::advance() and @c SynchronizedIterator::get_current(), 2) @c SynchronizedIterator::reset()
+ *  and go back to 1).
  *
- * The memory allocated internally for positions and ends is kept after reset, so it is advisable to use the same iterator for many iterations, as
- * opposed to creating a new one for each iteration.
+ * @note The memory allocated internally for positions and ends is kept after @c SynchronizedIterator::reset(), so it is advisable to use the
+ *  same iterator for many iterations, as opposed to creating a new one for each iteration.
  */
 
-/// Class implementing synchronized iteration.
+/// Synchronized iteration.
 template<typename Iterator> class SynchronizedIterator {
 public:
 

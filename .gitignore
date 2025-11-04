@@ -41,6 +41,14 @@ build-wasm/
 doc/api/
 doc/xml/
 doc/_build
+doc/src/namespace
+doc/src/namespacelist.rst
+doc/src/file
+doc/src/filelist.rst
+doc/src/struct
+doc/src/structlist.rst
+doc/src/class
+doc/src/classlist.rst
 
 coverage.info
 cov_html

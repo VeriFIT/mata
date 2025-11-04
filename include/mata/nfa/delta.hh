@@ -1,4 +1,7 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Data structures representing the delta (transition function) of an NFA, mapping states and input symbols to
+ *  sets of states.
+ */
 
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH

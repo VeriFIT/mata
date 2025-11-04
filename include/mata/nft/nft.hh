@@ -31,17 +31,6 @@
 
 #include "mata/nfa/nfa.hh"
 
-/**
- * Nondeterministic Finite Transducers including structures, transitions and algorithms.
- *
- * In particular, this includes:
- *   1. Structures (Automaton, Transitions, Results, Delta),
- *   2. Algorithms (operations, checks, tests),
- *   3. Constructions.
- *
- * Other algorithms are included in mata::nft::Plumbing (simplified API for, e.g., binding)
- * and mata::nft::algorithms (concrete implementations of algorithms, such as for complement).
- */
 namespace mata::nft {
 
 class Levels: public std::vector<Level> {
@@ -77,7 +66,7 @@ public:
 };
 
 /**
- * A class representing an NFT.
+ * @brief A class representing an NFT.
  */
 class Nft: public nfa::Nfa {
 public:

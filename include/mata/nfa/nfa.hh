@@ -1,4 +1,13 @@
-/* nfa.hh -- Nondeterministic finite automaton (over finite words).
+/** @file
+ * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.
+ *
+ * In particular, this includes:
+ *   1. Structures (Automaton, Transitions, Results, Delta),
+ *   2. Algorithms (operations, checks, tests),
+ *   3. Constructions.
+ *
+ * Other algorithms are included in @c mata::nfa::plumbing (simplified API for, e.g., bindings) and
+ *  @c mata::nfa::algorithms (concrete implementations of algorithms, such as for complement).
  */
 
 #ifndef MATA_NFA_HH_
@@ -31,17 +40,6 @@
 #include "types.hh"
 #include "delta.hh"
 
-/**
- * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.
- *
- * In particular, this includes:
- *   1. Structures (Automaton, Transitions, Results, Delta),
- *   2. Algorithms (operations, checks, tests),
- *   3. Constructions.
- *
- * Other algorithms are included in mata::nfa::Plumbing (simplified API for, e.g., binding)
- * and mata::nfa::algorithms (concrete implementations of algorithms, such as for complement).
- */
 namespace mata::nfa {
 
 /**

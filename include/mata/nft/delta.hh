@@ -1,4 +1,7 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Data structures representing the delta (transition function) of an NFT, mapping states and input symbols to
+ *  sets of states where a single NFT transition comprises a sequence of (NFA) transitions in @c mata::nft::Delta.
+ */
 
 #ifndef MATA_NFT_DELTA_HH
 #define MATA_NFT_DELTA_HH

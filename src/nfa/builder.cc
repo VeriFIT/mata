@@ -1,4 +1,6 @@
-// TODO: Insert header file.
+/** @file
+ * @brief Functions to build predefined types of NFAs, to create them from regular expressions, and to load them from files.
+ */
 
 #include "mata/nfa/builder.hh"
 #include "mata/parser/mintermization.hh"

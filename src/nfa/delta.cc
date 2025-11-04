@@ -1,6 +1,6 @@
-/* delta.cc -- Operations on Delta.
+/** @file
+ * @brief Operations on @c mata::nfa::Delta.
  */
-// TODO: Add file header.
 
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"

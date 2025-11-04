@@ -1,15 +1,13 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Basic types used in the @c mata::nft module for NFTs.
+ */
 
 #ifndef MATA_NFT_TYPES_HH
 #define MATA_NFT_TYPES_HH
 
 #include "mata/alphabet.hh"
-#include "mata/parser/parser.hh"
 
 #include "mata/nfa/types.hh"
-
-#include <limits>
-
 
 namespace mata::nft {
 

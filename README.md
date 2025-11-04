@@ -94,7 +94,7 @@ make -C bindings/python test
 
 # Getting started
 
-To get started, we refer to the [examples](examples/) in our repository.
+To get started, we refer to the folder [examples](./examples/) in our repository.
 This directory contains examples of various usage in form of:
 
   1. C/C++ example programs. By default, they are built with the library. To run for example the first example:

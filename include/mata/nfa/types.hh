@@ -1,4 +1,6 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Basic types used in the @c mata::nfa module for NFAs.
+ */
 
 #ifndef MATA_TYPES_HH
 #define MATA_TYPES_HH
