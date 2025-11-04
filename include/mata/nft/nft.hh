@@ -1,4 +1,73 @@
-/* nft.hh -- Nondeterministic finite automaton (over finite words).
+/** @file
+ * @brief Nondeterministic Finite Transducers including structures, transitions and algorithms.
+ *
+ * In particular, this includes:
+ *   1. Structures (Transducer, Transitions, Results, Delta),
+ *   2. Algorithms (operations, checks, tests),
+ *   3. Constructions.
+ *
+ * Other algorithms are included in @c mata::nft::plumbing (simplified API for, e.g., bindings)
+ * and @c mata::nft::algorithms (concrete implementations of algorithms, such as for inclusion).
+ */
+
+/**
+ * @page nft Nondeterministic Finite Transducers (NFTs)
+ *
+ * @warning Mata provides an experimental (unstable) support for (non-)deterministic finite transducers (NFTs).
+ *  The provided interface may change.
+ *
+ * @section nft_design The design of NFTs in Mata
+ *
+ * In Mata, the classical transducers from textbook definitions (where a transition is a tuple of
+ *  `(initial state, input symbol, final state, output string)`) are encoded using a simpler data structure for the
+ *  transition relation, @c mata::nft::Delta The data structures can directly represent only transitions of the form
+ *  `p -a-> s` where `a` is a single symbol or epsilon. A “high-level” transitions of the form `p -abc/def-> q` where
+ * 'abc' is an input word and def is an output word are encoded as a sequence of these 'low level' transitions:
+ *  `p -a- p’ -d-> q -b-> q' -e-> r -c-> r' -f-> s` (odd transitions read letters of the input track, even transitions read
+ *  letters of the output track, a transition can have epsilon instead of a letter). The primed states are a sort of
+ *  internal states, to where the automaton gets after reading a letter on the input tape. States are distinguished by
+ *  their “level”. “Normal” states  p,q,r,s have level 0, the internal states p’,q’,r’ have in this case the levels 1
+ *  (and you could have n-tape transducers where level can be larger than 1).
+ * In Mata, the @c mata::nft::Delta interface is used only for the manual handling of the internal delta representation,
+ *  taking only (initial state, input symbol, final state)
+ * We find it useful to think about NFTs in Mata as normal NFAs with a single symbol on a transition (because Mata uses
+ *  the same underlying data structure for NFTs as for NFAs) where states are annotated with levels. The 'NFT' states
+ *  are the states with levels 0, the other levels are for the internal states. Each NFT transition is a sequence of NFA
+ *  transitions, one per tape, between two states with levels 0. Each NFA transition performs a single symbol read on
+ *  the tape of the source state.
+ * A sequence of symbols on transitions is not a single word on any tape, but an interleaved description of a single NFT
+ *  transition over multiple tapes, e.g., q1(l:0)-{a}->q2(l:1)-{b}->q3(l:2)-{c}->q4(l:0) (where (l:X) describes the level
+ *  of the state) is a single 'NFT' transition (from a state with level 0 to another state with level 0) where the NFT
+ *  symbol read is a 3-tape symbol ('a', 'b', 'c'), interpreted as 'read 'a' on tape 0, read 'b' on tape 1, and read 'c'
+ *  on tape 2.' When you want to read 'af' on a single tape, you need to construct two such transitions where on the
+ *  remaining tapes, you read an epsilon symbol.
+ *
+ * @section nft_usage Working with NFTs
+ *
+ * There are some utility functions to simplify creating this NFA-like Delta data structure for NFTs such as
+ *  @c mata::nft::Nft::insert_word() (inserting the NFA-like sequence of transitions on different tapes: 'abcd' which means to
+ *  read 'ac' on tape 0 and 'bd' on tape 1), and @c mata::nft::Nft::insert_word_by_parts() (inserting word for each tape
+ *  separately: {'ac', 'bd'} to achieve the same as in the previous).
+ * If you however want precise control over the created transitions, you can omit using the utility NFT functions and
+ *  build your NFT like an NFA using the Nft::Delta::* operations directly, adding a single symbol on a single tape per
+ *  add() call. You will have to correctly specify the levels for the states. When working with 2-tape NFTs modelling a
+ *  replace operation, we use @c mata::applications::strings::replace namespace with utility functions such as
+ *  @c mata::applications::strings::replace::replace_reluctant_regex() (accepting parameters: regex as the input for the tape 0,
+ *  and a word as a replacement on tape 1), etc.
+ * The notion of jumps (in the jump mode RepeatSymbol, a mode designed for NFTs) is just an optimization to reduce the
+ *  size of the NFT. It is an approach to simplify the data structure for NFTs where you can say that you jump over
+ *  several internal states and NFA-like transitions to up to the next state with level 0, each transition in the
+ *  sequence reading the same single symbol of the jump. That is useful when, for example, having a NFT reading string
+ *  'abc' on all tapes. You can encode it as a sequence of jumps between states with level 0 as
+ *  q0(l:0)-{a}->q1(l:0)-{b}->q2(l:0)-{c}->q3(l:0). Notice that the internal states are not present, but they are implied
+ *  by the jump.
+ * Ideally, one should not even have to think about the levels and the intermediate states when properly using the
+ *  utility functions (from the @c mata::nft::Nft class and the @c mata::nft namespace in general).
+ *
+ * @see @ref examples/nft.cc example.
+ *
+ * @note If you find some expected NFT operation or utility function missing, do not hesitate to let us know and we will
+ *  implement it. The interface for NFTs is not stable yet, so we are open to any and all feedback.
  */
 
 #ifndef MATA_NFT_HH_
