@@ -12,8 +12,8 @@ Mata is an open source automata library that offers interface for different kind
 
 # Requirements and dependencies
 
-For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required. 
-From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies). 
+For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
+From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies).
 
 The Mata library further depends on the following libraries, included in the `3rdparty` directory:
 - `cudd` for BDD manipulation,
@@ -30,7 +30,7 @@ cd mata
 make release
 ```
 
-In order to install the library, you can run 
+In order to install the library, you can run
 
 ```
 sudo make install
@@ -42,7 +42,7 @@ In order to verify the functionality of the library, you can run the test suite:
 make test
 ```
 
-You might, need to install the dependencies to measure the coverage of the tests. 
+You might, need to install the dependencies to measure the coverage of the tests.
 Run the following to install the dependencies for MacOS:
 
 ```
@@ -58,11 +58,11 @@ sudo apt-get install -y build-essential lcov gcovr xdg-utils
 # Python binding
 
 Mata offers binding of its efficient library to Python. You can install the binding as an Python
-package on your system as follows. 
+package on your system as follows.
 
 ### Install from PyPI
 
-To install a latest version from the PyPI repository, run 
+To install a latest version from the PyPI repository, run
 ```
 pip3 install libmata
 ```
@@ -76,7 +76,7 @@ system. We recommend using the virtual environemnt (`venv`) to install and use t
 python -m pip install --upgrade pip
 make -C bindings/python init
 
-sudo apt-get -qq update 
+sudo apt-get -qq update
 sudo apt-get -qq install -y graphviz graphviz-dev
 ```
 
@@ -112,7 +112,7 @@ python examples/example01-python-binding.py
   4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
   a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
   Navigate to generated link to see the available jupyter notebooks:
-   
+
 ```
 pip3 install jupyter
 jupyter notebook
@@ -215,6 +215,10 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
 
+## Benchmarking, profiling
+
+For instructions on how to benchmark and profile Mata, see [BENCHMARKING.md](BENCHMARKING.md).
+
 # Supported Automata Models
 
 While we try to keep the provided libray interface stable, Mata is still a project in its infancy.
@@ -260,7 +264,7 @@ Please refer to our [contributing guidelines](CONTRIBUTING.md).
     - [Example 03: Exploring Maze](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-03-exploring-maze.ipynb)
 
 Also, check out our research group focusing on program analysis, static and dynamic analysis,
-formal methods, verification and many more: 
+formal methods, verification and many more:
 <http://www.fit.vutbr.cz/research/groups/verifit/index.php.en>.
 
 # Licensing
@@ -275,7 +279,7 @@ See [AUTHORS.md](AUTHORS.md)
 
 # Acknowledgements
 
-We thank for the support received from the Brno University of Technology 
+We thank for the support received from the Brno University of Technology
 ([BUT FIT](https://www.fit.vutbr.cz/)).
 
 Development of this tool has been supported by the following projects: ???.

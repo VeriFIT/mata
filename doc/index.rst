@@ -11,6 +11,9 @@ Welcome to automata-library's documentation!
    :caption: Contents:
 
    introduction
+   benchmarking
+   automata-format
+   contributing
    nfa
    nft
    alphabet
