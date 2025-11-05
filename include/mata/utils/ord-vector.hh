@@ -10,29 +10,6 @@
 
 #include "utils.hh"
 
-namespace {
-/**
- * @brief  Converts an object to string
- *
- * Static method for conversion of an object of any class with the << output
- * operator into a string
- *
- * @param[in]  n  The object for the conversion
- *
- * @returns  The string representation of the object
- */
-template <typename T>
-std::string to_str(const T& n) {
-    // the output stream for the string
-    std::ostringstream oss;
-    // insert the object into the stream
-    oss << n;
-    // return the string
-    return oss.str();
-}
-
-} // Anonymous namespace.
-
 namespace mata::utils {
 
 template <class Key> class OrdVector;
@@ -86,6 +63,27 @@ private:  // Private data members
 
 private:  // Private methods
     bool is_sorted() const { return mata::utils::is_sorted(vec_); }
+
+    /**
+    * @brief Converts an object to string.
+    *
+    * Static method for conversion of an object of any class with the << output operator into a string
+    *
+    * @param[in]  n  The object for the conversion.
+    *
+    * @returns  The string representation of the object.
+    */
+    template <typename T>
+    static std::string to_str(const T& n) {
+        // The output stream for the string.
+        std::ostringstream oss;
+        // Insert the object into the stream.
+        oss << n;
+        // Return the string.
+        return oss.str();
+        // TODO: When C++20 compliant compilers are sufficiently widespread, use std::format directly.
+        // return std::format("{}", n);
+    }
 
 public:
     OrdVector() : vec_() {}
