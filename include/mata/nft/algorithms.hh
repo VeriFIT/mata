@@ -1,4 +1,5 @@
-/* algorithms.hh -- Wrapping up algorithms for Nft manipulation which would be otherwise in anonymous namespaces.
+/** @file
+ * @brief Functions to operate on NFTs, such as inclusion and universality checking, etc.
  */
 
 #ifndef MATA_NFT_INTERNALS_HH_

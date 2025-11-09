@@ -1,5 +1,5 @@
 Benchmarking
 ============
 
-.. include :: ../BENCHMARKING.md
+.. include :: ../../BENCHMARKING.md
    :parser: myst_parser.sphinx_

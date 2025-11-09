@@ -1,4 +1,7 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Function to build predefined types of NFTs, to create them from regular expressions, and to load them from
+ *  files.
+ */
 
 #ifndef LIBMATA_NFT_BUILDER_HH
 #define LIBMATA_NFT_BUILDER_HH

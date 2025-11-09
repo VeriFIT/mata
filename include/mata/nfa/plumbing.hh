@@ -1,4 +1,10 @@
-/* nfa-plumbings.hh -- Wrapping up different supporting functions.
+/** @file
+ * @brief Wrappers around various support functions.
+ *
+ * Simplified NFA API, used in binding to call NFA algorithms.
+ *
+ * In particular, this mostly includes operations and checks, that do not return Automaton,
+ * but instead take resulting automaton as pointer (e.g. `void f(Nfa* result, const Nfa& lhs, const Nfa& rhs)`).
  */
 
 #ifndef MATA_NFA_PLUMBING_HH_
@@ -12,10 +18,7 @@
 using namespace mata::nfa::builder;
 
 /**
- * Simplified NFA API, used in binding to call NFA algorithms.
- *
- * In particular, this mostly includes operations and checks, that do not return Automaton,
- * but instead take resulting automaton as pointer (e.g. `void f(Nfa* result, const Nfa& lhs, const Nfa& rhs)`).
+ * @brief Wrappers around various support functions.
  */
 namespace mata::nfa::plumbing {
 
@@ -38,7 +41,7 @@ inline void complement(
 }
 
 inline void minimize(Nfa* res, const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski"}}) { *res = minimize(aut, params); }
- 
+
 inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
     *result = determinize(aut, subset_map);
 }

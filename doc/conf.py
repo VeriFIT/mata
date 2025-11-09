@@ -17,9 +17,9 @@ import os
 
 # -- Project information -----------------------------------------------------
 
-project = 'mata'
-copyright = '2022, VeriFIT Group, BUT, FIT'
-author = 'VeriFIT Group, BUT, FIT'
+project = 'Mata'
+copyright = '2025, Automata@FIT Group, BUT, FIT'
+author = 'Automata@FIT Group, BUT, FIT'
 
 
 def get_version():
@@ -81,3 +81,4 @@ breathe_projects = {
     project: "xml/"
 }
 breathe_default_project = project
+myst_heading_anchors = 7

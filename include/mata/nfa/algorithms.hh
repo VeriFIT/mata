@@ -1,4 +1,10 @@
-/* algorithms.hh -- Wrapping up algorithms for Nfa manipulation which would be otherwise in anonymous namespaces.
+/** @file
+ * @brief Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
+ *
+ * This is a separation of the implementation from the interface defined in @c mata::nfa.
+ * @note In @c mata::nfa interface, there are particular dispatch functions calling these function according to
+ *  parameters provided by a user. E.g., we can call the following function:
+ * `is_universal(aut, alph, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based algorithm.
  */
 
 #ifndef MATA_NFA_INTERNALS_HH_
@@ -9,12 +15,6 @@
 
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
- *
- * This is a separation of the implementation from the interface defined in mata::nfa.
- * Note, that in mata::nfa interface, there are particular dispatch functions calling
- * these function according to parameters provided by a user.
- * E.g. we can call the following function: `is_universal(aut, alph, {{'algorithm', 'antichains'}})`
- * to check for universality based on antichain-based algorithm.
  */
 namespace mata::nfa::algorithms {
 
@@ -133,7 +133,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
 
 /**
  * @brief Reduce NFA using (forward) simulation.
- * 
+ *
  * @param[in] nfa NFA to reduce
  * @param[out] state_renaming Map mapping original states to the reduced states.
  */
