@@ -5,6 +5,8 @@
 #ifndef MATA_NFT_TYPES_HH
 #define MATA_NFT_TYPES_HH
 
+#include <utility>
+
 #include "mata/alphabet.hh"
 
 #include "mata/nfa/types.hh"
@@ -14,6 +16,29 @@ namespace mata::nft {
 extern const std::string TYPE_NFT;
 
 using Level = unsigned;
+
+/**
+ * @brief Classes for levels ordering in NFTs.
+ */
+class LevelsOrdering {
+public:
+    using Compare = std::function<bool(Level, Level)>;
+    /**
+     * @brief Ordering for Levels in NFTs where lower levels precede higher levels.
+     *
+     * That is, levels are ordered as follows: 0 < 1 < 2 < ... < num_of_levels-1.
+     */
+    static bool Minimal(const Level lhs, const Level rhs) { return std::less()(lhs, rhs); }
+    /**
+     * @brief Ordering for levels in NFTs where lower levels precede higher levels, except for 0 which is the highest level.
+     *
+     * That is, levels are ordered as follows: 1 < 2 < ... < num_of_levels-1 < 0.
+     * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the next lowest
+     *  level of the next state.
+     */
+    static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
+};
+
 using State = mata::nfa::State;
 using StateSet = mata::nfa::StateSet;
 

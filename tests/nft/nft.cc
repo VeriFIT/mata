@@ -1,10 +1,12 @@
 // TODO: some header
 
+#include <algorithm>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nft/types.hh"
 #include "utils.hh"
 
 #include "mata/utils/sparse-set.hh"
@@ -1848,6 +1850,25 @@ TEST_CASE("mata::nft::Levels") {
         CHECK(levels.count(3) == 0);
         CHECK(levels.count(5) == 0);
     }
+
+    SECTION("mata::nft::Levels::get_levels_of()") {
+        Levels levels = { 1, 0, 1, 0, 4, 2, 0 };
+        StateSet states = { 0, 2, 4, 5 };
+        std::vector<Level> expected_levels = { 1, 1, 4, 2 };
+        CHECK(levels.get_levels_of(states) == expected_levels);
+    }
+
+    SECTION("mata::nft::Levels::get_minimal_next_level_of()") {
+        Levels levels = { 1, 0, 1, 0, 4, 2, 0 };
+        StateSet states = { 0, 1, 4, 5 };
+        CHECK(levels.get_minimal_next_level_of(states) == 1);
+        states.erase(0);
+        CHECK(levels.get_minimal_next_level_of(states) == 2);
+        states.erase(5);
+        CHECK(levels.get_minimal_next_level_of(states) == 4);
+        states.erase(4);
+        CHECK(levels.get_minimal_next_level_of(states) == 0);
+    }
 }
 
 TEST_CASE("mata::nft::Nft::invert_levels()") {
@@ -3518,92 +3539,92 @@ TEST_CASE("mata::nft::print_to_mata()") {
 }
 
 TEST_CASE("mata::nft::Nft::trim() bug") {
-	Nft aut(5, {0}, {4});
-	aut.delta.add(0, 122, 1);
-	aut.delta.add(1, 98, 1);
-	aut.delta.add(1, 122, 1);
-	aut.delta.add(1, 97, 2);
-	aut.delta.add(2, 122, 1);
-	aut.delta.add(2, 97, 1);
-	aut.delta.add(1, 97, 4);
-	aut.delta.add(3, 97, 4);
+    Nft aut(5, {0}, {4});
+    aut.delta.add(0, 122, 1);
+    aut.delta.add(1, 98, 1);
+    aut.delta.add(1, 122, 1);
+    aut.delta.add(1, 97, 2);
+    aut.delta.add(2, 122, 1);
+    aut.delta.add(2, 97, 1);
+    aut.delta.add(1, 97, 4);
+    aut.delta.add(3, 97, 4);
 
-	Nft aut_copy {aut};
-	CHECK(are_equivalent(aut_copy.trim(), aut));
+    Nft aut_copy {aut};
+    CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
 TEST_CASE("mata::nft::get_useful_states_tarjan") {
-	SECTION("Nft 1") {
-		Nft aut(5, {0}, {4});
-		aut.delta.add(0, 122, 1);
-		aut.delta.add(1, 98, 1);
-		aut.delta.add(1, 122, 1);
-		aut.delta.add(1, 97, 2);
-		aut.delta.add(2, 122, 1);
-		aut.delta.add(2, 97, 1);
-		aut.delta.add(1, 97, 4);
-		aut.delta.add(3, 97, 4);
+    SECTION("Nft 1") {
+        Nft aut(5, {0}, {4});
+        aut.delta.add(0, 122, 1);
+        aut.delta.add(1, 98, 1);
+        aut.delta.add(1, 122, 1);
+        aut.delta.add(1, 97, 2);
+        aut.delta.add(2, 122, 1);
+        aut.delta.add(2, 97, 1);
+        aut.delta.add(1, 97, 4);
+        aut.delta.add(3, 97, 4);
 
-		mata::BoolVector bv = aut.get_useful_states();
-		mata::BoolVector ref({ 1, 1, 1, 0, 1});
-		CHECK(bv == ref);
-	}
+        mata::BoolVector bv = aut.get_useful_states();
+        mata::BoolVector ref({ 1, 1, 1, 0, 1});
+        CHECK(bv == ref);
+    }
 
-	SECTION("Empty NFT") {
-		Nft aut;
-		mata::BoolVector bv = aut.get_useful_states();
-		CHECK(bv == mata::BoolVector({}));
-	}
+    SECTION("Empty NFT") {
+        Nft aut;
+        mata::BoolVector bv = aut.get_useful_states();
+        CHECK(bv == mata::BoolVector({}));
+    }
 
-	SECTION("Single-state NFT") {
-		Nft aut(1, {0}, {});
-		mata::BoolVector bv = aut.get_useful_states();
-		CHECK(bv == mata::BoolVector({ 0}));
-	}
+    SECTION("Single-state NFT") {
+        Nft aut(1, {0}, {});
+        mata::BoolVector bv = aut.get_useful_states();
+        CHECK(bv == mata::BoolVector({ 0}));
+    }
 
-	SECTION("Single-state NFT acc") {
-		Nft aut(1, {0}, {0});
-		mata::BoolVector bv = aut.get_useful_states();
-		CHECK(bv == mata::BoolVector({ 1}));
-	}
+    SECTION("Single-state NFT acc") {
+        Nft aut(1, {0}, {0});
+        mata::BoolVector bv = aut.get_useful_states();
+        CHECK(bv == mata::BoolVector({ 1}));
+    }
 
-	SECTION("Nft 2") {
-		Nft aut(5, {0, 1}, {2});
-		aut.delta.add(0, 122, 2);
-		aut.delta.add(2, 98, 3);
-		aut.delta.add(1, 98, 4);
-		aut.delta.add(4, 97, 3);
+    SECTION("Nft 2") {
+        Nft aut(5, {0, 1}, {2});
+        aut.delta.add(0, 122, 2);
+        aut.delta.add(2, 98, 3);
+        aut.delta.add(1, 98, 4);
+        aut.delta.add(4, 97, 3);
 
-		mata::BoolVector bv = aut.get_useful_states();
-		mata::BoolVector ref({ 1, 0, 1, 0, 0});
-		CHECK(bv == ref);
-	}
+        mata::BoolVector bv = aut.get_useful_states();
+        mata::BoolVector ref({ 1, 0, 1, 0, 0});
+        CHECK(bv == ref);
+    }
 
-	SECTION("Nft 3") {
-		Nft aut(2, {0, 1}, {0, 1});
-		aut.delta.add(0, 122, 0);
-		aut.delta.add(1, 98, 1);
+    SECTION("Nft 3") {
+        Nft aut(2, {0, 1}, {0, 1});
+        aut.delta.add(0, 122, 0);
+        aut.delta.add(1, 98, 1);
 
-		mata::BoolVector bv = aut.get_useful_states();
-		mata::BoolVector ref({ 1, 1});
-		CHECK(bv == ref);
-	}
+        mata::BoolVector bv = aut.get_useful_states();
+        mata::BoolVector ref({ 1, 1});
+        CHECK(bv == ref);
+    }
 
-	SECTION("Nft no final") {
-		Nft aut(5, {0}, {});
-		aut.delta.add(0, 122, 1);
-		aut.delta.add(1, 98, 1);
-		aut.delta.add(1, 122, 1);
-		aut.delta.add(1, 97, 2);
-		aut.delta.add(2, 122, 1);
-		aut.delta.add(2, 97, 1);
-		aut.delta.add(1, 97, 4);
-		aut.delta.add(3, 97, 4);
+    SECTION("Nft no final") {
+        Nft aut(5, {0}, {});
+        aut.delta.add(0, 122, 1);
+        aut.delta.add(1, 98, 1);
+        aut.delta.add(1, 122, 1);
+        aut.delta.add(1, 97, 2);
+        aut.delta.add(2, 122, 1);
+        aut.delta.add(2, 97, 1);
+        aut.delta.add(1, 97, 4);
+        aut.delta.add(3, 97, 4);
 
-		mata::BoolVector bv = aut.get_useful_states();
-		mata::BoolVector ref({ 0, 0, 0, 0, 0});
-		CHECK(bv == ref);
-	}
+        mata::BoolVector bv = aut.get_useful_states();
+        mata::BoolVector ref({ 0, 0, 0, 0, 0});
+        CHECK(bv == ref);
+    }
 
     SECTION("more initials") {
         Nft aut(4, {0, 1, 2}, {0, 3});

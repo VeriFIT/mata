@@ -7,6 +7,8 @@
 #include <iterator>
 #include <fstream>
 #include <string>
+#include <utility>
+#include <ranges>
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
@@ -22,8 +24,32 @@ using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-const std::string mata::nft::TYPE_NFT = "NFT";
+constexpr std::string mata::nft::TYPE_NFT = "NFT";
 
+std::vector<Level> Levels::get_levels_of(const utils::SparseSet<State>& states) const {
+    std::vector<Level> result;
+    result.reserve(states.size());
+    for (const State state: states) { result.push_back((*this)[state]); }
+    return result;
+}
+std::vector<Level> Levels::get_levels_of(const StateSet& states) const {
+    std::vector<Level> result;
+    result.reserve(states.size());
+    for (const State state: states) { result.push_back((*this)[state]); }
+    return result;
+}
+
+Level Levels::get_minimal_level_of(const StateSet& states, LevelsOrdering::Compare levels_ordering) const {
+    if (states.empty()) {
+        throw std::runtime_error("Levels::get_minimal_level_of: states is empty, no level can be obtained.");
+    }
+    auto levels = states | std::views::transform([&](const State& state) { return (*this)[state]; });
+    return std::ranges::min(levels, std::move(levels_ordering));
+}
+
+Level Levels::get_minimal_next_level_of(const StateSet& states) const {
+    return get_minimal_level_of(states, LevelsOrdering::Next);
+}
 
 size_t Nft::num_of_states_with_level(const Level level) const {
     return levels.count(level);

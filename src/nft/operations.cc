@@ -1113,7 +1113,7 @@ Run mata::nft::encode_word(const Alphabet* alphabet, const std::vector<std::stri
     return mata::nfa::encode_word(alphabet, input);
 }
 
-std::set<mata::Word> mata::nft::Nft::get_words(size_t max_length) const {
+std::set<mata::Word> mata::nft::Nft::get_words(const size_t max_length) const {
     std::set<mata::Word> result;
 
     // contains a pair: a state s and the word with which we got to the state s
@@ -1139,7 +1139,7 @@ std::set<mata::Word> mata::nft::Nft::get_words(size_t max_length) const {
                 mata::Word new_word = word;
                 new_word.push_back(sp.symbol);
                 for (State s_to : sp.targets) {
-                    new_worklist.push_back({s_to, new_word});
+                    new_worklist.emplace_back(s_to, new_word);
                     if (final.contains(s_to)) {
                         result.insert(new_word);
                     }
