@@ -282,7 +282,7 @@ public:
  * takes the iterator and v and extracts the v.begin() and v.end() from v.
  */
 template<class Container>
-void push_back (SynchronizedIterator<typename Container::const_iterator> &i,const Container &container) {
+void push_back (SynchronizedIterator<typename Container::const_iterator> &i,const Container& container) {
     i.push_back(container.begin(),container.end());
 }
 

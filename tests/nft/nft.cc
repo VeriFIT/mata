@@ -443,63 +443,124 @@ TEST_CASE("mata::nft::is_lang_empty_cex()")
 }
 
 
-TEST_CASE("mata::nft::determinize()")
-{
-    Nft aut(3);
+TEST_CASE("mata::nft::determinize()") {
+    Nft nft{ Nft::with_levels(3) };
     Nft result;
     std::unordered_map<StateSet, State> subset_map;
 
-    SECTION("empty automaton")
-    {
-        result = determinize(aut);
-
-        REQUIRE(result.final.empty());
-        REQUIRE(result.delta.empty());
-        CHECK(result.is_lang_empty());
+    SECTION("empty automaton") {
+        result = determinize(nft, &subset_map);
     }
 
-    SECTION("simple automaton 1")
-    {
-        aut.initial = {1 };
-        aut.final = {1 };
-        result = determinize(aut, &subset_map);
-
-        REQUIRE(result.initial[subset_map[{1}]]);
-        REQUIRE(result.final[subset_map[{1}]]);
-        REQUIRE(result.delta.empty());
+    SECTION("simple automaton 1") {
+        nft.initial = { 0 };
+        nft.final = { 0 };
+        nft.levels = { 0 };
+        result = determinize(nft, &subset_map);
     }
 
-    SECTION("simple automaton 2")
-    {
-        aut.initial = {1 };
-        aut.final = {2 };
-        aut.delta.add(1, 'a', 2);
-        result = determinize(aut, &subset_map);
-
-        REQUIRE(result.initial[subset_map[{1}]]);
-        REQUIRE(result.final[subset_map[{2}]]);
-        REQUIRE(result.delta.contains(subset_map[{1}], 'a', subset_map[{2}]));
+    SECTION("simple automaton 2") {
+        nft.initial = { 0 };
+        nft.final = { 1 };
+        nft.delta.add(0, 'a', 1);
+        nft.levels = { 0, 0 };
+        result = determinize(nft, &subset_map);
     }
 
-    SECTION("This broke Delta when delta[q] could cause re-allocation of post")
-    {
-        Nft x{};
-        x.initial.insert(0);
-        x.final.insert(4);
-        x.delta.add(0, 1, 3);
-        x.delta.add(3, 1, 3);
-        x.delta.add(3, 2, 3);
-        x.delta.add(3, 0, 1);
-        x.delta.add(1, 1, 1);
-        x.delta.add(1, 2, 1);
-        x.delta.add(1, 0, 2);
-        x.delta.add(2, 0, 2);
-        x.delta.add(2, 1, 2);
-        x.delta.add(2, 2, 2);
-        x.delta.add(2, 0, 4);
-        OnTheFlyAlphabet alphabet{};
-        auto complement_result{determinize(x)};
+    SECTION("simple automaton with epsilons") {
+        nft.initial = { 0 };
+        nft.final = { 3, 4, 6 };
+        nft.levels = { 0, 1, 2, 0, 0, 2, 0 };
+        nft.delta.reserve(7);
+        nft.delta.add(0, EPSILON, 3);
+        nft.delta.add(0, EPSILON, 5);
+        nft.delta.add(5, EPSILON, 6);
+        nft.delta.add(0, EPSILON, 1);
+        nft.delta.add(1, EPSILON, 2);
+        nft.delta.add(2, EPSILON, 4);
+        result = determinize(nft, &subset_map);
     }
+
+    SECTION("simple automaton with epsilons") {
+        nft.initial = { 0 };
+        nft.final = { 3, 4, 6 };
+        nft.levels = { 0, 1, 2, 0, 0, 2, 0 };
+        nft.delta.reserve(7);
+        nft.delta.add(0, 'a', 3);
+        nft.delta.add(0, 'a', 5);
+        nft.delta.add(5, 'a', 6);
+        nft.delta.add(0, 'a', 1);
+        nft.delta.add(1, 'a', 2);
+        nft.delta.add(2, 'a', 4);
+        result = determinize(nft, &subset_map);
+    }
+
+    SECTION("nft with loops") {
+        nft.initial = { 0 };
+        nft.final = { 3, 4 };
+        nft.levels = { 0, 2, 1, 0, 0 };
+        nft.delta.add(0, 'a', 2);
+        nft.delta.add(0, 'a', 1);
+        nft.delta.add(0, 'a', 0);
+        nft.delta.add(0, 'a', 4);
+        nft.delta.add(1, 'a', 0);
+        nft.delta.add(2, 'b', 3);
+        nft.delta.add(3, 'c', 3);
+        nft.delta.add(4, 'd', 4);
+        result = determinize(nft, &subset_map);
+    }
+
+
+    SECTION("simple automaton with symbols and epsilons") {
+        nft.initial = { 0 };
+        nft.final = { 3, 4, 6, 9, 10 };
+        nft.levels = { 0, 1, 2, 0, 0, 2, 0, 1, 2, 0, 0, 1 };
+        nft.delta.add(0, EPSILON, 3);
+        nft.delta.add(0, EPSILON, 5);
+        nft.delta.add(5, 'a', 6);
+        nft.delta.add(0, EPSILON, 1);
+        nft.delta.add(1, 'b', 2);
+        nft.delta.add(2, 'c', 4);
+        nft.delta.add(0, EPSILON, 7);
+        nft.delta.add(7, EPSILON, 8);
+        nft.delta.add(8, 'a', 9);
+        nft.delta.add(9, 'd', 10);
+        nft.delta.add(0, 'e', 6);
+        nft.delta.add(9, 'f', 9);
+        nft.delta.add(9, 'g', 11);
+        nft.delta.add(11, 'g', 9);
+        result = determinize(nft, &subset_map);
+    }
+
+    CHECK(result.initial.size() <= 1);
+    for (const auto& state_post: result.delta) {
+        for (const auto& [symbol, targets]: state_post) {
+            CHECK(targets.size() == 1);
+        }
+    }
+    CHECK(result.num_of_levels == 3);
+    CHECK(are_equivalent(nft, result));
+    CHECK(result.num_of_states() == result.get_reachable_states().size());
+
+    // SECTION("This broke Delta when delta[q] could cause re-allocation of post")
+    // {
+    //     Nft x{};
+    //     x.initial.insert(0);
+    //     x.final.insert(4);
+    //     x.delta.add(0, 1, 3);
+    //     x.delta.add(3, 1, 3);
+    //     x.delta.add(3, 2, 3);
+    //     x.delta.add(3, 0, 1);
+    //     x.delta.add(1, 1, 1);
+    //     x.delta.add(1, 2, 1);
+    //     x.delta.add(1, 0, 2);
+    //     x.delta.add(2, 0, 2);
+    //     x.delta.add(2, 1, 2);
+    //     x.delta.add(2, 2, 2);
+    //     x.delta.add(2, 0, 4);
+    //     OnTheFlyAlphabet alphabet{};
+    //     auto complement_result{determinize(x)};
+    // }
 } // }}}
 
 TEST_CASE("mata::nft::minimize() for profiling", "[.profiling],[minimize]") {

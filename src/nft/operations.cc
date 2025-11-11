@@ -1,11 +1,12 @@
-/* nft.cc -- operations for NFT
+/** @file
+ * @brief Operations on Nondeterministic Finite Transducers (NFTs).
  */
 
 #include <algorithm>
 #include <list>
 #include <unordered_set>
 #include <iterator>
-#include <algorithm>
+#include <ranges>
 
 // MATA headers
 #include "mata/nft/delta.hh"
@@ -1028,79 +1029,103 @@ Nft mata::nft::reduce(const Nft &aut, StateRenaming *state_renaming, const Param
     return result;
 }
 
-Nft mata::nft::determinize(
-        const Nft&  aut,
-        std::unordered_map<StateSet, State> *subset_map) {
+Nft mata::nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map) {
+    Nft result{ Nft::with_levels(nft.num_of_levels) };
+    result.alphabet = nft.alphabet;
+    if (nft.initial.empty()) { return result; }
 
-    Nft result;
-    //assuming all sets targets are non-empty
-    std::vector<std::pair<State, StateSet>> worklist;
+    // Assuming all sets targets are non-empty.
+    std::vector<std::pair<State, StateSet>> worklist{};
     bool deallocate_subset_map = false;
     if (subset_map == nullptr) {
-        subset_map = new std::unordered_map<StateSet,State>();
+        subset_map = new std::unordered_map<StateSet, State>{};
         deallocate_subset_map = true;
     }
 
-    result.clear();
+    const StateSet sources_init{ nft.initial };
+    const State source_init_res{ result.add_state() };
+    result.initial.insert(source_init_res);
 
-    const StateSet S0 =  StateSet(aut.initial);
-    const State S0id = result.add_state();
-    result.initial.insert(S0id);
+    if (nft.final.intersects_with(sources_init)) { result.final.insert(source_init_res); }
+    worklist.emplace_back(source_init_res, sources_init);
 
-    if (aut.final.intersects_with(S0)) {
-        result.final.insert(S0id);
-    }
-    worklist.emplace_back(S0id, S0);
-
-    (*subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
-
-    if (aut.delta.empty())
+    if (nft.delta.empty()) {
+        if (deallocate_subset_map) { delete subset_map; }
         return result;
+    }
 
-    using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
-    SynchronizedExistentialSymbolPostIterator synchronized_iterator;
+    (*subset_map)[sources_init] = source_init_res;
 
+    using Iterator = OrdVector<SymbolPost>::const_iterator;
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
+    // A map of jumps from a `result` source state to a set of targets in the `nft` that is yet to be added to the
+    //  `result`.
+    std::unordered_map<State, StatePost> wip_jumps{};
     while (!worklist.empty()) {
-        const auto Spair = worklist.back();
+        auto [source_res, sources] = std::move(worklist.back());
         worklist.pop_back();
-        const StateSet S = Spair.second;
-        const State Sid = Spair.first;
-        if (S.empty()) {
-            // This should not happen assuming all sets targets are non-empty.
-            break;
-        }
+        if (sources.empty()) { break; } // This should not happen assuming all sets targets are non-empty.
 
-        // add moves of S to the sync ex iterator
-        // TODO: shouldn't we also reset first?
-        for (State q: S) {
-            mata::utils::push_back(synchronized_iterator, aut.delta[q]);
+        // Add moves of `sources` to the synchronized existential iterator.
+        synchronized_iterator.reset();
+        for (const State source_orig : sources) { push_back(synchronized_iterator, nft.delta[source_orig]); }
+
+        // Add partially processed jumps from `source_res` to the synchronized iterator.
+        StatePost wip_jumps_state_post;
+        if (auto wip_jumps_state_post_it{ wip_jumps.find(source_res) }; wip_jumps_state_post_it != wip_jumps.end()) {
+            wip_jumps_state_post = std::move(wip_jumps_state_post_it->second);
+            wip_jumps.erase(wip_jumps_state_post_it);
+            push_back(synchronized_iterator, wip_jumps_state_post);
         }
 
         while (synchronized_iterator.advance()) {
-
-            // extract post from the sychronized_iterator iterator
             const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-            Symbol currentSymbol = (*moves.begin())->symbol;
-            StateSet T = synchronized_iterator.unify_targets();
+            const Symbol current_symbol{ (*moves.begin())->symbol };
+            StateSet targets{ synchronized_iterator.unify_targets() };
+            const auto existing_targets_it = subset_map->find(targets);
+            const bool target_res_exists{ existing_targets_it != subset_map->end() };
 
-            const auto existingTitr = subset_map->find(T);
-            State Tid;
-            if (existingTitr != subset_map->end()) {
-                Tid = existingTitr->second;
+            State target_res;
+            // Targets that need further processing because they were not reached yet at this step.
+            StateSet targets_partial{};
+            StateSet targets_resolved{};
+            Level next_level;
+            if (target_res_exists) {
+                target_res = existing_targets_it->second;
+                next_level = result.levels[target_res];
             } else {
-                Tid = result.add_state();
-                (*subset_map)[mata::utils::OrdVector<State>(T)] = Tid;
-                if (aut.final.intersects_with(T)) {
-                    result.final.insert(Tid);
-                }
-                worklist.emplace_back(Tid, T);
+                // Create target of the minimal level between all the original targets.
+                next_level = nft.levels.get_minimal_next_level_of(targets);
+                if (next_level != 0) {
+                    for (const State state : targets) {
+                        (nft.levels[state] == next_level ? targets_resolved : targets_partial).push_back(state);
+                    }
+                } else { targets_resolved = std::move(targets); }
             }
-            result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
+
+            // Try to add the transition to the result. If the target state does not exist yet, create it.
+            if (auto [it, inserted]{ result.delta.mutable_state_post(source_res).insert(SymbolPost{ current_symbol }) };
+                inserted) {
+                if (!target_res_exists) {
+                    target_res = result.add_state_with_level(next_level);
+                    (*subset_map)[mata::utils::OrdVector<State>(targets_resolved)] = target_res;
+                    if (!targets_partial.empty()) {
+                        // Some targets were not resolved at this step, so we need to store them for further processing.
+                        wip_jumps.emplace(target_res, StatePost{ { current_symbol, targets_partial } });
+                    }
+                    worklist.emplace_back(target_res, targets_resolved);
+                    if (next_level == 0) {
+                        // `Nft` transition cannot jump beyond level 0, so we stop unwinding the targets_resolved by
+                        //   level here.
+                        if (nft.final.intersects_with(targets_resolved)) { result.final.insert(target_res); }
+                    }
+                }
+                it->push_back(target_res);
+            }
         }
     }
 
     if (deallocate_subset_map) { delete subset_map; }
-
     return result;
 }
 
