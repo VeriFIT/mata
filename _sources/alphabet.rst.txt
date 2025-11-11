@@ -1,4 +1,4 @@
 Alphabet
-===================================
+========
 
 .. doxygenfile:: alphabet.hh

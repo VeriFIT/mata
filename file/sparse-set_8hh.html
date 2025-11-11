@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File sparse-set.hh &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File strings.hh" href="strings_8hh.html" />
+    <link rel="prev" title="File re2parser.hh" href="re2parser_8hh.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-sparse-set-hh">
+<h1>File sparse-set.hh<a class="headerlink" href="#file-sparse-set-hh" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utilsE">
+<span id="_CPPv3N4mata5utilsE"></span><span id="_CPPv2N4mata5utilsE"></span><span id="mata::utils"></span><span class="target" id="namespacemata_1_1utils"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">utils</span></span></span><br /></dt>
+<dd><p>SparseSet.h Implements a class template of a sparse set of unsigned integers. </p>
+<p>Non-automata-related structures and algorithms.</p>
+<p>
+In particular, this includes:<ol class="lowerroman simple">
+<li><p>Predicates,</p></li>
+<li><p>Ordered Vectors,</p></li>
+<li><p>Iterators,</p></li>
+<li><p>Printers,</p></li>
+<li><p>Other helper functions. </p></li>
+</ol>
+<dl class="simple">
+<dt><strong>Author</strong></dt><dd><p>Sam Griffiths www.computist.xyz <a class="reference external" href="https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a">https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a</a></p>
+</dd>
+</dl>
+</p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSetE">
+<span id="_CPPv3I0EN4mata5utils9SparseSetE"></span><span id="_CPPv2I0EN4mata5utils9SparseSetE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Number</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;sparse-set.hh&gt;</em></div>
+<p>Implementation of a set of non-negative numbers using sparse-set. </p>
+<p>This class implements the interface of a set (similar to std::set) using sparse-set date structure, that is, a pair of vectors dense and sparse (… google it). Importantly<ul class="simple">
+<li><p>Insertion and removal are constant time.</p></li>
+<li><p>Iteration is linear in the number of stored elements.</p></li>
+<li><p>It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.</p></li>
+</ul>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Number</strong> – Number type: type of numbers contained in the container. </p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet8iteratorE">
+<span id="_CPPv3N4mata5utils9SparseSet8iteratorE"></span><span id="_CPPv2N4mata5utils9SparseSet8iteratorE"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1afb599442f3210b7001ec554c0873775c"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet8iteratorE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet14const_iteratorE">
+<span id="_CPPv3N4mata5utils9SparseSet14const_iteratorE"></span><span id="_CPPv2N4mata5utils9SparseSet14const_iteratorE"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ae8dccb1d8356c048b99caa5189aee7f0"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">const_iterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet14const_iteratorE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet5beginEv">
+<span id="_CPPv3N4mata5utils9SparseSet5beginEv"></span><span id="_CPPv2N4mata5utils9SparseSet5beginEv"></span><span id="mata::utils::SparseSet::begin"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ad69bd11391be1a1dba5c8202259664f8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9SparseSet8iteratorE" title="mata::utils::SparseSet::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet5beginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSet5beginEv">
+<span id="_CPPv3NK4mata5utils9SparseSet5beginEv"></span><span id="_CPPv2NK4mata5utils9SparseSet5beginEv"></span><span id="mata::utils::SparseSet::beginC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a29305669b60ca1680752e2fc3592ba99"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9SparseSet14const_iteratorE" title="mata::utils::SparseSet::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSet5beginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet3endEv">
+<span id="_CPPv3N4mata5utils9SparseSet3endEv"></span><span id="_CPPv2N4mata5utils9SparseSet3endEv"></span><span id="mata::utils::SparseSet::end"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1acad38d52497a975bfb6f2f6acd76631f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9SparseSet8iteratorE" title="mata::utils::SparseSet::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet3endEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSet3endEv">
+<span id="_CPPv3NK4mata5utils9SparseSet3endEv"></span><span id="_CPPv2NK4mata5utils9SparseSet3endEv"></span><span id="mata::utils::SparseSet::endC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1accf9a4bd0c34d4a5f6a7dab66ea10cdc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9SparseSet14const_iteratorE" title="mata::utils::SparseSet::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSet3endEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSet4sizeEv">
+<span id="_CPPv3NK4mata5utils9SparseSet4sizeEv"></span><span id="_CPPv2NK4mata5utils9SparseSet4sizeEv"></span><span id="mata::utils::SparseSet::sizeC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a259cb5a711406a8c3e5d937eb9350cca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSet4sizeEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSet11domain_sizeEv">
+<span id="_CPPv3NK4mata5utils9SparseSet11domain_sizeEv"></span><span id="_CPPv2NK4mata5utils9SparseSet11domain_sizeEv"></span><span id="mata::utils::SparseSet::domain_sizeC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ab3ca1eaf5408c0467c82f456fe0bb5ab"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">domain_size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSet11domain_sizeEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSet5emptyEv">
+<span id="_CPPv3NK4mata5utils9SparseSet5emptyEv"></span><span id="_CPPv2NK4mata5utils9SparseSet5emptyEv"></span><span id="mata::utils::SparseSet::emptyC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a644718bb2fb240de962dc3c9a1fdf0dc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSet5emptyEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet5clearEv">
+<span id="_CPPv3N4mata5utils9SparseSet5clearEv"></span><span id="_CPPv2N4mata5utils9SparseSet5clearEv"></span><span id="mata::utils::SparseSet::clear"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ac8bb3912a3ce86b15842e79d0b421204"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet5clearEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet7reserveE6size_t">
+<span id="_CPPv3N4mata5utils9SparseSet7reserveE6size_t"></span><span id="_CPPv2N4mata5utils9SparseSet7reserveE6size_t"></span><span id="mata::utils::SparseSet::reserve__s"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a436cc0c56bfe1129dbcac1034e532171"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">u</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet7reserveE6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSet8containsEK6Number">
+<span id="_CPPv3NK4mata5utils9SparseSet8containsEK6Number"></span><span id="_CPPv2NK4mata5utils9SparseSet8containsEK6Number"></span><span id="mata::utils::SparseSet::contains__NumberCC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ac1bcdf61aba8e4c15f0ed055ef86e503"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSet8containsEK6Number" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet6insertEK6Number">
+<span id="_CPPv3N4mata5utils9SparseSet6insertEK6Number"></span><span id="_CPPv2N4mata5utils9SparseSet6insertEK6Number"></span><span id="mata::utils::SparseSet::insert__NumberC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a6f329df96bf43544f04781a487ac4327"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet6insertEK6Number" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet13erase_nocheckEK6Number">
+<span id="_CPPv3N4mata5utils9SparseSet13erase_nocheckEK6Number"></span><span id="_CPPv2N4mata5utils9SparseSet13erase_nocheckEK6Number"></span><span id="mata::utils::SparseSet::erase_nocheck__NumberC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a85afe67177c190d627461d0261bcf226"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase_nocheck</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">number</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Erase <code class="docutils literal notranslate"><span class="pre">number</span></code> from the set without checking for its existence. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>number</strong> – Number to be erased. </p>
+</dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">number</span></code> exists in the set. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet5eraseEK6Number">
+<span id="_CPPv3N4mata5utils9SparseSet5eraseEK6Number"></span><span id="_CPPv2N4mata5utils9SparseSet5eraseEK6Number"></span><span id="mata::utils::SparseSet::erase__NumberC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a8d6c44793639bb5e253bfb9df41a5048"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet5eraseEK6Number" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetEv">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetEv"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetEv"></span><span id="mata::utils::SparseSet::SparseSet"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ab5bb74df22db54e10f74adcf30377644"></span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd><p>New Mata code. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetE6Number">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetE6Number"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetE6Number"></span><span id="mata::utils::SparseSet::SparseSet__Number"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a44b0f32d259268248337a0dea8944ec4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">domain_size</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Basic constructor where you may reserve a domain size. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetENSt16initializer_listI6NumberEE">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetENSt16initializer_listI6NumberEE"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetENSt16initializer_listI6NumberEE"></span><span id="mata::utils::SparseSet::SparseSet__std::initializer_list:Number:"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a307087891277d2f80a349900e44de9b7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">list</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet9SparseSetENSt16initializer_listI6NumberEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSet9SparseSetE13InputIterator13InputIterator">
+<span id="_CPPv3I0EN4mata5utils9SparseSet9SparseSetE13InputIterator13InputIterator"></span><span id="_CPPv2I0EN4mata5utils9SparseSet9SparseSetE13InputIterator13InputIterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1a8711f9b27a12bdfdfd33243d0097a42a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet9SparseSetE13InputIterator13InputIterator" title="mata::utils::SparseSet::SparseSet::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet9SparseSetE13InputIterator13InputIterator" title="mata::utils::SparseSet::SparseSet::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9SparseSet9SparseSetE13InputIterator13InputIterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSet9SparseSetER1T">
+<span id="_CPPv3I0EN4mata5utils9SparseSet9SparseSetER1T"></span><span id="_CPPv2I0EN4mata5utils9SparseSet9SparseSetER1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1a7cdc274612011d6f02443a7847231a71"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet9SparseSetER1T" title="mata::utils::SparseSet::SparseSet::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">container</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9SparseSet9SparseSetER1T" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetERK10BoolVector">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetERK10BoolVector"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetERK10BoolVector"></span><span id="mata::utils::SparseSet::SparseSet__BoolVectorCR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ae28c97fa548c8372e146abfa9c8fdf42"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1BoolVector.html#_CPPv4N4mata10BoolVectorE" title="mata::BoolVector"><span class="n"><span class="pre">BoolVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bv</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet9SparseSetERK10BoolVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetERK9SparseSetI6NumberE">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetERK9SparseSetI6NumberE"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetERK9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::SparseSet__SparseSet:Number:CR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1afb9d725db7b4cedfd795663a0039d06c"></span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9SparseSet9SparseSetERK9SparseSetI6NumberE" title="mata::utils::SparseSet::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet9SparseSetERK9SparseSetI6NumberE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetERR9SparseSetI6NumberE">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetERR9SparseSetI6NumberE"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetERR9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::SparseSet__SparseSet:Number:RR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a5f2526563e13cb299203673d5ccc71e1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5utils9SparseSet9SparseSetERR9SparseSetI6NumberE" title="mata::utils::SparseSet::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet9SparseSetERR9SparseSetI6NumberE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSetaSERK9SparseSetI6NumberE">
+<span id="_CPPv3N4mata5utils9SparseSetaSERK9SparseSetI6NumberE"></span><span id="_CPPv2N4mata5utils9SparseSetaSERK9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::assign-operator__SparseSet:Number:CR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ae36324a3fef6aefd7a847eae989b71d5"></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSetaSERK9SparseSetI6NumberE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSetaSERR9SparseSetI6NumberE">
+<span id="_CPPv3N4mata5utils9SparseSetaSERR9SparseSetI6NumberE"></span><span id="_CPPv2N4mata5utils9SparseSetaSERR9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::assign-operator__SparseSet:Number:RR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a4494e4271279c4e2099438663ac3a94d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSetaSERR9SparseSetI6NumberE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE">
+<span id="_CPPv3NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE"></span><span id="_CPPv2NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::eq-operator__SparseSet:Number:CRC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a8090ccb246995d2c7cd4e3a2e74b56ae"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet10consistentEv">
+<span id="_CPPv3N4mata5utils9SparseSet10consistentEv"></span><span id="_CPPv2N4mata5utils9SparseSet10consistentEv"></span><span id="mata::utils::SparseSet::consistent"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a1c4f6e04ba4a33eff229dc62fbb7bb7f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">consistent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet10consistentEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSetixE6Number">
+<span id="_CPPv3NK4mata5utils9SparseSetixE6Number"></span><span id="_CPPv2NK4mata5utils9SparseSetixE6Number"></span><span id="mata::utils::SparseSet::subscript-operator__NumberC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a85705d7a825cbe91070d0b680a4af642"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if predicate for <code class="docutils literal notranslate"><span class="pre">q</span></code> is set. False otherwise (even if q is out of range of the predicate). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSet6insertEv13InputIterator13InputIterator">
+<span id="_CPPv3I0EN4mata5utils9SparseSet6insertE13InputIterator13InputIterator"></span><span id="_CPPv2I0EN4mata5utils9SparseSet6insertE13InputIterator13InputIterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1ac048f549259de32da2acd742cce52d5c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet6insertEv13InputIterator13InputIterator" title="mata::utils::SparseSet::insert::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet6insertEv13InputIterator13InputIterator" title="mata::utils::SparseSet::insert::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9SparseSet6insertEv13InputIterator13InputIterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I_8IterableEN4mata5utils9SparseSet6insertEvRK1T">
+<span id="_CPPv3I_8IterableEN4mata5utils9SparseSet6insertERK1T"></span><span id="_CPPv2I_8IterableEN4mata5utils9SparseSet6insertERK1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Iterable</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1afe188795976eacdb1695f25afa28ed55"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I_8IterableEN4mata5utils9SparseSet6insertEvRK1T" title="mata::utils::SparseSet::insert::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I_8IterableEN4mata5utils9SparseSet6insertEvRK1T" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet6insertERKNSt16initializer_listI6NumberEE">
+<span id="_CPPv3N4mata5utils9SparseSet6insertERKNSt16initializer_listI6NumberEE"></span><span id="_CPPv2N4mata5utils9SparseSet6insertERKNSt16initializer_listI6NumberEE"></span><span id="mata::utils::SparseSet::insert__std::initializer_list:Number:CR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1adbbfdc89e8dcfd55e177377dd99729fb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">list</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet6insertERKNSt16initializer_listI6NumberEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSet5eraseEv13InputIterator13InputIterator">
+<span id="_CPPv3I0EN4mata5utils9SparseSet5eraseE13InputIterator13InputIterator"></span><span id="_CPPv2I0EN4mata5utils9SparseSet5eraseE13InputIterator13InputIterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1a52d66bb67c1ef8a87c4cf69240037caa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet5eraseEv13InputIterator13InputIterator" title="mata::utils::SparseSet::erase::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet5eraseEv13InputIterator13InputIterator" title="mata::utils::SparseSet::erase::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9SparseSet5eraseEv13InputIterator13InputIterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I_8IterableEN4mata5utils9SparseSet5eraseEvRK1T">
+<span id="_CPPv3I_8IterableEN4mata5utils9SparseSet5eraseERK1T"></span><span id="_CPPv2I_8IterableEN4mata5utils9SparseSet5eraseERK1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Iterable</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1a2404e65d8a987af8b00f47b92d1c2d1a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I_8IterableEN4mata5utils9SparseSet5eraseEvRK1T" title="mata::utils::SparseSet::erase::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I_8IterableEN4mata5utils9SparseSet5eraseEvRK1T" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet5eraseERKNSt16initializer_listI6NumberEE">
+<span id="_CPPv3N4mata5utils9SparseSet5eraseERKNSt16initializer_listI6NumberEE"></span><span id="_CPPv2N4mata5utils9SparseSet5eraseERKNSt16initializer_listI6NumberEE"></span><span id="mata::utils::SparseSet::erase__std::initializer_list:Number:CR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ac1396d49d9ff9458d3eade1936677219"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">list</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet5eraseERKNSt16initializer_listI6NumberEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK4mata5utils9SparseSet15intersects_withEbRK1T">
+<span id="_CPPv3I0ENK4mata5utils9SparseSet15intersects_withERK1T"></span><span id="_CPPv2I0ENK4mata5utils9SparseSet15intersects_withERK1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1ad3b9b415b223f3440fe67997f8128ffd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">intersects_with</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK4mata5utils9SparseSet15intersects_withEbRK1T" title="mata::utils::SparseSet::intersects_with::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK4mata5utils9SparseSet15intersects_withEbRK1T" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet10complementE6Number">
+<span id="_CPPv3N4mata5utils9SparseSet10complementE6Number"></span><span id="_CPPv2N4mata5utils9SparseSet10complementE6Number"></span><span id="mata::utils::SparseSet::complement__Number"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ad1f9d9e67969dc0228ec6fbf62178787"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">complement</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">new_domain_size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet10complementE6Number" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSet6filterEvRR1F">
+<span id="_CPPv3I0EN4mata5utils9SparseSet6filterERR1F"></span><span id="_CPPv2I0EN4mata5utils9SparseSet6filterERR1F"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">F</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1a65f4d796ec7dbd556582f316c8a68101"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet6filterEvRR1F" title="mata::utils::SparseSet::filter::F"><span class="n"><span class="pre">F</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9SparseSet6filterEvRR1F" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet4sortEv">
+<span id="_CPPv3N4mata5utils9SparseSet4sortEv"></span><span id="_CPPv2N4mata5utils9SparseSet4sortEv"></span><span id="mata::utils::SparseSet::sort"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a47fdc9eea42b6975cdc835bb2e08810e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sort</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet4sortEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSet6renameEvRR1F">
+<span id="_CPPv3I0EN4mata5utils9SparseSet6renameERR1F"></span><span id="_CPPv2I0EN4mata5utils9SparseSet6renameERR1F"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">F</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet_1a328843d87481e8aeca517b7b177b925f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rename</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9SparseSet6renameEvRR1F" title="mata::utils::SparseSet::rename::F"><span class="n"><span class="pre">F</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9SparseSet6renameEvRR1F" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet3maxEv">
+<span id="_CPPv3N4mata5utils9SparseSet3maxEv"></span><span id="_CPPv2N4mata5utils9SparseSet3maxEv"></span><span id="mata::utils::SparseSet::max"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a7b9c6069f365bec1e288e78fdd90cc62"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">max</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Maximal Number in set. </p>
+<p>Expensive operation as it has to compute the maximal Number in linear time. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet8truncateEv">
+<span id="_CPPv3N4mata5utils9SparseSet8truncateEv"></span><span id="_CPPv2N4mata5utils9SparseSet8truncateEv"></span><span id="mata::utils::SparseSet::truncate"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a6cdeae8dd0ba505874283c6d41a91418"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">truncate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet8truncateEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet5denseE">
+<span id="_CPPv3N4mata5utils9SparseSet5denseE"></span><span id="_CPPv2N4mata5utils9SparseSet5denseE"></span><span id="mata::utils::SparseSet::dense__std::vector:Number:"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1afa07b69d91d848f98df43a6211f1a6f8"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dense</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet5denseE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet6sparseE">
+<span id="_CPPv3N4mata5utils9SparseSet6sparseE"></span><span id="_CPPv2N4mata5utils9SparseSet6sparseE"></span><span id="mata::utils::SparseSet::sparse__std::vector:Number:"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a02abe44e70d57c2b9385557e8eaedf93"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sparse</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet6sparseE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet5size_E">
+<span id="_CPPv3N4mata5utils9SparseSet5size_E"></span><span id="_CPPv2N4mata5utils9SparseSet5size_E"></span><span id="mata::utils::SparseSet::size___s"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a5f31775800bbb46b35b5791def1f3acc"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet5size_E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Number of elements which are in the set (current size). </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet12domain_size_E">
+<span id="_CPPv3N4mata5utils9SparseSet12domain_size_E"></span><span id="_CPPv2N4mata5utils9SparseSet12domain_size_E"></span><span id="mata::utils::SparseSet::domain_size___s"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a4786b9e7f1ff251aac28c3141d154d81"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">domain_size_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet12domain_size_E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Over-approximation of Number in sparse set. It represents the Numbers which were in the set throughout the life of the set until now. </p>
+<p><code class="docutils literal notranslate"><a class="reference internal" href="../utils.html#classmata_1_1utils_1_1SparseSet_1a6cdeae8dd0ba505874283c6d41a91418"><span class="std std-ref"><span class="pre">truncate()</span></span></a></code> will update the domain size to the current maximal Number + 1. Constructor can preallocate the sparse set and set domain size to the requested value. The structures are preallocated to at least <code class="docutils literal notranslate"><span class="pre">domain_size_</span></code> size (can be more when maximal Number is removed). </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet12are_disjointERK9SparseSetRK9SparseSet">
+<span id="_CPPv3N4mata5utils9SparseSet12are_disjointERK9SparseSetRK9SparseSet"></span><span id="_CPPv2N4mata5utils9SparseSet12are_disjointERK9SparseSetRK9SparseSet"></span><span id="mata::utils::SparseSet::are_disjoint__SparseSetCR.SparseSetCR"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a263c695b6002f25fdbcc5b0c317dadb6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">are_disjoint</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">A</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">B</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet12are_disjointERK9SparseSetRK9SparseSet" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ord-vector_8hh.html">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="re2parser_8hh.html" title="previous chapter">File re2parser.hh</a></li>
+      <li>Next: <a href="strings_8hh.html" title="next chapter">File strings.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/sparse-set_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

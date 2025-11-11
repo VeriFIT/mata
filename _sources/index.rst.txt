@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to automata-library's documentation!
-============================================
+Mata automata library
+=====================
 
 .. toctree::
    :maxdepth: 2
@@ -19,11 +19,16 @@ Welcome to automata-library's documentation!
    alphabet
    utils
    applications
+   namespacelist
+   classlist
+   filelist
+   structlist
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
+.. FIXME: The modindex currently does not work.
+.. * :ref:`modindex`
 * :ref:`search`

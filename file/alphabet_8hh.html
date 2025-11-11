@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File alphabet.hh &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File closed-set.hh" href="closed-set_8hh.html" />
+    <link rel="prev" title="File list" href="../filelist.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-alphabet-hh">
+<h1>File alphabet.hh<a class="headerlink" href="#file-alphabet-hh" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-typedefs">Typedefs</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6SymbolE">
+<span id="_CPPv3N4mata6SymbolE"></span><span id="_CPPv2N4mata6SymbolE"></span><span class="target" id="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Symbol</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata4WordE">
+<span id="_CPPv3N4mata4WordE"></span><span id="_CPPv2N4mata4WordE"></span><span class="target" id="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Word</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata8WordNameE">
+<span id="_CPPv3N4mata8WordNameE"></span><span id="_CPPv2N4mata8WordNameE"></span><span class="target" id="namespacemata_1a8303ec143c29a00d6c75060ade2c6843"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">WordName</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16encode_word_utf8ERK4Word">
+<span id="_CPPv3N4mata16encode_word_utf8ERK4Word"></span><span id="_CPPv2N4mata16encode_word_utf8ERK4Word"></span><span id="mata::encode_word_utf8__WordCR"></span><span class="target" id="namespacemata_1a4da1dc4063c3a7abe947f2b86920b4cc"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">encode_word_utf8</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">word</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Encode a word using UTF-8 encoding. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>word</strong> – <strong>[in]</strong> The word to encode. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The UTF-8 encoded word. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16decode_word_utf8ERK4Word">
+<span id="_CPPv3N4mata16decode_word_utf8ERK4Word"></span><span id="_CPPv2N4mata16decode_word_utf8ERK4Word"></span><span id="mata::decode_word_utf8__WordCR"></span><span class="target" id="namespacemata_1a3481bf9f6a17bbfce374c302e5f1e477"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">decode_word_utf8</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">word</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Decode a word using UTF-8 encoding. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>word</strong> – <strong>[in]</strong> The word to decode. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The UTF-8 decoded word. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata8AlphabetE">
+<span id="_CPPv3N4mata8AlphabetE"></span><span id="_CPPv2N4mata8AlphabetE"></span><span id="mata::Alphabet"></span><span class="target" id="classmata_1_1Alphabet"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alphabet</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;alphabet.hh&gt;</em></div>
+<p>The abstract interface for NFA alphabets. </p>
+<p>Subclassed by <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1EnumAlphabet"><span class="std std-ref">EnumAlphabet</span></a>, <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref">IntAlphabet</span></a>, <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1OnTheFlyAlphabet"><span class="std std-ref">OnTheFlyAlphabet</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata8Alphabet14translate_symbERKNSt6stringE">
+<span id="_CPPv3N4mata8Alphabet14translate_symbERKNSt6stringE"></span><span id="_CPPv2N4mata8Alphabet14translate_symbERKNSt6stringE"></span><span id="mata::Alphabet::translate_symb__ssCR"></span><span class="target" id="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_symb</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symb</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><br /></dt>
+<dd><p>translates a string into a symbol </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet14translate_wordERK8WordName">
+<span id="_CPPv3NK4mata8Alphabet14translate_wordERK8WordName"></span><span id="_CPPv2NK4mata8Alphabet14translate_wordERK8WordName"></span><span id="mata::Alphabet::translate_word__WordNameCRC"></span><span class="target" id="classmata_1_1Alphabet_1a839198a10c8040bfb498117fa299aa3b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_word</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8WordNameE" title="mata::WordName"><span class="n"><span class="pre">WordName</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">word_name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Translate sequence of symbol names to sequence of their respective values. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet24reverse_translate_symbolE6Symbol">
+<span id="_CPPv3NK4mata8Alphabet24reverse_translate_symbolE6Symbol"></span><span id="_CPPv2NK4mata8Alphabet24reverse_translate_symbolE6Symbol"></span><span id="mata::Alphabet::reverse_translate_symbol__SymbolC"></span><span class="target" id="classmata_1_1Alphabet_1a9043bb698e3a1ac5a702a2de113d8e1a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reverse_translate_symbol</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><br /></dt>
+<dd><p>Translate internal <code class="docutils literal notranslate"><span class="pre">symbol</span></code> representation back to its original string name. </p>
+<p>Throws an exception when the <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is missing in the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> to translate. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">symbol</span></code> original name. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata8AlphabetixERKNSt6stringE">
+<span id="_CPPv3N4mata8AlphabetixERKNSt6stringE"></span><span id="_CPPv2N4mata8AlphabetixERKNSt6stringE"></span><span id="mata::Alphabet::subscript-operator__ssCR"></span><span class="target" id="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symb</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>also translates strings to symbols </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet20get_alphabet_symbolsEv">
+<span id="_CPPv3NK4mata8Alphabet20get_alphabet_symbolsEv"></span><span id="_CPPv2NK4mata8Alphabet20get_alphabet_symbolsEv"></span><span id="mata::Alphabet::get_alphabet_symbolsC"></span><span class="target" id="classmata_1_1Alphabet_1ae1edf8c949d5c0523b05eb58192b2884"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_alphabet_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get a set of all symbols in the alphabet. </p>
+<p>The result does not have to equal the list of symbols in the automaton using this alphabet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet14get_complementERKN5utils9OrdVectorI6SymbolEE">
+<span id="_CPPv3NK4mata8Alphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="_CPPv2NK4mata8Alphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="mata::Alphabet::get_complement__utils::OrdVector:Symbol:CRC"></span><span class="target" id="classmata_1_1Alphabet_1a657cec0fd4934edfe40e7d70a5219774"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_complement</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>complement of a set of symbols wrt the alphabet </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata8AlphabetD0Ev">
+<span id="_CPPv3N4mata8AlphabetD0Ev"></span><span id="_CPPv2N4mata8AlphabetD0Ev"></span><span id="mata::Alphabet::~Alphabet"></span><span class="target" id="classmata_1_1Alphabet_1a9dbe39c3ff6adeeea62bb9751077b4d0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~Alphabet</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet8is_equalERK8Alphabet">
+<span id="_CPPv3NK4mata8Alphabet8is_equalERK8Alphabet"></span><span id="_CPPv2NK4mata8Alphabet8is_equalERK8Alphabet"></span><span id="mata::Alphabet::is_equal__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet8is_equalEPCK8Alphabet">
+<span id="_CPPv3NK4mata8Alphabet8is_equalEPCK8Alphabet"></span><span id="_CPPv2NK4mata8Alphabet8is_equalEPCK8Alphabet"></span><span id="mata::Alphabet::is_equal__AlphabetCPCC"></span><span class="target" id="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8AlphabeteqERK8Alphabet">
+<span id="_CPPv3NK4mata8AlphabeteqERK8Alphabet"></span><span id="_CPPv2NK4mata8AlphabeteqERK8Alphabet"></span><span id="mata::Alphabet::eq-operator__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet5emptyEv">
+<span id="_CPPv3NK4mata8Alphabet5emptyEv"></span><span id="_CPPv2NK4mata8Alphabet5emptyEv"></span><span id="mata::Alphabet::emptyC"></span><span class="target" id="classmata_1_1Alphabet_1ae22f66718bb2160cb671c4355ceeb1a2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><br /></dt>
+<dd><p>Checks whether the alphabet has any symbols. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata8Alphabet5clearEv">
+<span id="_CPPv3N4mata8Alphabet5clearEv"></span><span id="_CPPv2N4mata8Alphabet5clearEv"></span><span id="mata::Alphabet::clear"></span><span class="target" id="classmata_1_1Alphabet_1aae048282c7011eedc2e0492f6421ea73"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata8Alphabet7addressEv">
+<span id="_CPPv3NK4mata8Alphabet7addressEv"></span><span id="_CPPv2NK4mata8Alphabet7addressEv"></span><span id="mata::Alphabet::addressC"></span><span class="target" id="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">address</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabetE">
+<span id="_CPPv3N4mata12EnumAlphabetE"></span><span id="_CPPv2N4mata12EnumAlphabetE"></span><span id="mata::EnumAlphabet"></span><span class="target" id="classmata_1_1EnumAlphabet"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;alphabet.hh&gt;</em></div>
+<p>Enumerated alphabet using a set of integers as symbols maintaining a set of specified symbols. </p>
+<p><code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1EnumAlphabet"><span class="std std-ref"><span class="pre">EnumAlphabet</span></span></a></code> is a version of direct (identity) alphabet (does not give names to symbols, their name is their integer value directly). However, unlike <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref"><span class="pre">IntAlphabet</span></span></a></code>, <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1EnumAlphabet"><span class="std std-ref"><span class="pre">EnumAlphabet</span></span></a></code> maintains an ordered set of symbols in the alphabet.</p>
+<p>Therefore, calling member functions <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1EnumAlphabet_1ac49a8b966d82d52bec89a62be2e913b5"><span class="std std-ref"><span class="pre">get_complement()</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1EnumAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec"><span class="std std-ref"><span class="pre">get_alphabet_symbols()</span></span></a></code> makes sense in the context of <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1EnumAlphabet"><span class="std std-ref"><span class="pre">EnumAlphabet</span></span></a></code> and the functions give the expected results.</p>
+<p>Example: <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Alphabet</span><span class="w"> </span><span class="n">alph</span><span class="p">{</span><span class="w"> </span><span class="n">EnumAlphabet</span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">};</span>
+<span class="n">CHECK</span><span class="p">(</span><span class="n">alph</span><span class="p">.</span><span class="n">translate_symb</span><span class="p">(</span><span class="s">&quot;6&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">6</span><span class="p">);</span>
+<span class="n">CHECK_THROWS</span><span class="p">(</span><span class="n">alph</span><span class="p">.</span><span class="n">translate_symb</span><span class="p">(</span><span class="s">&quot;5&quot;</span><span class="p">));</span><span class="w"> </span><span class="c1">// Throws an exception about an unknown symbol.</span>
+<span class="n">CHECK</span><span class="p">(</span><span class="n">alph</span><span class="p">.</span><span class="n">get_complement</span><span class="p">({</span><span class="w"> </span><span class="n">utils</span><span class="o">::</span><span class="n">OrdVector</span><span class="o">&lt;</span><span class="n">Symbol</span><span class="o">&gt;</span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">utils</span><span class="o">::</span><span class="n">OrdVector</span><span class="o">&lt;</span><span class="n">Symbol</span><span class="o">&gt;</span><span class="p">{</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="p">});</span>
+</pre></div>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet12EnumAlphabetEv">
+<span id="_CPPv3N4mata12EnumAlphabet12EnumAlphabetEv"></span><span id="_CPPv2N4mata12EnumAlphabet12EnumAlphabetEv"></span><span id="mata::EnumAlphabet::EnumAlphabet"></span><span class="target" id="classmata_1_1EnumAlphabet_1ac3b6721a5c35f67481b338d520e94181"></span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet12EnumAlphabetERK12EnumAlphabet">
+<span id="_CPPv3N4mata12EnumAlphabet12EnumAlphabetERK12EnumAlphabet"></span><span id="_CPPv2N4mata12EnumAlphabet12EnumAlphabetERK12EnumAlphabet"></span><span id="mata::EnumAlphabet::EnumAlphabet__EnumAlphabetCR"></span><span class="target" id="classmata_1_1EnumAlphabet_1af5704774258eca5a277ee122f51e5f1f"></span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabet12EnumAlphabetERK12EnumAlphabet" title="mata::EnumAlphabet::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet12EnumAlphabetEPCK12EnumAlphabet">
+<span id="_CPPv3N4mata12EnumAlphabet12EnumAlphabetEPCK12EnumAlphabet"></span><span id="_CPPv2N4mata12EnumAlphabet12EnumAlphabetEPCK12EnumAlphabet"></span><span id="mata::EnumAlphabet::EnumAlphabet__EnumAlphabetCPC"></span><span class="target" id="classmata_1_1EnumAlphabet_1abf14078d760fbb9f12cb5e807ec4bb1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabet12EnumAlphabetEPCK12EnumAlphabet" title="mata::EnumAlphabet::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet12EnumAlphabetERR12EnumAlphabet">
+<span id="_CPPv3N4mata12EnumAlphabet12EnumAlphabetERR12EnumAlphabet"></span><span id="_CPPv2N4mata12EnumAlphabet12EnumAlphabetERR12EnumAlphabet"></span><span id="mata::EnumAlphabet::EnumAlphabet__EnumAlphabetRR"></span><span class="target" id="classmata_1_1EnumAlphabet_1a4d2331198c8eda2d4ea517fe12c2f3b6"></span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabet12EnumAlphabetERR12EnumAlphabet" title="mata::EnumAlphabet::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet20get_alphabet_symbolsEv">
+<span id="_CPPv3NK4mata12EnumAlphabet20get_alphabet_symbolsEv"></span><span id="_CPPv2NK4mata12EnumAlphabet20get_alphabet_symbolsEv"></span><span id="mata::EnumAlphabet::get_alphabet_symbolsC"></span><span class="target" id="classmata_1_1EnumAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_alphabet_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Get a set of all symbols in the alphabet. </p>
+<p>The result does not have to equal the list of symbols in the automaton using this alphabet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE">
+<span id="_CPPv3NK4mata12EnumAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="_CPPv2NK4mata12EnumAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="mata::EnumAlphabet::get_complement__utils::OrdVector:Symbol:CRC"></span><span class="target" id="classmata_1_1EnumAlphabet_1ac49a8b966d82d52bec89a62be2e913b5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_complement</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>complement of a set of symbols wrt the alphabet </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet24reverse_translate_symbolE6Symbol">
+<span id="_CPPv3NK4mata12EnumAlphabet24reverse_translate_symbolE6Symbol"></span><span id="_CPPv2NK4mata12EnumAlphabet24reverse_translate_symbolE6Symbol"></span><span id="mata::EnumAlphabet::reverse_translate_symbol__SymbolC"></span><span class="target" id="classmata_1_1EnumAlphabet_1a04dc585772dae7a5187640961e9f3726"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reverse_translate_symbol</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Translate internal <code class="docutils literal notranslate"><span class="pre">symbol</span></code> representation back to its original string name. </p>
+<p>Throws an exception when the <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is missing in the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> to translate. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">symbol</span></code> original name. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabetaSERK12EnumAlphabet">
+<span id="_CPPv3N4mata12EnumAlphabetaSERK12EnumAlphabet"></span><span id="_CPPv2N4mata12EnumAlphabetaSERK12EnumAlphabet"></span><span id="mata::EnumAlphabet::assign-operator__EnumAlphabetCR"></span><span class="target" id="classmata_1_1EnumAlphabet_1aba52e7ef9fefa320cf64274e3f11854b"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabetE" title="mata::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabetE" title="mata::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabetaSERR12EnumAlphabet">
+<span id="_CPPv3N4mata12EnumAlphabetaSERR12EnumAlphabet"></span><span id="_CPPv2N4mata12EnumAlphabetaSERR12EnumAlphabet"></span><span id="mata::EnumAlphabet::assign-operator__EnumAlphabetRR"></span><span class="target" id="classmata_1_1EnumAlphabet_1a97db905d8dbab31f3451d229d978ba48"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabetE" title="mata::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabetE" title="mata::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet16add_symbols_fromERKN4mata5utils9OrdVectorI6SymbolEE">
+<span id="_CPPv3N4mata12EnumAlphabet16add_symbols_fromERKN4mata5utils9OrdVectorI6SymbolEE"></span><span id="_CPPv2N4mata12EnumAlphabet16add_symbols_fromERKN4mata5utils9OrdVectorI6SymbolEE"></span><span id="mata::EnumAlphabet::add_symbols_from__mata::utils::OrdVector:Symbol:CR"></span><span class="target" id="classmata_1_1EnumAlphabet_1ae3e7b8f4960c25f6f2a21d184155ad47"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_symbols_from</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Expand alphabet by symbols from the passed <code class="docutils literal notranslate"><span class="pre">symbols</span></code>. </p>
+<p>Adding a symbol name which already exists will throw an exception. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbols</strong> – <strong>[in]</strong> Vector of symbols to add. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet16add_symbols_fromERK12EnumAlphabet">
+<span id="_CPPv3N4mata12EnumAlphabet16add_symbols_fromERK12EnumAlphabet"></span><span id="_CPPv2N4mata12EnumAlphabet16add_symbols_fromERK12EnumAlphabet"></span><span id="mata::EnumAlphabet::add_symbols_from__EnumAlphabetCR"></span><span class="target" id="classmata_1_1EnumAlphabet_1a25411a7470524561db74bca90916ff41"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_symbols_from</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata12EnumAlphabetE" title="mata::EnumAlphabet"><span class="n"><span class="pre">EnumAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Expand alphabet by symbols from the passed <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbols_to_add</strong> – <strong>[in]</strong> Vector of symbols to add. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet12EnumAlphabetENSt16initializer_listI6SymbolEE">
+<span id="_CPPv3N4mata12EnumAlphabet12EnumAlphabetENSt16initializer_listI6SymbolEE"></span><span id="_CPPv2N4mata12EnumAlphabet12EnumAlphabetENSt16initializer_listI6SymbolEE"></span><span id="mata::EnumAlphabet::EnumAlphabet__std::initializer_list:Symbol:"></span><span class="target" id="classmata_1_1EnumAlphabet_1a97fd7cce062c059708d0936826b03f4e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata12EnumAlphabet12EnumAlphabetE7InputIt7InputIt">
+<span id="_CPPv3I0EN4mata12EnumAlphabet12EnumAlphabetE7InputIt7InputIt"></span><span id="_CPPv2I0EN4mata12EnumAlphabet12EnumAlphabetE7InputIt7InputIt"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIt</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1EnumAlphabet_1a5e789b6fb1dd2953c1fb4e3ba7e1185a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4I0EN4mata12EnumAlphabet12EnumAlphabetE7InputIt7InputIt" title="mata::EnumAlphabet::EnumAlphabet::InputIt"><span class="n"><span class="pre">InputIt</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4I0EN4mata12EnumAlphabet12EnumAlphabetE7InputIt7InputIt" title="mata::EnumAlphabet::EnumAlphabet::InputIt"><span class="n"><span class="pre">InputIt</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet12EnumAlphabetENSt16initializer_listINSt6stringEEE">
+<span id="_CPPv3N4mata12EnumAlphabet12EnumAlphabetENSt16initializer_listINSt6stringEEE"></span><span id="_CPPv2N4mata12EnumAlphabet12EnumAlphabetENSt16initializer_listINSt6stringEEE"></span><span id="mata::EnumAlphabet::EnumAlphabet__std::initializer_list:ss:"></span><span class="target" id="classmata_1_1EnumAlphabet_1ab7ee64518fe11a01a6bf8871b2a76dbc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EnumAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">l</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet14translate_symbERKNSt6stringE">
+<span id="_CPPv3N4mata12EnumAlphabet14translate_symbERKNSt6stringE"></span><span id="_CPPv2N4mata12EnumAlphabet14translate_symbERKNSt6stringE"></span><span id="mata::EnumAlphabet::translate_symb__ssCR"></span><span class="target" id="classmata_1_1EnumAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_symb</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">str</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>translates a string into a symbol </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet14translate_wordERK8WordName">
+<span id="_CPPv3NK4mata12EnumAlphabet14translate_wordERK8WordName"></span><span id="_CPPv2NK4mata12EnumAlphabet14translate_wordERK8WordName"></span><span id="mata::EnumAlphabet::translate_word__WordNameCRC"></span><span class="target" id="classmata_1_1EnumAlphabet_1a9affe447067c5e36080fe61f90a8e207"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_word</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8WordNameE" title="mata::WordName"><span class="n"><span class="pre">WordName</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">word_name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Translate sequence of symbol names to sequence of their respective values. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet14add_new_symbolERKNSt6stringE">
+<span id="_CPPv3N4mata12EnumAlphabet14add_new_symbolERKNSt6stringE"></span><span id="_CPPv2N4mata12EnumAlphabet14add_new_symbolERKNSt6stringE"></span><span id="mata::EnumAlphabet::add_new_symbol__ssCR"></span><span class="target" id="classmata_1_1EnumAlphabet_1aa8a976c3b774fafa845e21b1b3be511a"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_new_symbol</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Add new symbol to the alphabet with the value identical to its string representation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol</strong> – <strong>[in]</strong> User-space representation of the symbol. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the insertion as <code class="docutils literal notranslate"><span class="pre">InsertionResult</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet14add_new_symbolE6Symbol">
+<span id="_CPPv3N4mata12EnumAlphabet14add_new_symbolE6Symbol"></span><span id="_CPPv2N4mata12EnumAlphabet14add_new_symbolE6Symbol"></span><span id="mata::EnumAlphabet::add_new_symbol__Symbol"></span><span class="target" id="classmata_1_1EnumAlphabet_1ab290f67a6d7f091e3a71475f78ae1857"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_new_symbol</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Add new symbol to the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – <strong>[in]</strong> User-space representation of the symbol. </p></li>
+<li><p><strong>symbol</strong> – <strong>[in]</strong> Number of the symbol to be used on transitions. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the insertion as <code class="docutils literal notranslate"><span class="pre">InsertionResult</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet14get_next_valueEv">
+<span id="_CPPv3NK4mata12EnumAlphabet14get_next_valueEv"></span><span id="_CPPv2NK4mata12EnumAlphabet14get_next_valueEv"></span><span id="mata::EnumAlphabet::get_next_valueC"></span><span class="target" id="classmata_1_1EnumAlphabet_1a4d70d60280982e782db2e8a02bb301f9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_next_value</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the next value for a potential new symbol. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Next <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet21get_number_of_symbolsEv">
+<span id="_CPPv3NK4mata12EnumAlphabet21get_number_of_symbolsEv"></span><span id="_CPPv2NK4mata12EnumAlphabet21get_number_of_symbolsEv"></span><span id="mata::EnumAlphabet::get_number_of_symbolsC"></span><span class="target" id="classmata_1_1EnumAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_number_of_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the number of existing symbols, epsilon symbols excluded. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of symbols. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet5emptyEv">
+<span id="_CPPv3NK4mata12EnumAlphabet5emptyEv"></span><span id="_CPPv2NK4mata12EnumAlphabet5emptyEv"></span><span id="mata::EnumAlphabet::emptyC"></span><span class="target" id="classmata_1_1EnumAlphabet_1a108bb972911adff5dd227f4f645a7967"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Checks whether the alphabet has any symbols. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet24update_next_symbol_valueE6Symbol">
+<span id="_CPPv3N4mata12EnumAlphabet24update_next_symbol_valueE6Symbol"></span><span id="_CPPv2N4mata12EnumAlphabet24update_next_symbol_valueE6Symbol"></span><span id="mata::EnumAlphabet::update_next_symbol_value__Symbol"></span><span class="target" id="classmata_1_1EnumAlphabet_1aeb27901599fe497fd719a6aa5128a046"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update_next_symbol_value</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Update next symbol value when appropriate. </p>
+<p>When the newly inserted value is larger or equal to the current next symbol value, update the next symbol value to a value one larger than the new value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – The value of the newly added symbol. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet5eraseEK6Symbol">
+<span id="_CPPv3N4mata12EnumAlphabet5eraseEK6Symbol"></span><span id="_CPPv2N4mata12EnumAlphabet5eraseEK6Symbol"></span><span id="mata::EnumAlphabet::erase__SymbolC"></span><span class="target" id="classmata_1_1EnumAlphabet_1af17b5b7e725c1bf48028d75f046b2a94"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Erase a symbol from the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of symbols erased (0 or 1). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet5eraseEN5utils9OrdVectorI6SymbolE14const_iteratorE">
+<span id="_CPPv3N4mata12EnumAlphabet5eraseEN5utils9OrdVectorI6SymbolE14const_iteratorE"></span><span id="_CPPv2N4mata12EnumAlphabet5eraseEN5utils9OrdVectorI6SymbolE14const_iteratorE"></span><span id="mata::EnumAlphabet::erase__utils::OrdVector:Symbol:::const_iterator"></span><span class="target" id="classmata_1_1EnumAlphabet_1acdb070ebdf73ceb7854951e80a24fce8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove a symbol name value pair from the position <code class="docutils literal notranslate"><span class="pre">pos</span></code> from the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Iterator following the last removed element. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet5eraseEN5utils9OrdVectorI6SymbolE14const_iteratorEN5utils9OrdVectorI6SymbolE14const_iteratorE">
+<span id="_CPPv3N4mata12EnumAlphabet5eraseEN5utils9OrdVectorI6SymbolE14const_iteratorEN5utils9OrdVectorI6SymbolE14const_iteratorE"></span><span id="_CPPv2N4mata12EnumAlphabet5eraseEN5utils9OrdVectorI6SymbolE14const_iteratorEN5utils9OrdVectorI6SymbolE14const_iteratorE"></span><span id="mata::EnumAlphabet::erase__utils::OrdVector:Symbol:::const_iterator.utils::OrdVector:Symbol:::const_iterator"></span><span class="target" id="classmata_1_1EnumAlphabet_1a59d593db7e2921fa73ddb8b96d1b3bb6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove a symbol name value pair from the positions between <code class="docutils literal notranslate"><span class="pre">first</span></code> and <code class="docutils literal notranslate"><span class="pre">last</span></code> from the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Iterator following the last removed element. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet5clearEv">
+<span id="_CPPv3N4mata12EnumAlphabet5clearEv"></span><span id="_CPPv2N4mata12EnumAlphabet5clearEv"></span><span id="mata::EnumAlphabet::clear"></span><span class="target" id="classmata_1_1EnumAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabetixERKNSt6stringE">
+<span id="_CPPv3N4mata12EnumAlphabetixERKNSt6stringE"></span><span id="_CPPv2N4mata12EnumAlphabetixERKNSt6stringE"></span><span id="mata::EnumAlphabet::subscript-operator__ssCR"></span><span class="target" id="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symb</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>also translates strings to symbols </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet8is_equalERK8Alphabet">
+<span id="_CPPv3NK4mata12EnumAlphabet8is_equalERK8Alphabet"></span><span id="_CPPv2NK4mata12EnumAlphabet8is_equalERK8Alphabet"></span><span id="mata::EnumAlphabet::is_equal__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet8is_equalEPCK8Alphabet">
+<span id="_CPPv3NK4mata12EnumAlphabet8is_equalEPCK8Alphabet"></span><span id="_CPPv2NK4mata12EnumAlphabet8is_equalEPCK8Alphabet"></span><span id="mata::EnumAlphabet::is_equal__AlphabetCPCC"></span><span class="target" id="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabeteqERK8Alphabet">
+<span id="_CPPv3NK4mata12EnumAlphabeteqERK8Alphabet"></span><span id="_CPPv2NK4mata12EnumAlphabeteqERK8Alphabet"></span><span id="mata::EnumAlphabet::eq-operator__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12EnumAlphabet7addressEv">
+<span id="_CPPv3NK4mata12EnumAlphabet7addressEv"></span><span id="_CPPv2NK4mata12EnumAlphabet7addressEv"></span><span id="mata::EnumAlphabet::addressC"></span><span class="target" id="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">address</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet8symbols_E">
+<span id="_CPPv3N4mata12EnumAlphabet8symbols_E"></span><span id="_CPPv2N4mata12EnumAlphabet8symbols_E"></span><span id="mata::EnumAlphabet::symbols___mata::utils::OrdVector:Symbol:"></span><span class="target" id="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0"></span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">symbols_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Map of string transition symbols to symbol values. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12EnumAlphabet18next_symbol_value_E">
+<span id="_CPPv3N4mata12EnumAlphabet18next_symbol_value_E"></span><span id="_CPPv2N4mata12EnumAlphabet18next_symbol_value_E"></span><span id="mata::EnumAlphabet::next_symbol_value___Symbol"></span><span class="target" id="classmata_1_1EnumAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">next_symbol_value_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Next value to be used for a newly added symbol. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabetE">
+<span id="_CPPv3N4mata11IntAlphabetE"></span><span id="_CPPv2N4mata11IntAlphabetE"></span><span id="mata::IntAlphabet"></span><span class="target" id="classmata_1_1IntAlphabet"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabet</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;alphabet.hh&gt;</em></div>
+<p>Direct alphabet (also identity alphabet or integer alphabet) using integers as symbols. </p>
+<p>This alphabet presumes that all integers are valid symbols. Therefore, calling member functions <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet_1ac49a8b966d82d52bec89a62be2e913b5"><span class="std std-ref">get_complement()</span></a> and <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec"><span class="std std-ref">get_alphabet_symbols()</span></a> makes no sense in this context and the methods will throw exceptions warning about the inappropriate use of <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref">IntAlphabet</span></a>. If one needs these functions, they should use <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1OnTheFlyAlphabet"><span class="std std-ref">OnTheFlyAlphabet</span></a> instead of <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref">IntAlphabet</span></a>. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet11IntAlphabetEv">
+<span id="_CPPv3N4mata11IntAlphabet11IntAlphabetEv"></span><span id="_CPPv2N4mata11IntAlphabet11IntAlphabetEv"></span><span id="mata::IntAlphabet::IntAlphabet"></span><span class="target" id="classmata_1_1IntAlphabet_1a3d4df17a353ac7de40c9ad90167df9e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabet</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet14translate_symbERKNSt6stringE">
+<span id="_CPPv3N4mata11IntAlphabet14translate_symbERKNSt6stringE"></span><span id="_CPPv2N4mata11IntAlphabet14translate_symbERKNSt6stringE"></span><span id="mata::IntAlphabet::translate_symb__ssCR"></span><span class="target" id="classmata_1_1IntAlphabet_1a5956fe34c120b11bb74e2ecb3f9f7df6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_symb</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symb</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>translates a string into a symbol </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet24reverse_translate_symbolE6Symbol">
+<span id="_CPPv3NK4mata11IntAlphabet24reverse_translate_symbolE6Symbol"></span><span id="_CPPv2NK4mata11IntAlphabet24reverse_translate_symbolE6Symbol"></span><span id="mata::IntAlphabet::reverse_translate_symbol__SymbolC"></span><span class="target" id="classmata_1_1IntAlphabet_1a04dc585772dae7a5187640961e9f3726"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reverse_translate_symbol</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Translate internal <code class="docutils literal notranslate"><span class="pre">symbol</span></code> representation back to its original string name. </p>
+<p>Throws an exception when the <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is missing in the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> to translate. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">symbol</span></code> original name. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet20get_alphabet_symbolsEv">
+<span id="_CPPv3NK4mata11IntAlphabet20get_alphabet_symbolsEv"></span><span id="_CPPv2NK4mata11IntAlphabet20get_alphabet_symbolsEv"></span><span id="mata::IntAlphabet::get_alphabet_symbolsC"></span><span class="target" id="classmata_1_1IntAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_alphabet_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Get a set of all symbols in the alphabet. </p>
+<p>The result does not have to equal the list of symbols in the automaton using this alphabet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE">
+<span id="_CPPv3NK4mata11IntAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="_CPPv2NK4mata11IntAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="mata::IntAlphabet::get_complement__utils::OrdVector:Symbol:CRC"></span><span class="target" id="classmata_1_1IntAlphabet_1ac49a8b966d82d52bec89a62be2e913b5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_complement</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>complement of a set of symbols wrt the alphabet </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet11IntAlphabetERK11IntAlphabet">
+<span id="_CPPv3N4mata11IntAlphabet11IntAlphabetERK11IntAlphabet"></span><span id="_CPPv2N4mata11IntAlphabet11IntAlphabetERK11IntAlphabet"></span><span id="mata::IntAlphabet::IntAlphabet__IntAlphabetCR"></span><span class="target" id="classmata_1_1IntAlphabet_1af2cc334c6009f389096ae9d5330a9cdd"></span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet11IntAlphabetERK11IntAlphabet" title="mata::IntAlphabet::IntAlphabet"><span class="n"><span class="pre">IntAlphabet</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabetaSERK11IntAlphabet">
+<span id="_CPPv3N4mata11IntAlphabetaSERK11IntAlphabet"></span><span id="_CPPv2N4mata11IntAlphabetaSERK11IntAlphabet"></span><span id="mata::IntAlphabet::assign-operator__IntAlphabetCR"></span><span class="target" id="classmata_1_1IntAlphabet_1a81680b3bf453517f835fa60032e9f9d8"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabetE" title="mata::IntAlphabet"><span class="n"><span class="pre">IntAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabetE" title="mata::IntAlphabet"><span class="n"><span class="pre">IntAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">int_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet5emptyEv">
+<span id="_CPPv3NK4mata11IntAlphabet5emptyEv"></span><span id="_CPPv2NK4mata11IntAlphabet5emptyEv"></span><span id="mata::IntAlphabet::emptyC"></span><span class="target" id="classmata_1_1IntAlphabet_1a108bb972911adff5dd227f4f645a7967"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Checks whether the alphabet has any symbols. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet5clearEv">
+<span id="_CPPv3N4mata11IntAlphabet5clearEv"></span><span id="_CPPv2N4mata11IntAlphabet5clearEv"></span><span id="mata::IntAlphabet::clear"></span><span class="target" id="classmata_1_1IntAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet14translate_wordERK8WordName">
+<span id="_CPPv3NK4mata11IntAlphabet14translate_wordERK8WordName"></span><span id="_CPPv2NK4mata11IntAlphabet14translate_wordERK8WordName"></span><span id="mata::IntAlphabet::translate_word__WordNameCRC"></span><span class="target" id="classmata_1_1Alphabet_1a839198a10c8040bfb498117fa299aa3b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_word</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8WordNameE" title="mata::WordName"><span class="n"><span class="pre">WordName</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">word_name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Translate sequence of symbol names to sequence of their respective values. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabetixERKNSt6stringE">
+<span id="_CPPv3N4mata11IntAlphabetixERKNSt6stringE"></span><span id="_CPPv2N4mata11IntAlphabetixERKNSt6stringE"></span><span id="mata::IntAlphabet::subscript-operator__ssCR"></span><span class="target" id="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symb</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>also translates strings to symbols </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet8is_equalERK8Alphabet">
+<span id="_CPPv3NK4mata11IntAlphabet8is_equalERK8Alphabet"></span><span id="_CPPv2NK4mata11IntAlphabet8is_equalERK8Alphabet"></span><span id="mata::IntAlphabet::is_equal__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet8is_equalEPCK8Alphabet">
+<span id="_CPPv3NK4mata11IntAlphabet8is_equalEPCK8Alphabet"></span><span id="_CPPv2NK4mata11IntAlphabet8is_equalEPCK8Alphabet"></span><span id="mata::IntAlphabet::is_equal__AlphabetCPCC"></span><span class="target" id="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabeteqERK8Alphabet">
+<span id="_CPPv3NK4mata11IntAlphabeteqERK8Alphabet"></span><span id="_CPPv2NK4mata11IntAlphabeteqERK8Alphabet"></span><span id="mata::IntAlphabet::eq-operator__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11IntAlphabet7addressEv">
+<span id="_CPPv3NK4mata11IntAlphabet7addressEv"></span><span id="_CPPv2NK4mata11IntAlphabet7addressEv"></span><span id="mata::IntAlphabet::addressC"></span><span class="target" id="classmata_1_1IntAlphabet_1ae3fc574f2bd60d3a15cda26b4a24565f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">address</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet17alphabet_instanceE">
+<span id="_CPPv3N4mata11IntAlphabet17alphabet_instanceE"></span><span id="_CPPv2N4mata11IntAlphabet17alphabet_instanceE"></span><span id="mata::IntAlphabet::alphabet_instance__IntAlphabetSingletonR"></span><span class="target" id="classmata_1_1IntAlphabet_1a2ea31609a6e8ff16d2859d58811d84ce"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE" title="mata::IntAlphabet::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">alphabet_instance</span></span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingletonE"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingletonE"></span><span id="mata::IntAlphabet::IntAlphabetSingleton"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></span><br /></dt>
+<dd><p>Singleton class implementing integer alphabet_instance for class <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref">IntAlphabet</span></a>. </p>
+<p>Users have to use <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref">IntAlphabet</span></a> instead which provides interface identical to other alphabets and can be used in places where an instance of the abstract class <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> is required. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonER20IntAlphabetSingleton">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonER20IntAlphabetSingleton"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonER20IntAlphabetSingleton"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton__IntAlphabetSingletonR"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0a7fb1b7c97e861246d41f2556d70a36"></span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonER20IntAlphabetSingleton" title="mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonERR20IntAlphabetSingleton">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonERR20IntAlphabetSingleton"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonERR20IntAlphabetSingleton"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton__IntAlphabetSingletonRR"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aba1c0059a71cab0a807bdb8c0b37877e"></span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonERR20IntAlphabetSingleton" title="mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonaSERK20IntAlphabetSingleton">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingletonaSERK20IntAlphabetSingleton"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingletonaSERK20IntAlphabetSingleton"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::assign-operator__IntAlphabetSingletonCR"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a12ad75118ad7b2cd4b0da3ddce3c2e19"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE" title="mata::IntAlphabet::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE" title="mata::IntAlphabet::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonaSERR20IntAlphabetSingleton">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingletonaSERR20IntAlphabetSingleton"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingletonaSERR20IntAlphabetSingleton"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::assign-operator__IntAlphabetSingletonRR"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1ac950d77643d5966ec16a94a9da8ec516"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE" title="mata::IntAlphabet::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE" title="mata::IntAlphabet::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonD0Ev">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingletonD0Ev"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingletonD0Ev"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::~IntAlphabetSingleton"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a344f1d32162e65175ddda4ab3dbb28c1"></span><span class="sig-name descname"><span class="n"><span class="pre">~IntAlphabetSingleton</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingleton3getEv">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingleton3getEv"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingleton3getEv"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::get"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aff2d2aa24b78e6c19e0a87af2629c2eb"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata11IntAlphabet20IntAlphabetSingletonE" title="mata::IntAlphabet::IntAlphabetSingleton"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonEv">
+<span id="_CPPv3N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonEv"></span><span id="_CPPv2N4mata11IntAlphabet20IntAlphabetSingleton20IntAlphabetSingletonEv"></span><span id="mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton"></span><span class="target" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0ae91b03564d5b6da3f3a70d56a745dc"></span><span class="sig-name descname"><span class="n"><span class="pre">IntAlphabetSingleton</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabetE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabetE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabetE"></span><span id="mata::OnTheFlyAlphabet"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;alphabet.hh&gt;</em></div>
+<p>An alphabet constructed ‘on the fly’. </p>
+<p>Should be use anytime the automata have a specific names for the symbols. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet17StringToSymbolMapE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet17StringToSymbolMapE"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StringToSymbolMap</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet15InsertionResultE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet15InsertionResultE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet15InsertionResultE"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InsertionResult</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd><p>Result of the insertion of a new symbol. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE6Symbol">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE6Symbol"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">init_symbol</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERK16OnTheFlyAlphabet">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERK16OnTheFlyAlphabet"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERK16OnTheFlyAlphabet"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__OnTheFlyAlphabetCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a10a915917eb633cc02d0581b9df92133"></span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERK16OnTheFlyAlphabet" title="mata::OnTheFlyAlphabet::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERR16OnTheFlyAlphabet">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERR16OnTheFlyAlphabet"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERR16OnTheFlyAlphabet"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__OnTheFlyAlphabetRR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1ab09ccbdebb101ef685749dedc8d8f6f6"></span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERR16OnTheFlyAlphabet" title="mata::OnTheFlyAlphabet::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetEPCK16OnTheFlyAlphabet">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetEPCK16OnTheFlyAlphabet"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetEPCK16OnTheFlyAlphabet"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__OnTheFlyAlphabetCPC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1af9ee1dd5510f4c9a601fc1a3d08eb5fc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetEPCK16OnTheFlyAlphabet" title="mata::OnTheFlyAlphabet::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE17StringToSymbolMap">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE17StringToSymbolMap"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE17StringToSymbolMap"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__StringToSymbolMap"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a240058630c0ab23f299edb8652ab399f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">str_sym_map</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERKNSt6vectorINSt6stringEEE6Symbol">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERKNSt6vectorINSt6stringEEE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetERKNSt6vectorINSt6stringEEE6Symbol"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__std::vector:ss:CR.Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a5d09ea7c966a609aca9edd50fa8c1d83"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbol_names</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">init_symbol</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Create alphabet from a list of symbol names. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbol_names</strong> – Names for symbols on transitions. </p></li>
+<li><p><strong>init_symbol</strong> – Start of a sequence of values to use for new symbols. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE7InputIt7InputIt">
+<span id="_CPPv3I0EN4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE7InputIt7InputIt"></span><span id="_CPPv2I0EN4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE7InputIt7InputIt"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIt</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1OnTheFlyAlphabet_1afdb0d054f3f5405752dfb8ff7225d12c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4I0EN4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE7InputIt7InputIt" title="mata::OnTheFlyAlphabet::OnTheFlyAlphabet::InputIt"><span class="n"><span class="pre">InputIt</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4I0EN4mata16OnTheFlyAlphabet16OnTheFlyAlphabetE7InputIt7InputIt" title="mata::OnTheFlyAlphabet::OnTheFlyAlphabet::InputIt"><span class="n"><span class="pre">InputIt</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetENSt16initializer_listINSt4pairINSt6stringE6SymbolEEEE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetENSt16initializer_listINSt4pairINSt6stringE6SymbolEEEE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16OnTheFlyAlphabetENSt16initializer_listINSt4pairINSt6stringE6SymbolEEEE"></span><span id="mata::OnTheFlyAlphabet::OnTheFlyAlphabet__std::initializer_list:std::pair:ss.Symbol::"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a7291c3160e5746c24897c0e6009601e8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">name_symbol_map</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet20get_alphabet_symbolsEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet20get_alphabet_symbolsEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet20get_alphabet_symbolsEv"></span><span id="mata::OnTheFlyAlphabet::get_alphabet_symbolsC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_alphabet_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Get a set of all symbols in the alphabet. </p>
+<p>The result does not have to equal the list of symbols in the automaton using this alphabet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet14get_complementERKN5utils9OrdVectorI6SymbolEE"></span><span id="mata::OnTheFlyAlphabet::get_complement__utils::OrdVector:Symbol:CRC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1ac49a8b966d82d52bec89a62be2e913b5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_complement</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>complement of a set of symbols wrt the alphabet </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet24reverse_translate_symbolE6Symbol">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet24reverse_translate_symbolE6Symbol"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet24reverse_translate_symbolE6Symbol"></span><span id="mata::OnTheFlyAlphabet::reverse_translate_symbol__SymbolC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a04dc585772dae7a5187640961e9f3726"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reverse_translate_symbol</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Translate internal <code class="docutils literal notranslate"><span class="pre">symbol</span></code> representation back to its original string name. </p>
+<p>Throws an exception when the <code class="docutils literal notranslate"><span class="pre">symbol</span></code> is missing in the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> to translate. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">symbol</span></code> original name. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabetaSERK16OnTheFlyAlphabet">
+<span id="_CPPv3N4mata16OnTheFlyAlphabetaSERK16OnTheFlyAlphabet"></span><span id="_CPPv2N4mata16OnTheFlyAlphabetaSERK16OnTheFlyAlphabet"></span><span id="mata::OnTheFlyAlphabet::assign-operator__OnTheFlyAlphabetCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a08e07cbc2fa8239b9396769a4aa9241f"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabetaSERR16OnTheFlyAlphabet">
+<span id="_CPPv3N4mata16OnTheFlyAlphabetaSERR16OnTheFlyAlphabet"></span><span id="_CPPv2N4mata16OnTheFlyAlphabetaSERR16OnTheFlyAlphabet"></span><span id="mata::OnTheFlyAlphabet::assign-operator__OnTheFlyAlphabetRR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1af3c55ae216db46f881a589dcc1b47189"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16add_symbols_fromERKNSt6vectorINSt6stringEEE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16add_symbols_fromERKNSt6vectorINSt6stringEEE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16add_symbols_fromERKNSt6vectorINSt6stringEEE"></span><span id="mata::OnTheFlyAlphabet::add_symbols_from__std::vector:ss:CR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a87945241f2758044b2da72c86979c890"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_symbols_from</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbol_names</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Expand alphabet by symbols from the passed <code class="docutils literal notranslate"><span class="pre">symbol_names</span></code>. </p>
+<p>Adding a symbol name which already exists will throw an exception. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol_names</strong> – <strong>[in]</strong> Vector of symbol names. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet16add_symbols_fromERK17StringToSymbolMap">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet16add_symbols_fromERK17StringToSymbolMap"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet16add_symbols_fromERK17StringToSymbolMap"></span><span id="mata::OnTheFlyAlphabet::add_symbols_from__StringToSymbolMapCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1ab09415483853bf9cdc6be99638bf881c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_symbols_from</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">new_symbol_map</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Expand alphabet by symbols from the passed <code class="docutils literal notranslate"><span class="pre">symbol_map</span></code>. </p>
+<p>The value of the already existing symbols will NOT be overwritten. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_symbol_map</strong> – <strong>[in]</strong> Map of strings to symbols. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet14translate_symbERKNSt6stringE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet14translate_symbERKNSt6stringE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet14translate_symbERKNSt6stringE"></span><span id="mata::OnTheFlyAlphabet::translate_symb__ssCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_symb</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">str</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>translates a string into a symbol </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet14translate_wordERK8WordName">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet14translate_wordERK8WordName"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet14translate_wordERK8WordName"></span><span id="mata::OnTheFlyAlphabet::translate_word__WordNameCRC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a4a1802522d33536e48a5cc8b8b3c88cb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">translate_word</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8WordNameE" title="mata::WordName"><span class="n"><span class="pre">WordName</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">word_name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Translate sequence of symbol names to sequence of their respective values. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE"></span><span id="mata::OnTheFlyAlphabet::add_new_symbol__ssCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a0882c1b5fd8acdeae986ede9b1094b4d"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet15InsertionResultE" title="mata::OnTheFlyAlphabet::InsertionResult"><span class="n"><span class="pre">InsertionResult</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_new_symbol</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Add new symbol to the alphabet with the value of <code class="docutils literal notranslate"><span class="pre">next_symbol_value</span></code>. </p>
+<p>Throws an exception when the adding fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – <strong>[in]</strong> User-space representation of the symbol. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the insertion as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e"><span class="std std-ref"><span class="pre">InsertionResult</span></span></a></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE6Symbol">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE6Symbol"></span><span id="mata::OnTheFlyAlphabet::add_new_symbol__ssCR.Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a7356ee4f29ea31b538960f0d5b1a81a3"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet15InsertionResultE" title="mata::OnTheFlyAlphabet::InsertionResult"><span class="n"><span class="pre">InsertionResult</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_new_symbol</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Add new symbol to the alphabet. </p>
+<p>Throws an exception when the adding fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – <strong>[in]</strong> User-space representation of the symbol. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> Number of the symbol to be used on transitions. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the insertion as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e"><span class="std std-ref"><span class="pre">InsertionResult</span></span></a></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet18try_add_new_symbolERKNSt6stringE6Symbol">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet18try_add_new_symbolERKNSt6stringE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet18try_add_new_symbolERKNSt6stringE6Symbol"></span><span id="mata::OnTheFlyAlphabet::try_add_new_symbol__ssCR.Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1afd59120b2bc374a0a879ea00e082bd2d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet15InsertionResultE" title="mata::OnTheFlyAlphabet::InsertionResult"><span class="n"><span class="pre">InsertionResult</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">try_add_new_symbol</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Try to add symbol to the alphabet map. </p>
+<p>Does not throw an exception when the adding fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – <strong>[in]</strong> User-space representation of the symbol. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> Number of the symbol to be used on transitions. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the insertion as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e"><span class="std std-ref"><span class="pre">InsertionResult</span></span></a></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet14get_next_valueEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet14get_next_valueEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet14get_next_valueEv"></span><span id="mata::OnTheFlyAlphabet::get_next_valueC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a4d70d60280982e782db2e8a02bb301f9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_next_value</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the next value for a potential new symbol. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Next <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet21get_number_of_symbolsEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet21get_number_of_symbolsEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet21get_number_of_symbolsEv"></span><span id="mata::OnTheFlyAlphabet::get_number_of_symbolsC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_number_of_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the number of existing symbols, epsilon symbols excluded. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of symbols. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet14get_symbol_mapEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet14get_symbol_mapEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet14get_symbol_mapEv"></span><span id="mata::OnTheFlyAlphabet::get_symbol_mapC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1aaddd2560a343f3a189043c75f71503a0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_symbol_map</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the symbol map used in the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Map mapping strings to symbols used internally in Mata. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet5emptyEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet5emptyEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet5emptyEv"></span><span id="mata::OnTheFlyAlphabet::emptyC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a108bb972911adff5dd227f4f645a7967"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Checks whether the alphabet has any symbols. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet24update_next_symbol_valueE6Symbol">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet24update_next_symbol_valueE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet24update_next_symbol_valueE6Symbol"></span><span id="mata::OnTheFlyAlphabet::update_next_symbol_value__Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1aeb27901599fe497fd719a6aa5128a046"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update_next_symbol_value</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Update next symbol value when appropriate. </p>
+<p>When the newly inserted value is larger or equal to the current next symbol value, update the next symbol value to a value one larger than the new value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – The value of the newly added symbol. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet5eraseE6Symbol">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet5eraseE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet5eraseE6Symbol"></span><span id="mata::OnTheFlyAlphabet::erase__Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a7650ff24ca0062b4bab0086c4ea70c41"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove a symbol name value pair specified by its <code class="docutils literal notranslate"><span class="pre">symbol</span></code> from the alphabet. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Complexity: O(n), where n is the number of symbols in the alphabet. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of symbols removed (0 or 1). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet5eraseERKNSt6stringE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet5eraseERKNSt6stringE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet5eraseERKNSt6stringE"></span><span id="mata::OnTheFlyAlphabet::erase__ssCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a085f781ed9067042166e721bbbbd3752"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbol_name</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove a symbol name value pair specified by its <code class="docutils literal notranslate"><span class="pre">symbol_name</span></code> from the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of symbols removed (0 or 1). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet5eraseEN17StringToSymbolMap14const_iteratorE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet5eraseEN17StringToSymbolMap14const_iteratorE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet5eraseEN17StringToSymbolMap14const_iteratorE"></span><span id="mata::OnTheFlyAlphabet::erase__StringToSymbolMap::const_iterator"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1aebb173a751925d7456f340eb0525ae80"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove a symbol name value pair from the position <code class="docutils literal notranslate"><span class="pre">pos</span></code> from the alphabet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet5eraseEN17StringToSymbolMap14const_iteratorEN17StringToSymbolMap14const_iteratorE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet5eraseEN17StringToSymbolMap14const_iteratorEN17StringToSymbolMap14const_iteratorE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet5eraseEN17StringToSymbolMap14const_iteratorEN17StringToSymbolMap14const_iteratorE"></span><span id="mata::OnTheFlyAlphabet::erase__StringToSymbolMap::const_iterator.StringToSymbolMap::const_iterator"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a7503f5e4d42290e2f4a6853ad6fd1da4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove a symbol name value pair from the positions between <code class="docutils literal notranslate"><span class="pre">first</span></code> and <code class="docutils literal notranslate"><span class="pre">last</span></code> from the alphabet. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet5clearEv">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet5clearEv"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet5clearEv"></span><span id="mata::OnTheFlyAlphabet::clear"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabetixERKNSt6stringE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabetixERKNSt6stringE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabetixERKNSt6stringE"></span><span id="mata::OnTheFlyAlphabet::subscript-operator__ssCR"></span><span class="target" id="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symb</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>also translates strings to symbols </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet8is_equalERK8Alphabet">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet8is_equalERK8Alphabet"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet8is_equalERK8Alphabet"></span><span id="mata::OnTheFlyAlphabet::is_equal__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet8is_equalEPCK8Alphabet">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet8is_equalEPCK8Alphabet"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet8is_equalEPCK8Alphabet"></span><span id="mata::OnTheFlyAlphabet::is_equal__AlphabetCPCC"></span><span class="target" id="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_equal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">other_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether two alphabets are equal. </p>
+<p>In general, two alphabets are equal if and only if they are of the same class instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other_alphabet</strong> – The other alphabet to compare with for equality. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if equal, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabeteqERK8Alphabet">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabeteqERK8Alphabet"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabeteqERK8Alphabet"></span><span id="mata::OnTheFlyAlphabet::eq-operator__AlphabetCRC"></span><span class="target" id="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet7addressEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet7addressEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet7addressEv"></span><span id="mata::OnTheFlyAlphabet::addressC"></span><span class="target" id="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">address</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet11symbol_map_E">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet11symbol_map_E"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet11symbol_map_E"></span><span id="mata::OnTheFlyAlphabet::symbol_map___StringToSymbolMap"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet17StringToSymbolMapE" title="mata::OnTheFlyAlphabet::StringToSymbolMap"><span class="n"><span class="pre">StringToSymbolMap</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">symbol_map_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Map of string transition symbols to symbol values. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet18next_symbol_value_E">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet18next_symbol_value_E"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet18next_symbol_value_E"></span><span id="mata::OnTheFlyAlphabet::next_symbol_value___Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">next_symbol_value_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Next value to be used for a newly added symbol. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4St">
+<span id="_CPPv3St"></span><span id="_CPPv2St"></span><span id="std"></span><span class="target" id="namespacestd"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">std</span></span></span><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NStlsERNSt7ostreamERKN4mata8AlphabetE">
+<span id="_CPPv3NStlsERNSt7ostreamERKN4mata8AlphabetE"></span><span id="_CPPv2NStlsERNSt7ostreamERKN4mata8AlphabetE"></span><span id="std::lshift-operator__osR.mata::AlphabetCR"></span><span class="target" id="namespacestd_1a9647819234fc49f9ff28f5e4a8d30714"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File alphabet.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ord-vector_8hh.html">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparse-set_8hh.html">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="../filelist.html" title="previous chapter">File list</a></li>
+      <li>Next: <a href="closed-set_8hh.html" title="next chapter">File closed-set.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/alphabet_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

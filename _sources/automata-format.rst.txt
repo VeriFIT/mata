@@ -1,5 +1,5 @@
 Automata Format
 ===============
 
-.. include :: ../AUTOMATAFORMAT.md
+.. include :: ../../AUTOMATAFORMAT.md
    :parser: myst_parser.sphinx_

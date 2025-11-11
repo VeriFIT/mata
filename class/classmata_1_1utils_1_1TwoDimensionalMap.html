@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Class mata::utils::TwoDimensionalMap &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File list" href="../filelist.html" />
+    <link rel="prev" title="Class mata::utils::SynchronizedUniversalIterator" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="class-mata-utils-twodimensionalmap">
+<h1>Class mata::utils::TwoDimensionalMap<a class="headerlink" href="#class-mata-utils-twodimensionalmap" title="Link to this heading">¶</a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE">
+<span id="_CPPv3I0_b_6size_tEN4mata5utils17TwoDimensionalMapE"></span><span id="_CPPv2I0_b_6size_tEN4mata5utils17TwoDimensionalMapE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">track_inverted</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MAX_MATRIX_SIZE</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">50'000'000</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TwoDimensionalMap</span></span></span><a class="headerlink" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A two-dimensional map that can be used to store pairs of values and their associated value. </p>
+<p>This class can handle both small and large maps efficiently.</p>
+<p>The largest matrix of pairs of we are brave enough to allocate is 50’000’000 for 8 Byte values. So ten million cells is close to 100 MB. If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (vec_map_storage). The unordered_map seems to be about twice slower.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T</strong> – Type of the values stored in the map. Must be an unsigned type. </p></li>
+<li><p><strong>track_inverted</strong> – Whether to track inverted indices for the first and second dimensions. To use this feature correctly, the mapping has to be reversible. </p></li>
+<li><p><strong>MAX_MATRIX_SIZE</strong> – Maximum size of the matrix before switching to vector of unordered maps. </p></li>
+</ul>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t"></span><span id="mata::utils::TwoDimensionalMap::TwoDimensionalMap__sC.sC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TwoDimensionalMap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">first_dim_size</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">second_dim_size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Constructor for <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1TwoDimensionalMap"><span class="std std-ref">TwoDimensionalMap</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first_dim_size</strong> – Size of the first dimension. </p></li>
+<li><p><strong>second_dim_size</strong> – Size of the second dimension. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils17TwoDimensionalMap3getEK1TK1T">
+<span id="_CPPv3NK4mata5utils17TwoDimensionalMap3getEK1TK1T"></span><span id="_CPPv2NK4mata5utils17TwoDimensionalMap3getEK1TK1T"></span><span id="mata::utils::TwoDimensionalMap::get__TC.TCC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1af935e042d6212dd24be4848e0c689345"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">second</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils17TwoDimensionalMap3getEK1TK1T" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Get the value associated with a pair of keys. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> – First key. </p></li>
+<li><p><strong>second</strong> – Second key. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value associated with the pair, or std::numeric_limits&lt;T&gt;::max() if not found. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T"></span><span id="mata::utils::TwoDimensionalMap::insert__TC.TC.TC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1aacddb220ca8b46e27bf8be72f61ca777"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">second</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Insert a value associated with a pair of keys. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> – First key. </p></li>
+<li><p><strong>second</strong> – Second key. </p></li>
+<li><p><strong>value</strong> – Value to associate with the pair. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T">
+<span id="_CPPv3NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T"></span><span id="_CPPv2NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T"></span><span id="mata::utils::TwoDimensionalMap::get_first_inverted__TCC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1a0aa3d2e818b4851935792f8523e60d2a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_first_inverted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Get the first inverted index for a <code class="docutils literal notranslate"><span class="pre">value</span></code>. </p>
+<p>This is only available if track_inverted is true. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T">
+<span id="_CPPv3NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T"></span><span id="_CPPv2NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T"></span><span id="mata::utils::TwoDimensionalMap::get_second_inverted__TCC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1abfb4c7c6e9d71d6aac6091d799437569"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_second_inverted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Get the second inverted index for a <code class="docutils literal notranslate"><span class="pre">value</span></code>. </p>
+<p>This is only available if track_inverted is true. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classlist.html">Class list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html">Class mata::nfa::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions.html">Class mata::nfa::Delta::Transitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator.html">Class mata::nfa::Delta::Transitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Move.html">Class mata::nfa::Move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost.html">Class mata::nfa::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves.html">Class mata::nfa::StatePost::Moves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves_1_1const__iterator.html">Class mata::nfa::StatePost::Moves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::utils::TwoDimensionalMap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../classlist.html">Class list</a><ul>
+      <li>Previous: <a href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html" title="previous chapter">Class mata::utils::SynchronizedUniversalIterator</a></li>
+      <li>Next: <a href="../filelist.html" title="next chapter">File list</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/class/classmata_1_1utils_1_1TwoDimensionalMap.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

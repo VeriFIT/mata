@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Namespace mata::utils &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Namespace std" href="namespacestd.html" />
+    <link rel="prev" title="Namespace mata::parser" href="namespacemata_1_1parser.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="namespace-mata-utils">
+<h1>Namespace mata::utils<a class="headerlink" href="#namespace-mata-utils" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utilsE">
+<span id="_CPPv3N4mata5utilsE"></span><span id="_CPPv2N4mata5utilsE"></span><span id="mata::utils"></span><span class="target" id="namespacemata_1_1utils"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">utils</span></span></span><br /></dt>
+<dd><p>SparseSet.h Implements a class template of a sparse set of unsigned integers. </p>
+<p>Non-automata-related structures and algorithms.</p>
+<p>
+In particular, this includes:<ol class="loweralpha simple">
+<li><p>Predicates,</p></li>
+<li><p>Ordered Vectors,</p></li>
+<li><p>Iterators,</p></li>
+<li><p>Printers,</p></li>
+<li><p>Other helper functions. </p></li>
+</ol>
+<dl class="simple">
+<dt><strong>Author</strong></dt><dd><p>Sam Griffiths www.computist.xyz <a class="reference external" href="https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a">https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a</a></p>
+</dd>
+</dl>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE">
+<span id="_CPPv3I0EN4mata5utils12are_disjointERKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE"></span><span id="_CPPv2I0EN4mata5utils12are_disjointERKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a45bacd213d85651e04c4b970a4843fa1"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">are_disjoint</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE" title="mata::utils::are_disjoint::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE" title="mata::utils::are_disjoint::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9is_sortedEbRKNSt6vectorI3KeyEE">
+<span id="_CPPv3I0EN4mata5utils9is_sortedERKNSt6vectorI3KeyEE"></span><span id="_CPPv2I0EN4mata5utils9is_sortedERKNSt6vectorI3KeyEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a12d5e11556b2ae3c4f96fb21c9176061"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_sorted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4I0EN4mata5utils9is_sortedEbRKNSt6vectorI3KeyEE" title="mata::utils::is_sorted::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9push_backEvR20SynchronizedIteratorIN9Container14const_iteratorEERK9Container">
+<span id="_CPPv3I0EN4mata5utils9push_backER20SynchronizedIteratorIN9Container14const_iteratorEERK9Container"></span><span id="_CPPv2I0EN4mata5utils9push_backER20SynchronizedIteratorIN9Container14const_iteratorEERK9Container"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Container</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1ac7dda4e0480c4f299da58d1b4ca05b85"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedIterator.html#_CPPv4I0EN4mata5utils20SynchronizedIteratorE" title="mata::utils::SynchronizedIterator"><span class="n"><span class="pre">SynchronizedIterator</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="../file/synchronized-iterator_8hh.html#_CPPv4I0EN4mata5utils9push_backEvR20SynchronizedIteratorIN9Container14const_iteratorEERK9Container" title="mata::utils::push_back::Container"><span class="n"><span class="pre">Container</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">i</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/synchronized-iterator_8hh.html#_CPPv4I0EN4mata5utils9push_backEvR20SynchronizedIteratorIN9Container14const_iteratorEERK9Container" title="mata::utils::push_back::Container"><span class="n"><span class="pre">Container</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">container</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>In order to make initialisation of the sync. </p>
+<p>iterator nicer than inputting v.begin() and v.end() as the two parameters of the method push_back, this function wraps the method push_back, takes the iterator and v and extracts the v.begin() and v.end() from v. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils11replace_allERKNSt6stringERKNSt6stringERKNSt6stringE">
+<span id="_CPPv3N4mata5utils11replace_allERKNSt6stringERKNSt6stringERKNSt6stringE"></span><span id="_CPPv2N4mata5utils11replace_allERKNSt6stringERKNSt6stringERKNSt6stringE"></span><span id="mata::utils::replace_all__ssCR.ssCR.ssCR"></span><span class="target" id="namespacemata_1_1utils_1aa646da551e44732ac7cf7e592cf1c151"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">replace_all</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">needle</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">replace</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Replace all occurrences of a substring in a string. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> – The input string </p></li>
+<li><p><strong>needle</strong> – The substring to be replaced </p></li>
+<li><p><strong>replace</strong> – The replacement string </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new string with all occurrences of the substring replaced. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils12are_disjointEbRKNSt3setI1TEERKNSt3setI1TEE">
+<span id="_CPPv3I0EN4mata5utils12are_disjointERKNSt3setI1TEERKNSt3setI1TEE"></span><span id="_CPPv2I0EN4mata5utils12are_disjointERKNSt3setI1TEERKNSt3setI1TEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1ad9a2445b70fdc1c692b657b4d7d0ceb0"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">are_disjoint</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils12are_disjointEbRKNSt3setI1TEERKNSt3setI1TEE" title="mata::utils::are_disjoint::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils12are_disjointEbRKNSt3setI1TEERKNSt3setI1TEE" title="mata::utils::are_disjoint::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Are two sets disjoint? </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN4mata5utils5is_inEbRK1TRK4Cont">
+<span id="_CPPv3I00EN4mata5utils5is_inERK1TRK4Cont"></span><span id="_CPPv2I00EN4mata5utils5is_inERK1TRK4Cont"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Cont</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1ab02236a19281787ca1e57fa50115af91"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_in</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils5is_inEbRK1TRK4Cont" title="mata::utils::is_in::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">elem</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils5is_inEbRK1TRK4Cont" title="mata::utils::is_in::Cont"><span class="n"><span class="pre">Cont</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cont</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Is there an element in a container? </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils12hash_combineE6size_t6size_tRK1T">
+<span id="_CPPv3I0EN4mata5utils12hash_combineE6size_tRK1T"></span><span id="_CPPv2I0EN4mata5utils12hash_combineE6size_tRK1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a7fa2e3394206b0e3364cc7199916ada8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hash_combine</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils12hash_combineE6size_t6size_tRK1T" title="mata::utils::hash_combine::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Combine two hash values. </p>
+<p>Values taken from <a class="reference external" href="http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp">http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp</a></p>
+<p>TODO: fix to be more suitable for 64b </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils10hash_rangeE6size_t2It2It">
+<span id="_CPPv3I0EN4mata5utils10hash_rangeE2It2It"></span><span id="_CPPv2I0EN4mata5utils10hash_rangeE2It2It"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">It</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a7dadc704bc80aa67ff2d0d91738fd15f"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hash_range</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils10hash_rangeE6size_t2It2It" title="mata::utils::hash_range::It"><span class="n"><span class="pre">It</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils10hash_rangeE6size_t2It2It" title="mata::utils::hash_range::It"><span class="n"><span class="pre">It</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Hashes a range. </p>
+<p>Inspired by <a class="reference external" href="http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp">http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp</a></p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN4mata5utils6haskeyEbRK1TRK1K">
+<span id="_CPPv3I00EN4mata5utils6haskeyERK1TRK1K"></span><span id="_CPPv2I00EN4mata5utils6haskeyERK1TRK1K"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">K</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a7527633252089dfe69556bd5923f62ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">haskey</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils6haskeyEbRK1TRK1K" title="mata::utils::haskey::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cont</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils6haskeyEbRK1TRK1K" title="mata::utils::haskey::K"><span class="n"><span class="pre">K</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>checks whether a container with <code class="docutils literal notranslate"><span class="pre">find</span></code> contains a key </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E">
+<span id="_CPPv3II00DpE000DpEN4mata5utils10invert_mapERK3MapI2T12T2E"></span><span id="_CPPv2II00DpE000DpEN4mata5utils10invert_mapERK3MapI2T12T2E"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Map</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T1</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T2</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">Args</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a181e2adeb601262a78eac3b5f641a2e5"></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E" title="mata::utils::invert_map::Map"><span class="n"><span class="pre">Map</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E" title="mata::utils::invert_map::T2"><span class="n"><span class="pre">T2</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E" title="mata::utils::invert_map::T1"><span class="n"><span class="pre">T1</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invert_map</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E" title="mata::utils::invert_map::Map"><span class="n"><span class="pre">Map</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E" title="mata::utils::invert_map::T1"><span class="n"><span class="pre">T1</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4II00DpE000DpEN4mata5utils10invert_mapE3MapI2T22T1ERK3MapI2T12T2E" title="mata::utils::invert_map::T2"><span class="n"><span class="pre">T2</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mp</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>inverts a map (should work for std::map and std::unordered_map) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils17reserve_on_insertEvR6Vector6size_t6size_t">
+<span id="_CPPv3I0EN4mata5utils17reserve_on_insertER6Vector6size_t6size_t"></span><span id="_CPPv2I0EN4mata5utils17reserve_on_insertER6Vector6size_t6size_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Vector</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1ae4aa5aac3a8372b20b8560f460d9da01"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve_on_insert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils17reserve_on_insertEvR6Vector6size_t6size_t" title="mata::utils::reserve_on_insert::Vector"><span class="n"><span class="pre">Vector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">needed_capacity</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">extension</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">32</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN4mata5utils10defragmentEvR6VectorRKNSt6vectorI5IndexEE">
+<span id="_CPPv3I00EN4mata5utils10defragmentER6VectorRKNSt6vectorI5IndexEE"></span><span id="_CPPv2I00EN4mata5utils10defragmentER6VectorRKNSt6vectorI5IndexEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Vector</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Index</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a867cda49c488cbfb093c92055ee48693"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">defragment</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils10defragmentEvR6VectorRKNSt6vectorI5IndexEE" title="mata::utils::defragment::Vector"><span class="n"><span class="pre">Vector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils10defragmentEvR6VectorRKNSt6vectorI5IndexEE" title="mata::utils::defragment::Index"><span class="n"><span class="pre">Index</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN4mata5utils6renameEvR6VectorRKNSt6vectorI5IndexEE">
+<span id="_CPPv3I00EN4mata5utils6renameER6VectorRKNSt6vectorI5IndexEE"></span><span id="_CPPv2I00EN4mata5utils6renameER6VectorRKNSt6vectorI5IndexEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Vector</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Index</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a7343ae68ac48b3e636b2096acb0e67f6"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rename</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils6renameEvR6VectorRKNSt6vectorI5IndexEE" title="mata::utils::rename::Vector"><span class="n"><span class="pre">Vector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils6renameEvR6VectorRKNSt6vectorI5IndexEE" title="mata::utils::rename::Index"><span class="n"><span class="pre">Index</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN4mata5utils14filter_indexesEvR6VectorRRK3Fun">
+<span id="_CPPv3I00EN4mata5utils14filter_indexesER6VectorRRK3Fun"></span><span id="_CPPv2I00EN4mata5utils14filter_indexesER6VectorRRK3Fun"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Vector</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fun</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a466f74a7210f4027fc0241badf1c5fb1"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filter_indexes</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils14filter_indexesEvR6VectorRRK3Fun" title="mata::utils::filter_indexes::Vector"><span class="n"><span class="pre">Vector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils14filter_indexesEvR6VectorRRK3Fun" title="mata::utils::filter_indexes::Fun"><span class="n"><span class="pre">Fun</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I00EN4mata5utils6filterEvR6VectorRRK3Fun">
+<span id="_CPPv3I00EN4mata5utils6filterER6VectorRRK3Fun"></span><span id="_CPPv2I00EN4mata5utils6filterER6VectorRRK3Fun"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Vector</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fun</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1ac2e11bb4b18013234ebb6eb91fb1816b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils6filterEvR6VectorRRK3Fun" title="mata::utils::filter::Vector"><span class="n"><span class="pre">Vector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I00EN4mata5utils6filterEvR6VectorRRK3Fun" title="mata::utils::filter::Fun"><span class="n"><span class="pre">Fun</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils15sort_and_rmduplEvR6Vector">
+<span id="_CPPv3I0EN4mata5utils15sort_and_rmduplER6Vector"></span><span id="_CPPv2I0EN4mata5utils15sort_and_rmduplER6Vector"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Vector</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a7e8587727ba2b11a5b4a4409c6cf9169"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sort_and_rmdupl</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils15sort_and_rmduplEvR6Vector" title="mata::utils::sort_and_rmdupl::Vector"><span class="n"><span class="pre">Vector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVectorE">
+<span id="_CPPv3I0EN4mata5utils9OrdVectorE"></span><span id="_CPPv2I0EN4mata5utils9OrdVectorE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;ord-vector.hh&gt;</em></div>
+<p>Implementation of a set using ordered vector. </p>
+<p>This class implements the interface of a set (the same interface as std::set) using ordered vector as the underlying data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Key</strong> – Key type: type of the elements contained in the container. Each elements in a set is also its key. </p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector10differenceERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVector10differenceERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVector10differenceERK9OrdVector"></span><span id="mata::utils::OrdVector::difference__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a76b66e225ae187f3f69d870fd07080d7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">difference</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Compute set difference as <code class="docutils literal notranslate"><span class="pre">this</span></code> minus <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rhs</strong> – Other vector with symbols to be excluded. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> minus <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector8containsERK3Key">
+<span id="_CPPv3NK4mata5utils9OrdVector8containsERK3Key"></span><span id="_CPPv2NK4mata5utils9OrdVector8containsERK3Key"></span><span id="mata::utils::OrdVector::contains__KeyCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a4ba0005e319eda1ba871a1a01be7764e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether <code class="docutils literal notranslate"><span class="pre">key</span></code> exists in the ordered vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5eraseERK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector5eraseERK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector5eraseERK3Key"></span><span id="mata::utils::OrdVector::erase__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a769571751cba2fa78c6b556f2f6d3b94"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove <code class="docutils literal notranslate"><span class="pre">k</span></code> from sorted vector. </p>
+<p>This function expects the vector to be sorted. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector4backEv">
+<span id="_CPPv3N4mata5utils9OrdVector4backEv"></span><span id="_CPPv2N4mata5utils9OrdVector4backEv"></span><span id="mata::utils::OrdVector::back"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1af6a356cfb0cc9438197d4f2224507bee"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utils9OrdVector9referenceE" title="mata::utils::OrdVector::reference"><span class="n"><span class="pre">reference</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Get reference to the last element in the vector. </p>
+<p>Modifying the underlying value in the reference could break sortedness. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector13with_reservedEK6size_t">
+<span id="_CPPv3N4mata5utils9OrdVector13with_reservedEK6size_t"></span><span id="_CPPv2N4mata5utils9OrdVector13with_reservedEK6size_t"></span><span id="mata::utils::OrdVector::with_reserved__sC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a52563bb89bd17a96b35242ecc23af261"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">with_reserved</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Create <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a> with reserved <code class="docutils literal notranslate"><span class="pre">capacity</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>capacity</strong> – <strong>[in]</strong> Capacity of <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a> to reserve. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Newly create <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVectorlsERNSt7ostreamERK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVectorlsERNSt7ostreamERK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVectorlsERNSt7ostreamERK9OrdVector"></span><span id="mata::utils::OrdVector::lshift-operator__osR.OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ac973a20c0b03b6bedaca75e709983993"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Overloaded &lt;&lt; operator. </p>
+<p>Overloaded &lt;&lt; operator for output stream.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector_1af2d75115a89bd6720db09453a8a1231f"><span class="std std-ref">to_str()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>os</strong> – <strong>[in]</strong> The output stream </p></li>
+<li><p><strong>vec</strong> – <strong>[in]</strong> Assignment to the variables</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Modified output stream </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9SparseSetE">
+<span id="_CPPv3I0EN4mata5utils9SparseSetE"></span><span id="_CPPv2I0EN4mata5utils9SparseSetE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Number</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SparseSet"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;sparse-set.hh&gt;</em></div>
+<p>Implementation of a set of non-negative numbers using sparse-set. </p>
+<p>This class implements the interface of a set (similar to std::set) using sparse-set date structure, that is, a pair of vectors dense and sparse (… google it). Importantly<ul class="simple">
+<li><p>Insertion and removal are constant time.</p></li>
+<li><p>Iteration is linear in the number of stored elements.</p></li>
+<li><p>It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.</p></li>
+</ul>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Number</strong> – Number type: type of numbers contained in the container. </p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet13erase_nocheckEK6Number">
+<span id="_CPPv3N4mata5utils9SparseSet13erase_nocheckEK6Number"></span><span id="_CPPv2N4mata5utils9SparseSet13erase_nocheckEK6Number"></span><span id="mata::utils::SparseSet::erase_nocheck__NumberC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a85afe67177c190d627461d0261bcf226"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase_nocheck</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">number</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Erase <code class="docutils literal notranslate"><span class="pre">number</span></code> from the set without checking for its existence. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>number</strong> – Number to be erased. </p>
+</dd>
+<dt class="field-even">Pre<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">number</span></code> exists in the set. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetEv">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetEv"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetEv"></span><span id="mata::utils::SparseSet::SparseSet"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1ab5bb74df22db54e10f74adcf30377644"></span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd><p>New Mata code. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet9SparseSetE6Number">
+<span id="_CPPv3N4mata5utils9SparseSet9SparseSetE6Number"></span><span id="_CPPv2N4mata5utils9SparseSet9SparseSetE6Number"></span><span id="mata::utils::SparseSet::SparseSet__Number"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a44b0f32d259268248337a0dea8944ec4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">domain_size</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Basic constructor where you may reserve a domain size. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSetixE6Number">
+<span id="_CPPv3NK4mata5utils9SparseSetixE6Number"></span><span id="_CPPv2NK4mata5utils9SparseSetixE6Number"></span><span id="mata::utils::SparseSet::subscript-operator__NumberC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a85705d7a825cbe91070d0b680a4af642"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if predicate for <code class="docutils literal notranslate"><span class="pre">q</span></code> is set. False otherwise (even if q is out of range of the predicate). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet3maxEv">
+<span id="_CPPv3N4mata5utils9SparseSet3maxEv"></span><span id="_CPPv2N4mata5utils9SparseSet3maxEv"></span><span id="mata::utils::SparseSet::max"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a7b9c6069f365bec1e288e78fdd90cc62"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">max</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Maximal Number in set. </p>
+<p>Expensive operation as it has to compute the maximal Number in linear time. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils31SynchronizedExistentialIteratorE">
+<span id="_CPPv3I0EN4mata5utils31SynchronizedExistentialIteratorE"></span><span id="_CPPv2I0EN4mata5utils31SynchronizedExistentialIteratorE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SynchronizedExistentialIterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SynchronizedExistentialIterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedIterator.html#_CPPv4I0EN4mata5utils20SynchronizedIteratorE" title="mata::utils::SynchronizedIterator"><span class="n"><span class="pre">SynchronizedIterator</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedExistentialIterator.html#_CPPv4I0EN4mata5utils31SynchronizedExistentialIteratorE" title="mata::utils::SynchronizedExistentialIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;synchronized-iterator.hh&gt;</em></div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils31SynchronizedExistentialIterator7advanceEv">
+<span id="_CPPv3N4mata5utils31SynchronizedExistentialIterator7advanceEv"></span><span id="_CPPv2N4mata5utils31SynchronizedExistentialIterator7advanceEv"></span><span id="mata::utils::SynchronizedExistentialIterator::advance"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ae594056547eaed65a6e0a2358d7ddc5b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">advance</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Advances all positions just above current_minimum, that is, to or above next_minimum. </p>
+<p>Those at next_minimum are added to currently_synchronized. Since next_minimum becomes the current minimum, new next_minimum must be updated too. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils31SynchronizedExistentialIterator11get_currentEv">
+<span id="_CPPv3NK4mata5utils31SynchronizedExistentialIterator11get_currentEv"></span><span id="_CPPv2NK4mata5utils31SynchronizedExistentialIterator11get_currentEv"></span><span id="mata::utils::SynchronizedExistentialIterator::get_currentC"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad4caf0e477393cb1ce67c9f9c7f63ac7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedExistentialIterator.html#_CPPv4I0EN4mata5utils31SynchronizedExistentialIteratorE" title="mata::utils::SynchronizedExistentialIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_current</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>Returns the vector of current still active positions. </p>
+<p>Beware, they will be ordered differently from how there were input into the iterator. This is due to swapping of the emptied positions with positions at the end. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils31SynchronizedExistentialIterator9push_backERK8IteratorRK8Iterator">
+<span id="_CPPv3N4mata5utils31SynchronizedExistentialIterator9push_backERK8IteratorRK8Iterator"></span><span id="_CPPv2N4mata5utils31SynchronizedExistentialIterator9push_backERK8IteratorRK8Iterator"></span><span id="mata::utils::SynchronizedExistentialIterator::push_back__IteratorCR.IteratorCR"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedExistentialIterator_1aea8f0bac6a86224b0e1b3617635fa55a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedExistentialIterator.html#_CPPv4I0EN4mata5utils31SynchronizedExistentialIteratorE" title="mata::utils::SynchronizedExistentialIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">begin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedExistentialIterator.html#_CPPv4I0EN4mata5utils31SynchronizedExistentialIteratorE" title="mata::utils::SynchronizedExistentialIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">end</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
+<dd><p>This is supposed to be called only before an iteration, after constructor of reset. </p>
+<p>Calling after advance breaks the iterator. Specifies begin and end of one vector, to initialise before the iteration starts. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils20SynchronizedIteratorE">
+<span id="_CPPv3I0EN4mata5utils20SynchronizedIteratorE"></span><span id="_CPPv2I0EN4mata5utils20SynchronizedIteratorE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SynchronizedIterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SynchronizedIterator</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;synchronized-iterator.hh&gt;</em></div>
+<p>Synchronized iteration. </p>
+<p>Subclassed by <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1SynchronizedExistentialIterator"><span class="std std-ref">SynchronizedExistentialIterator&lt; Iterator &gt;</span></a>, <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1SynchronizedUniversalIterator"><span class="std std-ref">SynchronizedUniversalIterator&lt; Iterator &gt;</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils20SynchronizedIterator20SynchronizedIteratorEK6size_t">
+<span id="_CPPv3N4mata5utils20SynchronizedIterator20SynchronizedIteratorEK6size_t"></span><span id="_CPPv2N4mata5utils20SynchronizedIterator20SynchronizedIteratorEK6size_t"></span><span id="mata::utils::SynchronizedIterator::SynchronizedIterator__sC"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedIterator_1a35e553ac58b9e32429772619add1006b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SynchronizedIterator</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>size</strong> – Number of elements to reserve up-front for positions and ends. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils20SynchronizedIterator9push_backERK8IteratorRK8Iterator">
+<span id="_CPPv3N4mata5utils20SynchronizedIterator9push_backERK8IteratorRK8Iterator"></span><span id="_CPPv2N4mata5utils20SynchronizedIterator9push_backERK8IteratorRK8Iterator"></span><span id="mata::utils::SynchronizedIterator::push_back__IteratorCR.IteratorCR"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedIterator.html#_CPPv4I0EN4mata5utils20SynchronizedIteratorE" title="mata::utils::SynchronizedIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">begin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedIterator.html#_CPPv4I0EN4mata5utils20SynchronizedIteratorE" title="mata::utils::SynchronizedIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">end</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>This is supposed to be called only before an iteration, after constructor of reset. </p>
+<p>Calling after advance breaks the iterator. Specifies begin and end of one vector, to initialise before the iteration starts. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils20SynchronizedIterator5resetEK6size_t">
+<span id="_CPPv3N4mata5utils20SynchronizedIterator5resetEK6size_t"></span><span id="_CPPv2N4mata5utils20SynchronizedIterator5resetEK6size_t"></span><span id="mata::utils::SynchronizedIterator::reset__sC"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Empties positions and ends. </p>
+<p>Though they should keep the allocated space. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>size</strong> – Number of elements to reserve up-front for positions and ends. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils29SynchronizedUniversalIteratorE">
+<span id="_CPPv3I0EN4mata5utils29SynchronizedUniversalIteratorE"></span><span id="_CPPv2I0EN4mata5utils29SynchronizedUniversalIteratorE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SynchronizedUniversalIterator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SynchronizedUniversalIterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedIterator.html#_CPPv4I0EN4mata5utils20SynchronizedIteratorE" title="mata::utils::SynchronizedIterator"><span class="n"><span class="pre">SynchronizedIterator</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedUniversalIterator.html#_CPPv4I0EN4mata5utils29SynchronizedUniversalIteratorE" title="mata::utils::SynchronizedUniversalIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;synchronized-iterator.hh&gt;</em></div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils29SynchronizedUniversalIterator7advanceEv">
+<span id="_CPPv3N4mata5utils29SynchronizedUniversalIterator7advanceEv"></span><span id="_CPPv2N4mata5utils29SynchronizedUniversalIterator7advanceEv"></span><span id="mata::utils::SynchronizedUniversalIterator::advance"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a26e94ac149e5205057d93cf14dfa3325"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">advance</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Advances all positions to the NEXT minimum and returns true (though the next minimum might be the current state if synchronized_at_current_minimum is false), or returns false if positions cannot be synchronized. </p>
+<p>If positions are synchronized to start with, then synchronized_at_current_minimum decides whether to stay or advance further. The general of the algorithm is to synchronize everybody with position[0]. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils29SynchronizedUniversalIterator11get_currentEv">
+<span id="_CPPv3NK4mata5utils29SynchronizedUniversalIterator11get_currentEv"></span><span id="_CPPv2NK4mata5utils29SynchronizedUniversalIterator11get_currentEv"></span><span id="mata::utils::SynchronizedUniversalIterator::get_currentC"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a42f8288c41866cce64d5bcb4619c400b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedUniversalIterator.html#_CPPv4I0EN4mata5utils29SynchronizedUniversalIteratorE" title="mata::utils::SynchronizedUniversalIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_current</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Returns the vector of current positions. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils29SynchronizedUniversalIterator9push_backERK8IteratorRK8Iterator">
+<span id="_CPPv3N4mata5utils29SynchronizedUniversalIterator9push_backERK8IteratorRK8Iterator"></span><span id="_CPPv2N4mata5utils29SynchronizedUniversalIterator9push_backERK8IteratorRK8Iterator"></span><span id="mata::utils::SynchronizedUniversalIterator::push_back__IteratorCR.IteratorCR"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedUniversalIterator.html#_CPPv4I0EN4mata5utils29SynchronizedUniversalIteratorE" title="mata::utils::SynchronizedUniversalIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">begin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SynchronizedUniversalIterator.html#_CPPv4I0EN4mata5utils29SynchronizedUniversalIteratorE" title="mata::utils::SynchronizedUniversalIterator::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">end</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>This is supposed to be called only before an iteration, after constructor of reset. </p>
+<p>Calling after advance breaks the iterator. Specifies begin and end of one vector, to initialise before the iteration starts. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils29SynchronizedUniversalIterator31synchronized_at_current_minimumE">
+<span id="_CPPv3N4mata5utils29SynchronizedUniversalIterator31synchronized_at_current_minimumE"></span><span id="_CPPv2N4mata5utils29SynchronizedUniversalIterator31synchronized_at_current_minimumE"></span><span id="mata::utils::SynchronizedUniversalIterator::synchronized_at_current_minimum__b"></span><span class="target" id="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a81cf8630f18c3694b2d11857bc4f817b"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">synchronized_at_current_minimum</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><br /></dt>
+<dd><p>“minimum” would be the smallest class bounded from below by all positions that appears in all OrdContainers. </p>
+<p>Are we sure that all positions at this class? Invariant: it can be true only if all positions are indeed synchronized. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4I0_6size_tEN4mata5utils12TuplePrinterE">
+<span id="_CPPv3I0_6size_tEN4mata5utils12TuplePrinterE"></span><span id="_CPPv2I0_6size_tEN4mata5utils12TuplePrinterE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Tuple</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">N</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structmata_1_1utils_1_1TuplePrinter"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TuplePrinter</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;utils.hh&gt;</em></div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils12TuplePrinterI5TupleXL1EEEE">
+<span id="_CPPv3I0EN4mata5utils12TuplePrinterI5TupleXL1EEEE"></span><span id="_CPPv2I0EN4mata5utils12TuplePrinterI5TupleX1EEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Tuple</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structmata_1_1utils_1_1TuplePrinter_3_01Tuple_00_011_01_4"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TuplePrinter</span></span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils12TuplePrinterI5TupleXL1EEEE" title="mata::utils::TuplePrinter&lt;Tuple, 1&gt;::Tuple"><span class="n"><span class="pre">Tuple</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;utils.hh&gt;</em></div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE">
+<span id="_CPPv3I0_b_6size_tEN4mata5utils17TwoDimensionalMapE"></span><span id="_CPPv2I0_b_6size_tEN4mata5utils17TwoDimensionalMapE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">track_inverted</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MAX_MATRIX_SIZE</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">50'000'000</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TwoDimensionalMap</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;two-dimensional-map.hh&gt;</em></div>
+<p>A two-dimensional map that can be used to store pairs of values and their associated value. </p>
+<p>This class can handle both small and large maps efficiently.</p>
+<p>The largest matrix of pairs of we are brave enough to allocate is 50’000’000 for 8 Byte values. So ten million cells is close to 100 MB. If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (vec_map_storage). The unordered_map seems to be about twice slower.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T</strong> – Type of the values stored in the map. Must be an unsigned type. </p></li>
+<li><p><strong>track_inverted</strong> – Whether to track inverted indices for the first and second dimensions. To use this feature correctly, the mapping has to be reversible. </p></li>
+<li><p><strong>MAX_MATRIX_SIZE</strong> – Maximum size of the matrix before switching to vector of unordered maps. </p></li>
+</ul>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap17TwoDimensionalMapEK6size_tK6size_t"></span><span id="mata::utils::TwoDimensionalMap::TwoDimensionalMap__sC.sC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TwoDimensionalMap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">first_dim_size</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">second_dim_size</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Constructor for <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1TwoDimensionalMap"><span class="std std-ref">TwoDimensionalMap</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first_dim_size</strong> – Size of the first dimension. </p></li>
+<li><p><strong>second_dim_size</strong> – Size of the second dimension. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils17TwoDimensionalMap3getEK1TK1T">
+<span id="_CPPv3NK4mata5utils17TwoDimensionalMap3getEK1TK1T"></span><span id="_CPPv2NK4mata5utils17TwoDimensionalMap3getEK1TK1T"></span><span id="mata::utils::TwoDimensionalMap::get__TC.TCC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1af935e042d6212dd24be4848e0c689345"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">second</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the value associated with a pair of keys. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> – First key. </p></li>
+<li><p><strong>second</strong> – Second key. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value associated with the pair, or std::numeric_limits&lt;T&gt;::max() if not found. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap6insertEK1TK1TK1T"></span><span id="mata::utils::TwoDimensionalMap::insert__TC.TC.TC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1aacddb220ca8b46e27bf8be72f61ca777"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">second</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Insert a value associated with a pair of keys. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first</strong> – First key. </p></li>
+<li><p><strong>second</strong> – Second key. </p></li>
+<li><p><strong>value</strong> – Value to associate with the pair. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T">
+<span id="_CPPv3NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T"></span><span id="_CPPv2NK4mata5utils17TwoDimensionalMap18get_first_invertedEK1T"></span><span id="mata::utils::TwoDimensionalMap::get_first_inverted__TCC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1a0aa3d2e818b4851935792f8523e60d2a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_first_inverted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the first inverted index for a <code class="docutils literal notranslate"><span class="pre">value</span></code>. </p>
+<p>This is only available if track_inverted is true. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T">
+<span id="_CPPv3NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T"></span><span id="_CPPv2NK4mata5utils17TwoDimensionalMap19get_second_invertedEK1T"></span><span id="mata::utils::TwoDimensionalMap::get_second_inverted__TCC"></span><span class="target" id="classmata_1_1utils_1_1TwoDimensionalMap_1abfb4c7c6e9d71d6aac6091d799437569"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_second_inverted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1TwoDimensionalMap.html#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the second inverted index for a <code class="docutils literal notranslate"><span class="pre">value</span></code>. </p>
+<p>This is only available if track_inverted is true. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../namespacelist.html">Namespace list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="namespacemata.html">Namespace mata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications.html">Namespace mata::applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings.html">Namespace mata::applications::strings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings_1_1replace.html">Namespace mata::applications::strings::replace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings_1_1seg__nfa.html">Namespace mata::applications::strings::seg_nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa.html">Namespace mata::nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1algorithms.html">Namespace mata::nfa::algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1builder.html">Namespace mata::nfa::builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1plumbing.html">Namespace mata::nfa::plumbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft.html">Namespace mata::nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1algorithms.html">Namespace mata::nft::algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1builder.html">Namespace mata::nft::builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1plumbing.html">Namespace mata::nft::plumbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1parser.html">Namespace mata::parser</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Namespace mata::utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacestd.html">Namespace std</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../namespacelist.html">Namespace list</a><ul>
+      <li>Previous: <a href="namespacemata_1_1parser.html" title="previous chapter">Namespace mata::parser</a></li>
+      <li>Next: <a href="namespacestd.html" title="next chapter">Namespace std</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/namespace/namespacemata_1_1utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

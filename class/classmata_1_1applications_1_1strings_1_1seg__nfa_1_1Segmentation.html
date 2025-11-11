@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Class mata::applications::strings::seg_nfa::Segmentation &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Class mata::nfa::Delta" href="classmata_1_1nfa_1_1Delta.html" />
+    <link rel="prev" title="Class mata::applications::strings::replace::ReluctantReplace" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="class-mata-applications-strings-seg-nfa-segmentation">
+<h1>Class mata::applications::strings::seg_nfa::Segmentation<a class="headerlink" href="#class-mata-applications-strings-seg-nfa-segmentation" title="Link to this heading">¶</a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12applications7strings7seg_nfa12SegmentationE">
+<span id="_CPPv3N4mata12applications7strings7seg_nfa12SegmentationE"></span><span id="_CPPv2N4mata12applications7strings7seg_nfa12SegmentationE"></span><span id="mata::applications::strings::seg_nfa::Segmentation"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Segmentation</span></span></span><br /></dt>
+<dd><p>Class executing segmentation operations for a given segment automaton. </p>
+<p>Works only with segment automata. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12applications7strings7seg_nfa12Segmentation12EpsilonDepthE">
+<span id="_CPPv3N4mata12applications7strings7seg_nfa12Segmentation12EpsilonDepthE"></span><span id="_CPPv2N4mata12applications7strings7seg_nfa12Segmentation12EpsilonDepthE"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1adcbe08a210127b0100a75ee94e919255"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EpsilonDepth</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><br /></dt>
+<dd><p>Depth of ε-transitions. Dictionary of lists of ε-transitions grouped by their depth. For each depth ‘i’ we have ‘depths[i]’ which contains a list of ε-transitions of depth ‘i’. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12applications7strings7seg_nfa12Segmentation12SegmentationERK6SegNfaRKNSt3setI6SymbolEE">
+<span id="_CPPv3N4mata12applications7strings7seg_nfa12Segmentation12SegmentationERK6SegNfaRKNSt3setI6SymbolEE"></span><span id="_CPPv2N4mata12applications7strings7seg_nfa12Segmentation12SegmentationERK6SegNfaRKNSt3setI6SymbolEE"></span><span id="mata::applications::strings::seg_nfa::Segmentation::Segmentation__SegNfaCR.std::set:Symbol:CR"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1a7e2de0baef396d49784ce7fc4e57ea7e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Segmentation</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../applications.html#_CPPv4N4mata12applications7strings7seg_nfa6SegNfaE" title="mata::applications::strings::seg_nfa::SegNfa"><span class="n"><span class="pre">SegNfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">epsilons</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Prepare automaton <code class="docutils literal notranslate"><span class="pre">aut</span></code> for segmentation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aut</strong> – <strong>[in]</strong> Segment automaton to make segments for. </p></li>
+<li><p><strong>epsilon</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> to execute segmentation for. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12applications7strings7seg_nfa12Segmentation18get_epsilon_depthsEv">
+<span id="_CPPv3NK4mata12applications7strings7seg_nfa12Segmentation18get_epsilon_depthsEv"></span><span id="_CPPv2NK4mata12applications7strings7seg_nfa12Segmentation18get_epsilon_depthsEv"></span><span id="mata::applications::strings::seg_nfa::Segmentation::get_epsilon_depthsC"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1add1f82e381ea21894177bec6d70d61c0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../applications.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation23EpsilonDepthTransitionsE" title="mata::applications::strings::seg_nfa::Segmentation::EpsilonDepthTransitions"><span class="n"><span class="pre">EpsilonDepthTransitions</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_epsilon_depths</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get segmentation depths for ε-transitions. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Map of depths to lists of ε-transitions. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12applications7strings7seg_nfa12Segmentation27get_epsilon_depth_trans_mapEv">
+<span id="_CPPv3NK4mata12applications7strings7seg_nfa12Segmentation27get_epsilon_depth_trans_mapEv"></span><span id="_CPPv2NK4mata12applications7strings7seg_nfa12Segmentation27get_epsilon_depth_trans_mapEv"></span><span id="mata::applications::strings::seg_nfa::Segmentation::get_epsilon_depth_trans_mapC"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1a19a7cf7909544bc94dcf3340572b087d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../applications.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation25EpsilonDepthTransitionMapE" title="mata::applications::strings::seg_nfa::Segmentation::EpsilonDepthTransitionMap"><span class="n"><span class="pre">EpsilonDepthTransitionMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_epsilon_depth_trans_map</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the epsilon depth trans map object (mapping of depths and states to eps-successors) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Map of depths to a map of states to transitions </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12applications7strings7seg_nfa12Segmentation12get_segmentsEv">
+<span id="_CPPv3N4mata12applications7strings7seg_nfa12Segmentation12get_segmentsEv"></span><span id="_CPPv2N4mata12applications7strings7seg_nfa12Segmentation12get_segmentsEv"></span><span id="mata::applications::strings::seg_nfa::Segmentation::get_segments"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1afcc8d395b6cd1c6fb0a28c163b4113f2"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../applications.html#_CPPv4N4mata12applications7strings3NfaE" title="mata::applications::strings::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_segments</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Get segment automata. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A vector of segments for the segment automaton in the order from the left (initial state in segment automaton) to the right (final states of segment automaton). </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12applications7strings7seg_nfa12Segmentation22get_untrimmed_segmentsEv">
+<span id="_CPPv3N4mata12applications7strings7seg_nfa12Segmentation22get_untrimmed_segmentsEv"></span><span id="_CPPv2N4mata12applications7strings7seg_nfa12Segmentation22get_untrimmed_segmentsEv"></span><span id="mata::applications::strings::seg_nfa::Segmentation::get_untrimmed_segments"></span><span class="target" id="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1aeb58d62c5067cb83370b85be87cd8126"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../applications.html#_CPPv4N4mata12applications7strings3NfaE" title="mata::applications::strings::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_untrimmed_segments</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Get raw segment automata. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A vector of segments for the segment automaton in the order from the left (initial state in segment automaton) to the right (final states of segment automaton) without trimming (the states are same as in the original automaton). </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classlist.html">Class list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html">Class mata::nfa::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions.html">Class mata::nfa::Delta::Transitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator.html">Class mata::nfa::Delta::Transitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Move.html">Class mata::nfa::Move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost.html">Class mata::nfa::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves.html">Class mata::nfa::StatePost::Moves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves_1_1const__iterator.html">Class mata::nfa::StatePost::Moves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1TwoDimensionalMap.html">Class mata::utils::TwoDimensionalMap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../classlist.html">Class list</a><ul>
+      <li>Previous: <a href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html" title="previous chapter">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+      <li>Next: <a href="classmata_1_1nfa_1_1Delta.html" title="next chapter">Class mata::nfa::Delta</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/class/classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

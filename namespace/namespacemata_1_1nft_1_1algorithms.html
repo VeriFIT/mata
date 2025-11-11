@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Namespace mata::nft::algorithms &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Namespace mata::nft::builder" href="namespacemata_1_1nft_1_1builder.html" />
+    <link rel="prev" title="Namespace mata::nft" href="namespacemata_1_1nft.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="namespace-mata-nft-algorithms">
+<h1>Namespace mata::nft::algorithms<a class="headerlink" href="#namespace-mata-nft-algorithms" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithmsE">
+<span id="_CPPv3N4mata3nft10algorithmsE"></span><span id="_CPPv2N4mata3nft10algorithmsE"></span><span id="mata::nft::algorithms"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">algorithms</span></span></span><br /></dt>
+<dd><p>Concrete NFT implementations of algorithms, such as complement, inclusion, or universality checking. </p>
+<p>This is a separation of the implementation from the interface defined in <a class="reference internal" href="namespacemata_1_1nft.html#namespacemata_1_1nft"><span class="std std-ref">mata::nft</span></a>. Note, that in <a class="reference internal" href="namespacemata_1_1nft.html#namespacemata_1_1nft"><span class="std std-ref">mata::nft</span></a> interface, there are particular dispatch functions calling these function according to parameters provided by a user. E.g. we can call the following function: is_universal(aut, alph, {{‘algorithm, ‘antichains’}})` to check for universality based on antichain-based algorithm.</p>
+<p>In particular, this includes algorithms for:<ol class="loweralpha simple">
+<li><p>Complementation,</p></li>
+<li><p>Inclusion,</p></li>
+<li><p>Universality checking,</p></li>
+<li><p>Intersection/concatenation with epsilon transitions, or,</p></li>
+<li><p>Computing relation. </p></li>
+</ol>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms19minimize_brzozowskiERK3Nft">
+<span id="_CPPv3N4mata3nft10algorithms19minimize_brzozowskiERK3Nft"></span><span id="_CPPv2N4mata3nft10algorithms19minimize_brzozowskiERK3Nft"></span><span id="mata::nft::algorithms::minimize_brzozowski__NftCR"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a34943c219e78c992d959bce4ed9dd778"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minimize_brzozowski</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Brzozowski minimization of automata (revert -&gt; determinize -&gt; revert -&gt; determinize). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>aut</strong> – <strong>[in]</strong> Automaton to be minimized. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Minimized automaton. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms20complement_classicalERK3NftRKN4mata5utils9OrdVectorI6SymbolEEb">
+<span id="_CPPv3N4mata3nft10algorithms20complement_classicalERK3NftRKN4mata5utils9OrdVectorI6SymbolEEb"></span><span id="_CPPv2N4mata3nft10algorithms20complement_classicalERK3NftRKN4mata5utils9OrdVectorI6SymbolEEb"></span><span id="mata::nft::algorithms::complement_classical__NftCR.mata::utils::OrdVector:Symbol:CR.b"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a9760601b6501359b97409b9ae8e1f9bf"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">complement_classical</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">minimize_during_determinization</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Complement implemented by determization, adding sink state and making automaton complete. </p>
+<p>Then it adds final states which were non final in the original automaton. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aut</strong> – <strong>[in]</strong> Automaton to be complemented. </p></li>
+<li><p><strong>symbols</strong> – <strong>[in]</strong> Symbols needed to make the automaton complete. </p></li>
+<li><p><strong>minimize_during_determinization</strong> – <strong>[in]</strong> Whether the determinized automaton is computed by (brzozowski) minimization. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Complemented automaton. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms17is_included_naiveERK3NftRK3NftPK8AlphabetP3Run8JumpMode">
+<span id="_CPPv3N4mata3nft10algorithms17is_included_naiveERK3NftRK3NftPK8AlphabetP3Run8JumpMode"></span><span id="_CPPv2N4mata3nft10algorithms17is_included_naiveERK3NftRK3NftPK8AlphabetP3Run8JumpMode"></span><span id="mata::nft::algorithms::is_included_naive__NftCR.NftCR.AlphabetCP.RunP.JumpMode"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1abdbc499a4878f718a2ff89fc27e3e114"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_included_naive</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">smaller</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bigger</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft3RunE" title="mata::nft::Run"><span class="n"><span class="pre">Run</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">jump_mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpMode12RepeatSymbolE" title="mata::nft::JumpMode::RepeatSymbol"><span class="n"><span class="pre">RepeatSymbol</span></span></a><span class="sig-paren">)</span><br /></dt>
+<dd><p>Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then it checks emptiness of intersection. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smaller</strong> – <strong>[in]</strong> Automaton which language should be included in the bigger one. </p></li>
+<li><p><strong>bigger</strong> – <strong>[in]</strong> Automaton which language should include the smaller one. </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of both automata (it is computed automatically, but it is more efficient to set it if you have it). </p></li>
+<li><p><strong>cex</strong> – <strong>[out]</strong> A potential counterexample word which breaks inclusion </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms22is_included_antichainsERK3NftRK3NftPK8AlphabetP3Run8JumpMode">
+<span id="_CPPv3N4mata3nft10algorithms22is_included_antichainsERK3NftRK3NftPK8AlphabetP3Run8JumpMode"></span><span id="_CPPv2N4mata3nft10algorithms22is_included_antichainsERK3NftRK3NftPK8AlphabetP3Run8JumpMode"></span><span id="mata::nft::algorithms::is_included_antichains__NftCR.NftCR.AlphabetCP.RunP.JumpMode"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a3e2ac599e61d5f746ef7ac9e8de8d88d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_included_antichains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">smaller</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bigger</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft3RunE" title="mata::nft::Run"><span class="n"><span class="pre">Run</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">jump_mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpMode12RepeatSymbolE" title="mata::nft::JumpMode::RepeatSymbol"><span class="n"><span class="pre">RepeatSymbol</span></span></a><span class="sig-paren">)</span><br /></dt>
+<dd><p>Inclusion implemented by antichain algorithms. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smaller</strong> – <strong>[in]</strong> Automaton which language should be included in the bigger one </p></li>
+<li><p><strong>bigger</strong> – <strong>[in]</strong> Automaton which language should include the smaller one </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of both automata (not needed for antichain algorithm) </p></li>
+<li><p><strong>cex</strong> – <strong>[out]</strong> A potential counterexample word which breaks inclusion </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms18is_universal_naiveERK3NftRK8AlphabetP3Run">
+<span id="_CPPv3N4mata3nft10algorithms18is_universal_naiveERK3NftRK8AlphabetP3Run"></span><span id="_CPPv2N4mata3nft10algorithms18is_universal_naiveERK3NftRK8AlphabetP3Run"></span><span id="mata::nft::algorithms::is_universal_naive__NftCR.AlphabetCR.RunP"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a32d064886e377a191b4b1b7845fba52e"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_universal_naive</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft3RunE" title="mata::nft::Run"><span class="n"><span class="pre">Run</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cex</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Universality check implemented by checking emptiness of complemented automaton. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aut</strong> – <strong>[in]</strong> Automaton which universality is checked </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of the automaton </p></li>
+<li><p><strong>cex</strong> – <strong>[out]</strong> Counterexample word which eventually breaks the universality </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the complemented automaton has non empty language, i.e., the original one is not universal </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms23is_universal_antichainsERK3NftRK8AlphabetP3Run">
+<span id="_CPPv3N4mata3nft10algorithms23is_universal_antichainsERK3NftRK8AlphabetP3Run"></span><span id="_CPPv2N4mata3nft10algorithms23is_universal_antichainsERK3NftRK8AlphabetP3Run"></span><span id="mata::nft::algorithms::is_universal_antichains__NftCR.AlphabetCR.RunP"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a20027d158eed79752ce1108587694fef"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_universal_antichains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft3RunE" title="mata::nft::Run"><span class="n"><span class="pre">Run</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cex</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Universality checking based on subset construction with antichain. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aut</strong> – <strong>[in]</strong> Automaton which universality is checked </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of the automaton </p></li>
+<li><p><strong>cex</strong> – <strong>[out]</strong> Counterexample word which eventually breaks the universality </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the automaton is universal, otherwise false. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms16compute_relationERK3NftRK12ParameterMap">
+<span id="_CPPv3N4mata3nft10algorithms16compute_relationERK3NftRK12ParameterMap"></span><span id="_CPPv2N4mata3nft10algorithms16compute_relationERK3NftRK12ParameterMap"></span><span id="mata::nft::algorithms::compute_relation__NftCR.ParameterMapCR"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1ac21abf93f5a0ddb85ea42d1039331442"></span><span class="n"><span class="pre">Simlib</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Util</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">BinaryRelation</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_relation</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft12ParameterMapE" title="mata::nft::ParameterMap"><span class="n"><span class="pre">ParameterMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;relation&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;simulation&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;direction&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;forward&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms7productERK3NftRK3NftRRKNSt8functionIFb5State5StateEEEPNSt13unordered_mapINSt4pairI5State5StateEE5StateEE8JumpModeK5StateK5State">
+<span id="_CPPv3N4mata3nft10algorithms7productERK3NftRK3NftRRKNSt8functionIFb5State5StateEEEPNSt13unordered_mapINSt4pairI5State5StateEE5StateEE8JumpModeK5StateK5State"></span><span id="_CPPv2N4mata3nft10algorithms7productERK3NftRK3NftRRKNSt8functionIFb5State5StateEEEPNSt13unordered_mapINSt4pairI5State5StateEE5StateEE8JumpModeK5StateK5State"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a3223ffde269a9e2cff960ed458504862"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">product</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">function</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">final_condition</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">prod_map</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">jump_mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpMode12RepeatSymbolE" title="mata::nft::JumpMode::RepeatSymbol"><span class="n"><span class="pre">RepeatSymbol</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lhs_first_aux_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft6LimitsE" title="mata::nft::Limits"><span class="n"><span class="pre">Limits</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">max_state</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">rhs_first_aux_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft6LimitsE" title="mata::nft::Limits"><span class="n"><span class="pre">Limits</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">max_state</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Compute product of two NFTs, final condition is to be specified. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> – <strong>[in]</strong> First NFT to compute intersection for. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Second NFT to compute intersection for. </p></li>
+<li><p><strong>final_condition</strong> – <strong>[in]</strong> The predicate that tells whether a pair of states is final (conjunction for intersection). </p></li>
+<li><p><strong>prod_map</strong> – <strong>[out]</strong> Can be used to get the mapping of the pairs of the original states to product states. Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures, because this one is too slow. </p></li>
+<li><p><strong>jump_mode</strong> – <strong>[in]</strong> Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <code class="docutils literal notranslate"><span class="pre">DONT_CARE</span></code>. </p></li>
+<li><p><strong>lhs_first_aux_state</strong> – <strong>[in]</strong> The first auxiliary state in <code class="docutils literal notranslate"><span class="pre">lhs</span></code>. Two auxiliary states can not form a product state. </p></li>
+<li><p><strong>rhs_first_aux_state</strong> – <strong>[in]</strong> The first auxiliary state in <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. Two auxiliary states con not form a product state. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NFT as a product of NFTs <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and <code class="docutils literal notranslate"><span class="pre">rhs</span></code> with ε handled as regular symbols. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms15concatenate_epsERK3NftRK3NftRK6SymbolbP13StateRenamingP13StateRenaming">
+<span id="_CPPv3N4mata3nft10algorithms15concatenate_epsERK3NftRK3NftRK6SymbolbP13StateRenamingP13StateRenaming"></span><span id="_CPPv2N4mata3nft10algorithms15concatenate_epsERK3NftRK3NftRK6SymbolbP13StateRenamingP13StateRenaming"></span><span id="mata::nft::algorithms::concatenate_eps__NftCR.NftCR.SymbolCR.b.StateRenamingP.StateRenamingP"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a66c4f8dc2ef63d77a52b5571baf0e1e1"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">concatenate_eps</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">epsilon</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">use_epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft13StateRenamingE" title="mata::nft::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">lhs_state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft13StateRenamingE" title="mata::nft::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rhs_state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Concatenate two NFTs. </p>
+<p>Supports epsilon symbols when <code class="docutils literal notranslate"><span class="pre">use_epsilon</span></code> is set to true. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> – <strong>[in]</strong> First automaton to concatenate. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
+<li><p><strong>epsilon</strong> – <strong>[in]</strong> Epsilon to be used for concatenation (provided <code class="docutils literal notranslate"><span class="pre">use_epsilon</span></code> is true) </p></li>
+<li><p><strong>use_epsilon</strong> – <strong>[in]</strong> Whether to concatenate over epsilon symbol. </p></li>
+<li><p><strong>lhs_state_renaming</strong> – <strong>[out]</strong> Map mapping lhs states to result states. </p></li>
+<li><p><strong>rhs_state_renaming</strong> – <strong>[out]</strong> Map mapping rhs states to result states. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Concatenated automaton. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../namespacelist.html">Namespace list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="namespacemata.html">Namespace mata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications.html">Namespace mata::applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings.html">Namespace mata::applications::strings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings_1_1replace.html">Namespace mata::applications::strings::replace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings_1_1seg__nfa.html">Namespace mata::applications::strings::seg_nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa.html">Namespace mata::nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1algorithms.html">Namespace mata::nfa::algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1builder.html">Namespace mata::nfa::builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1plumbing.html">Namespace mata::nfa::plumbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft.html">Namespace mata::nft</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Namespace mata::nft::algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1builder.html">Namespace mata::nft::builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1plumbing.html">Namespace mata::nft::plumbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1parser.html">Namespace mata::parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1utils.html">Namespace mata::utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacestd.html">Namespace std</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../namespacelist.html">Namespace list</a><ul>
+      <li>Previous: <a href="namespacemata_1_1nft.html" title="previous chapter">Namespace mata::nft</a></li>
+      <li>Next: <a href="namespacemata_1_1nft_1_1builder.html" title="next chapter">Namespace mata::nft::builder</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/namespace/namespacemata_1_1nft_1_1algorithms.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

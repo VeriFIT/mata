@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File mintermization.hh &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File algorithms.hh" href="nfa_2algorithms_8hh.html" />
+    <link rel="prev" title="File inter-aut.hh" href="inter-aut_8hh.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-mintermization-hh">
+<h1>File mintermization.hh<a class="headerlink" href="#file-mintermization-hh" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14MintermizationE">
+<span id="_CPPv3N4mata14MintermizationE"></span><span id="_CPPv2N4mata14MintermizationE"></span><span id="mata::Mintermization"></span><span class="target" id="classmata_1_1Mintermization"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Mintermization</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;mintermization.hh&gt;</em></div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization16compute_mintermsERKNSt13unordered_setI3BDDEE">
+<span id="_CPPv3N4mata14Mintermization16compute_mintermsERKNSt13unordered_setI3BDDEE"></span><span id="_CPPv2N4mata14Mintermization16compute_mintermsERKNSt13unordered_setI3BDDEE"></span><span id="mata::Mintermization::compute_minterms__std::unordered_set:BDD:CR"></span><span class="target" id="classmata_1_1Mintermization_1a811b8eda0757e03065aa5aa823603cbf"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_minterms</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">source_bdds</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Takes a set of BDDs and build a minterm tree over it. </p>
+<p>The leaves of BDDs, which are minterms of input set, are returned </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_bdds</strong> – BDDs for which minterms are computed </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Computed minterms </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization16graph_to_bdd_nfaERK12FormulaGraph">
+<span id="_CPPv3N4mata14Mintermization16graph_to_bdd_nfaERK12FormulaGraph"></span><span id="_CPPv2N4mata14Mintermization16graph_to_bdd_nfaERK12FormulaGraph"></span><span id="mata::Mintermization::graph_to_bdd_nfa__FormulaGraphCR"></span><span class="target" id="classmata_1_1Mintermization_1aaa9a7e7f3f1cbb2e6d6e331ecdbe82b7"></span><span class="n"><span class="pre">BDD</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">graph_to_bdd_nfa</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">graph</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Transforms a graph representing formula at transition to bdd. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>graph</strong> – Graph to be transformed </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Resulting BDD </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization16graph_to_bdd_afaERK12FormulaGraph">
+<span id="_CPPv3N4mata14Mintermization16graph_to_bdd_afaERK12FormulaGraph"></span><span id="_CPPv2N4mata14Mintermization16graph_to_bdd_afaERK12FormulaGraph"></span><span id="mata::Mintermization::graph_to_bdd_afa__FormulaGraphCR"></span><span class="target" id="classmata_1_1Mintermization_1a27472854ea5a8b27b24a577515736b14"></span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="mata::Mintermization::OptionalBdd"><span class="n"><span class="pre">OptionalBdd</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">graph_to_bdd_afa</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">graph</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Transforms a graph representing formula at transition to bdd. </p>
+<p>This version of method is a more general one and accepts also formula including states. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>graph</strong> – Graph to be transformed </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Resulting BDD </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization10mintermizeERKN4mata15IntermediateAutE">
+<span id="_CPPv3N4mata14Mintermization10mintermizeERKN4mata15IntermediateAutE"></span><span id="_CPPv2N4mata14Mintermization10mintermizeERKN4mata15IntermediateAutE"></span><span id="mata::Mintermization::mintermize__mata::IntermediateAutCR"></span><span class="target" id="classmata_1_1Mintermization_1a6518a351ad9194b6d1d1dc43420836f2"></span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mintermize</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Method mintermizes given automaton which has bitvector alphabet. </p>
+<p>It transforms its transitions to BDDs, then build a minterm tree over the BDDs and finally transforms automaton to explicit one. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>aut</strong> – Automaton to be mintermized. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mintermized automaton </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization10mintermizeERKNSt6vectorIPKN4mata15IntermediateAutEEE">
+<span id="_CPPv3N4mata14Mintermization10mintermizeERKNSt6vectorIPKN4mata15IntermediateAutEEE"></span><span id="_CPPv2N4mata14Mintermization10mintermizeERKNSt6vectorIPKN4mata15IntermediateAutEEE"></span><span id="mata::Mintermization::mintermize__std::vector:mata::IntermediateAutCP:CR"></span><span class="target" id="classmata_1_1Mintermization_1a7212d3052d3aee0104e98fbc8a0bbb0c"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mintermize</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">auts</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Methods mintermize given automata which have bitvector alphabet. </p>
+<p>It transforms transitions of all automata to BDDs, then build a minterm tree over the BDDs and finally transforms automata to explicit one (sharing the same minterms). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>auts</strong> – Automata to be mintermized. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mintermized automata corresponding to the input autamata </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization10mintermizeERKNSt6vectorIN4mata15IntermediateAutEEE">
+<span id="_CPPv3N4mata14Mintermization10mintermizeERKNSt6vectorIN4mata15IntermediateAutEEE"></span><span id="_CPPv2N4mata14Mintermization10mintermizeERKNSt6vectorIN4mata15IntermediateAutEEE"></span><span id="mata::Mintermization::mintermize__std::vector:mata::IntermediateAut:CR"></span><span class="target" id="classmata_1_1Mintermization_1aad02530c1feda3d4e02ab74f37729107"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mintermize</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">auts</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization10mintermizeERKNSt6vectorIN4mata15IntermediateAutEEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization19minterms_to_aut_nfaERN4mata15IntermediateAutERKN4mata15IntermediateAutERKNSt13unordered_setI3BDDEE">
+<span id="_CPPv3N4mata14Mintermization19minterms_to_aut_nfaERN4mata15IntermediateAutERKN4mata15IntermediateAutERKNSt13unordered_setI3BDDEE"></span><span id="_CPPv2N4mata14Mintermization19minterms_to_aut_nfaERN4mata15IntermediateAutERKN4mata15IntermediateAutERKNSt13unordered_setI3BDDEE"></span><span id="mata::Mintermization::minterms_to_aut_nfa__mata::IntermediateAutR.mata::IntermediateAutCR.std::unordered_set:BDD:CR"></span><span class="target" id="classmata_1_1Mintermization_1ad38987aa2a54f4c6816098a83519dc0c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minterms_to_aut_nfa</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">minterms</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The method performs the mintermization over &#64;aut with given &#64;minterms. </p>
+<p>It is method specialized for NFA. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>res</strong> – The resulting mintermized automaton </p></li>
+<li><p><strong>aut</strong> – Automaton to be mintermized </p></li>
+<li><p><strong>minterms</strong> – Set of minterms for mintermization </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization19minterms_to_aut_afaERN4mata15IntermediateAutERKN4mata15IntermediateAutERKNSt13unordered_setI3BDDEE">
+<span id="_CPPv3N4mata14Mintermization19minterms_to_aut_afaERN4mata15IntermediateAutERKN4mata15IntermediateAutERKNSt13unordered_setI3BDDEE"></span><span id="_CPPv2N4mata14Mintermization19minterms_to_aut_afaERN4mata15IntermediateAutERKN4mata15IntermediateAutERKNSt13unordered_setI3BDDEE"></span><span id="mata::Mintermization::minterms_to_aut_afa__mata::IntermediateAutR.mata::IntermediateAutCR.std::unordered_set:BDD:CR"></span><span class="target" id="classmata_1_1Mintermization_1a8a54d61c09a74c22be2965a04967ec9f"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minterms_to_aut_afa</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">minterms</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The method for mintermization of alternating finite automaton using a given set of minterms. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>res</strong> – The resulting mintermized automaton </p></li>
+<li><p><strong>aut</strong> – Automaton to be mintermized </p></li>
+<li><p><strong>minterms</strong> – Set of minterms for mintermization </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization14MintermizationEv">
+<span id="_CPPv3N4mata14Mintermization14MintermizationEv"></span><span id="_CPPv2N4mata14Mintermization14MintermizationEv"></span><span id="mata::Mintermization::Mintermization"></span><span class="target" id="classmata_1_1Mintermization_1a7928670a27b65e045e877726a0c4479b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Mintermization</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization14MintermizationEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-types">Private Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization18DisjunctStatesPairE">
+<span id="_CPPv3N4mata14Mintermization18DisjunctStatesPairE"></span><span id="_CPPv2N4mata14Mintermization18DisjunctStatesPairE"></span><span class="target" id="classmata_1_1Mintermization_1acd2abc6da71d06e038f1db50bf409cab"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">DisjunctStatesPair</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization18DisjunctStatesPairE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-functions">Private Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization16trans_to_bdd_nfaERK15IntermediateAut">
+<span id="_CPPv3N4mata14Mintermization16trans_to_bdd_nfaERK15IntermediateAut"></span><span id="_CPPv2N4mata14Mintermization16trans_to_bdd_nfaERK15IntermediateAut"></span><span id="mata::Mintermization::trans_to_bdd_nfa__IntermediateAutCR"></span><span class="target" id="classmata_1_1Mintermization_1ae8e93ff40af3d2183e2595608dadba9b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trans_to_bdd_nfa</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization16trans_to_bdd_nfaERK15IntermediateAut" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization16trans_to_bdd_afaERK15IntermediateAut">
+<span id="_CPPv3N4mata14Mintermization16trans_to_bdd_afaERK15IntermediateAut"></span><span id="_CPPv2N4mata14Mintermization16trans_to_bdd_afaERK15IntermediateAut"></span><span id="mata::Mintermization::trans_to_bdd_afa__IntermediateAutCR"></span><span class="target" id="classmata_1_1Mintermization_1a73b87c34fc1b3dcb11f89994410e4afc"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trans_to_bdd_afa</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1IntermediateAut.html#_CPPv4N4mata15IntermediateAutE" title="mata::IntermediateAut"><span class="n"><span class="pre">IntermediateAut</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization16trans_to_bdd_afaERK15IntermediateAut" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization7bdd_mngE">
+<span id="_CPPv3N4mata14Mintermization7bdd_mngE"></span><span id="_CPPv2N4mata14Mintermization7bdd_mngE"></span><span id="mata::Mintermization::bdd_mng__Cudd"></span><span class="target" id="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa"></span><span class="n"><span class="pre">Cudd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bdd_mng</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization7bdd_mngE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization16symbol_to_bddvarE">
+<span id="_CPPv3N4mata14Mintermization16symbol_to_bddvarE"></span><span id="_CPPv2N4mata14Mintermization16symbol_to_bddvarE"></span><span id="mata::Mintermization::symbol_to_bddvar__std::unordered_map:ss.BDD:"></span><span class="target" id="classmata_1_1Mintermization_1a987006074fa55dbb95612164bd4c1707"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">symbol_to_bddvar</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization16symbol_to_bddvarE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization15trans_to_bddvarE">
+<span id="_CPPv3N4mata14Mintermization15trans_to_bddvarE"></span><span id="_CPPv2N4mata14Mintermization15trans_to_bddvarE"></span><span id="mata::Mintermization::trans_to_bddvar__std::unordered_map:FormulaGraphCP.BDD:"></span><span class="target" id="classmata_1_1Mintermization_1a0f865290bd6ebaeab385219a259d4a52"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trans_to_bddvar</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization15trans_to_bddvarE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization27lhs_to_disjuncts_and_statesE">
+<span id="_CPPv3N4mata14Mintermization27lhs_to_disjuncts_and_statesE"></span><span id="_CPPv2N4mata14Mintermization27lhs_to_disjuncts_and_statesE"></span><span id="mata::Mintermization::lhs_to_disjuncts_and_states__std::unordered_map:FormulaNodeCP.std::vector:DisjunctStatesPair::"></span><span class="target" id="classmata_1_1Mintermization_1acc9fd42a9fe0f4c16812e189806d1b1f"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="inter-aut_8hh.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata14Mintermization18DisjunctStatesPairE" title="mata::Mintermization::DisjunctStatesPair"><span class="n"><span class="pre">DisjunctStatesPair</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lhs_to_disjuncts_and_states</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization27lhs_to_disjuncts_and_statesE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization4bddsE">
+<span id="_CPPv3N4mata14Mintermization4bddsE"></span><span id="_CPPv2N4mata14Mintermization4bddsE"></span><span id="mata::Mintermization::bdds__std::unordered_set:BDD:"></span><span class="target" id="classmata_1_1Mintermization_1a2be3a3f43e32f7859c8cdb26f7a42a53"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">BDD</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bdds</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization4bddsE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBddE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBddE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBddE"></span><span id="mata::Mintermization::OptionalBdd"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OptionalBdd</span></span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum-class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd4TYPEE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd4TYPEE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd4TYPEE"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TYPE</span></span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd4TYPEE" title="Link to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd4TYPE9NOTHING_EE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd4TYPE9NOTHING_EE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd4TYPE9NOTHING_EE"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a70acc97a4853e98b4cd0656dd8f5f5e6"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NOTHING_E</span></span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd4TYPE9NOTHING_EE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd4TYPE5BDD_EE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd4TYPE5BDD_EE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd4TYPE5BDD_EE"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a4bf9bd393de504fb734e5250a082071b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BDD_E</span></span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd4TYPE5BDD_EE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddEv">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd11OptionalBddEv"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd11OptionalBddEv"></span><span id="mata::Mintermization::OptionalBdd::OptionalBdd"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a6cb8582a22bb1db806fda34f3dfd1965"></span><span class="sig-name descname"><span class="n"><span class="pre">OptionalBdd</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPE"></span><span id="mata::Mintermization::OptionalBdd::OptionalBdd__TYPE"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a43a1fb159c6a95ed77b3987e022ccfbc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OptionalBdd</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBdd4TYPEE" title="mata::Mintermization::OptionalBdd::TYPE"><span class="n"><span class="pre">TYPE</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddERK3BDD">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd11OptionalBddERK3BDD"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd11OptionalBddERK3BDD"></span><span id="mata::Mintermization::OptionalBdd::OptionalBdd__BDDCR"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OptionalBdd</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">BDD</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bdd</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddERK3BDD" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPERK3BDD">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPERK3BDD"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPERK3BDD"></span><span id="mata::Mintermization::OptionalBdd::OptionalBdd__TYPE.BDDCR"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OptionalBdd</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBdd4TYPEE" title="mata::Mintermization::OptionalBdd::TYPE"><span class="n"><span class="pre">TYPE</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">BDD</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bdd</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd11OptionalBddE4TYPERK3BDD" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata14Mintermization11OptionalBddmlERK11OptionalBdd">
+<span id="_CPPv3NK4mata14Mintermization11OptionalBddmlERK11OptionalBdd"></span><span id="_CPPv2NK4mata14Mintermization11OptionalBddmlERK11OptionalBdd"></span><span id="mata::Mintermization::OptionalBdd::mul-operator__OptionalBddCRC"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1afe01caa5028bedb1201624921e939b51"></span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="mata::Mintermization::OptionalBdd"><span class="n"><span class="pre">OptionalBdd</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="mata::Mintermization::OptionalBdd"><span class="n"><span class="pre">OptionalBdd</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata14Mintermization11OptionalBddmlERK11OptionalBdd" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata14Mintermization11OptionalBddplERK11OptionalBdd">
+<span id="_CPPv3NK4mata14Mintermization11OptionalBddplERK11OptionalBdd"></span><span id="_CPPv2NK4mata14Mintermization11OptionalBddplERK11OptionalBdd"></span><span id="mata::Mintermization::OptionalBdd::add-operator__OptionalBddCRC"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0ecd32513a4c89a638adc930b904ee16"></span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="mata::Mintermization::OptionalBdd"><span class="n"><span class="pre">OptionalBdd</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">+</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="mata::Mintermization::OptionalBdd"><span class="n"><span class="pre">OptionalBdd</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata14Mintermization11OptionalBddplERK11OptionalBdd" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata14Mintermization11OptionalBddntEv">
+<span id="_CPPv3NK4mata14Mintermization11OptionalBddntEv"></span><span id="_CPPv2NK4mata14Mintermization11OptionalBddntEv"></span><span id="mata::Mintermization::OptionalBdd::not-operatorC"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a37336d79949a81598b396ee63f7626f3"></span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBddE" title="mata::Mintermization::OptionalBdd"><span class="n"><span class="pre">OptionalBdd</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">!</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata14Mintermization11OptionalBddntEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd4typeE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd4typeE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd4typeE"></span><span id="mata::Mintermization::OptionalBdd::type__TYPE"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c"></span><a class="reference internal" href="#_CPPv4N4mata14Mintermization11OptionalBdd4TYPEE" title="mata::Mintermization::OptionalBdd::TYPE"><span class="n"><span class="pre">TYPE</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd4typeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata14Mintermization11OptionalBdd3valE">
+<span id="_CPPv3N4mata14Mintermization11OptionalBdd3valE"></span><span id="_CPPv2N4mata14Mintermization11OptionalBdd3valE"></span><span id="mata::Mintermization::OptionalBdd::val__BDD"></span><span class="target" id="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83"></span><span class="n"><span class="pre">BDD</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">val</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata14Mintermization11OptionalBdd3valE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ord-vector_8hh.html">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparse-set_8hh.html">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="inter-aut_8hh.html" title="previous chapter">File inter-aut.hh</a></li>
+      <li>Next: <a href="nfa_2algorithms_8hh.html" title="next chapter">File algorithms.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/mintermization_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

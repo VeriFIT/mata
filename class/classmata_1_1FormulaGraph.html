@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Class mata::FormulaGraph &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Class mata::IntAlphabet" href="classmata_1_1IntAlphabet.html" />
+    <link rel="prev" title="Class mata::EnumAlphabet" href="classmata_1_1EnumAlphabet.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="class-mata-formulagraph">
+<h1>Class mata::FormulaGraph<a class="headerlink" href="#class-mata-formulagraph" title="Link to this heading">¶</a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphE">
+<span id="_CPPv3N4mata12FormulaGraphE"></span><span id="_CPPv2N4mata12FormulaGraphE"></span><span id="mata::FormulaGraph"></span><span class="target" id="classmata_1_1FormulaGraph"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraphE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Structure representing a transition formula using a graph. </p>
+<p>A node of graph consists of node itself and set of children nodes. Nodes are operators and operands of the formula. E.g., a formula q1 &amp; s1 will be transformed to a tree with &amp; as a root node and q1 and s2 being children nodes of the root. </p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classlist.html">Class list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html">Class mata::nfa::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions.html">Class mata::nfa::Delta::Transitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator.html">Class mata::nfa::Delta::Transitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Move.html">Class mata::nfa::Move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost.html">Class mata::nfa::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves.html">Class mata::nfa::StatePost::Moves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves_1_1const__iterator.html">Class mata::nfa::StatePost::Moves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1TwoDimensionalMap.html">Class mata::utils::TwoDimensionalMap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../classlist.html">Class list</a><ul>
+      <li>Previous: <a href="classmata_1_1EnumAlphabet.html" title="previous chapter">Class mata::EnumAlphabet</a></li>
+      <li>Next: <a href="classmata_1_1IntAlphabet.html" title="next chapter">Class mata::IntAlphabet</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/class/classmata_1_1FormulaGraph.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
