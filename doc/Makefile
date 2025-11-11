@@ -18,7 +18,7 @@ help:
 .PHONY: help Makefile html dirhtml
 
 init:
-	# pip3 install -r requirements.txt
+	pip3 install -r requirements.txt
 
 html:
 	breathe-apidoc --output-dir ./src/ --force --members ./xml/
