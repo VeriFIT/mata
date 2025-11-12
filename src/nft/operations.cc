@@ -926,6 +926,7 @@ Nft mata::nft::algorithms::minimize_brzozowski(const Nft& aut) {
     return determinize(revert(determinize(revert(aut))));
 }
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
 Nft mata::nft::minimize(
                 const Nft& aut,
                 const ParameterMap& params)
@@ -948,6 +949,7 @@ Nft mata::nft::minimize(
 
     return algo(aut);
 }
+#endif
 
 Nft mata::nft::union_nondet(const Nft &lhs, const Nft &rhs) {
     Nft union_nft{ lhs };
@@ -1129,7 +1131,7 @@ Nft mata::nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* 
     return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Nft& nft) {
+std::ostream& operator<<(std::ostream& os, const Nft& nft) {
     nft.print_to_mata(os);
     return os;
 }

@@ -8,6 +8,7 @@
 using namespace mata::nft;
 using namespace mata::utils;
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
 Nft mata::nft::algorithms::complement_classical(const Nft& aut, const OrdVector<Symbol>& symbols,
                                                 const bool minimize_during_determinization) {
     Nft result;
@@ -73,3 +74,4 @@ Nft mata::nft::complement(const Nft& aut, const mata::utils::OrdVector<mata::Sym
 
     return algo(aut, symbols, minimize_during_determinization);
 }
+#endif

@@ -1049,27 +1049,28 @@ TEST_CASE("mata::nft::make_complete()")
     }
 } // }}}
 
-TEST_CASE("mata::nft::complement()")
-{ // {{{
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+TEST_CASE("mata::nft::complement()") {
     Nft aut(3);
     Nft cmpl;
 
-    SECTION("empty automaton, empty alphabet")
-    {
+    SECTION("empty automaton, empty alphabet") {
         OnTheFlyAlphabet alph{};
-
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(
+            aut, alph, { { "algorithm", "classical" },
+                         { "minimize", "false" } }
+        );
         Nft empty_string_nft{ nft::builder::create_sigma_star_nft(&alph) };
         CHECK(are_equivalent(cmpl, empty_string_nft));
     }
 
-    SECTION("empty automaton")
-    {
+    SECTION("empty automaton") {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "false" } }
+                );
 
         REQUIRE(cmpl.is_in_lang({}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
@@ -1081,26 +1082,28 @@ TEST_CASE("mata::nft::complement()")
         CHECK(are_equivalent(cmpl, sigma_star_nft));
     }
 
-    SECTION("empty automaton accepting epsilon, empty alphabet")
-    {
+    SECTION("empty automaton accepting epsilon, empty alphabet") {
         OnTheFlyAlphabet alph{};
-        aut.initial = {1};
-        aut.final = {1};
+        aut.initial = { 1 };
+        aut.final = { 1 };
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "false" } }
+                );
 
         CHECK(cmpl.is_lang_empty());
     }
 
-    SECTION("empty automaton accepting epsilon")
-    {
+    SECTION("empty automaton accepting epsilon") {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = {1};
-        aut.final = {1};
+        aut.initial = { 1 };
+        aut.final = { 1 };
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "false" } }
+                );
 
         REQUIRE(!cmpl.is_in_lang({}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"]}, {}}));
@@ -1112,18 +1115,19 @@ TEST_CASE("mata::nft::complement()")
         REQUIRE(cmpl.delta.num_of_transitions() == 4);
     }
 
-    SECTION("non-empty automaton accepting a*b*")
-    {
+    SECTION("non-empty automaton accepting a*b*") {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = {1, 2};
-        aut.final = {1, 2};
+        aut.initial = { 1, 2 };
+        aut.final = { 1, 2 };
 
         aut.delta.add(1, alph["a"], 1);
         aut.delta.add(1, alph["a"], 2);
         aut.delta.add(2, alph["b"], 2);
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "false" } }
+                );
 
         REQUIRE(!cmpl.is_in_lang(Word{}));
         REQUIRE(!cmpl.is_in_lang(Word{ alph["a"] }));
@@ -1138,22 +1142,24 @@ TEST_CASE("mata::nft::complement()")
         REQUIRE(cmpl.delta.num_of_transitions() == 6);
     }
 
-    SECTION("empty automaton, empty alphabet, minimization")
-    {
+    SECTION("empty automaton, empty alphabet, minimization") {
         OnTheFlyAlphabet alph{};
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "true"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "true" } }
+                );
         Nft empty_string_nft{ nft::builder::create_sigma_star_nft(&alph) };
         CHECK(are_equivalent(empty_string_nft, cmpl));
     }
 
-    SECTION("empty automaton, minimization")
-    {
+    SECTION("empty automaton, minimization") {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "true"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "true" } }
+                );
 
         REQUIRE(cmpl.is_in_lang({}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
@@ -1165,11 +1171,10 @@ TEST_CASE("mata::nft::complement()")
         CHECK(are_equivalent(sigma_star_nft, cmpl));
     }
 
-    SECTION("minimization vs no minimization")
-    {
+    SECTION("minimization vs no minimization") {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = {0, 1};
-        aut.final = {1, 2};
+        aut.initial = { 0, 1 };
+        aut.final = { 1, 2 };
 
         aut.delta.add(1, alph["b"], 1);
         aut.delta.add(1, alph["a"], 2);
@@ -1177,27 +1182,30 @@ TEST_CASE("mata::nft::complement()")
         aut.delta.add(0, alph["a"], 1);
         aut.delta.add(0, alph["a"], 2);
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "false" } }
+                );
 
-        Nft cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "true"}});
+        Nft cmpl_min = complement(
+                aut, alph, { { "algorithm", "classical" },
+                             { "minimize", "true" } }
+                );
 
         CHECK(are_equivalent(cmpl, cmpl_min, &alph));
         CHECK(cmpl_min.num_of_states() == 4);
         CHECK(cmpl.num_of_states() == 5);
     }
+}
+#endif
 
-} // }}}
-
-TEST_CASE("mata::nft::is_universal()")
-{ // {{{
+TEST_CASE("mata::nft::is_universal()") {
     Nft aut(6);
     Run cex;
     ParameterMap params;
 
-    const std::unordered_set<std::string> ALGORITHMS = {
-        "naive",
+    const std::unordered_set<std::string> algorithms = {
+        // "naive", // FIXME(nft): Uncomment when naive algorithm is implemented for NFTs.
         "antichains",
     };
 
@@ -1205,7 +1213,7 @@ TEST_CASE("mata::nft::is_universal()")
     {
         OnTheFlyAlphabet alph{};
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, params);
 
@@ -1219,7 +1227,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.initial = {1};
         aut.final = {1};
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, &cex, params);
 
@@ -1234,7 +1242,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.initial = {1};
         aut.final = {1};
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, &cex, params);
 
@@ -1253,7 +1261,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.delta.add(1, alph["a"], 2);
         aut.delta.add(2, alph["b"], 2);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, params);
 
@@ -1270,7 +1278,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.delta.add(1, alph["a"], 1);
         aut.delta.add(2, alph["b"], 2);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, params);
 
@@ -1287,7 +1295,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.delta.add(1, alph["a"], 1);
         aut.delta.add(1, alph["b"], 1);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, params);
 
@@ -1312,7 +1320,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.delta.add(3, alph["b"], 5);
         aut.delta.add(5, alph["b"], 5);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, &cex, params);
 
@@ -1340,7 +1348,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.delta.add(4, alph["a"], 4);
         aut.delta.add(4, alph["b"], 4);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, &cex, params);
 
@@ -1364,7 +1372,7 @@ TEST_CASE("mata::nft::is_universal()")
         aut.delta.add(4, alph["b"], 2);
         aut.delta.add(4, alph["b"], 3);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, &cex, params);
 
@@ -1380,7 +1388,7 @@ TEST_CASE("mata::nft::is_universal()")
 
         aut.delta.add(1, alph["a"], 1);
 
-        for (const auto& algo : ALGORITHMS) {
+        for (const auto& algo : algorithms) {
             params["algorithm"] = algo;
             bool is_univ = aut.is_universal(alph, &cex, params);
 

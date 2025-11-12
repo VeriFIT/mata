@@ -877,6 +877,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_
 Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
+
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+// TODO(nft): Implement for NFTs.
 /**
  * @brief Compute automaton accepting complement of @p aut.
  *
@@ -917,6 +920,7 @@ Nft complement(const Nft& aut, const utils::OrdVector<Symbol>& symbols,
  * @return Minimal deterministic automaton.
  */
 Nft minimize(const Nft &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
+#endif
 
 /**
  * @brief Determinize automaton.

@@ -201,7 +201,7 @@ namespace {
 }
 
 std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &trans) { // {{{
-    std::string result = "(" + std::to_string(trans.source) + ", " +
+    const std::string result = "(" + std::to_string(trans.source) + ", " +
                          std::to_string(trans.symbol) + ", " + std::to_string(trans.target) + ")";
     return os << result;
 }
@@ -220,8 +220,8 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
         for (const SymbolPost& symbol_post: delta[state]) {
             used_symbols.insert(symbol_post.symbol);
         }
-        const OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
-        for (const Symbol symbol: unused_symbols) {
+        for (const OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
+             const Symbol symbol : unused_symbols) {
             delta.add(state, symbol, sink_state_val);
             transition_added = true;
         }
