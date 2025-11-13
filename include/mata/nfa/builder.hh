@@ -57,7 +57,7 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
  * @param final_state_density Density of final states in the automaton. The value must be in range [0, 1]. The state 0 is always final.
  *  If the density is 1, every state will be final.
  */
-Nfa create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density);
+Nfa create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density, const std::optional<unsigned int>& seed = std::nullopt);
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted

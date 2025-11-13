@@ -222,7 +222,7 @@ Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
     return nfa;
 }
 
-Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density) {
+Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density, const std::optional<unsigned int>& seed) {
     if (num_of_states == 0) {
         return Nfa();
     }
@@ -238,8 +238,8 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     Nfa nfa{ num_of_states, { 0 }, { 0 }, new OnTheFlyAlphabet{} };
 
     // Initialize the random number generator
-    std::random_device rd;  // Seed for the random number engine
-    std::mt19937 gen(rd()); // Mersenne Twister engine
+    unsigned int seed_value{ seed.value_or(std::random_device{}()) };  // Seed for the random number engine
+    std::mt19937 gen(seed_value); // Mersenne Twister engine
 
     // Unique final state generator
     std::vector<State> states(num_of_states);
