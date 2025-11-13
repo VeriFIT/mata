@@ -56,6 +56,7 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
  *  A value of num_of_states means that there will be a transition between every pair of states for each symbol.
  * @param final_state_density Density of final states in the automaton. The value must be in range [0, 1]. The state 0 is always final.
  *  If the density is 1, every state will be final.
+ * @param seed Seed for the PRNG used. If no seed is given, the algorithm chooses one uniformly at random.
  */
 Nfa create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density, const std::optional<unsigned int>& seed = std::nullopt);
 
