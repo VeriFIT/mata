@@ -419,15 +419,6 @@ Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const JumpMode
     return project_to(nft, OrdVector<Level>{ level_to_project }, jump_mode);
 }
 
-Nft Nft::apply(const nfa::Nfa& nfa, Level level_to_apply_on, bool project_out_applied_level, JumpMode jump_mode) const {
-    Nft nft_from_nfa{ nfa };
-    return compose(nft_from_nfa, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
-}
-
-Nft Nft::apply(const Word& word, Level level_to_apply_on, bool project_out_applied_level, JumpMode jump_mode) const {
-    return apply(nfa::builder::create_single_word_nfa(word), level_to_apply_on, project_out_applied_level, jump_mode);
-}
-
 Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
     assert(0 < nft.num_of_levels);
     assert(nft.num_of_levels <= new_levels_mask.size());

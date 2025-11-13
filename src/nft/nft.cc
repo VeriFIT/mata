@@ -1,20 +1,18 @@
-/* nft.cc -- operations for NFA
+/** @file
+ * @brief Methods for NFTs.
  */
 
 #include <algorithm>
-#include <list>
+#include <cassert>
 #include <optional>
-#include <iterator>
 #include <fstream>
 #include <string>
 #include <utility>
 #include <ranges>
 
-// MATA headers
 #include "mata/utils/sparse-set.hh"
+#include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
-#include "mata/nft/algorithms.hh"
-#include <mata/simlib/explicit_lts.hh>
 
 
 using namespace mata::utils;
@@ -609,8 +607,8 @@ bool Nft::contains_jump_transitions() const {
     if (num_of_levels == 1) { return false; }
 
     for (const Transition& transition : delta.transitions()) {
-        Level src_level = levels[transition.source];
-        Level tgt_level = levels[transition.target];
+        const Level src_level{ levels[transition.source] };
+        Level tgt_level{ levels[transition.target] };
         if (tgt_level == 0) {
             // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
             tgt_level = tgt_level + static_cast<Level>(num_of_levels);
@@ -631,7 +629,7 @@ bool Nft::is_identical(const Nft& aut) const {
     return num_of_levels == aut.num_of_levels && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
 }
 
-Levels& Levels::set(State state, Level level) {
+Levels& Levels::set(const State state, const Level level) {
     if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
     (*this)[state] = level;
     return *this;
@@ -648,10 +646,8 @@ mata::nfa::Nfa Nft::to_nfa_update_move(
     return to_nfa_move();
 }
 
-
 Nft Nft::apply(const nfa::Nfa& nfa, const Level level_to_apply_on, const bool project_out_applied_level, const JumpMode jump_mode) const {
-    Nft nft_from_nfa{ nfa };
-    return compose(nft_from_nfa, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
+    return compose(Nft{ nfa }, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
 }
 
 Nft Nft::apply(const Word& word, const Level level_to_apply_on, const bool project_out_applied_level, const JumpMode jump_mode) const {
