@@ -16,6 +16,7 @@
 #include "mata/nft/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
+
 using namespace mata::utils;
 using namespace mata::nft;
 using mata::Symbol;
@@ -49,6 +50,14 @@ Level Levels::get_minimal_level_of(const StateSet& states, LevelsOrdering::Compa
 
 Level Levels::get_minimal_next_level_of(const StateSet& states) const {
     return get_minimal_level_of(states, LevelsOrdering::Next);
+}
+
+bool Levels::can_follow(const Level source_level, const Level target_level) {
+    return source_level < target_level || target_level == 0;
+}
+
+bool Levels::can_follow_for_states(const State source, const State target) const {
+    return can_follow((*this)[source], (*this)[target]);
 }
 
 size_t Nft::num_of_states_with_level(const Level level) const {
@@ -637,4 +646,65 @@ mata::nfa::Nfa Nft::to_nfa_update_move(
     const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
     unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
     return to_nfa_move();
+}
+
+
+Nft Nft::apply(const nfa::Nfa& nfa, const Level level_to_apply_on, const bool project_out_applied_level, const JumpMode jump_mode) const {
+    Nft nft_from_nfa{ nfa };
+    return compose(nft_from_nfa, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
+}
+
+Nft Nft::apply(const Word& word, const Level level_to_apply_on, const bool project_out_applied_level, const JumpMode jump_mode) const {
+    return apply(nfa::builder::create_single_word_nfa(word), level_to_apply_on, project_out_applied_level, jump_mode);
+}
+
+bool Nft::make_complete(const Alphabet* const alphabet, const std::optional<std::vector<State>>& sink_states) {
+    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
+}
+
+bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<std::vector<State>>& sink_states) {
+    bool transition_added{ false };
+    const size_t num_of_states{ this->num_of_states() };
+    const std::vector<State> sinks{ [&]{
+        auto sinks_val{ sink_states.value_or(std::vector<State>{}) };
+        if (sinks_val.empty()) {
+            for (Level level{ 0 }; level < num_of_levels; ++level) { sinks_val.push_back(add_state_with_level(level)); }
+        }
+        assert(
+            [&]{
+                for (Level level{ 0 }; level < num_of_levels; ++level) {
+                    const State sink_state{ sinks_val[level] };
+                    if (sink_state >= this->num_of_states() || levels[sink_state] != level) {
+                        return false;
+                    }
+                }
+                return true;
+            }() && "Nft::make_complete: sink_states must have correct levels and exist in the NFT."
+        );
+        return sinks_val;
+    }() };
+
+    auto next_level = [&](const Level level) {
+        return (num_of_levels == 1) ? level : (level + 1) % static_cast<Level>(num_of_levels);
+    };
+
+    OrdVector<Symbol> used_symbols{};
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        used_symbols.clear();
+        for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
+        for (const auto unused_symbols{ symbols.difference(used_symbols) }; const Symbol symbol : unused_symbols) {
+            delta.add(state, symbol, sinks[next_level(levels[state])]);
+            transition_added = true;
+        }
+    }
+
+    if (transition_added && num_of_states <= this->num_of_states()) {
+        for (const Symbol symbol : symbols) {
+            for (Level level{ 0 }; level < num_of_levels; ++level) {
+                delta.add(sinks[level], symbol, sinks[next_level(level)]);
+            }
+        }
+    }
+
+    return transition_added;
 }
