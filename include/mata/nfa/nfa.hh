@@ -10,6 +10,61 @@
  *  @c mata::nfa::algorithms (concrete implementations of algorithms, such as for complement).
  */
 
+/**
+ * @page nfa Nondeterministic Finite Automata (NFAs)
+ *
+ * @section nfa_design The design of NFAs in Mata
+ *
+ * NFAs in Mata are represented using the @c mata::nfa::Nfa class. The transition relation is represented using
+ *  the @c mata::nfa::Delta class, which provides an efficient way to store and manipulate transitions.
+ * The states of the NFA are represented as integers, starting from 0 up to the number of states minus one.
+ * The initial and final states are represented using the @c mata::utils::SparseSet class, which allows for efficient
+ *  storage and manipulation of sets of states.
+ *
+ * @c mata::nfa::Delta is a key component of the NFA representation. It stores transitions in a three-level data
+ *  structure:
+ *  1. A vector indexed by source states, where each entry @c mata::nfa::StatePost contains a vector of symbol posts
+ *   @c mata::nfa::SymbolPost.
+ *  2. Each mata::nfa::SymbolPost represents a set of transitions labeled with a specific symbol from the source state to
+ *   a set of target states.
+ *  3. Each @c mata::nfa::SymbolPost object contains a set of target states @c std::OrdVector<State> that can be reached
+ *   from the source state via the corresponding symbol.
+ *
+ *  The main idea behind @c mata::nfa::Nfa is that the members (@c mata::nfa::Nfa::delta, @c mata::nfa::Nfa::initial,
+ *   @c mata::nfa::Nfa::alphabet, ...) do not depend on each other.
+ *  This allows for some well-optimized implementations as well as easy replacement of individual members, or extensions
+ *   to the NFA structure (e.g., adding levels for NFT), if needed.
+ *  However, this also poses a risk of inconsistency between the members (e.g., having initial states that do not exist
+ *   in the delta).
+ *  The high-level functions in @c mata::nfa namespace and @c mata::nfa::Nfa class are designed to maintain the
+ *   consistency of the NFA structure, but the individual members can be modified directly by the user, which may lead to
+ *   inconsistencies, yet there are often useful when implementing highly-optimized algorithms.
+ *
+ *  The main operation on NFAs is BFS/DFS through @c mata::nfa::Delta structure, which is used in most algorithms.
+ *  The data structure is designed such that direct access to a specific transition is less efficient, but iterating
+ *   through all transitions from a given source state, for all source states is efficient (e.g.,
+ *   @c mata::utils::SynchronizedIterator).
+ *  When designing algorithms for Mata, be sure utilize iteration through @c mata::nfa::Delta structure as much as
+ *   possible.
+ *
+ *  @section nfa_usage Working with NFAs
+ *
+ *  The library provides various functions to create, manipulate, and analyze NFAs.
+ *  The core operations on NFAs, such as union, intersection, complement, determinization, and minimization, are
+ *   implemented in @c mata::nfa namespace and as methods of the @c mata::nfa::Nfa class.
+ *  More advanced algorithms and utilities are available in the @c mata::nfa::algorithms and @c mata::nfa::plumbing
+ *   namespaces.
+ *  Users can create NFAs manually by adding states and transitions using the methods provided in the @c mata::nfa::Nfa
+ *   and @c mata::nfa::Delta classes, or they can use higher-level functions to construct NFAs from regular expressions,
+ *   words, or other NFAs using the functions in the @c mata::nfa::builder and @c mata::parser namespaces.
+ *
+ *  @note The algorithms provided in Mata for NFAs are designed to perform only the core operations on NFAs, such as
+ *   union, intersection, complement, determinization, minimization, etc., but do not by default optimize the NFAs
+ *   during these operations. Users can apply optimization algorithms separately after performing the core operations,
+ *   such as using the @c mata::nfa::reduce() function to reduce the resulting NFA, @c mata::nfa::minimize() to minimize
+ *   the resulting NFA, or @c mata::nfa::trim() to remove unreachable and non-terminating states.
+ */
+
 #ifndef MATA_NFA_HH_
 #define MATA_NFA_HH_
 

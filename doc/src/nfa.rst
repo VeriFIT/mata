@@ -1,6 +1,8 @@
 Nondeterministic Finite automata
 ================================
 
+.. doxygenpage:: nfa
+
 Types
 -----
 .. doxygenfile:: nfa/types.hh
