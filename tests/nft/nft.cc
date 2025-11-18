@@ -1049,6 +1049,7 @@ TEST_CASE("mata::nft::make_complete()") {
             }
         }
     }
+    CHECK(result.is_complete());
 }
 
 #ifdef MATA_NFT_NOT_IMPLEMENTED
@@ -2568,71 +2569,6 @@ TEST_CASE("mata::nft::Nft::is_deterministic()")
         REQUIRE(!aut.is_deterministic());
     }
 } // }}}
-
-TEST_CASE("mata::nft::is_complete()") {
-    // Nft aut('q' + 1);
-    Nft nft{ Nft::with_levels(3) };
-    EnumAlphabet alphabet{};
-
-
-
-    // SECTION("empty automaton") {
-    //     OnTheFlyAlphabet alph{};
-    //
-    //     // is complete for the empty alphabet
-    //     REQUIRE(aut.is_complete(&alph));
-    //
-    //     alph.translate_symb("a1");
-    //     alph.translate_symb("a2");
-    //
-    //     // the empty automaton is complete even for a non-empty alphabet
-    //     REQUIRE(aut.is_complete(&alph));
-    //
-    //     // add a non-reachable state (the automaton should still be complete)
-    //     aut.delta.add('q', alph["a1"], 'q');
-    //     REQUIRE(aut.is_complete(&alph));
-    // }
-    //
-    // SECTION("small automaton") {
-    //     OnTheFlyAlphabet alph{};
-    //
-    //     aut.initial.insert(4);
-    //     aut.delta.add(4, alph["a"], 8);
-    //     aut.delta.add(4, alph["c"], 8);
-    //     aut.delta.add(4, alph["a"], 6);
-    //     aut.delta.add(4, alph["b"], 6);
-    //     aut.delta.add(8, alph["b"], 4);
-    //     aut.delta.add(6, alph["a"], 2);
-    //     aut.delta.add(2, alph["b"], 2);
-    //     aut.delta.add(2, alph["a"], 0);
-    //     aut.delta.add(2, alph["c"], 12);
-    //     aut.delta.add(0, alph["a"], 2);
-    //     aut.delta.add(12, alph["a"], 14);
-    //     aut.delta.add(14, alph["b"], 12);
-    //     aut.final.insert({ 2, 12 });
-    //
-    //     REQUIRE(!aut.is_complete(&alph));
-    //
-    //     aut.make_complete(&alph, { 100 });
-    //     REQUIRE(aut.is_complete(&alph));
-    // }
-    //
-    // SECTION("using a non-alphabet symbol") {
-    //     OnTheFlyAlphabet alph{};
-    //
-    //     aut.initial.insert(4);
-    //     aut.delta.add(4, alph["a"], 8);
-    //     aut.delta.add(4, alph["c"], 8);
-    //     aut.delta.add(4, alph["a"], 6);
-    //     aut.delta.add(4, alph["b"], 6);
-    //     aut.delta.add(6, 100, 4);
-    //
-    //     CHECK_THROWS_WITH(
-    //             aut.is_complete(&alph),
-    //             Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
-    //             );
-    // }
-}
 
 TEST_CASE("mata::nft::is_prefix_in_lang()")
 { // {{{

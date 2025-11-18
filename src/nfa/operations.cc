@@ -498,16 +498,18 @@ bool mata::nfa::Nfa::is_deterministic() const {
 
     return true;
 }
-bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
-    utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(*this, alphabet) };
-    utils::OrdVector<Symbol> symbs_ls{ symbols };
 
+bool Nfa::is_complete(Alphabet const* const alphabet) const {
+    return is_complete(get_symbols_to_work_with(*this, alphabet));
+}
+
+bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
     // TODO: make a general function for traversal over reachable states that can be shared by other functions?
     std::list<State> worklist(initial.begin(), initial.end());
     std::unordered_set<State> processed(initial.begin(), initial.end());
 
     while (!worklist.empty()) {
-        State state = *worklist.begin();
+        const State state = *worklist.begin();
         worklist.pop_front();
 
         size_t n = 0;      // counter of symbols

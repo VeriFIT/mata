@@ -822,7 +822,6 @@ public:
     );
 
     /**
-
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
