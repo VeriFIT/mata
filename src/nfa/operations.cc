@@ -486,20 +486,16 @@ Nfa mata::nfa::revert(const Nfa& aut) {
 
 bool mata::nfa::Nfa::is_deterministic() const {
     if (initial.size() != 1) { return false; }
-
     if (delta.empty()) { return true; }
 
-    const size_t aut_size = num_of_states();
+    const size_t aut_size{ num_of_states() };
     for (size_t i = 0; i < aut_size; ++i) {
-        for (const auto& symStates : delta[i]) {
-            if (symStates.num_of_targets() != 1) { return false; }
-        }
+        for (const auto& symbol_post : delta[i]) { if (symbol_post.num_of_targets() != 1) { return false; } }
     }
-
     return true;
 }
 
-bool Nfa::is_complete(Alphabet const* const alphabet) const {
+bool Nfa::is_complete(const Alphabet* const alphabet) const {
     return is_complete(get_symbols_to_work_with(*this, alphabet));
 }
 

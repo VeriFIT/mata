@@ -104,7 +104,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
             if (level < 0) {
                 throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
             }
-            aut.num_of_levels = static_cast<Level>(level);
+            aut.levels.num_of_levels = static_cast<Level>(level);
         } catch (const std::invalid_argument&) {
             throw std::runtime_error("Bad format of levels: unsupported level " + it->second[0]);
         } catch (const std::out_of_range&) {
@@ -227,18 +227,18 @@ Nft builder::create_single_word_nft(const std::vector<std::string>& word, mata::
 
 Nft builder::create_empty_string_nft(const size_t num_of_levels) {
     Nft nft{ nfa::builder::create_empty_string_nfa() };
-    nft.num_of_levels = num_of_levels;
+    nft.levels.num_of_levels = num_of_levels;
     return nft;
 }
 
 Nft builder::create_sigma_star_nft(const size_t num_of_levels) {
-    Nft nft{ 1, { 0 }, { 0 }, { 0 }, num_of_levels };
+    Nft nft{ Nft::with_levels({num_of_levels, { 0 } }, 1, { 0 }, { 0 })};
     nft.delta.add(0, DONT_CARE, 0);
     return nft;
 }
 
 Nft builder::create_sigma_star_nft(const mata::Alphabet* alphabet, const size_t num_of_levels) {
-    Nft nft{1, { 0 }, { 0 }, { 0 }, num_of_levels};
+    Nft nft{ Nft::with_levels({num_of_levels, { 0 } }, 1, { 0 }, { 0 }) };
     nft.insert_identity(0, alphabet->get_alphabet_symbols().to_vector());
     return nft;
 }
@@ -285,12 +285,8 @@ Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t n
     }
 
     const size_t nfa_num_of_states{ nfa.num_of_states() };
-    Nft nft{ nfa_num_of_states, nfa.initial, nfa.final, {}, num_of_levels };
+    Nft nft{ Nft::with_levels(num_of_levels, nfa_num_of_states, nfa.initial, nfa.final) };
 
-    State first_level_state;
-    State inner_src;
-    State inner_tgt;
-    Symbol inner_symbol;
     for(State src{ 0 }; src < nfa_num_of_states; ++src) {
         for (const SymbolPost& symbol_post: nfa.delta[src]) {
             if (symbol_post.symbol == EPSILON && (!next_levels_symbol.has_value() || next_levels_symbol.value() == EPSILON)) {
@@ -298,17 +294,17 @@ Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t n
                 continue;
             }
 
-            first_level_state = nft.add_state_with_level(1);
-            inner_symbol = next_levels_symbol.has_value() ? next_levels_symbol.value() : symbol_post.symbol;
+            const State first_level_state = nft.add_state_with_level(1);
+            const Symbol inner_symbol = next_levels_symbol.has_value() ? next_levels_symbol.value() : symbol_post.symbol;
             for (const State tgt: symbol_post.targets) {
                 // Transition from level 0 to level 1
                 nft.delta.add(src, symbol_post.symbol, first_level_state);
-                inner_src = first_level_state;
+                State inner_src = first_level_state;
 
                 // Transition from level 1 to level num_of_levels-1
                 if (explicit_transitions) {
                     for (Level tgt_level{ 2 }; tgt_level < num_of_levels; ++tgt_level) {
-                        inner_tgt = nft.add_state_with_level(tgt_level);
+                        const State inner_tgt = nft.add_state_with_level(tgt_level);
                         nft.delta.add(inner_src, inner_symbol, inner_tgt);
                         inner_src = inner_tgt;
                     }
@@ -325,14 +321,13 @@ Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t n
 
 Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_levels) {
     Nft result{ std::move(nfa) };
-    result.levels = Levels(result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
-    result.num_of_levels = num_of_levels;
+    std::vector<Level> levels( result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
 
     // We apply simple DFS
     StateSet worklist; // worklist for DFS
     for (State initial_state : result.initial) {
         // start with initial states, which should be level 0
-        result.levels[initial_state] = 0;
+        levels[initial_state] = 0;
         worklist.insert(initial_state);
     }
 
@@ -340,21 +335,22 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_le
         State state_to_process = worklist.back();
         worklist.pop_back();
         for (State tgt : result.delta[state_to_process].get_successors()) {
-            Level next_level = result.levels[state_to_process] + 1;
+            Level next_level = levels[state_to_process] + 1;
             if (next_level == num_of_levels) {
                 next_level = 0;
             }
-            if (result.levels[tgt] == num_of_levels) { // tgt does not have a level yet
+            if (levels[tgt] == num_of_levels) { // tgt does not have a level yet
                 if (next_level != 0 && result.final.contains(tgt)) {
                     throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (final state is not at level 0) in mata::nft::Nft::from_nfa_with_levels_advancing()");
                 }
-                result.levels[tgt] = next_level;
+                levels[tgt] = next_level;
                 worklist.insert(tgt);
-            } else if (result.levels[tgt] != next_level) {
+            } else if (levels[tgt] != next_level) {
                 throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft (a state has more possible levels) in mata::nft::Nft::from_nfa_with_levels_advancing()");
             }
         }
     }
+    result.levels = Levels{ num_of_levels, std::move(levels) };
 
     return result;
 }

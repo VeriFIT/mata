@@ -1,6 +1,8 @@
 /* nfa-noodlification.cc -- Noodlification of NFAs
  */
 
+#include <ranges>
+
 #include "mata/utils/utils.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/builder.hh"
@@ -20,9 +22,8 @@ namespace {
 size_t get_num_of_permutations(const seg_nfa::Segmentation::EpsilonDepthTransitions& epsilon_depths)
 {
     size_t num_of_permutations{ 1 };
-    for (const auto& segment: epsilon_depths)
-    {
-        num_of_permutations *= segment.second.size();
+    for (const auto& transitions_at_depth : epsilon_depths | std::views::values) {
+        num_of_permutations *= transitions_at_depth.size();
     }
     return num_of_permutations;
 }
@@ -46,7 +47,7 @@ void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfa
     }
 }
 
-Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol delimiter) {
+Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, const mata::Symbol delimiter) {
     Nfa concatenation{*nfas[0]};
     for (size_t i = 1; i < nfas.size(); ++i) {
         concatenation = mata::nfa::algorithms::concatenate_eps(concatenation, *nfas[i], delimiter, true);
@@ -63,7 +64,7 @@ Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol
  * coming from the initial state have epsilon on the first tape.
  */
 bool is_nft_homomorphic(const std::shared_ptr<Nft> nft) {
-    if (nft->num_of_levels != 2) {
+    if (nft->levels.num_of_levels != 2) {
         return false;
     }
 
@@ -463,7 +464,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     Nft concatenated_output_nft(std::move(concatenated_output));
 
     auto add_self_loop_for_every_default_state = [](Nft& nft, Symbol symbol) {
-        Word sym_word(nft.num_of_levels, symbol);
+        Word sym_word(nft.levels.num_of_levels, symbol);
 
         size_t original_num_of_states = nft.num_of_states();
         for (State s{ 0 }; s < original_num_of_states; s++) {
@@ -498,6 +499,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         intersection = *nft;
         // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
         add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
+
         intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
     }
     intersection.trim();

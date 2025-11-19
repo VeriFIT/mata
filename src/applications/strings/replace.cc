@@ -192,9 +192,9 @@ Nfa mata::applications::strings::replace::reluctant_nfa(Nfa nfa) {
 Nft mata::applications::strings::replace::create_identity(Alphabet const* const alphabet, const size_t num_of_levels) {
     if (num_of_levels == 0) { throw std::runtime_error("NFT must have at least one level"); }
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
-//    const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
-//    const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
-    Nft nft{ 1, { 0 }, { 0 }, { 0 }, num_of_levels };
+    // const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
+    // const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
+    Nft nft{ Nft::with_levels({num_of_levels, { 0 } }, 1, { 0 }, { 0 }) };
     nft.insert_identity(0, alphabet_symbols.to_vector());
     return nft;
 }
@@ -460,7 +460,7 @@ Nft applications::strings::replace::replace_reluctant_literal(const Word& litera
 Nft ReluctantReplace::replace_literal_nft(const Word& literal, const Word& replacement, Alphabet const* const alphabet,
                                       const Symbol end_marker, ReplaceMode replace_mode) {
     Nft nft{};
-    nft.num_of_levels = 2;
+    nft.levels.num_of_levels = 2;
     State init_state{ nft.add_state_with_level(0) };
     nft.initial.insert(init_state);
     const std::vector<std::pair<State, Word>> state_word_pairs{
@@ -538,15 +538,15 @@ Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replaceme
     // ; by t’, starting with the first occurrence and proceeding in
     // ; left-to-right order.
     // (str.replace_all String String String String)
-    if (replace_mode == ReplaceMode::All && literal == Word{}) {
+    if (replace_mode == ReplaceMode::All && literal.empty()) {
         return applications::strings::replace::create_identity(alphabet);
     }
 
     ReluctantReplace reluctant_replace{};
     Nft nft_end_marker{ [&]() {
         Nft nft_end_marker{ create_identity(alphabet) };
-        State middle{ nft_end_marker.add_state_with_level(1) };
-        State end_marker_state{ nft_end_marker.add_state_with_level(0) };
+        const State middle{ nft_end_marker.add_state_with_level(1) };
+        const State end_marker_state{ nft_end_marker.add_state_with_level(0) };
         nft_end_marker.delta.add(*nft_end_marker.initial.begin(), EPSILON, middle);
         nft_end_marker.delta.add(middle, end_marker, end_marker_state);
         nft_end_marker.final.clear();

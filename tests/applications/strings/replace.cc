@@ -45,8 +45,8 @@ TEST_CASE("nft::create_identity()") {
         nft.delta.add(0, 3, 7);
         nft.delta.add(7, 3, 8);
         nft.delta.add(8, 3, 0);
-        nft.num_of_levels = 3;
-        nft.levels.resize(nft.num_of_levels * (alphabet.get_number_of_symbols() - 1));
+        nft.levels.num_of_levels = 3;
+        nft.levels.resize(nft.levels.num_of_levels * (alphabet.get_number_of_symbols() - 1));
         nft.levels[0] = 0;
         nft.levels[1] = 1;
         nft.levels[2] = 2;
@@ -63,7 +63,7 @@ TEST_CASE("nft::create_identity()") {
     SECTION("identity nft no symbols") {
         EnumAlphabet alphabet{};
         nft.alphabet = &alphabet;
-        nft.num_of_levels = 3;
+        nft.levels.num_of_levels = 3;
         nft.levels.resize(1);
         nft.levels[0] = 0;
         Nft nft_identity{ create_identity(&alphabet, 3) };
@@ -73,7 +73,7 @@ TEST_CASE("nft::create_identity()") {
     SECTION("identity nft one symbol") {
         EnumAlphabet alphabet{ 0 };
         nft.alphabet = &alphabet;
-        nft.num_of_levels = 2;
+        nft.levels.num_of_levels = 2;
         nft.levels.resize(2);
         nft.levels[0] = 0;
         nft.levels[1] = 1;
@@ -92,7 +92,7 @@ TEST_CASE("nft::create_identity()") {
         nft.delta.add(0, 1, 0);
         nft.delta.add(0, 2, 0);
         nft.delta.add(0, 3, 0);
-        nft.num_of_levels = 1;
+        nft.levels.num_of_levels = 1;
         nft.levels.resize(1);
         nft.levels[0] = 0;
         Nft nft_identity{ create_identity(&alphabet, 1) };
@@ -115,7 +115,7 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
         expected.delta.add(3, 2, 0);
         expected.delta.add(0, 3, 4);
         expected.delta.add(4, 3, 0);
-        expected.num_of_levels = 2;
+        expected.levels.num_of_levels = 2;
         expected.levels.resize(5);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
@@ -134,7 +134,7 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
     SECTION("identity nft one symbol") {
         EnumAlphabet alphabet{ 0 };
         expected.alphabet = &alphabet;
-        expected.num_of_levels = 2;
+        expected.levels.num_of_levels = 2;
         expected.levels.resize(2);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
@@ -159,7 +159,7 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
         expected.delta.add(3, 2, 0);
         expected.delta.add(0, 3, 4);
         expected.delta.add(4, 3, 0);
-        expected.num_of_levels = 2;
+        expected.levels.num_of_levels = 2;
         expected.levels.resize(9);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
@@ -185,7 +185,7 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
         expected.delta.add(3, 2, 0);
         expected.delta.add(0, 3, 4);
         expected.delta.add(4, 3, 0);
-        expected.num_of_levels = 2;
+        expected.levels.num_of_levels = 2;
         expected.levels.resize(5);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
@@ -199,7 +199,7 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
     SECTION("identity expected one symbol with word replace") {
         EnumAlphabet alphabet{ 0 };
         expected.alphabet = &alphabet;
-        expected.num_of_levels = 2;
+        expected.levels.num_of_levels = 2;
         expected.levels.resize(2);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
@@ -258,8 +258,8 @@ TEST_CASE("nft::reluctant_replacement()") {
         CHECK(nfa::are_equivalent(dfa_end_marker, dfa_expected_end_marker));
         Nft dft_end_marker{ reluctant_replace.end_marker_dft(dfa_end_marker, END_MARKER) };
         Nft dft_expected_end_marker{};
-        dft_expected_end_marker.num_of_levels = 2;
-        dft_expected_end_marker.levels = { 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1 };
+        dft_expected_end_marker.levels.num_of_levels = 2;
+        dft_expected_end_marker.levels.set({ 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1 });
         dft_expected_end_marker.initial = { 0 };
         dft_expected_end_marker.final = { 9 };
         dft_expected_end_marker.delta.add(0, 'c', 1);
@@ -300,7 +300,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         Nft dft_expected{};
         dft_expected.initial.insert(0);
         dft_expected.final = { 0, 4, 7, 14 };
-        dft_expected.num_of_levels = 2;
+        dft_expected.levels.num_of_levels = 2;
         dft_expected.delta.add(0, 'a', 1);
         dft_expected.delta.add(1, 'a', 0);
         dft_expected.delta.add(0, 'b', 2);
@@ -371,7 +371,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         Nft dft_expected{};
         dft_expected.initial.insert(0);
         dft_expected.final = { 0, 2, 7, 14 };
-        dft_expected.num_of_levels = 2;
+        dft_expected.levels.num_of_levels = 2;
         dft_expected.delta.add(0, 'a', 1);
         dft_expected.delta.add(1, 'a', 2);
         dft_expected.delta.add(0, 'b', 3);
@@ -442,7 +442,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         Nft nft_expected{};
         nft_expected.initial.insert(0);
         nft_expected.final.insert(1);
-        nft_expected.num_of_levels = 2;
+        nft_expected.levels.num_of_levels = 2;
         nft_expected.delta.add(0, EPSILON, 1);
         nft_expected.delta.add(0, EPSILON, 2);
         nft_expected.delta.add(0, EPSILON, 3);

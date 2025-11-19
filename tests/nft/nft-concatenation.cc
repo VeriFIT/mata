@@ -62,9 +62,9 @@ using Symbol = mata::Symbol;
 
 TEST_CASE("mata::nft::concatenate()") {
     Nft lhs{};
-    lhs.num_of_levels = 1;
+    lhs.levels.num_of_levels = 1;
     Nft rhs{};
-    rhs.num_of_levels = 1;
+    rhs.levels.num_of_levels = 1;
     Nft result{};
 
     SECTION("Empty automaton without states") {
@@ -353,9 +353,9 @@ TEST_CASE("mata::nft::concatenate()") {
 
 TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
     Nft lhs{};
-    lhs.num_of_levels = 1;
+    lhs.levels.num_of_levels = 1;
     Nft rhs{};
-    rhs.num_of_levels = 1;
+    rhs.levels.num_of_levels = 1;
     Nft result{};
 
     SECTION("Empty automaton") {
@@ -582,9 +582,9 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 }
 
 TEST_CASE("mata::nft::(a|b)*") {
-    Nft aut1{ mata::nfa::builder::create_from_regex("a*") };
-    Nft aut2{ mata::nfa::builder::create_from_regex("b*") };
-    Nft aut3{ mata::nfa::builder::create_from_regex("a*b*") };
+    const Nft aut1{ mata::nfa::builder::create_from_regex("a*") };
+    const Nft aut2{ mata::nfa::builder::create_from_regex("b*") };
+    const Nft aut3{ mata::nfa::builder::create_from_regex("a*b*") };
     const Nft concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
@@ -612,7 +612,7 @@ TEST_CASE("mata::nft::Bug with epsilon transitions") {
     const Nft result{ concatenate(nft1, nft2, true) };
 
     Nft expected{ nft1 };
-    assert(expected.num_of_levels == nft1.num_of_levels);
+    assert(expected.levels.num_of_levels == nft1.levels.num_of_levels);
     expected.delta.add(3, EPSILON, 4);
     expected.delta.add(4, 97, 4);
     expected.delta.add(4, 98, 4);

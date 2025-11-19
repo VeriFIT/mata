@@ -15,7 +15,7 @@ Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon,
 }
 
 Nft& Nft::concatenate(const Nft& aut) {
-    assert(num_of_levels == aut.num_of_levels);
+    assert(levels.num_of_levels == aut.levels.num_of_levels);
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;
@@ -61,25 +61,25 @@ Nft& Nft::concatenate(const Nft& aut) {
 
 Nft algorithms::concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon,
                                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
-    assert(lhs.num_of_levels == rhs.num_of_levels);
+    assert(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
     if (lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
-        return Nft::with_levels(lhs.num_of_levels);
+        return Nft::with_levels(lhs.levels.num_of_levels);
     }
 
     const unsigned long lhs_states_num{ lhs.num_of_states() };
     const unsigned long rhs_states_num{ rhs.num_of_states() };
-    Nft result{ Nft::with_levels(lhs.num_of_levels) }; // Concatenated automaton.
+    Nft result{ Nft::with_levels(lhs.levels.num_of_levels) }; // Concatenated automaton.
     StateRenaming _lhs_states_renaming{}; // Map mapping rhs states to result states.
     StateRenaming _rhs_states_renaming{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-    if (result_num_of_states == 0) { return Nft{ Nft::with_levels(lhs.num_of_levels) }; }
+    if (result_num_of_states == 0) { return Nft{ Nft::with_levels(lhs.levels.num_of_levels) }; }
 
-    result = Nft::with_levels(lhs.num_of_levels);
+    result = Nft::with_levels(lhs.levels.num_of_levels);
     result.delta = lhs.delta;
     result.initial = lhs.initial;
     result.add_state(result_num_of_states-1);
@@ -103,7 +103,7 @@ Nft algorithms::concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& ep
 
     // Add epsilon transitions connecting lhs and rhs automata.
     // The epsilon transitions lead from lhs original final states to rhs original initial states.
-    std::vector<Symbol> nft_epsilon(result.num_of_levels, epsilon);
+    const std::vector<Symbol> nft_epsilon(result.levels.num_of_levels, epsilon);
     for (const auto& lhs_final_state: lhs.final) {
         for (const auto& rhs_initial_state: rhs.initial) {
             result.add_transition(lhs_final_state, nft_epsilon,

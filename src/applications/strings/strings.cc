@@ -212,10 +212,10 @@ bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
 }
 
 std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
-    assert(nft.num_of_levels == lengths.size());
+    assert(nft.levels.num_of_levels == lengths.size());
     assert(!nft.contains_jump_transitions());
     if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
-    if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.num_of_levels, mata::Word()); }
+    if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](int x) { return x == 0; })) { return std::vector<mata::Word>(nft.levels.num_of_levels, mata::Word()); }
 
     for (const State initial_state: nft.initial) {
         /// Current state, its state post iterator, its end iterator, and iterator in the current symbol post to target states.
@@ -271,8 +271,8 @@ std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of
                 if (!worklist.empty()) {
                     auto& [prev_state, prev_state_post_it, prev_state_post_end, prev_targets_it]{ worklist.back() };
                     assert(prev_state_post_it != prev_state_post_end);
-                    Symbol prev_symbol = prev_state_post_it->symbol;
-                    nft::Level prev_level = nft.levels[prev_state];
+                    const Symbol prev_symbol = prev_state_post_it->symbol;
+                    const nft::Level prev_level = nft.levels[prev_state];
                     if (prev_symbol != EPSILON) {
                         assert(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
                         result[prev_level].pop_back();

@@ -38,7 +38,7 @@ bool mata::nft::algorithms::is_included_antichains(
     Run*                   cex,
     const JumpMode         jump_mode)
 { // {{{
-    if (smaller.num_of_levels != bigger.num_of_levels) { return false; }
+    if (smaller.levels.num_of_levels != bigger.levels.num_of_levels) { return false; }
 
     OrdVector<mata::Symbol> symbols;
     if (alphabet == nullptr) {
@@ -96,7 +96,7 @@ bool mata::nft::is_included(
 
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet *alphabet, const JumpMode jump_mode, const ParameterMap& params)
 {
-    if (lhs.num_of_levels != rhs.num_of_levels) { return false; }
+    if (lhs.levels.num_of_levels != rhs.levels.num_of_levels) { return false; }
 
     OrdVector<mata::Symbol> symbols;
     if (alphabet == nullptr) {

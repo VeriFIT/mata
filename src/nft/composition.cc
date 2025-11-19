@@ -20,8 +20,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     // The loop word is constructed using the EPSILON symbol for all levels, except for the levels
     // where is_dcare_on_transition is true, in which case the DONT_CARE symbol is used.
     auto insert_self_loops = [&](Nft &nft, const BoolVector &is_dcare_on_transition) {
-        Word loop_word(nft.num_of_levels, EPSILON);
-        for (size_t i{ 0 }; i < nft.num_of_levels; i++) {
+        Word loop_word(nft.levels.num_of_levels, EPSILON);
+        for (size_t i{ 0 }; i < nft.levels.num_of_levels; i++) {
             if (is_dcare_on_transition[i]) {
                 loop_word[i] = DONT_CARE;
             }
@@ -60,8 +60,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
         ++rhs_sync_levels_it;
     }
     // After the last synchronization level (i == |sync|)
-    lhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(lhs.num_of_levels) - *(lhs_sync_levels_it - 1) - 1);
-    rhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(rhs.num_of_levels) - *(rhs_sync_levels_it - 1) - 1);
+    lhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(lhs.levels.num_of_levels) - *(lhs_sync_levels_it - 1) - 1);
+    rhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(rhs.levels.num_of_levels) - *(rhs_sync_levels_it - 1) - 1);
 
     // Construct a mask for new levels in lhs and rhs.
     // For each synchronization block (non-synchronization levels up to a synchronization transition),
