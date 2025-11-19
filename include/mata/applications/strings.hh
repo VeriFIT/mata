@@ -608,7 +608,7 @@ protected:
     Nft reluctant_leftmost_nft(const std::string& regex, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
     Nft reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
 
-    Nft replace_literal_nft(const Word& literal, const Word& replacement, const Alphabet const* const alphabet, Symbol end_marker,
+    Nft replace_literal_nft(const Word& literal, const Word& replacement, Alphabet const* const alphabet, Symbol end_marker,
                             ReplaceMode replace_mode = ReplaceMode::All);
 };
 
