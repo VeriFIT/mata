@@ -456,6 +456,9 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
         if (decode_ascii_chars) {
             return to_ascii(symbol);
         }
+        if (this->alphabet != nullptr) {
+            return this->alphabet->reverse_translate_symbol(symbol);
+        }
 
         return std::to_string(symbol);
     };
