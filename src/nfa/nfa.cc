@@ -456,6 +456,7 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
         if (decode_ascii_chars) {
             return to_ascii(symbol);
         }
+
         return std::to_string(symbol);
     };
 
@@ -597,7 +598,8 @@ void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
 
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " "
-        << ((alphabet != nullptr) ? alphabet->reverse_translate_symbol(trans.symbol) : std::to_string(trans.symbol))
+        << ((alphabet != nullptr) ? alphabet->reverse_translate_symbol(trans.symbol) :
+            ((this->alphabet != nullptr) ? this->alphabet->reverse_translate_symbol(trans.symbol) : std::to_string(trans.symbol)))
         << " q" << trans.target << std::endl;
     }
 }
