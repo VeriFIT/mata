@@ -1,15 +1,16 @@
-/* nft-complement.cc -- NFT complement
+/** @file
+ * @brief Complement of NFTs.
  */
 
-// MATA headers
-#include "mata/nft/nft.hh"
 #include "mata/nft/algorithms.hh"
+#include "mata/nft/nft.hh"
 
 using namespace mata::nft;
 using namespace mata::utils;
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
 Nft mata::nft::algorithms::complement_classical(const Nft& aut, const OrdVector<Symbol>& symbols,
-                                                bool minimize_during_determinization) {
+                                                const bool minimize_during_determinization) {
     Nft result;
     State sink_state;
     if (minimize_during_determinization) {
@@ -26,8 +27,7 @@ Nft mata::nft::algorithms::complement_classical(const Nft& aut, const OrdVector<
         std::unordered_map<StateSet, State> subset_map;
         result = determinize(aut, &subset_map);
         // check if a sink state was not created during determinization
-        auto sink_state_iter = subset_map.find({});
-        if (sink_state_iter != subset_map.end()) {
+        if (const auto sink_state_iter = subset_map.find({}); sink_state_iter != subset_map.end()) {
             sink_state = sink_state_iter->second;
         } else {
             sink_state = result.num_of_states();
@@ -36,6 +36,7 @@ Nft mata::nft::algorithms::complement_classical(const Nft& aut, const OrdVector<
 
     result.make_complete(symbols, sink_state);
     result.final.complement(result.num_of_states());
+
     return result;
 }
 
@@ -61,7 +62,7 @@ Nft mata::nft::complement(const Nft& aut, const mata::utils::OrdVector<mata::Sym
     }
 
     bool minimize_during_determinization = false;
-    if (params.find("minimize") != params.end()) {
+    if (params.contains("minimize")) {
         const std::string& minimize_arg = params.at("minimize");
         if ("true" == minimize_arg) { minimize_during_determinization = true; }
         else if ("false" == minimize_arg) { minimize_during_determinization = false; }
@@ -73,3 +74,4 @@ Nft mata::nft::complement(const Nft& aut, const mata::utils::OrdVector<mata::Sym
 
     return algo(aut, symbols, minimize_during_determinization);
 }
+#endif

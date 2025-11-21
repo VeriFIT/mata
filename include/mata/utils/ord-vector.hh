@@ -121,9 +121,10 @@ public:
         return ord_vector;
     }
 
-    void insert(iterator itr, const Key& x) {
-        assert(itr == this->end() || x <= *itr);
-        vec_.insert(itr,x);
+    std::pair<iterator, bool> insert(iterator itr, const Key& x) {
+        if (empty() || itr == end()) { return { vec_.insert(itr, x), true }; }
+        if (x >= *itr || (itr != begin() && x <= *(itr - 1))) { return { itr, false }; }
+        return { vec_.insert(itr, x), true };
     }
 
     // EMPLACE_BACK WHICH BREAKS SORTEDNESS,
@@ -151,15 +152,18 @@ public:
     virtual inline iterator erase(const_iterator pos) { return vec_.erase(pos); }
     virtual inline iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
 
-    virtual void insert(const Key& x) {
+    virtual std::pair<iterator, bool> insert(const Key& x) {
         assert(is_sorted());
 
         reserve_on_insert(vec_);
 
         // Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
         auto pos  = std::lower_bound(vec_.begin(), vec_.end(), x);
-        if (pos == vec_.end() || *pos != x)
-            vec_.insert(pos,x);
+        bool inserted{ false };
+        if (pos == vec_.end() || *pos != x) {
+            pos = vec_.insert(pos, x);
+            inserted = true;
+        }
 
         //TODO: measure, if there is not benefit to this custom version, remove
         //size_t first = 0;
@@ -196,16 +200,16 @@ public:
         //vec_[first] = x;
 
         assert(is_sorted());
+        return { pos, inserted };
     }
 
-    virtual void insert(const OrdVector& vec) {
+    virtual bool insert(const OrdVector& vec) {
         static OrdVector tmp{};
         assert(is_sorted());
         assert(vec.is_sorted());
         tmp.clear();
 
-        set_union(*this,vec,tmp);
-
+        const auto inserted{ set_union(*this,vec,tmp) };
         vec_ = tmp.vec_;
         /*
          * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
@@ -214,6 +218,7 @@ public:
          */
         //std::swap(tmp.vec_,vec_);
         assert(is_sorted());
+        return inserted;
     }
 
     inline void clear() { vec_.clear(); }
@@ -448,15 +453,22 @@ public:
         return result;
     }
 
-    static void set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
+    static bool set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.is_sorted());
         assert(rhs.is_sorted());
 
-        if (lhs.empty()) { result = rhs; return; }
-        if (rhs.empty()) { result = lhs; return; }
+        const bool rhs_empty{ rhs.empty() };
+        if (lhs.empty()) {
+            result = rhs;
+            return !rhs_empty;
+        }
+        if (rhs_empty) {
+            result = lhs;
+            return false;
+        }
 
         result.reserve(lhs.size()+rhs.size());
-        std::set_union(lhs.vec_.begin(),lhs.vec_.end(),rhs.vec_.begin(),rhs.vec_.end(),std::back_inserter(result.vec_));
+        std::ranges::set_union(lhs.vec_, rhs.vec_, std::back_inserter(result.vec_));
 
         //TODO: measure, if there is not benefit to this custom version, remove
         //auto lhs_it = lhs.begin();
@@ -485,6 +497,10 @@ public:
         //}
 
         assert(result.is_sorted());
+        // FIXME: This always returns `.begin()`, even if the first inserted element is further in the vector. Made to
+        //  keep the interface similar to std::set.
+        if (result.size() > lhs.size()) { return true; }
+        return false;
     }
 
     static OrdVector set_union(const OrdVector& lhs, const OrdVector& rhs) {

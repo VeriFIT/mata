@@ -54,9 +54,9 @@ public:
     StateSet targets{};
 
     SymbolPost() = default;
-    explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
-    SymbolPost(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
-    SymbolPost(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
+    explicit SymbolPost(const Symbol symbol) : symbol{ symbol } {}
+    SymbolPost(const Symbol symbol, const State state_to) : symbol{ symbol }, targets{ state_to } {}
+    SymbolPost(const Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
 
     SymbolPost(SymbolPost&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
     SymbolPost(const SymbolPost& rhs) = default;

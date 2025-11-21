@@ -132,6 +132,32 @@ public:
      * @param[in] level Level to be counted.
      */
     size_t count(Level level) const { return static_cast<size_t>(std::count(begin(), end(), level)); }
+
+    /**
+     * @brief Get levels of states in @p states.
+     */
+    std::vector<Level> get_levels_of(const utils::SparseSet<State>& states) const;
+    /**
+     * @brief Get levels of states in @p states.
+     */
+    std::vector<Level> get_levels_of(const StateSet& states) const;
+
+    /**
+     * @brief Get the minimal level for the states in @p states.
+     *
+     * "Minimal level" is defined as the level with the lowest numerical value, i.e., `0 < 1 < 2 < ... < num_of_levels-1`.
+     * "Minimal" often relates to the current states ("What is the current state with minimal level?")
+     */
+    Level get_minimal_level_of(const StateSet& states, LevelsOrdering::Compare levels_ordering = LevelsOrdering::Minimal) const;
+
+    /**
+     * @brief Get the minimal next level for the states in @p states.
+     *
+     * "Minimal next level" is defined as the minimal level in the next transition (that may follow another level),
+     *  i.e., `1 < 2 < ... < num_of_levels-1 < 0`.
+     * "Minimal next" relates to the next target states ("What is the next minimal level to target in a transition?").
+     */
+    Level get_minimal_next_level_of(const StateSet& states) const;
 };
 
 /**
@@ -659,9 +685,11 @@ public:
      *
      * If you have an automaton with finite language (can be checked using @ref is_acyclic),
      * you can get all words by calling
-     *      get_words(aut.num_of_states())
+     *      aut.get_words(aut.num_of_states())
+     * @param max_length Maximum length of words to be returned. Default: "no limit"; will infinitely loop if the language is infinite.
+     * @return Set of all words in the language of the automaton whose length is <= @p max_length.
      */
-    std::set<Word> get_words(size_t max_length) const;
+    std::set<Word> get_words(size_t max_length = std::numeric_limits<size_t>::max()) const;
 
     /**
      * @brief Apply @p nfa to @c this.
@@ -849,6 +877,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_
 Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
+
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+// TODO(nft): Implement for NFTs.
 /**
  * @brief Compute automaton accepting complement of @p aut.
  *
@@ -889,15 +920,16 @@ Nft complement(const Nft& aut, const utils::OrdVector<Symbol>& symbols,
  * @return Minimal deterministic automaton.
  */
 Nft minimize(const Nft &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
+#endif
 
 /**
  * @brief Determinize automaton.
  *
- * @param[in] aut Automaton to determinize.
+ * @param[in] nft Automaton to determinize.
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
  * @return Determinized automaton.
  */
-Nft determinize(const Nft& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
+Nft determinize(const Nft& nft, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
  * @brief Reduce the size of the automaton.

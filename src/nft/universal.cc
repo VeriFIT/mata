@@ -1,7 +1,7 @@
-/* nft-universal.cc -- NFT universality
+/* @file
+ * @brief NFT universality.
  */
 
-// MATA headers
 #include "mata/nft/nft.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
@@ -12,7 +12,7 @@ using namespace mata::utils;
 //TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
 // it is not something needed in practice, so some little overhead is ok
 
-
+#ifdef MATA_NFT_NOT_IMPLEMENTED
 /// naive universality check (complementation + emptiness)
 bool mata::nft::algorithms::is_universal_naive(
 	const Nft&         aut,
@@ -23,7 +23,7 @@ bool mata::nft::algorithms::is_universal_naive(
 
 	return cmpl.is_lang_empty(cex);
 } // is_universal_naive }}}
-
+#endif
 
 /// universality check using Antichains
 bool mata::nft::algorithms::is_universal_antichains(
@@ -132,23 +132,28 @@ bool mata::nft::algorithms::is_universal_antichains(
 
 // The dispatching method that calls the correct one based on parameters.
 bool mata::nft::Nft::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
-	// setting the default algorithm
-	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
-	if (!haskey(params, "algorithm")) {
-		throw std::runtime_error(std::to_string(__func__) +
-			" requires setting the \"algorithm\" key in the \"params\" argument; "
-			"received: " + std::to_string(params));
-	}
+    // TODO(nft): Revert back to the naive algorithm when implemented for NFTs?
+    // Setting the default algorithm.
+    decltype(algorithms::is_universal_antichains)* algo = algorithms::is_universal_antichains;
+    if (!haskey(params, "algorithm")) {
+            throw std::runtime_error(std::to_string(__func__) +
+                    " requires setting the \"algorithm\" key in the \"params\" argument; "
+                    "received: " + std::to_string(params));
+    }
 
-	const std::string& str_algo = params.at("algorithm");
-	if ("naive" == str_algo) { /* default */ }
-	else if ("antichains" == str_algo) {
-		algo = algorithms::is_universal_antichains;
-	} else {
-		throw std::runtime_error(std::to_string(__func__) +
-			" received an unknown value of the \"algorithm\" key: " + str_algo);
-	}
-	return algo(*this, alphabet, cex);
+    const std::string& str_algo = params.at("algorithm");
+    if ("naive" == str_algo) {
+        /* default */
+        throw std::runtime_error(std::to_string(__func__) +
+                 " naive algorithm is not implemented for NFTs");
+    }
+    else if ("antichains" == str_algo) {
+            algo = algorithms::is_universal_antichains;
+    } else {
+            throw std::runtime_error(std::to_string(__func__) +
+                    " received an unknown value of the \"algorithm\" key: " + str_algo);
+    }
+    return algo(*this, alphabet, cex);
 } // is_universal()
 
 bool mata::nft::Nft::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
