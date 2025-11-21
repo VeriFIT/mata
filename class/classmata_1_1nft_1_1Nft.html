@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Class mata::utils::OrdVector" href="classmata_1_1utils_1_1OrdVector.html" />
-    <link rel="prev" title="Class mata::nft::Levels" href="classmata_1_1nft_1_1Levels.html" />
+    <link rel="prev" title="Class mata::nft::LevelsOrdering" href="classmata_1_1nft_1_1LevelsOrdering.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -690,9 +690,17 @@ If you need to parse the automaton again, use <a class="reference internal" href
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft9get_wordsE6size_t">
-<span id="_CPPv3NK4mata3nft3Nft9get_wordsE6size_t"></span><span id="_CPPv2NK4mata3nft3Nft9get_wordsE6size_t"></span><span id="mata::nft::Nft::get_words__sC"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ab05f262c6f723e4a90e071ffec9cf545"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_words</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">max_length</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata3nft3Nft9get_wordsE6size_t" title="Link to this definition">¶</a><br /></dt>
+<span id="_CPPv3NK4mata3nft3Nft9get_wordsE6size_t"></span><span id="_CPPv2NK4mata3nft3Nft9get_wordsE6size_t"></span><span id="mata::nft::Nft::get_words__sC"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ab6ac96601356b1bb248783bc88750fed"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata4WordE" title="mata::Word"><span class="n"><span class="pre">Word</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_words</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">max_length</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">numeric_limits</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">size_t</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">max</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata3nft3Nft9get_wordsE6size_t" title="Link to this definition">¶</a><br /></dt>
 <dd><p>Get the set of all words in the language of the automaton whose length is &lt;= <code class="docutils literal notranslate"><span class="pre">max_length</span></code>. </p>
-<p>If you have an automaton with finite language (can be checked using <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Nfa_1a3081a0a932963e92b5e408663ea3980d"><span class="std std-ref">is_acyclic</span></a>), you can get all words by calling get_words(aut.num_of_states()) </p>
+<p>If you have an automaton with finite language (can be checked using <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Nfa_1a3081a0a932963e92b5e408663ea3980d"><span class="std std-ref">is_acyclic</span></a>), you can get all words by calling aut.get_words(aut.num_of_states()) </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>max_length</strong> – Maximum length of words to be returned. Default: “no limit”; will infinitely loop if the language is infinite. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set of all words in the language of the automaton whose length is &lt;= <code class="docutils literal notranslate"><span class="pre">max_length</span></code>. </p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="cpp function">
@@ -1358,6 +1366,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1LevelsOrdering.html">Class mata::nft::LevelsOrdering</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::nft::Nft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
@@ -1376,7 +1385,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../classlist.html">Class list</a><ul>
-      <li>Previous: <a href="classmata_1_1nft_1_1Levels.html" title="previous chapter">Class mata::nft::Levels</a></li>
+      <li>Previous: <a href="classmata_1_1nft_1_1LevelsOrdering.html" title="previous chapter">Class mata::nft::LevelsOrdering</a></li>
       <li>Next: <a href="classmata_1_1utils_1_1OrdVector.html" title="next chapter">Class mata::utils::OrdVector</a></li>
   </ul></li>
   </ul></li>
