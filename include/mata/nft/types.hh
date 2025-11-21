@@ -18,28 +18,6 @@ extern const std::string TYPE_NFT;
 
 using Level = unsigned;
 
-/**
- * @brief Classes for levels ordering in NFTs.
- */
-class LevelsOrdering {
-public:
-    using Compare = std::function<bool(Level, Level)>;
-    /**
-     * @brief Ordering for Levels in NFTs where lower levels precede higher levels.
-     *
-     * That is, levels are ordered as follows: 0 < 1 < 2 < ... < num_of_levels-1.
-     */
-    static bool Minimal(const Level lhs, const Level rhs) { return std::less()(lhs, rhs); }
-    /**
-     * @brief Ordering for levels in NFTs where lower levels precede higher levels, except for 0 which is the highest level.
-     *
-     * That is, levels are ordered as follows: 1 < 2 < ... < num_of_levels-1 < 0.
-     * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the next lowest
-     *  level of the next state.
-     */
-    static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
-};
-
 using State = mata::nfa::State;
 using StateSet = mata::nfa::StateSet;
 
@@ -82,6 +60,26 @@ constexpr Level DEFAULT_NUM_OF_LEVELS{ 2 };
 class Levels: std::vector<Level> {
     using super = std::vector<Level>;
 public:
+    /// @brief Orderings of levels.
+    class Ordering {
+    public:
+        using Compare = std::function<bool(Level, Level)>;
+        /**
+         * @brief Ordering for Levels in NFTs where lower levels precede higher levels.
+         *
+         * That is, levels are ordered as follows: 0 < 1 < 2 < ... < num_of_levels-1.
+         */
+        static bool Minimal(const Level lhs, const Level rhs) { return std::less()(lhs, rhs); }
+        /**
+         * @brief Ordering for levels in NFTs where lower levels precede higher levels, except for 0 which is the highest level.
+         *
+         * That is, levels are ordered as follows: 1 < 2 < ... < num_of_levels-1 < 0.
+         * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the next lowest
+         *  level of the next state.
+         */
+        static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
+    };
+
     /**
      * @brief Number of levels (tracks) the transducer recognizes. Each transducer transition will comprise
      *  @c num_of_levels of NFA transitions.
@@ -196,7 +194,7 @@ public:
      * "Minimal" often relates to the current states ("What is the current state with minimal level?")
      */
     std::optional<Level> get_minimal_level_of(
-            const StateSet& states, LevelsOrdering::Compare levels_ordering = LevelsOrdering::Minimal) const;
+            const StateSet& states, Ordering::Compare levels_ordering = Ordering::Minimal) const;
 
     /**
      * @brief Get the minimal next level for the states in @p states.
@@ -246,6 +244,7 @@ public:
         if (levels.size() == 0) { return std::nullopt; }
         return std::ranges::max(levels) + 1;
     }
+
 private:
     bool check_levels_in_range_() const { return std::ranges::all_of(*this, [&](const Level level) { return level < num_of_levels; }); }
 };

@@ -96,14 +96,14 @@ std::vector<Level> Levels::get_levels_of(const StateSet& states) const {
     return result;
 }
 
-std::optional<Level> Levels::get_minimal_level_of(const StateSet& states, LevelsOrdering::Compare levels_ordering) const {
+std::optional<Level> Levels::get_minimal_level_of(const StateSet& states, Ordering::Compare levels_ordering) const {
     if (states.empty()) { return std::nullopt; }
     auto levels = states | std::views::transform([&](const State& state) { return (*this)[state]; });
     return std::ranges::min(levels, std::move(levels_ordering));
 }
 
 std::optional<Level> Levels::get_minimal_next_level_of(const StateSet& states) const {
-    return get_minimal_level_of(states, LevelsOrdering::Next);
+    return get_minimal_level_of(states, Ordering::Next);
 }
 
 bool Levels::can_follow(const Level source_level, const Level target_level) {
