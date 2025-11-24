@@ -628,8 +628,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft6Levels5countE5Level">
-<span id="_CPPv3NK4mata3nft6Levels5countE5Level"></span><span id="_CPPv2NK4mata3nft6Levels5countE5Level"></span><span id="mata::nft::Levels::count__LevelC"></span><span class="target" id="classmata_1_1nft_1_1Levels_1af6522c06e0639e4974dba9e1a10c3b78"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">count</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">level</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft6Levels5countEK5Level">
+<span id="_CPPv3NK4mata3nft6Levels5countEK5Level"></span><span id="_CPPv2NK4mata3nft6Levels5countEK5Level"></span><span id="mata::nft::Levels::count__LevelCC"></span><span class="target" id="classmata_1_1nft_1_1Levels_1a9ae08638f7bc2d4093b290e0e4aa6ccd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">level</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>Count the number of occurrences of a level in <code class="docutils literal notranslate"><span class="pre">this</span></code>. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -662,6 +662,45 @@
 <span id="_CPPv3NK4mata3nft6Levels25get_minimal_next_level_ofERK8StateSet"></span><span id="_CPPv2NK4mata3nft6Levels25get_minimal_next_level_ofERK8StateSet"></span><span id="mata::nft::Levels::get_minimal_next_level_of__StateSetCRC"></span><span class="target" id="classmata_1_1nft_1_1Levels_1a6cf71d2019043b280892cbdf7fe70618"></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_minimal_next_level_of</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8StateSetE" title="mata::nft::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">states</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>Get the minimal next level for the states in <code class="docutils literal notranslate"><span class="pre">states</span></code>. </p>
 <p>“Minimal next level” is defined as the minimal level in the next transition (that may follow another level), i.e., <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">&lt;</span> <span class="pre">2</span> <span class="pre">&lt;</span> <span class="pre">...</span> <span class="pre">&lt;</span> <span class="pre">num_of_levels-1</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>. “Minimal next” relates to the next target states (“What is the next minimal level to target in a transition?”). </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft6Levels21can_follow_for_statesE5State5State">
+<span id="_CPPv3NK4mata3nft6Levels21can_follow_for_statesE5State5State"></span><span id="_CPPv2NK4mata3nft6Levels21can_follow_for_statesE5State5State"></span><span id="mata::nft::Levels::can_follow_for_states__State.StateC"></span><span class="target" id="classmata_1_1nft_1_1Levels_1a157a79db3673e41c0af5d71f3d27619c"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">can_follow_for_states</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">source</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">target</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether a transition can be made from <code class="docutils literal notranslate"><span class="pre">source</span></code> to <code class="docutils literal notranslate"><span class="pre">target</span></code>. </p>
+<p>A transition can be made if the level of <code class="docutils literal notranslate"><span class="pre">target</span></code> is higher than the level of <code class="docutils literal notranslate"><span class="pre">source</span></code>, or if the level of <code class="docutils literal notranslate"><span class="pre">target</span></code> is 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> – <strong>[in]</strong> Source state. </p></li>
+<li><p><strong>target</strong> – <strong>[in]</strong> Target state. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if the transition can be made, <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft6Levels10can_followE5Level5Level">
+<span id="_CPPv3N4mata3nft6Levels10can_followE5Level5Level"></span><span id="_CPPv2N4mata3nft6Levels10can_followE5Level5Level"></span><span id="mata::nft::Levels::can_follow__Level.Level"></span><span class="target" id="classmata_1_1nft_1_1Levels_1a4257481f133a9f5a2df41ba1936a17b5"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">can_follow</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">source_level</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">target_level</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Check whether a transition can be made from a state with level <code class="docutils literal notranslate"><span class="pre">source_level</span></code> to a state with level <code class="docutils literal notranslate"><span class="pre">target_level</span></code>. </p>
+<p>A transition can be made if the target level is higher than the source level, or if the target level is 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_level</strong> – <strong>[in]</strong> <a class="reference internal" href="../nft.html#namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5"><span class="std std-ref">Level</span></a> of the source state. </p></li>
+<li><p><strong>target_level</strong> – <strong>[in]</strong> <a class="reference internal" href="../nft.html#namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5"><span class="std std-ref">Level</span></a> of the target state. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if the transition can be made, <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise. </p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -712,7 +751,14 @@
 <dd><p>Construct a new explicit NFT with num_of_states states and optionally set initial and final states. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>num_of_states</strong> – <strong>[in]</strong> Number of states for which to preallocate <a class="reference internal" href="../nft.html#namespacemata_1_1nft_1a7d4198ab11320a2e080b1fe3006a1179"><span class="std std-ref">Delta</span></a>. </p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_of_states</strong> – <strong>[in]</strong> Number of states for which to preallocate <a class="reference internal" href="../nft.html#namespacemata_1_1nft_1a7d4198ab11320a2e080b1fe3006a1179"><span class="std std-ref">Delta</span></a>. </p></li>
+<li><p><strong>initial_states</strong> – Initial states of the NFT. </p></li>
+<li><p><strong>final_states</strong> – Final states of the NFT. </p></li>
+<li><p><strong>levels</strong> – <a class="reference internal" href="../nft.html#classmata_1_1nft_1_1Levels"><span class="std std-ref">Levels</span></a> of the states. </p></li>
+<li><p><strong>num_of_levels</strong> – Number of levels for the NFT (default: <code class="docutils literal notranslate"><span class="pre">DEFAULT_NUM_OF_LEVELS</span></code>). </p></li>
+<li><p><strong>alphabet</strong> – <a class="reference internal" href="namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of the NFT. </p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1462,6 +1508,60 @@ If you need to parse the automaton again, use <a class="reference internal" href
 </dd></dl>
 
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE">
+<span id="_CPPv3N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="_CPPv2N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="mata::nft::Nft::make_complete__AlphabetCP.std::optional:std::vector:State::CR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a1a3f0d3c6c6c3cd18d7fc03678d28fcc"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">make_complete</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sink_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Make NFT complete in place. </p>
+<p>For each state <code class="docutils literal notranslate"><span class="pre">state</span></code>, add transitions with “missing” symbols from <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> (symbols that do not occur on transitions from given <code class="docutils literal notranslate"><span class="pre">state</span></code>) to <code class="docutils literal notranslate"><span class="pre">sink_states[level]</span></code> where <code class="docutils literal notranslate"><span class="pre">level</span> <span class="pre">==</span> <span class="pre">this-&gt;levels[state]</span></code>. If <code class="docutils literal notranslate"><span class="pre">sink_states</span></code> contain states that do not belong to the NFT, they are added to it, but only in the case that some transition to those states were added. If NFT does not contain any states, this function does nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing “missing” symbols. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, use <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise use <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>. </p></li>
+<li><p><strong>sink_states</strong> – <strong>[in]</strong> The level-indexed vector of sink states, one per level into which new transitions are added. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, add new sink states. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if a new transition was added to the NFA, <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE">
+<span id="_CPPv3N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="_CPPv2N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="mata::nft::Nft::make_complete__utils::OrdVector:Symbol:CR.std::optional:std::vector:State::CR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ac10127a905bc7f5e746745a1f767df51"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">make_complete</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sink_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Make NFT complete in place. </p>
+<p>For each state <code class="docutils literal notranslate"><span class="pre">state</span></code>, add transitions with “missing” symbols from <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> (symbols that do not occur on transitions from given <code class="docutils literal notranslate"><span class="pre">state</span></code>) to <code class="docutils literal notranslate"><span class="pre">sink_states[level]</span></code> where <code class="docutils literal notranslate"><span class="pre">level</span> <span class="pre">==</span> <span class="pre">this-&gt;levels[state]</span></code>. If <code class="docutils literal notranslate"><span class="pre">sink_states</span></code> contain states that do not belong to the NFT, they are added to it, but only in the case that some transition to those states were added. If NFT does not contain any states, this function does nothing.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This overloaded version is a more efficient version which does not need to compute the set of symbols to complete to from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan to complete multiple automata over the same set of symbols.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbols</strong> – <strong>[in]</strong> Symbols to compute “missing” symbols from. </p></li>
+<li><p><strong>sink_states</strong> – <strong>[in]</strong> The level-indexed vector of sink states, one per level into which new transitions are added. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, add new sink states. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code> if a new transition was added to the NFA, <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft11is_completeEPK8Alphabet">
+<span id="_CPPv3NK4mata3nft3Nft11is_completeEPK8Alphabet"></span><span id="_CPPv2NK4mata3nft3Nft11is_completeEPK8Alphabet"></span><span id="mata::nft::Nft::is_complete__AlphabetCPC"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a1690de9bbf594d4b2006c5a561e41a42"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_complete</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Test for automaton completeness with regard to an alphabet. </p>
+<p>An automaton is complete if every reachable state has at least one outgoing transition over every symbol. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft11is_completeERKN5utils9OrdVectorI6SymbolEE">
+<span id="_CPPv3NK4mata3nft3Nft11is_completeERKN5utils9OrdVectorI6SymbolEE"></span><span id="_CPPv2NK4mata3nft3Nft11is_completeERKN5utils9OrdVectorI6SymbolEE"></span><span id="mata::nft::Nft::is_complete__utils::OrdVector:Symbol:CRC"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a23f97b5b12b578077367b51a688118e2"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_complete</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Test for automaton completeness with regard to an alphabet. </p>
+<p>An automaton is complete if every reachable state has at least one outgoing transition over every symbol. </p>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft13num_of_statesEv">
 <span id="_CPPv3NK4mata3nft3Nft13num_of_statesEv"></span><span id="_CPPv2NK4mata3nft3Nft13num_of_statesEv"></span><span id="mata::nft::Nft::num_of_statesC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1a517ccaad5cfcaece95baead025656370"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_of_states</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>Get the current number of states in the whole automaton. </p>
@@ -1730,13 +1830,6 @@ If you need to parse the automaton again, use <a class="reference internal" href
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft11is_completeEPK8Alphabet">
-<span id="_CPPv3NK4mata3nft3Nft11is_completeEPK8Alphabet"></span><span id="_CPPv2NK4mata3nft3Nft11is_completeEPK8Alphabet"></span><span id="mata::nft::Nft::is_complete__AlphabetCPC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1a1690de9bbf594d4b2006c5a561e41a42"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_complete</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Test for automaton completeness with regard to an alphabet. </p>
-<p>An automaton is complete if every reachable state has at least one outgoing transition over every symbol. </p>
-</dd></dl>
-
-<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft10is_acyclicEv">
 <span id="_CPPv3NK4mata3nft3Nft10is_acyclicEv"></span><span id="_CPPv2NK4mata3nft3Nft10is_acyclicEv"></span><span id="mata::nft::Nft::is_acyclicC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1a3081a0a932963e92b5e408663ea3980d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_acyclic</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>Is the automaton graph acyclic? </p>
@@ -1942,7 +2035,11 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft13num_of_levelsE">
 <span id="_CPPv3N4mata3nft3Nft13num_of_levelsE"></span><span id="_CPPv2N4mata3nft3Nft13num_of_levelsE"></span><span id="mata::nft::Nft::num_of_levels__s"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a7774bd555c48a436c00bf1b9501c60c2"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_of_levels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft21DEFAULT_NUM_OF_LEVELSE" title="mata::nft::DEFAULT_NUM_OF_LEVELS"><span class="n"><span class="pre">DEFAULT_NUM_OF_LEVELS</span></span></a><span class="p"><span class="pre">}</span></span><br /></dt>
 <dd><p>Number of levels (tracks) the transducer recognizes. </p>
-<p>Each transducer transition will comprise <code class="docutils literal notranslate"><span class="pre">num_of_levels</span></code> of NFA transitions. </p>
+<p>Each transducer transition will comprise <code class="docutils literal notranslate"><span class="pre">num_of_levels</span></code> of NFA transitions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The number of levels has to be at least 1. </p>
+</div>
 </dd></dl>
 
 <dl class="cpp var">
