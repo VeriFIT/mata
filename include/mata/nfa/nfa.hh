@@ -84,6 +84,7 @@
 #include <vector>
 #include <queue>
 #include <optional>
+#include <ranges>
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
