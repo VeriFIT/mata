@@ -832,15 +832,12 @@ public:
      *
      * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
      *  defined, otherwise use @c this->delta.get_used_symbols().
-     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
-     *  alphabet symbols.
      * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
      *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const Alphabet* alphabet = nullptr,
-        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
@@ -856,15 +853,12 @@ public:
      *  to complete multiple automata over the same set of symbols.
      *
      * @param[in] symbols Symbols to compute "missing" symbols from.
-     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
-     *  alphabet symbols.
      * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
      *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const utils::OrdVector<Symbol>& symbols,
-        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
@@ -974,40 +968,43 @@ Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_
 Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-
-#ifdef MATA_NFT_NOT_IMPLEMENTED
-// TODO(nft): Implement for NFTs.
 /**
- * @brief Compute automaton accepting complement of @p aut.
+ * @brief Compute automaton accepting a complement of @p nft.
  *
- * @param[in] aut Automaton whose complement to compute.
+ * @warning This function only supports NFTs without epsilon transitions (length-preserving NFTs).
+ *
+ * @param[in] nft Automaton whose complement to compute.
  * @param[in] alphabet Alphabet used for complementation.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
- * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * - "minimize": (TODO: unimplemented) "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nft complement(const Nft& aut, const Alphabet& alphabet,
+Nft complement(const Nft& nft, const Alphabet& alphabet,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
+ *
+ * @warning This function only supports NFTs without epsilon transitions (length-preserving NFTs).
  *
  * This overloaded version complements over an already created ordered set of @p symbols instead of an alphabet.
  * This is a more efficient solution in case you already have @p symbols precomputed or want to complement multiple
  *  automata over the same set of @c symbols: the function does not need to compute the ordered set of symbols from
  *  the alphabet again (and for each automaton).
  *
- * @param[in] aut Automaton whose complement to compute.
+ * @param[in] nft Automaton whose complement to compute.
  * @param[in] symbols Symbols to complement over.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
- * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * - "minimize": (TODO: unimplemented) "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nft complement(const Nft& aut, const utils::OrdVector<Symbol>& symbols,
+Nft complement(const Nft& nft, const utils::OrdVector<Symbol>& symbols,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+// TODO(nft): Implement for NFTs.
 /**
  * @brief Compute minimal deterministic automaton.
  *
@@ -1264,7 +1261,19 @@ Nft insert_level(const Nft& nft, Level new_level, JumpMode jump_mode = JumpMode:
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
-} // namespace mata::nft.
+/**
+ * @brief Check whether two symbols match.
+ *
+ * Two symbols match if they are equal (`'a' == 'a'`; also `EPSILON == EPSILON`), or if at least one of them is
+ *  @c DONT_CARE and the other is not @c EPSILON.
+ *
+ * @param a First symbol to compare.
+ * @param b Second symbol to compare.
+ * @return @c true if the symbols match, @c false otherwise.
+ */
+bool symbols_match(Symbol a, Symbol b);
+
+}
 
 namespace std {
 std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);

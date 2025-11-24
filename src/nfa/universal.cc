@@ -12,20 +12,11 @@ using namespace mata::utils;
 //TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
 // it is not something needed in practice, so some little overhead is ok
 
-
-/// naive universality check (complementation + emptiness)
 bool mata::nfa::algorithms::is_universal_naive(
-	const Nfa&         aut,
-	const Alphabet&    alphabet,
-	Run*               cex)
-{ // {{{
-	Nfa cmpl = complement(aut, alphabet);
+        const Nfa& aut,
+        const Alphabet& alphabet,
+        Run* cex) { return complement(aut, alphabet).is_lang_empty(cex); }
 
-	return cmpl.is_lang_empty(cex);
-} // is_universal_naive }}}
-
-
-/// universality check using Antichains
 bool mata::nfa::algorithms::is_universal_antichains(
     const Nfa&         aut,
     const Alphabet&    alphabet,

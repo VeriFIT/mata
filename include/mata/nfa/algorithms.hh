@@ -37,11 +37,9 @@ Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
 
 /**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
- *  which were non final in the original automaton.
+ *  which were non-final in the original automaton.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
- * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (brzozowski)
- *  minimization.
  * @return Complemented automaton.
  */
 Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols);
@@ -63,8 +61,7 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
  * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if
  *  you have it).
  * @param[out] cex A potential counterexample word which breaks inclusion
- * @return True if smaller language is included,
- * i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
  */
 bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
 
@@ -75,8 +72,7 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
  * @param[in] bigger Automaton which language should include the smaller one
  * @param[in] alphabet Alphabet of both automata (not needed for antichain algorithm)
  * @param[out] cex A potential counterexample word which breaks inclusion
- * @return True if smaller language is included,
- * i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
  */
 bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 

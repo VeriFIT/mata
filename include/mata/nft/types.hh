@@ -5,9 +5,9 @@
 #ifndef MATA_NFT_TYPES_HH
 #define MATA_NFT_TYPES_HH
 
+#include <concepts>
 #include <optional>
 #include <utility>
-#include <concepts>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
@@ -19,18 +19,23 @@ extern const std::string TYPE_NFT;
 
 using Level = unsigned;
 
-using State = mata::nfa::State;
-using StateSet = mata::nfa::StateSet;
+using State = nfa::State;
+using StateSet = nfa::StateSet;
 
-using Run = mata::nfa::Run;
-using EpsilonClosureOpt = mata::nfa::EpsilonClosureOpt;
+using Run = nfa::Run;
+using EpsilonClosureOpt = nfa::EpsilonClosureOpt;
 
-using StateRenaming = mata::nfa::StateRenaming;
+using StateRenaming = nfa::StateRenaming;
 
+/**
+ * @brief Concept defining an iterable container of states.
+ */
 template<typename States>
-concept MapLevelToStates = std::same_as<States, StateSet>
-                    || std::same_as<States, utils::SparseSet<State>>
-                    || std::same_as<States, std::vector<State>>;
+concept StatesContainerIterable = requires(States states) {
+    { states.begin() } -> std::input_or_output_iterator;
+    { states.end() } -> std::sentinel_for<decltype(states.begin())>;
+    requires std::convertible_to<typename States::value_type, State>;
+};
 
 /**
  * @brief Map of additional parameter name and value pairs.
@@ -130,9 +135,6 @@ public:
      * @param[in] levels Levels to be assigned.
      */
     Levels& operator=(std::vector<Level>&& levels);
-
-    template<class States>
-    std::vector<StateSet> map_levels_to(const States& states) const;
 
     using
         // Member types.
@@ -246,8 +248,12 @@ public:
     /**
      * @brief Get mapping of levels to sets of states from @p states.
      */
-    template<MapLevelToStates States>
-    std::vector<StateSet> map_levels_to(const States& states) const;
+    template<StatesContainerIterable States>
+    std::vector<StateSet> map_levels_to(const States& states) const {
+        std::vector<StateSet> result(num_of_levels);
+        for (const State state : states) { result[(*this)[state]].insert(state); }
+        return result;
+    }
 
     /**
      * @brief Get the next level that should follow after @p level.
@@ -318,13 +324,6 @@ private:
     bool check_levels_in_range_() const { return std::ranges::all_of(*this, [&](const Level level) { return level < num_of_levels; }); }
 };
 
-template<MapLevelToStates States>
-std::vector<StateSet> Levels::map_levels_to(const States& states) const {
-    std::vector<StateSet> result(num_of_levels);
-    for (const State state : states) { result[(*this)[state]].insert(state); }
-    return result;
 }
-
-} // namespace mata::nft.
 
 #endif
