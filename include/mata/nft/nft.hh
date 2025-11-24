@@ -79,24 +79,18 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
-#include <memory>
 #include <limits>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "mata/alphabet.hh"
-#include "mata/parser/parser.hh"
-#include "mata/utils/utils.hh"
-#include "mata/utils/ord-vector.hh"
-#include "mata/parser/inter-aut.hh"
-#include "mata/utils/synchronized-iterator.hh"
-#include "mata/utils/sparse-set.hh"
-#include "types.hh"
 #include "delta.hh"
+#include "types.hh"
+#include "mata/alphabet.hh"
+#include "mata/utils/ord-vector.hh"
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/utils.hh"
 
 #include "mata/nfa/nfa.hh"
 
@@ -131,7 +125,7 @@ public:
      *
      * @param[in] level Level to be counted.
      */
-    size_t count(Level level) const { return static_cast<size_t>(std::count(begin(), end(), level)); }
+    size_t count(const Level level) const { return static_cast<size_t>(std::count(begin(), end(), level)); }
 
     /**
      * @brief Get levels of states in @p states.
@@ -158,12 +152,38 @@ public:
      * "Minimal next" relates to the next target states ("What is the next minimal level to target in a transition?").
      */
     Level get_minimal_next_level_of(const StateSet& states) const;
+
+    /**
+     * @brief Check whether a transition can be made from a state with level @p source_level to a state with level
+     *  @p target_level.
+     *
+     * A transition can be made if the target level is higher than the source level, or if the target level is 0.
+     *
+     * @param[in] source_level Level of the source state.
+     * @param[in] target_level Level of the target state.
+     * @return @c true if the transition can be made, @c false otherwise.
+     */
+    static bool can_follow(Level source_level, Level target_level);
+
+    /**
+     * @brief Check whether a transition can be made from @p source to @p target.
+     *
+     * A transition can be made if the level of @p target is higher than the level of @p source, or if the level of
+     *  @p target is 0.
+     *
+     * @param[in] source Source state.
+     * @param[in] target Target state.
+     * @return @c true if the transition can be made, @c false otherwise.
+     */
+    bool can_follow_for_states(State source, State target) const;
 };
 
 /**
  * @brief A class representing an NFT.
  */
 class Nft: public nfa::Nfa {
+private:
+    using super = nfa::Nfa;
 public:
     /**
      * @brief Vector of levels giving each state a level in range from 0 to @c num_of_levels - 1.
@@ -174,6 +194,8 @@ public:
     /**
      * @brief Number of levels (tracks) the transducer recognizes. Each transducer transition will comprise
      *  @c num_of_levels of NFA transitions.
+     *
+     * @note The number of levels has to be at least 1.
      */
     size_t num_of_levels{ DEFAULT_NUM_OF_LEVELS };
 
@@ -196,6 +218,11 @@ public:
      * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
+     * @param initial_states Initial states of the NFT.
+     * @param final_states Final states of the NFT.
+     * @param levels Levels of the states.
+     * @param num_of_levels Number of levels for the NFT (default: @c DEFAULT_NUM_OF_LEVELS).
+     * @param alphabet Alphabet of the NFT.
      */
     explicit Nft(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
                  utils::SparseSet<State> final_states = {}, Levels levels = {}, const size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
@@ -773,6 +800,51 @@ public:
         JumpMode jump_mode = JumpMode::RepeatSymbol
     );
 
+
+    /**
+     * @brief Make NFT complete in place.
+     *
+     * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
+     *  transitions from given `state`) to `sink_states[level]` where `level == this->levels[state]`.
+     * If @p sink_states contain states that do not belong to the NFT, they are added to it, but only in the case that
+     *  some transition to those states were added.
+     * If NFT does not contain any states, this function does nothing.
+     *
+     * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
+     *  defined, otherwise use @c this->delta.get_used_symbols().
+     * @param[in] sink_states The level-indexed vector of sink states, one per level into which new transitions are
+     *  added. If @c std::nullopt, add new sink states.
+     * @return @c true if a new transition was added to the NFA, @c false otherwise.
+     */
+    bool make_complete(
+        const Alphabet* alphabet = nullptr,
+        const std::optional<std::vector<State>>& sink_states = std::nullopt
+    );
+
+    /**
+     * @brief Make NFT complete in place.
+     *
+     * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
+     *  transitions from given `state`) to `sink_states[level]` where `level == this->levels[state]`.
+     * If @p sink_states contain states that do not belong to the NFT, they are added to it, but only in the case that
+     *  some transition to those states were added.
+     * If NFT does not contain any states, this function does nothing.
+     *
+     * @note This overloaded version is a more efficient version which does not need to compute the set of symbols to
+     *  complete to from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan
+     *  to complete multiple automata over the same set of symbols.
+     *
+     * @param[in] symbols Symbols to compute "missing" symbols from.
+     * @param[in] sink_states The level-indexed vector of sink states, one per level into which new transitions are
+     *  added. If @c std::nullopt, add new sink states.
+     * @return @c true if a new transition was added to the NFA, @c false otherwise.
+     */
+    bool make_complete(
+        const utils::OrdVector<Symbol>& symbols,
+        const std::optional<std::vector<State>>& sink_states = std::nullopt
+    );
+
+    using super::is_complete;
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.

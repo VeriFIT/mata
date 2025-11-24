@@ -484,6 +484,13 @@ public:
     bool is_complete(Alphabet const* alphabet = nullptr) const;
 
     /**
+     * @brief Test for automaton completeness with regard to an alphabet.
+     *
+     * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.
+     */
+    bool is_complete(const utils::OrdVector<Symbol>& symbols) const;
+
+    /**
      * @brief Is the automaton graph acyclic? Used for checking language finiteness.
      *
      * @return true <-> Automaton graph is acyclic.
