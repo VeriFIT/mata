@@ -1,0 +1,6 @@
+tools:
+  cppcheck:
+    enabled: true
+    patterns_to_ignore:
+      - missingInclude
+      - missingIncludeSystem
