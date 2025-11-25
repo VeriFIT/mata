@@ -960,24 +960,57 @@ TEST_CASE("mata::nft::make_complete()") {
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
     nft.alphabet = &alphabet;
     result.alphabet = &alphabet;
+    auto alphabet_symbols = [&]{ return alphabet.get_alphabet_symbols(); };
+    OrdVector<Symbol> epsilons{};
+    auto alphabet_symbols_with_epsilons = [&] {
+        OrdVector<Symbol> symbols{ alphabet_symbols() };
+        symbols.insert(epsilons);
+        return symbols;
+    };
+    OrdVector<Symbol> symbols{ alphabet_symbols() };
+
+    std::optional<std::vector<State>> sinks{ std::nullopt };
 
     const auto CHECK_SHARED = [&]{
         CHECK(are_equivalent(nft, result));
         for (State source{ 0 }; source < result.num_of_states(); ++source) {
-            for (const auto symbol : alphabet.get_alphabet_symbols()) {
+            for (const auto symbol : symbols) {
                 const auto& state_post{ result.delta[source] };
                 auto state_post_it{ state_post.find(symbol) };
                 REQUIRE(state_post_it != state_post.end());
-                for (const auto target : state_post_it->targets) { CHECK(result.levels.can_follow_for_states(source, target)); }
+                for (const auto target : state_post_it->targets) {
+                    CHECK(result.levels.can_follow_for_states(source, target));
+                }
             }
         }
-        CHECK(result.is_complete());
+        CHECK(result.is_complete(symbols));
         CHECK(result.levels.num_of_levels == nft.levels.num_of_levels);
+
+
+        // Check sinks if any were provided.
+        // CHECK(not result.make_complete(&alphabet, epsilons_to_check, std::vector<State>{ sinks }));
+        for (auto sinks_val{ sinks.value_or(std::vector<State>{}) }; const State sink : sinks_val) {
+            for (const auto symbol : alphabet_symbols()) {
+                CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
+            }
+            for (const auto symbol : epsilons) {
+                CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
+            }
+        }
+        // auto CHECK_SECTION = [&](const OrdVector<Symbol>& epsilons_to_check = {}) {
     };
 
     SECTION("empty automaton, empty alphabet") {
         alphabet.clear();
-        nft.make_complete(&alphabet);
+
+        result = nft;
+        result.make_complete(&alphabet, epsilons, sinks);
+        CHECK_SHARED();
+
+        result = nft;
+        epsilons = { EPSILON };
+        result.make_complete(&alphabet, epsilons, sinks);
+        symbols = alphabet_symbols_with_epsilons();
         CHECK_SHARED();
     }
 
@@ -987,8 +1020,15 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.final = { 2 };
         nft.delta.add(0, 'a', 1);
         nft.delta.add(1, 'b', 2);
+
         result = nft;
         result.make_complete(&alphabet);
+        CHECK_SHARED();
+
+        result = nft;
+        epsilons = { EPSILON };
+        result.make_complete(&alphabet, epsilons);
+        symbols = alphabet_symbols_with_epsilons();
         CHECK_SHARED();
     }
 
@@ -1001,8 +1041,15 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(1, 'b', 2);
         nft.delta.add(2, 'a', 3);
         nft.delta.add(3, 'b', 4);
+
         result = nft;
         result.make_complete(&alphabet);
+        CHECK_SHARED();
+
+        result = nft;
+        epsilons = { EPSILON };
+        result.make_complete(&alphabet, epsilons);
+        symbols = alphabet_symbols_with_epsilons();
         CHECK_SHARED();
     }
 
@@ -1015,8 +1062,15 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(2, 'a', 3);
         nft.delta.add(3, 'b', 4);
         nft.delta.add(4, 'a', 5);
+
         result = nft;
         result.make_complete(&alphabet);
+        CHECK_SHARED();
+
+        result = nft;
+        epsilons = { EPSILON };
+        result.make_complete(&alphabet, epsilons);
+        symbols = alphabet_symbols_with_epsilons();
         CHECK_SHARED();
     }
 
@@ -1032,45 +1086,42 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(2, 'a', 3);
         nft.delta.add(3, 'b', 4);
         nft.delta.add(4, 'a', 5);
+
         result = nft;
         result.make_complete(&alphabet);
+        CHECK_SHARED();
+
+        result = nft;
+        epsilons = { EPSILON };
+        result.make_complete(&alphabet, epsilons);
+        symbols = alphabet_symbols_with_epsilons();
         CHECK_SHARED();
     }
 
     SECTION("with sinks") {
-         nft.initial = { 0 };
-         nft.final = { 4 };
-         nft.levels = { 0, 1, 2, 0, 1, 0, 0, 1, 2 };
-         nft.delta.add(0, 'a', 1);
-         nft.delta.add(0, 'b', 0);
-         nft.delta.add(0, 'a', 2);
-         nft.delta.add(0, 'b', 3);
-         nft.delta.add(1, 'b', 2);
-         nft.delta.add(1, 'c', 8);
-         nft.delta.add(2, 'a', 3);
-         nft.delta.add(3, 'b', 4);
-         nft.delta.add(4, 'a', 5);
-         result = nft;
-         const std::vector<State> sinks{ 6, 7, 8 };
-         result.make_complete(&alphabet, sinks);
-         CHECK(not result.make_complete(&alphabet, std::vector<State>{ sinks }));
-         for (const State sink : sinks) {
-             for (const auto symbol : alphabet.get_alphabet_symbols()) {
-                 CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks.size()) + *sinks.begin()));
-             }
-         }
-     }
+        nft.initial = { 0 };
+        nft.final = { 4 };
+        nft.levels = { 0, 1, 2, 0, 1, 0, 0, 1, 2 };
+        nft.delta.add(0, 'a', 1);
+        nft.delta.add(0, 'b', 0);
+        nft.delta.add(0, 'a', 2);
+        nft.delta.add(0, 'b', 3);
+        nft.delta.add(1, 'b', 2);
+        nft.delta.add(1, 'c', 8);
+        nft.delta.add(2, 'a', 3);
+        nft.delta.add(3, 'b', 4);
+        nft.delta.add(4, 'a', 5);
 
-    CHECK(are_equivalent(nft, result));
-    for (State source{ 0 }; source < result.num_of_states(); ++source) {
-        for (const auto symbol : alphabet.get_alphabet_symbols()) {
-            const auto& state_post{ result.delta[source] };
-            auto state_post_it{ state_post.find(symbol) };
-            REQUIRE(state_post_it != state_post.end());
-            for (const auto target : state_post_it->targets) {
-                REQUIRE(result.levels.can_follow_for_states(source, target));
-            }
-        }
+        sinks = { 6, 7, 8 };
+
+        result = nft;
+        result.make_complete(&alphabet, epsilons, sinks);
+        CHECK_SHARED();
+
+        result = nft;
+        epsilons = { EPSILON };
+        result.make_complete(&alphabet, epsilons, sinks);
+        symbols = alphabet_symbols_with_epsilons();
         CHECK_SHARED();
     }
 }

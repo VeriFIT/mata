@@ -763,12 +763,15 @@ public:
      *
      * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
      *  defined, otherwise use @c this->delta.get_used_symbols().
+     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
+     *  alphabet symbols.
      * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
      *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const Alphabet* alphabet = nullptr,
+        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
@@ -784,12 +787,15 @@ public:
      *  to complete multiple automata over the same set of symbols.
      *
      * @param[in] symbols Symbols to compute "missing" symbols from.
+     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
+     *  alphabet symbols.
      * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
      *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const utils::OrdVector<Symbol>& symbols,
+        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 

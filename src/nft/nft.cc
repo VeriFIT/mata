@@ -703,12 +703,19 @@ Nft Nft::apply(const Word& word, const Level level_to_apply_on, const bool proje
     return apply(nfa::builder::create_single_word_nfa(word), level_to_apply_on, project_out_applied_level, jump_mode);
 }
 
-bool Nft::make_complete(const Alphabet* const alphabet, const std::optional<std::vector<State>>& sink_states) {
-    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
+bool Nft::make_complete(
+        const Alphabet* const alphabet,
+        const OrdVector<Symbol>& epsilons,
+        const std::optional<std::vector<State>>& sink_states) {
+    return make_complete(get_symbols_to_work_with(*this, alphabet), epsilons, sink_states);
 }
 
-bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<std::vector<State>>& sink_states) {
+bool Nft::make_complete(
+        const OrdVector<Symbol>& symbols,
+        const OrdVector<Symbol>& epsilons,
+        const std::optional<std::vector<State>>& sink_states) {
     const size_t num_of_states_orig{ this->num_of_states() };
+    if (num_of_states_orig == 0) { return false; }
 
     const std::vector<State> sinks{ [&]{
         auto sinks_val{ sink_states.value_or(std::vector<State>{}) };
@@ -745,19 +752,28 @@ bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<st
     for (State state{ 0 }; state < num_of_states_orig; ++state) {
         used_symbols.clear();
         for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
-        for (const auto unused_symbols{ symbols.difference(used_symbols) }; const Symbol symbol : unused_symbols) {
-            delta.add(state, symbol, sinks[next_level(levels[state])]);
-            transition_added = true;
-        }
+
+        auto add_transitions_to_sinks = [&](const auto& symbols_to_add) {
+            for (const Symbol symbol : symbols_to_add) {
+                delta.add(state, symbol, sinks[next_level(levels[state])]);
+                transition_added = true;
+            }
+        };
+        add_transitions_to_sinks(symbols.difference(used_symbols));
+        add_transitions_to_sinks(epsilons.difference(used_symbols));
     }
 
     // Add loops on sink states (from sink to a sink of the next level).
     if (transition_added && num_of_states_orig < this->num_of_states()) {
-        for (const Symbol symbol : symbols) {
+        auto add_transitions_between_sinks = [&](const auto& symbols_to_add) {
             for (Level level{ 0 }; level < levels.num_of_levels; ++level) {
-                delta.add(sinks[level], symbol, sinks[next_level(level)]);
+                for (const Symbol symbol : symbols_to_add) {
+                    delta.add(sinks[level], symbol, sinks[next_level(level)]);
+                }
             }
-        }
+        };
+        add_transitions_between_sinks(symbols);
+        add_transitions_between_sinks(epsilons);
     }
 
     return transition_added;
