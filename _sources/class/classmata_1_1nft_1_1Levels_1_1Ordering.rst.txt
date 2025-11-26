@@ -1,0 +1,5 @@
+Class mata::nft::Levels::Ordering
+=================================
+
+.. doxygenclass:: mata::nft::Levels::Ordering
+   :members:
