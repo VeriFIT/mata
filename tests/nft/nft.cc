@@ -3629,86 +3629,127 @@ TEST_CASE("mata::nft::get_useful_states_tarjan") {
     }
 }
 
-TEST_CASE("mata::nft::Nft::get_words") {
+TEST_CASE("mata::nft::Nft::get_words()") {
+    Nft nft {Nft::with_levels(3)};
+    std::set<Word> words_expected{};
+
+    const auto CHECK_SHARED = [&]() {
+        if (words_expected.empty()) {
+            CHECK(nft.get_words().empty());
+            CHECK(nft.get_words(0).empty());
+            CHECK(nft.get_words(5).empty());
+            return;
+        }
+
+        const size_t word_length_max = std::ranges::max_element(
+                words_expected,
+                [](const Word& a, const Word& b) { return a.size() < b.size(); }
+                )->size();
+        const auto words_result{ nft.get_words(word_length_max) };
+        CHECK(words_result.size() == words_expected.size());
+        for (const Word& word: words_expected) {
+            CHECK(words_result.contains(word));
+        }
+    };
+
     SECTION("empty") {
-        Nft aut;
-        CHECK(aut.get_words(0).empty());
-        CHECK(aut.get_words(1).empty());
-        CHECK(aut.get_words(5).empty());
+        CHECK(nft.get_words().empty());
+        CHECK(nft.get_words(0).empty());
+        CHECK(nft.get_words(5).empty());
     }
 
     SECTION("empty word") {
-        Nft aut(1, { 0 }, { 0 });
-        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
-        CHECK(aut.get_words(1) == std::set<mata::Word>{{}});
-        CHECK(aut.get_words(5) == std::set<mata::Word>{{}});
+        nft = Nft{1, {0}, {0} };
+        words_expected = { {} };
+        CHECK_SHARED();
     }
 
     SECTION("noodle - one final") {
-        Nft aut(3, { 0 }, { 2 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 2);
-        CHECK(aut.get_words(0).empty());
-        CHECK(aut.get_words(1).empty());
-        CHECK(aut.get_words(2) == std::set<mata::Word>{{0, 1}});
-        CHECK(aut.get_words(3) == std::set<mata::Word>{{0, 1}});
-        CHECK(aut.get_words(5) == std::set<mata::Word>{{0, 1}});
+        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 0, 4);
+        nft.delta.add(4, 1, 5);
+        nft.delta.add(5, 2, 6);
+
+        words_expected = { { 0, 1, 2, 0, 1, 2 } };
+        CHECK_SHARED();
     }
 
-    SECTION("noodle - two finals") {
-        Nft aut(3, { 0 }, { 1, 2 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 2);
-        CHECK(aut.get_words(0).empty());
-        CHECK(aut.get_words(1) == std::set<mata::Word>{{0}});
-        CHECK(aut.get_words(2) == std::set<mata::Word>{{0}, {0, 1}});
-        CHECK(aut.get_words(3) == std::set<mata::Word>{{0}, {0, 1}});
-        CHECK(aut.get_words(5) == std::set<mata::Word>{{0}, {0, 1}});
+    SECTION("noodle - two final") {
+        nft = Nft{ 7, { 0 }, { 3, 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 0, 4);
+        nft.delta.add(4, 1, 5);
+        nft.delta.add(5, 2, 6);
+
+        words_expected = { { 0, 1, 2 }, { 0, 1, 2, 0, 1, 2 } };
+        CHECK_SHARED();
     }
 
-    SECTION("noodle - three finals") {
-        Nft aut(3, { 0 }, { 0, 1, 2 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 2);
-        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
-        CHECK(aut.get_words(1) == std::set<mata::Word>{{}, {0}});
-        CHECK(aut.get_words(2) == std::set<mata::Word>{{}, {0}, {0, 1}});
-        CHECK(aut.get_words(3) == std::set<mata::Word>{{}, {0}, {0, 1}});
-        CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {0, 1}});
+    SECTION("noodle - one final with multiple paths") {
+        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(2, 3, 3);
+        nft.delta.add(3, 0, 4);
+        nft.delta.add(4, 1, 5);
+        nft.delta.add(2, 4, 3);
+        nft.delta.add(5, 2, 6);
+
+        words_expected = { { 0, 1, 2, 0, 1, 2 }, { 0, 1, 3, 0, 1, 2 }, { 0, 1, 4, 0, 1, 2 } };
+        CHECK_SHARED();
     }
 
-    SECTION("more complex") {
-        Nft aut(6, { 0, 1 }, { 1, 3, 4, 5 });
-        aut.delta.add(0, 0, 3);
-        aut.delta.add(3, 1, 4);
-        aut.delta.add(0, 2, 2);
-        aut.delta.add(3, 3, 2);
-        aut.delta.add(1, 4, 2);
-        aut.delta.add(2, 5, 5);
-        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
-        CHECK(aut.get_words(1) == std::set<mata::Word>{{}, {0}});
-        CHECK(aut.get_words(2) == std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}});
-        CHECK(aut.get_words(3) == std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
-        CHECK(aut.get_words(4) == std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
-        CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+    SECTION("noodle - one final with multiple paths with epsilons") {
+        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, EPSILON, 3);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 0, 4);
+        nft.delta.add(4, 1, 5);
+        nft.delta.add(5, 3, 6);
+        nft.delta.add(5, EPSILON, 6);
+
+        words_expected = {
+            { 0, 1, EPSILON, 0, 1, EPSILON },
+            { 0, 1, 2, 0, 1, EPSILON },
+            { 0, 1, EPSILON, 0, 1, 3 },
+            { 0, 1, 2, 0, 1, 3 },
+        };
+        CHECK_SHARED();
     }
 
-    SECTION("cycle") {
-        Nft aut(6, { 0, 1 }, { 0, 1 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 0);
-        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
-        CHECK(aut.get_words(1) == std::set<mata::Word>{{}, {0}, {1}});
-        CHECK(aut.get_words(2) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}});
-        CHECK(aut.get_words(3) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}});
-        CHECK(
-            aut.get_words(4) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}, {0, 1, 0, 1},
-            {1, 0, 1, 0}}
-        );
-        CHECK(
-            aut.get_words(5) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}, {0, 1, 0, 1},
-            {1, 0, 1, 0}, {0, 1, 0, 1, 0}, {1, 0, 1, 0, 1}}
-        );
+    SECTION("Loop") {
+        nft = Nft{ 4, { 0 }, { 3 }, { 3, { 0, 1, 2, 0 } } };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 0, 1);
+
+        words_expected = { { 0, 1, 2 }, { 0, 1, 2, 0, 1, 2}, { 0, 1, 2, 0, 1, 2, 0, 1, 2} };
+        CHECK_SHARED();
+    }
+
+    SECTION("Jumps") {
+        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, EPSILON, 3);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 3, 6);
+        nft.delta.add(3, 0, 4);
+        nft.delta.add(4, 1, 5);
+        nft.delta.add(5, 4, 6);
+
+        words_expected = { { 0, EPSILON, EPSILON, 3, 3, 3 }, { 0, 1, 2, 3, 3, 3 },
+                           { 0, EPSILON, EPSILON, 0, 1, 4 }, { 0, 1, 2, 0, 1, 4 } };
+        CHECK_SHARED();
     }
 }
 

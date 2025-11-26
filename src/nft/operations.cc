@@ -1085,11 +1085,11 @@ Run mata::nft::encode_word(const Alphabet* alphabet, const std::vector<std::stri
     return mata::nfa::encode_word(alphabet, input);
 }
 
-std::set<mata::Word> mata::nft::Nft::get_words(const size_t max_length) const {
-    std::set<mata::Word> result;
+std::set<Word> Nft::get_words(const size_t max_length, const JumpMode jump_mode) const {
+    std::set<Word> result;
 
     // contains a pair: a state s and the word with which we got to the state s
-    std::vector<std::pair<State, mata::Word>> worklist;
+    std::vector<std::pair<State, Word>> worklist;
     // initializing worklist
     for (State init_state : initial) {
         worklist.push_back({ init_state, {} });
@@ -1097,18 +1097,39 @@ std::set<mata::Word> mata::nft::Nft::get_words(const size_t max_length) const {
     }
 
     // will be used during the loop
-    std::vector<std::pair<State, mata::Word>> new_worklist;
+    std::vector<std::pair<State, Word>> new_worklist;
 
-    unsigned cur_length = 0;
+    size_t cur_length = 0;
     while (!worklist.empty() && cur_length < max_length) {
         new_worklist.clear();
-        for (const auto& [state, word] : worklist) {
-            for (const SymbolPost& sp : delta[state]) {
-                mata::Word new_word = word;
-                new_word.push_back(sp.symbol);
-                for (State s_to : sp.targets) {
-                    new_worklist.emplace_back(s_to, new_word);
-                    if (final.contains(s_to)) { result.insert(new_word); }
+        for (const auto& [source, word] : worklist) {
+            const auto level_next{ levels.next_level_after(levels[source]) };
+            for (const SymbolPost& symbol_post : delta[source]) {
+                auto targets{ symbol_post.targets };
+                auto map_level_targets{ levels.map_levels_to(targets) };
+                for (size_t target_level{ 0 }; target_level < map_level_targets.size(); ++target_level) {
+                    const auto& targets_for_level{ map_level_targets[target_level] };
+                    if (targets_for_level.empty()) { continue; }
+                    Word new_word{ word };
+                    new_word.push_back(symbol_post.symbol);
+                    if (target_level != level_next) {
+                        for (Level level{ level_next }; level != target_level; level = levels.next_level_after(level)) {
+                            switch (jump_mode) {
+                                case JumpMode::AppendDontCares:
+                                    new_word.push_back(DONT_CARE);
+                                    break;
+                                case JumpMode::RepeatSymbol:
+                                    new_word.push_back(symbol_post.symbol);
+                                    break;
+                                default:
+                                    throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
+                            }
+                        }
+                    }
+                    for (auto target : targets_for_level) {
+                        new_worklist.emplace_back(target, new_word);
+                        if (final.contains(target)) { result.insert(new_word); }
+                    }
                 }
             }
         }

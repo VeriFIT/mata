@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <utility>
+#include <concepts>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
@@ -25,6 +26,11 @@ using Run = mata::nfa::Run;
 using EpsilonClosureOpt = mata::nfa::EpsilonClosureOpt;
 
 using StateRenaming = mata::nfa::StateRenaming;
+
+template<typename States>
+concept MapLevelToStates = std::same_as<States, StateSet>
+                    || std::same_as<States, utils::SparseSet<State>>
+                    || std::same_as<States, std::vector<State>>;
 
 /**
  * @brief Map of additional parameter name and value pairs.
@@ -124,6 +130,9 @@ public:
      * @param[in] levels Levels to be assigned.
      */
     Levels& operator=(std::vector<Level>&& levels);
+
+    template<class States>
+    std::vector<StateSet> map_levels_to(const States& states) const;
 
     using
         // Member types.
@@ -227,10 +236,25 @@ public:
      * @brief Get levels of states in @p states.
      */
     std::vector<Level> get_levels_of(const utils::SparseSet<State>& states) const;
+
     /**
      * @brief Get levels of states in @p states.
      */
     std::vector<Level> get_levels_of(const StateSet& states) const;
+
+
+    /**
+     * @brief Get mapping of levels to sets of states from @p states.
+     */
+    template<MapLevelToStates States>
+    std::vector<StateSet> map_levels_to(const States& states) const;
+
+    /**
+     * @brief Get the next level that should follow after @p level.
+     * @param level The current level.
+     * @return The next level.
+     */
+    Level next_level_after(const Level level) const { return (level + 1) % static_cast<Level>(num_of_levels); }
 
     /**
      * @brief Get the minimal level for the states in @p states.
@@ -293,6 +317,13 @@ public:
 private:
     bool check_levels_in_range_() const { return std::ranges::all_of(*this, [&](const Level level) { return level < num_of_levels; }); }
 };
+
+template<MapLevelToStates States>
+std::vector<StateSet> Levels::map_levels_to(const States& states) const {
+    std::vector<StateSet> result(num_of_levels);
+    for (const State state : states) { result[(*this)[state]].insert(state); }
+    return result;
+}
 
 } // namespace mata::nft.
 

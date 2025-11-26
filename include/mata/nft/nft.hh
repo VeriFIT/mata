@@ -679,9 +679,10 @@ public:
      * you can get all words by calling
      *      aut.get_words(aut.num_of_states())
      * @param max_length Maximum length of words to be returned. Default: "no limit"; will infinitely loop if the language is infinite.
+     * @param jump_mode Specifies how to interpret the jump transitions.
      * @return Set of all words in the language of the automaton whose length is <= @p max_length.
      */
-    std::set<Word> get_words(size_t max_length = std::numeric_limits<size_t>::max()) const;
+    std::set<Word> get_words(size_t max_length = std::numeric_limits<size_t>::max(), JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Apply @p nfa to @c this.
@@ -770,7 +771,7 @@ public:
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
-     *  transitions from given `state`) to `sink_states[next_level(level)]` where `level == this->levels[state]`.
+     *  transitions from given `state`) to `sink_states[next_level_after(level)]` where `level == this->levels[state]`.
      * If NFT does not contain any states, this function does nothing.
      *
      * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
@@ -791,7 +792,7 @@ public:
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
-     *  transitions from given `state`) to `sink_states[next_level(level)]` where `level == this->levels[state]`.
+     *  transitions from given `state`) to `sink_states[next_level_after(level)]` where `level == this->levels[state]`.
      * If NFT does not contain any states, this function does nothing.
      *
      * @note This overloaded version is a more efficient version which does not need to compute the set of symbols to
