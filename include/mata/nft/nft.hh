@@ -96,88 +96,6 @@
 
 namespace mata::nft {
 
-class Levels: public std::vector<Level> {
-    using super = std::vector<Level>;
-public:
-    Levels& set(State state, Level level = DEFAULT_LEVEL);
-    using super::vector;
-    using super::operator=;
-    Levels(const std::vector<Level>& levels): super{ levels } {}
-    Levels(std::vector<Level>&& levels): super{ std::move(levels) } {}
-    Levels& operator=(const std::vector<Level>& levels) {
-        if (this != &levels) { super::operator=(levels); }
-        return *this;
-    }
-    Levels& operator=(std::vector<Level>&& levels) {
-        if (this != &levels) { super::operator=(std::move(levels)); }
-        return *this;
-    }
-
-    /**
-     * @brief Append @p levels_vector to the end of @c this.
-     *
-     * @param[in] levels_vector Vector of levels to be appended.
-     */
-    void append(const Levels& levels_vector) { for (const Level& level: levels_vector) { push_back(level); } }
-
-    /**
-     * @brief Count the number of occurrences of a level in @c this.
-     *
-     * @param[in] level Level to be counted.
-     */
-    size_t count(const Level level) const { return static_cast<size_t>(std::count(begin(), end(), level)); }
-
-    /**
-     * @brief Get levels of states in @p states.
-     */
-    std::vector<Level> get_levels_of(const utils::SparseSet<State>& states) const;
-    /**
-     * @brief Get levels of states in @p states.
-     */
-    std::vector<Level> get_levels_of(const StateSet& states) const;
-
-    /**
-     * @brief Get the minimal level for the states in @p states.
-     *
-     * "Minimal level" is defined as the level with the lowest numerical value, i.e., `0 < 1 < 2 < ... < num_of_levels-1`.
-     * "Minimal" often relates to the current states ("What is the current state with minimal level?")
-     */
-    Level get_minimal_level_of(const StateSet& states, LevelsOrdering::Compare levels_ordering = LevelsOrdering::Minimal) const;
-
-    /**
-     * @brief Get the minimal next level for the states in @p states.
-     *
-     * "Minimal next level" is defined as the minimal level in the next transition (that may follow another level),
-     *  i.e., `1 < 2 < ... < num_of_levels-1 < 0`.
-     * "Minimal next" relates to the next target states ("What is the next minimal level to target in a transition?").
-     */
-    Level get_minimal_next_level_of(const StateSet& states) const;
-
-    /**
-     * @brief Check whether a transition can be made from a state with level @p source_level to a state with level
-     *  @p target_level.
-     *
-     * A transition can be made if the target level is higher than the source level, or if the target level is 0.
-     *
-     * @param[in] source_level Level of the source state.
-     * @param[in] target_level Level of the target state.
-     * @return @c true if the transition can be made, @c false otherwise.
-     */
-    static bool can_follow(Level source_level, Level target_level);
-
-    /**
-     * @brief Check whether a transition can be made from @p source to @p target.
-     *
-     * A transition can be made if the level of @p target is higher than the level of @p source, or if the level of
-     *  @p target is 0.
-     *
-     * @param[in] source Source state.
-     * @param[in] target Target state.
-     * @return @c true if the transition can be made, @c false otherwise.
-     */
-    bool can_follow_for_states(State source, State target) const;
-};
-
 /**
  * @brief A class representing an NFT.
  */
@@ -186,18 +104,13 @@ private:
     using super = nfa::Nfa;
 public:
     /**
-     * @brief Vector of levels giving each state a level in range from 0 to @c num_of_levels - 1.
+     * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
      *
      * For state `q`, `levels[q]` gives the state `q` a level.
+     *
+     * Also holds the number of levels in the NFT in @c levels.num_of_levels.
      */
     Levels levels{};
-    /**
-     * @brief Number of levels (tracks) the transducer recognizes. Each transducer transition will comprise
-     *  @c num_of_levels of NFA transitions.
-     *
-     * @note The number of levels has to be at least 1.
-     */
-    size_t num_of_levels{ DEFAULT_NUM_OF_LEVELS };
 
     /// Key value store for additional attributes for the NFT. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -208,12 +121,13 @@ public:
     //  dictionary in the attributes.
 
 public:
-    explicit Nft(Delta delta = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Levels levels = {}, const size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
-                 Alphabet* alphabet = nullptr)
-        : Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet), num_of_levels(num_of_levels) {
-        this->levels = levels.empty() ? Levels(num_of_states(), DEFAULT_LEVEL) : std::move(levels);
-    }
+    explicit Nft(
+            Delta delta = {}, utils::SparseSet<State> initial_states = {},
+            utils::SparseSet<State> final_states = {}, Levels levels = {},
+            Alphabet* alphabet = nullptr)
+        : Nfa{ std::move(delta), std::move(initial_states), std::move(final_states), alphabet },
+          levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states(), DEFAULT_LEVEL } : std::move(levels) } {}
+
     /**
      * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
      *
@@ -221,24 +135,36 @@ public:
      * @param initial_states Initial states of the NFT.
      * @param final_states Final states of the NFT.
      * @param levels Levels of the states.
-     * @param num_of_levels Number of levels for the NFT (default: @c DEFAULT_NUM_OF_LEVELS).
      * @param alphabet Alphabet of the NFT.
      */
     explicit Nft(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Levels levels = {}, const size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
+                 utils::SparseSet<State> final_states = {}, Levels levels = {},
                  Alphabet* alphabet = nullptr)
-        : Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet),
-          num_of_levels(num_of_levels) {
-        this->levels = levels.empty() ? Levels(num_of_states, DEFAULT_LEVEL) : std::move(levels);
+        : Nfa{ num_of_states, std::move(initial_states), std::move(final_states), alphabet },
+          levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states, DEFAULT_LEVEL } : std::move(levels) } {}
+
+    static Nft with_levels(
+            Levels levels, const size_t num_of_states = 0, utils::SparseSet<State> initial_states = {},
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), alphabet };
     }
 
-    static Nft with_levels(const size_t num_of_levels, const size_t num_of_states = 0, Levels levels = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
-        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), num_of_levels, alphabet };
+    static Nft with_levels(
+            Levels levels, Delta delta, utils::SparseSet<State> initial_states = {},
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), alphabet };
     }
-    static Nft with_levels(const size_t num_of_levels, Delta delta, Levels levels = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
-        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), num_of_levels, alphabet };
+
+    static Nft with_levels(
+            const size_t num_of_levels, const size_t num_of_states = 0, utils::SparseSet<State> initial_states = {},
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabet };
+    }
+
+    static Nft with_levels(
+            const size_t num_of_levels, Delta delta, utils::SparseSet<State> initial_states = {},
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabet };
     }
 
     /**
@@ -247,13 +173,13 @@ public:
     Nft(const Nft& other) = default;
 
     Nft(Nft&& other) noexcept
-        : levels{ std::move(other.levels) }, num_of_levels{ other.num_of_levels } {
-            delta = std::move(other.delta);
-            initial = std::move(other.initial);
-            final = std::move(other.final);
-            attributes = std::move(other.attributes);
-            alphabet = other.alphabet;
-            other.alphabet = nullptr;
+        : levels{ std::move(other.levels) } {
+          delta = std::move(other.delta);
+          initial = std::move(other.initial);
+          final = std::move(other.final);
+          attributes = std::move(other.attributes);
+          alphabet = other.alphabet;
+          other.alphabet = nullptr;
     }
 
     Nft& operator=(const Nft& other) = default;
@@ -270,7 +196,8 @@ public:
      * @param num_of_levels Number of levels for the NFT. (default: 1)
      * @param default_level Default level for the states. (default: 0)
      */
-    explicit Nft(const mata::nfa::Nfa& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(other), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
+    explicit Nft(const mata::nfa::Nfa& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL)
+        : mata::nfa::Nfa(other), levels{ num_of_levels, num_of_states(), default_level } {}
 
     /**
      * @brief Construct a new NFT with @p num_of_levels levels from NFA.
@@ -283,9 +210,35 @@ public:
      * @param num_of_levels Number of levels for the NFT. (default: 1)
      * @param default_level Default level for the states. (default: 0)
      */
-    explicit Nft(mata::nfa::Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), default_level), num_of_levels(num_of_levels) {}
-    Nft& operator=(const mata::nfa::Nfa& other) noexcept;
-    Nft& operator=(mata::nfa::Nfa&& other) noexcept;
+    explicit Nft(Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL)
+        : Nfa(std::move(other)), levels{ num_of_levels, num_of_states(), default_level } {}
+
+    /**
+     * @brief Construct a new NFT with @p num_of_levels levels from NFA.
+     * All states levels are set to the @p default_level. The transition function
+     * remains the same as in the NFA.
+     *
+     * Note: Constructor functions with more options are available in mata::nft::builder.
+     *
+     * @param other NFA to be converted to NFT.
+     * @param levels Levels for the states of the NFA @c other.
+     */
+    explicit Nft(const Nfa& other, Levels levels): Nfa(other), levels{ std::move(levels) } {}
+
+    /**
+     * @brief Construct a new NFT with @p num_of_levels levels from NFA.
+     * All states levels are set to the @p default_level. The transition function
+     * remains the same as in the NFA.
+     *
+     * Note: Constructor functions with more options are available in mata::nft::builder.
+     *
+     * @param other NFA to be converted to NFT.
+     * @param levels Levels for the states of the NFA @c other.
+     */
+    explicit Nft(Nfa&& other, Levels levels): Nfa{ std::move(other) }, levels{ std::move(levels) } {}
+
+    Nft& operator=(const Nfa& other) noexcept;
+    Nft& operator=(Nfa&& other) noexcept;
 
     /**
      * Add a new (fresh) state to the automaton.
@@ -805,19 +758,20 @@ public:
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
-     *  transitions from given `state`) to `sink_states[level]` where `level == this->levels[state]`.
-     * If @p sink_states contain states that do not belong to the NFT, they are added to it, but only in the case that
-     *  some transition to those states were added.
+     *  transitions from given `state`) to `sink_states[next_level(level)]` where `level == this->levels[state]`.
      * If NFT does not contain any states, this function does nothing.
      *
      * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
      *  defined, otherwise use @c this->delta.get_used_symbols().
-     * @param[in] sink_states The level-indexed vector of sink states, one per level into which new transitions are
-     *  added. If @c std::nullopt, add new sink states.
+     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
+     *  alphabet symbols.
+     * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
+     *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const Alphabet* alphabet = nullptr,
+        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
@@ -825,9 +779,7 @@ public:
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
-     *  transitions from given `state`) to `sink_states[level]` where `level == this->levels[state]`.
-     * If @p sink_states contain states that do not belong to the NFT, they are added to it, but only in the case that
-     *  some transition to those states were added.
+     *  transitions from given `state`) to `sink_states[next_level(level)]` where `level == this->levels[state]`.
      * If NFT does not contain any states, this function does nothing.
      *
      * @note This overloaded version is a more efficient version which does not need to compute the set of symbols to
@@ -835,16 +787,20 @@ public:
      *  to complete multiple automata over the same set of symbols.
      *
      * @param[in] symbols Symbols to compute "missing" symbols from.
-     * @param[in] sink_states The level-indexed vector of sink states, one per level into which new transitions are
-     *  added. If @c std::nullopt, add new sink states.
+     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
+     *  alphabet symbols.
+     * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
+     *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const utils::OrdVector<Symbol>& symbols,
+        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
     using super::is_complete;
+    using super::is_deterministic;
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.
@@ -899,7 +855,7 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
  * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
  * levels are projected out from the resulting NFT.
  *
- * Vectors of synchronization levels have to be non-empty and of the the same size.
+ * Vectors of synchronization levels have to be non-empty and of the same size.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.

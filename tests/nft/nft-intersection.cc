@@ -175,11 +175,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
     Nft expected;
     SECTION("Intersection of transducers with epsilon transitions.") {
         SECTION("The intersection results in an empty language.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            a = Nft::with_levels({2, { 0, 1, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, EPSILON, 1);
             a.delta.add(1, 'b', 2);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            b = Nft::with_levels({2, { 0, 1, 0 } }, 3, { 0 }, { 2 });
             b.delta.add(0, 'b', 1);
             b.delta.add(1, EPSILON, 2);
 
@@ -191,21 +191,21 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         }
 
         SECTION("Epsilon is treated as an alphabet symbol.") {
-            a = Nft(5, { 0 }, { 3, 4 }, { 0, 1, 1, 0, 0 }, 2);
+            a = Nft::with_levels({2, { 0, 1, 1, 0, 0 } }, 5, { 0 }, { 3, 4 });
             a.delta.add(0, EPSILON, 1);
             a.delta.add(0, 'b', 2);
             a.delta.add(1, 'a', 3);
             a.delta.add(2, 'a', 4);
             a.delta.add(4, EPSILON, 4);
 
-            b = Nft(4, { 0 }, { 3 }, { 0, 1, 1, 0 }, 2);
+            b = Nft::with_levels({2, { 0, 1, 1, 0 } }, 4, { 0 }, { 3 });
             b.delta.add(0, EPSILON, 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(1, 'a', 3);
             b.delta.add(1, 'b', 3);
             b.delta.add(2, 'a', 3);
 
-            expected = Nft(4, { 0 }, { 3 }, { 0, 1, 1, 0 }, 2);
+            expected = Nft::with_levels({2, { 0, 1, 1, 0 } }, 4, { 0 }, { 3 });
             expected.delta.add(0, EPSILON, 1);
             expected.delta.add(0, 'b', 2);
             expected.delta.add(1, 'a', 3);
@@ -219,16 +219,16 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
 
     SECTION("Intersection of linear transducers with multiple levels.") {
         SECTION("Intersection 1") {
-            a = Nft(4, { 0 }, { 3 }, { 0, 1, 3, 0 }, 4);
+            a = Nft::with_levels({4, { 0, 1, 3, 0 } }, 4, { 0 }, { 3 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'b', 2);
             a.delta.add(2, 'c', 3);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 4);
+            b = Nft::with_levels({4, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'b', 2);
 
-            expected = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
+            expected = Nft::with_levels({4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'b', 2);
             expected.delta.add(2, 'b', 3);
@@ -240,10 +240,10 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         }
 
         SECTION("Intersection 2") {
-            a = Nft(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            a = Nft::with_levels({2, { 0, 0 } }, 2, { 0 }, { 1 });
             a.delta.add(0, 'a', 1);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 1, 0}, 1);
+            b = Nft::with_levels({2, { 0, 1, 0} }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'b', 2);
 
@@ -255,12 +255,12 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         }
 
         SECTION("Intersection 3") {
-            a = Nft(4, { 0 }, { 3 }, { 0, 2, 3, 0 }, 5);
+            a = Nft::with_levels({5, { 0, 2, 3, 0 } }, 4, { 0 }, { 3 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'b', 2);
             a.delta.add(2, 'a', 3);
 
-            b = Nft(5, { 0 }, { 4 }, { 0, 1, 3, 4, 0 }, 5);
+            b = Nft::with_levels({5, { 0, 1, 3, 4, 0 } }, 5, { 0 }, { 4 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'c', 2);
             b.delta.add(2, 'b', 3);
@@ -279,7 +279,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
     }
 
     SECTION("Intersection of complex transducers with multiple levels and an epsilon transition") {
-        a = Nft(8, { 0 }, { 5, 6, 7 }, { 0, 1, 1, 2, 2, 0, 0, 0 }, 3);
+        a = Nft::with_levels({3, { 0, 1, 1, 2, 2, 0, 0, 0 } }, 8, { 0 }, { 5, 6, 7 });
         a.delta.add(0, 'a', 1);
         a.delta.add(0, 'b', 2);
         a.delta.add(0, 'a', 4);
@@ -292,7 +292,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         a.delta.add(6, EPSILON, 4);
         a.delta.add(7, 'c', 2);
 
-        b = Nft(5, { 0 }, { 3, 4 }, { 0, 1, 2, 0, 0 }, 3);
+        b = Nft::with_levels({3, { 0, 1, 2, 0, 0 } }, 5, { 0 }, { 3, 4 });
         b.delta.add(0, 'a', 1);
         b.delta.add(0, 'b', 1);
         b.delta.add(0, 'a', 3);
@@ -302,7 +302,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         b.delta.add(3, 'c', 3);
         b.delta.add(4, EPSILON, 4);
 
-        expected = Nft(12, { 0 }, { 4, 5, 9, 11 }, { 0, 1, 1, 2, 0, 0, 2, 1, 2, 0, 2, 0 }, 3);
+        expected = Nft::with_levels({3, { 0, 1, 1, 2, 0, 0, 2, 1, 2, 0, 2, 0 } }, 12, { 0 }, { 4, 5, 9, 11 });
         expected.delta.add(0, 'b', 1);
         expected.delta.add(0, 'a', 2);
         expected.delta.add(0, 'a', 7);
@@ -325,11 +325,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
 
     SECTION("Intersection of transducers with the DONT_CARE symbol") {
         SECTION("DONT_CARE is in the lhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, DONT_CARE, 1);
             a.delta.add(1, 'c', 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, 'a', 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(0, 'a', 3);
@@ -337,7 +337,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
             b.delta.add(2, 'd', 5);
             b.delta.add(3, 'e', 6);
 
-            expected = Nft(10, { 0 }, { 7, 8, 9 }, { 0, 1, 1, 1, 2, 2, 2, 0, 0, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 1, 1, 2, 2, 2, 0, 0, 0 } }, 10, { 0 }, { 7, 8, 9 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(0, 'b', 2);
             expected.delta.add(0, 'a', 3);
@@ -354,11 +354,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         }
 
         SECTION("DONT_CARE is in the rhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'c', 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, DONT_CARE, 1);
             b.delta.add(0, DONT_CARE, 2);
             b.delta.add(0, DONT_CARE, 3);
@@ -366,7 +366,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
             b.delta.add(2, 'd', 5);
             b.delta.add(3, 'e', 6);
 
-            expected = Nft(8, { 0 }, { 5, 6, 7 }, { 0, 1, 2, 2, 2, 0, 0, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 2, 2, 2, 0, 0, 0 } }, 8, { 0 }, { 5, 6, 7 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'c', 2);
             expected.delta.add(1, 'd', 3);
@@ -381,11 +381,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         }
 
         SECTION("DONT_CARE is in both lhs and rhs. In lhs, DONT_CARE is at a higher level than it is in rhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, DONT_CARE, 1);
             a.delta.add(1, DONT_CARE, 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, DONT_CARE, 1);
             b.delta.add(0, DONT_CARE, 2);
             b.delta.add(0, DONT_CARE, 3);
@@ -393,7 +393,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
             b.delta.add(2, 'd', 5);
             b.delta.add(3, 'e', 6);
 
-            expected = Nft(10, { 0 }, { 7, 8, 9 }, { 0, 1, 1, 1, 2, 2, 2, 0, 0, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 1, 1, 2, 2, 2, 0, 0, 0 } }, 10, { 0 }, { 7, 8, 9 });
             expected.delta.add(0, DONT_CARE, 1);
             expected.delta.add(0, DONT_CARE, 2);
             expected.delta.add(0, DONT_CARE, 3);
@@ -410,15 +410,15 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
         }
 
         SECTION("DONT_CARE is in the rhs at a higher level than it is in the lhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 1, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 1, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, DONT_CARE, 2);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, DONT_CARE, 2);
 
-            expected = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, DONT_CARE, 2);
             expected.delta.add(2, DONT_CARE, 3);
@@ -550,11 +550,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
     Nft expected;
     SECTION("Intersection of transducers with epsilon transitions.") {
         SECTION("The intersection results in an empty language.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            a = Nft::with_levels({2, { 0, 1, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, EPSILON, 1);
             a.delta.add(1, 'b', 2);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            b = Nft::with_levels({2, { 0, 1, 0 } }, 3, { 0 }, { 2 });
             b.delta.add(0, 'b', 1);
             b.delta.add(1, EPSILON, 2);
 
@@ -566,21 +566,21 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("Epsilon is treated as an alphabet symbol.") {
-            a = Nft(5, { 0 }, { 3, 4 }, { 0, 1, 1, 0, 0 }, 2);
+            a = Nft::with_levels({2, { 0, 1, 1, 0, 0 } }, 5, { 0 }, { 3, 4 });
             a.delta.add(0, EPSILON, 1);
             a.delta.add(0, 'b', 2);
             a.delta.add(1, 'a', 3);
             a.delta.add(2, 'a', 4);
             a.delta.add(4, EPSILON, 4);
 
-            b = Nft(4, { 0 }, { 3 }, { 0, 1, 1, 0 }, 2);
+            b = Nft::with_levels({2, { 0, 1, 1, 0 } }, 4, { 0 }, { 3 });
             b.delta.add(0, EPSILON, 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(1, 'a', 3);
             b.delta.add(1, 'b', 3);
             b.delta.add(2, 'a', 3);
 
-            expected = Nft(4, { 0 }, { 3 }, { 0, 1, 1, 0 }, 2);
+            expected = Nft::with_levels({2, { 0, 1, 1, 0 } }, 4, { 0 }, { 3 });
             expected.delta.add(0, EPSILON, 1);
             expected.delta.add(0, 'b', 2);
             expected.delta.add(1, 'a', 3);
@@ -594,16 +594,16 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
 
     SECTION("Intersection of linear transducers with multiple levels.") {
         SECTION("Intersection 1") {
-            a = Nft(4, { 0 }, { 3 }, { 0, 1, 3, 0 }, 4);
+            a = Nft::with_levels({4, { 0, 1, 3, 0 } }, 4, { 0 }, { 3 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'b', 2);
             a.delta.add(2, 'c', 3);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 4);
+            b = Nft::with_levels({4, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'b', 2);
 
-            expected = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
+            expected = Nft::with_levels({4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'b', 2);
             expected.delta.add(2, 'b', 3);
@@ -616,16 +616,16 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("Intersection 2") {
-            a = Nft(4, { 0 }, { 3 }, { 0, 1, 3, 0 }, 4);
+            a = Nft::with_levels({4, { 0, 1, 3, 0 } }, 4, { 0 }, { 3 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'a', 2);
             a.delta.add(2, 'a', 3);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 4);
+            b = Nft::with_levels({4, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'a', 2);
 
-            expected = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
+            expected = Nft::with_levels({4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'a', 2);
             expected.delta.add(2, 'a', 3);
@@ -637,10 +637,10 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("Intersection 3") {
-            a = Nft(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            a = Nft::with_levels({2, { 0, 0 } }, 2, { 0 }, { 1 });
             a.delta.add(0, 'a', 1);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 1, 0}, 1);
+            b = Nft::with_levels({2, { 0, 1, 0} }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'b', 2);
 
@@ -652,10 +652,10 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("Intersection 4") {
-            a = Nft(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            a = Nft::with_levels({2, { 0, 0 } }, 2, { 0 }, { 1 });
             a.delta.add(0, 'a', 1);
 
-            b = Nft(3, { 0 }, { 2 }, { 0, 1, 0}, 1);
+            b = Nft::with_levels({2, { 0, 1, 0} }, 3, { 0 }, { 2 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'a', 2);
 
@@ -667,18 +667,18 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("Intersection 5") {
-            a = Nft(4, { 0 }, { 3 }, { 0, 2, 3, 0 }, 5);
+            a = Nft::with_levels({5, { 0, 2, 3, 0 } }, 4, { 0 }, { 3 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'a', 2);
             a.delta.add(2, 'b', 3);
 
-            b = Nft(5, { 0 }, { 4 }, { 0, 1, 3, 4, 0 }, 5);
+            b = Nft::with_levels({5, { 0, 1, 3, 4, 0 } }, 5, { 0 }, { 4 });
             b.delta.add(0, 'a', 1);
             b.delta.add(1, 'a', 2);
             b.delta.add(2, 'b', 3);
             b.delta.add(3, 'b', 4);
 
-            expected = Nft(6, { 0 }, { 5 }, { 0, 1, 2, 3, 4, 0 }, 5);
+            expected = Nft::with_levels({5, { 0, 1, 2, 3, 4, 0 } }, 6, { 0 }, { 5 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'a', 2);
             expected.delta.add(2, 'a', 3);
@@ -692,7 +692,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
     }
 
     SECTION("Intersection of complex transducers with multiple levels and an epsilon transition") {
-        a = Nft(8, { 0 }, { 5, 6, 7 }, { 0, 1, 1, 2, 2, 0, 0, 0 }, 3);
+        a = Nft::with_levels({3, { 0, 1, 1, 2, 2, 0, 0, 0 } }, 8, { 0 }, { 5, 6, 7 });
         a.delta.add(0, 'a', 1);
         a.delta.add(0, 'b', 2);
         a.delta.add(0, 'a', 4);
@@ -705,7 +705,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         a.delta.add(6, EPSILON, 4);
         a.delta.add(7, 'c', 2);
 
-        b = Nft(5, { 0 }, { 3, 4 }, { 0, 1, 2, 0, 0 }, 3);
+        b = Nft::with_levels({3, { 0, 1, 2, 0, 0 } }, 5, { 0 }, { 3, 4 });
         b.delta.add(0, 'a', 1);
         b.delta.add(0, 'b', 1);
         b.delta.add(0, 'a', 3);
@@ -715,7 +715,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         b.delta.add(3, EPSILON, 3);
         b.delta.add(4, 'c', 4);
 
-        expected = Nft(6, { 0 }, { 3, 5 }, { 0, 1, 2, 0, 1, 0}, 3);
+        expected = Nft::with_levels({3, { 0, 1, 2, 0, 1, 0} }, 6, { 0 }, { 3, 5 });
         expected.delta.add(0, 'a', 1);
         expected.delta.add(0, 'b', 1);
         expected.delta.add(0, 'b', 4);
@@ -731,11 +731,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
 
     SECTION("Intersection of transducers with the DONT_CARE symbol") {
         SECTION("DONT_CARE is in the lhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, DONT_CARE, 1);
             a.delta.add(1, 'c', 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, 'a', 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(0, 'a', 3);
@@ -743,7 +743,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
             b.delta.add(2, 'd', 5);
             b.delta.add(3, 'e', 6);
 
-            expected = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'c', 2);
             expected.delta.add(2, 'c', 3);
@@ -754,11 +754,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("DONT_CARE is in the rhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, 'c', 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, 'a', 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(0, 'a', 3);
@@ -766,7 +766,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
             b.delta.add(2, DONT_CARE, 5);
             b.delta.add(3, DONT_CARE, 6);
 
-            expected = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'a', 2);
             expected.delta.add(2, 'c', 3);
@@ -777,11 +777,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("DONT_CARE is in both lhs and rhs. In lhs, DONT_CARE is at a smaller level than it is in rhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, DONT_CARE, 1);
             a.delta.add(1, 'c', 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, 'a', 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(0, 'a', 3);
@@ -789,7 +789,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
             b.delta.add(2, DONT_CARE, 5);
             b.delta.add(3, DONT_CARE, 6);
 
-            expected = Nft(3, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 2, 0 } }, 3, { 0 }, { 3 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(0, 'b', 1);
             expected.delta.add(1, DONT_CARE, 2);
@@ -801,11 +801,11 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
         }
 
         SECTION("DONT_CARE is in the rhs at a smaller level than it is in the lhs.") {
-            a = Nft(3, { 0 }, { 2 }, { 0, 2, 0 }, 3);
+            a = Nft::with_levels({3, { 0, 2, 0 } }, 3, { 0 }, { 2 });
             a.delta.add(0, 'a', 1);
             a.delta.add(1, DONT_CARE, 2);
 
-            b = Nft(7, { 0 }, { 4, 5, 6 }, { 0, 1, 1, 1, 0, 0, 0 }, 3);
+            b = Nft::with_levels({3, { 0, 1, 1, 1, 0, 0, 0 } }, 7, { 0 }, { 4, 5, 6 });
             b.delta.add(0, 'a', 1);
             b.delta.add(0, 'b', 2);
             b.delta.add(0, 'a', 3);
@@ -813,7 +813,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") 
             b.delta.add(2, DONT_CARE, 5);
             b.delta.add(3, DONT_CARE, 6);
 
-            expected = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+            expected = Nft::with_levels({3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'a', 2);
             expected.delta.add(2, DONT_CARE, 3);

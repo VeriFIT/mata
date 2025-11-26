@@ -25,6 +25,64 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 constexpr std::string mata::nft::TYPE_NFT = "NFT";
 
+Levels::Levels(const size_t num_of_levels, const size_t count, const Level value): super(count, value), num_of_levels{ num_of_levels } {
+   assert(value < num_of_levels && "Levels::Levels: level is out of range of the set number of levels.");
+}
+
+Levels::Levels(const size_t num_of_levels, const std::initializer_list<Level> levels): super{ levels }, num_of_levels{ num_of_levels } {
+    assert(check_levels_in_range_() && "Levels::Levels: level is out of range of the set number of levels.");
+}
+
+Levels::Levels(const size_t num_of_levels, const iterator first, const iterator last): super{ first, last }, num_of_levels{ num_of_levels } {
+    assert(check_levels_in_range_() && "Levels::Levels: level is out of range of the set number of levels.");
+}
+
+Levels& Levels::operator=(const std::initializer_list<Level> other) {
+    super::operator=(other);
+    num_of_levels = num_of_levels_used().value_or(DEFAULT_NUM_OF_LEVELS);
+    return *this;
+}
+
+Levels& Levels::operator=(const std::vector<Level>& levels) {
+    if (this != &levels) {
+        super::operator=(levels);
+        num_of_levels = num_of_levels_used().value_or(DEFAULT_NUM_OF_LEVELS);
+    }
+    return *this;
+}
+
+Levels& Levels::operator=(std::vector<Level>&& levels) {
+    if (this != &levels) {
+        super::operator=(std::move(levels));
+        num_of_levels = num_of_levels_used().value_or(DEFAULT_NUM_OF_LEVELS);
+    }
+    return *this;
+}
+
+Levels& Levels::set(const State state, const Level level) {
+    assert(level < num_of_levels && "Levels::set: level is out of range of the set number of levels.");
+    if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
+    (*this)[state] = level;
+    return *this;
+}
+
+Levels& Levels::set(const std::vector<Level>& levels) {
+    assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
+    assign(levels.begin(), levels.end());
+    return *this;
+}
+
+Levels& Levels::set(std::vector<Level>&& levels) {
+    assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
+    assign(std::make_move_iterator(levels.begin()), std::make_move_iterator(levels.end()));
+    return *this;
+}
+
+void Levels::append(const Levels& levels_vector) {
+    reserve(size() + levels_vector.size());
+    std::ranges::copy(levels_vector, std::back_inserter(*this));
+}
+
 std::vector<Level> Levels::get_levels_of(const utils::SparseSet<State>& states) const {
     std::vector<Level> result;
     result.reserve(states.size());
@@ -38,16 +96,14 @@ std::vector<Level> Levels::get_levels_of(const StateSet& states) const {
     return result;
 }
 
-Level Levels::get_minimal_level_of(const StateSet& states, LevelsOrdering::Compare levels_ordering) const {
-    if (states.empty()) {
-        throw std::runtime_error("Levels::get_minimal_level_of: states is empty, no level can be obtained.");
-    }
+std::optional<Level> Levels::get_minimal_level_of(const StateSet& states, Ordering::Compare levels_ordering) const {
+    if (states.empty()) { return std::nullopt; }
     auto levels = states | std::views::transform([&](const State& state) { return (*this)[state]; });
     return std::ranges::min(levels, std::move(levels_ordering));
 }
 
-Level Levels::get_minimal_next_level_of(const StateSet& states) const {
-    return get_minimal_level_of(states, LevelsOrdering::Next);
+std::optional<Level> Levels::get_minimal_next_level_of(const StateSet& states) const {
+    return get_minimal_level_of(states, Ordering::Next);
 }
 
 bool Levels::can_follow(const Level source_level, const Level target_level) {
@@ -87,16 +143,18 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     final.filter(is_state_useful);
 
     // Specific for levels
-    //////////////////////
     State move_index{ 0 };
-    std::erase_if(levels,
-         [&](Level&) -> bool {
-             State prev{ move_index };
-             ++move_index;
-             return !useful_states[prev];
-         }
+    levels.erase(
+        std::ranges::remove_if(
+            levels,
+            [&](Level&) -> bool {
+                State prev{ move_index };
+                ++move_index;
+                return !useful_states[prev];
+            }
+        ).begin(),
+        levels.end()
     );
-    //////////////////////
 
     auto rename_state = [&](State q){return renaming[q];};
     initial.rename(rename_state);
@@ -312,7 +370,7 @@ void Nft::print_to_mata(std::ostream &output) const {
         }
         output << std::endl;
     }
-    output << "%LevelsNum " << num_of_levels << std::endl;
+    output << "%LevelsNum " << levels.num_of_levels << std::endl;
 
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
@@ -327,16 +385,16 @@ void Nft::print_to_mata(const std::string& filename) const {
     print_to_mata(output);
 }
 
-Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, Symbol abstract_symbol) const {
-    mata::nft::Nft one_symbol_transducer{num_of_states(), initial, final, levels, num_of_levels};
-    for (mata::nfa::State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
-        mata::nfa::StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
+Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol abstract_symbol) const {
+    Nft one_symbol_transducer{ Nft::with_levels(levels, num_of_states(), initial, final) };
+    for (nfa::State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
+        nfa::StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
         if (levels_to_keep.contains(levels[source_state])) {
             state_post_of_new_source_state = delta[source_state];
         } else {
-            mata::nfa::SymbolPost new_transition{abstract_symbol};
-            for (const mata::nfa::SymbolPost& symbol_post : delta[source_state]) {
-                if (symbol_post.symbol == mata::nft::EPSILON) {
+            nfa::SymbolPost new_transition{abstract_symbol};
+            for (const nfa::SymbolPost& symbol_post : delta[source_state]) {
+                if (symbol_post.symbol == EPSILON) {
                     state_post_of_new_source_state.insert(symbol_post);
                 } else {
                     new_transition.targets.insert(symbol_post.targets);
@@ -374,16 +432,15 @@ void Nft::unwind_jumps_inplace(const utils::OrdVector<Symbol> &dont_care_symbol_
         }
     };
 
-    Level src_lvl, trg_lvl, diff_lvl;
-    for (const auto &transition : delta.transitions()) {
-        src_lvl = levels[transition.source];
-        trg_lvl = levels[transition.target];
-        diff_lvl = (trg_lvl == 0) ? (static_cast<Level>(num_of_levels) - src_lvl) : trg_lvl - src_lvl;
+    for (const auto& transition : delta.transitions()) {
+        const Level src_lvl = levels[transition.source];
+        const Level trg_lvl = levels[transition.target];
 
-        if (diff_lvl == 1 && transition.symbol == DONT_CARE && !dcare_for_dcare) {
+        if (const Level diff_lvl = (trg_lvl == 0) ? (static_cast<Level>(levels.num_of_levels) - src_lvl) : trg_lvl - src_lvl;
+            diff_lvl == 1 && transition.symbol == DONT_CARE && !dcare_for_dcare) {
             transitions_to_del.push_back(transition);
             for (const Symbol replace_symbol : dont_care_symbol_replacements) {
-                transitions_to_add.emplace_back( transition.source, replace_symbol, transition.target );
+                transitions_to_add.emplace_back(transition.source, replace_symbol, transition.target);
             }
         } else if (diff_lvl > 1) {
             transitions_to_del.push_back(transition);
@@ -400,8 +457,9 @@ void Nft::unwind_jumps_inplace(const utils::OrdVector<Symbol> &dont_care_symbol_
             inner_trg_lvl++;
 
             // Iterations 1 to n-1 connecting inner states.
-            Level pre_trg_lvl = (trg_lvl == 0) ? (static_cast<Level>(num_of_levels) - 1) : (trg_lvl - 1);
-            for (; inner_src_lvl < pre_trg_lvl; inner_src_lvl++, inner_trg_lvl++) {
+            for (const Level pre_trg_lvl = (trg_lvl == 0)
+                 ? (static_cast<Level>(levels.num_of_levels) - 1) : (trg_lvl - 1);
+                 inner_src_lvl < pre_trg_lvl; inner_src_lvl++, inner_trg_lvl++) {
                 inner_trg = add_state();
                 levels[inner_trg] = inner_trg_lvl;
 
@@ -414,12 +472,8 @@ void Nft::unwind_jumps_inplace(const utils::OrdVector<Symbol> &dont_care_symbol_
         }
     }
 
-    for (const Transition &transition : transitions_to_add) {
-        delta.add(transition);
-    }
-    for (const Transition &transition : transitions_to_del) {
-        delta.remove(transition);
-    }
+    for (const Transition& transition : transitions_to_add) { delta.add(transition); }
+    for (const Transition& transition : transitions_to_del) { delta.remove(transition); }
 }
 
 Nft Nft::unwind_jumps(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
@@ -440,7 +494,7 @@ Nft& Nft::operator=(Nft&& other) noexcept {
     if (this != &other) {
         mata::nfa::Nfa::operator=(other);
         levels = std::move(other.levels);
-        num_of_levels = other.num_of_levels;
+        levels.num_of_levels = other.levels.num_of_levels;
     }
     return *this;
 }
@@ -450,7 +504,7 @@ Nft& Nft::operator=(const mata::nfa::Nfa& other) noexcept {
     if (this != &other) {
         mata::nfa::Nfa::operator=(other);
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
-        num_of_levels = 1;
+        levels.num_of_levels = 1;
     }
     return *this;
 }
@@ -459,7 +513,7 @@ Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
     if (this != &other) {
         mata::nfa::Nfa::operator=(other);
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
-        num_of_levels = 1;
+        levels.num_of_levels = 1;
     }
     return *this;
 }
@@ -498,9 +552,9 @@ State Nft::insert_word(const State source, const Word &word, const State target)
     const size_t num_of_states_after = num_of_states();
     const Level source_level = levels[source];
 
-    Level lvl = (num_of_levels == 1) ? source_level : (source_level + 1) % static_cast<Level>(num_of_levels);
+    Level lvl = (levels.num_of_levels == 1) ? source_level : (source_level + 1) % static_cast<Level>(levels.num_of_levels);
     for (State state{ first_new_state }; state < num_of_states_after;
-         ++state, lvl = (lvl + 1) % static_cast<Level>(num_of_levels)) { add_state_with_level(state, lvl); }
+         ++state, lvl = (lvl + 1) % static_cast<Level>(levels.num_of_levels)) { add_state_with_level(state, lvl); }
 
     assert(levels[word_target] == 0 || levels[num_of_states_after - 1] < levels[word_target]);
 
@@ -513,7 +567,7 @@ State Nft::insert_word(const State source, const Word& word) {
 }
 
 State Nft::insert_word_by_parts(const State source, const std::vector<Word> &word_parts_on_levels, const State target) {
-    assert(word_parts_on_levels.size() == num_of_levels);
+    assert(word_parts_on_levels.size() == levels.num_of_levels);
     assert(source < num_of_states());
     assert(target < num_of_states());
     assert(source < levels.size());
@@ -521,14 +575,14 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
     assert(levels[source] == levels[target]);
     const Level from_to_level{ levels[source] };
 
-    if (num_of_levels == 1) {
+    if (levels.num_of_levels == 1) {
         return Nft::insert_word(source, word_parts_on_levels[0], target);
     }
 
-    std::vector<mata::Word::const_iterator> word_part_it_v(num_of_levels);
-    for (Level lvl{ from_to_level }, i{ 0 }; i < static_cast<Level>(num_of_levels); ++i) {
+    std::vector<mata::Word::const_iterator> word_part_it_v(levels.num_of_levels);
+    for (Level lvl{ from_to_level }, i{ 0 }; i < static_cast<Level>(levels.num_of_levels); ++i) {
         word_part_it_v[lvl] = word_parts_on_levels[lvl].begin();
-        lvl = (lvl + 1) % static_cast<Level>(num_of_levels);
+        lvl = (lvl + 1) % static_cast<Level>(levels.num_of_levels);
     }
 
     // This function retrieves the next symbol from a word part at a specified level and advances the corresponding iterator.
@@ -541,7 +595,7 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
     };
 
     // Add transition source --> inner_state.
-    Level inner_lvl = (num_of_levels == 1 ) ? 0 : (from_to_level + 1) % static_cast<Level>(num_of_levels);
+    Level inner_lvl = (levels.num_of_levels == 1 ) ? 0 : (from_to_level + 1) % static_cast<Level>(levels.num_of_levels);
     State inner_state = add_state_with_level(inner_lvl);
     delta.add(source, get_next_symbol(from_to_level), inner_state);
 
@@ -553,10 +607,10 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
         word_parts_on_levels.end(),
         [](const Word& a, const Word& b) { return a.size() < b.size(); }
     )->size();
-    const size_t word_total_len = num_of_levels * max_word_part_len;
+    const size_t word_total_len = levels.num_of_levels * max_word_part_len;
     if (word_total_len != 0) {
         for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
-            inner_lvl = (prev_lvl + 1) % static_cast<Level>(num_of_levels);
+            inner_lvl = (prev_lvl + 1) % static_cast<Level>(levels.num_of_levels);
             inner_state = add_state_with_level(inner_lvl);
             delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
             prev_state = inner_state;
@@ -596,22 +650,22 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
     // FIXME(nft): Allow symbol jump transitions?
 //    if (jump_mode == JumpMode::RepeatSymbol) {
 //        delta.add(state, symbol, state);
-//        insert_word(state, Word(num_of_levels, symbol), state);
+//        insert_word(state, Word(levels.num_of_levels, symbol), state);
 //    } else {
-        insert_word(state, Word(num_of_levels, symbol), state);
+        insert_word(state, Word(levels.num_of_levels, symbol), state);
 //    }
     return *this;
 }
 
 bool Nft::contains_jump_transitions() const {
-    if (num_of_levels == 1) { return false; }
+    if (levels.num_of_levels == 1) { return false; }
 
     for (const Transition& transition : delta.transitions()) {
         const Level src_level{ levels[transition.source] };
         Level tgt_level{ levels[transition.target] };
         if (tgt_level == 0) {
-            // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
-            tgt_level = tgt_level + static_cast<Level>(num_of_levels);
+            // we want to check if the difference between src and tgt levels is at most 1 modulo levels.num_of_levels
+            tgt_level = tgt_level + static_cast<Level>(levels.num_of_levels);
         }
         if (tgt_level - src_level != 1) {
             return true;
@@ -626,14 +680,9 @@ void Nft::clear() {
 }
 
 bool Nft::is_identical(const Nft& aut) const {
-    return num_of_levels == aut.num_of_levels && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
+    return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
 }
 
-Levels& Levels::set(const State state, const Level level) {
-    if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
-    (*this)[state] = level;
-    return *this;
-}
 
 mata::nfa::Nfa Nft::to_nfa_update_copy(
     const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
@@ -654,21 +703,34 @@ Nft Nft::apply(const Word& word, const Level level_to_apply_on, const bool proje
     return apply(nfa::builder::create_single_word_nfa(word), level_to_apply_on, project_out_applied_level, jump_mode);
 }
 
-bool Nft::make_complete(const Alphabet* const alphabet, const std::optional<std::vector<State>>& sink_states) {
-    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
+bool Nft::make_complete(
+        const Alphabet* const alphabet,
+        const OrdVector<Symbol>& epsilons,
+        const std::optional<std::vector<State>>& sink_states) {
+    return make_complete(get_symbols_to_work_with(*this, alphabet), epsilons, sink_states);
 }
 
-bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<std::vector<State>>& sink_states) {
-    bool transition_added{ false };
-    const size_t num_of_states{ this->num_of_states() };
+bool Nft::make_complete(
+        const OrdVector<Symbol>& symbols,
+        const OrdVector<Symbol>& epsilons,
+        const std::optional<std::vector<State>>& sink_states) {
+    const size_t num_of_states_orig{ this->num_of_states() };
+    if (num_of_states_orig == 0) { return false; }
+
     const std::vector<State> sinks{ [&]{
         auto sinks_val{ sink_states.value_or(std::vector<State>{}) };
         if (sinks_val.empty()) {
-            for (Level level{ 0 }; level < num_of_levels; ++level) { sinks_val.push_back(add_state_with_level(level)); }
+            for (Level level{ 0 }; level < levels.num_of_levels; ++level) {
+                sinks_val.push_back(add_state_with_level(level));
+            }
         }
         assert(
+            sinks_val.size() == levels.num_of_levels &&
+            "Nft::make_complete: sink_states size must be equal to num_of_levels."
+        );
+        assert(
             [&]{
-                for (Level level{ 0 }; level < num_of_levels; ++level) {
+                for (Level level{ 0 }; level < levels.num_of_levels; ++level) {
                     const State sink_state{ sinks_val[level] };
                     if (sink_state >= this->num_of_states() || levels[sink_state] != level) {
                         return false;
@@ -681,25 +743,37 @@ bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<st
     }() };
 
     auto next_level = [&](const Level level) {
-        return (num_of_levels == 1) ? level : (level + 1) % static_cast<Level>(num_of_levels);
+        return (levels.num_of_levels == 1) ? level : (level + 1) % static_cast<Level>(levels.num_of_levels);
     };
 
+    // Add missing transitions from original states to sink states.
     OrdVector<Symbol> used_symbols{};
-    for (State state{ 0 }; state < num_of_states; ++state) {
+    bool transition_added{ false };
+    for (State state{ 0 }; state < num_of_states_orig; ++state) {
         used_symbols.clear();
         for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
-        for (const auto unused_symbols{ symbols.difference(used_symbols) }; const Symbol symbol : unused_symbols) {
-            delta.add(state, symbol, sinks[next_level(levels[state])]);
-            transition_added = true;
-        }
+
+        auto add_transitions_to_sinks = [&](const auto& symbols_to_add) {
+            for (const Symbol symbol : symbols_to_add) {
+                delta.add(state, symbol, sinks[next_level(levels[state])]);
+                transition_added = true;
+            }
+        };
+        add_transitions_to_sinks(symbols.difference(used_symbols));
+        add_transitions_to_sinks(epsilons.difference(used_symbols));
     }
 
-    if (transition_added && num_of_states <= this->num_of_states()) {
-        for (const Symbol symbol : symbols) {
-            for (Level level{ 0 }; level < num_of_levels; ++level) {
-                delta.add(sinks[level], symbol, sinks[next_level(level)]);
+    // Add loops on sink states (from sink to a sink of the next level).
+    if (transition_added && num_of_states_orig < this->num_of_states()) {
+        auto add_transitions_between_sinks = [&](const auto& symbols_to_add) {
+            for (Level level{ 0 }; level < levels.num_of_levels; ++level) {
+                for (const Symbol symbol : symbols_to_add) {
+                    delta.add(sinks[level], symbol, sinks[next_level(level)]);
+                }
             }
-        }
+        };
+        add_transitions_between_sinks(symbols);
+        add_transitions_between_sinks(epsilons);
     }
 
     return transition_added;

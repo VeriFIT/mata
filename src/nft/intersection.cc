@@ -33,10 +33,10 @@ Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const Jum
 
 //TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
 Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map, const JumpMode jump_mode, const State lhs_first_aux_state, const State rhs_first_aux_state) {
-    assert(lhs.num_of_levels == rhs.num_of_levels);
+    assert(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 
     Nft product{}; // The product automaton.
-    product.num_of_levels = lhs.num_of_levels;
+    product.levels.num_of_levels = lhs.levels.num_of_levels;
     utils::TwoDimensionalMap<State> product_storage{lhs.num_of_states(), rhs.num_of_states()};
     std::deque<State> worklist{}; // Set of product states to process.
 

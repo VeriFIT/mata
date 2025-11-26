@@ -52,7 +52,7 @@ namespace {
 
     Nft reduce_size_by_simulation(const Nft& aut, StateRenaming &state_renaming) {
         Nft result;
-        result.num_of_levels = aut.num_of_levels;
+        result.levels.num_of_levels = aut.levels.num_of_levels;
         const auto sim_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
@@ -67,8 +67,8 @@ namespace {
 
         // map each state q of aut to the state of the reduced automaton representing the simulation class of q
         for (State q = 0; q < num_of_states; ++q) {
-            const State qReprState = quot_proj[q];
-            if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
+            if (const State qReprState = quot_proj[q]; !state_renaming.contains(qReprState)) {
+                // we need to map q's class to a new state in reducedAut
                 assert(aut.levels[q] == aut.levels[qReprState]);
                 const State qClass = result.add_state_with_level(aut.levels[qReprState]);
                 state_renaming[qReprState] = qClass;
@@ -144,7 +144,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     for (State state = 0; state != num_of_states; ++state) {
         if (aut.levels[state] == DEFAULT_LEVEL) {
             std::vector<std::vector<State>> state_safe_epsilon_runs{ {state} };
-            for (Level cur_level = 0; cur_level < aut.num_of_levels; ++cur_level) {
+            for (Level cur_level = 0; cur_level < aut.levels.num_of_levels; ++cur_level) {
                 std::vector<std::vector<State>> new_state_safe_epsilon_runs;
                 for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
                     State state_s = safe_epsilon_run.back();
@@ -155,14 +155,14 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                             // for levels > DEFAULT_LEVEL we do not want to have transitions that are not with empty symbol
                             continue;
                         }
-                        if (cur_level != aut.num_of_levels-1 && eps_move_it_s->targets.size() > 1) {
+                        if (cur_level != aut.levels.num_of_levels-1 && eps_move_it_s->targets.size() > 1) {
                             // if we are not at the last level (next level will be 0), we do not allow multiple epsilon transitions
                             // from state_s, as one could be on the path of fully epsilon run, while the other would not be, so we
                             // would mark something as safe epsilon run, which would not be safe
                             continue;
                         }
                         for (State target : eps_move_it_s->targets) {
-                            if (cur_level == aut.num_of_levels-1) {
+                            if (cur_level == aut.levels.num_of_levels-1) {
                                 // we are at the last level, next level will be 0
                                 assert(aut.levels[target] == DEFAULT_LEVEL);
                                 std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
@@ -254,16 +254,16 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
 Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode) {
     assert(!levels_to_project.empty());
-    assert(*std::max_element(levels_to_project.begin(), levels_to_project.end()) < nft.num_of_levels);
+    assert(*std::ranges::max_element(levels_to_project) < nft.levels.num_of_levels);
 
     // Checks if a given state is being projected out based on the levels_to_project vector.
-    auto is_projected_out = [&](State s) {
-        return levels_to_project.find(nft.levels[s]) != levels_to_project.end();
+    auto is_projected_out = [&](const State state) {
+        return levels_to_project.find(nft.levels[state]) != levels_to_project.end();
     };
 
     // Checks if each level between given states is being projected out.
-    auto is_projected_along_path = [&](State src, State tgt) {
-        Level stop_lvl = (nft.levels[tgt] == 0) ? static_cast<Level>(nft.num_of_levels) : nft.levels[tgt];
+    auto is_projected_along_path = [&](const State src, const State tgt) {
+        Level stop_lvl = (nft.levels[tgt] == 0) ? static_cast<Level>(nft.levels.num_of_levels) : nft.levels[tgt];
         for (Level lvl{ nft.levels[src] }; lvl < stop_lvl; lvl++) {
             if (levels_to_project.find(lvl) == levels_to_project.end()) {
                 return false;
@@ -273,39 +273,40 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     };
 
     // Determines the transition length between two states based on their levels.
-    auto get_trans_len = [&](State src, State tgt) {
-        return (nft.levels[src] == 0) ? (nft.num_of_levels - nft.levels[src]) : (nft.levels[tgt] - nft.levels[src]);
+    auto get_trans_len = [&](const State src, const State tgt) {
+        return (nft.levels[src] == 0) ? (nft.levels.num_of_levels - nft.levels[src]) : (nft.levels[tgt] - nft.levels[src]);
     };
 
-    // Returns one-state automaton it the case of projecting all levels.
-    if (nft.num_of_levels == levels_to_project.size()) {
-        if (nft.is_lang_empty()) {
-            return Nft(1, {0}, {}, {}, 0);
-        }
-        return Nft(1, {0}, {0}, {}, 0);
+    if (nft.levels.num_of_levels == levels_to_project.size()) {
+        throw std::invalid_argument("Cannot project out all levels of the NFT.");
+        // TODO: Returning an empty NFT with 0 levels as a boolean automaton, equivalent to a bool flag?
+        //  - no accepted words = empty set = false
+        //  - { epsilon } = true
+        // if (nft.is_lang_empty()) { return Nft{ Nft::with_levels(0)}; }
+        // return Nft(1, {0}, {0}, Levels{ 0 }, nullptr);
     }
 
-    // Calculates the smallest level 0 < k < num_of_levels that starts a consecutive ascending sequence
-    // of levels k, k+1, k+2, ..., num_of_levels-1 in the ordered-vector levels_to_project.
-    // If there is no such sequence, then k == num_of_levels.
-    size_t seq_start_idx = nft.num_of_levels;
-    const std::vector<Level> levels_to_proj_v = levels_to_project.to_vector();
+    // Calculates the smallest level 0 < k < levels.num_of_levels that starts a consecutive ascending sequence
+    // of levels k, k+1, k+2, ..., levels.num_of_levels-1 in the ordered-vector levels_to_project.
+    // If there is no such sequence, then k == levels.num_of_levels.
+    size_t seq_start_idx = nft.levels.num_of_levels;
+    const std::vector<Level>& levels_to_proj_v = levels_to_project.to_vector();
     for (auto levels_to_proj_v_revit = levels_to_proj_v.rbegin();
          levels_to_proj_v_revit != levels_to_proj_v.rend() && *levels_to_proj_v_revit == seq_start_idx - 1;
-         ++levels_to_proj_v_revit, --seq_start_idx);
+         ++levels_to_proj_v_revit, --seq_start_idx) {}
 
     // Only states whose level is part of the sequence (will have level 0) can additionally be marked as final.
     auto can_be_final = [&](State s) {
         return seq_start_idx <= nft.levels[s];
     };
 
-    // Builds a vector of size num_of_levels. Each index k contains a new level for level k.
+    // Builds a vector of size levels.num_of_levels. Each index k contains a new level for level k.
     // Sets levels to 0 starting from seq_start_idx.
     // Example:
     // old levels    0 1 2 3 4 5 6
     // project out     x   x   x x
     // new levels    0 0 1 2 2 0 0
-    std::vector<Level> new_levels(nft.num_of_levels , 0);
+    std::vector<Level> new_levels(nft.levels.num_of_levels , 0);
     Level lvl_sub{ 0 };
     for (Level lvl_old{ 0 }; lvl_old < seq_start_idx; lvl_old++) {
         new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
@@ -359,7 +360,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     }
 
     // Construct the automaton with projected levels.
-    Nft result{ Delta{}, nft.initial, nft.final, nft.levels, nft.num_of_levels, nft.alphabet };
+    Nft result{ Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabet) };
     for (State src_state{ 0 }; src_state < num_of_states_in_delta; src_state++) { // For every state.
         for (State cls_state : closure[src_state]) { // For every state in its epsilon closure.
             if (nft.final[cls_state] && can_be_final(src_state)) result.final.insert(src_state);
@@ -397,7 +398,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     for (State s{ 0 }; s < result.levels.size(); s++) {
         result.levels[s] = new_levels[result.levels[s]];
     }
-    result.num_of_levels = static_cast<Level>(result.num_of_levels - levels_to_project.size());
+    result.levels.num_of_levels = static_cast<Level>(result.levels.num_of_levels - levels_to_project.size());
 
     return result;
 }
@@ -407,11 +408,10 @@ Nft mata::nft::project_out(const Nft& nft, const Level level_to_project, const J
 }
 
 Nft mata::nft::project_to(const Nft& nft, const OrdVector<Level>& levels_to_project, const JumpMode jump_mode) {
-    OrdVector<Level> all_levels{ OrdVector<Level>::with_reserved(nft.num_of_levels) };
-    for (Level level{ 0 }; level < nft.num_of_levels; ++level) { all_levels.push_back(level); }
-    OrdVector<Level> levels_to_project_out{ OrdVector<Level>::with_reserved(nft.num_of_levels) };
-    std::set_difference(all_levels.begin(), all_levels.end(), levels_to_project.begin(),
-                        levels_to_project.end(), std::back_inserter(levels_to_project_out) );
+    OrdVector<Level> all_levels{ OrdVector<Level>::with_reserved(nft.levels.num_of_levels) };
+    for (Level level{ 0 }; level < nft.levels.num_of_levels; ++level) { all_levels.push_back(level); }
+    OrdVector<Level> levels_to_project_out{ OrdVector<Level>::with_reserved(nft.levels.num_of_levels) };
+    std::ranges::set_difference(all_levels, levels_to_project, std::back_inserter(levels_to_project_out) );
     return project_out(nft, levels_to_project_out, jump_mode);
 }
 
@@ -420,15 +420,15 @@ Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const JumpMode
 }
 
 Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
-    assert(0 < nft.num_of_levels);
-    assert(nft.num_of_levels <= new_levels_mask.size());
-    assert(static_cast<size_t>(std::count(new_levels_mask.begin(), new_levels_mask.end(), false)) == nft.num_of_levels);
+    assert(0 < nft.levels.num_of_levels);
+    assert(nft.levels.num_of_levels <= new_levels_mask.size());
+    assert(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
 
-    if (nft.num_of_levels == new_levels_mask.size()) {
+    if (nft.levels.num_of_levels == new_levels_mask.size()) {
          return { nft };
     }
 
-    // Construct a vector of size equal to num_of_levels. Each index k in this vector represents a new level for the original level k.
+    // Construct a vector of size equal to levels.num_of_levels. Each index k in this vector represents a new level for the original level k.
     // Note: The 0th index always remains zero.
     // Here are a couple of examples to illustrate this:
     // Example 1:
@@ -439,10 +439,10 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     //   Input (levels)      : 0 1 2
     //   Mask                : 1 1 0 1 1 0 0
     //   Output (new levels) : 0 3 6
-    std::vector<Level> updated_levels(nft.num_of_levels, 0);
+    std::vector<Level> updated_levels(nft.levels.num_of_levels, 0);
     Level old_lvl = 0;
     Level new_lvl = 0;
-    auto mask_it = std::find(new_levels_mask.begin(), new_levels_mask.end(), false);
+    auto mask_it = std::ranges::find(new_levels_mask, false);
     if (new_levels_mask[0]) {
         old_lvl = 1;
         new_lvl = static_cast<Level>(std::distance(new_levels_mask.begin(), mask_it) + 1);
@@ -467,7 +467,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     //  Output (JumpMode::AppendDontCares):    3 3 3 5 5 8 8 8 12 12 12 12
     const size_t mask_size = new_levels_mask.size();
     std::vector<Level> next_inner_levels(mask_size);
-    Level next_level = static_cast<Level>(mask_size);
+    auto next_level = static_cast<Level>(mask_size);
     size_t i = mask_size - 1;
     for (auto it = new_levels_mask.rbegin(); it != new_levels_mask.rend(); ++it, --i) {
         next_inner_levels[i] = next_level;
@@ -480,7 +480,12 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     }
 
     // Construct an empty automaton with updated levels.
-    Nft result(Delta(nft.num_of_states()), nft.initial, nft.final, new_state_levels, static_cast<unsigned int>(new_levels_mask.size()), nft.alphabet);
+    Nft result(
+        Nft::with_levels(
+            Levels{ new_levels_mask.size(), new_state_levels },
+            nft.num_of_states(), nft.initial, nft.final, nft.alphabet
+        )
+    );
 
     // Function to create a transition between source and target states.
     // The transition symbol is determined based on the parameters:
@@ -520,13 +525,14 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     for (const auto &trans : nft.delta.transitions()) {
         State src = trans.source;
         Level src_lvl = result.levels[trans.source];
-        State inner;
-        const Level stop_level = static_cast<Level>((result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1));
+        const auto stop_level = static_cast<Level>((result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1));
 
         // Construct the first n-1 parts of the original transition.
         bool is_old_level_processed = false;
         while (next_inner_levels[src_lvl] < next_inner_levels[stop_level]) {
-            inner = get_inner_state(trans.source, next_inner_levels[src_lvl], new_levels_mask[src_lvl], is_old_level_processed);
+            const State inner = get_inner_state(
+                    trans.source, next_inner_levels[src_lvl], new_levels_mask[src_lvl], is_old_level_processed
+                    );
             create_transition(src, trans.symbol, inner, new_levels_mask[src_lvl], is_old_level_processed);
             if (!new_levels_mask[src_lvl]) {
                 is_old_level_processed = true;
@@ -544,11 +550,11 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
 
 Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const JumpMode jump_mode) {
     // TODO(nft): Optimize the insertion of just one level by using move.
-    BoolVector new_levels_mask(nft.num_of_levels + 1, false);
+    BoolVector new_levels_mask(nft.levels.num_of_levels + 1, false);
     if (new_level < new_levels_mask.size()) {
         new_levels_mask[new_level] = true;
     } else {
-        new_levels_mask[nft.num_of_levels] = true;
+        new_levels_mask[nft.levels.num_of_levels] = true;
         new_levels_mask.resize(new_level + 1, true);
     }
     return insert_levels(nft, new_levels_mask, jump_mode);
@@ -762,13 +768,16 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
         new_final.insert(renaming[s]);
     }
     // Create new automaton
-    Nft aut_inv = Nft(num_of_zerostates, std::move(new_initial), std::move(new_final), Levels(num_of_zerostates, 0), aut.num_of_levels, aut.alphabet);
+    Nft aut_inv = Nft::with_levels(
+        { aut.levels.num_of_levels, num_of_zerostates, DEFAULT_LEVEL },
+        num_of_zerostates, std::move(new_initial), std::move(new_final), aut.alphabet
+    );
 
     // Creates new states with inverted levels for each inner state in the path.
     auto create_states_with_inverted_levels = [&](const std::vector<State>& path_states) {
         for (const State s: path_states) {
             if (aut.levels[s] == 0) { continue; }
-            renaming[s] = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - aut.levels[s]));
+            renaming[s] = aut_inv.add_state_with_level(static_cast<Level>(aut.levels.num_of_levels - aut.levels[s]));
         }
     };
 
@@ -794,7 +803,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
         std::unordered_map<std::pair<State, State>, State> auxiliary_states;
         auto get_aux_state = [&](const State src, const State tgt, const Level level) {
             const std::pair<State, State> key{ src, tgt };
-            if (auxiliary_states.find(key) == auxiliary_states.end()) {
+            if (!auxiliary_states.contains(key)) {
                 auxiliary_states[key] = aut_inv.add_state_with_level(level);
             }
             return auxiliary_states[key];
@@ -805,8 +814,8 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
             if (is_src_head && is_tgt_tail) {
                 // It is a direct transition between two zero-states (the head and the tail).
                 // Just copy it.
-                if (jump_mode == JumpMode::AppendDontCares && aut.num_of_levels > 1) {
-                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.num_of_levels - 1));
+                if (jump_mode == JumpMode::AppendDontCares && aut.levels.num_of_levels > 1) {
+                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.levels.num_of_levels - 1));
                     aut_inv.delta.add(renaming[src], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[tgt]);
                 } else {
@@ -816,7 +825,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a transition from a zero-state (head) to a nonzero-state (inner state).
                 // Map it as transition from that nonzero-state (inner state) to the tail (zero-states).
                 if (jump_mode == JumpMode::AppendDontCares && aut.levels[tgt] > 1) {
-                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.num_of_levels - 1));
+                    const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.levels.num_of_levels - 1));
                     aut_inv.delta.add(renaming[tgt], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[tail]);
                 } else {
@@ -826,7 +835,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
             } else if (is_tgt_tail) {
                 // It is a transition from a nonzero-state (inner state) to a zero-state (tail).
                 // Map it as transition from the zero-state (head) to that nonzero-state (inner state).
-                if (jump_mode == JumpMode::AppendDontCares && (aut.num_of_levels - aut.levels[src]) > 1) {
+                if (jump_mode == JumpMode::AppendDontCares && (aut.levels.num_of_levels - aut.levels[src]) > 1) {
                     const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
                     aut_inv.delta.add(renaming[head], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[src]);
@@ -872,7 +881,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // Extend the path.
                 std::vector<State> new_path = path;
                 new_path.push_back(tgt);
-                stack.push({ tgt, std::move(new_path) });
+                stack.emplace(tgt, std::move(new_path));
             }
         }
     }
@@ -1023,7 +1032,7 @@ Nft mata::nft::reduce(const Nft &aut, StateRenaming *state_renaming, const Param
 }
 
 Nft mata::nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map) {
-    Nft result{ Nft::with_levels(nft.num_of_levels) };
+    Nft result{ Nft::with_levels(nft.levels.num_of_levels) };
     result.alphabet = nft.alphabet;
     if (nft.initial.empty()) { return result; }
 
@@ -1088,7 +1097,7 @@ Nft mata::nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* 
                 next_level = result.levels[target_res];
             } else {
                 // Create target of the minimal level between all the original targets.
-                next_level = nft.levels.get_minimal_next_level_of(targets);
+                next_level = *nft.levels.get_minimal_next_level_of(targets);
                 if (next_level != 0) {
                     for (const State state : targets) {
                         (nft.levels[state] == next_level ? targets_resolved : targets_partial).push_back(state);
@@ -1172,21 +1181,21 @@ std::set<mata::Word> mata::nft::Nft::get_words(const size_t max_length) const {
 }
 
 bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
-    if (track_words.size() != num_of_levels) {
-        throw std::runtime_error("Invalid number of tracks. Expected " + std::to_string(num_of_levels) + ".");
+    if (track_words.size() != levels.num_of_levels) {
+        throw std::runtime_error("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
     }
-    std::vector<Word::const_iterator> track_words_begins(num_of_levels);
-    for (size_t track{ 0 }; track < num_of_levels; ++track) {
+    std::vector<Word::const_iterator> track_words_begins(levels.num_of_levels);
+    for (size_t track{ 0 }; track < levels.num_of_levels; ++track) {
         track_words_begins[track] = track_words[track].begin();
     }
 
     const std::vector<Word::const_iterator> track_words_ends{
         [&](){
-            std::vector<Word::const_iterator> track_words_ends(num_of_levels);
-            for (size_t track{ 0 }; track < num_of_levels; ++track) {
-                track_words_ends[track] = track_words[track].end();
+            std::vector<Word::const_iterator> val(levels.num_of_levels);
+            for (size_t track{ 0 }; track < levels.num_of_levels; ++track) {
+                val[track] = track_words[track].end();
             }
-            return track_words_ends;
+            return val;
         }()
     };
 
@@ -1205,11 +1214,10 @@ bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
     for (const State state: initial) {
         worklist.emplace_back(state, track_words_begins);
     }
-    Level level;
     while (!worklist.empty()) {
         const auto [state, words_its]{ std::move(worklist.front()) };
         worklist.pop_front();
-        level = levels[state];
+        const Level level = levels[state];
         const StatePost& state_post{ delta[state] };
         const auto state_post_end{ state_post.end() };
         const Word::const_iterator word_symbol_it{ words_its[level] };
@@ -1242,8 +1250,8 @@ bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
                             continue_to_next_target = true;
                         }
                         ++next_words_its[level_in_transition];
-                        level_in_transition = (level_in_transition + 1) % static_cast<Level>(num_of_levels);
-                    } while(level_in_transition % num_of_levels != levels[target] && !continue_to_next_target);
+                        level_in_transition = (level_in_transition + 1) % static_cast<Level>(levels.num_of_levels);
+                    } while(level_in_transition % levels.num_of_levels != levels[target] && !continue_to_next_target);
                     if (continue_to_next_target) { continue; }
                     if (are_all_track_words_read(next_words_its) && final.contains(target)) { return true; }
                     worklist.emplace_back(target, next_words_its);
