@@ -28,7 +28,7 @@ int main() {
     // Then transduce a sequence of 'bc' to 'BC'.
     next_state = nft.insert_word(next_state, { 'b', 'B', 'c', 'C' });
     // Then transduce a sequence 'd' to 'DEF' (non-length-preserving operation).
-    nft.insert_word_by_parts(next_state, { { 'd' }, { 'D', 'E', 'F' } }, final);
+    nft.insert_word_by_levels(next_state, { { 'd' }, { 'D', 'E', 'F' } }, final);
     // Finally, accept the same suffix on all tapes.
     nft.insert_identity(final, &alphabet);
     // NFT nft transduces a sequence of 'abcd' to 'ABCDEF', accepting the same suffix on all tapes.
@@ -57,7 +57,7 @@ int main() {
     nft2.final.insert(final2);
     State next2{ nft2.add_transition(initial2, { 'A', '1' }) };
     next2 = nft2.insert_word(next2, { 'B', '2', 'C', '3' });
-    nft2.insert_word_by_parts(next2, { { 'D' }, { '4', '5', '6' } }, final2);
+    nft2.insert_word_by_levels(next2, { { 'D' }, { '4', '5', '6' } }, final2);
     nft2.insert_identity(final2, &alphabet);
     Nft nft_composed{ mata::nft::compose(nft, nft2) }; // Compose, by default on tape 1 of nft and tape 0 of nft2, giving the composition nft2 after nft.
     // Print the composed NFT in dot format, labeling the states as `state_number:level`.

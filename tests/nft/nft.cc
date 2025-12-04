@@ -5268,7 +5268,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
     }
 }
 
-TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
+TEST_CASE("mata::nft::Nft::insert_word_by_levels()") {
     Nft nft, expected;
 
     SECTION("Inserting a word between two states (both initial and final) with empty delta.") {
@@ -5277,7 +5277,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
         SECTION("levels.num_of_levels == 1 && word_part.size() == 1") {
             nft = Nft::with_levels({1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            State new_tgt = nft.insert_word_by_parts(0, { {'a'} } , 1);
+            State new_tgt = nft.insert_word_by_levels(0, { {'a'} } , 1);
             CHECK(new_tgt == 1);
 
             expected = Nft::with_levels({1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5288,7 +5288,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
         SECTION("levels.num_of_levels == 1 && word_part.size() == 2") {
             nft = Nft::with_levels({1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'} } , 1);
+            State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'} } , 1);
             CHECK(new_tgt == 1);
 
             expected = Nft::with_levels({1, { 0, 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5300,7 +5300,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
         SECTION("levels.num_of_levels == 1 && word_part.size() == 4") {
             nft = Nft::with_levels({1, { 0, 0, 0, 0, 0 } }, delta, { 0, 1 }, { 0, 1  });
-            State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'} }, 1);
+            State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b', 'c', 'd'} }, 1);
             CHECK(new_tgt == 1);
 
             expected = Nft::with_levels({1, { 0, 0, 0, 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5324,7 +5324,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 1") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'} } , 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a'}, {'b'} } , 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({2, { 0, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5335,7 +5335,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'} } , 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'}, {'c', 'd'} } , 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5349,7 +5349,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0, 1, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5370,7 +5370,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 1") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'}, {'c'}, {'d'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a'}, {'b'}, {'c'}, {'d'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5384,7 +5384,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5402,7 +5402,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5438,7 +5438,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         SECTION("levels.num_of_levels == 2") {
             SECTION("word_part.size() == 1") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a'}, {'b'} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0 } }, delta, { 0, 1 }, { 3 });
@@ -5450,7 +5450,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'}, {'c', 'd'} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0, 1, 0 } }, delta, { 0, 1 }, { 5 });
@@ -5464,7 +5464,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0, 1, 0, 1, 0, 1, 0 } }, delta, { 0, 1 }, { 9 });
@@ -5484,7 +5484,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         SECTION("levels.num_of_levels == 4") {
             SECTION("word_part.size() == 1") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'}, {'c'}, {'d'} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a'}, {'b'}, {'c'}, {'d'} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 5 });
@@ -5498,7 +5498,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 9 });
@@ -5516,7 +5516,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 17 });
@@ -5542,7 +5542,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("The lengths of word pats dont have the same length.") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {} });
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {} });
                 nft.final.insert(new_tgt);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 17 });
@@ -5578,7 +5578,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         SECTION("levels.num_of_levels == 2") {
             SECTION("word_part.size() == 1") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {}, {'b'} } , 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {}, {'b'} } , 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({2, { 0, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5590,7 +5590,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c'} } , 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b'}, {'c'} } , 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5604,7 +5604,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft::with_levels({2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a', 'b', 'c', 'd'}, {'e'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({2, { 0, 0, 1, 0, 1, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5624,7 +5624,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         SECTION("levels.num_of_levels == 4") {
             SECTION("word_part.size() == 1") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {}, {'c'}, {} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a'}, {}, {'c'}, {} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5638,7 +5638,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'c', 'd'}, {}, {'g'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {'a'}, {'c', 'd'}, {}, {'g'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5656,7 +5656,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft::with_levels({4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_parts(0, { {}, {'e', 'f'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+                State new_tgt = nft.insert_word_by_levels(0, { {}, {'e', 'f'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
                 CHECK(new_tgt == 1);
 
                 expected = Nft::with_levels({4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
@@ -5687,7 +5687,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
             nft = Nft{};
             nft.levels.num_of_levels = 3;
             const State state_lvl1{ nft.add_state_with_level(1) };
-            const State target{ nft.insert_word_by_parts(state_lvl1, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
+            const State target{ nft.insert_word_by_levels(state_lvl1, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
             CHECK(nft.levels[target] == 1);
             expected = Nft{};
             expected.levels.num_of_levels = 3;
@@ -5708,7 +5708,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
             nft = Nft{};
             nft.levels.num_of_levels = 3;
             const State state_lvl2{ nft.add_state_with_level(2) };
-            const State target{ nft.insert_word_by_parts(state_lvl2, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
+            const State target{ nft.insert_word_by_levels(state_lvl2, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
             CHECK(nft.levels[target] == 2);
             expected = Nft{};
             expected.levels.num_of_levels = 3;

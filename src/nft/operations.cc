@@ -1180,9 +1180,9 @@ std::set<mata::Word> mata::nft::Nft::get_words(const size_t max_length) const {
     return result;
 }
 
-bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
+bool Nft::is_in_lang_by_levels(const std::vector<Word>& track_words) {
     if (track_words.size() != levels.num_of_levels) {
-        throw std::runtime_error("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
+        throw std::invalid_argument("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
     }
     std::vector<Word::const_iterator> track_words_begins(levels.num_of_levels);
     for (size_t track{ 0 }; track < levels.num_of_levels; ++track) {

@@ -46,7 +46,7 @@
  *
  * There are some utility functions to simplify creating this NFA-like Delta data structure for NFTs such as
  *  @c mata::nft::Nft::insert_word() (inserting the NFA-like sequence of transitions on different tapes: 'abcd' which means to
- *  read 'ac' on tape 0 and 'bd' on tape 1), and @c mata::nft::Nft::insert_word_by_parts() (inserting word for each tape
+ *  read 'ac' on tape 0 and 'bd' on tape 1), and @c mata::nft::Nft::insert_word_by_levels() (inserting word for each tape
  *  separately: {'ac', 'bd'} to achieve the same as in the previous).
  * If you however want precise control over the created transitions, you can omit using the utility NFT functions and
  *  build your NFT like an NFA using the Nft::Delta::* operations directly, adding a single symbol on a single tape per
@@ -340,7 +340,7 @@ public:
      * @param target The target state where the word ends. @p target must already exist and be of a level 0.
      * @return The state @p target where the inserted @p word_parts_on_levels ends.
      */
-    State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels, State target);
+    State insert_word_by_levels(State source, const std::vector<Word>& word_parts_on_levels, State target);
 
     /**
      * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT
@@ -355,7 +355,7 @@ public:
      * @param word_parts_on_levels The vector of word parts, with each part corresponding to a different level.
      * @return The newly created target where the inserted @p word_parts_on_levels ends.
      */
-    State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels);
+    State insert_word_by_levels(State source, const std::vector<Word>& word_parts_on_levels);
 
     /**
      * Inserts identity transitions into the NFT.
@@ -656,7 +656,7 @@ public:
      * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
      *  relation accepted by the transducer with 'n' levels (tracks).
      */
-    bool is_tuple_in_lang(const std::vector<Word>& track_words);
+    bool is_in_lang_by_levels(const std::vector<Word>& track_words);
 
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
