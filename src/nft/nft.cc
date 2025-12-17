@@ -212,11 +212,36 @@ void Nft::print_to_dot(
         }
     };
 
+    auto has_alphabet_at_level = [&](const Level level) -> bool {
+        return this->alphabets.has_value() && this->alphabets->operator[](level) != nullptr;
+    };
+
+    auto translate_symbol_at_level = [&](const Symbol symbol, const Level level) -> std::string {
+        if (!decode_ascii_chars && has_alphabet_at_level(level)) {
+            return this->alphabets->operator[](level)->reverse_translate_symbol(symbol);
+        } else {
+            return translate_symbol(symbol);
+        }
+    };
+
     auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
         std::string result;
         for (const Symbol& symbol : symbols) { result += translate_symbol(symbol) + ","; }
         result.pop_back(); // Remove last comma
         return result;
+    };
+
+    auto vec_of_symbols_to_string_at_level = [&](const OrdVector<Symbol>& symbols, const Level level) {
+        if (has_alphabet_at_level(level)) {
+            std::string result;
+            for (const Symbol& symbol: symbols) {
+                result += translate_symbol_at_level(symbol, level) + ",";
+            }
+            result.pop_back(); // Remove last comma
+            return result;
+        } else {
+            return vec_of_symbols_to_string(symbols);
+        }
     };
 
     auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
@@ -281,7 +306,7 @@ void Nft::print_to_dot(
 
             std::string label = use_intervals
                                     ? vec_of_symbols_to_string_with_intervals(symbols)
-                                    : vec_of_symbols_to_string(symbols);
+                                    : vec_of_symbols_to_string_at_level(symbols, levels[source]);
             std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
             bool is_shortened = false;
             if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {

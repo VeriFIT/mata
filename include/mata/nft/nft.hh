@@ -134,11 +134,18 @@ public:
     // TODO: When there is a need for state dictionary, consider creating default library implementation of state
     //  dictionary in the attributes.
 
+    /**
+     * @brief If each level has its own alphabet. alphabets[i] (or rather alphabets->operator[](i)) contains a pointer to the alphabet of level i.
+     *
+     * Each Alphabet can be shared among multiple levels and NFTs. If all levels share the same alphabet, assign std::nullopt here and use alphabet member instead.
+     */
+    std::optional<std::vector<Alphabet*>> alphabets = std::nullopt;
+
 public:
     explicit Nft(
             Delta delta = {}, utils::SparseSet<State> initial_states = {},
             utils::SparseSet<State> final_states = {}, Levels levels = {},
-            Alphabet* alphabet = nullptr)
+            Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt)
         : Nfa{ std::move(delta), std::move(initial_states), std::move(final_states), alphabet },
           levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states(), DEFAULT_LEVEL } : std::move(levels) } {}
 
@@ -153,32 +160,32 @@ public:
      */
     explicit Nft(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
                  utils::SparseSet<State> final_states = {}, Levels levels = {},
-                 Alphabet* alphabet = nullptr)
+                 Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt)
         : Nfa{ num_of_states, std::move(initial_states), std::move(final_states), alphabet },
-          levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states, DEFAULT_LEVEL } : std::move(levels) } {}
+          levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states, DEFAULT_LEVEL } : std::move(levels) }, alphabets{alphabets} {}
 
     static Nft with_levels(
             Levels levels, const size_t num_of_states = 0, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
-        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), alphabet };
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), alphabet, alphabets };
     }
 
     static Nft with_levels(
             Levels levels, Delta delta, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
-        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), alphabet };
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), alphabet, alphabets };
     }
 
     static Nft with_levels(
             const size_t num_of_levels, const size_t num_of_states = 0, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
-        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabet };
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabet, alphabets };
     }
 
     static Nft with_levels(
             const size_t num_of_levels, Delta delta, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr) {
-        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabet };
+            utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabet, alphabets };
     }
 
     /**
