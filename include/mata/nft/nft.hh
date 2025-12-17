@@ -512,7 +512,7 @@ public:
      * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
      * @return automaton in DOT format
      */
-    std::string print_to_dot(bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1) const;
+    std::string print_to_dot(bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton to the output stream in DOT format
@@ -522,7 +522,7 @@ public:
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
      * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
      */
-    void print_to_dot(std::ostream &output, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1) const;
+    void print_to_dot(std::ostream &output, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton to the file in DOT format
@@ -532,7 +532,7 @@ public:
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
      * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
      */
-    void print_to_dot(const std::string& filename, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1) const;
+    void print_to_dot(const std::string& filename, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton in mata format

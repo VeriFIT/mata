@@ -177,13 +177,13 @@ void Nft::remove_epsilon(Symbol epsilon) {
     *this = mata::nft::remove_epsilon(*this, epsilon);
 }
 
-std::string Nft::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+std::string Nft::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
     std::stringstream output;
     print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
     return output.str();
 }
 
-void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
     auto to_ascii = [&](const Symbol symbol) -> std::string {
         // Translate only printable ASCII characters.
         if (symbol < 33 || symbol >= 127) {
@@ -203,8 +203,13 @@ void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
         }
         if (decode_ascii_chars) {
             return to_ascii(symbol);
+        } else if (alphabet != nullptr) {
+            return alphabet->reverse_translate_symbol(symbol);
+        } else if (this->alphabet != nullptr) {
+            return this->alphabet->reverse_translate_symbol(symbol);
+        } else {
+            return std::to_string(symbol);
         }
-        return std::to_string(symbol);
     };
 
     auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
@@ -314,7 +319,7 @@ void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
     output << "}" << std::endl;
 }
 
-void Nft::print_to_dot(const std::string& filename,  const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+void Nft::print_to_dot(const std::string& filename,  const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
@@ -373,7 +378,10 @@ void Nft::print_to_mata(std::ostream &output) const {
     output << "%LevelsNum " << levels.num_of_levels << std::endl;
 
     for (const Transition& trans: delta.transitions()) {
-        output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
+        output << "q" << trans.source << " "
+        << ((alphabet != nullptr) ? alphabet->reverse_translate_symbol(trans.symbol) :
+            ((this->alphabet != nullptr) ? this->alphabet->reverse_translate_symbol(trans.symbol) : std::to_string(trans.symbol)))
+        << " q" << trans.target << std::endl;
     }
 }
 
