@@ -1,24 +1,28 @@
-// TODO: some header
+/** @file
+ * @brief Tests for basic functionality of @c mata::nft::Nft.
+ */
 
 #include <algorithm>
+#include <ranges>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "utils.hh"
 #include "mata/alphabet.hh"
 #include "mata/nft/types.hh"
-#include "utils.hh"
 
-#include "mata/utils/sparse-set.hh"
-#include "mata/nft/delta.hh"
 #include "mata/nft/nft.hh"
+#include "mata/nft/delta.hh"
+#include "mata/utils/sparse-set.hh"
+
 #include "mata/applications/strings.hh"
-#include "mata/nft/builder.hh"
-#include "mata/nft/plumbing.hh"
-#include "mata/nft/algorithms.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nft/algorithms.hh"
+#include "mata/nft/builder.hh"
+#include "mata/nft/plumbing.hh"
 
 using namespace mata;
 using namespace mata::nft::algorithms;
@@ -3615,15 +3619,15 @@ TEST_CASE("mata::nft:: create simple automata") {
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     nft = builder::create_sigma_star_nft(&alphabet, 1);
-    CHECK(nft.is_in_lang({ {}, {} }));
-    CHECK(nft.is_in_lang({ 0 , {} }));
-    CHECK(nft.is_in_lang({ 1 , {} }));
-    CHECK(nft.is_in_lang({ 2 , {} }));
-    CHECK(nft.is_in_lang({ { 0, 1 }, {} }));
-    CHECK(nft.is_in_lang({ { 1, 0 }, {} }));
-    CHECK(nft.is_in_lang({ { 2, 2, 2 }, {} }));
-    CHECK(nft.is_in_lang({ { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
-    CHECK(!nft.is_in_lang({  3 , {} }));
+    CHECK(nft.is_in_lang(Word{}));
+    CHECK(nft.is_in_lang({ 0 }));
+    CHECK(nft.is_in_lang({ 1 }));
+    CHECK(nft.is_in_lang({ 2 }));
+    CHECK(nft.is_in_lang({ 0, 1 }));
+    CHECK(nft.is_in_lang({ 1, 0 }));
+    CHECK(nft.is_in_lang({ 2, 2, 2 }));
+    CHECK(nft.is_in_lang({ 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }));
+    CHECK(!nft.is_in_lang({ 3 }));
 }
 
 TEST_CASE("mata::nft::print_to_mata()") {

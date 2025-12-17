@@ -1,4 +1,5 @@
-/* nfa.cc -- operations for NFA
+/** @file
+ * @brief Operations for NFA.
  */
 
 #include <algorithm>
@@ -7,6 +8,7 @@
 #include <iterator>
 #include <fstream>
 #include <string>
+#include <queue>
 
 // MATA headers
 #include "mata/alphabet.hh"
@@ -50,9 +52,8 @@ namespace {
             }
         }
 
-        State state;
         while (!worklist.empty()) {
-            state = worklist.back();
+            const State state{ worklist.back() };
             worklist.pop_back();
             for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
@@ -124,14 +125,14 @@ std::vector<State> Nfa::distances_to_final() const {
     return revert(*this).distances_from_initial();
 }
 
-Run Nfa::get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const {
-    Run result{{}, {q}};
-    while (!final[q]) {
-        for (Move move : delta[q].moves()) {
-            if (distances_to_final[move.target] < distances_to_final[q]) {
+Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
+    Run result{{}, {state}};
+    while (!final[state]) {
+        for (Move move : delta[state].moves()) {
+            if (distances_to_final[move.target] < distances_to_final[state]) {
                 result.word.push_back(move.symbol);
                 result.path.push_back(move.target);
-                q = move.target;
+                state = move.target;
                 break;
             }
         }
@@ -209,7 +210,7 @@ namespace {
  * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
  * (see https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm, in particular strongconnect(v))
  * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff
- * the state i is useful at the end. To break the recursiveness, we use @p program_stack simulating
+ * the state `i` is useful at the end. To break the recursiveness, we use @p program_stack simulating
  * the program stack during the recursive calls of strongconnect(v) (see the wiki).
  *
  * Node data
@@ -297,7 +298,7 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
         }
         if(rec_call) continue;
 
-        // check if we have the root of a SCC
+        // check if we have the root of an SCC
         if(act_state_data.lowlink == act_state_data.index) {
             State st;
             std::vector<State> scc;
@@ -444,14 +445,14 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
         switch (symbol) {
             case '"':     return "\\\"";
             case '\\':    return "\\\\";
-            default:      return std::string(1, static_cast<char>(symbol));
+            default:      return { 1, static_cast<char>(symbol) };
         }
     };
 
     auto translate_symbol = [&](const Symbol symbol) -> std::string {
         switch (symbol) {
-            case EPSILON:      return "<eps>";
-            default:           break;
+            case EPSILON: return "<eps>";
+            default: break;
         }
         if (decode_ascii_chars) {
             return to_ascii(symbol);
@@ -632,17 +633,16 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    auto get_epsilon_closure = [&](const StateSet& states) {
-        StateSet closure{ states };
+    auto get_epsilon_closure = [&](const StateSet& states_for) {
+        StateSet closure{ states_for };
         std::queue<State> worklist;
-        for (const State state: states) {
+        for (const State state: states_for) {
             worklist.push(state);
         }
         while (!worklist.empty()) {
             const State state = worklist.front();
             worklist.pop();
-            auto move_it{ delta[state].find(EPSILON) };
-            if (move_it != delta[state].end()) {
+            if (auto move_it{ delta[state].find(EPSILON) }; move_it != delta[state].end()) {
                 for (const State target: move_it->targets) {
                     if (!closure.contains(target)) {
                         closure.insert(target);
@@ -872,12 +872,8 @@ Nfa Nfa::decode_utf8() const {
     // For example, consider the sequences 0xC8 0x80 and 0xC8 0x88.
     // Based solely on the first byte (0xC8), we cannot determine which sequence
     // will result in the higher number.
-    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost& symbol_post, const bool is_nondet) {
-        if (is_nondet) {
-            state_post.insert(symbol_post);
-        } else {
-            state_post.emplace_back(std::move(symbol_post));
-        }
+    auto add_to_state_post = [&](StatePost& state_post, const SymbolPost& symbol_post, const bool is_nondet) {
+        if (is_nondet) { state_post.insert(symbol_post); } else { state_post.emplace_back(symbol_post); }
     };
 
     // UTF-8 Byte Patterns:
