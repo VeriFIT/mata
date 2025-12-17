@@ -10,11 +10,15 @@
 
 #include <limits>
 
+#include "types.hh"
+#include "types.hh"
+
 namespace mata::nfa {
 
 extern const std::string TYPE_NFA;
 
 using State = unsigned long;
+using Symbol = mata::Symbol;
 using StateSet = mata::utils::OrdVector<State>;
 
 struct Run {
@@ -60,7 +64,7 @@ public:
 class Nfa; ///< A non-deterministic finite automaton.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON = Limits::max_symbol;
+constexpr Symbol EPSILON{ Limits::max_symbol };
 
 } // namespace mata::nfa.
 

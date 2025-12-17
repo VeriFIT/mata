@@ -74,26 +74,20 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
 #include <memory>
-#include <limits>
+#include <optional>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <queue>
-#include <optional>
 
-#include "mata/alphabet.hh"
-#include "mata/parser/parser.hh"
-#include "mata/utils/utils.hh"
-#include "mata/utils/ord-vector.hh"
-#include "mata/parser/inter-aut.hh"
-#include "mata/utils/synchronized-iterator.hh"
-#include "mata/utils/sparse-set.hh"
-#include "types.hh"
 #include "delta.hh"
+#include "types.hh"
+#include "mata/alphabet.hh"
+#include "mata/parser/inter-aut.hh"
+#include "mata/utils/ord-vector.hh"
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/utils.hh"
 
 namespace mata::nfa {
 
@@ -130,6 +124,9 @@ public:
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
+     * @param[in] initial_states Initial states of the NFA.
+     * @param[in] final_states Final states of the NFA.
+     * @param[in] alphabet Pointer to the alphabet used by the NFA.
      */
     explicit Nfa(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
                  utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
@@ -249,7 +246,7 @@ public:
      * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
      *
-     * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
+     * @return BoolVector Bool vector whose `i`-th value is true iff the state `i` is useful.
      */
     BoolVector get_useful_states() const;
 
@@ -269,7 +266,7 @@ public:
     };
 
     /**
-     * @brief Tarjan's SCC discover algorihm.
+     * @brief Tarjan's SCC discover algorithm.
      *
      * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
      */
@@ -306,13 +303,12 @@ public:
     std::vector<State> distances_to_final() const;
 
     /**
-     * @brief Get some shortest accepting run from state @p q
+     * @brief Get some shortest accepting run from state @p state.
      *
-     * Assumes that @p q is a state of this automaton and that there is some accepting run from @p q
-     *
+     * @param state State from which the accepting run starts.
      * @param distances_to_final Vector of the lengths of the shortest runs from states (can be computed using distances_to_final())
      */
-    Run get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const;
+    Run get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const;
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -343,7 +339,7 @@ public:
      * @param symbol Symbol to check.
      * @return True if the passed @p symbol is epsilon, false otherwise.
      */
-    bool is_epsilon(Symbol symbol) const {
+    static bool is_epsilon(const Symbol symbol) {
         // TODO: When multiple epsilon symbols specification inside the alphabets is implemented, update this check to
         //  reflect the new changes:
         //  Check for alphabet in the NFA, check for specified epsilon symbol and compare. Otherwise, compare with the
@@ -371,6 +367,7 @@ public:
     /**
      * @brief Prints the automaton to the output stream in DOT format
      *
+     * @param[out] output Output stream to print the automaton to.
      * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
      * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
@@ -402,6 +399,7 @@ public:
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
      *
+     * @param[out] output Output stream to print the automaton to.
      * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
      */
     void print_to_mata(std::ostream &output, const Alphabet* alphabet = nullptr) const;
@@ -425,7 +423,7 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given set of states over the given symbol.
      */
-    StateSet post(const StateSet& states, const Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
+    StateSet post(const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
@@ -454,7 +452,7 @@ public:
 
     /**
      * Check whether the language of NFA is empty.
-     * Currently calls is_lang_empty_scc if cex is null
+     * Currently, calls is_lang_empty_scc if cex is null
      * @param[out] cex Counter-example path for a case the language is not empty.
      * @return True if the language is empty, false otherwise.
      */
@@ -509,7 +507,6 @@ public:
 
     /**
      * Fill @p alphabet_to_fill with symbols from @p nfa.
-     * @param[in] nfa NFA with symbols to fill @p alphabet_to_fill with.
      * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @p nfa.
      */
     void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
@@ -562,12 +559,14 @@ public:
      *
      * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
      */
-    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) { return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix); }
+    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const {
+        return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix);
+    }
 
     /**
      * @brief Read a word and return the set of states the automaton ends up in.
      *
-     * @param word The word to read.
+     * @param run The word to read.
      * @param use_epsilon Whether the automaton uses epsilon transitions.
      *
      * @return Set of all reachable states after reading the word. Note: This returns
@@ -575,7 +574,7 @@ public:
      *         language membership, or intersect the result with final states manually if needed.
      *         Note: The returned set is empty if the word cannot be read.
      */
-    StateSet read_word(const Run& word, const bool use_epsilon = false) const;
+    StateSet read_word(const Run& run, bool use_epsilon = false) const;
 
     /**
      * @brief Read a word and return the set of states the automaton ends up in.
@@ -651,7 +650,7 @@ public:
      * @param first_epsilon If defined, all symbols >=first_epsilon are assumed to be epsilon and therefore are not in the returned word.
      * @return std::optional<Word> Some word from the language. If the language is empty, returns std::nullopt.
      */
-    std::optional<Word> get_word(const std::optional<Symbol> first_epsilon = EPSILON) const;
+    std::optional<Word> get_word(std::optional<Symbol> first_epsilon = EPSILON) const;
 
     /**
      * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
@@ -722,7 +721,7 @@ template<bool...> struct bool_pack{};
 /// Check that for all values in a pack @p Ts are 'true'.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
-template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
+template<typename T, typename... Ts> using AreAllOfType = conjunction<std::is_same<Ts, T>...>::type;
 
 /**
  * Create alphabet from variadic number of NFAs given as arguments.
@@ -842,7 +841,7 @@ Nfa lang_difference(
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 Nfa intersection(const Nfa& lhs, const Nfa& rhs,
-                 const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
+                 Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
 /**
  * @brief Concatenate two NFAs.
@@ -997,27 +996,28 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
-// Reverting the automaton by one of the three functions below,
-// currently simple_revert seems best (however, not tested enough).
+/// Reverting the automaton by one of the three functions below,
+/// currently simple_revert seems best (however, not tested enough).
 Nfa revert(const Nfa& aut);
 
-// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures,
-// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
-// It is faster asymptotically and for somewhat dense automata,
-// the same or a little bit slower than simple_revert otherwise.
-// Not affected by pre-reserving vectors.
+/// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures, and is potentially
+///  dangerous when there are used symbols with large numbers (allocates an array indexed by symbols).
+/// It is asymptotically faster, however.
+/// For somewhat dense automata, the performance is the same or a little bit slower than simple_revert otherwise.
+/// Not affected by pre-reserving vectors.
 Nfa fragile_revert(const Nfa& aut);
 
-// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
-//  Much affected by pre-reserving vectors.
+/// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
+/// Much affected by pre-reserving vectors.
 Nfa simple_revert(const Nfa& aut);
 
-// Reverting the automaton by a modification of the simple algorithm.
-// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all, except on
-//  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
+/// Reverting the automaton by a modification of the simple algorithm.
+/// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all,
+///  except on dense automata, where it is almost as slow as simple_revert.
+/// Candidate for removal.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
-// Removing epsilon transitions
+/// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
@@ -1030,9 +1030,10 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
 
 /**
  * Get the set of symbols to work with during operations.
+ * @param nfa NFA to get symbols from.
  * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
  */
-utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
+utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* shared_alphabet = nullptr);
 
 /**
  * @brief Get any arbitrary accepted word in the language difference of @p nfa_included without @p nfa_excluded.
@@ -1056,7 +1057,7 @@ std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const
 namespace std {
 template <>
 struct hash<mata::nfa::Transition> {
-	inline size_t operator()(const mata::nfa::Transition& trans) const {
+	inline size_t operator()(const mata::nfa::Transition& trans) const noexcept {
 		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
 		accum = mata::utils::hash_combine(accum, trans.symbol);
 		accum = mata::utils::hash_combine(accum, trans.target);

@@ -1,4 +1,6 @@
-// TODO: some header
+/** @file
+ * @brief Tests for Nondeterministic Finite Automata (NFAs).
+ */
 
 #include <unordered_set>
 
@@ -22,10 +24,6 @@ using namespace mata::applications::strings;
 using namespace mata::nfa::plumbing;
 using namespace mata::utils;
 using namespace mata::parser;
-using Symbol = mata::Symbol;
-using Word = mata::Word;
-using IntAlphabet = mata::IntAlphabet;
-using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 TEST_CASE("mata::nfa::size()") {
     Nfa nfa{};
@@ -1900,7 +1898,7 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
-        REQUIRE(cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
@@ -1929,7 +1927,7 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
-        REQUIRE(!cmpl.is_in_lang({}));
+        REQUIRE(!cmpl.is_in_lang(Run{}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["b"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
@@ -1979,7 +1977,7 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
-        REQUIRE(cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
@@ -4223,15 +4221,15 @@ TEST_CASE("mata::nfa:: create simple automata") {
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     nfa = builder::create_sigma_star_nfa(&alphabet);
-    CHECK(nfa.is_in_lang({ {}, {} }));
-    CHECK(nfa.is_in_lang({  0 , {} }));
-    CHECK(nfa.is_in_lang({  1 , {} }));
-    CHECK(nfa.is_in_lang({  2 , {} }));
-    CHECK(nfa.is_in_lang({ { 0, 1 }, {} }));
-    CHECK(nfa.is_in_lang({ { 1, 0 }, {} }));
-    CHECK(nfa.is_in_lang({ { 2, 2, 2 }, {} }));
-    CHECK(nfa.is_in_lang({ { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
-    CHECK(!nfa.is_in_lang({  3 , {} }));
+    CHECK(nfa.is_in_lang(Word{}));
+    CHECK(nfa.is_in_lang(Word{ 0 }));
+    CHECK(nfa.is_in_lang(Word{ 1 }));
+    CHECK(nfa.is_in_lang(Word{ 2 }));
+    CHECK(nfa.is_in_lang(Word{ 0, 1 }));
+    CHECK(nfa.is_in_lang(Word{ 1, 0 }));
+    CHECK(nfa.is_in_lang(Word{ 2, 2, 2 }));
+    CHECK(nfa.is_in_lang(Word{ 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }));
+    CHECK(!nfa.is_in_lang(Word{ 3 } ));
 }
 
 TEST_CASE("mata::nfa:: print_to_mata") {

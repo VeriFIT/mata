@@ -40,7 +40,7 @@ bool mata::nft::algorithms::is_universal_antichains(
 			return false;
 		}
 
-		return std::includes(rhs.begin(), rhs.end(), lhs.begin(), lhs.end());
+		return std::ranges::includes(rhs, lhs);
 	};
 
 	// process parameters
@@ -88,7 +88,7 @@ bool mata::nft::algorithms::is_universal_antichains(
 						trav = paths[trav].first;
 					}
 
-					std::reverse(cex->word.begin(), cex->word.end());
+					std::ranges::reverse(cex->word);
 				}
 
 				return false;

@@ -69,7 +69,8 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
 bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
 
 /**
- * Inclusion implemented by antichain algorithms.
+ * @brief Inclusion implemented by antichain algorithms.
+ *
  * @param[in] smaller Automaton which language should be included in the bigger one
  * @param[in] bigger Automaton which language should include the smaller one
  * @param[in] alphabet Alphabet of both automata (not needed for antichain algorithm)
@@ -80,16 +81,18 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
 bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
 /**
- * Universality check implemented by checking emptiness of complemented automaton
+ * @brief Check universality by checking the emptiness of a complement of @p aut.
+ *
  * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
  * @param[out] cex Counterexample word which eventually breaks the universality
- * @return True if the complemented automaton has non empty language, i.e., the original one is not universal
+ * @return True if the complemented automaton has non-empty language, i.e., the original one is not universal
  */
 bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
 /**
- * Universality checking based on subset construction with antichain.
+ * @brief check universality based on subset construction with antichains.
+ *
  * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
  * @param[out] cex Counterexample word which eventually breaks the universality
@@ -106,7 +109,7 @@ Simlib::Util::BinaryRelation compute_relation(
  *
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
- * @param[in] first_epsilons The smallest epsilon.
+ * @param[in] first_epsilon The smallest epsilon.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
  * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
  *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
@@ -114,7 +117,7 @@ Simlib::Util::BinaryRelation compute_relation(
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
-            const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+            Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
 /**
  * @brief Concatenate two NFAs.

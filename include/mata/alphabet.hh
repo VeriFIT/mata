@@ -4,12 +4,12 @@
 #ifndef MATA_ALPHABET_HH
 #define MATA_ALPHABET_HH
 
-#include <forward_list>
+#include <limits>
 #include <string>
 #include <utility>
 
-#include "utils/utils.hh"
 #include "utils/ord-vector.hh"
+#include "utils/utils.hh"
 
 namespace mata {
 

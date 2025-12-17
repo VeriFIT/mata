@@ -360,7 +360,7 @@ public:
     /**
      * Inserts identity transitions into the NFT.
      *
-     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     * @param state The state where the identity transition will be inserted. @p state serves as both the source and
      *  target state.
      * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol in
      *  the vector.
@@ -374,9 +374,9 @@ public:
     /**
      * Inserts identity transitions into the NFT.
      *
-     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     * @param state The state where the identity transition will be inserted. @p state serves as both the source and
      *  target state.
-     * @param alpahbet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
+     * @param alphabet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
@@ -387,7 +387,7 @@ public:
     /**
      * Inserts an identity transition into the NFT.
      *
-     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     * @param state The state where the identity transition will be inserted. @p state serves as both the source and
      *  target state.
      * @param symbol The symbol used for the identity transition.
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
@@ -446,12 +446,6 @@ public:
      * @brief In-place union
      */
     Nft& unite_nondet_with(const Nft &aut);
-
-    /**
-     * Unify transitions to create a directed graph with at most a single transition between two states.
-     * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
-     * @return An automaton representing a directed graph.
-     */
 
      /**
       * @brief Get NFT where transitions of @c this are replaced with transitions over one symbol @p abstract_symbol
@@ -517,6 +511,7 @@ public:
     /**
      * @brief Prints the automaton to the output stream in DOT format
      *
+     * @param[out] output Output stream to print the automaton to.
      * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
      * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
@@ -572,7 +567,7 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given set of states over the given symbol.
      */
-    StateSet post(const StateSet& states, const Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
+    StateSet post(const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
@@ -626,7 +621,7 @@ public:
      *
      * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
      */
-    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) {
+    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const {
          return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix);
     }
 
@@ -812,7 +807,7 @@ template<bool...> struct bool_pack{};
 /// Check that for all values in a pack @p Ts are 'true'.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
-template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
+template<typename T, typename... Ts> using AreAllOfType = conjunction<std::is_same<Ts, T>...>::type;
 
 /**
  * @brief Compute non-deterministic union.
@@ -1042,7 +1037,7 @@ bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet, Ju
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nft& lhs, const Nft& rhs, JumpMode JumpMode = JumpMode::RepeatSymbol, const ParameterMap& params = {{ "algorithm", "antichains"}});
+bool are_equivalent(const Nft& lhs, const Nft& rhs, JumpMode jump_mode = JumpMode::RepeatSymbol, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
