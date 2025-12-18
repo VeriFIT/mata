@@ -1132,7 +1132,7 @@ Nft mata::nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* 
     return result;
 }
 
-std::ostream& operator<<(std::ostream& os, const Nft& nft) {
+std::ostream& std::operator<<(std::ostream& os, const Nft& nft) {
     nft.print_to_mata(os);
     return os;
 }
