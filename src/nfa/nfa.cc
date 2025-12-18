@@ -477,28 +477,30 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
     auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
         std::string result;
 
-        std::vector<std::pair<Symbol, Symbol>> intervals;
-        auto symbols_it = symbols.begin();
-        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
-        ++symbols_it;
-        for (; symbols_it != symbols.end(); ++symbols_it) {
-            if (*symbols_it == interval.second + 1) {
-                interval.second = *symbols_it;
-            } else {
-                intervals.push_back(interval);
-                interval = {*symbols_it, *symbols_it};
-            }
-        }
-        intervals.push_back(interval);
+        const auto intervals{
+            [&]() {
+                std::vector<std::pair<Symbol, Symbol>> intervals_;
+                auto symbols_it = symbols.begin();
+                std::pair<Symbol, Symbol> interval{ *symbols_it, *symbols_it };
+                ++symbols_it;
+                for (; symbols_it != symbols.end(); ++symbols_it) {
+                    if (*symbols_it == interval.second + 1) { interval.second = *symbols_it; } else {
+                        intervals_.push_back(interval);
+                        interval = { *symbols_it, *symbols_it };
+                    }
+                }
+                intervals_.push_back(interval);
+                return intervals_;
+            }()
+        };
 
-        for (const auto& interval: intervals) {
-            const size_t interval_size = interval.second - interval.first + 1;
-            if (interval_size == 1) {
-                result += translate_symbol(interval.first) + ",";
+        for (const auto& [symbol_from, symbol_to] : intervals) {
+            if (const size_t interval_size{ symbol_to - symbol_from + 1 }; interval_size == 1) {
+                result += translate_symbol(symbol_from) + ",";
             } else if (interval_size == 2) {
-                result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
+                result += translate_symbol(symbol_from) + "," + translate_symbol(symbol_to) + ",";
             } else {
-                result += "[" + translate_symbol(interval.first) + "-" + translate_symbol(interval.second) + "],";
+                result += "[" + translate_symbol(symbol_from) + "-" + translate_symbol(symbol_to) + "],";
             }
         }
 
@@ -587,7 +589,7 @@ void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
 
     if (!initial.empty()) {
         output << "%Initial";
-        for (State init_state: initial) {
+        for (const State init_state: initial) {
             output << " q" << init_state;
         }
         output << std::endl;
@@ -595,7 +597,7 @@ void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
 
     if (!final.empty()) {
         output << "%Final";
-        for (State final_state: final) {
+        for (const State final_state: final) {
             output << " q" << final_state;
         }
         output << std::endl;

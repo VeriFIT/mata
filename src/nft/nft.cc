@@ -173,17 +173,21 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-void Nft::remove_epsilon(Symbol epsilon) {
+void Nft::remove_epsilon(const Symbol epsilon) {
     *this = mata::nft::remove_epsilon(*this, epsilon);
 }
 
-std::string Nft::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
+std::string Nft::print_to_dot(
+    const bool decode_ascii_chars, const bool use_intervals, const int max_label_length,
+    const Alphabet* alphabet) const {
     std::stringstream output;
-    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
     return output.str();
 }
 
-void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
+void Nft::print_to_dot(
+    std::ostream& output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length,
+    const Alphabet* alphabet) const {
     auto to_ascii = [&](const Symbol symbol) -> std::string {
         // Translate only printable ASCII characters.
         if (symbol < 33 || symbol >= 127) {
@@ -224,28 +228,30 @@ void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
     auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
         std::string result;
 
-        std::vector<std::pair<Symbol, Symbol>> intervals;
-        auto symbols_it = symbols.begin();
-        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
-        ++symbols_it;
-        for (; symbols_it != symbols.end(); ++symbols_it) {
-            if (*symbols_it == interval.second + 1) {
-                interval.second = *symbols_it;
-            } else {
-                intervals.push_back(interval);
-                interval = {*symbols_it, *symbols_it};
-            }
-        }
-        intervals.push_back(interval);
+        const auto intervals{
+            [&]() {
+                std::vector<std::pair<Symbol, Symbol>> intervals_;
+                auto symbols_it = symbols.begin();
+                std::pair<Symbol, Symbol> interval{ *symbols_it, *symbols_it };
+                ++symbols_it;
+                for (; symbols_it != symbols.end(); ++symbols_it) {
+                    if (*symbols_it == interval.second + 1) { interval.second = *symbols_it; } else {
+                        intervals_.push_back(interval);
+                        interval = { *symbols_it, *symbols_it };
+                    }
+                }
+                intervals_.push_back(interval);
+                return intervals_;
+            }()
+        };
 
-        for (const auto& interval: intervals) {
-            const size_t interval_size = interval.second - interval.first + 1;
-            if (interval_size == 1) {
-                result += translate_symbol(interval.first) + ",";
+        for (const auto& [symbol_from, symbol_to] : intervals) {
+            if (const size_t interval_size{ symbol_to - symbol_from + 1 }; interval_size == 1) {
+                result += translate_symbol(symbol_from) + ",";
             } else if (interval_size == 2) {
-                result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
+                result += translate_symbol(symbol_from) + "," + translate_symbol(symbol_to) + ",";
             } else {
-                result += "[" + translate_symbol(interval.first) + "-" + translate_symbol(interval.second) + "],";
+                result += "[" + translate_symbol(symbol_from) + "-" + translate_symbol(symbol_to) + "],";
             }
         }
 
@@ -319,12 +325,14 @@ void Nft::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
     output << "}" << std::endl;
 }
 
-void Nft::print_to_dot(const std::string& filename,  const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
+void Nft::print_to_dot(
+    const std::string& filename, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length,
+    const Alphabet* alphabet) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
 }
 
 std::string Nft::print_to_mata() const {
