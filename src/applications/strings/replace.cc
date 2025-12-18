@@ -423,14 +423,14 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet const* const
     }
     nft_reluctant_leftmost.levels[curr_state] = 1;
     // Output the replacement.
-    curr_state = nft_reluctant_leftmost.insert_word_by_parts(curr_state, { {}, replacement });
+    curr_state = nft_reluctant_leftmost.insert_word_by_levels(curr_state, { {}, replacement });
     State next_state{ nft_reluctant_leftmost.add_state_with_level(0) };
     nft_reluctant_leftmost.delta.add(curr_state, EPSILON, next_state);
     nft_reluctant_leftmost.final.insert(next_state);
     nft_reluctant_leftmost.final.clear();
     switch (replace_mode) {
         case ReplaceMode::All: { // Return to beginning to possibly repeat replacement.
-            nft_reluctant_leftmost.insert_word_by_parts(next_state, { { EPSILON }, { EPSILON } }, initial);
+            nft_reluctant_leftmost.insert_word_by_levels(next_state, { { EPSILON }, { EPSILON } }, initial);
             break;
         };
         case ReplaceMode::Single: { // End the replacement mode.
@@ -438,7 +438,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet const* const
             const State final{ next_state };
             nft_reluctant_leftmost.final.insert(final);
             nft_reluctant_leftmost.insert_identity(final, alphabet_symbols.to_vector());
-            nft_reluctant_leftmost.insert_word_by_parts(final, { { begin_marker }, { EPSILON } }, final);
+            nft_reluctant_leftmost.insert_word_by_levels(final, { { begin_marker }, { EPSILON } }, final);
             break;
         };
         default: {

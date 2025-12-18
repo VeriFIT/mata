@@ -582,7 +582,7 @@ State Nft::insert_word(const State source, const Word& word) {
     return insert_word(source, word, add_state_with_level(levels[source]));
 }
 
-State Nft::insert_word_by_parts(const State source, const std::vector<Word> &word_parts_on_levels, const State target) {
+State Nft::insert_word_by_levels(const State source, const std::vector<Word> &word_parts_on_levels, const State target) {
     assert(word_parts_on_levels.size() == levels.num_of_levels);
     assert(source < num_of_states());
     assert(target < num_of_states());
@@ -638,9 +638,9 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
     return target;
 }
 
-State Nft::insert_word_by_parts(const State source, const std::vector<Word> &word_parts_on_levels) {
+State Nft::insert_word_by_levels(const State source, const std::vector<Word> &word_parts_on_levels) {
    assert(source < levels.size());
-   return insert_word_by_parts(source, word_parts_on_levels, add_state_with_level(levels[source]));
+   return insert_word_by_levels(source, word_parts_on_levels, add_state_with_level(levels[source]));
 }
 
 State Nft::add_transition(const State source, const std::vector<Symbol>& symbols, const State target) {
