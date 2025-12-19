@@ -54,17 +54,21 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest) # also enables testing, if it was not disabled from command line
 
     if (BUILD_TESTING)
-        # Catch2 library for writing tests
+      # Catch2 library for writing tests
+      if (FETCHCONTENT_FULLY_DISCONNECTED)
+        find_package(Catch2 REQUIRED)
+      else ()
         FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG        v3.7.1
+          Catch2
+          GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+          GIT_TAG        v3.11.0
         )
         FetchContent_MakeAvailable(Catch2)
         list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
-        include(Catch) # Adds Catch2::Catch2WithMain and Catch2::Catch2
         get_target_property(catch2_includes Catch2 INTERFACE_INCLUDE_DIRECTORIES)
         target_include_directories(Catch2 SYSTEM INTERFACE ${catch2_includes})
+      endif()
+      include(Catch) # Adds Catch2::Catch2WithMain and Catch2::Catch2
     endif()
 
 endif()

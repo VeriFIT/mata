@@ -10,17 +10,41 @@ Mata is an open source automata library that offers interface for different kind
   1. An efficient library implemented in C/C++
   2. A flexible wrapper implemented in Python that uses the efficient library
 
-# Requirements and dependencies
+## Installation
+
+### Nix
+
+Available in [nixpkgs](https://github.com/NixOS/nixpkgs/) (maintained by [@Adda0](https://github.com/Adda0)) as `pkgs.mata`:
+
+```shell
+nix build nixpkgs#mata
+```
+
+This repo also provides a flake (maintained by [@Adda0](https://github.com/Adda0) with [flake-compat](https://github.com/NixOS/flake-compat) and an overlay:
+
+```shell
+nix build github:VeriFIT/mata
+```
+
+For development:
+
+```shell
+nix develop github:VeriFIT/mata
+```
+
+### Download pre-built binaries from GitHub
+
+You can download pre-built binaries from the [releases](https://github.com/VeriFIT/mata/releases) page on GitHub.
+
+### Building and installing from sources
 
 For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
 From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies).
 
-The Mata library further depends on the following libraries, included in the `3rdparty` directory:
+The Mata library further depends on the following libraries, included in the `./3rdparty/` directory:
 - `cudd` for BDD manipulation,
 - `re2` for regular expression parsing and the corresponding automata construction, and
 - `simlib` for a simulation computation.
-
-# Building and installing from sources
 
 To build the library, run the following:
 
@@ -55,12 +79,12 @@ Run the following to install the dependencies for Ubuntu:
 sudo apt-get install -y build-essential lcov gcovr xdg-utils
 ```
 
-# Python binding
+## Python binding
 
 Mata offers binding of its efficient library to Python. You can install the binding as an Python
 package on your system as follows.
 
-### Install from PyPI
+### Installation from PyPI
 
 To install a latest version from the PyPI repository, run
 ```
@@ -92,7 +116,7 @@ Finally, you can verify the binding woks as expected by running the test suite:
 make -C bindings/python test
 ```
 
-# Getting started
+## Getting started
 
 To get started, we refer to the folder [examples](./examples/) in our repository.
 This directory contains examples of various usage in form of:
@@ -118,7 +142,7 @@ pip3 install jupyter
 jupyter notebook
 ```
 
-## Using the library
+### Using the library
 
 The library can be used directly in the C/C++ code. The result of compilation is a static
 or dynamic library, that can be linked to ones project. Note, that the library is dependent
@@ -183,7 +207,7 @@ add_executable(mata-example
 target_link_libraries(mata-example PUBLIC ${LIBMATA})
 ```
 
-## Using the Python binding
+### Using the Python binding
 
 The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.
@@ -215,11 +239,11 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
 
-## Benchmarking, profiling
+### Benchmarking, profiling
 
 For instructions on how to benchmark and profile Mata, see [BENCHMARKING.md](BENCHMARKING.md).
 
-# Supported Automata Models
+## Supported Automata Models
 
 While we try to keep the provided libray interface stable, Mata is still a project in its infancy.
 Hence, the interface is subject to change.
@@ -231,7 +255,7 @@ Mata currently supports (non-)deterministic finite automata (NFAs), defined in `
 > Mata provides an experimental (unstable) support for (non-)deterministic finite transducers (NFTs), defined in `include/mata/nft/`.
 > The provided interface may change.
 
-# Versioning
+## Versioning
 
 Mata follows the versioning scheme `GENERATION.MAJOR.MINOR`, e.g. `1.2.3` where `1` is the generation number, and `2` the major version, and `3` the minor version.
 The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https://semver.org/) scheme.
@@ -242,15 +266,15 @@ The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https:
 - The changes in the `MAJOR` version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.
 
 
-# Publications
+## Publications
 - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.1007/978-3-031-57249-4_7). In *Proc. of TACAS'24*, volume 14571 of LNCS, pages 130-151, 2024. Springer.
     - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., Síč, J.: [A replication package for reproducing the results of paper “Mata: A fast and simple finite automata library”](https://doi.org/10.5281/zenodo.10044515) (Oct 2023).
 
-# Contributing
+## Contributing
 
 Please refer to our [contributing guidelines](CONTRIBUTING.md).
 
-# Links
+## Links
 
   - Project (origin) repository: <https://github.com/verifit/mata>
   - Issue tracker: <https://github.com/verifit/mata/issues>
@@ -267,23 +291,22 @@ Also, check out our research group focusing on program analysis, static and dyna
 formal methods, verification and many more:
 <http://www.fit.vutbr.cz/research/groups/verifit/index.php.en>.
 
-# Licensing
+## Licensing
 
 The code of Mata is licensed under MIT licence. See [LICENSE](LICENSE).
 
 The folder [`3rdparty/`](3rdparty) contains 3rd party applications licensed under their own licences, included with the code.
 
-# Contacts
+## Contacts
 
 See [AUTHORS.md](AUTHORS.md)
 
-# Acknowledgements
+## Acknowledgements
 
 We thank for the support received from the Brno University of Technology
 ([BUT FIT](https://www.fit.vutbr.cz/)).
 
-Development of this tool has been supported by the following projects: ???.
+<!-- Development of this tool has been supported by the following projects: ???. -->
 
-This tool as well as the information provided on this web page reflects
-only the author's view and no organization is responsible for any use
-that may be made of the information it contains.
+This tool as well as the information provided on this web page reflects only the author's view and no organization is
+ responsible for any use that may be made of the information it contains.

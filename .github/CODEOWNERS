@@ -1,0 +1,9 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence, there owners will be requested for
+# review when someone opens a pull request.
+* @adda0
+
+# Nix-related
+#/nix/ @adda0
+#*.nix @adda0
+#flake.lock @adda0

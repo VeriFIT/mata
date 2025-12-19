@@ -14,6 +14,7 @@ alias vc := valgrind-callgrind
 alias c := clean
 alias rd := release-debuginfo
 alias w := wip
+alias d := docs
 
 #check:
 
@@ -23,18 +24,20 @@ CXX := env_var_or_default("CXX", "g++")
 JOBS := env_var_or_default("JOBS", "6")
 
 test:
-    make debug BUILD_DIR="build/debug/${CXX}"
-    ./build/debug/${CXX}/tests/tests
+    make debug BUILD_DIR="build/debug/{{CXX}}"
+    ./build/debug/{{CXX}}/tests/tests
 
-    make release BUILD_DIR="build/release/${CXX}"
-    ./build/release/${CXX}/tests/tests
+    make release BUILD_DIR="build/release/{{CXX}}"
+    ./build/release/{{CXX}}/tests/tests
 
 wip BUILD_DIR_PATH BUILD_MODE="debug":
-    make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_DIR_PATH}}/${CXX}"
-    ./build/{{BUILD_DIR_PATH}}/${CXX}/tests/tests
+    make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_DIR_PATH}}/{{CXX}}"
+    ./build/{{BUILD_DIR_PATH}}/{{CXX}}/tests/tests
 
 test-python:
-    source .venv/bin/activate && make -j ${JOBS} -C bindings/python BUILD_DIR=build/bindings/python && make -j ${JOBS} -C bindings/python test && ./run_papermill_examples.sh ; deactivate
+    # source .venv/bin/activate.fish &&
+    make -j {{JOBS}} -C bindings/python BUILD_DIR=build/bindings/python && make -j {{JOBS}} -C bindings/python test && ./run_papermill_examples.sh
+    # ; deactivate
 
 valgrind-callgrind +ARGS:
     valgrind --tool=callgrind {{ARGS}}
@@ -44,3 +47,7 @@ clean:
 
 release-debuginfo:
     make release-debuginfo BUILD_DIR="build/release-debuginfo"
+
+docs:
+    make doc
+    make -C doc html
