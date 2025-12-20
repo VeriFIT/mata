@@ -1,8 +1,6 @@
 name: Code Quality
-
 on:
   pull_request:
-
 jobs:
   warnings-base:
     runs-on: ${{ matrix.os }}
@@ -11,7 +9,7 @@ jobs:
       #  still executed.
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,14 +19,13 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
         with:
-          build-log-output-file: 'warnings-base'
-
+          build-log-output-file: "warnings-base"
   warnings-new:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
@@ -36,14 +33,13 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
         with:
-          build-log-output-file: 'warnings-new'
-
+          build-log-output-file: "warnings-new"
   run-tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
@@ -51,19 +47,17 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
         with:
-          build-log-output-file: 'warnings-new'
+          build-log-output-file: "warnings-new"
       - name: Test the library
         run: make test
-
   run-test-performance-base:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [
-        #ubuntu-latest,
-        macos-latest
-      ]
+          #ubuntu-latest,
+          macos-latest]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,7 +70,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-          cache: 'pip'
+          cache: "pip"
       - name: Install Python Dependencies
         shell: sh
         run: |
@@ -91,16 +85,14 @@ jobs:
             ./tests-integration/results/corr-single-param-jobs.csv
             ./tests-integration/results/corr-double-param-jobs.csv
           key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
-
   run-test-performance:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [
-        #ubuntu-latest,
-          macos-latest
-        ]
+          #ubuntu-latest,
+          macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
@@ -111,7 +103,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
-          cache: 'pip'
+          cache: "pip"
       - name: Install Python Dependencies
         shell: sh
         run: |
@@ -126,7 +118,6 @@ jobs:
             ./tests-integration/results/corr-single-param-jobs.csv
             ./tests-integration/results/corr-double-param-jobs.csv
           key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
-
   compare-performance:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -134,16 +125,15 @@ jobs:
       matrix:
         os: [
           #ubuntu-latest,
-          macos-latest
-        ]
-    needs: [ run-test-performance, run-test-performance-base ]
+          macos-latest]
+    needs: [run-test-performance, run-test-performance-base]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-          cache: 'pip'
+          cache: "pip"
       - name: Install Python Dependencies
         shell: sh
         run: |
@@ -171,14 +161,13 @@ jobs:
         run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
       - name: LOOK HERE for Comparison of operations accepting two automata as parameters
         run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
-
   compare-versions:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
-    needs: [ warnings-base, warnings-new ]
+        os: [ubuntu-latest, macos-latest]
+    needs: [warnings-base, warnings-new]
     steps:
       - name: Restore new cache
         uses: actions/cache/restore@v4
@@ -207,7 +196,6 @@ jobs:
           if [ $number_of_warnings -gt 0 ]; then
             exit 1
           fi
-
   code-coverage:
     runs-on: ubuntu-latest
     needs: run-tests
@@ -222,3 +210,32 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           gcov: true
+  format-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: actions/checkout@v4
+      - name: Import bot's GPG key for signing commits
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_config_global: true
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+      - uses: ./.github/workflows/actions/setup
+      - name: Check formatting using treefmt through Nix
+        run: |
+          nix fmt
+          if [ -n "$(git status --porcelain)" ]; then
+              echo "ERROR: Code is not properly formatted. Please run 'nix fmt' locally and commit the changes:"
+              git diff
+              exit 1
+          else
+              echo "Code is properly formatted."
+          fi

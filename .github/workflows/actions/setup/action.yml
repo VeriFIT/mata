@@ -2,12 +2,11 @@ name: Setup environment
 description: Setup environment for running workflows.
 inputs:
   os:
-    description: 'Operating system to run on'
+    description: "Operating system to run on"
     required: false
     default: ubuntu-latest
-
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Building MacOS dependencies
       if: ${{ inputs.os == 'macos-latest' }}

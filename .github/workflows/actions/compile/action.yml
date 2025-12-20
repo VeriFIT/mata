@@ -2,11 +2,10 @@ name: Setup environment
 description: Setup environment for running workflows.
 inputs:
   build-log-output-file:
-    description: 'File to store the build log to.'
+    description: "File to store the build log to."
     required: true
-
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Compile base version of the static and shared libraries
       shell: sh
