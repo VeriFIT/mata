@@ -37,20 +37,98 @@
 <h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">¶</a></h1>
 <section id="contributing-guidelines">
 <h2>Contributing guidelines<a class="headerlink" href="#contributing-guidelines" title="Link to this heading">¶</a></h2>
-<p>In case you run into some unexpected behaviour, error or anything suspicious either contact us directly through mail or
-<a class="reference external" href="https://github.com/VeriFIT/mata/issues/new/choose">create a new issue</a>.
-When creating a new issue, please, try to include everything necessary for us to know (such as the version, operating
-system, etc.) so we can sucessfully replicate the issue.</p>
-<p>If you’d like to contribute to the Mata project, please <a class="reference external" href="https://github.com/VeriFIT/mata/fork">fork the repository</a>,
-create a new feature branch, and finally <a class="reference external" href="https://github.com/VeriFIT/mata/compare">create a new pull request</a>.
+<p>Thank you for your interest in contributing to <code class="docutils literal notranslate"><span class="pre">mata</span></code>.</p>
+<p>We welcome contributions from the community and appreciate your help in improving this project.</p>
+<section id="getting-started">
+<h3>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p>If you’d like to contribute to the Mata project, please <a class="reference external" href="https://github.com/VeriFIT/mata/fork">fork the repository</a>.</p></li>
+<li><p>Clone your fork locally:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/YOUR_USERNAME/mata.git
+<span class="nb">cd</span><span class="w"> </span>mata
+</pre></div>
+</div>
+</li>
+<li><p>Create a new feature branch.</p></li>
+<li><p>Build the project.
+Refer to <a class="reference internal" href="#README#Building-and-installing-from-sources"><span class="xref myst">README#Building and installing from sources</span></a> for instructions
+on how to build the project from sources.</p></li>
+<li><p>Commit the changes and push to your fork.</p></li>
+<li><p>Finally, <a class="reference external" href="https://github.com/VeriFIT/mata/compare">create a new pull request</a>.
 When opening a PR, either set its status to <code class="docutils literal notranslate"><span class="pre">Open</span></code> (the default behaviour) when you want the PR to be immediately
 up for review, or set its status to <code class="docutils literal notranslate"><span class="pre">Draft</span></code> when the PR is work-in-progress and you do not want the PR to be
 reviewed yet.
 When the draft PR is finished and ready for review, switch the status to <code class="docutils literal notranslate"><span class="pre">Open</span></code> to indicate we should review the PR.
 Optionally, you can tag <code class="docutils literal notranslate"><span class="pre">&#64;Adda0</span></code> (and any other contributors you explicitly want to review the PR) to request the
-review directly, be it an open PR or a draft.</p>
-<section id="design-style">
-<h3>Design style<a class="headerlink" href="#design-style" title="Link to this heading">¶</a></h3>
+review directly, be it an open PR or a draft.</p></li>
+</ol>
+</section>
+<section id="getting-help">
+<h3>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">¶</a></h3>
+<p>In case you run into some unexpected behaviour, error or anything suspicious, either contact us directly through mail or
+<a class="reference external" href="https://github.com/VeriFIT/mata/issues/new/choose">create a new issue</a>.
+When creating a new issue, please, try to include everything necessary for us to know (such as the version, operating
+system, etc.) so we can sucessfully replicate the issue.</p>
+<ul class="simple">
+<li><p>Check the <a class="reference external" href="https://github.com/VeriFIT/mata/wiki">wiki</a> for detailed documentation.</p></li>
+<li><p>Look at existing issues and discussions for similar problems or questions.</p></li>
+<li><p>Feel free to ask questions in new issues or discussions.</p></li>
+</ul>
+</section>
+<section id="bug-fixes">
+<h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Link to this heading">¶</a></h3>
+<p><strong>Bug fix pull requests are always welcome.</strong>
+If you have found a bug and have a fix for it, feel free to submit a pull request directly.
+Please include:</p>
+<ul class="simple">
+<li><p>A clear description of the bug you’re fixing.</p></li>
+<li><p>Steps to reproduce the issue (if applicable).</p></li>
+<li><p>Your solution and why it fixes the problem.</p></li>
+</ul>
+</section>
+<section id="new-features">
+<h3>New Features<a class="headerlink" href="#new-features" title="Link to this heading">¶</a></h3>
+<p>For new features, we prefer a discussion-first approach:</p>
+<ol class="arabic simple">
+<li><p><strong>Open an issue first</strong> to discuss the feature and potential implementations.</p></li>
+<li><p>Wait for feedback from maintainers and the community.</p></li>
+<li><p>Implement the agreed-upon design.</p></li>
+<li><p>Submit a pull request with the implementation.</p></li>
+</ol>
+<p>This process helps ensure that:</p>
+<ul class="simple">
+<li><p>The feature aligns with the project’s goals.</p></li>
+<li><p>We avoid duplicate work.</p></li>
+<li><p>The implementation follows the project’s patterns and conventions.</p></li>
+</ul>
+</section>
+<section id="pull-request-process">
+<h3>Pull Request Process<a class="headerlink" href="#pull-request-process" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Ensure your code builds successfully. <!-- 2. If you have made a change to the dependencies then update the `nix/vendor-hash` file. --></p></li>
+<li><p>(Optional) Submit your pull request with screenshots (if applicable).</p></li>
+</ol>
+</section>
+<section id="code-and-design-style">
+<h3>Code and design style<a class="headerlink" href="#code-and-design-style" title="Link to this heading">¶</a></h3>
+<p>Follow standard C++ conventions and formatting.</p>
+<section id="code-formatting">
+<h4>Code Formatting<a class="headerlink" href="#code-formatting" title="Link to this heading">¶</a></h4>
+<p>Do not forget to format your code.
+This project uses <a class="reference external" href="https://github.com/numtide/treefmt">treefmt</a> to format the code.</p>
+<section id="with-nix">
+<h5>With Nix<a class="headerlink" href="#with-nix" title="Link to this heading">¶</a></h5>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nix<span class="w"> </span>fmt
+</pre></div>
+</div>
+</section>
+<section id="without-nix">
+<h5>Without Nix<a class="headerlink" href="#without-nix" title="Link to this heading">¶</a></h5>
+<p>Install <code class="docutils literal notranslate"><span class="pre">treefmt</span></code> and the required formatters, then run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>treefmt
+</pre></div>
+</div>
+<p>For required formatters, refer to <a class="reference internal" href="#.treefmt.toml"><span class="xref myst">.treefmt.toml</span></a>.</p>
 <ul class="simple">
 <li><p><strong>private</strong> attributes of classes/structs should use <code class="docutils literal notranslate"><span class="pre">snake_case_</span></code> (note the trailing <code class="docutils literal notranslate"><span class="pre">_</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">snake_case</span></code> is to be used in context of:</p>
@@ -68,6 +146,8 @@ review directly, be it an open PR or a draft.</p>
 </ul>
 </li>
 </ul>
+</section>
+</section>
 <section id="todo-and-similar-message-format">
 <h4>TODO and similar message format<a class="headerlink" href="#todo-and-similar-message-format" title="Link to this heading">¶</a></h4>
 <p>When commenting on a future TODO, an unresolved issue to be fixed, a bug or an unresolved note which is to be
@@ -91,8 +171,8 @@ but also in loop declarations (headers) such as:</p>
 </pre></div>
 </div>
 <p>to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">xyz_end</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">xyz_end</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="c1">// Note: Using prefix is more performant. Use</span>
-<span class="n">whenever</span><span class="w"> </span><span class="n">possible</span><span class="p">.</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">xyz_end</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">xyz_end</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span>
+<span class="c1">// Note: Using prefix is more performant. Use whenever possible.</span>
 </pre></div>
 </div>
 <p>or (if the iterated variable and the end condition variable are not of the same data type, or you want to make the
@@ -102,13 +182,25 @@ condition variable explicitly <code class="docutils literal notranslate"><span c
 </pre></div>
 </div>
 </section>
+<section id="testing">
+<h4>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Write unit tests for multiple cases, including edge cases.</p></li>
+</ul>
 </section>
+</section>
+<section id="development-tips">
+<h3>Development Tips<a class="headerlink" href="#development-tips" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>The main entry point is <code class="docutils literal notranslate"><span class="pre">include/mata/nfa/nfa.hh</span></code>, <code class="docutils literal notranslate"><span class="pre">include/mata/nft/nft.hh</span></code>, etc.</p></li>
+</ul>
+<!-- TODO: - Set `DEBUG=1` environment variable for printing debug messages to `debug.log` file -->
 </section>
 <section id="for-maintainers">
-<h2>For maintainers<a class="headerlink" href="#for-maintainers" title="Link to this heading">¶</a></h2>
+<h3>For maintainers<a class="headerlink" href="#for-maintainers" title="Link to this heading">¶</a></h3>
 <p>The information in this section concerns only maintainers of the project.</p>
 <section id="versioning-during-pr-merge">
-<h3>Versioning during PR merge<a class="headerlink" href="#versioning-during-pr-merge" title="Link to this heading">¶</a></h3>
+<h4>Versioning during PR merge<a class="headerlink" href="#versioning-during-pr-merge" title="Link to this heading">¶</a></h4>
 <p>By default, each merge automatically increases the <code class="docutils literal notranslate"><span class="pre">minor</span></code> version of the library
 (i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.1.0</span></code> ). This can be overruled using either tag <code class="docutils literal notranslate"><span class="pre">#patch</span></code> (increasing
 patch version, i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.0.1</span></code>) or <code class="docutils literal notranslate"><span class="pre">#major</span></code> (increasing major version, i.e.,
@@ -116,6 +208,9 @@ patch version, i.e., <code class="docutils literal notranslate"><span class="pre
 <p>Generally, it is recommended to use <code class="docutils literal notranslate"><span class="pre">#major</span></code> for changes that introduces backward-incompatible
 changes for people that used previous versions, and <code class="docutils literal notranslate"><span class="pre">#patch</span></code> for minor changes, such as bug-fixes,
 performance fixes or refactoring.</p>
+<hr class="docutils" />
+<p>Thank you for contributing to Mata!</p>
+</section>
 </section>
 </section>
 </section>
@@ -153,7 +248,6 @@ performance fixes or refactoring.</p>
 <li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#contributing-guidelines">Contributing guidelines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#for-maintainers">For maintainers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
