@@ -2,28 +2,30 @@
 
 Thank you for your interest in contributing to `mata`.
 
-We welcome contributions from the community and appreciate your help in iproving this project.
+We welcome contributions from the community and appreciate your help in improving this project.
 
 ## Getting started
 
 1. If you'd like to contribute to the Mata project, please [fork the repository](https://github.com/VeriFIT/mata/fork).
 2. Clone your fork locally:
+
    ```shell
    git clone https://github.com/YOUR_USERNAME/mata.git
    cd mata
    ```
-2. Create a new feature branch.
-3. Build the project.
+
+3. Create a new feature branch.
+4. Build the project.
    Refer to [README#Building and installing from sources](README#Building-and-installing-from-sources) for instructions
    on how to build the project from sources.
-4. Commit the changes and push to your fork.
-5. Finally, [create a new pull request](https://github.com/VeriFIT/mata/compare).
+5. Commit the changes and push to your fork.
+6. Finally, [create a new pull request](https://github.com/VeriFIT/mata/compare).
    When opening a PR, either set its status to `Open` (the default behaviour) when you want the PR to be immediately
    up for review, or set its status to `Draft` when the PR is work-in-progress and you do not want the PR to be
-    reviewed yet.
+   reviewed yet.
    When the draft PR is finished and ready for review, switch the status to `Open` to indicate we should review the PR.
    Optionally, you can tag `@Adda0` (and any other contributors you explicitly want to review the PR) to request the
-    review directly, be it an open PR or a draft.
+   review directly, be it an open PR or a draft.
 
 ## Getting Help
 
@@ -63,9 +65,8 @@ This process helps ensure that:
 
 ## Pull Request Process
 
-1. Ensure your code builds successfully.
-<!-- 2. If you have made a change to the dependencies then update the `nix/vendor-hash` file. -->
-3. (Optional) Submit your pull request with screenshots (if applicable).
+1. Ensure your code builds successfully. <!-- 2. If you have made a change to the dependencies then update the `nix/vendor-hash` file. -->
+2. (Optional) Submit your pull request with screenshots (if applicable).
 
 ## Code and design style
 
@@ -94,13 +95,13 @@ For required formatters, refer to [.treefmt.toml](.treefmt.toml).
 
 - **private** attributes of classes/structs should use `snake_case_` (note the trailing `_`).
 - `snake_case` is to be used in context of:
-    - variables, and
-    - functions / class methods (which are neither constructors nor destructors).
+  - variables, and
+  - functions / class methods (which are neither constructors nor destructors).
 - `UpperCamelCase` is to be used in the context of:
-    - class/structure names,
-    - aliases of types created using `using`,
-    - constructors and destructors, and
-    - elements of the type `enum` (prefer using `enum class`).
+  - class/structure names,
+  - aliases of types created using `using`,
+  - constructors and destructors, and
+  - elements of the type `enum` (prefer using `enum class`).
 
 ### TODO and similar message format
 

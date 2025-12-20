@@ -6,47 +6,48 @@ like working with shared pointers or C/C++ features, and troubleshooting tips fo
 may arise during development.
 
 <!-- TOC -->
-* [Basic info](#basic-info)
-  * [Getting Started](#getting-started)
-  * [File/Directory Structure](#filedirectory-structure)
-  * [Adding a new function](#adding-a-new-function)
-  * [Adding a new module](#adding-a-new-module)
-  * [Adding a new class](#adding-a-new-class)
-  * [Adding or modifying the function's signature](#adding-or-modifying-the-functions-signature)
-* [Advanced modifications of functions](#advanced-modifications-of-functions)
-  * [Declaring function with clashing name](#declaring-function-with-clashing-name)
-  * [Declaring function returning complex type](#declaring-function-returning-complex-type)
-* [Advanced modifications of classes](#advanced-modifications-of-classes)
-  * [Declaring class methods](#declaring-class-methods)
-  * [Declaring class attributes, getters and  setters](#declaring-class-attributes-getters-and--setters)
-  * [Declaring class with clashing name](#declaring-class-with-clashing-name)
-  * [Declaring class usable in other modules](#declaring-class-usable-in-other-modules)
-  * [Declaring functions for string representation of objects](#declaring-functions-for-string-representation-of-objects)
-  * [Declaring functions for comparison of objects](#declaring-functions-for-comparison-of-objects)
-* [Other advanced features](#other-advanced-features)
-  * [Dereferencing and retyping the object](#dereferencing-and-retyping-the-object)
-    * [Dereferencing shared pointer](#dereferencing-shared-pointer)
-    * [Dereferencing iterator](#dereferencing-iterator)
-  * [Using null pointer](#using-null-pointer)
-  * [Defining C variables in code](#defining-c-variables-in-code)
-  * [Working with standard streams](#working-with-standard-streams)
-  * [Working with iterators](#working-with-iterators)
-  * [Defining type definition](#defining-type-definition)
-  * [Calling functions of shared pointer object](#calling-functions-of-shared-pointer-object)
-  * [Supporting Python for loops](#supporting-python-for-loops)
-  * [Working with strings](#working-with-strings)
-  * [Helping Cython to infer types](#helping-cython-to-infer-types)
-  * [Using pre- and post-increments (`var++` and `++var`)](#using-pre--and-post-increments-var-and-var)
-  * [Working with exceptions](#working-with-exceptions)
-* [Importing between modules](#importing-between-modules)
-  * [Importing C/C++ defined functions and symbols](#importing-cc-defined-functions-and-symbols)
-  * [Importing Python defined functions and symbols](#importing-python-defined-functions-and-symbols)
-  * [Importing standard containers and types](#importing-standard-containers-and-types)
-* [Troubleshooting](#troubleshooting)
-  * [An error when importing Python object from other module](#an-error-when-importing-python-object-from-other-module)
-  * [A weird error when Cython cannot retype C/C++ object to Python object](#a-weird-error-when-cython-cannot-retype-cc-object-to-python-object)
-  * [An error when Cython cannot find cimported function, even if it is defined](#an-error-when-cython-cannot-find-cimported-function-even-if-it-is-defined)
-* [Quick glossary](#quick-glossary)
+
+- [Basic info](#basic-info)
+  - [Getting Started](#getting-started)
+  - [File/Directory Structure](#filedirectory-structure)
+  - [Adding a new function](#adding-a-new-function)
+  - [Adding a new module](#adding-a-new-module)
+  - [Adding a new class](#adding-a-new-class)
+  - [Adding or modifying the function's signature](#adding-or-modifying-the-functions-signature)
+- [Advanced modifications of functions](#advanced-modifications-of-functions)
+  - [Declaring function with clashing name](#declaring-function-with-clashing-name)
+  - [Declaring function returning complex type](#declaring-function-returning-complex-type)
+- [Advanced modifications of classes](#advanced-modifications-of-classes)
+  - [Declaring class methods](#declaring-class-methods)
+  - [Declaring class attributes, getters and setters](#declaring-class-attributes-getters-and--setters)
+  - [Declaring class with clashing name](#declaring-class-with-clashing-name)
+  - [Declaring class usable in other modules](#declaring-class-usable-in-other-modules)
+  - [Declaring functions for string representation of objects](#declaring-functions-for-string-representation-of-objects)
+  - [Declaring functions for comparison of objects](#declaring-functions-for-comparison-of-objects)
+- [Other advanced features](#other-advanced-features)
+  - [Dereferencing and retyping the object](#dereferencing-and-retyping-the-object)
+    - [Dereferencing shared pointer](#dereferencing-shared-pointer)
+    - [Dereferencing iterator](#dereferencing-iterator)
+  - [Using null pointer](#using-null-pointer)
+  - [Defining C variables in code](#defining-c-variables-in-code)
+  - [Working with standard streams](#working-with-standard-streams)
+  - [Working with iterators](#working-with-iterators)
+  - [Defining type definition](#defining-type-definition)
+  - [Calling functions of shared pointer object](#calling-functions-of-shared-pointer-object)
+  - [Supporting Python for loops](#supporting-python-for-loops)
+  - [Working with strings](#working-with-strings)
+  - [Helping Cython to infer types](#helping-cython-to-infer-types)
+  - [Using pre- and post-increments (`var++` and `++var`)](#using-pre--and-post-increments-var-and-var)
+  - [Working with exceptions](#working-with-exceptions)
+- [Importing between modules](#importing-between-modules)
+  - [Importing C/C++ defined functions and symbols](#importing-cc-defined-functions-and-symbols)
+  - [Importing Python defined functions and symbols](#importing-python-defined-functions-and-symbols)
+  - [Importing standard containers and types](#importing-standard-containers-and-types)
+- [Troubleshooting](#troubleshooting)
+  - [An error when importing Python object from other module](#an-error-when-importing-python-object-from-other-module)
+  - [A weird error when Cython cannot retype C/C++ object to Python object](#a-weird-error-when-cython-cannot-retype-cc-object-to-python-object)
+  - [An error when Cython cannot find cimported function, even if it is defined](#an-error-when-cython-cannot-find-cimported-function-even-if-it-is-defined)
+- [Quick glossary](#quick-glossary)
 <!-- TOC -->
 
 ## Getting started
@@ -132,16 +133,16 @@ The directory structure is as follows:
 - `build/`: Compiled binding in the form of shared libraries.
 - `dist/`: Packed binding for PyPI, allowing installation via `pip install libmata`.
 - `libmata/`: Root Python binding package.
-    - `__init__.py`: An empty file necessary to define the package.
-    - `nfa/`: Package for nondeterministic finite automata, corresponding to the `mata::nfa::` namespace.
-        - `nfa.*`: Wrappers for `mata::nfa::Nfa` members and related structures or algorithms.
-        - `strings.*`: Wrappers for `mata::applications::strings` members and related structures or algorithms.
-    - `alphabets.*`: Wrappers for `mata::Alphabet` members and related structures or algorithms.
-    - `parser.*`: Wrappers for `mata::parser` members and related structures or algorithms.
-    - `plotting.*`: Helper functions for displaying `libmata` members in Python code, interpreters, Jupyter notebooks, etc.
-    - `utils.*`: Wrappers for `mata::utils` members and related structures or algorithms.
+  - `__init__.py`: An empty file necessary to define the package.
+  - `nfa/`: Package for nondeterministic finite automata, corresponding to the `mata::nfa::` namespace.
+    - `nfa.*`: Wrappers for `mata::nfa::Nfa` members and related structures or algorithms.
+    - `strings.*`: Wrappers for `mata::applications::strings` members and related structures or algorithms.
+  - `alphabets.*`: Wrappers for `mata::Alphabet` members and related structures or algorithms.
+  - `parser.*`: Wrappers for `mata::parser` members and related structures or algorithms.
+  - `plotting.*`: Helper functions for displaying `libmata` members in Python code, interpreters, Jupyter notebooks, etc.
+  - `utils.*`: Wrappers for `mata::utils` members and related structures or algorithms.
 - `tests/`: Tests for the Cython wrapper.
-    - `conftest.py`: Global configuration of tests, containing fixtures, setups, etc.
+  - `conftest.py`: Global configuration of tests, containing fixtures, setups, etc.
 - `Manifest.in`: Specification of the contents of the wrapper distribution for PyPI.
 - `pyproject.toml`: Specification for the wrapper distribution for PyPI.
 - `requirements.txt`: Specification of the wrapper's requirements and dependencies. Run `make init` or `pip3 install -r requirements.txt` to install them.
@@ -149,9 +150,8 @@ The directory structure is as follows:
 
 ## Adding a new function
 
-  1. Declare the function in `.pxd` file:
-
-     - For a class function, declare it within the class definition:
+1. Declare the function in `.pxd` file:
+   - For a class function, declare it within the class definition:
 
 ```cython
 cdef extern from "mata/nfa.hh" namespace "mata::nfa":
@@ -163,7 +163,7 @@ cdef extern from "mata/nfa.hh" namespace "mata::nfa":
         #    ^- signature of class function
 ```
 
-   - For a non-class function, declare it under its corresponding environment:
+- For a non-class function, declare it under its corresponding environment:
 
 ```cython
 cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
@@ -173,12 +173,12 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
     #         Cython types from C/C++ API as parameters
 ```
 
-   - You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh),
-     (2) the namespace where the function is a member, and (3) the signature of the function.
-     The signature can be partial; the binding will only use the number of defined parameters.
-     The typing can be conservative, e.g., const references do not have to be kept.
+- You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh),
+  (2) the namespace where the function is a member, and (3) the signature of the function.
+  The signature can be partial; the binding will only use the number of defined parameters.
+  The typing can be conservative, e.g., const references do not have to be kept.
 
-  2. Implement the function in the `.pyx` file:
+2. Implement the function in the `.pyx` file:
 
 ```cython
 cimport libmata.nfa.nfa as mata_nfa
@@ -198,9 +198,9 @@ def get_elements_from_bool_vec(bool_vec: list[int]):
 
 ## Adding a new module
 
-  1. Create a `module.pxd` file and declare the functions from libmata that you want to use in the binding.
-  2. Create a `module.pyx` file, where you will `cimport module` and write the implementation for functions calling the declared functions as `module.declared_function(...)`.
-  3. Add the module to the list of extensions in `setup.py`:
+1. Create a `module.pxd` file and declare the functions from libmata that you want to use in the binding.
+2. Create a `module.pyx` file, where you will `cimport module` and write the implementation for functions calling the declared functions as `module.declared_function(...)`.
+3. Add the module to the list of extensions in `setup.py`:
 
 ```cython
 extensions = [
@@ -218,7 +218,7 @@ extensions = [
 
 ## Adding a new class
 
-  1. Declare the class in the `.pxd` file
+1. Declare the class in the `.pxd` file
 
 ```cython
 cdef extern from "mata/alphabet.hh" namespace "mata":
@@ -235,14 +235,14 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
         # ^-- class method
 ```
 
-  2. In `pyx` file declare the Python object that will serve as a wrapper:
+2. In `pyx` file declare the Python object that will serve as a wrapper:
 
 ```cython
 cdef class OnTheFlyAlphabet(Alphabet):
     pass
 ```
 
-  3. In the wrapper object define the variable that holds pointer to the original C/C++ object.
+3. In the wrapper object define the variable that holds pointer to the original C/C++ object.
 
 ```cython
 cdef class OnTheFlyAlphabet(Alphabet):
@@ -250,7 +250,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
     #    ^-- pointer to OnTheFlyAlphabet in the C/C++ library
 ```
 
-  4. Create `__cinit__` and `__dealloc__` functions which are created when constructing new Python object.
+4. Create `__cinit__` and `__dealloc__` functions which are created when constructing new Python object.
 
 ```cython
 cdef class OnTheFlyAlphabet(Alphabet):
@@ -266,11 +266,11 @@ cdef class OnTheFlyAlphabet(Alphabet):
         del self.thisptr
 ```
 
-  5. You can now define your class as `OnTheFlyAlphabet()` in Python code.
+5. You can now define your class as `OnTheFlyAlphabet()` in Python code.
 
 ## Adding or modifying the function's signature
 
-  1. Locate the function in the `.pxd` file:
+1. Locate the function in the `.pxd` file:
 
 ```cython
 cdef extern from "mata/re2parser.hh" namespace "mata::parser":
@@ -279,7 +279,7 @@ cdef extern from "mata/re2parser.hh" namespace "mata::parser":
     #         ^-- function signature    ^-- can fire exceptions
 ```
 
-  2. Now, you can add new parameter to the function:
+2. Now, you can add new parameter to the function:
 
 ```cython
 cdef extern from "mata/re2parser.hh" namespace "mata::parser":
@@ -288,7 +288,7 @@ cdef extern from "mata/re2parser.hh" namespace "mata::parser":
     #         ^-- function signature    ^-- new parameter
 ```
 
-  3. Or you can define new signature:
+3. Or you can define new signature:
 
 ```cython
 cdef extern from "mata/re2parser.hh" namespace "mata::parser":
@@ -302,11 +302,11 @@ cdef extern from "mata/re2parser.hh" namespace "mata::parser":
 
 ## Declaring function with clashing name
 
-  * **Problem**: You want C/C++ function `func()` to be named the same in Python wrapping
-  * **Solution**: You can define the name of the function any way you want, but you need to follow
-    it with its full name in quotes (i.e. you can name the function in the `.pxd` as `c_my_func`
-    followed by full name `"Namespace::my_func"`; the function is then called as `c_my_func(..)`
-    in Python).
+- **Problem**: You want C/C++ function `func()` to be named the same in Python wrapping
+- **Solution**: You can define the name of the function any way you want, but you need to follow
+  it with its full name in quotes (i.e. you can name the function in the `.pxd` as `c_my_func`
+  followed by full name `"Namespace::my_func"`; the function is then called as `c_my_func(..)`
+  in Python).
 
 ```cython
 cdef NoodleSequence c_noodlify "mata::applications::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
@@ -316,10 +316,10 @@ cdef NoodleSequence c_noodlify "mata::applications::strings::seg_nfa::noodlify" 
 
 ## Declaring function returning complex type
 
-  * **Problem**: You want to wrap a C/C++ function `func()`, that returns some complex custom type.
-  * **Solution**: Cython does not support `std::move` of any kind, hence function returning complex
-    types, e.g. `mata::nfa::Nfa`. Hence, you have to implement additional helper function, that
-    will return the type as a pointer, i.e., convert `MyClass func()` to `void func(MyClass*)`
+- **Problem**: You want to wrap a C/C++ function `func()`, that returns some complex custom type.
+- **Solution**: Cython does not support `std::move` of any kind, hence function returning complex
+  types, e.g. `mata::nfa::Nfa`. Hence, you have to implement additional helper function, that
+  will return the type as a pointer, i.e., convert `MyClass func()` to `void func(MyClass*)`
 
 ```cython
 cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
@@ -330,7 +330,7 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
     # ^--- this definition cannot be efficiently implemented in Cython
 ```
 
-  * Then you can implement the actual function as follows:
+- Then you can implement the actual function as follows:
 
 ```cython
 def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
@@ -345,15 +345,15 @@ def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
     return result
 ```
 
-  * Note, that this assumes that you have the actual object stored as pointer in the underlying
+- Note, that this assumes that you have the actual object stored as pointer in the underlying
   Python class as `thisptr`.
 
 # Advanced modifications of classes
 
 ## Declaring class methods
 
-  * **Problem**: You want to declare C/C++ class method in the wrapper.
-  * **Solution**: You simply declare the method under the class in `.pxd` file.
+- **Problem**: You want to declare C/C++ class method in the wrapper.
+- **Solution**: You simply declare the method under the class in `.pxd` file.
 
 ```cython
 cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
@@ -364,14 +364,15 @@ cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
     #                  ^-- class method declaration
 ```
 
-  * You can then access the method from the C/C++ typed object in the `.pyx` file.
+- You can then access the method from the C/C++ typed object in the `.pyx` file.
+
 ```cython
 cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
 #    ^-- unordered_map    ^-- C/C++ var  ^-- calling wrapper function through C/C++ object in thisptr
 ```
 
-* **Problem**: You want to declare some method as class function in Python.
-* **Solution**: You implement the method in `pyx` file with `@classmethod` decorator.
+- **Problem**: You want to declare some method as class function in Python.
+- **Solution**: You implement the method in `pyx` file with `@classmethod` decorator.
 
 ```cython
 @classmethod
@@ -380,12 +381,12 @@ def determinize_with_subset_map(cls, Nfa lhs):
     pass
 ```
 
-* The function is then called as `module.Class.method`.
+- The function is then called as `module.Class.method`.
 
-## Declaring class attributes, getters and  setters
+## Declaring class attributes, getters and setters
 
-* **Problem**: You want to declare an attribute to be visible in class.
-* **Solution**: First, you declare the symbols in `.pxd` file. Attributes not declared here
+- **Problem**: You want to declare an attribute to be visible in class.
+- **Solution**: First, you declare the symbols in `.pxd` file. Attributes not declared here
   will simply not be visible.
 
 ```cython
@@ -395,7 +396,7 @@ cdef cppclass CMove "mata::nfa::SymbolPost":
 #   ^-- class attributes
 ```
 
-* Implement the getters and setters in Cython class
+- Implement the getters and setters in Cython class
 
 ```cython
 cdef class SymbolPost:
@@ -416,8 +417,8 @@ cdef class SymbolPost:
 
 ## Declaring class with clashing name
 
-* **Problem**: You want to declare C/C++ class and have Python object with same name.
-* **Solution**: You simply declare the C/C++ class with custom name followed by its full name.
+- **Problem**: You want to declare C/C++ class and have Python object with same name.
+- **Solution**: You simply declare the C/C++ class with custom name followed by its full name.
 
 ```cython
 cdef extern from "mata/nfa.hh" namespace "mata::nfa":
@@ -428,8 +429,8 @@ cdef extern from "mata/nfa.hh" namespace "mata::nfa":
 
 ## Declaring class usable in other modules
 
-* **Problem**: You want to declare Python class that is used in other modules in the binding.
-* **Solution**: You need to forward declare the Python class in the `.pxd` file.
+- **Problem**: You want to declare Python class that is used in other modules in the binding.
+- **Solution**: You need to forward declare the Python class in the `.pxd` file.
 
 ```cython
 # @file: nfa.pxd
@@ -449,8 +450,8 @@ result[epsilon_depth_pair.first].append(mata_nfa.Transition(trans.source, trans.
 
 ## Declaring functions for string representation of objects
 
-* **Problem**: You want to print your classes in the Python interpreter or jupyter notebook.
-* **Solution**: You have to define at least one of the two functions:
+- **Problem**: You want to print your classes in the Python interpreter or jupyter notebook.
+- **Solution**: You have to define at least one of the two functions:
   1. `__str__`: returns string representation; usually returned by calling function `str()` explicitely.
   2. `__repr__` returns computer readable representation (usually so it is parsable by other code); this is called in jupyter notebooks when you simply write the name of the vairable.
 
@@ -468,10 +469,11 @@ cdef class SymbolPost:
 
 ## Declaring functions for comparison of objects
 
-* **Problem**: You want to compare your wrapper objects based on C/C++ comparison functions.
-* **Solution**: You declare the operator functions in `.pxd` files and then implement Python comparison function in `pyx` file.
+- **Problem**: You want to compare your wrapper objects based on C/C++ comparison functions.
+- **Solution**: You declare the operator functions in `.pxd` files and then implement Python comparison function in `pyx` file.
 
-* First, declare the corresponding C/C++ operators in `pxd` file.
+- First, declare the corresponding C/C++ operators in `pxd` file.
+
 ```cython
 # @file: nfa.pxd
 cdef extern from "mata/nfa.hh" namespace "mata::nfa":
@@ -482,7 +484,7 @@ cdef extern from "mata/nfa.hh" namespace "mata::nfa":
         bool operator>=(CMove)
 ```
 
-* Second, implement the corresponding Python operators in `pyx` file.
+- Second, implement the corresponding Python operators in `pyx` file.
 
 ```cython
 # @file: nfa.pyx
@@ -500,15 +502,15 @@ cdef class SymbolPost:
         return dereference(self.thisptr) >= dereference(other.thisptr)
 ```
 
-* Now, you can compare objects in Python.
+- Now, you can compare objects in Python.
 
 # Other advanced features
 
 ## Dereferencing and retyping the object
 
-* **Problem**: You have a pointer (e.g., returned from function) and need to dereference it and
+- **Problem**: You have a pointer (e.g., returned from function) and need to dereference it and
   retype as well, as Cython cannot infer the type.
-* **Solution**: You `cimport` the `dereference` operator and then explicitly retype using `<CType>` notation.
+- **Solution**: You `cimport` the `dereference` operator and then explicitly retype using `<CType>` notation.
 
 ```cython
 from cython.operator import dereference
@@ -519,12 +521,12 @@ from cython.operator import dereference
 # ^-- the topmost function helps Cython to infer, that it is CAlphabet
 ```
 
-* Note: You might need to use parenthesis to restrict the scope of the the retype, i.e. `(<CType>...)`.
+- Note: You might need to use parenthesis to restrict the scope of the the retype, i.e. `(<CType>...)`.
 
 ### Dereferencing shared pointer
 
-* **Problem**: You want to dereference shared pointer in the `pyx` code.
-* **Solution**: You simply call `.get()` function and then you can safely dereference the pointer.
+- **Problem**: You want to dereference shared pointer in the `pyx` code.
+- **Solution**: You simply call `.get()` function and then you can safely dereference the pointer.
 
 ```cython
 from cython.operator import dereference
@@ -536,8 +538,8 @@ dereference(rhs.thisptr.get())
 
 ### Dereferencing iterator
 
-* **Problem**: You want to access the value of the iterator in `pyx` code.
-* **Solution**: You simply dereference the iterator.
+- **Problem**: You want to access the value of the iterator in `pyx` code.
+- **Solution**: You simply dereference the iterator.
 
 ```cython
 from cython.operator import dereference
@@ -547,14 +549,14 @@ dereference(it).symbol
 
 ## Using null pointer
 
-* **Problem**: You want to use null pointer in your `pyx` code.
-* **Solution**: You simply use `NULL` constant, that does not need to be imported and is supported
+- **Problem**: You want to use null pointer in your `pyx` code.
+- **Solution**: You simply use `NULL` constant, that does not need to be imported and is supported
   by Cython. `nullptr` is trivially replaced with C-style `NULL`
 
 ## Defining C variables in code
 
-* **Problem**: In `pyx` code you need to work with variables of C/C++ types.
-* **Solution**: You define the variable together with its types using `cdef` keyword.
+- **Problem**: In `pyx` code you need to work with variables of C/C++ types.
+- **Solution**: You define the variable together with its types using `cdef` keyword.
   Note: the type needs to be specified so that Cython can infer it. You can also help
   Cython with Python variables and parameters by using the typing notations (i.e., `var : type`)
 
@@ -571,9 +573,9 @@ cdef umap[pair[State, State], State] c_product_map
 
 ## Working with standard streams
 
-* **Problem**: You need to work with standard streams (`ostream`, `fstream`, etc..
-* **Solution**: You need to define the streams in the `pxd` header first. Then you can use
-them in the `pyx` code.
+- **Problem**: You need to work with standard streams (`ostream`, `fstream`, etc..
+- **Solution**: You need to define the streams in the `pxd` header first. Then you can use
+  them in the `pyx` code.
 
 ```cython
 cdef extern from "<iostream>" namespace "std":
@@ -590,7 +592,7 @@ cdef extern from "<sstream>" namespace "std":
         string str()
 ```
 
-* Then, you can call function that takes `ofstream` as follows:
+- Then, you can call function that takes `ofstream` as follows:
 
 ```cython
 cimport libmata.nfa.nfa as mata_nfa
@@ -608,8 +610,8 @@ finally:
 
 ## Using pre- and post-increments (`var++` and `++var`)
 
-* **Problem**: You want to manually use pre/post increments in your code.
-* **Solution**: You have to import  `postincrement` and `preincrement` from `cython.operator`.
+- **Problem**: You want to manually use pre/post increments in your code.
+- **Solution**: You have to import `postincrement` and `preincrement` from `cython.operator`.
 
 ```cython
 from cython.operator import postincrement as postinc, preincrement as preinc
@@ -619,8 +621,8 @@ preinc(iterator)
 
 ## Working with iterators
 
-* **Problem**: You want to iterate over some structure using iterators.
-* **Solution**: You use the iterator functions, `begin()`, `end()`, and so on;
+- **Problem**: You want to iterate over some structure using iterators.
+- **Solution**: You use the iterator functions, `begin()`, `end()`, and so on;
   however, you might need to make them visible. The standard iterators are visible,
   your custom classes need to define nested iterator class as shown below.
 
@@ -636,7 +638,7 @@ cdef cppclass CNfa "mata::nfa::Nfa":
         void refresh_trans()
 ```
 
-* Working with iterators in Cython, is then similar to working with iterators in C/C++.
+- Working with iterators in Cython, is then similar to working with iterators in C/C++.
 
 ```cython
 from libcpp.vector cimport vector
@@ -660,8 +662,8 @@ return transsymbols
 
 ## Defining type definition
 
-* **Problem**: You want to create some custom type or type alias.
-* **Solution**: You simply define `ctypedef` in `pxd` file. This can then be cimported from module.
+- **Problem**: You want to create some custom type or type alias.
+- **Solution**: You simply define `ctypedef` in `pxd` file. This can then be cimported from module.
 
 ```cython
 ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
@@ -669,8 +671,8 @@ ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
 
 ## Calling functions of shared pointer object
 
-* **Problem**: You need to work with shared pointers.
-* **Solution**: You cimport `shared_ptr` type, which can be used as any other type. For dereferencing
+- **Problem**: You need to work with shared pointers.
+- **Solution**: You cimport `shared_ptr` type, which can be used as any other type. For dereferencing
   or working with the object use `.get()` function which returns the pointer.
 
 ```cython
@@ -680,10 +682,9 @@ lhs.thisptr.get().add_state()
 
 ## Supporting Python for loops
 
-* **Problem**: You want iterate over your structure in Python `for` loops.
-* **Solution**: The standard function should support this by default (i.e., `std::` containers),
+- **Problem**: You want iterate over your structure in Python `for` loops.
+- **Solution**: The standard function should support this by default (i.e., `std::` containers),
   your custom classes needs to support basic iterators (`begin()`, `end()`, etc.).
-
 
 ```cython
 cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
@@ -695,8 +696,8 @@ for c_transition in c_transitions:
 
 ## Working with strings
 
-* **Problem**: You want to work with strings and pass them between binding and wrapped library.
-* **Solution**: You need to use `encode()` when passing strings to C/C++ functions, and `decode()`,
+- **Problem**: You want to work with strings and pass them between binding and wrapped library.
+- **Solution**: You need to use `encode()` when passing strings to C/C++ functions, and `decode()`,
   when recieving results.
 
 ```cython
@@ -708,8 +709,8 @@ result.decode('utf-8')
 
 ## Helping Cython to infer types
 
-* **Problem**: Cython fails to infer types for the variables and cannot compile the binding.
-* **Solution**: You need to help Cython a little: add types to parameters, add types to cdefined
+- **Problem**: Cython fails to infer types for the variables and cannot compile the binding.
+- **Solution**: You need to help Cython a little: add types to parameters, add types to cdefined
   variables, or manually retype the variable.
 
 ```cython
@@ -726,8 +727,8 @@ def union(cls, Nfa lhs, Nfa rhs):
 
 ## Working with exceptions
 
-* **Problem**: Your function can fire exceptions.
-* **Solution**: You have to tell Cython how to handle these.
+- **Problem**: Your function can fire exceptions.
+- **Solution**: You have to tell Cython how to handle these.
 
 ```cython
 void add(CTrans) except -1
@@ -740,14 +741,14 @@ void add(CTrans) noexcept +
 #                ^-- function will not fire exception
 ```
 
-* Note, there are other ways of handing exceptions, but these should suffice.
+- Note, there are other ways of handing exceptions, but these should suffice.
 
 # Importing between modules
 
 ## Importing C/C++ defined functions and symbols
 
-* **Problem**: You want to import symbols visible from wrapped `libmata` library.
-* **Solution**: You need to use `cimport`, which tells Cython to import C/C++ typed definitions.
+- **Problem**: You want to import symbols visible from wrapped `libmata` library.
+- **Solution**: You need to use `cimport`, which tells Cython to import C/C++ typed definitions.
 
 ```cython
 cimport libmata.alphabets as alph
@@ -758,13 +759,13 @@ from libmata.alphabets cimport CAlphabet
 
 ## Importing Python defined functions and symbols
 
-* **Problem**: You want to import symbols from other non-C/C++ modules.
-* **Solution**: You can try using `cimport`ed module; otherwise simply use `import`.
+- **Problem**: You want to import symbols from other non-C/C++ modules.
+- **Solution**: You can try using `cimport`ed module; otherwise simply use `import`.
 
 ## Importing standard containers and types
 
-* **Problem**: You want to use some standard C/C++ symbol, operation or container.
-* **Solution**: You need to import from `cython.operator`, `libc`, or `libcpp`, which
+- **Problem**: You want to use some standard C/C++ symbol, operation or container.
+- **Solution**: You need to import from `cython.operator`, `libc`, or `libcpp`, which
   contains number of helper types, functions, etc.
 
 ```cython
@@ -786,11 +787,11 @@ from libcpp.vector cimport vector
 
 ## An error when importing Python object from other module
 
-* **Problem**: You imported some other Cython module and want to use non-C/C++ class. The Cython,
+- **Problem**: You imported some other Cython module and want to use non-C/C++ class. The Cython,
   however, says that it does not know the requested member.
-* **Solution**: You have to forward-declare the Python class in `.pxd` file.
+- **Solution**: You have to forward-declare the Python class in `.pxd` file.
 
-* An example of such error is as below:
+- An example of such error is as below:
 
 ```shell
 Error compiling Cython file:
@@ -808,7 +809,7 @@ result[epsilon_depth_pair.first] = []
 libmata/nfa/strings.pyx:37:64: cimported module has no attribute 'Transition'
 ```
 
-* The fix is to add the following forward declaration to `.pxd` file.
+- The fix is to add the following forward declaration to `.pxd` file.
 
 ```cython
 # @file: nfa.pxd
@@ -819,11 +820,11 @@ cdef class Transition:
 
 ## A weird error when Cython cannot retype C/C++ object to Python object
 
-* **Problem**: You want to store some C/C++ type to a C/C++ member of the Python object. Cython,
+- **Problem**: You want to store some C/C++ type to a C/C++ member of the Python object. Cython,
   however, treats the object as Python object and cannot infer types.
-* **Solution**: You have to explicitly retype the underlying Python object to help Cython with the rest.
+- **Solution**: You have to explicitly retype the underlying Python object to help Cython with the rest.
 
-* The following is an example of the error.
+- The following is an example of the error.
 
 ```shell
 Error compiling Cython file:
@@ -841,7 +842,7 @@ Error compiling Cython file:
 libmata/nfa/strings.pyx:135:37: Cannot convert 'shared_ptr[CNfa]' to Python object
 ```
 
-* The fix is bellow: we help Cython by telling him that `noodle_segment` certainly is `mata_nfa.Nfa`
+- The fix is bellow: we help Cython by telling him that `noodle_segment` certainly is `mata_nfa.Nfa`
   class and now he can infer the type of its member `thisptr` and allow the assignment.
 
 ```cython
@@ -859,12 +860,12 @@ for c_noodle in c_noodle_segments:
 
 ## An error when Cython cannot find cimported function, even if it is defined
 
-* **Problem**: You defined some function `f` you wish to use in binding, you implement the function
+- **Problem**: You defined some function `f` you wish to use in binding, you implement the function
   with same name in the binding, but Cython first says, that
   you are redefining the function `f` and then says it cannot `cimport` it.
-* **Solution**: You have to explicitly name the function `f` to, e.g.. `c_f`.
+- **Solution**: You have to explicitly name the function `f` to, e.g.. `c_f`.
 
-* The following is an example of the error.
+- The following is an example of the error.
 
 ```shell
 warning: libmata/nfa/nfa.pyx:690:0: Overriding cdef method with def method.
@@ -884,7 +885,7 @@ mata_nfa.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subs
 libmata/nfa/nfa.pyx:687:12: cimported module has no attribute 'determinize'
 ```
 
-* An example of the solution is as follows:
+- An example of the solution is as follows:
 
 ```git
 -    cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
@@ -893,8 +894,8 @@ libmata/nfa/nfa.pyx:687:12: cimported module has no attribute 'determinize'
 
 # Quick glossary
 
-  - `cdef` = function available in C code;
-  - `cpdef` = function available in C/C++ and Python,
-  - `def` = function available in Python code.
-  - `cimport module` = import C/C++ visible functions; use `module.` prefix to access.
-  - `from module cimport func, Class, type` = import selected classes, types or functions; juse no prefix to access.
+- `cdef` = function available in C code;
+- `cpdef` = function available in C/C++ and Python,
+- `def` = function available in Python code.
+- `cimport module` = import C/C++ visible functions; use `module.` prefix to access.
+- `from module cimport func, Class, type` = import selected classes, types or functions; juse no prefix to access.

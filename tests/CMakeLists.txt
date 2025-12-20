@@ -9,8 +9,8 @@ target_compile_options (tests PRIVATE "$<$<CONFIG:RELEASE>:${MATA_COMMON_WARNING
 
 # Optionally, also add Clang-specific warnings.
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") # Using regular Clang or AppleClang.
-    target_compile_options (tests PRIVATE "$<$<CONFIG:DEBUG>:${MATA_CLANG_WARNINGS}>")
-    target_compile_options (tests PRIVATE "$<$<CONFIG:RELEASE>:${MATA_CLANG_WARNINGS}>")
+	target_compile_options (tests PRIVATE "$<$<CONFIG:DEBUG>:${MATA_CLANG_WARNINGS}>")
+	target_compile_options (tests PRIVATE "$<$<CONFIG:RELEASE>:${MATA_CLANG_WARNINGS}>")
 endif ()
 
 catch_discover_tests (tests)

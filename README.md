@@ -7,8 +7,8 @@
 
 Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:
 
-  1. An efficient library implemented in C/C++
-  2. A flexible wrapper implemented in Python that uses the efficient library
+1. An efficient library implemented in C/C++
+2. A flexible wrapper implemented in Python that uses the efficient library
 
 ## Installation
 
@@ -20,7 +20,7 @@ Available in [nixpkgs](https://github.com/NixOS/nixpkgs/) (maintained by [@Adda0
 nix build nixpkgs#mata
 ```
 
-This repo also provides a flake (maintained by [@Adda0](https://github.com/Adda0) with [flake-compat](https://github.com/NixOS/flake-compat) and an overlay:
+This repo also provides a flake (maintained by [@Adda0](https://github.com/Adda0)) with [flake-compat](https://github.com/NixOS/flake-compat) and an overlay:
 
 ```shell
 nix build github:VeriFIT/mata
@@ -42,6 +42,7 @@ For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) a
 From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies).
 
 The Mata library further depends on the following libraries, included in the `./3rdparty/` directory:
+
 - `cudd` for BDD manipulation,
 - `re2` for regular expression parsing and the corresponding automata construction, and
 - `simlib` for a simulation computation.
@@ -87,6 +88,7 @@ package on your system as follows.
 ### Installation from PyPI
 
 To install a latest version from the PyPI repository, run
+
 ```
 pip3 install libmata
 ```
@@ -121,21 +123,21 @@ make -C bindings/python test
 To get started, we refer to the folder [examples](./examples/) in our repository.
 This directory contains examples of various usage in form of:
 
-  1. C/C++ example programs. By default, they are built with the library. To run for example the first example:
+1. C/C++ example programs. By default, they are built with the library. To run for example the first example:
 
 ```
 ./build/examples/example01-simple
 ```
 
-  3. Python example scripts. To run the scripts run the following.
+3. Python example scripts. To run the scripts run the following.
 
 ```
 python examples/example01-python-binding.py
 ```
 
-  4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
-  a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
-  Navigate to generated link to see the available jupyter notebooks:
+4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
+   a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
+   Navigate to generated link to see the available jupyter notebooks:
 
 ```
 pip3 install jupyter
@@ -265,10 +267,10 @@ The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https:
 - Generally, the changes in the `MINOR` version should not break the existing interface, but exceptions might occur.
 - The changes in the `MAJOR` version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.
 
-
 ## Publications
-- Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.1007/978-3-031-57249-4_7). In *Proc. of TACAS'24*, volume 14571 of LNCS, pages 130-151, 2024. Springer.
-    - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., Síč, J.: [A replication package for reproducing the results of paper “Mata: A fast and simple finite automata library”](https://doi.org/10.5281/zenodo.10044515) (Oct 2023).
+
+- Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.1007/978-3-031-57249-4_7). In _Proc. of TACAS'24_, volume 14571 of LNCS, pages 130-151, 2024. Springer.
+  - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., Síč, J.: [A replication package for reproducing the results of paper “Mata: A fast and simple finite automata library”](https://doi.org/10.5281/zenodo.10044515) (Oct 2023).
 
 ## Contributing
 
@@ -276,16 +278,16 @@ Please refer to our [contributing guidelines](CONTRIBUTING.md).
 
 ## Links
 
-  - Project (origin) repository: <https://github.com/verifit/mata>
-  - Issue tracker: <https://github.com/verifit/mata/issues>
-    - In case of some sensitive bugs (like security vulnerabilities),
-      please contact us directly, instead of using issue tracker.
-      We value your effort to improve the security and privacy of this project!
-  - Project documentation: <https://verifit.github.io/mata>
-  - Jupyter notebooks demonstrating `mata` usage: <https://github.com/VeriFIT/mata/tree/devel/examples/notebooks>
-    - [Example 01: WS1S Logic](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb)
-    - [Example 02: ReDoS Attacks](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb)
-    - [Example 03: Exploring Maze](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-03-exploring-maze.ipynb)
+- Project (origin) repository: <https://github.com/verifit/mata>
+- Issue tracker: <https://github.com/verifit/mata/issues>
+  - In case of some sensitive bugs (like security vulnerabilities),
+    please contact us directly, instead of using issue tracker.
+    We value your effort to improve the security and privacy of this project!
+- Project documentation: <https://verifit.github.io/mata>
+- Jupyter notebooks demonstrating `mata` usage: <https://github.com/VeriFIT/mata/tree/devel/examples/notebooks>
+  - [Example 01: WS1S Logic](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb)
+  - [Example 02: ReDoS Attacks](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb)
+  - [Example 03: Exploring Maze](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-03-exploring-maze.ipynb)
 
 Also, check out our research group focusing on program analysis, static and dynamic analysis,
 formal methods, verification and many more:
@@ -309,4 +311,4 @@ We thank for the support received from the Brno University of Technology
 <!-- Development of this tool has been supported by the following projects: ???. -->
 
 This tool as well as the information provided on this web page reflects only the author's view and no organization is
- responsible for any use that may be made of the information it contains.
+responsible for any use that may be made of the information it contains.

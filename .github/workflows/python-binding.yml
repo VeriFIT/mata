@@ -1,7 +1,5 @@
 name: Python-Binding (build-&-test)
-
 permissions: write-all
-
 on:
   push:
     branches:
@@ -11,31 +9,25 @@ on:
     branches:
       - master
       - devel
-
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.12"]
-
     steps:
       - name: Checkout latest version
         uses: actions/checkout@v4
-
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
         with:
           python-version: ${{ matrix.python-version}}
-
       - name: Install The Binding
         run: |
           make -C bindings/python install
-
       - name: Run tests
         run: |
           make -C bindings/python test
-
       - name: Install runner for jupyter notebooks
         run: |
           python3 -m pip install ipykernel
@@ -43,32 +35,26 @@ jobs:
           python3 -m pip install numpy
           python3 -m pip install seaborn
           python3 -m pip install papermill pandas
-
       - name: Test the jupyter notebooks
         run: |
           papermill ./examples/notebooks/example-01-ws1s-formulae.ipynb out.ipynb
           papermill ./examples/notebooks/example-02-redos-attacks.ipynb out.ipynb
           papermill ./examples/notebooks/example-03-exploring-maze.ipynb out.ipynb
-
   build-from-tar:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.12"]
-
     steps:
       - name: Checkout latest version
         uses: actions/checkout@v4
-
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
         with:
           python-version: ${{ matrix.python-version}}
-
       - name: Create tarball
         run: |
           make -C bindings/python pypi-release
-
       - name: Install from tarball
         run: |
           pip3 install bindings/python/dist/*.tar.gz
