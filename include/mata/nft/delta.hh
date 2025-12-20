@@ -6,10 +6,10 @@
 #ifndef MATA_NFT_DELTA_HH
 #define MATA_NFT_DELTA_HH
 
-#include "mata/utils/sparse-set.hh"
-#include "mata/utils/synchronized-iterator.hh"
 #include "mata/alphabet.hh"
 #include "mata/nft/types.hh"
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/synchronized-iterator.hh"
 
 #include "mata/nfa/delta.hh"
 
@@ -17,18 +17,18 @@
 
 namespace mata::nft {
 
-using Transition = mata::nfa::Transition;
+using Transition = nfa::Transition;
 
-using Move = mata::nfa::Move;
+using Move = nfa::Move;
 
-using SymbolPost = mata::nfa::SymbolPost;
+using SymbolPost = nfa::SymbolPost;
 
-using StatePost = mata::nfa::StatePost;
+using StatePost = nfa::StatePost;
 
-using SynchronizedExistentialSymbolPostIterator = mata::nfa::SynchronizedExistentialSymbolPostIterator;
+using SynchronizedExistentialSymbolPostIterator = nfa::SynchronizedExistentialSymbolPostIterator;
 
-using Delta = mata::nfa::Delta;
+using Delta = nfa::Delta;
 
 } // namespace mata::nft.
 
-#endif //MATA_DELTA_HH
+#endif

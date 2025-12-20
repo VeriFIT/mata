@@ -1,43 +1,36 @@
-/* composition.cc -- Composition of two NFTs
+/** @file
+ * @brief Composition of two NFTs.
  */
 
-// MATA headers
 #include "mata/nft/nft.hh"
-#include <cassert>
-
 
 using namespace mata::utils;
 
-
-namespace mata::nft
-{
-
-Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, bool project_out_sync_levels, const JumpMode jump_mode) {
+namespace mata::nft {
+Nft compose(
+    const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels,
+    const bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(!lhs_sync_levels.empty());
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
 
     // Inserts loop into the given Nft for each state with level 0.
     // The loop word is constructed using the EPSILON symbol for all levels, except for the levels
-    // where is_dcare_on_transition is true, in which case the DONT_CARE symbol is used.
-    auto insert_self_loops = [&](Nft &nft, const BoolVector &is_dcare_on_transition) {
+    // where is_dont_care_on_transition is true, in which case the DONT_CARE symbol is used.
+    auto insert_self_loops = [&](Nft& nft, const BoolVector& is_dont_care_on_transition) {
         Word loop_word(nft.levels.num_of_levels, EPSILON);
         for (size_t i{ 0 }; i < nft.levels.num_of_levels; i++) {
-            if (is_dcare_on_transition[i]) {
-                loop_word[i] = DONT_CARE;
-            }
+            if (is_dont_care_on_transition[i]) { loop_word[i] = DONT_CARE; }
         }
 
-        size_t original_num_of_states = nft.num_of_states();
+        const size_t original_num_of_states = nft.num_of_states();
         for (State s{ 0 }; s < original_num_of_states; s++) {
-            if (nft.levels[s] == 0) {
-                nft.insert_word(s, loop_word, s);
-            }
+            if (nft.levels[s] == 0) { nft.insert_word(s, loop_word, s); }
         }
     };
 
     // Calculate the number of non-synchronization levels in lhs and rhs before/after each/last synchronization level.
     // Example:
-    //    Lets suppose we have 2 synchnonization levels.
+    //    Lets suppose we have 2 synchronization levels.
     //    The vector lhs_nonsync_levels_cnt = { 2, 0, 1 } indicates that
     //    - before the first synchronization level (i == 0) there are 2 non-synchronization levels
     //    - before the second synchronization level (i == 1) there are 0 non-synchronization levels
@@ -118,14 +111,15 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     insert_self_loops(rhs_synced, rhs_new_levels_mask);
 
     Nft result{ intersection(lhs_synced, rhs_synced, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state) };
-    if (project_out_sync_levels) {
-        result = project_out(result, sync_levels_to_project_out, jump_mode);
-    }
+    if (project_out_sync_levels) { result = project_out(result, sync_levels_to_project_out, jump_mode); }
     return result;
 }
 
-Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, bool project_out_sync_levels, const JumpMode jump_mode) {
-    return compose(lhs, rhs, OrdVector{ lhs_sync_level }, OrdVector{ rhs_sync_level }, project_out_sync_levels, jump_mode);
+Nft compose(
+    const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level,
+    const bool project_out_sync_levels, const JumpMode jump_mode) {
+    return compose(
+        lhs, rhs, OrdVector{ lhs_sync_level }, OrdVector{ rhs_sync_level }, project_out_sync_levels, jump_mode
+    );
 }
-
 } // mata::nft

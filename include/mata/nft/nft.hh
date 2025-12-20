@@ -495,7 +495,9 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void unwind_jumps(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    void unwind_jumps(
+        Nft& result, const utils::OrdVector<Symbol>& dont_care_symbol_replacements = { DONT_CARE },
+        JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Prints the automaton in DOT format
@@ -503,10 +505,15 @@ public:
      * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
      * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
-     * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+     *  If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+     * @param alphabet Alphabet to use for printing labels.
+     *  If nullptr, the automaton's alphabet is used.
+     *  If the automaton has no alphabet, symbols are printed as integers unless @p decode_ascii_chars is set.
      * @return automaton in DOT format
      */
-    std::string print_to_dot(bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
+    std::string print_to_dot(
+        bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1,
+        const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton to the output stream in DOT format
@@ -515,9 +522,14 @@ public:
      * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
      * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
-     * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+     *  If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+     * @param alphabet Alphabet to use for printing labels.
+     *  If nullptr, the automaton's alphabet is used.
+     *  If the automaton has no alphabet, symbols are printed as integers unless @p decode_ascii_chars is set.
      */
-    void print_to_dot(std::ostream &output, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
+    void print_to_dot(
+        std::ostream& output, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1,
+        const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton to the file in DOT format
@@ -525,9 +537,14 @@ public:
      * @param[in] decode_ascii_chars Whether to use ASCII characters for the output.
      * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
      * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
-     * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+     *  If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+     * @param[in] alphabet Alphabet to use for printing labels.
+     *  If nullptr, the automaton's alphabet is used.
+     *  If the automaton has no alphabet, symbols are printed as integers unless @p decode_ascii_chars is set.
      */
-    void print_to_dot(const std::string& filename, bool decode_ascii_chars = false, bool use_intervals = false, int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
+    void print_to_dot(
+        const std::string& filename, bool decode_ascii_chars = false, bool use_intervals = false,
+        int max_label_length = -1, const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Prints the automaton in mata format
@@ -577,7 +594,7 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given state over the given symbol.
      */
-    StateSet post(const State state, const Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const {
+    StateSet post(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
         return post(StateSet{ state }, symbol, epsilon_closure_opt);
     }
 
@@ -590,7 +607,7 @@ public:
      * @param symbol Symbol to compute the post set for.
      * @return Set of states reachable from the given state over the given symbol.
      */
-    const StateSet& post(const State state, Symbol symbol) const {
+    const StateSet& post(const State state, const Symbol symbol) const {
         return delta.get_successors(state, symbol);
     }
 
@@ -803,9 +820,9 @@ public:
 // Using parameter pack and variadic arguments.
 // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
 /// Pack of bools for reasoning about a sequence of parameters.
-template<bool...> struct bool_pack{};
+template<bool...> struct BoolPack{};
 /// Check that for all values in a pack @p Ts are 'true'.
-template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
+template<typename... Ts> using conjunction = std::is_same<BoolPack<true,Ts::value...>, BoolPack<Ts::value..., true>>;
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
 template<typename T, typename... Ts> using AreAllOfType = conjunction<std::is_same<Ts, T>...>::type;
 
@@ -996,8 +1013,10 @@ bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
-                        const ParameterMap& params = {{ "algorithm", "antichains" }}) {
+inline bool is_included(
+    const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr,
+    const JumpMode jump_mode = JumpMode::RepeatSymbol,
+    const ParameterMap& params = { { "algorithm", "antichains" } }) {
     return is_included(smaller, bigger, nullptr, alphabet, jump_mode, params);
 }
 

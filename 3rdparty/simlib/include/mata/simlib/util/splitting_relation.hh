@@ -405,7 +405,7 @@ public:
 
 	}
 
-	void erase(IteratorBase& iter) {
+	void erase(const IteratorBase& iter) {
 
 		auto& el = iter.el_;
 

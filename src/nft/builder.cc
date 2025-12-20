@@ -46,9 +46,8 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
     auto it = parsec.dict.find("Initial");
     if (parsec.dict.end() != it)
     {
-        for (const auto& str : it->second)
-        {
-            State state = get_state_name(str);
+        for (const auto& str : it->second) {
+            const State state = get_state_name(str);
             aut.initial.insert(state);
         }
     }
@@ -279,7 +278,9 @@ Nft builder::parse_from_mata(const std::string& nft_in_mata) {
     return parse_from_mata(nft_stream);
 }
 
-Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t num_of_levels, const bool explicit_transitions, std::optional<Symbol> next_levels_symbol) {
+Nft builder::from_nfa_with_levels_zero(
+    const nfa::Nfa& nfa, const size_t num_of_levels, const bool explicit_transitions,
+    const std::optional<Symbol> next_levels_symbol) {
     if (num_of_levels == 1 || (!explicit_transitions && !next_levels_symbol.has_value())) {
         return Nft(nfa, num_of_levels, 0);
     }
@@ -319,9 +320,10 @@ Nft builder::from_nfa_with_levels_zero(const mata::nfa::Nfa& nfa, const size_t n
     return nft;
 }
 
-Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_levels) {
+Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num_of_levels) {
     Nft result{ std::move(nfa) };
-    std::vector<Level> levels( result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
+    // num_of_levels represents that the state does not have level assigned yet
+    std::vector<Level> levels(result.num_of_states(), static_cast<Level>(num_of_levels));
 
     // We apply simple DFS
     StateSet worklist; // worklist for DFS
@@ -332,7 +334,7 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_le
     }
 
     while (!worklist.empty()) {
-        State state_to_process = worklist.back();
+        const State state_to_process = worklist.back();
         worklist.pop_back();
         for (State tgt : result.delta[state_to_process].get_successors()) {
             Level next_level = levels[state_to_process] + 1;

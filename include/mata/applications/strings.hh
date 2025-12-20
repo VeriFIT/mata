@@ -421,7 +421,7 @@ struct TransducerNoodleElement {
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
 std::vector<TransducerNoodle> noodlify_for_transducer(
-    std::shared_ptr<Nft> nft,
+    const std::shared_ptr<Nft>& nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
     bool reduce_intersection = true,

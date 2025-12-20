@@ -6,11 +6,11 @@
 #ifndef LIBMATA_NFT_BUILDER_HH
 #define LIBMATA_NFT_BUILDER_HH
 
-#include "mata/nfa/builder.hh"
 #include "nft.hh"
+#include "mata/nfa/builder.hh"
 
-#include <optional>
 #include <filesystem>
+#include <optional>
 
 /**
  * Namespace providing options to build NFAs.
@@ -123,8 +123,8 @@ Nft from_nfa_with_levels_zero(const nfa::Nfa& nfa, size_t num_of_levels = DEFAUL
 /**
  * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.
  *
- * It assumes that @p nfa is a representation of an nft without jump transitions.
- * It assign to each state the level based on the distance from the initial state.
+ * It assumes that @p nfa is a representation of an NFT without jump transitions.
+ * It assigns to each state the level based on the distance from the initial state.
  * For example, if there are 2 levels, the initial states are level 0, the successor
  * states are level 1, the states after that level 0, etc.
  *
@@ -134,8 +134,8 @@ Nft from_nfa_with_levels_zero(const nfa::Nfa& nfa, size_t num_of_levels = DEFAUL
  * @throws std::runtime_error if some state should be assigned two different levels
  *                            or if the final state is not at level 0.
  */
-Nft from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, size_t num_of_levels);
+Nft from_nfa_with_levels_advancing(nfa::Nfa nfa, size_t num_of_levels);
 
 } // namespace mata::nft::builder.
 
-#endif //LIBMATA_NFT_BUILDER_HH
+#endif

@@ -15,15 +15,15 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 }
 
 Nfa& Nfa::concatenate(const Nfa& aut) {
-    size_t n = this->num_of_states();
-    auto upd_fnc = [&](State st) {
+    const size_t n = this->num_of_states();
+    auto upd_fnc = [&](const State st) {
         return st + n;
     };
 
     // copy the information about aut to save the case when this is the same object as aut.
     utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
     utils::SparseSet<mata::nfa::State> aut_final = aut.final;
-    size_t aut_n = aut.num_of_states();
+    const size_t aut_n = aut.num_of_states();
 
     this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
@@ -39,7 +39,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     for(const State& ini : aut_initial) {
         const StatePost& ini_post = this->delta[upd_fnc(ini)];
         // is ini state also final?
-        bool is_final = aut_final[ini];
+        const bool is_final = aut_final[ini];
         for(const State& fin : this->final) {
             if(is_final) {
                 new_fin.insert(fin);
