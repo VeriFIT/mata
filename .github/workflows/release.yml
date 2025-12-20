@@ -1,14 +1,11 @@
 name: Release
-
 permissions: write-all
-
 on:
   pull_request:
     types:
       - closed
     branches:
       - devel
-
 jobs:
   release:
     if: github.event.pull_request.merged == true
@@ -18,12 +15,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: devel
-
       - name: Set up git config
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-
       - name: Infer the new version (without tagging)
         id: tagger
         uses: phish108/autotag-action@1.1.64
@@ -31,64 +26,52 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-branch: devel
           bump: minor
-          dry-run: 'TRUE'
-
+          dry-run: "TRUE"
       - name: Set the new version to file (without commit; will serve as temporary file)
         run: |
           echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
-
       - name: Tag the new version
         uses: phish108/autotag-action@1.1.64
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-branch: devel
           bump: minor
-
   build-and-deploy-doc:
     needs: release
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.12"]
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
+          cache: "pip"
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           make -C doc init
-
       - uses: ssciwr/doxygen-install@v1
-
       - name: Compile the documentation
         run: |
           python -m pip install --upgrade pip
           cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
           make doc
           make -C doc html
-
       - name: Deploy to gh pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: doc/_build/html
-
   build-and-deploy-to-pypi:
     needs: release
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.12"]
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Infer the new version (without tagging)
         id: tagger
         uses: phish108/autotag-action@1.1.64
@@ -96,46 +79,37 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-branch: devel
           bump: minor
-          dry-run: 'TRUE'
-
+          dry-run: "TRUE"
       - name: Set the new version to file without commiting (since the GA is done wrt old version)
         run: |
           echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
+          cache: "pip"
       - name: Install Python Dependencies
         run: |
           # Install and upgrade pip
           python3 -m pip install --upgrade pip
           # Install dependencies for build and deploy
           python3 -m pip install setuptools wheel twine
-
       - name: Install Python Dependencies
         run: |
           make -C bindings/python init
-
       - name: Install Unix dependencies
         run: |
           sudo apt-get -qq update
           sudo apt-get -qq install -y graphviz graphviz-dev
-
       - name: Verify that the Binding can be installed
         run: |
           make -C bindings/python install
-
       - name: Verify tests tests
         run: |
           make -C bindings/python test
-
       - name: Build python release distribution package
         run: |
           make -C bindings/python pypi-release
-
       # - name: Upload to TestPypi
       #   run: |
       #     python3 -m twine upload bindings/python/dist/*.tar.gz
@@ -143,20 +117,18 @@ jobs:
       #     TWINE_USERNAME: __token__
       #     TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
       #     TWINE_REPOSITORY: testpypi
-
       - name: Upload to Pypi
         run: |
           python3 -m twine upload bindings/python/dist/*.tar.gz
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
-
   warnings:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
@@ -164,7 +136,7 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
         with:
-          build-log-output-file: 'warnings-release'
+          build-log-output-file: "warnings-release"
       - name: Print release warnings
         run: cat build_log
       - name: Count number of warnings
@@ -174,13 +146,12 @@ jobs:
           if [ $number_of_warnings -gt 0 ]; then
             exit 1
           fi
-
   run-tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/workflows/actions/setup
@@ -188,6 +159,6 @@ jobs:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
         with:
-          build-log-output-file: 'warnings-new'
+          build-log-output-file: "warnings-new"
       - name: Test the library
         run: make test

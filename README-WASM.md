@@ -1,6 +1,6 @@
 ## Building Mata to WASM
 
-In order to build Mata library to WASM, you need to have `emscripten` set up, along with all of its dependencies. 
+In order to build Mata library to WASM, you need to have `emscripten` set up, along with all of its dependencies.
 You can use the system packages or consult [emsdk](https://github.com/emscripten-core/emsdk).
 For building Mata to WASM then use the following steps:
 

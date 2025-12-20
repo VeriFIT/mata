@@ -56,7 +56,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
 
 - `./tests-integration/automata/`: short database of approximately 70 automata of various complexity. The automata come from different
   benchmarks. The `easiest` benchmarks should take less than a second, while `hardest` can take more than 60 seconds.
- The current database is preliminary and might contain errors and issues when running.
+  The current database is preliminary and might contain errors and issues when running.
 - `./tests-integration/src/`: directory with source codes; these will be compiled to `@LIBMATA_ROOT@/build` directory.
   Only sources in the `src/` directory will be compiled using the `cmake` build system!
   You can build upon sources in `src/templates` to start with your own benchmarks or integration tests:
@@ -75,7 +75,6 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
 ### Creating new benchmarking tests
 
 - To create new tests, the following should be done:
-
   1. We recommend you to make a copy of one of the `./tests-integration/src/templates/template*.cc` files which contains basic boilerplate code:
 
      ```sh
@@ -83,6 +82,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
      ```
 
      where `<YOUR_FILENAME>.cc` source code must be in `./tests-integration/src/` directory; this will ensure it will be compiled using the cmake infrastructure.
+
   1. If you are using our template, locate the comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` and fill it with the code you want to profile, measure or test.
      - The measurement is performed using our timing macros (namely `TIME_BEGIN` and `TIME_END`).
      - If you want to use our timing macros (`TIME_BEGIN`, `TIME_END`, `TIME_STATEMENT`, or `TIME_BLOCK`) include them from `./tests-integration/src/utils/`.
@@ -96,6 +96,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
 
      where the `cmd` contains terminal execution of the binary, the `$1` corresponds to positional arguments that are fed by `pycobench`, `BENCHMARK_NAME` is the name under which the results will be registered (e.g. in the `csv` file, this will correspond to the column).
      - We recommend using the `cmake` variable `@CMAKE_CURRENT_BINARY_DIR@` together with cmake to (re)generate the jobs files with resolved paths (so one can call the `pycobench` from any machine and from any folder).
+
   1. Create a new input file `.input.in` as a CSV file (with `;` as column separator) with a list of benchmark instances, one instance per row.
      For example, for a binary `<YOUR_FILENAME>` from above which take as parameters 3 arguments, two mata NFAs in `.mata` format, and one number, the format of the input file could be:
 
@@ -106,6 +107,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
      ```
 
      - We recommend using the `cmake` variable `@CMAKE_CURRENT_BINARY_DIR@` together with cmake to (re)generate the inputs files with resolved paths (so one can call the `pycobench` from any machine and from any folder).
+
   1. Build sources, jobs, and inputs using `make release` or `make debug` from the project root directory or build it yourself using `cmake` from `./tests-integration/` directory.
 
 ### Run on one benchmark instance
@@ -145,11 +147,9 @@ You can find the exact instances and operations used in the paper in the mata-co
 The binaries take files with NFAs written in the `.mata` automata format as a command line input, with one automaton per file. The pycobench tool automates running these binaries:
 
 - with a pre-defined set of benchmark instances, specified in `.input` files inside `tests-integration/inputs/`.
-
   - One can make their own set of specific benchmark instances by creating a `.input.in` file (see examples there) and recompiling the project (which will create a corresponding `.input` file of the same name), or directly specifying external benchmark instances directly into a new `.input` file.
 
 - with the pre-defined set of operations (executed binaries), specified in `.yaml` configuration files inside `tests-integration/jobs/`.
-
   - Once can make their own set of operations to be performed (binaries to be executed) by creating a `.yaml.in` file and recompiling the project (which will create a corresponding `.yaml` configuration file of the same name), or directly specifying external operations (binaries) into a new `.yaml` file.
 
   The format of the configuration file is:
@@ -195,7 +195,6 @@ E.g.:
 For additional details, see tests-integration README and our replication package for the TACAS'24 paper introducing Mata.
 
 - Running pychobench manually
-
   1. Run `./tests-integration/pycobench`:
 
      ```sh
