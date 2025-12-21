@@ -100,8 +100,29 @@ public:
     Levels(Levels&& other) = default;
     Levels& operator=(const Levels& other) = default;
     Levels& operator=(Levels&& other) = default;
+    /**
+     * @brief Assign levels from @p other to @c this.
+     *
+     * After assignment, @c num_of_levels is set to the minimal number of levels that can accommodate all levels in @p other.
+     *
+     * @param[in] other Levels to be assigned.
+     */
     Levels& operator=(std::initializer_list<value_type> other);
+    /**
+     * @brief Assign levels from @p levels to @c this.
+     *
+     * After assignment, @c num_of_levels is set to the minimal number of levels that can accommodate all levels in @p levels.
+     *
+     * @param[in] levels Levels to be assigned.
+     */
     Levels& operator=(const std::vector<Level>& levels);
+    /**
+     * @brief Assign levels from @p levels to @c this.
+     *
+     * After assignment, @c num_of_levels is set to the minimal number of levels that can accommodate all levels in @p levels.
+     *
+     * @param[in] levels Levels to be assigned.
+     */
     Levels& operator=(std::vector<Level>&& levels);
 
     using
@@ -160,8 +181,32 @@ public:
     bool operator==(const Levels& other) const = default;
     bool operator==(const std::vector<Level>& other) const { return static_cast<const std::vector<Level>&>(*this) == other; }
 
+    /**
+     * @brief Set level of @p state to @p level.
+     *
+     * If @p state is out of range, resize @c this to accommodate it.
+     *
+     * @c num_of_levels is not changed, in contrast to the behaviour of @c Levels::operator=.
+     *
+     * @param[in] state State whose level is to be set.
+     * @param[in] level Level to be set for @p state.
+     */
     Levels& set(State state, Level level = DEFAULT_LEVEL);
+    /**
+     * @brief Set levels of @c this to @p levels.
+     *
+     * @c num_of_levels is not changed, in contrast to the behaviour of @c Levels::operator=.
+     *
+     * @param[in] levels Vector of levels to be set.
+     */
     Levels& set(const std::vector<Level>& levels);
+    /**
+     * @brief Set levels of @c this to @p levels.
+     *
+     * @c num_of_levels is not changed, in contrast to the behaviour of @c Levels::operator=.
+     *
+     * @param[in] levels Vector of levels to be set.
+     */
     Levels& set(std::vector<Level>&& levels);
 
     /**
