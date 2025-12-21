@@ -53,7 +53,7 @@ inline void reduce(Nfa* result, const Nfa &aut, StateRenaming *state_renaming = 
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
 
-inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
+inline void remove_epsilon(Nfa* result, const Nfa& aut, const Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
@@ -64,7 +64,7 @@ void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nul
     *result = builder::construct(parsed, alphabet, state_map);
 }
 
-inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
+inline void union_nondet(Nfa *union_automaton, const Nfa &lhs, const Nfa &rhs) { *union_automaton = union_nondet(lhs, rhs); }
 
 /**
  * @brief Compute intersection of two NFAs.
@@ -81,7 +81,7 @@ inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { 
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
+inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon = EPSILON,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
     *res = intersection(lhs, rhs, first_epsilon, prod_map);
 }
@@ -91,7 +91,7 @@ inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_
  * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, const bool use_epsilon = false,
                  StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }

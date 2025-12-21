@@ -8,9 +8,8 @@
 #ifndef MATA_INTER_AUT_HH
 #define MATA_INTER_AUT_HH
 
-#include <unordered_map>
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -23,79 +22,78 @@ namespace mata {
  * Each node has a name (in case of marking naming, an initial character defining type of node is removed and stored in
  * name), raw (name including potential type marker), and information about its type.
  */
-struct FormulaNode {
+class FormulaNode {
 public:
     enum class OperandType {
-        SYMBOL,
-        STATE,
-        NODE,
-        TRUE,
-        FALSE,
-        NOT_OPERAND
+        Symbol,
+        State,
+        Node,
+        True,
+        False,
+        NotOperand
     };
 
     enum class OperatorType {
-        NEG,
-        AND,
-        OR,
-        NOT_OPERATOR
+        Neg,
+        And,
+        Or,
+        NotOperator
     };
 
     enum class Type {
-        OPERAND,
-        OPERATOR,
-        LEFT_PARENTHESIS,
-        RIGHT_PARENTHESIS,
-        UNKNOWN
+        Operand,
+        Operator,
+        LeftParenthesis,
+        RightParenthesis,
+        Unknown
     };
 
     /// Define whether a node is operand or operator
-    Type type;
+    Type type{};
     /// Raw name of node as it was specified in input text, i.e., including type marker.
-    std::string raw;
+    std::string raw{};
     /// Parsed name, i.e., a potential type marker (first character) is removed.
-    std::string name; // Parsed name. When type marking is used, markers are removed.
+    std::string name{}; // Parsed name. When type marking is used, markers are removed.
     /// if a node is operator, it defines which one
-    OperatorType operator_type;
+    OperatorType operator_type{};
     /// if a node is operand, it defines which one
-    OperandType operand_type;
+    OperandType operand_type{};
 
-    bool is_operand() const { return type == Type::OPERAND; }
+    bool is_operand() const { return type == Type::Operand; }
 
-    bool is_operator() const { return type == Type::OPERATOR; }
+    bool is_operator() const { return type == Type::Operator; }
 
-    bool is_rightpar() const { return type == Type::RIGHT_PARENTHESIS; }
+    bool is_right_parenthesis() const { return type == Type::RightParenthesis; }
 
-    bool is_leftpar() const { return type == Type::LEFT_PARENTHESIS; }
+    bool is_left_parenthesis() const { return type == Type::LeftParenthesis; }
 
-    bool is_state() const { return operand_type == OperandType::STATE; }
+    bool is_state() const { return operand_type == OperandType::State; }
 
-    bool is_symbol() const { return operand_type == OperandType::SYMBOL; }
+    bool is_symbol() const { return operand_type == OperandType::Symbol; }
 
-    bool is_and() const { return type == Type::OPERATOR && operator_type == OperatorType::AND; }
+    bool is_and() const { return type == Type::Operator && operator_type == OperatorType::And; }
 
-    bool is_neg() const { return type == Type::OPERATOR && operator_type == OperatorType::NEG; }
+    bool is_neg() const { return type == Type::Operator && operator_type == OperatorType::Neg; }
 
     // TODO: should constant be its own operand type?
     bool is_constant() const { return is_true() || is_false(); }
-    bool is_true() const { return is_operand() && operand_type == OperandType::TRUE; }
-    bool is_false() const { return is_operand() && operand_type == OperandType::FALSE; }
+    bool is_true() const { return is_operand() && operand_type == OperandType::True; }
+    bool is_false() const { return is_operand() && operand_type == OperandType::False; }
 
     FormulaNode()
-        : type(Type::UNKNOWN), raw(), name(), operator_type(OperatorType::NOT_OPERATOR),
-          operand_type(OperandType::NOT_OPERAND) {}
+        : type(Type::Unknown), operator_type(OperatorType::NotOperator),
+          operand_type(OperandType::NotOperand) {}
 
-    FormulaNode(Type t, std::string raw, std::string name, OperatorType operator_t)
-        : type(t), raw(std::move(raw)), name(std::move(name)), operator_type(operator_t), operand_type(OperandType::NOT_OPERAND) {}
+    FormulaNode(const Type t, std::string raw, std::string name, const OperatorType operator_t)
+        : type(t), raw(std::move(raw)), name(std::move(name)), operator_type(operator_t), operand_type(OperandType::NotOperand) {}
 
-    FormulaNode(Type t, std::string raw, std::string name, OperandType operand)
-        : type(t), raw(std::move(raw)), name(std::move(name)), operator_type(OperatorType::NOT_OPERATOR), operand_type(operand) {}
+    FormulaNode(const Type t, std::string raw, std::string name, const OperandType operand)
+        : type(t), raw(std::move(raw)), name(std::move(name)), operator_type(OperatorType::NotOperator), operand_type(operand) {}
 
-    FormulaNode(Type t, const std::string& raw)
-        : type(t), raw(raw), name(raw), operator_type(OperatorType::NOT_OPERATOR), operand_type(OperandType::NOT_OPERAND) {}
+    FormulaNode(const Type t, const std::string& raw)
+        : type(t), raw(raw), name(raw), operator_type(OperatorType::NotOperator), operand_type(OperandType::NotOperand) {}
 
-    FormulaNode(const FormulaNode& n)
-        : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type), operand_type(n.operand_type) {}
+    FormulaNode(const FormulaNode& n) = default;
 
     FormulaNode(FormulaNode&&) noexcept = default;
 
@@ -111,23 +109,22 @@ public:
  * and q1 and s2 being children nodes of the root.
  */
 class FormulaGraph {
-private:
     /// Maximal number of @c FormulaNode children in any @c FormulaGraph node (for AND, OR nodes). Only one (NOT node)
-    ///  or zero (@c FormulaNode node) children may be used. Used as an optimalization by preallocating @c children at
+    ///  or zero (@c FormulaNode node) children may be used. Used as an optimization by pre-allocating @c children at
     ///  node initialization.
-    static constexpr size_t MAX_NUM_OF_CHILDREN{ 2 };
+    static constexpr size_t max_num_of_children{ 2 };
 public:
     FormulaNode node{};
     std::vector<FormulaGraph> children{};
 
     FormulaGraph() = default;
-    explicit FormulaGraph(const FormulaNode& n) : node(n), children() { children.reserve(MAX_NUM_OF_CHILDREN); }
-    explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() { children.reserve(MAX_NUM_OF_CHILDREN); }
-    FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
+    explicit FormulaGraph(const FormulaNode& n) : node(n) { children.reserve(max_num_of_children); }
+    explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)) { children.reserve(max_num_of_children); }
+    FormulaGraph(const FormulaGraph& g) = default;
     FormulaGraph(FormulaGraph&& g) noexcept : node(std::move(g.node)), children(std::move(g.children)) {}
 
-    FormulaGraph& operator=(const mata::FormulaGraph&) = default;
-    FormulaGraph& operator=(mata::FormulaGraph&&) noexcept = default;
+    FormulaGraph& operator=(const FormulaGraph&) = default;
+    FormulaGraph& operator=(FormulaGraph&&) noexcept = default;
 
     std::unordered_set<std::string> collect_node_names() const;
     void print_tree(std::ostream& os) const;
@@ -146,9 +143,9 @@ public:
      * alternating finite automata (AFA)
      */
     enum class AutomatonType {
-        NFA,
-        AFA,
-        NFT
+        Nfa,
+        Afa,
+        Nft,
     };
 
     /**
@@ -160,11 +157,11 @@ public:
      * There are two special cases used for alphabet - symbols could be any character (CHARS) or anything from utf (UTF).
      */
      enum class Naming {
-        AUTO,
-        MARKED,
-        ENUM,
-        CHARS,
-        UTF
+        Auto,
+        Marked,
+        Enum,
+        Chars,
+        Utf
     };
 
     /**
@@ -173,15 +170,15 @@ public:
      * So far, only explicit representation is supported.
      */
     enum class AlphabetType {
-        EXPLICIT,
-        BITVECTOR,
-        CLASS,
-        INTERVALS
+        Explicit,
+        Bitvector,
+        Class,
+        Intervals
     };
 
-    Naming state_naming = Naming::MARKED;
-    Naming symbol_naming = Naming::MARKED;
-    Naming node_naming = Naming::MARKED;
+    Naming state_naming = Naming::Marked;
+    Naming symbol_naming = Naming::Marked;
+    Naming node_naming = Naming::Marked;
     AlphabetType alphabet_type{};
     AutomatonType automaton_type{};
 
@@ -200,16 +197,18 @@ public:
      * Transitions are pairs where the first member is left-hand side of transition (i.e., a state)
      * and the second item is a graph representing transition formula (which can contain symbols, nodes, and states).
      */
-    struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions{};
+    std::vector<std::pair<FormulaNode, FormulaGraph>> transitions{};
 
     /**
-     * Returns symbolic part of transition. That may be just a symbol or bitvector formula.
-     * This function is supported only for NFA where transitions have a rhs state at the end of right
-     * handed side of transition.
+     * @brief Returns symbolic part of transition.
+     *
+     * That may be just a symbol or bitvector formula.
+     * This function is supported only for NFA where transitions have a rhs state at the end of right-handed side of
+     *  transition.
      * @param transition Transition from which symbol is returned
-     * @return Graph representing symbol. It maybe just an explicit symbol or graph representing bitvector formula
+     * @return Graph representing symbol. It may be just an explicit symbol or graph representing bitvector formula
      */
-    const FormulaGraph& get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& trans) const;
+    const FormulaGraph& get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& transition) const;
 
     /**
      * @brief A method for building a vector of IntermediateAut for a parsed input.
@@ -225,14 +224,14 @@ public:
      */
     static std::vector<IntermediateAut> parse_from_mf(const mata::parser::Parsed& parsed);
 
-    bool are_states_enum_type() const {return state_naming == Naming::ENUM;}
-    bool are_symbols_enum_type() const {return symbol_naming == Naming::ENUM;}
-    bool are_nodes_enum_type() const {return node_naming == Naming::ENUM;}
+    bool are_states_enum_type() const {return state_naming == Naming::Enum;}
+    bool are_symbols_enum_type() const {return symbol_naming == Naming::Enum;}
+    bool are_nodes_enum_type() const {return node_naming == Naming::Enum;}
 
-    bool is_bitvector() const {return alphabet_type == AlphabetType::BITVECTOR;}
-    bool is_nft() const {return automaton_type == AutomatonType::NFT;}
-    bool is_nfa() const {return automaton_type == AutomatonType::NFA;}
-    bool is_afa() const {return automaton_type == AutomatonType::AFA;}
+    bool is_bitvector() const {return alphabet_type == AlphabetType::Bitvector;}
+    bool is_nft() const {return automaton_type == AutomatonType::Nft;}
+    bool is_nfa() const {return automaton_type == AutomatonType::Nfa;}
+    bool is_afa() const {return automaton_type == AutomatonType::Afa;}
 
     std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
@@ -251,7 +250,7 @@ public:
 
     size_t get_number_of_disjuncts() const;
 
-    static void parse_transition(mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
+    static void parse_transition(IntermediateAut &aut, const std::vector<std::string> &tokens);
     void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
     void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
     void print_transitions_trees(std::ostream&) const;

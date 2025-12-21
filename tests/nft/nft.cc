@@ -691,7 +691,7 @@ TEST_CASE("mata::nft::construct() from IntermediateAut correct calls") { // {{{
     OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton") {
-        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::NFT;
+        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::Nft;
         REQUIRE(aut.is_lang_empty());
         aut = builder::construct(inter_aut);
         REQUIRE(aut.is_lang_empty());

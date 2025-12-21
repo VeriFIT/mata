@@ -1422,7 +1422,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 { // {{{
     SECTION("below 0x80")
     {
-        Nfa x = mata::parser::create_nfa("\\x{01}\\x{10}\\x{20}\\x{30}\\x{40}\\x{50}\\x{60}\\x{70}\\x{7f}", false, 306, true, Encoding::UTF8);
+        Nfa x = mata::parser::create_nfa("\\x{01}\\x{10}\\x{20}\\x{30}\\x{40}\\x{50}\\x{60}\\x{70}\\x{7f}", false, 306, true, Encoding::Utf8);
         CHECK(x.is_in_lang(Run{Word{0x01, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x7f}, {}}));
         Nfa y;
         y.initial.insert(0);
@@ -1441,7 +1441,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 
     SECTION("between 0x80 and 0x800")
     {
-        Nfa x = mata::parser::create_nfa("\\x{80}\\x{90}\\x{a0}\\x{b0}\\x{c0}\\x{d0}\\x{600}\\x{700}\\x{7ff}", false, 306, true, Encoding::UTF8);
+        Nfa x = mata::parser::create_nfa("\\x{80}\\x{90}\\x{a0}\\x{b0}\\x{c0}\\x{d0}\\x{600}\\x{700}\\x{7ff}", false, 306, true, Encoding::Utf8);
         CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0x600, 0x700, 0x7ff}), {}}));
         Nfa y;
         y.initial.insert(0);
@@ -1469,7 +1469,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 
     SECTION("between 0x800 and 0x7FFF")
     {
-        Nfa x = mata::parser::create_nfa("\\x{800}\\x{900}\\x{a00}\\x{b00}\\x{c00}\\x{d00}\\x{6000}\\x{7000}\\x{7fff}", false, 306, true, Encoding::UTF8);
+        Nfa x = mata::parser::create_nfa("\\x{800}\\x{900}\\x{a00}\\x{b00}\\x{c00}\\x{d00}\\x{6000}\\x{7000}\\x{7fff}", false, 306, true, Encoding::Utf8);
         CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x800, 0x900, 0xa00, 0xb00, 0xc00, 0xd00, 0x6000, 0x7000, 0x7fff}), {}}));
         Nfa y;
         y.initial.insert(0);
@@ -1505,7 +1505,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 
     SECTION("between 0x10000 and 0x10FFFF")
     {
-        Nfa x = mata::parser::create_nfa("\\x{10000}\\x{20000}\\x{30000}\\x{40000}\\x{50000}\\x{60000}\\x{70000}\\x{80000}\\x{10ffff}", false, 306, true, Encoding::UTF8);
+        Nfa x = mata::parser::create_nfa("\\x{10000}\\x{20000}\\x{30000}\\x{40000}\\x{50000}\\x{60000}\\x{70000}\\x{80000}\\x{10ffff}", false, 306, true, Encoding::Utf8);
         CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x10000, 0x20000, 0x30000, 0x40000, 0x50000, 0x60000, 0x70000, 0x80000, 0x10FFFF}), {}}));
         Nfa y;
         y.initial.insert(0);
@@ -1551,7 +1551,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 
     SECTION("mix")
     {
-        Nfa x = mata::parser::create_nfa("\\x{01}\\x{90}\\x{8ac}\\x{100cc}", false, 306, true, Encoding::UTF8);
+        Nfa x = mata::parser::create_nfa("\\x{01}\\x{90}\\x{8ac}\\x{100cc}", false, 306, true, Encoding::Utf8);
         CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x01, 0x90, 0x8ac, 0x100cc}), {}}));
         Nfa y;
         y.initial.insert(0);
@@ -1570,7 +1570,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     }
 
     SECTION("Regex range [x70-x90]") {
-        Nfa aut = mata::parser::create_nfa("[\\x{70}-\\x{90}]", false, 306, true, Encoding::UTF8);
+        Nfa aut = mata::parser::create_nfa("[\\x{70}-\\x{90}]", false, 306, true, Encoding::Utf8);
         aut = aut.decode_utf8();
 
         Nfa result;
@@ -1585,7 +1585,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     }
 
     SECTION("Regex range [x790-x890]") {
-        Nfa aut = mata::parser::create_nfa("[\\x{700}-\\x{900}]", false, 306, true, Encoding::UTF8);
+        Nfa aut = mata::parser::create_nfa("[\\x{700}-\\x{900}]", false, 306, true, Encoding::Utf8);
         aut = aut.decode_utf8();
 
         Nfa result;
@@ -1600,7 +1600,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     }
 
     SECTION("Regex range [xFF90-x10090]") {
-        Nfa aut = mata::parser::create_nfa("[\\x{FF90}-\\x{10090}]", false, 306, true, Encoding::UTF8);
+        Nfa aut = mata::parser::create_nfa("[\\x{FF90}-\\x{10090}]", false, 306, true, Encoding::Utf8);
         aut = aut.decode_utf8();
 
         Nfa result;
@@ -1615,7 +1615,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     }
 
     SECTION("Regex (\\x{60}*\\x{80})|(\\x{900}*\\x{600})") {
-        Nfa aut = mata::parser::create_nfa("(\\x{60}*\\x{80})|(\\x{900}*\\x{600})", false, 306, true, Encoding::UTF8);
+        Nfa aut = mata::parser::create_nfa("(\\x{60}*\\x{80})|(\\x{900}*\\x{600})", false, 306, true, Encoding::Utf8);
         aut = aut.decode_utf8();
 
         Nfa result;
@@ -1632,7 +1632,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 
     // A proper test, but takes about 2 seconds to run.
     SECTION("Regex [\\x{00}-\\x{10FFFF}]") {
-        Nfa aut = mata::parser::create_nfa("[\\x{00}-\\x{10FFFF}]", false, 306, true, Encoding::UTF8);
+        Nfa aut = mata::parser::create_nfa("[\\x{00}-\\x{10FFFF}]", false, 306, true, Encoding::Utf8);
         aut = aut.decode_utf8();
 
         // Random symbols

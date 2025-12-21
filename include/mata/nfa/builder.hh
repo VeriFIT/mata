@@ -58,7 +58,9 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
  *  If the density is 1, every state will be final.
  * @param seed Seed for the PRNG used. If no seed is given, the algorithm chooses one uniformly at random.
  */
-Nfa create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density, const std::optional<unsigned int>& seed = std::nullopt);
+Nfa create_random_nfa_tabakov_vardi(
+    size_t num_of_states, size_t alphabet_size, double states_transitions_ratio_per_symbol, double final_state_density,
+    const std::optional<unsigned int>& seed = std::nullopt);
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
@@ -108,15 +110,15 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 
 /**
  * @brief Create NFA from @p regex
- * 
+ *
  * The created NFA does not contain epsilons, is trimmed and reduced.
  * It uses the parser from RE2, see mata/parser/re2praser.hh for more
  * details and options.
- * 
+ *
  * At https://github.com/google/re2/wiki/Syntax, you can find the syntax
  * of @p regex with following futher limitations:
  *  1) The allowed characters are the first 256 characters of Unicode,
- *     i.e., Latin1 encoding (ASCII + 128 more characters). For the 
+ *     i.e., Latin1 encoding (ASCII + 128 more characters). For the
  *     full Unicode, check mata/parser/re2praser.hh.
  *  2) The created automaton represents the language of the regex and
  *     is not expected to be used in regex matching. Therefore, stuff
@@ -124,9 +126,9 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
  *     regular expressions a*b and ^a*b will both result in the same
  *     NFA accepting the language of multiple 'a's followed by one 'b'.
  *     See also issue #494.
- * 
+ *
  * @sa mata::parser::create_nfa()
- * 
+ *
  * @param regex regular expression
  */
 Nfa create_from_regex(const std::string& regex);

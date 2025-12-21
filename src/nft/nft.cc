@@ -84,9 +84,10 @@ Levels& Levels::set(std::vector<Level>&& levels) {
 void Levels::append(const Levels& levels_vector) {
     reserve(size() + levels_vector.size());
     std::ranges::copy(levels_vector, std::back_inserter(*this));
+    assert(check_levels_in_range_() && "Levels::append: level is out of range of the set number of levels.");
 }
 
-std::vector<Level> Levels::get_levels_of(const utils::SparseSet<State>& states) const {
+std::vector<Level> Levels::get_levels_of(const SparseSet<State>& states) const {
     std::vector<Level> result;
     result.reserve(states.size());
     for (const State state : states) { result.push_back((*this)[state]); }
@@ -172,7 +173,7 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-void Nft::remove_epsilon(const Symbol epsilon) { *this = mata::nft::remove_epsilon(*this, epsilon); }
+void Nft::remove_epsilon(const Symbol epsilon) { *this = nft::remove_epsilon(*this, epsilon); }
 
 std::string Nft::print_to_dot(
     const bool decode_ascii_chars, const bool use_intervals, const int max_label_length,
@@ -274,10 +275,10 @@ void Nft::print_to_dot(
                 continue;
             }
 
-            std::string label = (use_intervals)
+            std::string label = use_intervals
                                     ? vec_of_symbols_to_string_with_intervals(symbols)
                                     : vec_of_symbols_to_string(symbols);
-            std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
+            std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
             bool is_shortened = false;
             if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
                 label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
@@ -375,7 +376,7 @@ void Nft::print_to_mata(const std::string& filename) const {
 }
 
 Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol abstract_symbol) const {
-    Nft one_symbol_transducer{ Nft::with_levels(levels, num_of_states(), initial, final) };
+    Nft one_symbol_transducer{ with_levels(levels, num_of_states(), initial, final) };
     for (nfa::State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
         nfa::StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
         if (levels_to_keep.contains(levels[source_state])) {
@@ -397,11 +398,11 @@ void Nft::get_one_letter_aut(Nft& result) const { result = get_one_letter_aut();
 
 StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
     std::cerr << "Warning: Nft::post uses Nfa::post, which is not designed for NFT's jump transitions" << std::endl;
-    return nfa::Nfa::post(states, symbol, epsilon_closure_opt);
+    return Nfa::post(states, symbol, epsilon_closure_opt);
 }
 
 void Nft::unwind_jumps_inplace(
-    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
+    const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
     const bool dont_care_for_dont_care = dont_care_symbol_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
     std::vector<Transition> transitions_to_del;
     std::vector<Transition> transitions_to_add;
@@ -465,7 +466,7 @@ void Nft::unwind_jumps_inplace(
     for (const Transition& transition : transitions_to_del) { delta.remove(transition); }
 }
 
-Nft Nft::unwind_jumps(const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
+Nft Nft::unwind_jumps(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
     Nft result{ *this };
     // HACK. Works only for automata without levels.
     if (result.levels.size() != result.num_of_states()) { return result; }
@@ -474,13 +475,13 @@ Nft Nft::unwind_jumps(const utils::OrdVector<Symbol>& dont_care_symbol_replaceme
 }
 
 void Nft::unwind_jumps(
-    Nft& result, const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
+    Nft& result, const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
     result = unwind_jumps(dont_care_symbol_replacements, jump_mode);
 }
 
 Nft& Nft::operator=(Nft&& other) noexcept {
     if (this != &other) {
-        mata::nfa::Nfa::operator=(other);
+        Nfa::operator=(other);
         levels = std::move(other.levels);
         levels.num_of_levels = other.levels.num_of_levels;
     }
@@ -488,9 +489,9 @@ Nft& Nft::operator=(Nft&& other) noexcept {
 }
 
 
-Nft& Nft::operator=(const mata::nfa::Nfa& other) noexcept {
+Nft& Nft::operator=(const Nfa& other) noexcept {
     if (this != &other) {
-        mata::nfa::Nfa::operator=(other);
+        Nfa::operator=(other);
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
         levels.num_of_levels = 1;
     }
@@ -566,9 +567,9 @@ State Nft::insert_word_by_levels(
     assert(levels[source] == levels[target]);
     const Level from_to_level{ levels[source] };
 
-    if (levels.num_of_levels == 1) { return Nft::insert_word(source, word_parts_on_levels[0], target); }
+    if (levels.num_of_levels == 1) { return insert_word(source, word_parts_on_levels[0], target); }
 
-    std::vector<mata::Word::const_iterator> word_part_it_v(levels.num_of_levels);
+    std::vector<Word::const_iterator> word_part_it_v(levels.num_of_levels);
     for (Level lvl{ from_to_level }, i{ 0 }; i < static_cast<Level>(levels.num_of_levels); ++i) {
         word_part_it_v[lvl] = word_parts_on_levels[lvl].begin();
         lvl = (lvl + 1) % static_cast<Level>(levels.num_of_levels);
@@ -659,29 +660,29 @@ bool Nft::contains_jump_transitions() const {
 }
 
 void Nft::clear() {
-    mata::nfa::Nfa::clear();
+    Nfa::clear();
     levels.clear();
 }
 
 bool Nft::is_identical(const Nft& aut) const {
     return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels &&
-           mata::nfa::Nfa::is_identical(aut);
+           Nfa::is_identical(aut);
 }
 
 
 mata::nfa::Nfa Nft::to_nfa_update_copy(
-    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
+    const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
     return unwind_jumps(dont_care_symbol_replacements, jump_mode).to_nfa_copy();
 }
 
 mata::nfa::Nfa Nft::to_nfa_update_move(
-    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
+    const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
     unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
     return to_nfa_move();
 }
 
 Nft Nft::apply(
-    const nfa::Nfa& nfa, const Level level_to_apply_on, const bool project_out_applied_level,
+    const Nfa& nfa, const Level level_to_apply_on, const bool project_out_applied_level,
     const JumpMode jump_mode) const {
     return compose(Nft{ nfa }, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
 }

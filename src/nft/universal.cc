@@ -65,7 +65,7 @@ bool mata::nft::algorithms::is_universal_antichains(
 
         // process parameters
         // TODO: set correctly!!!!
-        bool is_dfs = true;
+        constexpr bool is_dfs = true;
         if (is_dfs) {
             state = *worklist.rbegin();
             worklist.pop_back();

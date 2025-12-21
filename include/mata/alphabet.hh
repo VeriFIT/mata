@@ -103,11 +103,11 @@ protected:
 */
 class IntAlphabet : public Alphabet {
 public:
-    IntAlphabet() : alphabet_instance(IntAlphabetSingleton::get()) {}
+    IntAlphabet() : alphabet_instance_(IntAlphabetSingleton::get()) {}
 
     Symbol translate_symb(const std::string &symb) override;
 
-    std::string reverse_translate_symbol(Symbol symbol) const override { return std::to_string(symbol); }
+    std::string reverse_translate_symbol(const Symbol symbol) const override { return std::to_string(symbol); }
 
     utils::OrdVector<Symbol> get_alphabet_symbols() const override {
         throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
@@ -127,7 +127,7 @@ public:
     void clear() override { throw std::runtime_error("Nonsensical use of clear() on IntAlphabet."); }
 
 protected:
-    const void* address() const override { return &alphabet_instance; }
+    const void* address() const override { return &alphabet_instance_; }
 
 private:
     /**
@@ -154,7 +154,7 @@ private:
         IntAlphabetSingleton() = default;
     }; // class IntAlphabetSingleton.
 
-    IntAlphabetSingleton& alphabet_instance;
+    IntAlphabetSingleton& alphabet_instance_;
 }; // class IntAlphabet.
 
 /**
@@ -207,11 +207,11 @@ public:
      */
     void add_symbols_from(const EnumAlphabet& alphabet) { symbols_.insert(alphabet.get_alphabet_symbols()); }
 
-    EnumAlphabet(std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
+    EnumAlphabet(const std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
     template <class InputIt> EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
         for (; first != last; ++first) { add_new_symbol(*first); }
     }
-    EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
+    EnumAlphabet(const std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
     Symbol translate_symb(const std::string& str) override;
     Word translate_word(const WordName& word_name) const override;
@@ -265,19 +265,20 @@ public:
      * @brief Erase a symbol from the alphabet.
      * @return Number of symbols erased (0 or 1).
      */
-    size_t erase(const Symbol symbol);
+    size_t erase(Symbol symbol);
 
     /**
      * @brief Remove a symbol name value pair from the position @p pos from the alphabet.
      * @return Iterator following the last removed element.
      */
-    void erase(utils::OrdVector<Symbol>::const_iterator pos) { symbols_.erase(pos); }
+    void erase(const utils::OrdVector<Symbol>::const_iterator pos) { symbols_.erase(pos); }
 
     /**
      * @brief Remove a symbol name value pair from the positions between @p first and @p last from the alphabet.
      * @return Iterator following the last removed element.
      */
-    void erase(utils::OrdVector<Symbol>::const_iterator first, utils::OrdVector<Symbol>::const_iterator last) {
+    void erase(
+        const utils::OrdVector<Symbol>::const_iterator first, const utils::OrdVector<Symbol>::const_iterator last) {
         symbols_.erase(first, last);
     }
 
@@ -295,7 +296,7 @@ public:
     /// Result of the insertion of a new symbol.
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
 
-    explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value_(init_symbol) {};
+    explicit OnTheFlyAlphabet(const Symbol init_symbol = 0) : next_symbol_value_(init_symbol) {};
     OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet) = default;
     OnTheFlyAlphabet(OnTheFlyAlphabet&& alphabet) = default;
     explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet): OnTheFlyAlphabet(*alphabet) {}
@@ -306,7 +307,7 @@ public:
      * @param symbol_names Names for symbols on transitions.
      * @param init_symbol Start of a sequence of values to use for new symbols.
      */
-    explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, Symbol init_symbol = 0)
+    explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, const Symbol init_symbol = 0)
             : symbol_map_(), next_symbol_value_(init_symbol) { add_symbols_from(symbol_names); }
 
     template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
@@ -432,12 +433,12 @@ public:
     /**
      * @brief Remove a symbol name value pair from the position @p pos from the alphabet.
      */
-    void erase(StringToSymbolMap::const_iterator pos) { symbol_map_.erase(pos); }
+    void erase(const StringToSymbolMap::const_iterator pos) { symbol_map_.erase(pos); }
 
     /**
      * @brief Remove a symbol name value pair from the positions between @p first and @p last from the alphabet.
      */
-    void erase(StringToSymbolMap::const_iterator first, StringToSymbolMap::const_iterator last) {
+    void erase(const StringToSymbolMap::const_iterator first, const StringToSymbolMap::const_iterator last) {
         symbol_map_.erase(first, last);
     }
 

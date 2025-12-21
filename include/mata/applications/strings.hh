@@ -31,7 +31,7 @@ public:
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
      * @param aut Automaton to compute shortest words for.
      */
-    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
+    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton_(revert(aut)) {
         insert_initial_lengths();
         compute();
     }
@@ -55,10 +55,10 @@ private:
     /// Pair binding the length of all words in the word set and word set with words of the given length.
     using LengthWordsPair = std::pair<WordLength, std::set<Word>>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
-    std::set<State> processed{}; ///< Set of already processed states.
-    std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const Nfa reversed_automaton; ///< Reversed input automaton.
+    std::unordered_map<State, LengthWordsPair> shortest_words_map_{};
+    std::set<State> processed_{}; ///< Set of already processed states.
+    std::deque<State> fifo_queue_{}; ///< FIFO queue for states to process.
+    const Nfa reversed_automaton_; ///< Reversed input automaton.
 
     /**
      * @brief Inserts initial lengths into the shortest words map.
@@ -84,7 +84,7 @@ private:
      * @return Created default shortest words map element for the given @p state.
      */
     LengthWordsPair map_default_shortest_words(const State state) {
-        return shortest_words_map.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
+        return shortest_words_map_.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
     }
 
     /**
@@ -170,7 +170,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    explicit Segmentation(const SegNfa& aut, const std::set<Symbol>& epsilons) : epsilons(epsilons), automaton(aut) {
+    explicit Segmentation(const SegNfa& aut, const std::set<Symbol>& epsilons) : epsilons_(epsilons), automaton_(aut) {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
 
@@ -178,14 +178,14 @@ public:
      * Get segmentation depths for ε-transitions.
      * @return Map of depths to lists of ε-transitions.
      */
-    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
+    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions_; }
 
     /**
      * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
      *
      * @return Map of depths to a map of states to transitions
      */
-    const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map; }
+    const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map_; }
 
     /**
      * Get segment automata.
@@ -201,17 +201,17 @@ public:
      */
     const std::vector<Nfa>& get_untrimmed_segments();
 
-    const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
+    const VisitedEpsMap& get_visited_eps() const { return this->visited_eps_; }
 
 private:
-    const std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
+    const std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
-    const SegNfa& automaton;
-    EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
-    EpsilonDepthTransitionMap eps_depth_trans_map{}; /// Epsilon depths with mapping of states to epsilon transitions
-    std::vector<SegNfa> segments{}; ///< Segments for @p automaton.
-    std::vector<SegNfa> segments_raw{}; ///< Raw segments for @p automaton.
-    VisitedEpsMap visited_eps{}; /// number of visited eps for each state
+    const SegNfa& automaton_;
+    EpsilonDepthTransitions epsilon_depth_transitions_{}; ///< Epsilon depths.
+    EpsilonDepthTransitionMap eps_depth_trans_map_{}; /// Epsilon depths with mapping of states to epsilon transitions
+    std::vector<SegNfa> segments_{}; ///< Segments for @p automaton.
+    std::vector<SegNfa> segments_raw_{}; ///< Raw segments for @p automaton.
+    VisitedEpsMap visited_eps_{}; /// number of visited eps for each state
 
     /**
      * Pair of state and its depth.
@@ -414,8 +414,11 @@ struct TransducerNoodleElement {
     std::shared_ptr<Nfa> output_aut;
     unsigned output_index;
 
-    TransducerNoodleElement(std::shared_ptr<Nft> transducer, std::shared_ptr<Nfa> input_aut, unsigned input_index, std::shared_ptr<Nfa> output_aut, unsigned output_index)
-                : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
+    TransducerNoodleElement(
+        const std::shared_ptr<Nft>& transducer, const std::shared_ptr<Nfa>& input_aut, const unsigned input_index,
+        const std::shared_ptr<Nfa>& output_aut, const unsigned output_index)
+        : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut),
+          output_index(output_index) {}
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
@@ -592,24 +595,35 @@ public:
     static Nft replace_symbol(Symbol from_symbol, const Word& replacement, Alphabet const* const alphabet,
                                            ReplaceMode replace_mode = ReplaceMode::All);
 protected:
-    nfa::Nfa end_marker_dfa(nfa::Nfa regex);
-    Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
+    static nfa::Nfa end_marker_dfa(nfa::Nfa regex);
 
-    nfa::Nfa generic_marker_dfa(const std::string& regex, Alphabet const* const alphabet);
-    nfa::Nfa generic_marker_dfa(nfa::Nfa regex, Alphabet const* const alphabet);
+    static Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
 
-    nfa::Nfa begin_marker_nfa(const std::string& regex, Alphabet const* const alphabet);
-    nfa::Nfa begin_marker_nfa(nfa::Nfa regex, Alphabet const* const alphabet);
+    static nfa::Nfa generic_marker_dfa(const std::string& regex, Alphabet const* const alphabet);
 
-    Nft begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker);
-    Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
-    nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet const* const alphabet);
+    static nfa::Nfa generic_marker_dfa(nfa::Nfa regex, Alphabet const* const alphabet);
 
-    Nft reluctant_leftmost_nft(const std::string& regex, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
-    Nft reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
+    static nfa::Nfa begin_marker_nfa(const std::string& regex, Alphabet const* const alphabet);
 
-    Nft replace_literal_nft(const Word& literal, const Word& replacement, Alphabet const* const alphabet, Symbol end_marker,
-                            ReplaceMode replace_mode = ReplaceMode::All);
+    static nfa::Nfa begin_marker_nfa(nfa::Nfa regex, Alphabet const* const alphabet);
+
+    static Nft begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker);
+
+    static Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
+
+    static nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet const* const alphabet);
+
+    static Nft reluctant_leftmost_nft(
+        const std::string& regex, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement,
+        ReplaceMode replace_mode);
+
+    static Nft reluctant_leftmost_nft(
+        nfa::Nfa nfa, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement,
+        ReplaceMode replace_mode);
+
+    static Nft replace_literal_nft(
+        const Word& literal, const Word& replacement, Alphabet const* const alphabet, Symbol end_marker,
+        ReplaceMode replace_mode = ReplaceMode::All);
 };
 
 } // namespace mata::applications::strings::replace

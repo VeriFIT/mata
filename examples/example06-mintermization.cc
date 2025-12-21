@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         for (const auto& ia : inter_auts) {
             mata::Mintermization mintermization;
             std::cout << ia << '\n';
-            if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR) {
+            if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
                 const auto& aut = mintermization.mintermize(ia);
                 assert(ia.transitions.size() <= aut.transitions.size());
                 std::cout << aut << '\n';

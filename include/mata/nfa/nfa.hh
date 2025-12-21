@@ -423,7 +423,7 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given set of states over the given symbol.
      */
-    StateSet post(const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
+    StateSet post(const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::None) const;
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
@@ -433,7 +433,7 @@ public:
      * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given state over the given symbol.
      */
-    StateSet post(const State state, const Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const {
+    StateSet post(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
         return post(StateSet{ state }, symbol, epsilon_closure_opt);
     }
 
@@ -730,7 +730,7 @@ template<typename T, typename... Ts> using AreAllOfType = conjunction<std::is_sa
  * @return Created alphabet.
  */
 template<typename... Nfas, typename = AreAllOfType<const Nfa&, Nfas...>>
-inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
+ OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     auto f = [&alphabet](const Nfa& aut) {
         aut.fill_alphabet(alphabet);
@@ -796,7 +796,7 @@ Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
  * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
  * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
  */
-Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalStateCondition final_condition = ProductFinalStateCondition::AND,
+Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalStateCondition final_condition = ProductFinalStateCondition::And,
             Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
@@ -822,7 +822,7 @@ Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalStateCondition final_con
 Nfa lang_difference(
     const Nfa &nfa_included, const Nfa &nfa_excluded,
     std::optional<
-        std::function<bool(const Nfa&, const Nfa&, const StateSet&, const StateSet&, const State, const Nfa&)>
+        std::function<bool(const Nfa&, const Nfa&, const StateSet&, const StateSet&, State, const Nfa&)>
     > macrostate_discover = std::nullopt
 );
 
@@ -918,7 +918,7 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzo
  */
 Nfa determinize(
     const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
-    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
+    std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt);
 
 /**
  * @brief Reduce the size of the automaton.
@@ -1057,12 +1057,12 @@ std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const
 namespace std {
 template <>
 struct hash<mata::nfa::Transition> {
-	inline size_t operator()(const mata::nfa::Transition& trans) const noexcept {
-		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
-		accum = mata::utils::hash_combine(accum, trans.symbol);
-		accum = mata::utils::hash_combine(accum, trans.target);
-		return accum;
-	}
+    size_t operator()(const mata::nfa::Transition& trans) const noexcept {
+        size_t accum = std::hash<mata::nfa::State>{}(trans.source);
+        accum = mata::utils::hash_combine(accum, trans.symbol);
+        accum = mata::utils::hash_combine(accum, trans.target);
+        return accum;
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const mata::nfa::Transition& trans);

@@ -1,10 +1,10 @@
 // Based on
 /**
-	SparseSet.h
-	Implements a class template of a sparse
-	set of unsigned integers.
-	@author Sam Griffiths
-	www.computist.xyz
+    SparseSet.h
+    Implements a class template of a sparse
+    set of unsigned integers.
+  @author Sam Griffiths
+  www.computist.xyz
     https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a
 */
 //there may be better implementations out there, something in boost, or
@@ -46,11 +46,11 @@ concept Iterable = requires(T t) {
  */
     template<typename Number>
     class SparseSet {
-        static_assert(std::is_unsigned<Number>::value, "SparseSet can only contain unsigned integers");
+        static_assert(std::is_unsigned_v<Number>, "SparseSet can only contain unsigned integers");
 
     private:
-        std::vector<Number> dense{}; // Dense set of elements.
-        std::vector<Number> sparse{}; // Map of elements to dense set indices.
+        std::vector<Number> dense_{}; // Dense set of elements.
+        std::vector<Number> sparse_{}; // Map of elements to dense set indices.
 
         /// Number of elements which are in the set (current size).
         size_t size_ = 0;
@@ -67,13 +67,13 @@ concept Iterable = requires(T t) {
         using iterator = typename std::vector<Number>::const_iterator;
         using const_iterator = typename std::vector<Number>::const_iterator;
 
-        iterator begin() { return dense.begin(); }
+        iterator begin() { return dense_.begin(); }
 
-        const_iterator begin() const { return dense.begin(); }
+        const_iterator begin() const { return dense_.begin(); }
 
-        iterator end() { return dense.begin() + static_cast<long>(size_); }
+        iterator end() { return dense_.begin() + static_cast<long>(size_); }
 
-        const_iterator end() const { return dense.begin() + static_cast<long>(size_); }
+        const_iterator end() const { return dense_.begin() + static_cast<long>(size_); }
 
         size_t size() const { return size_; }
         size_t domain_size() const { return domain_size_; }
@@ -86,8 +86,8 @@ concept Iterable = requires(T t) {
         //  But we should not create havoc with domain_size, which is used outside, namely for determining the states of an automaton.
         void reserve(size_t u) {
             if (u > domain_size_) {
-                dense.resize(u, 0);
-                sparse.resize(u, 0);
+                dense_.resize(u, 0);
+                sparse_.resize(u, 0);
                 domain_size_ = u;
             }
             assert(consistent());
@@ -95,8 +95,8 @@ concept Iterable = requires(T t) {
 
         bool contains(const Number val) const {
             return val < domain_size_ &&
-                   sparse[val] < size_ &&
-                   dense[sparse[val]] == val;
+                   sparse_[val] < size_ &&
+                   dense_[sparse_[val]] == val;
         }
 
         void insert(const Number val) {
@@ -106,8 +106,8 @@ concept Iterable = requires(T t) {
                 if (static_cast<size_t>(val) >= domain_size_) {
                     reserve(val + 1);
                 }
-                dense[size_] = val;
-                sparse[val] = static_cast<Number>(size_);
+                dense_[size_] = val;
+                sparse_[val] = static_cast<Number>(size_);
                 ++size_;
             }
 
@@ -120,8 +120,8 @@ concept Iterable = requires(T t) {
          * @pre @p number exists in the set.
          */
         void erase_nocheck(const Number number) {
-            dense[sparse[number]] = dense[size_ - 1];
-            sparse[dense[size_ - 1]] = sparse[number];
+            dense_[sparse_[number]] = dense_[size_ - 1];
+            sparse_[dense_[size_ - 1]] = sparse_[number];
             --size_;
         }
 
@@ -135,7 +135,7 @@ concept Iterable = requires(T t) {
 
         SparseSet() = default;
         /// Basic constructor where you may reserve a domain size.
-        explicit SparseSet(Number domain_size): dense(domain_size), sparse(domain_size, 0), size_(0), domain_size_(domain_size) {
+        explicit SparseSet(Number domain_size): dense_(domain_size), sparse_(domain_size, 0), size_(0), domain_size_(domain_size) {
             assert(consistent());
         };
 
@@ -169,7 +169,7 @@ concept Iterable = requires(T t) {
 
         SparseSet(const SparseSet<Number>& rhs) = default;
         SparseSet(SparseSet<Number>&& other) noexcept
-                : dense{ std::move(other.dense) }, sparse{ std::move(other.sparse) },
+                : dense_{ std::move(other.dense_) }, sparse_{ std::move(other.sparse_) },
                   size_{ other.size_ }, domain_size_{ other.domain_size_ } {
             other.size_ = 0;
             other.domain_size_ = 0;
@@ -179,8 +179,8 @@ concept Iterable = requires(T t) {
         SparseSet<Number>& operator=(const SparseSet <Number>& rhs) = default;
         SparseSet<Number>& operator=(SparseSet<Number>&& other) noexcept {
             if (this != &other) {
-                dense = std::move(other.dense);
-                sparse = std::move(other.sparse);
+                dense_ = std::move(other.dense_);
+                sparse_ = std::move(other.sparse_);
                 size_ = other.size_;
                 domain_size_ = other.domain_size_;
                 other.size_ = 0;
@@ -200,8 +200,8 @@ concept Iterable = requires(T t) {
         bool consistent() {
             return (domain_size_ >= size_ &&
                     (max() < domain_size_ || (size_ == 0 && domain_size_ == 0) ) &&
-                    dense.size() >= domain_size_ &&
-                    sparse.size() >= domain_size_
+                    dense_.size() >= domain_size_ &&
+                    sparse_.size() >= domain_size_
             );
         }
 
@@ -216,7 +216,7 @@ concept Iterable = requires(T t) {
         void insert(InputIterator first, InputIterator last) {
             while (first != last) {
                 insert(*first);
-                first++;
+                ++first;
             }
             assert(consistent());
         }
@@ -234,7 +234,7 @@ concept Iterable = requires(T t) {
         void erase(InputIterator first, InputIterator last) {
             while (first != last) {
                 erase(*first);
-                first++;
+                ++first;
             }
             assert(consistent());
         }
@@ -247,7 +247,7 @@ concept Iterable = requires(T t) {
         //call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
         template<class T>
         bool intersects_with(const T & set) const {
-            for (auto i=set.begin();i<set.end();i++) {
+            for (auto i=set.begin();i<set.end();++i) {
                 if (contains(*i))
                     return true;
             }
@@ -275,8 +275,8 @@ concept Iterable = requires(T t) {
         template<typename F>
         void filter(F && is_staying) {
             for (Number i{ 0 }; i < size_; ++i) {
-                while (i < size_ && !is_staying(dense[i])) {
-                    erase(dense[i]);
+                while (i < size_ && !is_staying(dense_[i])) {
+                    erase(dense_[i]);
                 }
             }
 
@@ -284,9 +284,9 @@ concept Iterable = requires(T t) {
         }
 
         void sort() {
-            std::sort(dense.begin(), dense.begin() + static_cast<long>(size_));
-            for (Number i = 0; i < size_; i++) {
-                sparse[dense[i]] = i;
+            std::sort(dense_.begin(), dense_.begin() + static_cast<long>(size_));
+            for (Number i = 0; i < size_; ++i) {
+                sparse_[dense_[i]] = i;
             }
 
             assert(consistent());
@@ -294,12 +294,12 @@ concept Iterable = requires(T t) {
 
         template<typename F>
         void rename(F && renaming) {
-            for (Number i = 0; i < size_; i++) {
-                if (dense[i] != renaming(dense[i])) {
-                    dense[i] = renaming(dense[i]);
-                    if (dense[i] >= domain_size_)
-                        reserve(dense[i]+1);
-                    sparse[dense[i]] = i;
+            for (Number i = 0; i < size_; ++i) {
+                if (dense_[i] != renaming(dense_[i])) {
+                    dense_[i] = renaming(dense_[i]);
+                    if (dense_[i] >= domain_size_)
+                        reserve(dense_[i]+1);
+                    sparse_[dense_[i]] = i;
                 }
             }
 
@@ -311,9 +311,9 @@ concept Iterable = requires(T t) {
         /// Expensive operation as it has to compute the maximal Number in linear time.
         Number max() {
             Number max = 0;
-            for (Number i = 0;i<size_;i++) {
-                if (max < dense[i])
-                    max = dense[i];
+            for (Number i = 0;i<size_;++i) {
+                if (max < dense_[i])
+                    max = dense_[i];
             }
             return max;
         }
@@ -328,16 +328,16 @@ concept Iterable = requires(T t) {
         }
 
         // This could be a template with types of A and B both as parameters, in utils?
-        friend bool are_disjoint(const SparseSet & A, const SparseSet & B) {
-            if (A.size() > B.size())
-                return are_disjoint(B,A);
+        friend bool are_disjoint(const SparseSet & a, const SparseSet & b) {
+            if (a.size() > b.size())
+                return are_disjoint(b,a);
             else {
-                for (auto i: A)
-                    if (B.contains(i))
+                for (auto i: a)
+                    if (b.contains(i))
                         return false;
             }
             return true;
         }
     };
 }
-#endif //LIBMATA_SPARSE_SET_HH
+#endif

@@ -8,8 +8,8 @@ using mata::OnTheFlyAlphabet;
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
     utils::OrdVector<Symbol> result;
-    for (const auto& str_sym_pair: symbol_map_) {
-        result.insert(str_sym_pair.second);
+    for (const auto& symbol : symbol_map_ | std::views::values) {
+        result.insert(symbol);
     }
     return result;
 } // OnTheFlyAlphabet::get_alphabet_symbols.
@@ -17,23 +17,23 @@ mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::utils::OrdVector<Symbol>& symbols) const {
     mata::utils::OrdVector<Symbol> symbols_alphabet{};
     symbols_alphabet.reserve(symbol_map_.size());
-    for (const auto& str_sym_pair : symbol_map_) {
-        symbols_alphabet.insert(str_sym_pair.second);
+    for (const auto& symbol : symbol_map_ | std::views::values) {
+        symbols_alphabet.insert(symbol);
     }
     return symbols_alphabet.difference(symbols);
 }
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
-    for (const auto& symbol_binding: new_symbol_map) {
-        update_next_symbol_value(symbol_binding.second);
-        try_add_new_symbol(symbol_binding.first, symbol_binding.second);
+    for (const auto& [symbol_name, symbol]: new_symbol_map) {
+        update_next_symbol_value(symbol);
+        try_add_new_symbol(symbol_name, symbol);
     }
 }
 
 std::string mata::OnTheFlyAlphabet::reverse_translate_symbol(const Symbol symbol) const {
-    for (const auto& symbol_mapping: symbol_map_) {
-        if (symbol_mapping.second == symbol) {
-            return symbol_mapping.first;
+    for (const auto& [symbol_name, symbol_val]: symbol_map_) {
+        if (symbol_val == symbol) {
+            return symbol_name;
         }
     }
     throw std::runtime_error("symbol '" + std::to_string(symbol) + "' is out of range of enumeration");
@@ -46,11 +46,11 @@ void mata::OnTheFlyAlphabet::add_symbols_from(const std::vector<std::string>& sy
 }
 
 Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
-    const auto it_insert_pair = symbol_map_.insert({str, next_symbol_value_});
-    if (it_insert_pair.second) {
+    const auto [it, inserted] = symbol_map_.insert({str, next_symbol_value_});
+    if (inserted) {
         return next_symbol_value_++;
     }
-    return it_insert_pair.first->second;
+    return it->second;
 
     // TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
     //  the alphabet should have only the previously fixed symbols?
@@ -86,7 +86,7 @@ OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const s
     return insertion_result;
 }
 
-OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const std::string& key, Symbol value) {
+OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const std::string& key, const Symbol value) {
     InsertionResult insertion_result{ try_add_new_symbol(key, value) };
     if (!insertion_result.second) { // If the insertion of key-value pair failed.
         throw std::runtime_error("multiple occurrences of the same symbol");
@@ -95,7 +95,7 @@ OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const s
     return insertion_result;
 }
 
-void mata::OnTheFlyAlphabet::update_next_symbol_value(Symbol value) {
+void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
     if (next_symbol_value_ <= value) {
         next_symbol_value_ = value + 1;
     }
@@ -172,7 +172,7 @@ void mata::EnumAlphabet::update_next_symbol_value(const Symbol value) {
 }
 
 size_t mata::EnumAlphabet::erase(const Symbol symbol) {
-    size_t num_of_erased{ symbols_.erase(symbol) };
+    const size_t num_of_erased{ symbols_.erase(symbol) };
     if (symbol == next_symbol_value_ - 1) {
         --next_symbol_value_;
     }
@@ -194,11 +194,8 @@ size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
 }
 
 size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
-    auto found_it{ symbol_map_.find(symbol_name) };
-    if (found_it != symbol_map_.end()) {
-        if (found_it->second == next_symbol_value_ - 1) {
-            --next_symbol_value_;
-        }
+    if (const auto found_it{ symbol_map_.find(symbol_name) }; found_it != symbol_map_.end()) {
+        if (found_it->second == next_symbol_value_ - 1) { --next_symbol_value_; }
         symbol_map_.erase(found_it);
         return 1;
     }
@@ -236,8 +233,7 @@ mata::Word mata::encode_word_utf8(const mata::Word& word) {
 mata::Word mata::decode_word_utf8(const mata::Word& word) {
     mata::Word decoded_word;
     for (size_t i = 0; i < word.size(); i++) {
-        Symbol symbol = word[i];
-        if ((symbol & 0x80) == 0) {
+        if (Symbol symbol = word[i]; (symbol & 0x80) == 0) {
             // U+0000   to U+007F  : 0xxxxxxx
             decoded_word.push_back(symbol);
         } else if ((symbol & 0xE0) == 0xC0) {

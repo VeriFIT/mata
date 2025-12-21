@@ -32,7 +32,7 @@ SymbolPost& SymbolPost::operator=(SymbolPost&& rhs) noexcept {
     return *this;
 }
 
-void SymbolPost::insert(State s) {
+void SymbolPost::insert(const State s) {
     if(targets.empty() || targets.back() < s) {
         targets.push_back(s);
         return;
@@ -241,12 +241,11 @@ Delta::Transitions::const_iterator::const_iterator(const Delta& delta): delta_{ 
     is_end_ = true;
 }
 
-Delta::Transitions::const_iterator::const_iterator(const Delta& delta, State current_state)
+Delta::Transitions::const_iterator::const_iterator(const Delta& delta, const State current_state)
     : delta_{ &delta }, current_state_{ current_state } {
     const size_t post_size = delta_->num_of_states();
     for (State source{ current_state_ }; source < post_size; ++source) {
-        const StatePost& state_post{ delta_->state_post(source) };
-        if (!state_post.empty()) {
+        if (const StatePost& state_post{ delta_->state_post(source) }; !state_post.empty()) {
             current_state_ = source;
             state_post_it_ = state_post.begin();
             symbol_post_it_ = state_post_it_->targets.begin();
@@ -334,7 +333,7 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
     return copied_state_posts;
 }
 
-StatePost& Delta::mutable_state_post(State q) {
+StatePost& Delta::mutable_state_post(const State q) {
     if (q >= state_posts_.size()) {
         utils::reserve_on_insert(state_posts_, q);
         const size_t new_size{ q + 1 };
@@ -522,15 +521,15 @@ StatePost::Moves::const_iterator StatePost::Moves::begin() const {
      return { *state_post_, symbol_post_it_, symbol_post_end_ };
 }
 
-StatePost::Moves::const_iterator StatePost::Moves::end() const { return const_iterator{}; }
+StatePost::Moves::const_iterator StatePost::Moves::end() { return const_iterator{}; }
 
 Delta::Transitions Delta::transitions() const { return Transitions{ this }; }
 
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{ *delta_ }; }
-Delta::Transitions::const_iterator Delta::Transitions::end() const { return const_iterator{}; }
+Delta::Transitions::const_iterator Delta::Transitions::end() { return const_iterator{}; }
 
 StatePost::Moves::Moves(
-    const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end)
+    const StatePost& state_post, const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end)
     : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_end_{ symbol_post_end } {}
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
@@ -671,8 +670,7 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
-            const size_t capacity{ symbol_post.symbol + 1 };
-            if (symbols.size() < capacity) {
+            if (const size_t capacity{ symbol_post.symbol + 1 }; symbols.size() < capacity) {
                 symbols.resize(capacity);
             }
             symbols[symbol_post.symbol] = true;
@@ -692,8 +690,7 @@ mata::BoolVector Delta::get_used_symbols_chv() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
-            const size_t capacity{ symbol_post.symbol + 1 };
-            if (symbols.size() < capacity) {
+            if (const size_t capacity{ symbol_post.symbol + 1 }; symbols.size() < capacity) {
                 symbols.resize(capacity * 2);
             }
             symbols[symbol_post.symbol] = true;
@@ -761,8 +758,8 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const Symbol sync_symbol) {
     do {
         if (is_synchronized()) {
-            auto current_min_symbol_post_it = get_current_minimum();
-            if (current_min_symbol_post_it->symbol >= sync_symbol) { break; }
+            if (const auto current_min_symbol_post_it = get_current_minimum();
+                current_min_symbol_post_it->symbol >= sync_symbol) { break; }
         }
     } while (advance());
     return is_synchronized() && get_current_minimum()->symbol == sync_symbol;
