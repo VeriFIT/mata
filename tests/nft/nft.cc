@@ -1978,6 +1978,16 @@ TEST_CASE("mata::nft::Levels") {
         states.erase(4);
         CHECK(levels.get_minimal_next_level_of(states) == 0);
     }
+
+    SECTION("operator=(std::vector<Level>) and set(std::vector<Level>) behaviour") {
+        levels = { 1, 0, 1 };
+        levels.num_of_levels = 12;
+        levels.set(std::vector<Level>{ 5, 6, 7 });
+        CHECK(levels.num_of_levels == 12);
+        levels = std::vector<Level>{ 2, 2, 1 };
+        CHECK(levels.num_of_levels == 3);
+        CHECK(levels == std::vector<Level>{ 2, 2, 1 });
+    }
 }
 
 TEST_CASE("mata::nft::Nft::invert_levels()") {

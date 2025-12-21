@@ -70,14 +70,16 @@ Levels& Levels::set(const State state, const Level level) {
 }
 
 Levels& Levels::set(const std::vector<Level>& levels) {
-    assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
     assign(levels.begin(), levels.end());
+    assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
     return *this;
 }
 
 Levels& Levels::set(std::vector<Level>&& levels) {
+    const auto num_of_levels_orig{ num_of_levels };
+    *this = std::move(levels);
+    num_of_levels = num_of_levels_orig;
     assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
-    assign(std::make_move_iterator(levels.begin()), std::make_move_iterator(levels.end()));
     return *this;
 }
 
@@ -498,9 +500,9 @@ Nft& Nft::operator=(const Nfa& other) noexcept {
     return *this;
 }
 
-Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
+Nft& Nft::operator=(Nfa&& other) noexcept {
     if (this != &other) {
-        mata::nfa::Nfa::operator=(other);
+        Nfa::operator=(std::move(other));
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
         levels.num_of_levels = 1;
     }
