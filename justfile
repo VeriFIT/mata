@@ -5,34 +5,41 @@
 #
 #default: lint build test
 # default recipe to display help information
-default:
-  @just --list
+[default]
+help:
+  just --list
 
 alias t := test
 alias tp := test-python
 alias vc := valgrind-callgrind
 alias c := clean
+alias r := release
 alias rd := release-debuginfo
 alias w := wip
 alias d := docs
-
-#check:
+alias h := help
 
 CXX := env_var_or_default("CXX", "g++")
 
 # Number of cores for parallel compilation.
 JOBS := env_var_or_default("JOBS", "6")
 
-test:
-    make debug BUILD_DIR="build/debug/{{CXX}}"
-    ./build/debug/{{CXX}}/tests/tests
+test *ARGS:
+    just build "debug"
+    just test-run "debug" {{ARGS}}
 
-    make release BUILD_DIR="build/release/{{CXX}}"
-    ./build/release/{{CXX}}/tests/tests
+    just build "release"
+    just test-run "release" {{ARGS}}
 
-wip BUILD_DIR_PATH BUILD_MODE="debug":
-    make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_DIR_PATH}}/{{CXX}}"
-    ./build/{{BUILD_DIR_PATH}}/{{CXX}}/tests/tests
+test-run BUILD_MODE="debug" *ARGS:
+    ./build/{{BUILD_MODE}}/{{CXX}}/tests/tests {{ARGS}}
+
+build BUILD_MODE="debug":
+    make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_MODE}}/{{CXX}}"
+
+wip BUILD_DIR BUILD_MODE="debug" *ARGS:
+    make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_DIR}}/{{CXX}}"
+    ./build/{{BUILD_DIR}}/{{CXX}}/tests/tests {{ARGS}}
 
 test-python:
     # source .venv/bin/activate.fish &&
@@ -45,8 +52,11 @@ valgrind-callgrind +ARGS:
 clean:
     make clean
 
+release:
+    just build "release"
+
 release-debuginfo:
-    make release-debuginfo BUILD_DIR="build/release-debuginfo"
+    just build "release-debuginfo"
 
 docs:
     make doc
