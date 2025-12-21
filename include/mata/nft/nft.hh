@@ -18,16 +18,16 @@
  *
  * @section nft_design The design of NFTs in Mata
  *
- * In Mata, the classical transducers from textbook definitions (where a transition is a tuple of
+ * The classical transducers from textbook definitions (where a transition is a tuple of
  *  `(initial state, input symbol, final state, output string)`) are encoded using a simpler data structure for the
  *  transition relation, @c mata::nft::Delta The data structures can directly represent only transitions of the form
  *  `p -a-> s` where `a` is a single symbol or epsilon. A “high-level” transitions of the form `p -abc/def-> q` where
  * 'abc' is an input word and def is an output word are encoded as a sequence of these 'low level' transitions:
- *  `p -a- p’ -d-> q -b-> q' -e-> r -c-> r' -f-> s` (odd transitions read letters of the input track, even transitions read
- *  letters of the output track, a transition can have epsilon instead of a letter). The primed states are a sort of
- *  internal states, to where the automaton gets after reading a letter on the input tape. States are distinguished by
- *  their “level”. “Normal” states  p,q,r,s have level 0, the internal states p’,q’,r’ have in this case the levels 1
- *  (and you could have n-tape transducers where level can be larger than 1).
+ *  `p -a- p’ -d-> q -b-> q' -e-> r -c-> r' -f-> s` (odd transitions read letters of the input track, even transitions
+ *  read letters of the output track, a transition can have epsilon instead of a letter). The primed states are a sort of
+ *  internal states, to where the automaton gets after reading a letter on the input tape (in Mata called level). States
+ *  are distinguished by their “level”. “Normal” states  p,q,r,s have level 0, the internal states p’,q’,r’ have in this
+ *  case the levels 1 (and you could have n-tape transducers where level can be larger than 1).
  * In Mata, the @c mata::nft::Delta interface is used only for the manual handling of the internal delta representation,
  *  taking only (initial state, input symbol, final state)
  * We find it useful to think about NFTs in Mata as normal NFAs with a single symbol on a transition (because Mata uses
@@ -63,6 +63,20 @@
  *  by the jump.
  * Ideally, one should not even have to think about the levels and the intermediate states when properly using the
  *  utility functions (from the @c mata::nft::Nft class and the @c mata::nft namespace in general).
+ *
+ *
+ * @section nft_word Representing words in NFTs
+ *
+ * When working with NFTs, words on multiple levels need to be represented.
+ * We consider an NFT word with @c n levels as a vector of words of type @c mata::Word, where the word at index @c i
+ *  in the vector represents the word on the level @c i.
+ * Operations on NFT words either work on each level separately (named with `_by_levels` suffix) or on the interleaved
+ *  representation of the NFT word.
+ * E.g., the NFT word representing reading 'abc' on level 0 and 'def' on level 1 can be represented as either
+ *  `std::vector<Word>{ Word{ 'a', 'b', 'c }, Word{ 'd', 'e', 'f' } }` (using the `_by_levels` variant) or as a word
+ *  `Word{ 'a', 'd', 'b', 'e', 'c', 'f' }` (using the interleaved representation).
+ * Words may contain @c DONT_CARE (representing wildcards on the respective level, but not @c EPSILON) and @EPSILON
+ *  (representing reading an empty string on the respective level ).
  *
  * @see @ref examples/nft.cc example.
  *
@@ -624,56 +638,70 @@ public:
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
 
     /**
-     * @brief Check whether a run over the word (or its prefix) is in the language of an automaton.
+     * @brief Check whether a @p run (or its prefix with @p match_prefix set) is in the language of an automaton.
      *
-     * @param word The run to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param run The run to check.
      * @param match_prefix Whether to also match the prefix of the word.
-     *
-     * @return True if the run (or its prefix) is in the language of the automaton, false otherwise.
+     * @return @c true if @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prefix = false) const;
+    bool is_in_lang(const Run& run, bool match_prefix = false) const;
+    bool is_in_lang(const Run&, bool, bool) const = delete;
 
     /**
-     * @brief Check whether a word (or its prefix) is in the language of an automaton.
+     * @brief Check whether a @p word (or its prefix with @p match_prefix set) is in the language of an automaton.
      *
      * @param word The word to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
      * @param match_prefix Whether to also match the prefix of the word.
-     *
-     * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
+     * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const {
-         return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix);
+    bool is_in_lang(const Word& word, const bool match_prefix = false) const {
+        return is_in_lang(Run{ word, {} }, match_prefix);
     }
+    bool is_in_lang(const Word& word, bool, bool) const = delete;
 
     /**
-     * @brief Check whether a prefix of a run is in the language of an automaton.
+     * @brief Check whether a prefix of a @p run is in the language of an automaton.
      *
-     * @param word The run to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
-     *
-     * @return True if the prefix of the run is in the language of the automaton, false otherwise.
+     * @param run The run to check.
+     * @return @c true if the prefix of @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_prefix_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+    bool is_in_lang_prefix(const Run& run) const { return is_in_lang(run, true); }
+    bool is_in_lang_prefix(const Run&, bool) const = delete;
+
 
     /**
-     * @brief Check whether a prefix of a word is in the language of an automaton.
+     * @brief Check whether a prefix of a @p word is in the language of an automaton.
      *
      * @param word The word to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
-     *
-     * @return True if the prefix of the word is in the language of the automaton, false otherwise.
+     * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_prefix_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prefix_in_lang(Run{ word, {} }, use_epsilon); }
+    bool is_in_lang_prefix(const Word& word) const { return is_in_lang_prefix(Run{ word, {} }); }
+    bool is_in_lang_prefix(const Word&, bool) const = delete;
 
     /**
-     * @brief Checks whether track words are in the language of the transducer.
+     * @brief Checks whether @p track_words are in the language of the transducer.
      *
      * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
      *  relation accepted by the transducer with 'n' levels (tracks).
+     *
+     * @param level_words The words to check.
+     * @param match_prefix Whether to also match the prefix of the word.
+     * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_by_levels(const std::vector<Word>& track_words);
+    bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false) const;
+
+    /**
+     * @brief Checks whether the prefix of @p track_words is in the language of the transducer.
+     *
+     * That is, the function checks whether a prefix a tuple @p track_words (word1, word2, word3, ..., wordn) is in the
+     * regular relation accepted by the transducer with 'n' levels (tracks).
+     *
+     * @param level_words The words to check.
+     * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
+     */
+    bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words) const {
+        return is_in_lang_by_levels(level_words, true);
+    }
 
     /**
      * @brief Get a word for a given run if it exists.
@@ -710,6 +738,7 @@ public:
      * @return Set of all words in the language of the automaton whose length is <= @p max_length.
      */
     std::set<Word> get_words(size_t max_length = std::numeric_limits<size_t>::max(), JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
 
     /**
      * @brief Apply @p nfa to @c this.

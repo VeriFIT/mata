@@ -623,12 +623,12 @@ public:
     /**
      * @brief Check whether a prefix of a run is in the language of an automaton.
      *
-     * @param word The run to check.
+     * @param run The run to check.
      * @param use_epsilon Whether the automaton uses epsilon transitions.
      *
      * @return True if the prefix of the run is in the language of the automaton, false otherwise.
      */
-    bool is_in_lang_prefix(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+    bool is_in_lang_prefix(const Run& run, const bool use_epsilon = false) const { return is_in_lang(run, use_epsilon, true); }
 
     /**
      * @brief Check whether a prefix of a word is in the language of an automaton.
