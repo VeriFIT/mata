@@ -1,0 +1,6 @@
+Checks: >
+#  *,
+  clang-diagnostic-*, clang-analyzer-*, cppcoreguidelines-*, modernize-*,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
