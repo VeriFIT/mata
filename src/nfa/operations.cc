@@ -586,7 +586,7 @@ std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
 }
 
 //TODO: this is not efficient
-bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+bool Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
     if (match_prefix) {
         StateSet current_post(this->initial);
 
