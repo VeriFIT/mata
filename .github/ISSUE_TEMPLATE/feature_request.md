@@ -1,6 +1,6 @@
 ---
 name: Feature request
-description: Request a new feature for this project.
+about: Request a new feature for this project.
 title: "[FR]: "
 type: feature
 labels: ""
