@@ -14,7 +14,7 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Struct mata::FormulaNode" href="structmata_1_1FormulaNode.html" />
+    <link rel="next" title="Struct mata::Mintermization::OptionalBdd" href="structmata_1_1Mintermization_1_1OptionalBdd.html" />
     <link rel="prev" title="Struct list" href="../structlist.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -48,15 +48,15 @@
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4NK4mata9ClosedSeteqERK9ClosedSetI1TE">
-<span id="_CPPv3NK4mata9ClosedSeteqERK9ClosedSetI1TE"></span><span id="_CPPv2NK4mata9ClosedSeteqERK9ClosedSetI1TE"></span><span id="mata::ClosedSet::eq-operator__ClosedSet:T:CRC"></span><span class="target" id="structmata_1_1ClosedSet_1a35eebeeab9453ab8e0549fb1f25d8e64"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/closed-set_8hh.html#_CPPv4I0EN4mata9ClosedSetE" title="mata::ClosedSet"><span class="n"><span class="pre">ClosedSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/closed-set_8hh.html#_CPPv4I0EN4mata9ClosedSetE" title="mata::ClosedSet::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9ClosedSeteqERK9ClosedSet">
+<span id="_CPPv3NK4mata9ClosedSeteqERK9ClosedSet"></span><span id="_CPPv2NK4mata9ClosedSeteqERK9ClosedSet"></span><span id="mata::ClosedSet::eq-operator__ClosedSetCRC"></span><span class="target" id="structmata_1_1ClosedSet_1a959e816b97e7f4e9bf48a7e3ddea1ba9"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/closed-set_8hh.html#_CPPv4I0EN4mata9ClosedSetE" title="mata::ClosedSet"><span class="n"><span class="pre">ClosedSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
 <dd><p>Two closed sets are equivalent iff their type, borders and corresponding antichains are the same. They are not equivalent otherwise. </p>
 </dd></dl>
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata9ClosedSet8containsERK4Node">
 <span id="_CPPv3NK4mata9ClosedSet8containsERK4Node"></span><span id="_CPPv2NK4mata9ClosedSet8containsERK4Node"></span><span id="mata::ClosedSet::contains__NodeCRC"></span><span class="target" id="structmata_1_1ClosedSet_1a8b030162112b25f4233699858729218d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/closed-set_8hh.html#_CPPv4N4mata9ClosedSet4NodeE" title="mata::ClosedSet::Node"><span class="n"><span class="pre">Node</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">node</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>This function decides whether a set of elements is part of the closed set by subset-compraring the input with all elements of the antichain. </p>
+<dd><p>This function decides whether a set of elements is part of the closed set by subset-comparing the input with all elements of the antichain. </p>
 <p>decides whether the closed set contains a given element </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -114,15 +114,15 @@
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata9ClosedSet9set_unionERK9ClosedSet">
 <span id="_CPPv3NK4mata9ClosedSet9set_unionERK9ClosedSet"></span><span id="_CPPv2NK4mata9ClosedSet9set_unionERK9ClosedSet"></span><span id="mata::ClosedSet::set_union__ClosedSetCRC"></span><span class="target" id="structmata_1_1ClosedSet_1a78d4b53e54eafc848209c515c677a45c"></span><a class="reference internal" href="../file/closed-set_8hh.html#_CPPv4I0EN4mata9ClosedSetE" title="mata::ClosedSet"><span class="n"><span class="pre">ClosedSet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_union</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/closed-set_8hh.html#_CPPv4I0EN4mata9ClosedSetE" title="mata::ClosedSet"><span class="n"><span class="pre">ClosedSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Performs an union over two closed sets with the same type and carrier. </p>
+<dd><p>Performs a union over two closed sets with the same type and carrier. </p>
 <p>This function simply adds all the elements of the antichain of the first closed set to the second closed set</p>
-<p>performs an union over closed sets </p>
+<p>performs a union over closed sets </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>rhs</strong> – a given closed set which will be unioned with the current one </p>
+<dd class="field-odd"><p><strong>rhs</strong> – a given closed set which will be united with the current one </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>an union of the given closed sets </p>
+<dd class="field-even"><p>a union of the given closed sets </p>
 </dd>
 </dl>
 </dd></dl>
@@ -202,8 +202,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../structlist.html">Struct list</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Struct mata::ClosedSet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structmata_1_1FormulaNode.html">Struct mata::FormulaNode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structmata_1_1IntermediateAut_1_1transitions.html">Struct mata::IntermediateAut::transitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1OptionalBdd.html">Struct mata::Mintermization::OptionalBdd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html">Struct mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement.html">Struct mata::applications::strings::seg_nfa::TransducerNoodleElement</a></li>
@@ -231,7 +229,7 @@
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../structlist.html">Struct list</a><ul>
       <li>Previous: <a href="../structlist.html" title="previous chapter">Struct list</a></li>
-      <li>Next: <a href="structmata_1_1FormulaNode.html" title="next chapter">Struct mata::FormulaNode</a></li>
+      <li>Next: <a href="structmata_1_1Mintermization_1_1OptionalBdd.html" title="next chapter">Struct mata::Mintermization::OptionalBdd</a></li>
   </ul></li>
   </ul></li>
 </ul>
