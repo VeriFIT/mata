@@ -202,11 +202,22 @@ cmake_minimum_required (VERSION 3.15.0)
 project (mata-example)
 set (CMAKE_CXX_STANDARD 20)
 
-find_library(LIBMATA mata REQUIRED)
+# find either installed mata, or if it not installed fetch the latest version and build it
+include (FetchContent)
+find_package(mata QUIET)
+if(NOT mata_FOUND)
+	FetchContent_Declare(
+        mata
+        GIT_REPOSITORY https://github.com/VeriFIT/mata
+        GIT_TAG        devel # can be also commit hash or tag
+    )
+
+    FetchContent_MakeAvailable(mata)
+endif()
 
 add_executable(mata-example
     mata-example.cc)
-target_link_libraries(mata-example PUBLIC ${LIBMATA})
+target_link_libraries(mata-example PUBLIC libmata)
 ```
 
 ### Using the Python binding
