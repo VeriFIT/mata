@@ -8,6 +8,10 @@ file (GLOB_RECURSE MATA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 add_library (libmata STATIC
 	${MATA_SOURCES}
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
+	# we add files from the libraries here, so we create one static library libmata.a with everything and so that we can export only libmata
+	$<TARGET_OBJECTS:cudd>
+	$<TARGET_OBJECTS:simlib>
+	$<TARGET_OBJECTS:re2>
 )
 
 # libmata needs at least c++20
@@ -17,15 +21,23 @@ set_target_properties (libmata PROPERTIES
 	OUTPUT_NAME mata
 )
 
-target_include_directories (libmata PUBLIC "${PROJECT_SOURCE_DIR}/include/")
+# Just to be safe, RE2 might need it, for WASM it is also needed
+find_package(Threads REQUIRED)
+target_link_libraries(libmata PRIVATE Threads::Threads)
 
-# For the case of WASM build we need to link with pthread
-if (EMSCRIPTEN)
-	target_link_libraries (libmata PRIVATE pthread)
-endif ()
+target_link_libraries(libmata PUBLIC cudd_headers simlib_headers)
 
-target_link_libraries (libmata PUBLIC cudd simlib)
-target_link_libraries (libmata PRIVATE re2)
+target_include_directories (libmata 
+	PUBLIC
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+		$<INSTALL_INTERFACE:include>
+
+	# we need to add include files from the libraries
+	PRIVATE
+		$<TARGET_PROPERTY:cudd,INTERFACE_INCLUDE_DIRECTORIES>
+		$<TARGET_PROPERTY:simlib,INTERFACE_INCLUDE_DIRECTORIES>
+		$<TARGET_PROPERTY:re2,INTERFACE_INCLUDE_DIRECTORIES>
+)
 
 # Add common compile warnings.
 target_compile_options (libmata PRIVATE "$<$<CONFIG:DEBUG>:${MATA_COMMON_WARNINGS}>")
