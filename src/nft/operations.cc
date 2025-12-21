@@ -862,6 +862,49 @@ std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {
     return { word, true };
 }
 
+std::vector<Word> Nft::mk_level_word_from_word(const Word& word) const {
+    if (word.size() % levels.num_of_levels != 0) {
+        throw std::invalid_argument(
+            std::to_string(__func__) +
+            ": received a word whose length does not correspond to the number of levels (not a multiple of number of "
+            "levels); " "word length: "
+            + std::to_string(word.size()) + ", number of levels: " + std::to_string(levels.num_of_levels)
+        );
+    }
+
+    std::vector<Word> level_words(levels.num_of_levels);
+    Level level{ 0 };
+    for (const auto symbol : word) {
+        level_words[level].push_back(symbol);
+        level = levels.next_level_after(level);
+    }
+    return level_words;
+}
+
+Word Nft::mk_word_from_level_word(const std::vector<Word>& level_words) const {
+    if (level_words.size() != levels.num_of_levels) {
+        throw std::invalid_argument(
+            std::to_string(__func__) +
+            ": received a level level_words whose number of levels does not correspond to the number of levels in the "
+            "NFT; number of levels in level level_words: "
+            + std::to_string(level_words.size()) + ", number of levels in the NFT: "
+            + std::to_string(levels.num_of_levels)
+        );
+    }
+
+    size_t word_length{ 0 };
+    for (const auto& level_word : level_words) { word_length += level_word.size(); }
+    Word word;
+    word.reserve(word_length);
+
+    for (const auto& level_word : level_words) {
+        for (const auto symbol : level_word) {
+            word.push_back(symbol);
+        }
+    }
+    return word;
+}
+
 Nft mata::nft::algorithms::minimize_brzozowski(const Nft& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     return determinize(revert(determinize(revert(aut))));

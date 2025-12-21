@@ -101,7 +101,7 @@ namespace mata::nft {
  */
 class Nft: public nfa::Nfa {
 private:
-    using super = nfa::Nfa;
+    using super = Nfa;
 public:
     /**
      * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
@@ -675,7 +675,29 @@ public:
      */
     bool is_in_lang_by_levels(const std::vector<Word>& track_words);
 
+    /**
+     * @brief Get a word for a given run if it exists.
+     *
+     * @param run The run containing a path to get the word for.
+     * @return A pair containing the word for the given run and a boolean indicating whether the word exists.
+     */
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
+
+    /**
+     * @brief Convert a word to level words according to the levels of the automaton.
+     *
+     * @param word The word to convert.
+     * @return The level words corresponding to the input word.
+     */
+    std::vector<Word> mk_level_word_from_word(const Word& word) const;
+
+    /**
+     * @brief Convert level words to a word according to the levels of the automaton.
+     *
+     * @param level_words The level words to convert.
+     * @return The word corresponding to the input level words.
+     */
+    Word mk_word_from_level_word(const std::vector<Word>& level_words) const;
 
     /**
      * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
