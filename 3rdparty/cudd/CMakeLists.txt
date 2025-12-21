@@ -136,11 +136,21 @@ add_library(cudd OBJECT
 
 target_compile_features(cudd PUBLIC cxx_std_20)
 
-target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cudd/"
-                                        "${CMAKE_CURRENT_SOURCE_DIR}/st/"
-                                        "${CMAKE_CURRENT_SOURCE_DIR}/mtr/"
-                                        "${CMAKE_CURRENT_SOURCE_DIR}/epd/"
-                                        "${CMAKE_CURRENT_SOURCE_DIR}/util/"
-                                        "${CMAKE_CURRENT_SOURCE_DIR}/cplusplus/"
-                                        "${CMAKE_CURRENT_BINARY_DIR}/")
-target_include_directories(cudd PUBLIC  "${CMAKE_CURRENT_SOURCE_DIR}/include/") # for cudd_config.h
+add_library(cudd_headers INTERFACE)
+target_include_directories(cudd_headers
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(cudd PUBLIC cudd_headers)
+
+target_include_directories(cudd
+    PRIVATE 
+        "${CMAKE_CURRENT_SOURCE_DIR}/cudd/"
+        "${CMAKE_CURRENT_SOURCE_DIR}/st/"
+        "${CMAKE_CURRENT_SOURCE_DIR}/mtr/"
+        "${CMAKE_CURRENT_SOURCE_DIR}/epd/"
+        "${CMAKE_CURRENT_SOURCE_DIR}/util/"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cplusplus/"
+        "${CMAKE_CURRENT_BINARY_DIR}/"
+)
