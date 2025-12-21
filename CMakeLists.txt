@@ -11,11 +11,6 @@ set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 option (MATA_WERROR "Warnings should be handled as errors" OFF)
 option (MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
 
-# For the case of WASM build we need to add -pthread option
-if (EMSCRIPTEN)
-	add_compile_options (-pthread)
-endif ()
-
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	# Store compile commands into 'build/compile_commands.json', which are needed, beside others, for linters.
@@ -161,6 +156,8 @@ configure_package_config_file(
     "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"  # output
     INSTALL_DESTINATION lib/cmake/mata
 )
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
+        DESTINATION lib/cmake/mata)
 
 
 # Uninstall target from https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#can-i-do-make-uninstall-with-cmake
