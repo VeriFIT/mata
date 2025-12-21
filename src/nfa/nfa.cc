@@ -27,11 +27,6 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 const std::string mata::nfa::TYPE_NFA = "NFA";
 
-const State Limits::min_state;
-const State Limits::max_state;
-const Symbol Limits::min_symbol;
-const Symbol Limits::max_symbol;
-
 namespace {
     /**
      * Compute reachability of states considering only specified states.
@@ -103,14 +98,13 @@ std::vector<State> Nfa::distances_from_initial() const {
         que.push_back(qi);
     }
 
-    while (!que.empty()) {
-        State src = que.front();
+    while (!que.empty()) { const State src = que.front();
         que.pop_front();
-        for (Move move : delta[src].moves()) {
-            if (!visited[move.target]) {
-                visited[move.target] = true;
-                distances[move.target] = distances[src] +1;
-                que.push_back(move.target);
+        for (auto [_, target] : delta[src].moves()) {
+            if (!visited[target]) {
+                visited[target] = true;
+                distances[target] = distances[src] +1;
+                que.push_back(target);
             }
         }
     }
@@ -125,11 +119,11 @@ std::vector<State> Nfa::distances_to_final() const {
 Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
     Run result{{}, {state}};
     while (!final[state]) {
-        for (Move move : delta[state].moves()) {
-            if (distances_to_final[move.target] < distances_to_final[state]) {
-                result.word.push_back(move.symbol);
-                result.path.push_back(move.target);
-                state = move.target;
+        for (auto [symbol, target] : delta[state].moves()) {
+            if (distances_to_final[target] < distances_to_final[state]) {
+                result.word.push_back(symbol);
+                result.path.push_back(target);
+                state = target;
                 break;
             }
         }
@@ -201,7 +195,7 @@ namespace {
             end_move = moves.end();
         };
     };
-};
+}
 
 /**
  * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
@@ -269,7 +263,7 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
                 return;
             }
         } else { // return from the recursive call
-            State act_succ = act_state_data.current_move->target;
+            const State act_succ = act_state_data.current_move->target;
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
             ++act_state_data.current_move;
@@ -384,12 +378,11 @@ bool Nfa::is_acyclic() const {
             acyclic = false;
                 return true;
             } else { // check for self-loops
-                State st = scc[0];
-                for(const auto& sp : this->delta[st]) {
-                    if(sp.targets.find(st) != sp.targets.end()) {
-                        acyclic = false;
-                        return true;
-                    }
+            for (const State st = scc[0]; const auto& sp : this->delta[st]) {
+                if (sp.targets.find(st) != sp.targets.end()) {
+                    acyclic = false;
+                    return true;
+                }
                 }
             }
             return false;
@@ -510,7 +503,7 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
                  << "node [shape=circle];" << std::endl;
 
     // Double circle for final states
-    for (State final_state: final) {
+    for (const State final_state: final) {
         is_state_drawn[final_state] = true;
         output << final_state << " [shape=doublecircle];" << std::endl;
     }
@@ -557,7 +550,7 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
 
     // Arrow for initial states
     output << "node [shape=none, label=\"\"];" << std::endl;
-    for (State init_state: initial) {
+    for (const State init_state: initial) {
         output << "i" << init_state << " -> " << init_state << ";" << std::endl;
     }
 
@@ -616,7 +609,7 @@ void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) c
     print_to_mata(output, alphabet);
 }
 
-Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
+Nfa Nfa::get_one_letter_aut(const Symbol abstract_symbol) const {
     Nfa digraph{num_of_states(), initial, final };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
@@ -656,7 +649,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
     StateSet res{};
 
     // If the symbol is EPSILON, we can stay in the same state.
-    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::NONE) {
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
         res = states;
     }
 
@@ -665,7 +658,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
     }
 
     StateSet from_states = states;
-    if (epsilon_closure_opt == EpsilonClosureOpt::BEFORE) {
+    if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
         // Before making the step using the symbol, we compute the epsilon closure.
         from_states = get_epsilon_closure(states);
     }
@@ -678,7 +671,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
         }
     }
 
-    if (epsilon_closure_opt == EpsilonClosureOpt::AFTER) {
+    if (epsilon_closure_opt == EpsilonClosureOpt::After) {
         // We need to compute the epsilon closure of the resulting states.
         res = get_epsilon_closure(res);
     }
@@ -691,11 +684,9 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 
     const State new_initial_state{ add_state() };
     for (const State orig_initial_state: initial) {
-        const StatePost& state_post{ delta.state_post(orig_initial_state) };
-        for (const auto& symbol_post: state_post) {
-            for (const State target: symbol_post.targets) {
-                delta.add(new_initial_state, symbol_post.symbol, target);
-            }
+        for (const StatePost& state_post{ delta.state_post(orig_initial_state) }; const auto& symbol_post :
+             state_post) {
+            for (const State target : symbol_post.targets) { delta.add(new_initial_state, symbol_post.symbol, target); }
         }
         if (final[orig_initial_state]) { final.insert(new_initial_state); }
     }
@@ -710,10 +701,8 @@ Nfa& Nfa::unify_final(const bool force_new_state) {
 
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
-        const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
-        for (const auto& transition: transitions_to) {
-            delta.add(transition.source, transition.symbol, new_final_state);
-        }
+        for (const auto transitions_to{ delta.get_transitions_to(orig_final_state) }; const auto& transition :
+             transitions_to) { delta.add(transition.source, transition.symbol, new_final_state); }
         if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
 
@@ -740,7 +729,7 @@ State Nfa::add_state() {
     return num_of_states;
 }
 
-State Nfa::add_state(State state) {
+State Nfa::add_state(const State state) {
     if (state >= delta.num_of_states()) {
         delta.allocate(state + 1);
     }
@@ -779,9 +768,9 @@ State Nfa::insert_word(const State source, const Word &word) { return insert_wor
 
 size_t Nfa::num_of_states() const {
     return std::max({
-        static_cast<size_t>(initial.domain_size()),
-        static_cast<size_t>(final.domain_size()),
-        static_cast<size_t>(delta.num_of_states())
+        initial.domain_size(),
+        final.domain_size(),
+        delta.num_of_states()
     });
 }
 
@@ -801,7 +790,7 @@ bool Nfa::is_identical(const Nfa& aut) const {
     return delta == aut.delta;
 }
 
-Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::optional<State> sink_state) {
+Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
     const State sink{ sink_state.value_or(num_of_states()) };
     if (initial.empty()) { // The automaton has no reachable states (accepting an empty language).
         // Insert a single initial sink state.
@@ -828,7 +817,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
     // Allocate space for initial and final states from 'this' which might be missing in Delta.
     this->delta.allocate(num_of_states);
 
-    auto renumber_states = [&](State st) {
+    auto renumber_states = [&](const State st) {
         return st + num_of_states;
     };
     this->delta.append(aut.delta.renumber_targets(renumber_states));
@@ -883,8 +872,7 @@ Nfa Nfa::decode_utf8() const {
     //       UTF-8 sequences, such as 11000000 10000000 (U+0300). Because of that,
     //       we need to check if the decoded symbol is within the valid range of Unicode code points.
     push_state_set(StateSet{this->initial});
-    while (!worklist.empty()) {
-        State q1 = worklist.top();
+    while (!worklist.empty()) { const State q1 = worklist.top();
         StatePost &q1_state_post = result.delta.mutable_state_post(q1);
         worklist.pop();
         // 1st Byte

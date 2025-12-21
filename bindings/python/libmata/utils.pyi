@@ -46,7 +46,7 @@ class BinaryRelation:
        """
        ...
     def split(self, at: int, reflexive: bool = True) -> None:
-        """Creates new row corresponding to the row/col at given index (i think)
+        """Creates new row corresponding to the row/col at given index (I think)
 
         :param size_t at: where the splitting will commence
         :param bool reflexive: whether the relation should stay reflexive
@@ -73,7 +73,7 @@ class BinaryRelation:
         """Builds equivalence classes w.r.t relation
 
         :return: mapping of state to its equivalence class,
-            first states corresponding to a equivalence class?
+            first states corresponding to an equivalence class?
         """
         ...
     def build_index(self) -> list[list[int]]:

@@ -16,20 +16,20 @@ template <class Key> class OrdVector;
 
 template <class T>
 bool are_disjoint(const utils::OrdVector<T>& lhs, const utils::OrdVector<T>& rhs) {
-    auto itLhs = lhs.begin();
-    auto itRhs = rhs.begin();
-    while (itLhs != lhs.end() && itRhs != rhs.end()) {
-        if (*itLhs == *itRhs) { return false; }
-        else if (*itLhs < *itRhs) { ++itLhs; }
-        else {++itRhs; }
+    auto it_lhs = lhs.begin();
+    auto it_rhs = rhs.begin();
+    while (it_lhs != lhs.end() && it_rhs != rhs.end()) {
+        if (*it_lhs == *it_rhs) { return false; }
+        else if (*it_lhs < *it_rhs) { ++it_lhs; }
+        else {++it_rhs; }
     }
     return true;
 }
 
 template <class Key>
 bool is_sorted(const std::vector<Key>& vec) {
-    for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec) {
-        if (!(*(itVec - 1) < *itVec)) {
+    for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
+        if (!(*(it_vec - 1) < *it_vec)) {
             // In case there is an unordered pair (or there is one element twice).
             return false;
         }
@@ -44,24 +44,23 @@ bool is_sorted(const std::vector<Key>& vec) {
  * std::set) using ordered vector as the underlying data structure.
  *
  * @tparam  Key  Key type: type of the elements contained in the container.
- *               Each elements in a set is also its key.
+ *               Each element in a set is also its key.
  */
 template<class Key> class OrdVector {
-private:  // Private data types
-
 public:   // Public data types
     using VectorType = std::vector<Key>;
     using value_type = Key;
     using size_type = size_t;
-    using iterator = typename VectorType::iterator ;
-    using const_iterator = typename VectorType::const_iterator;
-    using const_reference = typename VectorType::const_reference;
-    using reference = typename VectorType::reference;
+    using iterator = VectorType::iterator ;
+    using const_iterator = VectorType::const_iterator;
+    using const_reference = VectorType::const_reference;
+    using reference = VectorType::reference;
 
-private:  // Private data members
+private:
+    // Private data members
     VectorType vec_;
 
-private:  // Private methods
+    // Private methods
     bool is_sorted() const { return mata::utils::is_sorted(vec_); }
 
     /**
@@ -69,7 +68,7 @@ private:  // Private methods
     *
     * Static method for conversion of an object of any class with the << output operator into a string
     *
-    * @param[in]  n  The object for the conversion.
+    * @param[in] n The object for the conversion.
     *
     * @returns  The string representation of the object.
     */
@@ -382,13 +381,13 @@ public:
     bool operator==(const OrdVector& rhs) const {
         assert(is_sorted());
         assert(rhs.is_sorted());
-        return (vec_ == rhs.vec_);
+        return vec_ == rhs.vec_;
     }
 
-    bool operator<(const OrdVector& rhs) const {
+    std::weak_ordering operator<=>(const OrdVector& rhs) const {
         assert(is_sorted());
         assert(rhs.is_sorted());
-        return std::lexicographical_compare(vec_.begin(), vec_.end(), rhs.vec_.begin(), rhs.vec_.end());
+        return vec_ <=> rhs.vec_;
     }
 
     const std::vector<Key>& to_vector() const { return vec_; }
@@ -401,23 +400,23 @@ public:
         assert(is_sorted());
         assert(rhs.is_sorted());
 
-        const_iterator itLhs = begin();
-        const_iterator itRhs = rhs.begin();
+        const_iterator it_lhs = begin();
+        const_iterator it_rhs = rhs.begin();
 
-        while ((itLhs != end()) && (itRhs != rhs.end()))
+        while ((it_lhs != end()) && (it_rhs != rhs.end()))
         {   // until we drop out of the array (or find a common element)
-            if (*itLhs == *itRhs)
+            if (*it_lhs == *it_rhs)
             {   // in case there exists a common element
                 return false;
             }
-            else if (*itLhs < *itRhs)
+            else if (*it_lhs < *it_rhs)
             {   // in case the element in lhs is smaller
-                ++itLhs;
+                ++it_lhs;
             }
             else
             {   // in case the element in rhs is smaller
-                assert(*itLhs > *itRhs);
-                ++itRhs;
+                assert(*it_lhs > *it_rhs);
+                ++it_rhs;
             }
         }
         return true;
@@ -537,13 +536,11 @@ public:
 
 } // Namespace mata::utils.
 
-namespace std {
-    template <class Key>
-    struct hash<mata::utils::OrdVector<Key>> {
-        std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
-            return std::hash<std::vector<Key>>{}(vec.to_vector());
-        }
-    };
-}
+template <class Key>
+struct std::hash<mata::utils::OrdVector<Key>> {
+    std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
+        return std::hash<std::vector<Key>>{}(vec.to_vector());
+    }
+};
 
 #endif // MATA_ORD_VECTOR_HH_.

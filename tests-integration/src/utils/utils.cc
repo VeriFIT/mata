@@ -17,7 +17,7 @@ int load_automaton(
     }
     TIME_END(parsing);
     try {
-        if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
+        if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
             aut = mata::nfa::builder::construct(inter_auts[0], &alphabet);
         } else {
             mata::Mintermization mintermization;
@@ -50,10 +50,10 @@ int load_automata(
     }
     TIME_END(parsing);
     try {
-        if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
+        if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
             // This is not foolproof and assumes, that everything is BITVECTOR
             for (mata::IntermediateAut& inter_aut : inter_auts) {
-                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
+                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector);
                 auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
             }
         } else {
@@ -62,7 +62,7 @@ int load_automata(
             std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
             TIME_END(mintermization);
             for (mata::IntermediateAut& inter_aut : mintermized) {
-                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
+                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector);
                 auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
             }
         }

@@ -1487,7 +1487,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::NFA;
+        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
         REQUIRE(aut.is_lang_empty());
         aut = builder::construct(inter_aut);
         REQUIRE(aut.is_lang_empty());
@@ -3670,7 +3670,7 @@ TEST_CASE("mata::nfa::product(OR)") {
     REQUIRE(!rhs.is_in_lang(two_three));
 
     SECTION("Minimal example") {
-        Nfa result = mata::nfa::product(lhs, rhs, ProductFinalStateCondition::OR);
+        Nfa result = mata::nfa::product(lhs, rhs, ProductFinalStateCondition::Or);
         CHECK(!result.is_in_lang(one));
         CHECK(!result.is_in_lang(zero));
         CHECK(result.is_in_lang(two));

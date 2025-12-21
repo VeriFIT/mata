@@ -28,8 +28,8 @@ bool mata::nfa::algorithms::is_included_naive(
     bool result = nfa_isect.is_lang_empty(cex);
     if (cex != nullptr && !result) {
         std::unordered_map<State,State> nfa_isect_state_to_smaller_state;
-        for (const auto& prod_map_item : prod_map) {
-            nfa_isect_state_to_smaller_state[prod_map_item.second] = prod_map_item.first.first;
+        for (const auto& [states_orig, state_res] : prod_map) {
+            nfa_isect_state_to_smaller_state[state_res] = states_orig.first;
         }
         for (State& path_state : cex->path) {
             path_state = nfa_isect_state_to_smaller_state[path_state];
@@ -104,7 +104,9 @@ bool mata::nfa::algorithms::is_included_antichains(
 
     auto min_dst = [&](const StateSet& set) {
         if (set.empty()) return Limits::max_state;
-        return distances_bigger[*std::min_element(set.begin(), set.end(), [&](const State a,const State b){return distances_bigger[a] < distances_bigger[b];})];
+        return distances_bigger[*std::ranges::min_element(
+            set, [&](const State a, const State b) { return distances_bigger[a] < distances_bigger[b]; }
+        )];
     };
 
     auto lengths_incompatible = [&](const ProdStateType& pair) {
@@ -186,13 +188,15 @@ bool mata::nfa::algorithms::is_included_antichains(
                             next_on_path = paths.find(next_on_path->second.first);
                         }
 
-                        std::reverse(cex->word.begin(), cex->word.end());
-                        std::reverse(cex->path.begin(), cex->path.end());
+                        std::ranges::reverse(cex->word);
+                        std::ranges::reverse(cex->path);
 
-                        // it is poosible that lengths_incompatible(succ) was true, which means that cex is not finished, we need to add some shortest accepting run from smaller_suc
-                        Run leftover = smaller.get_shortest_accepting_run_from_state(smaller_succ, distances_smaller);
-                        cex->word.insert(cex->word.end(), leftover.word.begin(), leftover.word.end());
-                        cex->path.insert(cex->path.end(), leftover.path.begin(), leftover.path.end());
+                        // it is possible that lengths_incompatible(succ) was true, which means that cex is not finished, we need to add some shortest accepting run from smaller_suc
+                        auto [word, path] = smaller.get_shortest_accepting_run_from_state(
+                            smaller_succ, distances_smaller
+                        );
+                        cex->word.insert(cex->word.end(), word.begin(), word.end());
+                        cex->path.insert(cex->path.end(), path.begin(), path.end());
                     }
 
                     return false;
@@ -262,8 +266,7 @@ namespace {
         }
 
         decltype(algorithms::is_included_naive) *algo;
-        const std::string &str_algo = params.at("algorithm");
-        if ("naive" == str_algo) {
+        if (const std::string& str_algo = params.at("algorithm"); "naive" == str_algo) {
             algo = algorithms::is_included_naive;
         } else if ("antichains" == str_algo) {
             algo = algorithms::is_included_antichains;

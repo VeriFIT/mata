@@ -1,10 +1,9 @@
-/* parser.hh -- Classes for synchronized iteration.
+/** @file
+ * @brief Classes for synchronized iteration.
  */
 
 #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
 #define MATA_SYNCHRONIZED_ITERATOR_HH
-
-#include "ord-vector.hh"
 
 namespace mata::utils {
 
@@ -22,7 +21,7 @@ namespace mata::utils {
  * SynchronisedIterator is the parent virtual class.
  * It stores a vector of end-iterators for the OrdContainer v and a vector of current positions.
  * They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and
- *  ends, respectively
+ *  ends, respectively.
  * Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
  * (next smallest symbol in the case of TransSymbolStates).
  *
@@ -32,11 +31,12 @@ namespace mata::utils {
  * ii) In determinization, it is enough that there EXISTS a position that points to the smallest class.
  * Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
  *
- * Usage: 0) construct, 1) fill in using @c SynchronizedIterator::push_back(), iterate using @c SynchronizedIterator::advance() and @c SynchronizedIterator::get_current(), 2) @c SynchronizedIterator::reset()
+ * Usage: 0) construct, 1) fill in using @c SynchronizedIterator::push_back(), iterate using
+ *  @c SynchronizedIterator::advance() and @c SynchronizedIterator::get_current(), 2) @c SynchronizedIterator::reset()
  *  and go back to 1).
  *
- * @note The memory allocated internally for positions and ends is kept after @c SynchronizedIterator::reset(), so it is advisable to use the
- *  same iterator for many iterations, as opposed to creating a new one for each iteration.
+ * @note The memory allocated internally for positions and ends is kept after @c SynchronizedIterator::reset(), so it is
+ *  advisable to use the same iterator for many iterations, as opposed to creating a new one for each iteration.
  */
 
 /// Synchronized iteration.
@@ -50,7 +50,7 @@ public:
     explicit SynchronizedIterator(const size_t size = 0) {
         positions.reserve(size);
         ends.reserve(size);
-    };
+    }
 
     /** This is supposed to be called only before an iteration,
      * after constructor of reset.
@@ -62,20 +62,20 @@ public:
         // begin is actually incremented in advance ...? But tests do pass ...
         this->positions.emplace_back(begin);
         this->ends.emplace_back(end);
-    };
+    }
 
     /** Empties positions and ends.
      * Though they should keep the allocated space.
      * @param size Number of elements to reserve up-front for positions and ends.
      */
-    void reset(const size_t size = 0) {
+    virtual void reset(const size_t size = 0) {
         positions.clear();
         ends.clear();
         if (size > 0) {
             positions.reserve(size);
             ends.reserve(size);
         }
-    };
+    }
 
     void reserve(const size_t size) {
         this->positions.reserve(size);
@@ -86,7 +86,7 @@ public:
     virtual const std::vector<Iterator>& get_current() const = 0;
 
     virtual ~SynchronizedIterator() = default;
-}; // class SynchronizedIterator.
+};
 
 
 
@@ -108,7 +108,7 @@ public:
      *  advance further.
      * The general of the algorithm is to synchronize everybody with position[0].
      */
-    bool advance() {
+    bool advance() override {
         //Nothing to synchronize.
         if (this->positions.empty()) { return false;  } // TODO: ?? or not?
 
@@ -155,16 +155,16 @@ public:
     }
 
     /// Returns the vector of current positions.
-    const std::vector<Iterator>& get_current() const {
+    const std::vector<Iterator>& get_current() const override {
         return this->positions;
-    };
+    }
 
-    explicit SynchronizedUniversalIterator(const size_t size=0) : SynchronizedIterator<Iterator>(size) {};
+    explicit SynchronizedUniversalIterator(const size_t size=0) : SynchronizedIterator<Iterator>(size) {}
 
-    void reset(const size_t size = 0) {
+    void reset(const size_t size = 0) override {
         SynchronizedIterator < Iterator > ::reset(size);
         this->synchronized_at_current_minimum = false;
-    };
+    }
 }; // class SynchronizedUniversalIterator.
 
 template<typename Iterator>
@@ -234,7 +234,7 @@ public:
             ++i; // This cannot be in the for statement line, because of the continue in the if body above.
         }
         return !currently_synchronized.empty();
-    }; // advance().
+    }
 
     /**
      * @brief Returns the vector of current still active positions.
@@ -242,7 +242,7 @@ public:
      * Beware, they will be ordered differently from how there were input into the iterator.
      * This is due to swapping of the emptied positions with positions at the end.
      */
-    const std::vector<Iterator>& get_current() const override { return this->currently_synchronized; };
+    const std::vector<Iterator>& get_current() const override { return this->currently_synchronized; }
 
     void push_back(const Iterator &begin, const Iterator &end) override {
         // Empty vector would not have any effect (unlike in the case of the universal iterator).
@@ -266,7 +266,7 @@ public:
         this->currently_synchronized.reserve(size);
     }
 
-    void reset(const size_t size = 0) {
+    void reset(const size_t size = 0) override {
         SynchronizedIterator<Iterator>::reset(size);
         if (size > 0) {
             this->currently_synchronized.reserve(size);
@@ -276,7 +276,7 @@ public:
 };
 
 /**
- * In order to make initialisation of the sync. iterator nicer than inputting v.begin() and v.end()
+ * In order to make initialization of the sync. iterator nicer than inputting v.begin() and v.end()
  * as the two parameters of the method push_back,
  * this function wraps the method push_back,
  * takes the iterator and v and extracts the v.begin() and v.end() from v.
@@ -286,6 +286,6 @@ void push_back (SynchronizedIterator<typename Container::const_iterator> &i,cons
     i.push_back(container.begin(),container.end());
 }
 
-} // namespace mata::utils.
+}
 
-#endif // MATA_SYNCHRONIZED_ITERATOR_HH.
+#endif

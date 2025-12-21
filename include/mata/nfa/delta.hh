@@ -72,7 +72,7 @@ public:
     StateSet::const_iterator cbegin() const { return targets.cbegin(); }
     StateSet::const_iterator cend() const { return targets.cend(); }
 
-    size_t count(State s) const { return targets.count(s); }
+    size_t count(const State s) const { return targets.count(s); }
     bool empty() const { return targets.empty(); }
     size_t num_of_targets() const { return targets.size(); }
 
@@ -82,18 +82,18 @@ public:
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
-    void inline push_back(const State s) { targets.push_back(s); }
+    void push_back(const State s) { targets.push_back(s); }
 
     template <typename... Args>
     StateSet& emplace_back(Args&&... args) {
-	// Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
+    // Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
         return targets.emplace_back(std::forward<Args>(args)...);
     }
 
-    void erase(State s) { targets.erase(s); }
+    void erase(const State s) { targets.erase(s); }
 
-    std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
-    std::vector<State>::iterator find(State s) { return targets.find(s); }
+    std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
+    std::vector<State>::iterator find(const State s) { return targets.find(s); }
 }; // class mata::nfa::SymbolPost.
 
 /**
@@ -102,9 +102,8 @@ public:
  * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
  * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
  */
-class StatePost : private utils::OrdVector<SymbolPost> {
-private:
-    using super = utils::OrdVector<SymbolPost>;
+class StatePost : utils::OrdVector<SymbolPost> {
+    using super = OrdVector<SymbolPost>;
 public:
     using super::iterator, super::const_iterator;
     using super::begin, super::end, super::cbegin, super::cend;
@@ -185,7 +184,8 @@ public:
 
         class const_iterator;
         const_iterator begin() const;
-        const_iterator end() const;
+
+        static const_iterator end();
 
     private:
         const StatePost* state_post_{ nullptr };
@@ -248,7 +248,7 @@ public:
     const_iterator(const StatePost& state_post);
     /// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
     const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it,
-                   StatePost::const_iterator symbol_post_it_end);
+                   StatePost::const_iterator symbol_post_end);
     const_iterator(const const_iterator& other) noexcept = default;
     const_iterator(const_iterator&&) = default;
 
@@ -315,14 +315,14 @@ public:
     Delta(): state_posts_{} {}
     Delta(const Delta& other) = default;
     Delta(Delta&& other) = default;
-    explicit Delta(size_t n): state_posts_{ n } {}
+    explicit Delta(const size_t n): state_posts_{ n } {}
 
     Delta& operator=(const Delta& other) = default;
     Delta& operator=(Delta&& other) = default;
 
     bool operator==(const Delta& other) const;
 
-    void reserve(size_t n) {
+    void reserve(const size_t n) {
         state_posts_.reserve(n);
     };
 
@@ -376,7 +376,7 @@ public:
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
-	// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+    // Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
         return state_posts_.emplace_back(std::forward<Args>(args)...);
     }
 
@@ -459,7 +459,7 @@ public:
      * @param symbol Symbol
      * @param targets Set of states to
      */
-    void add(const State source, const Symbol symbol, const StateSet& targets);
+    void add(State source, Symbol symbol, const StateSet& targets);
 
     using const_iterator = std::vector<StatePost>::const_iterator;
     const_iterator cbegin() const { return state_posts_.cbegin(); }
@@ -560,13 +560,14 @@ public:
     Transitions() = default;
     explicit Transitions(const Delta* delta): delta_{ delta } {}
     Transitions(Transitions&&) = default;
-    Transitions(Transitions&) = default;
+    Transitions(const Transitions&) = default;
     Transitions& operator=(Transitions&&) = default;
-    Transitions& operator=(Transitions&) = default;
+    Transitions& operator=(const Transitions&) = default;
 
     class const_iterator;
     const_iterator begin() const;
-    const_iterator end() const;
+
+    static const_iterator end();
 private:
     const Delta* delta_;
 }; // class Transitions.

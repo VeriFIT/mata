@@ -2,13 +2,13 @@
  */
 
 // MATA headers
-#include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 using namespace mata::utils;
 
-Nfa mata::nfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols) {
+Nfa algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols) {
     return determinize(aut)
         .trim()
         .complement_deterministic(symbols);
@@ -26,10 +26,10 @@ Nfa algorithms::complement_brzozowski(const Nfa& aut, const OrdVector<Symbol>& s
 }
 
 Nfa mata::nfa::complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
-    return mata::nfa::complement(aut, alphabet.get_alphabet_symbols(), params);
+    return complement(aut, alphabet.get_alphabet_symbols(), params);
 }
 
-Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
+Nfa mata::nfa::complement(const Nfa& aut, const OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
     // Setting the requested algorithm.
     decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
     if (!haskey(params, "algorithm")) {
@@ -38,12 +38,12 @@ Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Sym
                                  "received: " + std::to_string(params));
     }
 
-    const std::string& str_algo = params.at("algorithm");
-    if ("classical" == str_algo) {  /* default */ }
-    else if ("brzozowski" == str_algo) {  algo = algorithms::complement_brzozowski; }
-    else {
-        throw std::runtime_error(std::to_string(__func__) +
-                                 " received an unknown value of the \"algorithm\" key: " + str_algo);
+    if (const std::string& str_algo = params.at("algorithm"); "classical" == str_algo) { /* default */ } else if (
+        "brzozowski" == str_algo) { algo = algorithms::complement_brzozowski; } else {
+        throw std::runtime_error(
+            std::to_string(__func__) +
+            " received an unknown value of the \"algorithm\" key: " + str_algo
+        );
     }
 
     return algo(aut, symbols);

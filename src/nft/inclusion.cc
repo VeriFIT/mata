@@ -84,6 +84,7 @@ bool mata::nft::is_included(
     const Alphabet* const alphabet,
     const JumpMode jump_mode,
     const ParameterMap& params) { // {{{
+    // ReSharper disable once CppLocalVariableMayBeConst
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
     return algo(smaller, bigger, alphabet, cex, jump_mode);
 }

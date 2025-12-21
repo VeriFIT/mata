@@ -107,7 +107,7 @@ Simlib::Util::BinaryRelation compute_relation(
  * @param[in] lhs First NFT to compute intersection for.
  * @param[in] rhs Second NFT to compute intersection for.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
- * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
+ * @param[out] product_map Can be used to get the mapping of the pairs of the original states to product states.
  *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
  *   because this one is too slow.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
@@ -117,7 +117,7 @@ Simlib::Util::BinaryRelation compute_relation(
  * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
 Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
-            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
+            std::unordered_map<std::pair<State,State>, State> *product_map = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
             State lhs_first_aux_state = Limits::max_state, State rhs_first_aux_state = Limits::max_state);
 
 /**

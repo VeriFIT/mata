@@ -11,15 +11,13 @@
 #include <limits>
 
 #include "types.hh"
-#include "types.hh"
 
 namespace mata::nfa {
 
 extern const std::string TYPE_NFA;
 
 using State = unsigned long;
-using Symbol = mata::Symbol;
-using StateSet = mata::utils::OrdVector<State>;
+using StateSet = utils::OrdVector<State>;
 
 struct Run {
     Word word{}; ///< A finite-length word.
@@ -27,15 +25,15 @@ struct Run {
 };
 
 enum class EpsilonClosureOpt : unsigned {
-    NONE   = 1 << 0,   ///< No epsilon closure.
-    BEFORE = 1 << 1,   ///< Epsilon closure before the transition.
-    AFTER  = 1 << 2,    ///< Epsilon closure after the transition.
-    BEFORE_AND_AFTER = BEFORE | AFTER ///< Epsilon closure before and after the transition.
+    None   = 1 << 0,   ///< No epsilon closure.
+    Before = 1 << 1,   ///< Epsilon closure before the transition.
+    After  = 1 << 2,    ///< Epsilon closure after the transition.
+    BeforeAndAfter = Before | After ///< Epsilon closure before and after the transition.
 };
 
 enum class ProductFinalStateCondition {
-    AND, ///< Both original states have to be final.
-    OR,  ///< At least one of the original states has to be final.
+    And, ///< Both original states have to be final.
+    Or,  ///< At least one of the original states has to be final.
 };
 
 using StateRenaming = std::unordered_map<State, State>;
@@ -54,11 +52,10 @@ using StateRenaming = std::unordered_map<State, State>;
 using ParameterMap = std::unordered_map<std::string, std::string>;
 
 struct Limits {
-public:
-    static const State min_state = std::numeric_limits<State>::min();
-    static const State max_state = std::numeric_limits<State>::max();
-    static const Symbol min_symbol = std::numeric_limits<Symbol>::min();
-    static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
+    static constexpr State min_state = std::numeric_limits<State>::min();
+    static constexpr State max_state = std::numeric_limits<State>::max();
+    static constexpr Symbol min_symbol = std::numeric_limits<Symbol>::min();
+    static constexpr Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
 class Nfa; ///< A non-deterministic finite automaton.
