@@ -4,15 +4,17 @@
 
 #include <algorithm>
 #include <cassert>
-#include <optional>
+#include <format>
 #include <fstream>
+#include <optional>
+#include <ranges>
 #include <string>
 #include <utility>
-#include <ranges>
+#include <queue>
 
-#include "mata/utils/sparse-set.hh"
-#include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/nfa/builder.hh"
+#include "mata/utils/sparse-set.hh"
 
 
 using namespace mata::utils;
@@ -399,8 +401,50 @@ Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol 
 void Nft::get_one_letter_aut(Nft& result) const { result = get_one_letter_aut(); }
 
 StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    std::cerr << "Warning: Nft::post uses Nfa::post, which is not designed for NFT's jump transitions" << std::endl;
-    return Nfa::post(states, symbol, epsilon_closure_opt);
+    StateSet res{};
+
+    // If the symbol is EPSILON, we can stay in the same state.
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
+        res = states;
+    }
+
+    if (delta.empty()) {
+        return res;
+    }
+
+    StateSet from_states = states;
+    if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
+        // Before making the step using the symbol, we compute the epsilon closure.
+        from_states = mk_epsilon_closure(states);
+    }
+
+    // Now, we can make the step using the symbol.
+    for (const State state: from_states) {
+        if (symbol == DONT_CARE) {
+            for (const SymbolPost& symbol_post : delta[state]) {
+                if (symbol_post.symbol == EPSILON) { continue; }
+                res.insert(symbol_post.targets);
+            }
+            continue;
+        }
+
+        const StatePost& state_post{ delta[state] };
+        if (const auto move_it{ state_post.find(symbol) }; move_it != state_post.end()) {
+            res.insert(move_it->targets);
+        }
+
+        if (symbol == EPSILON) { continue; }
+        if (const auto move_it{ state_post.find(DONT_CARE) }; move_it != state_post.end()) {
+            res.insert(move_it->targets);
+        }
+    }
+
+    if (epsilon_closure_opt == EpsilonClosureOpt::After) {
+        // We need to compute the epsilon closure of the resulting states.
+        res = mk_epsilon_closure(res);
+    }
+
+    return res;
 }
 
 void Nft::unwind_jumps_inplace(
@@ -538,16 +582,13 @@ State Nft::insert_word(const State source, const Word& word, const State target)
         throw std::invalid_argument{ "Inserting word between source and target states with different levels." };
     }
 
-    const State first_new_state = num_of_states();
-    const State word_target = Nfa::insert_word(source, word, target);
-    const size_t num_of_states_after = num_of_states();
-    const Level source_level = levels[source];
-
-    Level lvl = (levels.num_of_levels == 1)
-                    ? source_level
-                    : (source_level + 1) % static_cast<Level>(levels.num_of_levels);
+    const State first_new_state{ num_of_states() };
+    const State word_target{ Nfa::insert_word(source, word, target) };
+    const size_t num_of_states_after{ num_of_states() };
+    const Level source_level{ levels[source] };
+    Level lvl{ levels.next_level_after(source_level) };
     for (State state{ first_new_state }; state < num_of_states_after;
-         ++state, lvl = (lvl + 1) % static_cast<Level>(levels.num_of_levels)) { add_state_with_level(state, lvl); }
+         ++state, lvl = levels.next_level_after(lvl)) { add_state_with_level(state, lvl); }
 
     assert(levels[word_target] == 0 || levels[num_of_states_after - 1] < levels[word_target]);
 
@@ -574,7 +615,7 @@ State Nft::insert_word_by_levels(
     std::vector<Word::const_iterator> word_part_it_v(levels.num_of_levels);
     for (Level lvl{ from_to_level }, i{ 0 }; i < static_cast<Level>(levels.num_of_levels); ++i) {
         word_part_it_v[lvl] = word_parts_on_levels[lvl].begin();
-        lvl = (lvl + 1) % static_cast<Level>(levels.num_of_levels);
+        lvl = levels.next_level_after(lvl);
     }
 
     // This function retrieves the next symbol from a word part at a specified level and advances the corresponding iterator.
@@ -585,20 +626,22 @@ State Nft::insert_word_by_levels(
     };
 
     // Add transition source --> inner_state.
-    Level inner_lvl = (levels.num_of_levels == 1) ? 0 : (from_to_level + 1) % static_cast<Level>(levels.num_of_levels);
+    Level inner_lvl = levels.next_level_after(from_to_level);
     State inner_state = add_state_with_level(inner_lvl);
     delta.add(source, get_next_symbol(from_to_level), inner_state);
 
     // Add transition inner_state --> inner_state
     State prev_state = inner_state;
     Level prev_lvl = inner_lvl;
-    const size_t max_word_part_len = std::ranges::max_element(
-        word_parts_on_levels,
-        [](const Word& a, const Word& b) { return a.size() < b.size(); }
-    )->size();
+    const size_t max_word_part_len{
+        std::ranges::max_element(
+            word_parts_on_levels,
+            [](const Word& a, const Word& b) { return a.size() < b.size(); }
+        )->size()
+    };
     if (const size_t word_total_len = levels.num_of_levels * max_word_part_len; word_total_len != 0) {
         for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
-            inner_lvl = (prev_lvl + 1) % static_cast<Level>(levels.num_of_levels);
+            inner_lvl = levels.next_level_after(prev_lvl);
             inner_state = add_state_with_level(inner_lvl);
             delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
             prev_state = inner_state;
@@ -697,14 +740,12 @@ Nft Nft::apply(
 
 bool Nft::make_complete(
     const Alphabet* const alphabet,
-    const OrdVector<Symbol>& epsilons,
     const std::optional<std::vector<State>>& sink_states) {
-    return make_complete(get_symbols_to_work_with(*this, alphabet), epsilons, sink_states);
+    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
 }
 
 bool Nft::make_complete(
     const OrdVector<Symbol>& symbols,
-    const OrdVector<Symbol>& epsilons,
     const std::optional<std::vector<State>>& sink_states) {
     const size_t num_of_states_orig{ this->num_of_states() };
     if (num_of_states_orig == 0) { return false; }
@@ -755,7 +796,6 @@ bool Nft::make_complete(
             }
         };
         add_transitions_to_sinks(symbols.difference(used_symbols));
-        add_transitions_to_sinks(epsilons.difference(used_symbols));
     }
 
     // Add loops on sink states (from sink to a sink of the next level).
@@ -768,7 +808,6 @@ bool Nft::make_complete(
             }
         };
         add_transitions_between_sinks(symbols);
-        add_transitions_between_sinks(epsilons);
     }
 
     return transition_added;

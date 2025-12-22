@@ -3,19 +3,18 @@
  */
 
 #include <algorithm>
+#include <fstream>
+#include <iterator>
 #include <list>
 #include <optional>
-#include <iterator>
-#include <fstream>
-#include <string>
 #include <queue>
+#include <string>
 
-// MATA headers
-#include "mata/alphabet.hh"
-#include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
+#include "mata/alphabet.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/utils/sparse-set.hh"
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -625,27 +624,6 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    auto get_epsilon_closure = [&](const StateSet& source_states) {
-        StateSet closure{ source_states };
-        std::queue<State> worklist;
-        for (const State state: source_states) {
-            worklist.push(state);
-        }
-        while (!worklist.empty()) {
-            const State state = worklist.front();
-            worklist.pop();
-            if (auto move_it{ delta[state].find(EPSILON) }; move_it != delta[state].end()) {
-                for (const State target: move_it->targets) {
-                    if (!closure.contains(target)) {
-                        closure.insert(target);
-                        worklist.push(target);
-                    }
-                }
-            }
-        }
-        return closure;
-    };
-
     StateSet res{};
 
     // If the symbol is EPSILON, we can stay in the same state.
@@ -660,7 +638,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
     StateSet from_states = states;
     if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
         // Before making the step using the symbol, we compute the epsilon closure.
-        from_states = get_epsilon_closure(states);
+        from_states = mk_epsilon_closure(states);
     }
 
     // Now, we can make the step using the symbol.
@@ -673,7 +651,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 
     if (epsilon_closure_opt == EpsilonClosureOpt::After) {
         // We need to compute the epsilon closure of the resulting states.
-        res = get_epsilon_closure(res);
+        res = mk_epsilon_closure(res);
     }
 
     return res;
@@ -938,4 +916,22 @@ Nfa Nfa::decode_utf8() const {
     }
 
     return result;
+}
+
+StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+    StateSet closure{ source_states };
+    std::queue<State> worklist;
+    for (const State state : source_states) { worklist.push(state); }
+    while (!worklist.empty()) {
+        const State state = worklist.front();
+        worklist.pop();
+        for (const Symbol epsilon : epsilons) {
+            if (auto move_it{ delta[state].find(epsilon) }; move_it != delta[state].end()) {
+                for (const State target : move_it->targets) {
+                    if (closure.insert(target).second) { worklist.push(target); }
+                }
+            }
+        }
+    }
+    return closure;
 }

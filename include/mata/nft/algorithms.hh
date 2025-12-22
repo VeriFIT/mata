@@ -38,12 +38,11 @@ Nft minimize_brzozowski(const Nft& aut);
  *  which were non-final in the original automaton.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
- * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (brzozowski)
- *  minimization.
+ * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (Brzozowski) minimization.
  * @return Complemented automaton.
  */
-Nft complement_classical(const Nft& aut, const mata::utils::OrdVector<Symbol>& symbols,
-                         bool minimize_during_determinization = false);
+Nft complement_classical(
+    const Nft& aut, const utils::OrdVector<Symbol>& symbols, bool minimize_during_determinization = false);
 
 /**
  * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller, and then it checks
@@ -56,8 +55,7 @@ Nft complement_classical(const Nft& aut, const mata::utils::OrdVector<Symbol>& s
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE.
- * @return True if smaller language is included,
- * i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
  */
 bool is_included_naive(
     const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr,
@@ -72,8 +70,7 @@ bool is_included_naive(
  * @param[out] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE.
- * @return True if smaller language is included,
- * i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
  */
 bool is_included_antichains(
     const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr,
@@ -135,6 +132,6 @@ Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State
 Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-} // Namespace mata::nft::algorithms.
+}
 
-#endif // MATA_NFT_INTERNALS_HH_
+#endif

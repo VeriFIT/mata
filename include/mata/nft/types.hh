@@ -5,6 +5,7 @@
 #ifndef MATA_NFT_TYPES_HH
 #define MATA_NFT_TYPES_HH
 
+#include <concepts>
 #include <optional>
 #include <utility>
 
@@ -18,13 +19,23 @@ extern const std::string TYPE_NFT;
 
 using Level = unsigned;
 
-using State = mata::nfa::State;
-using StateSet = mata::nfa::StateSet;
+using State = nfa::State;
+using StateSet = nfa::StateSet;
 
-using Run = mata::nfa::Run;
-using EpsilonClosureOpt = mata::nfa::EpsilonClosureOpt;
+using Run = nfa::Run;
+using EpsilonClosureOpt = nfa::EpsilonClosureOpt;
 
-using StateRenaming = mata::nfa::StateRenaming;
+using StateRenaming = nfa::StateRenaming;
+
+/**
+ * @brief Concept defining an iterable container of states.
+ */
+template<typename States>
+concept StatesContainerIterable = requires(States states) {
+    { states.begin() } -> std::input_or_output_iterator;
+    { states.end() } -> std::sentinel_for<decltype(states.begin())>;
+    requires std::convertible_to<typename States::value_type, State>;
+};
 
 /**
  * @brief Map of additional parameter name and value pairs.
@@ -227,10 +238,29 @@ public:
      * @brief Get levels of states in @p states.
      */
     std::vector<Level> get_levels_of(const utils::SparseSet<State>& states) const;
+
     /**
      * @brief Get levels of states in @p states.
      */
     std::vector<Level> get_levels_of(const StateSet& states) const;
+
+
+    /**
+     * @brief Get mapping of levels to sets of states from @p states.
+     */
+    template<StatesContainerIterable States>
+    std::vector<StateSet> map_levels_to(const States& states) const {
+        std::vector<StateSet> result(num_of_levels);
+        for (const State state : states) { result[(*this)[state]].insert(state); }
+        return result;
+    }
+
+    /**
+     * @brief Get the next level that should follow after @p level.
+     * @param level The current level.
+     * @return The next level.
+     */
+    Level next_level_after(const Level level) const { return (level + 1) % static_cast<Level>(num_of_levels); }
 
     /**
      * @brief Get the minimal level for the states in @p states.
@@ -294,6 +324,6 @@ private:
     bool check_levels_in_range_() const { return std::ranges::all_of(*this, [&](const Level level) { return level < num_of_levels; }); }
 };
 
-} // namespace mata::nft.
+}
 
 #endif

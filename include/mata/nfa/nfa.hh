@@ -293,6 +293,15 @@ public:
     Nfa decode_utf8() const;
 
     /**
+     * @brief Get the epsilon closure of the given set of states.
+     *
+     * @param source_states Set of source states.
+     * @param epsilons Set of symbols to consider as epsilons when computing the closure.
+     * @return Epsilon closure of the given set of states.
+     */
+    StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = { EPSILON }) const;
+
+    /**
      * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
      */
     std::vector<State> distances_from_initial() const;
@@ -542,13 +551,13 @@ public:
     /**
      * @brief Check whether a run over the word (or its prefix) is in the language of an automaton.
      *
-     * @param word The run to check.
+     * @param run The run to check.
      * @param use_epsilon Whether the automaton uses epsilon transitions.
      * @param match_prefix Whether to also match the prefix of the word.
      *
      * @return True if the run (or its prefix) is in the language of the automaton, false otherwise.
      */
-    bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prefix = false) const;
+    bool is_in_lang(const Run& run, bool use_epsilon = false, bool match_prefix = false) const;
 
     /**
      * @brief Check whether a word (or its prefix) is in the language of an automaton.
@@ -614,12 +623,12 @@ public:
     /**
      * @brief Check whether a prefix of a run is in the language of an automaton.
      *
-     * @param word The run to check.
+     * @param run The run to check.
      * @param use_epsilon Whether the automaton uses epsilon transitions.
      *
      * @return True if the prefix of the run is in the language of the automaton, false otherwise.
      */
-    bool is_prefix_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+    bool is_in_lang_prefix(const Run& run, const bool use_epsilon = false) const { return is_in_lang(run, use_epsilon, true); }
 
     /**
      * @brief Check whether a prefix of a word is in the language of an automaton.
@@ -629,7 +638,7 @@ public:
      *
      * @return True if the prefix of the word is in the language of the automaton, false otherwise.
      */
-    bool is_prefix_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prefix_in_lang(Run{ word, {} }, use_epsilon); }
+    bool is_in_lang_prefix(const Word& word, const bool use_epsilon = false) const { return is_in_lang_prefix(Run{ word, {} }, use_epsilon); }
 
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 

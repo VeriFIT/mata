@@ -18,16 +18,16 @@
  *
  * @section nft_design The design of NFTs in Mata
  *
- * In Mata, the classical transducers from textbook definitions (where a transition is a tuple of
+ * The classical transducers from textbook definitions (where a transition is a tuple of
  *  `(initial state, input symbol, final state, output string)`) are encoded using a simpler data structure for the
  *  transition relation, @c mata::nft::Delta The data structures can directly represent only transitions of the form
  *  `p -a-> s` where `a` is a single symbol or epsilon. A “high-level” transitions of the form `p -abc/def-> q` where
  * 'abc' is an input word and def is an output word are encoded as a sequence of these 'low level' transitions:
- *  `p -a- p’ -d-> q -b-> q' -e-> r -c-> r' -f-> s` (odd transitions read letters of the input track, even transitions read
- *  letters of the output track, a transition can have epsilon instead of a letter). The primed states are a sort of
- *  internal states, to where the automaton gets after reading a letter on the input tape. States are distinguished by
- *  their “level”. “Normal” states  p,q,r,s have level 0, the internal states p’,q’,r’ have in this case the levels 1
- *  (and you could have n-tape transducers where level can be larger than 1).
+ *  `p -a- p’ -d-> q -b-> q' -e-> r -c-> r' -f-> s` (odd transitions read letters of the input track, even transitions
+ *  read letters of the output track, a transition can have epsilon instead of a letter). The primed states are a sort of
+ *  internal states, to where the automaton gets after reading a letter on the input tape (in Mata called level). States
+ *  are distinguished by their “level”. “Normal” states  p,q,r,s have level 0, the internal states p’,q’,r’ have in this
+ *  case the levels 1 (and you could have n-tape transducers where level can be larger than 1).
  * In Mata, the @c mata::nft::Delta interface is used only for the manual handling of the internal delta representation,
  *  taking only (initial state, input symbol, final state)
  * We find it useful to think about NFTs in Mata as normal NFAs with a single symbol on a transition (because Mata uses
@@ -63,6 +63,20 @@
  *  by the jump.
  * Ideally, one should not even have to think about the levels and the intermediate states when properly using the
  *  utility functions (from the @c mata::nft::Nft class and the @c mata::nft namespace in general).
+ *
+ *
+ * @section nft_word Representing words in NFTs
+ *
+ * When working with NFTs, words on multiple levels need to be represented.
+ * We consider an NFT word with @c n levels as a vector of words of type @c mata::Word, where the word at index @c i
+ *  in the vector represents the word on the level @c i.
+ * Operations on NFT words either work on each level separately (named with `_by_levels` suffix) or on the interleaved
+ *  representation of the NFT word.
+ * E.g., the NFT word representing reading 'abc' on level 0 and 'def' on level 1 can be represented as either
+ *  `std::vector<Word>{ Word{ 'a', 'b', 'c }, Word{ 'd', 'e', 'f' } }` (using the `_by_levels` variant) or as a word
+ *  `Word{ 'a', 'd', 'b', 'e', 'c', 'f' }` (using the interleaved representation).
+ * Words may contain @c DONT_CARE (representing wildcards on the respective level, but not @c EPSILON) and @c EPSILON
+ *  (representing reading an empty string on the respective level ).
  *
  * @see @ref examples/nft.cc example.
  *
@@ -577,7 +591,9 @@ public:
 
     /**
      * @brief Get the set of states reachable from the given set of states over the given symbol.
-     * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+     *
+     * @warning If @p epsilon_closure_opt is set, computes epsilon closures over multiple levels.
+     * That is, the result might contain states of different levels.
      *
      * @param states Set of states to compute the post set from.
      * @param symbol Symbol to compute the post set for.
@@ -588,6 +604,9 @@ public:
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
+     *
+     * @warning If @p epsilon_closure_opt is set, computes epsilon closures over multiple levels.
+     * That is, the result might contain states of different levels.
      *
      * @param state A state to compute the post set from.
      * @param symbol Symbol to compute the post set for.
@@ -619,58 +638,94 @@ public:
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
 
     /**
-     * @brief Check whether a run over the word (or its prefix) is in the language of an automaton.
+     * @brief Check whether a @p run (or its prefix with @p match_prefix set) is in the language of an automaton.
      *
-     * @param word The run to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param run The run to check.
      * @param match_prefix Whether to also match the prefix of the word.
-     *
-     * @return True if the run (or its prefix) is in the language of the automaton, false otherwise.
+     * @return @c true if @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prefix = false) const;
+    bool is_in_lang(const Run& run, bool match_prefix = false) const;
+    bool is_in_lang(const Run&, bool, bool) const = delete;
 
     /**
-     * @brief Check whether a word (or its prefix) is in the language of an automaton.
+     * @brief Check whether a @p word (or its prefix with @p match_prefix set) is in the language of an automaton.
      *
      * @param word The word to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
      * @param match_prefix Whether to also match the prefix of the word.
-     *
-     * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
+     * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const {
-         return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix);
+    bool is_in_lang(const Word& word, const bool match_prefix = false) const {
+        return is_in_lang(Run{ word, {} }, match_prefix);
+    }
+    bool is_in_lang(const Word& word, bool, bool) const = delete;
+
+    /**
+     * @brief Check whether a prefix of a @p run is in the language of an automaton.
+     *
+     * @param run The run to check.
+     * @return @c true if the prefix of @p run is in the language of the automaton, @c false otherwise.
+     */
+    bool is_in_lang_prefix(const Run& run) const { return is_in_lang(run, true); }
+    bool is_in_lang_prefix(const Run&, bool) const = delete;
+
+
+    /**
+     * @brief Check whether a prefix of a @p word is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
+     */
+    bool is_in_lang_prefix(const Word& word) const { return is_in_lang_prefix(Run{ word, {} }); }
+    bool is_in_lang_prefix(const Word&, bool) const = delete;
+
+    /**
+     * @brief Checks whether @p level_words are in the language of the transducer.
+     *
+     * That is, the function checks whether a tuple @p level_words (word1, word2, word3, ..., wordn) is in the regular
+     *  relation accepted by the transducer with 'n' levels (tracks).
+     *
+     * @param level_words The words to check.
+     * @param match_prefix Whether to also match the prefix of the word.
+     * @return @c true if @p word is in the language of the automaton, @c false otherwise.
+     */
+    bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false) const;
+
+    /**
+     * @brief Checks whether the prefix of @p level_words is in the language of the transducer.
+     *
+     * That is, the function checks whether a prefix of a tuple @p level_words (word1, word2, word3, ..., wordn) is in the
+     * regular relation accepted by the transducer with 'n' levels (tracks).
+     *
+     * @param level_words The words to check.
+     * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
+     */
+    bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words) const {
+        return is_in_lang_by_levels(level_words, true);
     }
 
     /**
-     * @brief Check whether a prefix of a run is in the language of an automaton.
+     * @brief Get a word for a given run if it exists.
      *
-     * @param word The run to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
-     *
-     * @return True if the prefix of the run is in the language of the automaton, false otherwise.
+     * @param run The run containing a path to get the word for.
+     * @return A pair containing the word for the given run and a boolean indicating whether the word exists.
      */
-    bool is_prefix_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
-
-    /**
-     * @brief Check whether a prefix of a word is in the language of an automaton.
-     *
-     * @param word The word to check.
-     * @param use_epsilon Whether the automaton uses epsilon transitions.
-     *
-     * @return True if the prefix of the word is in the language of the automaton, false otherwise.
-     */
-    bool is_prefix_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prefix_in_lang(Run{ word, {} }, use_epsilon); }
-
-    /**
-     * @brief Checks whether track words are in the language of the transducer.
-     *
-     * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
-     *  relation accepted by the transducer with 'n' levels (tracks).
-     */
-    bool is_in_lang_by_levels(const std::vector<Word>& track_words);
-
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
+
+    /**
+     * @brief Convert a word to level words according to the levels of the automaton.
+     *
+     * @param word The word to convert.
+     * @return The level words corresponding to the input word.
+     */
+    std::vector<Word> mk_level_word_from_word(const Word& word) const;
+
+    /**
+     * @brief Convert level words to a word according to the levels of the automaton.
+     *
+     * @param level_words The level words to convert.
+     * @return The word corresponding to the input level words.
+     */
+    Word mk_word_from_level_word(const std::vector<Word>& level_words) const;
 
     /**
      * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
@@ -679,9 +734,11 @@ public:
      * you can get all words by calling
      *      aut.get_words(aut.num_of_states())
      * @param max_length Maximum length of words to be returned. Default: "no limit"; will infinitely loop if the language is infinite.
+     * @param jump_mode Specifies how to interpret the jump transitions.
      * @return Set of all words in the language of the automaton whose length is <= @p max_length.
      */
-    std::set<Word> get_words(size_t max_length = std::numeric_limits<size_t>::max()) const;
+    std::set<Word> get_words(size_t max_length = std::numeric_limits<size_t>::max(), JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
 
     /**
      * @brief Apply @p nfa to @c this.
@@ -770,20 +827,17 @@ public:
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
-     *  transitions from given `state`) to `sink_states[next_level(level)]` where `level == this->levels[state]`.
+     *  transitions from given `state`) to `sink_states[next_level_after(level)]` where `level == this->levels[state]`.
      * If NFT does not contain any states, this function does nothing.
      *
      * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
      *  defined, otherwise use @c this->delta.get_used_symbols().
-     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
-     *  alphabet symbols.
      * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
      *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const Alphabet* alphabet = nullptr,
-        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
@@ -791,7 +845,7 @@ public:
      * @brief Make NFT complete in place.
      *
      * For each state `state`, add transitions with "missing" symbols from @p alphabet (symbols that do not occur on
-     *  transitions from given `state`) to `sink_states[next_level(level)]` where `level == this->levels[state]`.
+     *  transitions from given `state`) to `sink_states[next_level_after(level)]` where `level == this->levels[state]`.
      * If NFT does not contain any states, this function does nothing.
      *
      * @note This overloaded version is a more efficient version which does not need to compute the set of symbols to
@@ -799,15 +853,12 @@ public:
      *  to complete multiple automata over the same set of symbols.
      *
      * @param[in] symbols Symbols to compute "missing" symbols from.
-     * @param epsilons Epsilon symbols to include when computing "missing" symbols. Epsilon symbols are handled as normal
-     *  alphabet symbols.
      * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
      *  which new transitions are added. If @c std::nullopt, add new sink states.
      * @return @c true if a new transition was added to the NFA, @c false otherwise.
      */
     bool make_complete(
         const utils::OrdVector<Symbol>& symbols,
-        const utils::OrdVector<Symbol>& epsilons = {},
         const std::optional<std::vector<State>>& sink_states = std::nullopt
     );
 
@@ -917,40 +968,43 @@ Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_
 Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-
-#ifdef MATA_NFT_NOT_IMPLEMENTED
-// TODO(nft): Implement for NFTs.
 /**
- * @brief Compute automaton accepting complement of @p aut.
+ * @brief Compute automaton accepting a complement of @p nft.
  *
- * @param[in] aut Automaton whose complement to compute.
+ * @warning This function only supports NFTs without epsilon transitions (length-preserving NFTs).
+ *
+ * @param[in] nft Automaton whose complement to compute.
  * @param[in] alphabet Alphabet used for complementation.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
- * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * - "minimize": (TODO: unimplemented) "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nft complement(const Nft& aut, const Alphabet& alphabet,
+Nft complement(const Nft& nft, const Alphabet& alphabet,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
+ *
+ * @warning This function only supports NFTs without epsilon transitions (length-preserving NFTs).
  *
  * This overloaded version complements over an already created ordered set of @p symbols instead of an alphabet.
  * This is a more efficient solution in case you already have @p symbols precomputed or want to complement multiple
  *  automata over the same set of @c symbols: the function does not need to compute the ordered set of symbols from
  *  the alphabet again (and for each automaton).
  *
- * @param[in] aut Automaton whose complement to compute.
+ * @param[in] nft Automaton whose complement to compute.
  * @param[in] symbols Symbols to complement over.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
- * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * - "minimize": (TODO: unimplemented) "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nft complement(const Nft& aut, const utils::OrdVector<Symbol>& symbols,
+Nft complement(const Nft& nft, const utils::OrdVector<Symbol>& symbols,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+// TODO(nft): Implement for NFTs.
 /**
  * @brief Compute minimal deterministic automaton.
  *
@@ -1207,7 +1261,19 @@ Nft insert_level(const Nft& nft, Level new_level, JumpMode jump_mode = JumpMode:
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
-} // namespace mata::nft.
+/**
+ * @brief Check whether two symbols match.
+ *
+ * Two symbols match if they are equal (`'a' == 'a'`; also `EPSILON == EPSILON`), or if at least one of them is
+ *  @c DONT_CARE and the other is not @c EPSILON.
+ *
+ * @param a First symbol to compare.
+ * @param b Second symbol to compare.
+ * @return @c true if the symbols match, @c false otherwise.
+ */
+bool symbols_match(Symbol a, Symbol b);
+
+}
 
 namespace std {
 std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);
