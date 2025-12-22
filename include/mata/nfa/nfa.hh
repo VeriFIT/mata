@@ -293,6 +293,15 @@ public:
     Nfa decode_utf8() const;
 
     /**
+     * @brief Get the epsilon closure of the given set of states.
+     *
+     * @param source_states Set of source states.
+     * @param epsilons Set of symbols to consider as epsilons when computing the closure.
+     * @return Epsilon closure of the given set of states.
+     */
+    StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = { EPSILON }) const;
+
+    /**
      * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
      */
     std::vector<State> distances_from_initial() const;

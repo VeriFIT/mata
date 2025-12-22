@@ -577,7 +577,9 @@ public:
 
     /**
      * @brief Get the set of states reachable from the given set of states over the given symbol.
-     * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+     *
+     * @warning If @p epsilon_closure_opt is set, computes epsilon closures over multiple levels.
+     * That is, the result might contain states of different levels.
      *
      * @param states Set of states to compute the post set from.
      * @param symbol Symbol to compute the post set for.
@@ -588,6 +590,9 @@ public:
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
+     *
+     * @warning If @p epsilon_closure_opt is set, computes epsilon closures over multiple levels.
+     * That is, the result might contain states of different levels.
      *
      * @param state A state to compute the post set from.
      * @param symbol Symbol to compute the post set for.
