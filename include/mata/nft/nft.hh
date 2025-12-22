@@ -75,7 +75,7 @@
  * E.g., the NFT word representing reading 'abc' on level 0 and 'def' on level 1 can be represented as either
  *  `std::vector<Word>{ Word{ 'a', 'b', 'c }, Word{ 'd', 'e', 'f' } }` (using the `_by_levels` variant) or as a word
  *  `Word{ 'a', 'd', 'b', 'e', 'c', 'f' }` (using the interleaved representation).
- * Words may contain @c DONT_CARE (representing wildcards on the respective level, but not @c EPSILON) and @EPSILON
+ * Words may contain @c DONT_CARE (representing wildcards on the respective level, but not @c EPSILON) and @c EPSILON
  *  (representing reading an empty string on the respective level ).
  *
  * @see @ref examples/nft.cc example.
@@ -115,7 +115,7 @@ namespace mata::nft {
  */
 class Nft: public nfa::Nfa {
 private:
-    using super = Nfa;
+    using super = nfa::Nfa;
 public:
     /**
      * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
@@ -679,9 +679,9 @@ public:
     bool is_in_lang_prefix(const Word&, bool) const = delete;
 
     /**
-     * @brief Checks whether @p track_words are in the language of the transducer.
+     * @brief Checks whether @p level_words are in the language of the transducer.
      *
-     * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
+     * That is, the function checks whether a tuple @p level_words (word1, word2, word3, ..., wordn) is in the regular
      *  relation accepted by the transducer with 'n' levels (tracks).
      *
      * @param level_words The words to check.
@@ -691,9 +691,9 @@ public:
     bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false) const;
 
     /**
-     * @brief Checks whether the prefix of @p track_words is in the language of the transducer.
+     * @brief Checks whether the prefix of @p level_words is in the language of the transducer.
      *
-     * That is, the function checks whether a prefix a tuple @p track_words (word1, word2, word3, ..., wordn) is in the
+     * That is, the function checks whether a prefix of a tuple @p level_words (word1, word2, word3, ..., wordn) is in the
      * regular relation accepted by the transducer with 'n' levels (tracks).
      *
      * @param level_words The words to check.

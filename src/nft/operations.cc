@@ -898,10 +898,9 @@ Word Nft::mk_word_from_level_word(const std::vector<Word>& level_words) const {
     if (level_words.size() != levels.num_of_levels) {
         throw std::invalid_argument(
             std::to_string(__func__) +
-            ": received a level level_words whose number of levels does not correspond to the number of levels in the "
-            "NFT; number of levels in level level_words: "
-            + std::to_string(level_words.size()) + ", number of levels in the NFT: "
-            + std::to_string(levels.num_of_levels)
+            ": received level_words whose number of levels does not correspond to the number of levels in the NFT; "
+            "number of levels in level_words: " + std::to_string(level_words.size()) +
+            ", number of levels in the NFT: " + std::to_string(levels.num_of_levels)
         );
     }
 
