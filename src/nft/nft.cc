@@ -10,6 +10,7 @@
 #include <ranges>
 #include <string>
 #include <utility>
+#include <queue>
 
 #include "mata/nft/nft.hh"
 #include "mata/nfa/builder.hh"
@@ -400,8 +401,50 @@ Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol 
 void Nft::get_one_letter_aut(Nft& result) const { result = get_one_letter_aut(); }
 
 StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    std::cerr << "Warning: Nft::post uses Nfa::post, which is not designed for NFT's jump transitions" << std::endl;
-    return Nfa::post(states, symbol, epsilon_closure_opt);
+    StateSet res{};
+
+    // If the symbol is EPSILON, we can stay in the same state.
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
+        res = states;
+    }
+
+    if (delta.empty()) {
+        return res;
+    }
+
+    StateSet from_states = states;
+    if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
+        // Before making the step using the symbol, we compute the epsilon closure.
+        from_states = mk_epsilon_closure(states);
+    }
+
+    // Now, we can make the step using the symbol.
+    for (const State state: from_states) {
+        if (symbol == DONT_CARE) {
+            for (const SymbolPost& symbol_post : delta[state]) {
+                if (symbol_post.symbol == EPSILON) { continue; }
+                res.insert(symbol_post.targets);
+            }
+            continue;
+        }
+
+        const StatePost& state_post{ delta[state] };
+        if (const auto move_it{ state_post.find(symbol) }; move_it != state_post.end()) {
+            res.insert(move_it->targets);
+        }
+
+        if (symbol == EPSILON) { continue; }
+        if (const auto move_it{ state_post.find(DONT_CARE) }; move_it != state_post.end()) {
+            res.insert(move_it->targets);
+        }
+    }
+
+    if (epsilon_closure_opt == EpsilonClosureOpt::After) {
+        // We need to compute the epsilon closure of the resulting states.
+        res = mk_epsilon_closure(res);
+    }
+
+    return res;
 }
 
 void Nft::unwind_jumps_inplace(
@@ -697,14 +740,12 @@ Nft Nft::apply(
 
 bool Nft::make_complete(
     const Alphabet* const alphabet,
-    const OrdVector<Symbol>& epsilons,
     const std::optional<std::vector<State>>& sink_states) {
-    return make_complete(get_symbols_to_work_with(*this, alphabet), epsilons, sink_states);
+    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
 }
 
 bool Nft::make_complete(
     const OrdVector<Symbol>& symbols,
-    const OrdVector<Symbol>& epsilons,
     const std::optional<std::vector<State>>& sink_states) {
     const size_t num_of_states_orig{ this->num_of_states() };
     if (num_of_states_orig == 0) { return false; }
@@ -755,7 +796,6 @@ bool Nft::make_complete(
             }
         };
         add_transitions_to_sinks(symbols.difference(used_symbols));
-        add_transitions_to_sinks(epsilons.difference(used_symbols));
     }
 
     // Add loops on sink states (from sink to a sink of the next level).
@@ -768,7 +808,6 @@ bool Nft::make_complete(
             }
         };
         add_transitions_between_sinks(symbols);
-        add_transitions_between_sinks(epsilons);
     }
 
     return transition_added;
