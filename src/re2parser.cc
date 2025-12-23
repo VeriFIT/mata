@@ -210,7 +210,7 @@ namespace {
                         this->make_state_final(state_to, explicit_nfa);
                         this->state_cache.is_final_state[state_to] = true;
                     }
-                    for (const auto [symbol, target] : this->outgoing_edges[state_from]) {
+                    for (const auto& [symbol, target] : this->outgoing_edges[state_from]) {
                         // We copy transitions only to states that has incoming edge
                         if (this->state_cache.has_state_incoming_edge[state_to]) {
                             explicit_nfa.delta.add(state_to, symbol, target);
