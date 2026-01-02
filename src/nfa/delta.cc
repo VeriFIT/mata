@@ -11,15 +11,13 @@
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
 
-
 #include <algorithm>
 #include <functional>
 #include <iterator>
 #include <list>
 #include <queue>
-#include <utility>
 #include <ranges>
-
+#include <utility>
 
 using namespace mata::utils;
 using namespace mata::nfa;
