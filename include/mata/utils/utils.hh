@@ -184,6 +184,10 @@ inline size_t hash_combine(size_t lhs, const T& rhs)
 } // hash_combine }}}
 
 
+// Concept to check if all types in a parameter pack are the same as a specified type U
+template<typename U, typename... Ts>
+concept AllOfType = (std::same_as<U, Ts> && ...);
+
 /**
  * @brief  Hashes a range
  *

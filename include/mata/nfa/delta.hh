@@ -372,7 +372,18 @@ public:
      */
     StatePost& mutable_state_post(State source);
 
-    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    /**
+     * @brief Defragment the Delta.
+     *
+     * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
+     * according to @p renaming.
+     *
+     * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+     * @param[in] renaming Vector of states to rename the remaining state posts to.
+     * @return Self with defragmented delta.
+     */
+    Delta& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
@@ -494,6 +505,22 @@ public:
     std::vector<Transition> get_transitions_between(State state_from, State state_to) const;
 
     /**
+     * @brief Resize the delta to fit the given @p states.
+     * @tparam States A variadic parameter pack of states to resize the delta for.
+     * @param states States to resize the delta for.
+     */
+    template<typename... States> requires utils::AllOfType<State, States...>
+    Delta& resize_for_states(States... states) {
+        if constexpr (sizeof...(states) > 0) {
+            if (const State max_state{ std::max({ static_cast<State>(states)... }) }; max_state >= num_of_states()) {
+                reserve_on_insert(state_posts_, max_state);
+                state_posts_.resize(max_state + 1);
+            }
+        }
+        return *this;
+    }
+
+    /**
      * Get the set of states that are successors of the given @p state.
      * @param[in] state State from which successors are checked.
      * @return Set of states that are successors of the given @p state.
@@ -546,9 +573,23 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
+
 protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+/**
+ * @brief Defragment the Delta.
+ *
+ * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
+ * according to @p renaming.
+ *
+ * @param[in] delta Delta to defragment.
+ * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+ * @param[in] renaming Vector of states to rename the remaining state posts to.
+ * @return The defragmented Delta.
+ */
+Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
 /**
  * @brief Iterator over transitions represented as @c Transition instances.

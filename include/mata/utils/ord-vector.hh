@@ -145,11 +145,12 @@ public:
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
-    virtual inline void reserve(size_t size) { vec_.reserve(size); }
-    virtual inline void resize(size_t size) { vec_.resize(size); }
+    virtual void reserve(size_t size) { vec_.reserve(size); }
+    virtual void resize(size_t size) { vec_.resize(size); }
 
-    virtual inline iterator erase(const_iterator pos) { return vec_.erase(pos); }
-    virtual inline iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
+    virtual iterator erase(const_iterator pos) { return vec_.erase(pos); }
+    virtual iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
+    virtual size_type erase_if(std::function<bool(const value_type&)> should_erase) { return std::erase_if(vec_, should_erase); }
 
     virtual std::pair<iterator, bool> insert(const Key& x) {
         assert(is_sorted());
@@ -391,6 +392,7 @@ public:
     }
 
     const std::vector<Key>& to_vector() const { return vec_; }
+    std::vector<Key>& to_vector_mut() const { return vec_; }
 
     bool is_subset_of(const OrdVector& bigger) const {
         return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());

@@ -6,17 +6,20 @@
  *  well as iterating over transitions.
  */
 
+#include "mata/nfa/delta.hh"
+#include "mata/nfa/nfa.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/delta.hh"
 
 
 #include <algorithm>
-#include <list>
+#include <functional>
 #include <iterator>
 #include <list>
 #include <queue>
+#include <utility>
+#include <ranges>
+
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -116,10 +119,7 @@ std::vector<Transition> Delta::get_transitions_between(const State state_from, c
 }
 
 void Delta::add(const State source, Symbol symbol, const State target) {
-    if (const State max_state{ std::max(source, target) }; max_state >= state_posts_.size()) {
-        reserve_on_insert(state_posts_, max_state);
-        state_posts_.resize(max_state + 1);
-    }
+    resize_for_states(source, target);
 
     if (StatePost& state_transitions{ state_posts_[source] }; state_transitions.empty()) {
         state_transitions.insert({ symbol, target });
@@ -140,11 +140,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 
 void Delta::add(const State source, const Symbol symbol, const StateSet& targets) {
     if(targets.empty()) { return; }
-
-    if (const State max_state{ std::max(source, targets.back()) }; max_state >= state_posts_.size()) {
-        reserve_on_insert(state_posts_, max_state + 1);
-        state_posts_.resize(max_state + 1);
-    }
+    resize_for_states(source, targets.back());
 
     if (StatePost& state_transitions{ state_posts_[source] }; state_transitions.empty()) {
         state_transitions.insert({ symbol, targets });
@@ -343,39 +339,51 @@ StatePost& Delta::mutable_state_post(const State q) {
     return state_posts_[q];
 }
 
-void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
-    //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
-
-    //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
-    size_t move_index{ 0 };
-    std::erase_if(state_posts_,
-         [&](StatePost&) -> bool {
-             size_t prev{ move_index };
-             ++move_index;
-             return !is_staying[prev];
-         }
-    );
-
-    //this iterates through every post and every move, filters and renames states,
-    //and then removes moves that became empty.
-    for (State q=0,size=state_posts_.size(); q < size; ++q) {
-        StatePost & p = mutable_state_post(q);
-        for (auto move = p.begin(); move < p.end(); ++move) {
-            move->targets.erase(
-                    std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
-                        return !is_staying[q];
-                    }),
-                    move->targets.end()
-            );
-            move->targets.rename(renaming);
+Delta mata::nfa::defragment(const Delta &delta, const BoolVector &is_staying, const std::vector<State> &renaming) {
+    auto filter_rename_symbol_post = [&](const SymbolPost& symbol_post) {
+        SymbolPost new_symbol_post{ symbol_post.symbol };
+        for (const State& target : symbol_post.targets) {
+            if (!is_staying[target]) { continue; }
+            new_symbol_post.push_back(renaming[target]);
         }
-        p.erase(
-                std::remove_if(p.begin(), p.end(), [&](SymbolPost& move) -> bool {
-                    return move.targets.empty();
-                }),
-                p.end()
-        );
+        return new_symbol_post;
+    };
+    auto filter_rename_state_post = [&](const StatePost& state_post, const std::function<SymbolPost(const SymbolPost&)>& transform_symbol_post) {
+        StatePost result{};
+        for (const SymbolPost& symbol_post : state_post) {
+            SymbolPost new_symbol_post = transform_symbol_post(symbol_post);
+            if (new_symbol_post.empty()) { continue; }
+            result.push_back(std::move(new_symbol_post));
+        }
+        return result;
+    };
+
+    Delta delta_defragmented{};
+    for (State source{ 0 }; source < delta.num_of_states(); ++source) {
+        if (!is_staying[source]) { continue; }
+        delta_defragmented.emplace_back(filter_rename_state_post(delta[source], filter_rename_symbol_post));
     }
+    return delta_defragmented;
+}
+
+Delta& Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+    size_t source_new{ 0 };
+    for (size_t source_orig{ 0 }, num_of_states{ this->num_of_states() }; source_orig < num_of_states; ++source_orig) {
+        if (!is_staying[source_orig]) { continue; } // Skip source states not staying.
+        StatePost& state_post = state_posts_[source_orig];
+        for (auto state_post_it{ state_post.begin() }; state_post_it != state_post.end();) {
+            StateSet& targets{ state_post_it->targets };
+            targets.erase_if([&is_staying](const State& target) { return !is_staying[target]; });
+            targets.rename(renaming);
+            if (targets.empty()) { state_post_it = state_post.erase(state_post_it); } else { ++state_post_it; }
+        }
+        // Move the filtered state post to the new position, if needed.
+        if (source_new != source_orig) { state_posts_[source_new] = std::move(state_post); }
+        ++source_new;
+    }
+    // Resize to remove filtered-out state posts.
+    state_posts_.resize(source_new);
+    return *this;
 }
 
 bool Delta::operator==(const Delta& other) const {
