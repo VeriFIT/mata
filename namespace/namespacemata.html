@@ -2103,6 +2103,25 @@
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE">
+<span id="_CPPv3N4mata3nfa10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE"></span><span id="_CPPv2N4mata3nfa10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE"></span><span id="mata::nfa::defragment__DeltaCR.BoolVectorCR.std::vector:State:CR"></span><span class="target" id="namespacemata_1_1nfa_1a0eb321a2ca34d31ee3383ef959f70184"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">defragment</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">delta</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1BoolVector.html#_CPPv4N4mata10BoolVectorE" title="mata::BoolVector"><span class="n"><span class="pre">BoolVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Defragment the <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p>
+<p>This function removes all state posts which are not in <code class="docutils literal notranslate"><span class="pre">is_staying</span></code> and renames the remaining state posts according to <code class="docutils literal notranslate"><span class="pre">renaming</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>delta</strong> – <strong>[in]</strong> <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a> to defragment. </p></li>
+<li><p><strong>is_staying</strong> – <strong>[in]</strong> Boolean vector indicating which states are staying in the <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p></li>
+<li><p><strong>renaming</strong> – <strong>[in]</strong> Vector of states to rename the remaining state posts to. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The defragmented <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4IDp0EN4mata3nfa15create_alphabetE16OnTheFlyAlphabetDpRK4Nfas">
 <span id="_CPPv3IDp0EN4mata3nfa15create_alphabetEDpRK4Nfas"></span><span id="_CPPv2IDp0EN4mata3nfa15create_alphabetEDpRK4Nfas"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">Nfas</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../file/nfa_8hh.html#_CPPv4I0DpEN4mata3nfa12AreAllOfTypeE" title="mata::nfa::AreAllOfType"><span class="n"><span class="pre">AreAllOfType</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../file/nfa_8hh.html#_CPPv4IDp0EN4mata3nfa15create_alphabetE16OnTheFlyAlphabetDpRK4Nfas" title="mata::nfa::create_alphabet::Nfas"><span class="n"><span class="pre">Nfas</span></span></a><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1nfa_1a5f0e00375f584d1fe59b846d463af490"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">create_alphabet</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/nfa_8hh.html#_CPPv4IDp0EN4mata3nfa15create_alphabetE16OnTheFlyAlphabetDpRK4Nfas" title="mata::nfa::create_alphabet::Nfas"><span class="n"><span class="pre">Nfas</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nfas</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Create alphabet from variadic number of NFAs given as arguments. </p>
@@ -2652,6 +2671,24 @@ in] Nfas Type <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1
 </dd></dl>
 
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa5Delta10defragmentERK10BoolVectorRKNSt6vectorI5StateEE">
+<span id="_CPPv3N4mata3nfa5Delta10defragmentERK10BoolVectorRKNSt6vectorI5StateEE"></span><span id="_CPPv2N4mata3nfa5Delta10defragmentERK10BoolVectorRKNSt6vectorI5StateEE"></span><span id="mata::nfa::Delta::defragment__BoolVectorCR.std::vector:State:CR"></span><span class="target" id="classmata_1_1nfa_1_1Delta_1a73260724d89af66e032a88f43f49bda8"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">defragment</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1BoolVector.html#_CPPv4N4mata10BoolVectorE" title="mata::BoolVector"><span class="n"><span class="pre">BoolVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Defragment the <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p>
+<p>This function removes all state posts which are not in <code class="docutils literal notranslate"><span class="pre">is_staying</span></code> and renames the remaining state posts according to <code class="docutils literal notranslate"><span class="pre">renaming</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>is_staying</strong> – <strong>[in]</strong> Boolean vector indicating which states are staying in the <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p></li>
+<li><p><strong>renaming</strong> – <strong>[in]</strong> Vector of states to rename the remaining state posts to. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Self with defragmented delta. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa5Delta8allocateEK6size_t">
 <span id="_CPPv3N4mata3nfa5Delta8allocateEK6size_t"></span><span id="_CPPv2N4mata3nfa5Delta8allocateEK6size_t"></span><span id="mata::nfa::Delta::allocate__sC"></span><span class="target" id="classmata_1_1nfa_1_1Delta_1a0b3eaa5ec33accd30158fe01826774a7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">allocate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">num_of_states</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Allocate state posts up to <code class="docutils literal notranslate"><span class="pre">num_of_states</span></code> states, creating empty <code class="docutils literal notranslate"><a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1StatePost"><span class="std std-ref"><span class="pre">StatePost</span></span></a></code> for yet unallocated state posts. </p>
@@ -2794,6 +2831,20 @@ Operation is slow, traverses over all symbol posts. </p>
 </dd></dl>
 
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IDpEN4mata3nfa5Delta17resize_for_statesER5DeltaDp6States">
+<span id="_CPPv3IDpEN4mata3nfa5Delta17resize_for_statesEDp6States"></span><span id="_CPPv2IDpEN4mata3nfa5Delta17resize_for_statesEDp6States"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">States</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1nfa_1_1Delta_1ae1cdcd79c1ccdbd9ab13cc19f36d9769"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">resize_for_states</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4IDpEN4mata3nfa5Delta17resize_for_statesER5DeltaDp6States" title="mata::nfa::Delta::resize_for_states::States"><span class="n"><span class="pre">States</span></span></a><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">states</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Resize the delta to fit the given <code class="docutils literal notranslate"><span class="pre">states</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>States</strong> – A variadic parameter pack of states to resize the delta for. </p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>states</strong> – States to resize the delta for. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa5Delta14get_successorsE5State">
 <span id="_CPPv3NK4mata3nfa5Delta14get_successorsE5State"></span><span id="_CPPv2NK4mata3nfa5Delta14get_successorsE5State"></span><span id="mata::nfa::Delta::get_successors__StateC"></span><span class="target" id="classmata_1_1nfa_1_1Delta_1a8e1fb47985fb82c81fa790642353a7b8"></span><a class="reference internal" href="#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_successors</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">state</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>Get the set of states that are successors of the given <code class="docutils literal notranslate"><span class="pre">state</span></code>. </p>
@@ -2865,6 +2916,28 @@ Operation is slow, traverses over all symbol posts. </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An iterator to <code class="docutils literal notranslate"><a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1SymbolPost"><span class="std std-ref"><span class="pre">SymbolPost</span></span></a></code> with epsilon symbol. End iterator when there are no epsilon transitions. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa5Delta10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE">
+<span id="_CPPv3N4mata3nfa5Delta10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE"></span><span id="_CPPv2N4mata3nfa5Delta10defragmentERK5DeltaRK10BoolVectorRKNSt6vectorI5StateEE"></span><span id="mata::nfa::Delta::defragment__DeltaCR.BoolVectorCR.std::vector:State:CR"></span><span class="target" id="classmata_1_1nfa_1_1Delta_1a0eb321a2ca34d31ee3383ef959f70184"></span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">defragment</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">delta</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1BoolVector.html#_CPPv4N4mata10BoolVectorE" title="mata::BoolVector"><span class="n"><span class="pre">BoolVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Defragment the <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p>
+<p>This function removes all state posts which are not in <code class="docutils literal notranslate"><span class="pre">is_staying</span></code> and renames the remaining state posts according to <code class="docutils literal notranslate"><span class="pre">renaming</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>delta</strong> – <strong>[in]</strong> <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a> to defragment. </p></li>
+<li><p><strong>is_staying</strong> – <strong>[in]</strong> Boolean vector indicating which states are staying in the <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p></li>
+<li><p><strong>renaming</strong> – <strong>[in]</strong> Vector of states to rename the remaining state posts to. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The defragmented <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref">Delta</span></a>. </p>
 </dd>
 </dl>
 </dd></dl>
