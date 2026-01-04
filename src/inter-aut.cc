@@ -410,7 +410,7 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const
             for (const auto &ch: gr->children)
                 stack.push_back(&ch);
         }
-        res += std::max(trans_disjuncts, 1ul);
+        res += std::max(trans_disjuncts, size_t{1});
     }
 
     return res;
