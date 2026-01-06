@@ -2,7 +2,7 @@
 
 # Repositories
 
-We have repositories with all the NFA benchmarks and the benchmarking infrastructure in the following repositories:
+We have several repositories for all the NFA benchmarks and the benchmarking infrastructure:
 
 - **[VeriFIT/mata](https://github.com/VeriFIT/mata/)**
   - The main repository for Mata: A fast and simple automata library

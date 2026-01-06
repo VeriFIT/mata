@@ -136,7 +136,7 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
     useful_states.clear();
     useful_states = useful_states();
 #else
-    BoolVector useful_states{ get_useful_states() };
+    const BoolVector useful_states{ get_useful_states() };
 #endif
     const size_t useful_states_size{ useful_states.size() };
     std::vector<State> renaming(useful_states_size);
@@ -149,10 +149,10 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&](State q){return q < useful_states_size && useful_states[q];};
+    auto is_state_useful = [&](const State q){return q < useful_states_size && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
-    auto rename_state = [&](State q){return renaming[q];};
+    auto rename_state = [&](const State q){return renaming[q];};
     initial.rename(rename_state);
     final.rename(rename_state);
     initial.truncate();
@@ -167,6 +167,59 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
         }
     }
     return *this;
+}
+
+
+Nfa mata::nfa::trim(
+    const Nfa& nfa, StateRenaming* state_renaming,
+    std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states,
+    std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) {
+    if (!initial_states) { initial_states = nfa.initial; }
+    if (!final_states) { final_states = nfa.final; }
+
+    // Compute useful states using Tarjan's algorithm.
+    // The result is a bool vector where true means the state is useful.
+#ifdef _STATIC_STRUCTURES_
+    BoolVector useful_states{ nfa.get_useful_states(initial_states, final_states) };
+    useful_states.clear();
+    useful_states = nfa.get_useful_states(initial_states, final_states);
+#else
+    const BoolVector useful_states{ nfa.get_useful_states(initial_states, final_states) };
+#endif
+    Nfa nfa_trimmed{};
+
+    const size_t useful_states_size{ useful_states.size() };
+    std::vector<State> renaming(useful_states_size);
+    for (State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
+        if (useful_states[orig_state]) {
+            renaming[orig_state] = new_state;
+            ++new_state;
+        }
+    }
+
+    nfa_trimmed.delta = defragment(nfa.delta, useful_states, renaming);
+
+    nfa_trimmed.initial = initial_states.value_or(nfa.initial);
+    nfa_trimmed.final = final_states.value_or(nfa.final);
+
+    auto is_state_useful = [&](const State q){return q < useful_states.size() && useful_states[q];};
+    nfa_trimmed.initial.filter(is_state_useful);
+    nfa_trimmed.final.filter(is_state_useful);
+    auto rename_state = [&](const State q){return renaming[q];};
+    nfa_trimmed.initial.rename(rename_state);
+    nfa_trimmed.final.rename(rename_state);
+    nfa_trimmed.initial.truncate();
+    nfa_trimmed.final.truncate();
+    if (state_renaming != nullptr) {
+        state_renaming->clear();
+        state_renaming->reserve(useful_states_size);
+        for (State q{ 0 }; q < useful_states_size; ++q) {
+            if (useful_states[q]) {
+                (*state_renaming)[q] = renaming[q];
+            }
+        }
+    }
+    return nfa_trimmed;
 }
 
 namespace {
@@ -187,7 +240,7 @@ namespace {
 
         TarjanNodeData() = default;
 
-        TarjanNodeData(State q, const Delta& delta, unsigned long index)
+        TarjanNodeData(const State q, const Delta& delta, const unsigned long index)
             : index(index), lowlink(index), initilized(true), on_stack(true) {
             const StatePost::Moves moves{ delta[q].moves() };
             current_move = moves.begin();
@@ -231,13 +284,15 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  */
-void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
+void Nfa::tarjan_scc_discover(
+    const TarjanDiscoverCallback& callback,
+    const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::vector<State> program_stack;
     std::vector<State> tarjan_stack;
     unsigned long index_cnt = 0;
 
-    for(const State& q0 : initial) {
+    for(const State& q0 : (initial_states.value_or(this->initial)).get()) {
         program_stack.push_back(q0);
     }
 
@@ -311,13 +366,16 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
     }
 }
 
-BoolVector Nfa::get_useful_states() const {
+BoolVector Nfa::get_useful_states(const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states, const std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) const {
     BoolVector useful(this->num_of_states(), false);
     bool final_scc = false;
 
+    const SparseSet<State>& used_initial_states{ initial_states.value_or(initial) };
+    const SparseSet<State>& used_final_states{ final_states.value_or(this->final) };
+
     TarjanDiscoverCallback callback {};
-    callback.state_discover = [&](State state) -> bool {
-        if(this->final.contains(state)) {
+    callback.state_discover = [&](const State state) -> bool {
+        if(used_final_states.contains(state)) {
             useful[state] = true;
         }
         return false;
@@ -336,18 +394,18 @@ BoolVector Nfa::get_useful_states() const {
         final_scc = false;
         return false;
     };
-    callback.scc_state_discover = [&](State state) {
+    callback.scc_state_discover = [&](const State state) {
         if(useful[state]) {
             final_scc = true;
         }
     };
-    callback.succ_state_discover = [&](State act_state, State next_state) {
+    callback.succ_state_discover = [&](const State act_state, const State next_state) {
         if(useful[next_state]) {
             useful[act_state] = true;
         }
     };
 
-    tarjan_scc_discover(callback);
+    tarjan_scc_discover(callback, used_initial_states);
     return useful;
 }
 
@@ -355,7 +413,7 @@ bool Nfa::is_lang_empty_scc() const {
     bool accepting_state = false;
 
     TarjanDiscoverCallback callback {};
-    callback.state_discover = [&](State state) -> bool {
+    callback.state_discover = [&](const State state) -> bool {
         if(this->final.contains(state)) {
             accepting_state = true;
             return true;

@@ -243,12 +243,15 @@ public:
     StateSet get_terminating_states() const;
 
     /**
-     * @brief Get the useful states using a modified Tarjan's algorithm. A state
-     * is useful if it is reachable from an initial state and can reach a final state.
+     * @brief Get the useful states using a modified Tarjan's algorithm.
      *
+     * A state is useful if it is reachable from an initial state and can reach a final state.
+     *
+     * @param initial_states Optional set of initial states to consider when computing usefulness. If @c std::nullopt, uses the NFA's initial states.
+     * @param final_states Optional set of final states to consider when computing usefulness. If @c std::nullopt, uses the NFA's final states.
      * @return BoolVector Bool vector whose `i`-th value is true iff the state `i` is useful.
      */
-    BoolVector get_useful_states() const;
+    BoolVector get_useful_states(std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt) const;
 
     /**
      * @brief Structure for storing callback functions (event handlers) utilizing
@@ -268,9 +271,12 @@ public:
     /**
      * @brief Tarjan's SCC discover algorithm.
      *
-     * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
+     * @param callback Callback class to instantiate callbacks for the Tarjan's algorithm.
+     * @param initial_states Optional set of initial states to consider when computing SCCs. If @c std::nullopt, uses all states in the NFA.
      */
-    void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
+    void tarjan_scc_discover(
+        const TarjanDiscoverCallback& callback,
+        std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -278,6 +284,8 @@ public:
      * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
+     *
+     * @note The states are renumbered after trimming.
      *
      * @param[out] state_renaming Mapping of trimmed states to new states.
      * @return @c this after trimming.
@@ -1061,7 +1069,33 @@ utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alp
  */
 std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const Nfa &nfa_excluded);
 
-} // namespace mata::nfa.
+/**
+ * @brief Creates a new NFA with inaccessible (unreachable) and not co-accessible (non-terminating) states removed from
+ *  the input NFA @p nfa.
+ *
+ * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+ * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+ * the starting point of a path ending in a final state).
+ *
+ * The out-of-place trimming is faster than in-place trimming when you wish to keep the original NFA intact.
+ * This is caused by the out-of-place trimming directly constructing the trimmed NFA, while the in-place trimming needs
+ *  to meticulously find and remove states and transitions from the original NFA.
+ *
+ * @note The states in the returned NFA are renumbered.
+ *
+ * @param nfa NFA to trim.
+ * @param[out] state_renaming Mapping of trimmed states to new states.
+ * @param initial_states Optional set of initial states to consider instead of nfa.initial_states. If @c std::nullopt,
+ *  uses initial states of @p nfa.
+ * @param final_states Optional set of final states to consider instead of nfa.final_states. If @c std::nullopt, uses
+ *  final states of @p nfa.
+ * @return A new NFA from @p nfa after trimming.
+ */
+Nfa trim(
+    const Nfa& nfa, StateRenaming* state_renaming = nullptr,
+    std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt,
+    std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt);
+}
 
 namespace std {
 template <>
