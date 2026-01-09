@@ -959,8 +959,9 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
  * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
- * @param[in] composition_mode Mode of composition to use (General of FastNoJump). Default is Auto,
- *                             which selects the best mode based on the presence of jump transitions.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
+ *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
+ *                             mode is optimized for NFTs without jump transitions and with only one synchronization level.
  *
  * @return A new NFT after the composition.
  */
@@ -980,8 +981,9 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
- * @param[in] composition_mode Mode of composition to use (General of FastNoJump). Default is Auto,
- *                             which selects the best mode based on the presence of jump transitions.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
+ *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
+ *                             mode is optimized for NFTs without jump transitions and with only one synchronization level.
  *
  * @return A new NFT after the composition.
  */
