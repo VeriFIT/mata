@@ -202,7 +202,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     assert(lhs_sync_level < lhs.levels.num_of_levels && rhs_sync_level < rhs.levels.num_of_levels);
 
     if (jump_mode != JumpMode::NoJump) {
-        return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels);
+        return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels, jump_mode);
     }
 
     // Check that there are only explicit synchronization transitions of length 1 with exception for fast EPSILON transitions.
