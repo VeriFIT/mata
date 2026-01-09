@@ -5505,7 +5505,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
         Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
         Nft nft{ mata::applications::strings::replace::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
-        Nft nft_applied_nfa{ nft.apply(nfa, 0) };
+        Nft nft_applied_nfa{ nft.apply(nfa, 0, true, mata::nft::JumpMode::NoJump) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
         result.trim();
