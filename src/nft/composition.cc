@@ -6,6 +6,7 @@
 #include <cassert>
 #include <numeric>
 #include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 #include "mata/utils/two-dimensional-map.hh"
 
 
@@ -197,13 +198,37 @@ namespace {
 namespace mata::nft
 {
 
-
-Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, const bool project_out_sync_levels, const JumpMode jump_mode) {
-    assert(lhs_sync_level < lhs.levels.num_of_levels && rhs_sync_level < rhs.levels.num_of_levels);
-
-    if (jump_mode != JumpMode::NoJump) {
-        return compose(lhs, rhs, OrdVector<Level>{ lhs_sync_level }, OrdVector<Level>{ rhs_sync_level }, project_out_sync_levels, jump_mode);
+// Dispatch function for composition modes.
+Nft compose(const Nft& lhs,
+            const Nft& rhs,
+            const utils::OrdVector<Level>& lhs_sync_levels,
+            const utils::OrdVector<Level>& rhs_sync_levels,
+            const bool project_out_sync_levels,
+            const JumpMode jump_mode,
+            const CompositionMode composition_mode)
+{
+    switch (composition_mode) {
+        case CompositionMode::FastNoJump:
+            if (jump_mode != JumpMode::NoJump) {
+                throw std::invalid_argument("FastNoJump composition mode only supports NoJump jump mode.");
+            }
+            if (lhs_sync_levels.size() != 1 || rhs_sync_levels.size() != 1) {
+                throw std::invalid_argument("FastNoJump composition mode only supports a single synchronization level per NFT.");
+            }
+            return algorithms::compose_fast_no_jump(lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels);
+        case CompositionMode::Auto:
+            if (jump_mode == JumpMode::NoJump && lhs_sync_levels.size() == 1) {
+                return algorithms::compose_fast_no_jump(lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels);
+            }
+            [[fallthrough]];
+        case CompositionMode::General:
+        default:
+            return algorithms::compose_general(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode);
     }
+}
+
+Nft algorithms::compose_fast_no_jump(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level, const bool project_out_sync_levels) {
+    assert(lhs_sync_level < lhs.levels.num_of_levels && rhs_sync_level < rhs.levels.num_of_levels);
 
     // Check that there are only explicit synchronization transitions of length 1 with exception for fast EPSILON transitions.
     assert(
@@ -1001,14 +1026,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
     return result;
 }
 
-Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, bool project_out_sync_levels, const JumpMode jump_mode) {
+Nft algorithms::compose_general(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_levels, const OrdVector<Level>& rhs_sync_levels, bool project_out_sync_levels, const JumpMode jump_mode) {
     assert(!lhs_sync_levels.empty());
     assert(lhs_sync_levels.size() == rhs_sync_levels.size());
-
-    // if (lhs_sync_levels.size() == 1 && rhs_sync_levels.size() == 1) {
-    //     // If we have only one synchronization level we can do it faster.
-    //     return compose(lhs, rhs, lhs_sync_levels.front(), lhs_sync_levels.front(), project_out_sync_levels, jump_mode);
-    // }
 
     // Inserts loop into the given Nft for each state with level 0.
     // The loop word is constructed using the EPSILON symbol for all levels, except for the levels

@@ -132,6 +132,47 @@ Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State
 Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
+/**
+ * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
+ *
+ * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
+ * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
+ * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
+ * levels are projected out from the resulting NFT.
+ *
+ * Vectors of synchronization levels have to be non-empty and of the same size.
+ *
+ * NOTE: If you have only a single synchronization level per NFT and don't use jump transitions, consider using
+ *       no-jump varsion of the composition for better performance.
+ *
+ * @param[in] lhs First transducer to compose.
+ * @param[in] rhs Second transducer to compose.
+ * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
+ * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ *
+ * @return A new NFT after the composition.
+ */
+Nft compose_general(const Nft& lhs, const Nft& rhs,
+            const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
+            bool project_out_sync_levels = true,
+            JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+/**
+ * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs") with a single synchronization level and no jumps.
+ *
+ * @param[in] lhs First transducer to compose.
+ * @param[in] rhs Second transducer to compose.
+ * @param[in] lhs_sync_level The synchronization level of the @p lhs.
+ * @param[in] rhs_sync_level The synchronization level of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
+ *
+ * @return A new NFT after the composition.
+ */
+Nft compose_fast_no_jump(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true);
+
 }
 
 #endif

@@ -952,16 +952,6 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
 /**
  * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
  *
- * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
- * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
- * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
- * levels are projected out from the resulting NFT.
- *
- * Vectors of synchronization levels have to be non-empty and of the same size.
- *
- * NOTE: If you have only a single synchronization level per NFT and don't use jump transitions, consider using
- *       more efficient overloaded version of this function which takes single synchronization levels instead of vectors.
- *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
@@ -969,33 +959,47 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
  * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ * @param[in] composition_mode Mode of composition to use (General of FastNoJump). Default is Auto,
+ *                             which selects the best mode based on the presence of jump transitions.
+ *
  * @return A new NFT after the composition.
  */
 Nft compose(const Nft& lhs, const Nft& rhs,
             const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
             bool project_out_sync_levels = true,
-            JumpMode jump_mode = JumpMode::RepeatSymbol);
+            JumpMode jump_mode = JumpMode::RepeatSymbol,
+            CompositionMode composition_mode = CompositionMode::Auto);
 
 /**
  * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
- *
- * NOTE: If you don't have jump transitions, a more efficient computation will be used (without unwinding jumps,
- *       without creating intermediate NFTs, without aligning synchronization level).
- *
- * WARNING: If the NFTs use any king of jump transitions, the computation will be redirected
- *          to the more general and slower version of this function which is similar to the
- *          one that takes vectors of synchronization levels.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
  * @param[in] rhs_sync_level The synchronization level of the @p rhs.
- * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ * @param[in] composition_mode Mode of composition to use (General of FastNoJump). Default is Auto,
+ *                             which selects the best mode based on the presence of jump transitions.
+ *
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::RepeatSymbol);
+inline Nft compose(const Nft& lhs, const Nft& rhs,
+                   const Level lhs_sync_level = 1, const Level rhs_sync_level = 0,
+                   const bool project_out_sync_levels = true,
+                   const JumpMode jump_mode = JumpMode::RepeatSymbol,
+                   const CompositionMode composition_mode = CompositionMode::Auto)
+{
+    return compose(
+        lhs, rhs,
+        utils::OrdVector<Level>{ lhs_sync_level },
+        utils::OrdVector<Level>{ rhs_sync_level },
+        project_out_sync_levels,
+        jump_mode,
+        composition_mode
+    );
+}
 
 /**
  * @brief Concatenate two NFTs.

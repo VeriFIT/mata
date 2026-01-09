@@ -60,6 +60,12 @@ enum class JumpMode {
     NoJump ///< No jumps are allowed.
 };
 
+enum class CompositionMode {
+    General, ///< General composition mode for arbitrary number or synchronization levels and jump modes.
+    FastNoJump, ///< Fast composition mode for a single synchronization level and no jumps.
+    Auto ///< Automatically select the best composition mode based on the parameters.
+};
+
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
