@@ -15,6 +15,8 @@ OrdVector
 
 Synchronized Iterator
 ---------------------
+.. doxygenpage:: synchronized_iterator
+
 .. doxygenfile:: utils/synchronized-iterator.hh
 
 Two Dimensional Map

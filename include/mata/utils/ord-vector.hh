@@ -10,49 +10,26 @@
 
 #include "utils.hh"
 
-namespace {
-/**
- * @brief  Converts an object to string
- *
- * Static method for conversion of an object of any class with the << output
- * operator into a string
- *
- * @param[in]  n  The object for the conversion
- *
- * @returns  The string representation of the object
- */
-template <typename T>
-std::string to_str(const T& n) {
-    // the output stream for the string
-    std::ostringstream oss;
-    // insert the object into the stream
-    oss << n;
-    // return the string
-    return oss.str();
-}
-
-} // Anonymous namespace.
-
 namespace mata::utils {
 
 template <class Key> class OrdVector;
 
 template <class T>
 bool are_disjoint(const utils::OrdVector<T>& lhs, const utils::OrdVector<T>& rhs) {
-    auto itLhs = lhs.begin();
-    auto itRhs = rhs.begin();
-    while (itLhs != lhs.end() && itRhs != rhs.end()) {
-        if (*itLhs == *itRhs) { return false; }
-        else if (*itLhs < *itRhs) { ++itLhs; }
-        else {++itRhs; }
+    auto it_lhs = lhs.begin();
+    auto it_rhs = rhs.begin();
+    while (it_lhs != lhs.end() && it_rhs != rhs.end()) {
+        if (*it_lhs == *it_rhs) { return false; }
+        else if (*it_lhs < *it_rhs) { ++it_lhs; }
+        else {++it_rhs; }
     }
     return true;
 }
 
 template <class Key>
 bool is_sorted(const std::vector<Key>& vec) {
-    for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec) {
-        if (!(*(itVec - 1) < *itVec)) {
+    for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
+        if (!(*(it_vec - 1) < *it_vec)) {
             // In case there is an unordered pair (or there is one element twice).
             return false;
         }
@@ -67,25 +44,45 @@ bool is_sorted(const std::vector<Key>& vec) {
  * std::set) using ordered vector as the underlying data structure.
  *
  * @tparam  Key  Key type: type of the elements contained in the container.
- *               Each elements in a set is also its key.
+ *               Each element in a set is also its key.
  */
 template<class Key> class OrdVector {
-private:  // Private data types
-
 public:   // Public data types
     using VectorType = std::vector<Key>;
     using value_type = Key;
     using size_type = size_t;
-    using iterator = typename VectorType::iterator ;
-    using const_iterator = typename VectorType::const_iterator;
-    using const_reference = typename VectorType::const_reference;
-    using reference = typename VectorType::reference;
+    using iterator = VectorType::iterator ;
+    using const_iterator = VectorType::const_iterator;
+    using const_reference = VectorType::const_reference;
+    using reference = VectorType::reference;
 
-private:  // Private data members
+private:
+    // Private data members
     VectorType vec_;
 
-private:  // Private methods
+    // Private methods
     bool is_sorted() const { return mata::utils::is_sorted(vec_); }
+
+    /**
+    * @brief Converts an object to string.
+    *
+    * Static method for conversion of an object of any class with the << output operator into a string
+    *
+    * @param[in] n The object for the conversion.
+    *
+    * @returns  The string representation of the object.
+    */
+    template <typename T>
+    static std::string to_str(const T& n) {
+        // The output stream for the string.
+        std::ostringstream oss;
+        // Insert the object into the stream.
+        oss << n;
+        // Return the string.
+        return oss.str();
+        // TODO: When C++20 compliant compilers are sufficiently widespread, use std::format directly.
+        // return std::format("{}", n);
+    }
 
 public:
     OrdVector() : vec_() {}
@@ -123,9 +120,10 @@ public:
         return ord_vector;
     }
 
-    void insert(iterator itr, const Key& x) {
-        assert(itr == this->end() || x <= *itr);
-        vec_.insert(itr,x);
+    std::pair<iterator, bool> insert(iterator itr, const Key& x) {
+        if (empty() || itr == end()) { return { vec_.insert(itr, x), true }; }
+        if (x >= *itr || (itr != begin() && x <= *(itr - 1))) { return { itr, false }; }
+        return { vec_.insert(itr, x), true };
     }
 
     // EMPLACE_BACK WHICH BREAKS SORTEDNESS,
@@ -133,7 +131,7 @@ public:
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     template <typename... Args>
     reference emplace_back(Args&&... args) {
-	// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+    // Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
         return vec_.emplace_back(std::forward<Args>(args)...);
     }
 
@@ -147,46 +145,50 @@ public:
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
-    virtual inline void reserve(size_t size) { vec_.reserve(size); }
-    virtual inline void resize(size_t size) { vec_.resize(size); }
+    virtual void reserve(size_t size) { vec_.reserve(size); }
+    virtual void resize(size_t size) { vec_.resize(size); }
 
-    virtual inline iterator erase(const_iterator pos) { return vec_.erase(pos); }
-    virtual inline iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
+    virtual iterator erase(const_iterator pos) { return vec_.erase(pos); }
+    virtual iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
+    virtual size_type erase_if(std::function<bool(const value_type&)> should_erase) { return std::erase_if(vec_, should_erase); }
 
-    virtual void insert(const Key& x) {
+    virtual std::pair<iterator, bool> insert(const Key& x) {
         assert(is_sorted());
 
         reserve_on_insert(vec_);
 
         // Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
         auto pos  = std::lower_bound(vec_.begin(), vec_.end(), x);
-        if (pos == vec_.end() || *pos != x)
-            vec_.insert(pos,x);
+        bool inserted{ false };
+        if (pos == vec_.end() || *pos != x) {
+            pos = vec_.insert(pos, x);
+            inserted = true;
+        }
 
         //TODO: measure, if there is not benefit to this custom version, remove
         //size_t first = 0;
         //size_t last = vec_.size();
 
         //if ((last != 0) && (vec_.back() < x))
-        //{	// for the case which would be prevalent
+        //{ // for the case which would be prevalent
         //    // that is, the added thing can is larger than the largest thing and can be just bushed back
         //    vec_.push_back(x);
         //    return;
         //}
 
         //while (first < last)
-        //{	// while the pointers do not overlap
+        //{ // while the pointers do not overlap
         //    size_t middle = first + (last - first) / 2;
         //    if (vec_[middle] == x)
-        //    {	// in case we found x
+        //    { // in case we found x
         //        return;
         //    }
         //    else if (vec_[middle] < x)
-        //    {	// in case middle is less than x
+        //    { // in case middle is less than x
         //        first = middle + 1;
         //    }
         //    else
-        //    {	// in case middle is greater than x
+        //    { // in case middle is greater than x
         //        last = middle;
         //    }
         //}
@@ -198,16 +200,16 @@ public:
         //vec_[first] = x;
 
         assert(is_sorted());
+        return { pos, inserted };
     }
 
-    virtual void insert(const OrdVector& vec) {
+    virtual bool insert(const OrdVector& vec) {
         static OrdVector tmp{};
         assert(is_sorted());
         assert(vec.is_sorted());
         tmp.clear();
 
-        set_union(*this,vec,tmp);
-
+        const auto inserted{ set_union(*this,vec,tmp) };
         vec_ = tmp.vec_;
         /*
          * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
@@ -216,6 +218,7 @@ public:
          */
         //std::swap(tmp.vec_,vec_);
         assert(is_sorted());
+        return inserted;
     }
 
     inline void clear() { vec_.clear(); }
@@ -351,44 +354,45 @@ public:
     virtual inline iterator begin() { return vec_.begin(); }
     virtual inline iterator end() { return vec_.end(); }
 
-	virtual inline const_iterator cbegin() const { return begin(); }
-	virtual inline const_iterator cend() const { return end(); }
+    virtual inline const_iterator cbegin() const { return begin(); }
+    virtual inline const_iterator cend() const { return end(); }
 
-	/**
-	 * @brief  Overloaded << operator
-	 *
-	 * Overloaded << operator for output stream.
-	 *
-	 * @see  to_str()
-	 *
-	 * @param[in]  os    The output stream
-	 * @param[in]  vec   Assignment to the variables
-	 *
-	 * @returns  Modified output stream
-	 */
-	friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec) {
-		std::string result = "{";
+    /**
+     * @brief  Overloaded << operator
+   *
+  * Overloaded << operator for output stream.
+    *
+  * @see  to_str()
+   *
+  * @param[in]  os    The output stream
+  * @param[in]  vec   Assignment to the variables
+    *
+  * @returns  Modified output stream
+     */
+    friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec) {
+        std::string result = "{";
 
-		for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
-			result += ((it != vec.begin())? ", " : " ") + to_str(*it);
-		}
+        for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
+            result += ((it != vec.begin())? ", " : " ") + to_str(*it);
+        }
 
-		return os << (result + "}");
-	}
+        return os << (result + "}");
+    }
 
-	bool operator==(const OrdVector& rhs) const {
-		assert(is_sorted());
-		assert(rhs.is_sorted());
-		return (vec_ == rhs.vec_);
-	}
-
-    bool operator<(const OrdVector& rhs) const {
+    bool operator==(const OrdVector& rhs) const {
         assert(is_sorted());
         assert(rhs.is_sorted());
-        return std::lexicographical_compare(vec_.begin(), vec_.end(), rhs.vec_.begin(), rhs.vec_.end());
+        return vec_ == rhs.vec_;
+    }
+
+    std::weak_ordering operator<=>(const OrdVector& rhs) const {
+        assert(is_sorted());
+        assert(rhs.is_sorted());
+        return vec_ <=> rhs.vec_;
     }
 
     const std::vector<Key>& to_vector() const { return vec_; }
+    std::vector<Key>& to_vector_mut() const { return vec_; }
 
     bool is_subset_of(const OrdVector& bigger) const {
         return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
@@ -398,23 +402,23 @@ public:
         assert(is_sorted());
         assert(rhs.is_sorted());
 
-        const_iterator itLhs = begin();
-        const_iterator itRhs = rhs.begin();
+        const_iterator it_lhs = begin();
+        const_iterator it_rhs = rhs.begin();
 
-        while ((itLhs != end()) && (itRhs != rhs.end()))
-        {	// until we drop out of the array (or find a common element)
-            if (*itLhs == *itRhs)
-            {	// in case there exists a common element
+        while ((it_lhs != end()) && (it_rhs != rhs.end()))
+        {   // until we drop out of the array (or find a common element)
+            if (*it_lhs == *it_rhs)
+            {   // in case there exists a common element
                 return false;
             }
-            else if (*itLhs < *itRhs)
-            {	// in case the element in lhs is smaller
-                ++itLhs;
+            else if (*it_lhs < *it_rhs)
+            {   // in case the element in lhs is smaller
+                ++it_lhs;
             }
             else
-            {	// in case the element in rhs is smaller
-                assert(*itLhs > *itRhs);
-                ++itRhs;
+            {   // in case the element in rhs is smaller
+                assert(*it_lhs > *it_rhs);
+                ++it_rhs;
             }
         }
         return true;
@@ -450,15 +454,22 @@ public:
         return result;
     }
 
-    static void set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
+    static bool set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.is_sorted());
         assert(rhs.is_sorted());
 
-        if (lhs.empty()) { result = rhs; return; }
-        if (rhs.empty()) { result = lhs; return; }
+        const bool rhs_empty{ rhs.empty() };
+        if (lhs.empty()) {
+            result = rhs;
+            return !rhs_empty;
+        }
+        if (rhs_empty) {
+            result = lhs;
+            return false;
+        }
 
         result.reserve(lhs.size()+rhs.size());
-        std::set_union(lhs.vec_.begin(),lhs.vec_.end(),rhs.vec_.begin(),rhs.vec_.end(),std::back_inserter(result.vec_));
+        std::ranges::set_union(lhs.vec_, rhs.vec_, std::back_inserter(result.vec_));
 
         //TODO: measure, if there is not benefit to this custom version, remove
         //auto lhs_it = lhs.begin();
@@ -487,6 +498,10 @@ public:
         //}
 
         assert(result.is_sorted());
+        // FIXME: This always returns `.begin()`, even if the first inserted element is further in the vector. Made to
+        //  keep the interface similar to std::set.
+        if (result.size() > lhs.size()) { return true; }
+        return false;
     }
 
     static OrdVector set_union(const OrdVector& lhs, const OrdVector& rhs) {
@@ -504,7 +519,7 @@ public:
         auto lhs_it = lhs.begin();
         auto rhs_it = rhs.vec_.begin();
 
-        while ((lhs_it != lhs.end()) && (rhs_it != rhs.end())) {	// Until we get to the end of both vectors.
+        while ((lhs_it != lhs.end()) && (rhs_it != rhs.end())) {    // Until we get to the end of both vectors.
             if (*lhs_it == *rhs_it) {
                 result.push_back(*lhs_it);
                 ++lhs_it;
@@ -523,13 +538,11 @@ public:
 
 } // Namespace mata::utils.
 
-namespace std {
-    template <class Key>
-    struct hash<mata::utils::OrdVector<Key>> {
-        std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
-            return std::hash<std::vector<Key>>{}(vec.to_vector());
-        }
-    };
-}
+template <class Key>
+struct std::hash<mata::utils::OrdVector<Key>> {
+    std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
+        return std::hash<std::vector<Key>>{}(vec.to_vector());
+    }
+};
 
 #endif // MATA_ORD_VECTOR_HH_.

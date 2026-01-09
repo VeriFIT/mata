@@ -27,21 +27,18 @@ Nfa mata::nfa::algorithms::product(
  * @param[in] pair_to_process Currently processed pair of original states.
  * @param[in] new_product_symbol_post State transitions to add to the product.
  */
-    auto add_product_e_post = [&](const State lhs_source, const State rhs_source, SymbolPost& new_product_symbol_post)
-    {
+    auto add_product_e_post = [&](const State lhs_source, const State rhs_source, SymbolPost& new_product_symbol_post) {
         if (new_product_symbol_post.empty()) { return; }
 
-        State product_source = product_storage.get(lhs_source, rhs_source);
+        const State product_source = product_storage.get(lhs_source, rhs_source);
 
-        StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
-
-        if (product_state_post.empty() || new_product_symbol_post.symbol > product_state_post.back().symbol) {
+        if (StatePost& product_state_post{ product.delta.mutable_state_post(product_source) };
+            product_state_post.empty() || new_product_symbol_post.symbol > product_state_post.back().symbol) {
             product_state_post.push_back(std::move(new_product_symbol_post));
-        }
-        else {
-            auto symbol_post_it = product_state_post.find(new_product_symbol_post.symbol);
-            if (symbol_post_it == product_state_post.end()) {
-                product_state_post.insert(std::move(new_product_symbol_post));
+        } else {
+            if (const auto symbol_post_it = product_state_post.find(new_product_symbol_post.symbol);
+                symbol_post_it == product_state_post.end()) {
+                product_state_post.insert(new_product_symbol_post);
             }
             //Epsilons are not inserted in order, we insert all lhs epsilons and then all rhs epsilons.
             // It can happen that we insert an e-transition from lhs and then another with the same e from rhs.
@@ -117,11 +114,10 @@ Nfa mata::nfa::algorithms::product(
             // Find all transitions that have the same symbol for first and the second state in the pair_to_process.
             // Create transition from the pair_to_process to all pairs between states to which first transition goes
             //  and states to which second one goes.
-            Symbol symbol = same_symbol_posts[0]->symbol;
-            if (symbol < first_epsilon) {
+            if (Symbol symbol = same_symbol_posts[0]->symbol; symbol < first_epsilon) {
                 SymbolPost product_symbol_post{ symbol };
-                for (const State lhs_target: same_symbol_posts[0]->targets) {
-                    for (const State rhs_target: same_symbol_posts[1]->targets) {
+                for (const State lhs_target : same_symbol_posts[0]->targets) {
+                    for (const State rhs_target : same_symbol_posts[1]->targets) {
                         create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
                     }
                 }
@@ -139,11 +135,12 @@ Nfa mata::nfa::algorithms::product(
 
         //TODO: handling of epsilons might not be ideal, don't know, it would need some brain cycles to improve.
         // (handling of normal symbols is ok though)
-        auto lhs_first_epsilon_it = lhs_state_post.first_epsilon_it(first_epsilon);
-        if (lhs_first_epsilon_it != lhs_state_post.end()) {
-            for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end(); ++lhs_symbol_post) {
-                SymbolPost prod_symbol_post{lhs_symbol_post->symbol };
-                for (const State lhs_target: lhs_symbol_post->targets) {
+        if (auto lhs_first_epsilon_it = lhs_state_post.first_epsilon_it(first_epsilon);
+            lhs_first_epsilon_it != lhs_state_post.end()) {
+            for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end(); ++
+                 lhs_symbol_post) {
+                SymbolPost prod_symbol_post{ lhs_symbol_post->symbol };
+                for (const State lhs_target : lhs_symbol_post->targets) {
                     create_product_state_and_symbol_post(lhs_target, rhs_source, prod_symbol_post);
                 }
                 add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
@@ -152,11 +149,12 @@ Nfa mata::nfa::algorithms::product(
 
         // Add epsilon transitions, from rhs e-transitions.
         const StatePost& rhs_state_post{rhs.delta[rhs_source] };
-        auto rhs_first_epsilon_it = rhs_state_post.first_epsilon_it(first_epsilon);
-        if (rhs_first_epsilon_it != rhs_state_post.end()) {
-            for (auto rhs_symbol_post = rhs_first_epsilon_it; rhs_symbol_post < rhs_state_post.end(); ++rhs_symbol_post) {
-                SymbolPost prod_symbol_post{rhs_symbol_post->symbol };
-                for (const State rhs_target: rhs_symbol_post->targets) {
+        if (auto rhs_first_epsilon_it = rhs_state_post.first_epsilon_it(first_epsilon);
+            rhs_first_epsilon_it != rhs_state_post.end()) {
+            for (auto rhs_symbol_post = rhs_first_epsilon_it; rhs_symbol_post < rhs_state_post.end(); ++
+                 rhs_symbol_post) {
+                SymbolPost prod_symbol_post{ rhs_symbol_post->symbol };
+                for (const State rhs_target : rhs_symbol_post->targets) {
                     create_product_state_and_symbol_post(lhs_source, rhs_target, prod_symbol_post);
                 }
                 add_product_e_post(lhs_source, rhs_source, prod_symbol_post);

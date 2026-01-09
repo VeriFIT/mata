@@ -21,13 +21,13 @@ namespace mata::utils {
  * The unordered_map seems to be about twice slower.
  *
  * @tparam T Type of the values stored in the map. Must be an unsigned type.
- * @tparam track_inverted Whether to track inverted indices for the first and second dimensions.
+ * @tparam TrackInverted Whether to track inverted indices for the first and second dimensions.
  *         To use this feature correctly, the mapping has to be reversible.
- * @tparam MAX_MATRIX_SIZE Maximum size of the matrix before switching to vector of unordered maps.
+ * @tparam MaxMatrixSize Maximum size of the matrix before switching to vector of unordered maps.
  */
-template <typename T, bool track_inverted = true, size_t MAX_MATRIX_SIZE = 50'000'000>
+template <typename T, bool TrackInverted = true, size_t MaxMatrixSize = 50'000'000>
 class TwoDimensionalMap {
-    static_assert(std::is_unsigned<T>::value, "ProductStorage requires an unsigned type");
+    static_assert(std::is_unsigned_v<T>, "ProductStorage requires an unsigned type");
 
 public:
     using Map = std::unordered_map<std::pair<T, T>, T>;
@@ -41,19 +41,19 @@ public:
      * @param second_dim_size Size of the second dimension.
      */
     TwoDimensionalMap(const size_t first_dim_size, const size_t second_dim_size)
-        : is_large(first_dim_size * second_dim_size > MAX_MATRIX_SIZE),
-          first_dim_size(first_dim_size), second_dim_size(second_dim_size)
+        : is_large_(first_dim_size * second_dim_size > MaxMatrixSize),
+          first_dim_size_(first_dim_size), second_dim_size_(second_dim_size)
     {
         assert(first_dim_size < std::numeric_limits<T>::max());
         assert(second_dim_size < std::numeric_limits<T>::max());
-        if (!is_large) {
-            matrix_storage = MatrixStorage(first_dim_size, InvertedStorage(second_dim_size, std::numeric_limits<T>::max()));
+        if (!is_large_) {
+            matrix_storage_ = MatrixStorage(first_dim_size, InvertedStorage(second_dim_size, std::numeric_limits<T>::max()));
         } else {
-            vec_map_storage = VecMapStorage(first_dim_size);
+            vec_map_storage_ = VecMapStorage(first_dim_size);
         }
-        if constexpr (track_inverted) {
-            first_dim_inverted.resize(first_dim_size + second_dim_size);
-            second_dim_inverted.resize(first_dim_size + second_dim_size);
+        if constexpr (TrackInverted) {
+            first_dim_inverted_.resize(first_dim_size + second_dim_size);
+            second_dim_inverted_.resize(first_dim_size + second_dim_size);
         }
     }
 
@@ -64,12 +64,12 @@ public:
      * @return The value associated with the pair, or std::numeric_limits<T>::max() if not found.
      */
     T get(const T first, const T second) const {
-        if (!is_large) {
-            return matrix_storage[first][second];
+        if (!is_large_) {
+            return matrix_storage_[first][second];
         }
 
-        auto it = vec_map_storage[first].find(second);
-        if (it == vec_map_storage[first].end()) {
+        auto it = vec_map_storage_[first].find(second);
+        if (it == vec_map_storage_[first].end()) {
             return std::numeric_limits<T>::max();
         }
         return it->second;
@@ -82,16 +82,16 @@ public:
      * @param value Value to associate with the pair.
      */
     void insert(const T first, const T second, const T value) {
-        if (!is_large) {
-            matrix_storage[first][second] = value;
+        if (!is_large_) {
+            matrix_storage_[first][second] = value;
         } else {
-            vec_map_storage[first][second] = value;
+            vec_map_storage_[first][second] = value;
         }
-        if constexpr (track_inverted) {
-            first_dim_inverted.resize(value + 1);
-            second_dim_inverted.resize(value + 1);
-            first_dim_inverted[value] = first;
-            second_dim_inverted[value] = second;
+        if constexpr (TrackInverted) {
+            first_dim_inverted_.resize(value + 1);
+            second_dim_inverted_.resize(value + 1);
+            first_dim_inverted_[value] = first;
+            second_dim_inverted_[value] = second;
         }
     }
 
@@ -100,8 +100,8 @@ public:
      * This is only available if track_inverted is true.
      */
     T get_first_inverted(const T value) const {
-        static_assert(track_inverted, "get_first_inverted only available if track_inverted is true");
-        return first_dim_inverted[value];
+        static_assert(TrackInverted, "get_first_inverted only available if track_inverted is true");
+        return first_dim_inverted_[value];
     }
 
     /**
@@ -109,18 +109,18 @@ public:
      * This is only available if track_inverted is true.
      */
     T get_second_inverted(const T value) const {
-        static_assert(track_inverted, "get_second_inverted only available if track_inverted is true");
-        return second_dim_inverted[value];
+        static_assert(TrackInverted, "get_second_inverted only available if track_inverted is true");
+        return second_dim_inverted_[value];
     }
 
 private:
-    const bool is_large;
-    const size_t first_dim_size;
-    const size_t second_dim_size;
-    MatrixStorage matrix_storage{};
-    std::vector<std::unordered_map<T, T>> vec_map_storage{};
-    InvertedStorage first_dim_inverted{};
-    InvertedStorage second_dim_inverted{};
+    const bool is_large_;
+    const size_t first_dim_size_;
+    const size_t second_dim_size_;
+    MatrixStorage matrix_storage_{};
+    std::vector<std::unordered_map<T, T>> vec_map_storage_{};
+    InvertedStorage first_dim_inverted_{};
+    InvertedStorage second_dim_inverted_{};
 
 };
 

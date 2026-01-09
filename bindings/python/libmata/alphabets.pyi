@@ -14,7 +14,7 @@ class Alphabet:
         pass
 
 class OnTheFlyAlphabet(Alphabet):
-    """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
+    """OnTheFlyAlphabet represents alphabet that is not known beforehand and is constructed on-the-fly."""
     def __init__(self, initial_symbol: State = 0) -> None:
         ...
     @classmethod

@@ -1,4 +1,6 @@
-// TODO: Insert header file.
+/** @file
+ * @brief Functions to build predefined types of NFAs, to create them from regular expressions, and to load them from files.
+ */
 
 #include "mata/nfa/builder.hh"
 #include "mata/parser/mintermization.hh"
@@ -12,7 +14,7 @@ using namespace mata::nfa;
 using mata::nfa::Nfa;
 using mata::Symbol;
 
-Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
+Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
 
@@ -29,7 +31,7 @@ Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
     // a lambda for translating state names to identifiers
     auto get_state_name = [&state_map, &aut](const std::string& str) {
-        if (!state_map->count(str)) {
+        if (!state_map->contains(str)) {
             State state = aut.add_state();
             state_map->insert({str, state});
             return state;
@@ -45,59 +47,44 @@ Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
 
     auto it = parsec.dict.find("Initial");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto& str : it->second)
-        {
-            State state = get_state_name(str);
-            aut.initial.insert(state);
-        }
-    }
+    if (parsec.dict.end() != it) { for (const auto& str : it->second) { aut.initial.insert(get_state_name(str)); } }
 
 
     it = parsec.dict.find("Final");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto& str : it->second)
-        {
-            State state = get_state_name(str);
-            aut.final.insert(state);
-        }
-    }
+    if (parsec.dict.end() != it) { for (const auto& str : it->second) { aut.final.insert(get_state_name(str)); } }
 
-    for (const auto& body_line : parsec.body)
-    {
-        if (body_line.size() != 3)
-        {
+    for (const auto& body_line : parsec.body) {
+        if (body_line.size() != 3) {
             // clean up
             clean_up();
 
-            if (body_line.size() == 2)
-            {
-                throw std::runtime_error("Epsilon transitions not supported: " +
-                                         std::to_string(body_line));
-            }
-            else
-            {
-                throw std::runtime_error("Invalid transition: " +
-                                         std::to_string(body_line));
+            if (body_line.size() == 2) {
+                throw std::runtime_error(
+                    "Epsilon transitions not supported: " +
+                    std::to_string(body_line)
+                );
+            } else {
+                throw std::runtime_error(
+                    "Invalid transition: " +
+                    std::to_string(body_line)
+                );
             }
         }
 
-        State src_state = get_state_name(body_line[0]);
-        Symbol symbol = alphabet->translate_symb(body_line[1]);
-        State tgt_state = get_state_name(body_line[2]);
-
-        aut.delta.add(src_state, symbol, tgt_state);
+        aut.delta.add(
+            get_state_name(body_line[0]),
+            alphabet->translate_symb(body_line[1]),
+            get_state_name(body_line[2])
+        );
     }
 
     // do the dishes and take out garbage
     clean_up();
 
     return aut;
-} // construct().
+}
 
-Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
+Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
 
@@ -113,7 +100,7 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
     // a lambda for translating state names to identifiers
     auto get_state_name = [&state_map, &aut](const std::string& str) {
-        if (!state_map->count(str)) {
+        if (!state_map->contains(str)) {
             State state = aut.add_state();
             state_map->insert({str, state});
             return state;
@@ -128,11 +115,11 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         aut.initial.insert(state);
     }
 
-    for (const auto& trans : inter_aut.transitions)
+    for (const auto& [formula_node, formula_graph] : inter_aut.transitions)
     {
-        if (trans.second.children.size() != 2)
+        if (formula_graph.children.size() != 2)
         {
-            if (trans.second.children.size() == 1)
+            if (formula_graph.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
             }
@@ -142,9 +129,9 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
             }
         }
 
-        State src_state = get_state_name(trans.first.name);
-        Symbol symbol = alphabet->translate_symb(trans.second.children[0].node.name);
-        State tgt_state = get_state_name(trans.second.children[1].node.name);
+        State src_state = get_state_name(formula_node.name);
+        Symbol symbol = alphabet->translate_symb(formula_graph.children[0].node.name);
+        State tgt_state = get_state_name(formula_graph.children[1].node.name);
 
         aut.delta.add(src_state, symbol, tgt_state);
     }
@@ -155,13 +142,12 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         final_formula_nodes = inter_aut.final_formula.collect_node_names();
     }
     // for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
-    bool final_nodes_are_negated = (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation());
 
-    if (final_nodes_are_negated) {
+    if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
         // we add all states NOT in final_formula_nodes to final states
-        for (const auto &state_name_and_id : *state_map) {
-            if (!final_formula_nodes.count(state_name_and_id.first)) {
-                aut.final.insert(state_name_and_id.second);
+        for (const auto& [state_name, state] : *state_map) {
+            if (!final_formula_nodes.contains(state_name)) {
+                aut.final.insert(state);
             }
         }
     } else {
@@ -177,10 +163,10 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 } // construct().
 
 void builder::construct(
-        mata::nfa::Nfa *result,
-        const mata::IntermediateAut &inter_aut,
-        mata::Alphabet *alphabet,
-        mata::nfa::builder::NameStateMap *state_map
+        Nfa *result,
+        const IntermediateAut &inter_aut,
+        Alphabet *alphabet,
+        NameStateMap *state_map
 ) {
     *result = construct(inter_aut, alphabet, state_map);
 }
@@ -195,7 +181,7 @@ Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
     return nfa;
 }
 
-Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, mata::Alphabet *alphabet) {
+Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, Alphabet *alphabet) {
     if (!alphabet) {
         alphabet = new OnTheFlyAlphabet{ word };
     }
@@ -212,19 +198,19 @@ Nfa builder::create_empty_string_nfa() {
     return Nfa{ 1, { 0 }, { 0 } };
 }
 
-Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
+Nfa builder::create_sigma_star_nfa(Alphabet* alphabet) {
     Nfa nfa{ 1, { 0 }, { 0 }, alphabet };
-    for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
+    for (const Symbol& symbol : alphabet->get_alphabet_symbols()) {
         nfa.delta.add(0, symbol, 0);
     }
     return nfa;
 }
 
-Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density) {
+Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const size_t alphabet_size, const double states_transitions_ratio_per_symbol, const double final_state_density, const std::optional<unsigned int>& seed) {
     if (num_of_states == 0) {
         return Nfa();
     }
-    if (states_trans_ratio_per_symbol < 0 || static_cast<size_t>(states_trans_ratio_per_symbol) > num_of_states) {
+    if (states_transitions_ratio_per_symbol < 0 || static_cast<size_t>(states_transitions_ratio_per_symbol) > num_of_states) {
         // Maximum of num_of_states^2 unique transitions for one symbol can be created.
         throw std::runtime_error("Transition density must be in range [0, num_of_states]");
     }
@@ -236,8 +222,8 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     Nfa nfa{ num_of_states, { 0 }, { 0 }, new OnTheFlyAlphabet{} };
 
     // Initialize the random number generator
-    std::random_device rd;  // Seed for the random number engine
-    std::mt19937 gen(rd()); // Mersenne Twister engine
+    const unsigned int seed_value{ seed.value_or(std::random_device{}()) };  // Seed for the random number engine
+    std::mt19937 gen(seed_value); // Mersenne Twister engine
 
     // Unique final state generator
     std::vector<State> states(num_of_states);
@@ -257,9 +243,9 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     // Create transitions
     // Using std::min because, in some universe, casting and rounding might cause the number of transitions to exceed the number of possible transitions by 1
     // and then an access to the non-existing element of one_dimensional_transition_matrix would occur.
-    const size_t num_of_transitions_per_symbol{ std::min(static_cast<size_t>(std::round(static_cast<double>(num_of_states) * states_trans_ratio_per_symbol)), one_dimensional_transition_matrix.size()) };
+    const size_t num_of_transitions_per_symbol{ std::min(static_cast<size_t>(std::round(static_cast<double>(num_of_states) * states_transitions_ratio_per_symbol)), one_dimensional_transition_matrix.size()) };
     for (Symbol symbol{ 0 }; symbol < alphabet_size; ++symbol) {
-        std::shuffle(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), gen);
+        std::ranges::shuffle(one_dimensional_transition_matrix, gen);
         for (size_t i = 0; i < num_of_transitions_per_symbol; ++i) {
             const State source{ one_dimensional_transition_matrix[i] / num_of_states };
             const State target{ one_dimensional_transition_matrix[i] % num_of_states };
@@ -271,13 +257,12 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
 
 Nfa builder::parse_from_mata(std::istream& nfa_stream) {
     const std::string nfa_str = "NFA";
-    parser::Parsed parsed{ parser::parse_mf(nfa_stream) };
+    const parser::Parsed parsed{ parser::parse_mf(nfa_stream) };
     if (parsed.size() != 1) {
         throw std::runtime_error("The number of sections in the input file is '" + std::to_string(parsed.size())
             + "'. Required is '1'.\n");
     }
-    const std::string automaton_type{ parsed[0].type };
-    if (automaton_type.compare(0, nfa_str.length(), nfa_str) != 0) {
+    if (const std::string automaton_type{ parsed[0].type }; automaton_type.compare(0, nfa_str.length(), nfa_str) != 0) {
         throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFA'\n");
     }
     IntAlphabet alphabet;

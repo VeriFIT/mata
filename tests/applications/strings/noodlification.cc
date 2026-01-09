@@ -18,41 +18,41 @@ using namespace mata::nfa::builder;
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
-	x.initialstates = {1, 3}; \
-	x.finalstates = {5}; \
-	x.delta.add(1, 'a', 3); \
-	x.delta.add(1, 'a', 10); \
-	x.delta.add(1, 'b', 7); \
-	x.delta.add(3, 'a', 7); \
-	x.delta.add(3, 'b', 9); \
-	x.delta.add(9, 'a', 9); \
-	x.delta.add(7, 'b', 1); \
-	x.delta.add(7, 'a', 3); \
-	x.delta.add(7, 'c', 3); \
-	x.delta.add(10, 'a', 7); \
-	x.delta.add(10, 'b', 7); \
-	x.delta.add(10, 'c', 7); \
-	x.delta.add(7, 'a', 5); \
-	x.delta.add(5, 'a', 5); \
-	x.delta.add(5, 'c', 9); \
+	(x).initialstates = {1, 3}; \
+	(x).finalstates = {5}; \
+	(x).delta.add(1, 'a', 3); \
+	(x).delta.add(1, 'a', 10); \
+	(x).delta.add(1, 'b', 7); \
+	(x).delta.add(3, 'a', 7); \
+	(x).delta.add(3, 'b', 9); \
+	(x).delta.add(9, 'a', 9); \
+	(x).delta.add(7, 'b', 1); \
+	(x).delta.add(7, 'a', 3); \
+	(x).delta.add(7, 'c', 3); \
+	(x).delta.add(10, 'a', 7); \
+	(x).delta.add(10, 'b', 7); \
+	(x).delta.add(10, 'c', 7); \
+	(x).delta.add(7, 'a', 5); \
+	(x).delta.add(5, 'a', 5); \
+	(x).delta.add(5, 'c', 9); \
 
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
-	x.initialstates = {4}; \
-	x.finalstates = {2, 12}; \
-	x.delta.add(4, 'c', 8); \
-	x.delta.add(4, 'a', 8); \
-	x.delta.add(8, 'b', 4); \
-	x.delta.add(4, 'a', 6); \
-	x.delta.add(4, 'b', 6); \
-	x.delta.add(6, 'a', 2); \
-	x.delta.add(2, 'b', 2); \
-	x.delta.add(2, 'a', 0); \
-	x.delta.add(0, 'a', 2); \
-	x.delta.add(2, 'c', 12); \
-	x.delta.add(12, 'a', 14); \
-	x.delta.add(14, 'b', 12); \
+	(x).initialstates = {4}; \
+	(x).finalstates = {2, 12}; \
+	(x).delta.add(4, 'c', 8); \
+	(x).delta.add(4, 'a', 8); \
+	(x).delta.add(8, 'b', 4); \
+	(x).delta.add(4, 'a', 6); \
+	(x).delta.add(4, 'b', 6); \
+	(x).delta.add(6, 'a', 2); \
+	(x).delta.add(2, 'b', 2); \
+	(x).delta.add(2, 'a', 0); \
+	(x).delta.add(0, 'a', 2); \
+	(x).delta.add(2, 'c', 12); \
+	(x).delta.add(12, 'a', 14); \
+	(x).delta.add(14, 'b', 12); \
 
 // }}}
 
@@ -575,7 +575,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     SECTION("Simple - 1 input, 1 output") {
         x = create_from_regex("(a|b)*");
         y = create_from_regex("(a|b)*");
-        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t = Nft::with_levels(2, 1, { 0 }, { 0 });
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
         Nft copy = t;
@@ -594,7 +594,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         x = create_from_regex("(a|b)*");
         y = create_from_regex("(a|b)*");
         z = create_from_regex("(a|b)*");
-        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t = Nft::with_levels(2, 1, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
         Nft copy = t;
@@ -619,7 +619,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         x = create_from_regex("(a|b)*");
         y = create_from_regex("(a|b)*");
         z = create_from_regex("(a|b)*");
-        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t = Nft::with_levels(2, 1, { 0 }, { 0 });
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
         Nft copy = t;
@@ -645,7 +645,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         y = create_from_regex("(a|b)*");
         z = create_from_regex("(a|b)*");
         w = create_from_regex("(a|b)*");
-        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t = Nft::with_levels(2, 1, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
         Nft copy = t;
@@ -712,7 +712,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         y = create_from_regex("(a|b)*");
         z = create_from_regex("(a|b)*");
         w = create_from_regex("a*");
-        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t = Nft::with_levels(2, 1, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'a'}, 0);
         Nft copy = t;
@@ -737,10 +737,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         x = create_from_regex("(a|b)*");
         y = create_from_regex("b+");
         z = create_from_regex("(a|b)*");
-        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t = Nft::with_levels(2, 1, { 0 }, { 0 });
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'a'}, 0);
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
-        REQUIRE(noodles.size() == 0);
+        CHECK(noodles.empty());
     }
 }

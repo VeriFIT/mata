@@ -15,17 +15,18 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
+#include <ranges>
 #include <cstdint>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
-	if (mata::LOG_VERBOSITY >= lvl) {\
-		std::cerr << title << ": " << x << "\n";\
-	}\
+    if (mata::LOG_VERBOSITY >= (lvl)) {\
+        std::cerr << (title) << ": " << x << "\n";\
+    }\
 }
 
 #define PRINT_VERBOSE_LVL_LN(lvl, title, x) {\
-	PRINT_VERBOSE_LVL(lvl, title, __FILE__ << ":" << __func__ << ":" << __LINE__ << ": ")\
+    PRINT_VERBOSE_LVL((lvl), (title), __FILE__ << ":" << __func__ << ":" << __LINE__ << ": ")\
 }
 
 // #define DEBUG_PRINT(x) { std::cerr << "debug: " << x << "\n"; }
@@ -48,14 +49,28 @@
  */
 namespace mata {
 
-/// Representation of bool vector by a vector of uint8_t.
+template <typename T, typename Predicate>
+auto enumerate(const std::vector<T>& vec, Predicate pred) {
+    return std::views::iota(size_t{ 0 }, vec.size())
+         | std::views::filter([&](const size_t i) { return pred(vec[i]); })
+         | std::views::transform([&](const size_t i) { return std::pair(i, vec[i]); });
+}
+
+template <typename T, typename Predicate>
+auto filter_indices(const std::vector<T>& vec, Predicate pred) {
+    return std::views::iota(size_t{ 0 }, vec.size())
+         | std::views::filter([&](const size_t i) { return pred(vec[i]); });
+}
+
+
+/// Representation of a bool vector by a vector of uint8_t.
 class BoolVector : public std::vector<uint8_t> {
 public:
-    BoolVector(size_t size, bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
+    BoolVector(const size_t size, const bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
     BoolVector(const BoolVector&) = default;
     BoolVector(BoolVector&&) noexcept = default;
     BoolVector() = default;
-    BoolVector(std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
+    BoolVector(const std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
     explicit BoolVector(const std::vector<uint8_t>& uint8_ts): std::vector<uint8_t>(uint8_ts) {}
 
     BoolVector& operator=(const BoolVector&) = default;
@@ -120,29 +135,29 @@ namespace utils {
  * @return A new string with all occurrences of the substring replaced.
  */
 inline std::string replace_all(const std::string& input, const std::string& needle, const std::string& replace) {
-	std::string result = input;
-	size_t pos = 0;
-	while ((pos = result.find(needle, pos)) != std::string::npos) {
-		result.replace(pos, needle.length(), replace);
-		pos += replace.length();
-	}
-	return result;
+    std::string result = input;
+    size_t pos = 0;
+    while ((pos = result.find(needle, pos)) != std::string::npos) {
+        result.replace(pos, needle.length(), replace);
+        pos += replace.length();
+    }
+    return result;
 }
 
 /** Are two sets disjoint? */
 template <class T>
 bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 { // {{{
-	auto itLhs = lhs.begin();
-	auto itRhs = rhs.begin();
-	while (itLhs != lhs.end() && itRhs != rhs.end())
-	{
-		if (*itLhs == *itRhs) { return false; }
-		else if (*itLhs < *itRhs) { ++itLhs; }
-		else {++itRhs; }
-	}
+    auto it_lhs = lhs.begin();
+    auto it_rhs = rhs.begin();
+    while (it_lhs != lhs.end() && it_rhs != rhs.end())
+    {
+        if (*it_lhs == *it_rhs) { return false; }
+        else if (*it_lhs < *it_rhs) { ++it_lhs; }
+        else {++it_rhs; }
+    }
 
-	return true;
+    return true;
 } // }}}
 
 /** Is there an element in a container? */
@@ -163,11 +178,15 @@ bool is_in(const T& elem, const Cont& cont)
 template <class T>
 inline size_t hash_combine(size_t lhs, const T& rhs)
 { // {{{
-	size_t rhs_hash = std::hash<T>{}(rhs);
+    const size_t rhs_hash = std::hash<T>{}(rhs);
   lhs ^= rhs_hash + 0x9e3779b9 + (lhs<<6) + (lhs>>2);
-	return lhs;
+    return lhs;
 } // hash_combine }}}
 
+
+// Concept to check if all types in a parameter pack are the same as a specified type U
+template<typename U, typename... Ts>
+concept AllOfType = (std::same_as<U, Ts> && ...);
 
 /**
  * @brief  Hashes a range
@@ -178,40 +197,36 @@ inline size_t hash_combine(size_t lhs, const T& rhs)
 template <typename It>
 size_t hash_range(It first, It last)
 { // {{{
-	size_t accum = 0;
+    size_t accum = 0;
 
-	for (; first != last; ++first)
-	{
-		accum = hash_combine(accum, *first);
-	}
+    for (; first != last; ++first)
+    {
+        accum = hash_combine(accum, *first);
+    }
 
-	return accum;
+    return accum;
 } // hash_range(It, It) }}}
 
 /// checks whether a container with @p find contains a key
 template <class T, class K>
 inline bool haskey(const T& cont, const K& key)
 {
-	return cont.find(key) != cont.cend();
+    return cont.find(key) != cont.cend();
 }
 
 /// inverts a map (should work for std::map and std::unordered_map)
-template <template <class, class, class...> class Map, class T1, class T2, class... Args>
-Map<T2, T1> invert_map(const Map<T1, T2>& mp)
-{ // {{{
-	Map<T2, T1> result;
+template<template <class, class, class...> class Map, class T1, class T2, class... Args>
+Map<T2, T1> invert_map(const Map<T1, T2>& mp) {
+    Map<T2, T1> result;
 
-	for (const auto& key_val_pair : mp)
-	{
-		auto it_ins_pair = result.insert({key_val_pair.second, key_val_pair.first});
-		if (!it_ins_pair.second)
-		{
-			throw std::runtime_error("duplicate key when inverting a map");
-		}
-	}
+    for (const auto& key_val_pair : mp) {
+        if (auto it_ins_pair = result.insert({ key_val_pair.second, key_val_pair.first }); !it_ins_pair.second) {
+            throw std::runtime_error("duplicate key when inverting a map");
+        }
+    }
 
-	return result;
-} // invert_map }}}
+    return result;
+}
 
 template<class Tuple, std::size_t N>
 struct TuplePrinter;
@@ -223,7 +238,7 @@ struct TuplePrinter
 {
     static std::string print(const Tuple& t)
     {
-        std::string res = TuplePrinter<Tuple, N-1>::print(t);
+        const std::string res = TuplePrinter<Tuple, N-1>::print(t);
         return res + ", " + std::to_string(std::get<N-1>(t));
     }
 };
@@ -346,11 +361,11 @@ namespace std
 template <class A, class B>
 struct hash<std::pair<A,B>>
 {
-	inline size_t operator()(const std::pair<A,B>& k) const
-	{ // {{{
-		size_t accum = std::hash<A>{}(k.first);
-		return mata::utils::hash_combine(accum, k.second);
-	} // operator() }}}
+    inline size_t operator()(const std::pair<A,B>& k) const
+    { // {{{
+        size_t accum = std::hash<A>{}(k.first);
+        return mata::utils::hash_combine(accum, k.second);
+    } // operator() }}}
 };
 
 /**
@@ -359,10 +374,10 @@ struct hash<std::pair<A,B>>
 template <class A>
 struct hash<std::set<A>>
 {
-	inline size_t operator()(const std::set<A>& cont) const
-	{ // {{{
-		return mata::utils::hash_range(cont.begin(), cont.end());
-	} // operator() }}}
+    inline size_t operator()(const std::set<A>& cont) const
+    { // {{{
+        return mata::utils::hash_range(cont.begin(), cont.end());
+    } // operator() }}}
 };
 
 /**
@@ -371,10 +386,10 @@ struct hash<std::set<A>>
 template <class A>
 struct hash<std::vector<A>>
 {
-	inline size_t operator()(const std::vector<A>& cont) const
-	{ // {{{
-		return mata::utils::hash_range(cont.begin(), cont.end());
-	} // operator() }}}
+    inline size_t operator()(const std::vector<A>& cont) const
+    { // {{{
+        return mata::utils::hash_range(cont.begin(), cont.end());
+    } // operator() }}}
 };
 
 /*#######################################################
@@ -394,7 +409,7 @@ template <class A> std::string to_string(const std::function<A>& func);
 template <class A, class B> std::string to_string(const std::pair<A, B>& p);
 template <class A, class B> std::string to_string(const std::map<A, B>& mp);
 template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap);
-template <class A, class B> std::string to_string(const std::unordered_multimap<A, B>& unmmap);
+template <class A, class B> std::string to_string(const std::unordered_multimap<A, B>& unmap);
 
 // }}}
 
@@ -403,11 +418,11 @@ template <class A, class B> std::string to_string(const std::unordered_multimap<
  *========================================{{{*/
 
 /** Character to string */
-inline std::string to_string(char ch)
+inline std::string to_string(const char ch)
 { // {{{
-	std::string str;
-	str += ch;
-	return str;
+    std::string str;
+    str += ch;
+    return str;
 } // to_string(char) }}}
 
 /** String to string */
@@ -417,34 +432,34 @@ inline std::string to_string(const std::string& str) { return str; }
 template <class A>
 std::string to_string(const std::vector<A>& vec)
 { // {{{
-	std::string result = "[";
-	bool first = true;
-	for (auto elem : vec)
-	{
-		if (!first) { result += ", "; }
-		first = false;
-		result += std::to_string(elem);
-	}
-	result += "]";
+    std::string result = "[";
+    bool first = true;
+    for (auto elem : vec)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result += std::to_string(elem);
+    }
+    result += "]";
 
-	return result;
+    return result;
 } // to_string(std::vector) }}}
 
 /** List to string */
 template <class A>
 std::string to_string(const std::list<A>& vec)
 { // {{{
-	std::string result = "[";
-	bool first = true;
-	for (auto elem : vec)
-	{
-		if (!first) { result += ", "; }
-		first = false;
-		result += std::to_string(elem);
-	}
-	result += "]";
+    std::string result = "[";
+    bool first = true;
+    for (auto elem : vec)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result += std::to_string(elem);
+    }
+    result += "]";
 
-	return result;
+    return result;
 } // to_string(std::list) }}}
 
 // TODO: the following functions are similar
@@ -453,60 +468,60 @@ std::string to_string(const std::list<A>& vec)
 template <class A, class B>
 std::string to_string(const std::unordered_map<A, B>& unmap)
 { // {{{
-	std::string result = "{";
-	bool first = true;
-	for (auto key_val_pair : unmap)
-	{
-		if (!first) { result += ", "; }
-		first = false;
-		result +=
-			std::to_string(key_val_pair.first) +
-			" -> " +
-			std::to_string(key_val_pair.second);
-	}
-	result += "}";
+    std::string result = "{";
+    bool first = true;
+    for (auto key_val_pair : unmap)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result +=
+            std::to_string(key_val_pair.first) +
+            " -> " +
+            std::to_string(key_val_pair.second);
+    }
+    result += "}";
 
-	return result;
+    return result;
 } // to_string(std::unordered_map) }}}
 
 /** map to string */
 template <class A, class B>
 std::string to_string(const std::map<A, B>& mp)
 { // {{{
-	std::string result = "{";
-	bool first = true;
-	for (auto key_val_pair : mp)
-	{
-		if (!first) { result += ", "; }
-		first = false;
-		result +=
-			std::to_string(key_val_pair.first) +
-			" -> " +
-			std::to_string(key_val_pair.second);
-	}
-	result += "}";
+    std::string result = "{";
+    bool first = true;
+    for (auto key_val_pair : mp)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result +=
+            std::to_string(key_val_pair.first) +
+            " -> " +
+            std::to_string(key_val_pair.second);
+    }
+    result += "}";
 
-	return result;
+    return result;
 } // to_string(std::map) }}}
 
 /** unordered_multimap to string */
 template <class A, class B>
 std::string to_string(const std::unordered_multimap<A, B>& unmap)
 { // {{{
-	std::string result = "{";
-	bool first = true;
-	for (auto key_val_pair : unmap)
-	{
-		if (!first) { result += ", "; }
-		first = false;
-		result +=
-			std::to_string(key_val_pair.first) +
-			" -> " +
-			std::to_string(key_val_pair.second);
-	}
-	result += "}";
+    std::string result = "{";
+    bool first = true;
+    for (auto key_val_pair : unmap)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result +=
+            std::to_string(key_val_pair.first) +
+            " -> " +
+            std::to_string(key_val_pair.second);
+    }
+    result += "}";
 
-	return result;
+    return result;
 } // to_string(std::unordered_multimap) }}}
 
 
@@ -514,62 +529,62 @@ std::string to_string(const std::unordered_multimap<A, B>& unmap)
 template <class A>
 std::string to_string(const std::set<A>& st)
 { // {{{
-	std::string result = "{";
-	bool first = true;
-	for (auto elem : st)
-	{
-		if (!first) { result += ", "; }
-		first = false;
-		result += std::to_string(elem);
-	}
-	result += "}";
+    std::string result = "{";
+    bool first = true;
+    for (auto elem : st)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result += std::to_string(elem);
+    }
+    result += "}";
 
-	return result;
+    return result;
 } // to_string(std::set) }}}
 
 /** stack to string */
 template <class A>
 std::string to_string(const std::stack<A>& stck)
 { // {{{
-	std::stack<A> copy = stck;
-	std::vector<A> vec;
-	while (!copy.empty()) {
-		vec.push_back(copy.top());
-		copy.pop();
-	}
-	std::reverse(vec.begin(), vec.end());
-	return std::to_string(vec);
+    std::stack<A> copy = stck;
+    std::vector<A> vec;
+    while (!copy.empty()) {
+        vec.push_back(copy.top());
+        copy.pop();
+    }
+    std::reverse(vec.begin(), vec.end());
+    return std::to_string(vec);
 } // to_string(std::stack) }}}
 
 /** function to string */
 template <class A>
-std::string to_string(const std::function<A>& fun)
+std::string to_string(const std::function<A>& func)
 { // {{{
-	return std::to_string(static_cast<const void*>(&fun));
+    return std::to_string(static_cast<const void*>(&func));
 } // to_string(std::function) }}}
 
 /** tuple to string */
 template <class... Ts>
 std::string to_string(const std::tuple<Ts...>& tup)
 { // {{{
-	std::string str = "<";
+    std::string str = "<";
   str += mata::utils::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
-	str += ">";
+    str += ">";
 
-	return str;
+    return str;
 } // to_string(std::tuple) }}}
 
 template <class A, class B>
 std::string to_string(const std::pair<A, B>& p)
 { // {{{
-	return std::to_string(std::tuple<A, B>(p.first, p.second));
+    return std::to_string(std::tuple<A, B>(p.first, p.second));
 } // to_string(std::pair) }}}
 
 /** arbitrary type with the << operator */
 template <class A>
 std::string to_string(const A& value)
 { // {{{
-	std::ostringstream os;
+    std::ostringstream os;
   os << value;
   return os.str();
 } // to_string(T) }}}

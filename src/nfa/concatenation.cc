@@ -1,29 +1,29 @@
-/* nfa-concatenation.cc -- Concatenation of NFAs
+/** @file
+ * @brief Concatenation of NFAs.
  */
 
-// MATA headers
-#include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 
 namespace mata::nfa {
 
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs, const bool use_epsilon,
                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
     return algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming);
 }
 
 Nfa& Nfa::concatenate(const Nfa& aut) {
-    size_t n = this->num_of_states();
-    auto upd_fnc = [&](State st) {
+    const size_t n = this->num_of_states();
+    auto upd_fnc = [&](const State st) {
         return st + n;
     };
 
     // copy the information about aut to save the case when this is the same object as aut.
     utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
     utils::SparseSet<mata::nfa::State> aut_final = aut.final;
-    size_t aut_n = aut.num_of_states();
+    const size_t aut_n = aut.num_of_states();
 
     this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
@@ -39,7 +39,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     for(const State& ini : aut_initial) {
         const StatePost& ini_post = this->delta[upd_fnc(ini)];
         // is ini state also final?
-        bool is_final = aut_final[ini];
+        const bool is_final = aut_final[ini];
         for(const State& fin : this->final) {
             if(is_final) {
                 new_fin.insert(fin);
@@ -70,23 +70,23 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     const unsigned long lhs_states_num{lhs.num_of_states() };
     const unsigned long rhs_states_num{rhs.num_of_states() };
     Nfa result{}; // Concatenated automaton.
-    StateRenaming _lhs_states_renaming{}; // Map mapping rhs states to result states.
-    StateRenaming _rhs_states_renaming{}; // Map mapping rhs states to result states.
+    StateRenaming lhs_states_renaming{}; // Map mapping rhs states to result states.
+    StateRenaming rhs_states_renaming{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
     if (result_num_of_states == 0) { return Nfa{}; }
 
     // Map lhs states to result states.
-    _lhs_states_renaming.reserve(lhs_states_num);
+    lhs_states_renaming.reserve(lhs_states_num);
     Symbol result_state_index{ 0 };
     for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state) {
-        _lhs_states_renaming.insert(std::make_pair(lhs_state, result_state_index));
+        lhs_states_renaming.insert(std::make_pair(lhs_state, result_state_index));
         ++result_state_index;
     }
     // Map rhs states to result states.
-    _rhs_states_renaming.reserve(rhs_states_num);
+    rhs_states_renaming.reserve(rhs_states_num);
     for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state) {
-        _rhs_states_renaming.insert(std::make_pair(rhs_state, result_state_index));
+        rhs_states_renaming.insert(std::make_pair(rhs_state, result_state_index));
         ++result_state_index;
     }
 
@@ -100,14 +100,14 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     for (const auto& lhs_final_state: lhs.final) {
         for (const auto& rhs_initial_state: rhs.initial) {
             result.delta.add(lhs_final_state, epsilon,
-                             _rhs_states_renaming[rhs_initial_state]);
+                             rhs_states_renaming[rhs_initial_state]);
         }
     }
 
     // Make result final states.
     for (const auto& rhs_final_state: rhs.final)
     {
-        result.final.insert(_rhs_states_renaming[rhs_final_state]);
+        result.final.insert(rhs_states_renaming[rhs_final_state]);
     }
 
     // Add rhs transitions to the result.
@@ -117,9 +117,9 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
         {
             for (const State& rhs_state_to: rhs_move.targets)
             {
-                result.delta.add(_rhs_states_renaming[rhs_state],
+                result.delta.add(rhs_states_renaming[rhs_state],
                                  rhs_move.symbol,
-                                 _rhs_states_renaming[rhs_state_to]);
+                                 rhs_states_renaming[rhs_state_to]);
             }
         }
     }
@@ -127,8 +127,8 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (!use_epsilon) {
         result.remove_epsilon();
     }
-    if (lhs_state_renaming != nullptr) { *lhs_state_renaming = _lhs_states_renaming; }
-    if (rhs_state_renaming != nullptr) { *rhs_state_renaming = _rhs_states_renaming; }
+    if (lhs_state_renaming != nullptr) { *lhs_state_renaming = lhs_states_renaming; }
+    if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
     return result;
 } // concatenate_eps().
 } // Namespace mata::nfa.

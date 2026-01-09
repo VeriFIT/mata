@@ -1,4 +1,5 @@
-/* strings.hh -- Operations on NFAs/NFTs for string solving.
+/** @file
+ * @brief Operations on NFAs/NFTs used for string constraint solving.
  */
 
 #ifndef MATA_STRING_SOLVING_HH_
@@ -8,7 +9,7 @@
 #include "mata/nft/nft.hh"
 
 /**
- * NFA algorithms usable for solving string constraints.
+ * Operations on NFAs/NFTs used for string constraint solving.
  */
 namespace mata::applications::strings {
 
@@ -30,7 +31,7 @@ public:
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
      * @param aut Automaton to compute shortest words for.
      */
-    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
+    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton_(revert(aut)) {
         insert_initial_lengths();
         compute();
     }
@@ -54,10 +55,10 @@ private:
     /// Pair binding the length of all words in the word set and word set with words of the given length.
     using LengthWordsPair = std::pair<WordLength, std::set<Word>>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
-    std::set<State> processed{}; ///< Set of already processed states.
-    std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const Nfa reversed_automaton; ///< Reversed input automaton.
+    std::unordered_map<State, LengthWordsPair> shortest_words_map_{};
+    std::set<State> processed_{}; ///< Set of already processed states.
+    std::deque<State> fifo_queue_{}; ///< FIFO queue for states to process.
+    const Nfa reversed_automaton_; ///< Reversed input automaton.
 
     /**
      * @brief Inserts initial lengths into the shortest words map.
@@ -83,7 +84,7 @@ private:
      * @return Created default shortest words map element for the given @p state.
      */
     LengthWordsPair map_default_shortest_words(const State state) {
-        return shortest_words_map.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
+        return shortest_words_map_.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
     }
 
     /**
@@ -103,10 +104,10 @@ std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
  * @brief Get the accepting words for each tape of @p nft with specific lengths
- * 
+ *
  * This function finds such an accepting word of @p nft that for each tape i,
  * the word on this tape (on the ith index of resulting vector) has the length lengths[i].
- * 
+ *
  * @param nft Transducer whose accepting words we are looking for
  * @param lengths The lengths of the words of each tape (size of lengths == the levels of @p nft)
  * @return std::optional<std::vector<Word>> Either the resulting words of tapes, or std::nullopt if such words of specific lengths do not exist
@@ -169,7 +170,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    explicit Segmentation(const SegNfa& aut, const std::set<Symbol>& epsilons) : epsilons(epsilons), automaton(aut) {
+    explicit Segmentation(const SegNfa& aut, const std::set<Symbol>& epsilons) : epsilons_(epsilons), automaton_(aut) {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
 
@@ -177,14 +178,14 @@ public:
      * Get segmentation depths for ε-transitions.
      * @return Map of depths to lists of ε-transitions.
      */
-    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
+    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions_; }
 
     /**
      * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
      *
      * @return Map of depths to a map of states to transitions
      */
-    const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map; }
+    const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map_; }
 
     /**
      * Get segment automata.
@@ -200,17 +201,17 @@ public:
      */
     const std::vector<Nfa>& get_untrimmed_segments();
 
-    const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
+    const VisitedEpsMap& get_visited_eps() const { return this->visited_eps_; }
 
 private:
-    const std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
+    const std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
-    const SegNfa& automaton;
-    EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
-    EpsilonDepthTransitionMap eps_depth_trans_map{}; /// Epsilon depths with mapping of states to epsilon transitions
-    std::vector<SegNfa> segments{}; ///< Segments for @p automaton.
-    std::vector<SegNfa> segments_raw{}; ///< Raw segments for @p automaton.
-    VisitedEpsMap visited_eps{}; /// number of visited eps for each state
+    const SegNfa& automaton_;
+    EpsilonDepthTransitions epsilon_depth_transitions_{}; ///< Epsilon depths.
+    EpsilonDepthTransitionMap eps_depth_trans_map_{}; /// Epsilon depths with mapping of states to epsilon transitions
+    std::vector<SegNfa> segments_{}; ///< Segments for @p automaton.
+    std::vector<SegNfa> segments_raw_{}; ///< Raw segments for @p automaton.
+    VisitedEpsMap visited_eps_{}; /// number of visited eps for each state
 
     /**
      * Pair of state and its depth.
@@ -413,17 +414,21 @@ struct TransducerNoodleElement {
     std::shared_ptr<Nfa> output_aut;
     unsigned output_index;
 
-    TransducerNoodleElement(std::shared_ptr<Nft> transducer, std::shared_ptr<Nfa> input_aut, unsigned input_index, std::shared_ptr<Nfa> output_aut, unsigned output_index)
-                : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
+    TransducerNoodleElement(
+        const std::shared_ptr<Nft>& transducer, const std::shared_ptr<Nfa>& input_aut, const unsigned input_index,
+        const std::shared_ptr<Nfa>& output_aut, const unsigned output_index)
+        : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut),
+          output_index(output_index) {}
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
 std::vector<TransducerNoodle> noodlify_for_transducer(
-    std::shared_ptr<Nft> nft,
+    const std::shared_ptr<Nft>& nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
-    bool reduce_intersection = false
+    bool reduce_intersection = true,
+    bool use_homomorphic_heuristic = true
 );
 
 /**
@@ -462,20 +467,20 @@ enum class ReplaceMode {
 /**
  * Create identity transducer over the @p alphabet with @p num_of_levels levels.
  */
-Nft create_identity(mata::Alphabet* alphabet, size_t num_of_levels = 2);
+Nft create_identity(Alphabet const* const alphabet, size_t num_of_levels = 2);
 
 /**
  * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
  *  symbol @p from_symbol replaced with @to_symbol.
  */
-Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol from_symbol, Symbol replacement,
+Nft create_identity_with_single_symbol_replace(Alphabet const* const alphabet, Symbol from_symbol, Symbol replacement,
                                                ReplaceMode replace_mode = ReplaceMode::All);
 
 /**
  * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
  *  symbol @p from_symbol replaced with word @p replacement.
  */
-Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol from_symbol, const Word& replacement,
+Nft create_identity_with_single_symbol_replace(Alphabet const* const alphabet, Symbol from_symbol, const Word& replacement,
                                                ReplaceMode replace_mode = ReplaceMode::All);
 
 /**
@@ -489,21 +494,21 @@ Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol 
  * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
  * @return The reluctant leftmost replace NFT.
  */
-Nft replace_reluctant_regex(const std::string& regex, const Word& replacement, Alphabet* alphabet,
+Nft replace_reluctant_regex(const std::string& regex, const Word& replacement, Alphabet const* const alphabet,
                             ReplaceMode replace_mode = ReplaceMode::All, Symbol begin_marker = BEGIN_MARKER);
 
 /**
- * @brief Create NFT modelling a reluctant leftmost replace of regex @p regex to @p replacement.
+ * @brief Create NFT modelling a reluctant leftmost replace of regex represented by deterministic automaton @p aut to @p replacement.
  *
  * The most general replace operation, handling any regex as the part to be replaced.
- * @param regex NFA representing regex to be replaced.
+ * @param aut deterministic automaton representing regex to be replaced.
  * @param replacement Literal to replace with.
  * @param alphabet Alphabet over which to create the NFT.
  * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p regex.
  * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
  * @return The reluctant leftmost replace NFT.
  */
-Nft replace_reluctant_regex(nfa::Nfa regex, const Word& replacement, Alphabet* alphabet,
+Nft replace_reluctant_regex(nfa::Nfa aut, const Word& replacement, Alphabet const* const alphabet,
                             ReplaceMode replace_mode = ReplaceMode::All, Symbol begin_marker = BEGIN_MARKER);
 
 /**
@@ -515,7 +520,7 @@ Nft replace_reluctant_regex(nfa::Nfa regex, const Word& replacement, Alphabet* a
  * @param end_marker Symbol to be used internally as an end marker marking the end of the replaced literal.
  * @return The reluctant leftmost replace NFT.
  */
-Nft replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
+Nft replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet const* const alphabet,
                               ReplaceMode replace_mode = ReplaceMode::All, Symbol end_marker = END_MARKER);
 
 /**
@@ -526,7 +531,7 @@ Nft replace_reluctant_literal(const Word& literal, const Word& replacement, Alph
  * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p from_symbol.
  * @return The reluctant leftmost replace NFT.
  */
-Nft replace_reluctant_single_symbol(Symbol from_symbol, Symbol replacement, mata::Alphabet* alphabet,
+Nft replace_reluctant_single_symbol(Symbol from_symbol, Symbol replacement, Alphabet const* const alphabet,
                                     ReplaceMode replace_mode = ReplaceMode::All);
 
 /**
@@ -537,7 +542,7 @@ Nft replace_reluctant_single_symbol(Symbol from_symbol, Symbol replacement, mata
  * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p from_symbol.
  * @return The reluctant leftmost replace NFT.
  */
-Nft replace_reluctant_single_symbol(Symbol from_symbol, const Word& replacement, mata::Alphabet* alphabet,
+Nft replace_reluctant_single_symbol(Symbol from_symbol, const Word& replacement, Alphabet const* const alphabet,
                                     ReplaceMode replace_mode = ReplaceMode::All);
 
 /**
@@ -546,17 +551,17 @@ Nft replace_reluctant_single_symbol(Symbol from_symbol, const Word& replacement,
 class ReluctantReplace {
 public:
     /**
-     * @brief Create NFT modelling a reluctant leftmost replace of regex @p regex to @p replacement.
+     * @brief Create NFT modelling a reluctant leftmost replace of regex represented by deterministic automaton @p aut to @p replacement.
      *
      * The most general replace operation, handling any regex as the part to be replaced.
-     * @param regex NFA representing regex to be replaced.
+     * @param aut Deterministic automaton representing regex to be replaced.
      * @param replacement Literal to replace with.
      * @param alphabet Alphabet over which to create the NFT.
      * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p regex.
      * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
      * @return The reluctant leftmost replace NFT.
      */
-    static Nft replace_regex(nfa::Nfa regex, const Word& replacement, Alphabet* alphabet,
+    static Nft replace_regex(nfa::Nfa aut, const Word& replacement, Alphabet const* const alphabet,
                              ReplaceMode replace_mode = ReplaceMode::All, Symbol begin_marker = BEGIN_MARKER);
     /**
      * Create NFT modelling a reluctant leftmost replace of literal @p literal to @p replacement.
@@ -567,7 +572,7 @@ public:
      * @param end_marker Symbol to be used internally as an end marker marking the end of the replaced literal.
      * @return The reluctant leftmost replace NFT.
      */
-    static Nft replace_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
+    static Nft replace_literal(const Word& literal, const Word& replacement, Alphabet const* const alphabet,
                                             ReplaceMode replace_mode = ReplaceMode::All, Symbol end_marker = END_MARKER);
     /**
      * Create NFT modelling a reluctant leftmost replace of symbol @p from_symbol to @p replacement.
@@ -577,7 +582,7 @@ public:
      * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p from_symbol.
      * @return The reluctant leftmost replace NFT.
      */
-    static Nft replace_symbol(Symbol from_symbol, Symbol replacement, mata::Alphabet* alphabet,
+    static Nft replace_symbol(Symbol from_symbol, Symbol replacement, Alphabet const* const alphabet,
                                            ReplaceMode replace_mode = ReplaceMode::All);
     /**
      * Create NFT modelling a reluctant leftmost replace of symbol @p from_symbol to @p replacement.
@@ -587,27 +592,38 @@ public:
      * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p from_symbol.
      * @return The reluctant leftmost replace NFT.
      */
-    static Nft replace_symbol(Symbol from_symbol, const Word& replacement, mata::Alphabet* alphabet,
+    static Nft replace_symbol(Symbol from_symbol, const Word& replacement, Alphabet const* const alphabet,
                                            ReplaceMode replace_mode = ReplaceMode::All);
 protected:
-    nfa::Nfa end_marker_dfa(nfa::Nfa regex);
-    Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
+    static nfa::Nfa end_marker_dfa(nfa::Nfa regex);
 
-    nfa::Nfa generic_marker_dfa(const std::string& regex, Alphabet* alphabet);
-    nfa::Nfa generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet);
+    static Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
 
-    nfa::Nfa begin_marker_nfa(const std::string& regex, Alphabet* alphabet);
-    nfa::Nfa begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet);
+    static nfa::Nfa generic_marker_dfa(const std::string& regex, Alphabet const* const alphabet);
 
-    Nft begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker);
-    Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
-    nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet* alphabet);
+    static nfa::Nfa generic_marker_dfa(nfa::Nfa regex, Alphabet const* const alphabet);
 
-    Nft reluctant_leftmost_nft(const std::string& regex, Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
-    Nft reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
+    static nfa::Nfa begin_marker_nfa(const std::string& regex, Alphabet const* const alphabet);
 
-    Nft replace_literal_nft(const Word& literal, const Word& replacement, const Alphabet* alphabet, Symbol end_marker,
-                            ReplaceMode replace_mode = ReplaceMode::All);
+    static nfa::Nfa begin_marker_nfa(nfa::Nfa regex, Alphabet const* const alphabet);
+
+    static Nft begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker);
+
+    static Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
+
+    static nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet const* const alphabet);
+
+    static Nft reluctant_leftmost_nft(
+        const std::string& regex, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement,
+        ReplaceMode replace_mode);
+
+    static Nft reluctant_leftmost_nft(
+        nfa::Nfa nfa, Alphabet const* const alphabet, Symbol begin_marker, const Word& replacement,
+        ReplaceMode replace_mode);
+
+    static Nft replace_literal_nft(
+        const Word& literal, const Word& replacement, Alphabet const* const alphabet, Symbol end_marker,
+        ReplaceMode replace_mode = ReplaceMode::All);
 };
 
 } // namespace mata::applications::strings::replace

@@ -1,19 +1,20 @@
-/* nfa.cc -- operations for NFA
+/** @file
+ * @brief Operations for NFA.
  */
 
 #include <algorithm>
+#include <fstream>
+#include <iterator>
 #include <list>
 #include <optional>
-#include <iterator>
-#include <fstream>
+#include <queue>
 #include <string>
 
-// MATA headers
-#include "mata/alphabet.hh"
-#include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
+#include "mata/alphabet.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/utils/sparse-set.hh"
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -24,11 +25,6 @@ using mata::BoolVector;
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 const std::string mata::nfa::TYPE_NFA = "NFA";
-
-const State Limits::min_state;
-const State Limits::max_state;
-const Symbol Limits::min_symbol;
-const Symbol Limits::max_symbol;
 
 namespace {
     /**
@@ -50,9 +46,8 @@ namespace {
             }
         }
 
-        State state;
         while (!worklist.empty()) {
-            state = worklist.back();
+            const State state{ worklist.back() };
             worklist.pop_back();
             for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
@@ -73,19 +68,16 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = mata::nfa::remove_epsilon(*this, epsilon);
 }
 
-StateSet Nfa::get_reachable_states() const {
+StateSet Nfa::get_reachable_states(const std::function<bool(State)>& filter) const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{ this->num_of_states() };
-    for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
-    {
-        if (reachable_bool_array[original_state])
-        {
-            reachable_states.insert(original_state);
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (reachable_bool_array[state] && (not filter || filter(state))) {
+            reachable_states.insert(state);
         }
     }
-
     return reachable_states;
 }
 
@@ -105,14 +97,13 @@ std::vector<State> Nfa::distances_from_initial() const {
         que.push_back(qi);
     }
 
-    while (!que.empty()) {
-        State src = que.front();
+    while (!que.empty()) { const State src = que.front();
         que.pop_front();
-        for (Move move : delta[src].moves()) {
-            if (!visited[move.target]) {
-                visited[move.target] = true;
-                distances[move.target] = distances[src] +1;
-                que.push_back(move.target);
+        for (auto [_, target] : delta[src].moves()) {
+            if (!visited[target]) {
+                visited[target] = true;
+                distances[target] = distances[src] +1;
+                que.push_back(target);
             }
         }
     }
@@ -124,14 +115,14 @@ std::vector<State> Nfa::distances_to_final() const {
     return revert(*this).distances_from_initial();
 }
 
-Run Nfa::get_shortest_accepting_run_from_state(State q, const std::vector<State>& distances_to_final) const {
-    Run result{{}, {q}};
-    while (!final[q]) {
-        for (Move move : delta[q].moves()) {
-            if (distances_to_final[move.target] < distances_to_final[q]) {
-                result.word.push_back(move.symbol);
-                result.path.push_back(move.target);
-                q = move.target;
+Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
+    Run result{{}, {state}};
+    while (!final[state]) {
+        for (auto [symbol, target] : delta[state].moves()) {
+            if (distances_to_final[target] < distances_to_final[state]) {
+                result.word.push_back(symbol);
+                result.path.push_back(target);
+                state = target;
                 break;
             }
         }
@@ -145,7 +136,7 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
     useful_states.clear();
     useful_states = useful_states();
 #else
-    BoolVector useful_states{ get_useful_states() };
+    const BoolVector useful_states{ get_useful_states() };
 #endif
     const size_t useful_states_size{ useful_states.size() };
     std::vector<State> renaming(useful_states_size);
@@ -158,10 +149,10 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&](State q){return q < useful_states.size() && useful_states[q];};
+    auto is_state_useful = [&](const State q){return q < useful_states_size && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
-    auto rename_state = [&](State q){return renaming[q];};
+    auto rename_state = [&](const State q){return renaming[q];};
     initial.rename(rename_state);
     final.rename(rename_state);
     initial.truncate();
@@ -176,6 +167,59 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
         }
     }
     return *this;
+}
+
+
+Nfa mata::nfa::trim(
+    const Nfa& nfa, StateRenaming* state_renaming,
+    std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states,
+    std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) {
+    if (!initial_states) { initial_states = nfa.initial; }
+    if (!final_states) { final_states = nfa.final; }
+
+    // Compute useful states using Tarjan's algorithm.
+    // The result is a bool vector where true means the state is useful.
+#ifdef _STATIC_STRUCTURES_
+    BoolVector useful_states{ nfa.get_useful_states(initial_states, final_states) };
+    useful_states.clear();
+    useful_states = nfa.get_useful_states(initial_states, final_states);
+#else
+    const BoolVector useful_states{ nfa.get_useful_states(initial_states, final_states) };
+#endif
+    Nfa nfa_trimmed{};
+
+    const size_t useful_states_size{ useful_states.size() };
+    std::vector<State> renaming(useful_states_size);
+    for (State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
+        if (useful_states[orig_state]) {
+            renaming[orig_state] = new_state;
+            ++new_state;
+        }
+    }
+
+    nfa_trimmed.delta = defragment(nfa.delta, useful_states, renaming);
+
+    nfa_trimmed.initial = initial_states.value_or(nfa.initial);
+    nfa_trimmed.final = final_states.value_or(nfa.final);
+
+    auto is_state_useful = [&](const State q){return q < useful_states.size() && useful_states[q];};
+    nfa_trimmed.initial.filter(is_state_useful);
+    nfa_trimmed.final.filter(is_state_useful);
+    auto rename_state = [&](const State q){return renaming[q];};
+    nfa_trimmed.initial.rename(rename_state);
+    nfa_trimmed.final.rename(rename_state);
+    nfa_trimmed.initial.truncate();
+    nfa_trimmed.final.truncate();
+    if (state_renaming != nullptr) {
+        state_renaming->clear();
+        state_renaming->reserve(useful_states_size);
+        for (State q{ 0 }; q < useful_states_size; ++q) {
+            if (useful_states[q]) {
+                (*state_renaming)[q] = renaming[q];
+            }
+        }
+    }
+    return nfa_trimmed;
 }
 
 namespace {
@@ -196,20 +240,20 @@ namespace {
 
         TarjanNodeData() = default;
 
-        TarjanNodeData(State q, const Delta& delta, unsigned long index)
+        TarjanNodeData(const State q, const Delta& delta, const unsigned long index)
             : index(index), lowlink(index), initilized(true), on_stack(true) {
             const StatePost::Moves moves{ delta[q].moves() };
             current_move = moves.begin();
             end_move = moves.end();
         };
     };
-};
+}
 
 /**
  * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
  * (see https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm, in particular strongconnect(v))
  * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff
- * the state i is useful at the end. To break the recursiveness, we use @p program_stack simulating
+ * the state `i` is useful at the end. To break the recursiveness, we use @p program_stack simulating
  * the program stack during the recursive calls of strongconnect(v) (see the wiki).
  *
  * Node data
@@ -240,13 +284,15 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  */
-void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
+void Nfa::tarjan_scc_discover(
+    const TarjanDiscoverCallback& callback,
+    const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::vector<State> program_stack;
     std::vector<State> tarjan_stack;
     unsigned long index_cnt = 0;
 
-    for(const State& q0 : initial) {
+    for(const State& q0 : (initial_states.value_or(this->initial)).get()) {
         program_stack.push_back(q0);
     }
 
@@ -271,7 +317,7 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
                 return;
             }
         } else { // return from the recursive call
-            State act_succ = act_state_data.current_move->target;
+            const State act_succ = act_state_data.current_move->target;
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
             ++act_state_data.current_move;
@@ -297,7 +343,7 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
         }
         if(rec_call) continue;
 
-        // check if we have the root of a SCC
+        // check if we have the root of an SCC
         if(act_state_data.lowlink == act_state_data.index) {
             State st;
             std::vector<State> scc;
@@ -320,13 +366,16 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
     }
 }
 
-BoolVector Nfa::get_useful_states() const {
+BoolVector Nfa::get_useful_states(const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states, const std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) const {
     BoolVector useful(this->num_of_states(), false);
     bool final_scc = false;
 
+    const SparseSet<State>& used_initial_states{ initial_states.value_or(initial) };
+    const SparseSet<State>& used_final_states{ final_states.value_or(this->final) };
+
     TarjanDiscoverCallback callback {};
-    callback.state_discover = [&](State state) -> bool {
-        if(this->final.contains(state)) {
+    callback.state_discover = [&](const State state) -> bool {
+        if(used_final_states.contains(state)) {
             useful[state] = true;
         }
         return false;
@@ -345,18 +394,18 @@ BoolVector Nfa::get_useful_states() const {
         final_scc = false;
         return false;
     };
-    callback.scc_state_discover = [&](State state) {
+    callback.scc_state_discover = [&](const State state) {
         if(useful[state]) {
             final_scc = true;
         }
     };
-    callback.succ_state_discover = [&](State act_state, State next_state) {
+    callback.succ_state_discover = [&](const State act_state, const State next_state) {
         if(useful[next_state]) {
             useful[act_state] = true;
         }
     };
 
-    tarjan_scc_discover(callback);
+    tarjan_scc_discover(callback, used_initial_states);
     return useful;
 }
 
@@ -364,7 +413,7 @@ bool Nfa::is_lang_empty_scc() const {
     bool accepting_state = false;
 
     TarjanDiscoverCallback callback {};
-    callback.state_discover = [&](State state) -> bool {
+    callback.state_discover = [&](const State state) -> bool {
         if(this->final.contains(state)) {
             accepting_state = true;
             return true;
@@ -386,12 +435,11 @@ bool Nfa::is_acyclic() const {
             acyclic = false;
                 return true;
             } else { // check for self-loops
-                State st = scc[0];
-                for(const auto& sp : this->delta[st]) {
-                    if(sp.targets.find(st) != sp.targets.end()) {
-                        acyclic = false;
-                        return true;
-                    }
+            for (const State st = scc[0]; const auto& sp : this->delta[st]) {
+                if (sp.targets.find(st) != sp.targets.end()) {
+                    acyclic = false;
+                    return true;
+                }
                 }
             }
             return false;
@@ -429,13 +477,13 @@ bool Nfa::is_flat() const {
     return flat;
 }
 
-std::string Nfa::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+std::string Nfa::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
     std::stringstream output;
-    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
     return output.str();
 }
 
-void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
     auto to_ascii = [&](const Symbol symbol) -> std::string {
         // Translate only printable ASCII characters.
         if (symbol < 33 || symbol >= 127) {
@@ -444,19 +492,24 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
         switch (symbol) {
             case '"':     return "\\\"";
             case '\\':    return "\\\\";
-            default:      return std::string(1, static_cast<char>(symbol));
+            default:      return { 1, static_cast<char>(symbol) };
         }
     };
 
     auto translate_symbol = [&](const Symbol symbol) -> std::string {
         switch (symbol) {
-            case EPSILON:      return "<eps>";
-            default:           break;
+            case EPSILON: return "<eps>";
+            default: break;
         }
         if (decode_ascii_chars) {
             return to_ascii(symbol);
+        } else if (alphabet != nullptr) {
+            return alphabet->reverse_translate_symbol(symbol);
+        } else if (this->alphabet != nullptr) {
+            return this->alphabet->reverse_translate_symbol(symbol);
+        } else {
+            return std::to_string(symbol);
         }
-        return std::to_string(symbol);
     };
 
     auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
@@ -471,28 +524,30 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
     auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
         std::string result;
 
-        std::vector<std::pair<Symbol, Symbol>> intervals;
-        auto symbols_it = symbols.begin();
-        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
-        ++symbols_it;
-        for (; symbols_it != symbols.end(); ++symbols_it) {
-            if (*symbols_it == interval.second + 1) {
-                interval.second = *symbols_it;
-            } else {
-                intervals.push_back(interval);
-                interval = {*symbols_it, *symbols_it};
-            }
-        }
-        intervals.push_back(interval);
+        const auto intervals{
+            [&]() {
+                std::vector<std::pair<Symbol, Symbol>> intervals_val;
+                auto symbols_it = symbols.begin();
+                std::pair<Symbol, Symbol> interval{ *symbols_it, *symbols_it };
+                ++symbols_it;
+                for (; symbols_it != symbols.end(); ++symbols_it) {
+                    if (*symbols_it == interval.second + 1) { interval.second = *symbols_it; } else {
+                        intervals_val.push_back(interval);
+                        interval = { *symbols_it, *symbols_it };
+                    }
+                }
+                intervals_val.push_back(interval);
+                return intervals_val;
+            }()
+        };
 
-        for (const auto& interval: intervals) {
-            const size_t interval_size = interval.second - interval.first + 1;
-            if (interval_size == 1) {
-                result += translate_symbol(interval.first) + ",";
+        for (const auto& [symbol_from, symbol_to] : intervals) {
+            if (const size_t interval_size{ symbol_to - symbol_from + 1 }; interval_size == 1) {
+                result += translate_symbol(symbol_from) + ",";
             } else if (interval_size == 2) {
-                result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
+                result += translate_symbol(symbol_from) + "," + translate_symbol(symbol_to) + ",";
             } else {
-                result += "[" + translate_symbol(interval.first) + "-" + translate_symbol(interval.second) + "],";
+                result += "[" + translate_symbol(symbol_from) + "-" + translate_symbol(symbol_to) + "],";
             }
         }
 
@@ -505,7 +560,7 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
                  << "node [shape=circle];" << std::endl;
 
     // Double circle for final states
-    for (State final_state: final) {
+    for (const State final_state: final) {
         is_state_drawn[final_state] = true;
         output << final_state << " [shape=doublecircle];" << std::endl;
     }
@@ -552,19 +607,19 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
 
     // Arrow for initial states
     output << "node [shape=none, label=\"\"];" << std::endl;
-    for (State init_state: initial) {
+    for (const State init_state: initial) {
         output << "i" << init_state << " -> " << init_state << ";" << std::endl;
     }
 
     output << "}" << std::endl;
 }
 
-void Nfa::print_to_dot(const std::string& filename, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length) const {
+void Nfa::print_to_dot(const std::string& filename, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length);
+    print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
 }
 
 std::string Nfa::print_to_mata(const Alphabet* alphabet) const {
@@ -581,7 +636,7 @@ void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
 
     if (!initial.empty()) {
         output << "%Initial";
-        for (State init_state: initial) {
+        for (const State init_state: initial) {
             output << " q" << init_state;
         }
         output << std::endl;
@@ -589,7 +644,7 @@ void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
 
     if (!final.empty()) {
         output << "%Final";
-        for (State final_state: final) {
+        for (const State final_state: final) {
             output << " q" << final_state;
         }
         output << std::endl;
@@ -597,7 +652,8 @@ void Nfa::print_to_mata(std::ostream &output, const Alphabet* alphabet) const {
 
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " "
-        << ((alphabet != nullptr) ? alphabet->reverse_translate_symbol(trans.symbol) : std::to_string(trans.symbol))
+        << ((alphabet != nullptr) ? alphabet->reverse_translate_symbol(trans.symbol) :
+            ((this->alphabet != nullptr) ? this->alphabet->reverse_translate_symbol(trans.symbol) : std::to_string(trans.symbol)))
         << " q" << trans.target << std::endl;
     }
 }
@@ -610,7 +666,7 @@ void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) c
     print_to_mata(output, alphabet);
 }
 
-Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
+Nfa Nfa::get_one_letter_aut(const Symbol abstract_symbol) const {
     Nfa digraph{num_of_states(), initial, final };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
@@ -626,32 +682,10 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    auto get_epsilon_closure = [&](const StateSet& states) {
-        StateSet closure{ states };
-        std::queue<State> worklist;
-        for (const State state: states) {
-            worklist.push(state);
-        }
-        while (!worklist.empty()) {
-            const State state = worklist.front();
-            worklist.pop();
-            auto move_it{ delta[state].find(EPSILON) };
-            if (move_it != delta[state].end()) {
-                for (const State target: move_it->targets) {
-                    if (!closure.contains(target)) {
-                        closure.insert(target);
-                        worklist.push(target);
-                    }
-                }
-            }
-        }
-        return closure;
-    };
-
     StateSet res{};
 
     // If the symbol is EPSILON, we can stay in the same state.
-    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::NONE) {
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
         res = states;
     }
 
@@ -660,23 +694,22 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
     }
 
     StateSet from_states = states;
-    if (epsilon_closure_opt == EpsilonClosureOpt::BEFORE) {
+    if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
         // Before making the step using the symbol, we compute the epsilon closure.
-        from_states = get_epsilon_closure(states);
+        from_states = mk_epsilon_closure(states);
     }
 
     // Now, we can make the step using the symbol.
     for (const State state: from_states) {
         const StatePost& post{ delta[state] };
-        const auto move_it{ post.find(symbol) };
-        if (move_it != post.end()) {
+        if (const auto move_it{ post.find(symbol) }; move_it != post.end()) {
             res.insert(move_it->targets);
         }
     }
 
-    if (epsilon_closure_opt == EpsilonClosureOpt::AFTER) {
+    if (epsilon_closure_opt == EpsilonClosureOpt::After) {
         // We need to compute the epsilon closure of the resulting states.
-        res = get_epsilon_closure(res);
+        res = mk_epsilon_closure(res);
     }
 
     return res;
@@ -687,11 +720,9 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 
     const State new_initial_state{ add_state() };
     for (const State orig_initial_state: initial) {
-        const StatePost& state_post{ delta.state_post(orig_initial_state) };
-        for (const auto& symbol_post: state_post) {
-            for (const State target: symbol_post.targets) {
-                delta.add(new_initial_state, symbol_post.symbol, target);
-            }
+        for (const StatePost& state_post{ delta.state_post(orig_initial_state) }; const auto& symbol_post :
+             state_post) {
+            for (const State target : symbol_post.targets) { delta.add(new_initial_state, symbol_post.symbol, target); }
         }
         if (final[orig_initial_state]) { final.insert(new_initial_state); }
     }
@@ -706,10 +737,8 @@ Nfa& Nfa::unify_final(const bool force_new_state) {
 
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
-        const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
-        for (const auto& transition: transitions_to) {
-            delta.add(transition.source, transition.symbol, new_final_state);
-        }
+        for (const auto transitions_to{ delta.get_transitions_to(orig_final_state) }; const auto& transition :
+             transitions_to) { delta.add(transition.source, transition.symbol, new_final_state); }
         if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
 
@@ -736,7 +765,7 @@ State Nfa::add_state() {
     return num_of_states;
 }
 
-State Nfa::add_state(State state) {
+State Nfa::add_state(const State state) {
     if (state >= delta.num_of_states()) {
         delta.allocate(state + 1);
     }
@@ -775,9 +804,9 @@ State Nfa::insert_word(const State source, const Word &word) { return insert_wor
 
 size_t Nfa::num_of_states() const {
     return std::max({
-        static_cast<size_t>(initial.domain_size()),
-        static_cast<size_t>(final.domain_size()),
-        static_cast<size_t>(delta.num_of_states())
+        initial.domain_size(),
+        final.domain_size(),
+        delta.num_of_states()
     });
 }
 
@@ -797,7 +826,7 @@ bool Nfa::is_identical(const Nfa& aut) const {
     return delta == aut.delta;
 }
 
-Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::optional<State> sink_state) {
+Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
     const State sink{ sink_state.value_or(num_of_states()) };
     if (initial.empty()) { // The automaton has no reachable states (accepting an empty language).
         // Insert a single initial sink state.
@@ -824,7 +853,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
     // Allocate space for initial and final states from 'this' which might be missing in Delta.
     this->delta.allocate(num_of_states);
 
-    auto renumber_states = [&](State st) {
+    auto renumber_states = [&](const State st) {
         return st + num_of_states;
     };
     this->delta.append(aut.delta.renumber_targets(renumber_states));
@@ -866,12 +895,8 @@ Nfa Nfa::decode_utf8() const {
     // For example, consider the sequences 0xC8 0x80 and 0xC8 0x88.
     // Based solely on the first byte (0xC8), we cannot determine which sequence
     // will result in the higher number.
-    auto add_to_state_post = [&](StatePost &state_post, const SymbolPost& symbol_post, const bool is_nondet) {
-        if (is_nondet) {
-            state_post.insert(symbol_post);
-        } else {
-            state_post.emplace_back(std::move(symbol_post));
-        }
+    auto add_to_state_post = [&](StatePost& state_post, const SymbolPost& symbol_post, const bool is_nondet) {
+        if (is_nondet) { state_post.insert(symbol_post); } else { state_post.emplace_back(symbol_post); }
     };
 
     // UTF-8 Byte Patterns:
@@ -883,8 +908,7 @@ Nfa Nfa::decode_utf8() const {
     //       UTF-8 sequences, such as 11000000 10000000 (U+0300). Because of that,
     //       we need to check if the decoded symbol is within the valid range of Unicode code points.
     push_state_set(StateSet{this->initial});
-    while (!worklist.empty()) {
-        State q1 = worklist.top();
+    while (!worklist.empty()) { const State q1 = worklist.top();
         StatePost &q1_state_post = result.delta.mutable_state_post(q1);
         worklist.pop();
         // 1st Byte
@@ -950,4 +974,22 @@ Nfa Nfa::decode_utf8() const {
     }
 
     return result;
+}
+
+StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+    StateSet closure{ source_states };
+    std::queue<State> worklist;
+    for (const State state : source_states) { worklist.push(state); }
+    while (!worklist.empty()) {
+        const State state = worklist.front();
+        worklist.pop();
+        for (const Symbol epsilon : epsilons) {
+            if (auto move_it{ delta[state].find(epsilon) }; move_it != delta[state].end()) {
+                for (const State target : move_it->targets) {
+                    if (closure.insert(target).second) { worklist.push(target); }
+                }
+            }
+        }
+    }
+    return closure;
 }

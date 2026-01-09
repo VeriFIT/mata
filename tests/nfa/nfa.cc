@@ -1,4 +1,6 @@
-// TODO: some header
+/** @file
+ * @brief Tests for Nondeterministic Finite Automata (NFAs).
+ */
 
 #include <unordered_set>
 
@@ -22,10 +24,6 @@ using namespace mata::applications::strings;
 using namespace mata::nfa::plumbing;
 using namespace mata::utils;
 using namespace mata::parser;
-using Symbol = mata::Symbol;
-using Word = mata::Word;
-using IntAlphabet = mata::IntAlphabet;
-using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 TEST_CASE("mata::nfa::size()") {
     Nfa nfa{};
@@ -988,20 +986,20 @@ TEST_CASE("mata::nfa::Nfa::is_in_lang()") {
     }
 }
 
-TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
+TEST_CASE("mata::nfa::Nfa::is_in_lang_prefix()") {
     SECTION("without epsilon transitions") {
         SECTION("empty language") {
             Nfa nfa{};
-            CHECK(!nfa.is_prefix_in_lang(Word{}));
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'c', 'd', 'e' }));
+            CHECK(!nfa.is_in_lang_prefix(Word{}));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'c', 'd', 'e' }));
         }
 
         SECTION("epsilon language") {
             Nfa nfa{};
             nfa.initial = { 0 };
             nfa.final = { 0 };
-            CHECK(nfa.is_prefix_in_lang(Word{}));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'c', 'd', 'e' }));
+            CHECK(nfa.is_in_lang_prefix(Word{}));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'c', 'd', 'e' }));
         }
 
         SECTION("ab in ab|ac") {
@@ -1013,8 +1011,8 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(3, 'c', 4);
             nfa.final = { 2, 4 };
 
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b' }));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b' }));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'd', 'e' }));
         }
 
         SECTION("ab not in abcd") {
@@ -1026,23 +1024,23 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(3, 'd', 4);
             nfa.final = { 4 };
 
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'a', 'b' }));
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'c', 'd', 'e' }));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'a', 'b' }));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'c', 'd', 'e' }));
         }
     }
 
     SECTION("with epsilon transitions") {
         SECTION("empty language") {
             Nfa nfa{};
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'c', 'd', 'e' }, true));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'c', 'd', 'e' }, true));
         }
 
         SECTION("epsilon language") {
             Nfa nfa{};
             nfa.initial = { 0 };
             nfa.final = { 0 };
-            CHECK(nfa.is_prefix_in_lang(Word{}, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{}, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'c', 'd', 'e' }, true));
         }
 
         SECTION("epsilon language 2") {
@@ -1066,8 +1064,8 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(5, EPSILON, 3);
             nfa.delta.add(6, EPSILON, 0);
 
-            CHECK(nfa.is_prefix_in_lang(Word{}, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{}, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'c', 'd', 'e' }, true));
         }
 
         SECTION("ab in ab|ac with EPSILON at the beginning") {
@@ -1081,8 +1079,8 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(5, 'c', 6);
             nfa.final = { 3, 6 };
 
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
         }
 
         SECTION("ab in ab|ac with EPSILON in the middle") {
@@ -1096,8 +1094,8 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(5, 'c', 6);
             nfa.final = { 3, 6 };
 
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
         }
 
         SECTION("ab in ab|cd with EPSILON at the end") {
@@ -1111,8 +1109,8 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(5, EPSILON, 6);
             nfa.final = { 3, 6 };
 
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
 
         }
 
@@ -1131,8 +1129,8 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(9, EPSILON, 10);
             nfa.final = { 5, 10 };
 
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
         }
 
         SECTION("complex ab, abc, abxxy") {
@@ -1151,16 +1149,16 @@ TEST_CASE("mata::nfa::Nfa::is_prefix_in_lang()") {
             nfa.delta.add(5, 'c', 7);
             nfa.delta.add(6, EPSILON, 5);
             nfa.final = { 5, 7 };
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'x', 'x', 'y' }, true));
-            CHECK(!nfa.is_prefix_in_lang(Word{ }, true));
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'a' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'c', 'c', 'd', 'e'  }, true));
-            CHECK(nfa.is_prefix_in_lang(Word{ 'a', 'b', 'x', 'x', 'y', 'c', 'd', 'e'  }, true));
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'c', 'd', 'e' }, true));
-            CHECK(!nfa.is_prefix_in_lang(Word{ 'a', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'x', 'x', 'y' }, true));
+            CHECK(!nfa.is_in_lang_prefix(Word{ }, true));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'a' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'c', 'c', 'd', 'e'  }, true));
+            CHECK(nfa.is_in_lang_prefix(Word{ 'a', 'b', 'x', 'x', 'y', 'c', 'd', 'e'  }, true));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'c', 'd', 'e' }, true));
+            CHECK(!nfa.is_in_lang_prefix(Word{ 'a', 'c', 'd', 'e' }, true));
         }
     }
 }
@@ -1489,7 +1487,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::NFA;
+        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
         REQUIRE(aut.is_lang_empty());
         aut = builder::construct(inter_aut);
         REQUIRE(aut.is_lang_empty());
@@ -1900,7 +1898,7 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
-        REQUIRE(cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
@@ -1929,7 +1927,7 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
-        REQUIRE(!cmpl.is_in_lang({}));
+        REQUIRE(!cmpl.is_in_lang(Run{}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["b"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
@@ -1979,7 +1977,7 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
-        REQUIRE(cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
@@ -2967,7 +2965,7 @@ TEST_CASE("mata::nfa::is_complete()")
     }
 } // }}}
 
-TEST_CASE("mata::nfa::is_prefix_in_lang()")
+TEST_CASE("mata::nfa::is_in_lang_prefix()")
 { // {{{
     Nfa aut('q'+1);
 
@@ -2975,10 +2973,10 @@ TEST_CASE("mata::nfa::is_prefix_in_lang()")
     {
         Run w;
         w.word = {'a', 'b', 'd'};
-        REQUIRE(!aut.is_prefix_in_lang(w));
+        REQUIRE(!aut.is_in_lang_prefix(w));
 
         w.word = { };
-        REQUIRE(!aut.is_prefix_in_lang(w));
+        REQUIRE(!aut.is_in_lang_prefix(w));
     }
 
     SECTION("automaton accepting only epsilon")
@@ -2988,10 +2986,10 @@ TEST_CASE("mata::nfa::is_prefix_in_lang()")
 
         Run w;
         w.word = { };
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
 
         w.word = {'a', 'b'};
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
     }
 
     SECTION("small automaton")
@@ -3000,28 +2998,28 @@ TEST_CASE("mata::nfa::is_prefix_in_lang()")
 
         Run w;
         w.word = {'b', 'a'};
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
 
         w.word = { };
-        REQUIRE(!aut.is_prefix_in_lang(w));
+        REQUIRE(!aut.is_in_lang_prefix(w));
 
         w.word = {'c', 'b', 'a'};
-        REQUIRE(!aut.is_prefix_in_lang(w));
+        REQUIRE(!aut.is_in_lang_prefix(w));
 
         w.word = {'c', 'b', 'a', 'a'};
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
 
         w.word = {'a', 'a'};
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
 
         w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
 
         w.word = Word(100000, 'a');
-        REQUIRE(aut.is_prefix_in_lang(w));
+        REQUIRE(aut.is_in_lang_prefix(w));
 
         w.word = Word(100000, 'b');
-        REQUIRE(!aut.is_prefix_in_lang(w));
+        REQUIRE(!aut.is_in_lang_prefix(w));
     }
 } // }}}
 
@@ -3672,7 +3670,7 @@ TEST_CASE("mata::nfa::product(OR)") {
     REQUIRE(!rhs.is_in_lang(two_three));
 
     SECTION("Minimal example") {
-        Nfa result = mata::nfa::product(lhs, rhs, ProductFinalStateCondition::OR);
+        Nfa result = mata::nfa::product(lhs, rhs, ProductFinalStateCondition::Or);
         CHECK(!result.is_in_lang(one));
         CHECK(!result.is_in_lang(zero));
         CHECK(result.is_in_lang(two));
@@ -3906,19 +3904,17 @@ TEST_CASE("mata::nfa::get_useful_states() for profiling", "[.profiling],[useful_
     }
 }
 
-TEST_CASE("mata::nfa::trim() trivial") {
-    Nfa aut{1};
-    aut.initial.insert(0);
-    aut.final.insert(0);
-    aut.trim();
-}
-
-TEST_CASE("mata::nfa::trim()")
-{
+TEST_CASE("mata::nfa::Nfa::trim()") {
     Nfa orig_aut{20};
     FILL_WITH_AUT_A(orig_aut);
     orig_aut.delta.remove(1, 'a', 10);
 
+    SECTION("trivial") {
+        Nfa aut{1};
+        aut.initial.insert(0);
+        aut.final.insert(0);
+        aut.trim();
+    }
 
     SECTION("Without state map") {
         Nfa aut{orig_aut};
@@ -3962,8 +3958,59 @@ TEST_CASE("mata::nfa::trim()")
     }
 }
 
-TEST_CASE("mata::nfa::Nfa::delta.empty()")
-{
+TEST_CASE("mata::nfa::trim()") {
+    Nfa orig_aut{20};
+    FILL_WITH_AUT_A(orig_aut);
+    orig_aut.delta.remove(1, 'a', 10);
+
+    SECTION("trivial") {
+        Nfa aut{1};
+        aut.initial.insert(0);
+        aut.final.insert(0);
+        CHECK(nfa::are_equivalent(trim(aut), aut));
+    }
+
+    SECTION("Without state map") {
+        Nfa aut{ orig_aut };
+        Nfa trimmed_aut{ trim(orig_aut) };
+        CHECK(trimmed_aut.initial.size() == orig_aut.initial.size());
+        CHECK(trimmed_aut.final.size() == orig_aut.final.size());
+        CHECK(trimmed_aut.num_of_states() == 4);
+        for (const Word &word: get_shortest_words(orig_aut)) {
+            CHECK(trimmed_aut.is_in_lang(Run{word,{}}));
+        }
+
+        trimmed_aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
+        trimmed_aut = trim(trimmed_aut);
+        CHECK(trimmed_aut.delta.empty());
+        CHECK(trimmed_aut.num_of_states() == 0);
+    }
+
+    SECTION("With state map") {
+        Nfa aut{orig_aut};
+        StateRenaming state_map{};
+        aut = trim(aut, &state_map);
+        CHECK(aut.initial.size() == orig_aut.initial.size());
+        CHECK(aut.final.size() == orig_aut.final.size());
+        CHECK(aut.num_of_states() == 4);
+        for (const Word &word: get_shortest_words(orig_aut)) {
+            CHECK(aut.is_in_lang(Run{word,{}}));
+        }
+        REQUIRE(state_map.size() == 4);
+        CHECK(state_map.at(1) == 0);
+        CHECK(state_map.at(3) == 1);
+        CHECK(state_map.at(7) == 3);
+        CHECK(state_map.at(5) == 2);
+
+        aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
+        aut = trim(aut, &state_map);
+        CHECK(aut.delta.empty());
+        CHECK(aut.num_of_states() == 0);
+        CHECK(state_map.empty());
+    }
+}
+
+TEST_CASE("mata::nfa::Nfa::delta.empty()") {
     Nfa aut{};
 
     SECTION("Empty automaton")
@@ -4223,15 +4270,15 @@ TEST_CASE("mata::nfa:: create simple automata") {
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     nfa = builder::create_sigma_star_nfa(&alphabet);
-    CHECK(nfa.is_in_lang({ {}, {} }));
-    CHECK(nfa.is_in_lang({  0 , {} }));
-    CHECK(nfa.is_in_lang({  1 , {} }));
-    CHECK(nfa.is_in_lang({  2 , {} }));
-    CHECK(nfa.is_in_lang({ { 0, 1 }, {} }));
-    CHECK(nfa.is_in_lang({ { 1, 0 }, {} }));
-    CHECK(nfa.is_in_lang({ { 2, 2, 2 }, {} }));
-    CHECK(nfa.is_in_lang({ { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
-    CHECK(!nfa.is_in_lang({  3 , {} }));
+    CHECK(nfa.is_in_lang(Word{}));
+    CHECK(nfa.is_in_lang(Word{ 0 }));
+    CHECK(nfa.is_in_lang(Word{ 1 }));
+    CHECK(nfa.is_in_lang(Word{ 2 }));
+    CHECK(nfa.is_in_lang(Word{ 0, 1 }));
+    CHECK(nfa.is_in_lang(Word{ 1, 0 }));
+    CHECK(nfa.is_in_lang(Word{ 2, 2, 2 }));
+    CHECK(nfa.is_in_lang(Word{ 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }));
+    CHECK(!nfa.is_in_lang(Word{ 3 } ));
 }
 
 TEST_CASE("mata::nfa:: print_to_mata") {

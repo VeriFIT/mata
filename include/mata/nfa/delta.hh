@@ -1,4 +1,7 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Data structures representing the delta (transition function) of an NFA, mapping states and input symbols to
+ *  sets of states.
+ */
 
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
@@ -51,9 +54,9 @@ public:
     StateSet targets{};
 
     SymbolPost() = default;
-    explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
-    SymbolPost(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
-    SymbolPost(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
+    explicit SymbolPost(const Symbol symbol) : symbol{ symbol } {}
+    SymbolPost(const Symbol symbol, const State state_to) : symbol{ symbol }, targets{ state_to } {}
+    SymbolPost(const Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
 
     SymbolPost(SymbolPost&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
     SymbolPost(const SymbolPost& rhs) = default;
@@ -69,7 +72,7 @@ public:
     StateSet::const_iterator cbegin() const { return targets.cbegin(); }
     StateSet::const_iterator cend() const { return targets.cend(); }
 
-    size_t count(State s) const { return targets.count(s); }
+    size_t count(const State s) const { return targets.count(s); }
     bool empty() const { return targets.empty(); }
     size_t num_of_targets() const { return targets.size(); }
 
@@ -79,18 +82,18 @@ public:
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
-    void inline push_back(const State s) { targets.push_back(s); }
+    void push_back(const State s) { targets.push_back(s); }
 
     template <typename... Args>
     StateSet& emplace_back(Args&&... args) {
-	// Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
+    // Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
         return targets.emplace_back(std::forward<Args>(args)...);
     }
 
-    void erase(State s) { targets.erase(s); }
+    void erase(const State s) { targets.erase(s); }
 
-    std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
-    std::vector<State>::iterator find(State s) { return targets.find(s); }
+    std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
+    std::vector<State>::iterator find(const State s) { return targets.find(s); }
 }; // class mata::nfa::SymbolPost.
 
 /**
@@ -99,9 +102,8 @@ public:
  * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
  * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
  */
-class StatePost : private utils::OrdVector<SymbolPost> {
-private:
-    using super = utils::OrdVector<SymbolPost>;
+class StatePost : utils::OrdVector<SymbolPost> {
+    using super = OrdVector<SymbolPost>;
 public:
     using super::iterator, super::const_iterator;
     using super::begin, super::end, super::cbegin, super::cend;
@@ -182,7 +184,8 @@ public:
 
         class const_iterator;
         const_iterator begin() const;
-        const_iterator end() const;
+
+        static const_iterator end();
 
     private:
         const StatePost* state_post_{ nullptr };
@@ -245,7 +248,7 @@ public:
     const_iterator(const StatePost& state_post);
     /// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
     const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it,
-                   StatePost::const_iterator symbol_post_it_end);
+                   StatePost::const_iterator symbol_post_end);
     const_iterator(const const_iterator& other) noexcept = default;
     const_iterator(const_iterator&&) = default;
 
@@ -255,7 +258,7 @@ public:
     // Prefix increment
     const_iterator& operator++();
     // Postfix increment
-    const const_iterator operator++(int);
+    const_iterator operator++(int);
 
     const_iterator& operator=(const const_iterator& other) noexcept = default;
     const_iterator& operator=(const_iterator&&) = default;
@@ -293,7 +296,7 @@ public:
 /**
  * @brief Delta is a data structure for representing transition relation.
  *
- * Transition is represented as a triple Trans(source state, symbol, target state). Move is the part (symbol, target
+ * Transition is represented as a triple Transition(source state, symbol, target state). Move is the part (symbol, target
  *  state), specified for a single source state.
  * Its underlying data structure is vector of StatePost classes. Each index to the vector corresponds to one source
  *  state, that is, a number for a certain state is an index to the vector of state posts.
@@ -312,14 +315,14 @@ public:
     Delta(): state_posts_{} {}
     Delta(const Delta& other) = default;
     Delta(Delta&& other) = default;
-    explicit Delta(size_t n): state_posts_{ n } {}
+    explicit Delta(const size_t n): state_posts_{ n } {}
 
     Delta& operator=(const Delta& other) = default;
     Delta& operator=(Delta&& other) = default;
 
     bool operator==(const Delta& other) const;
 
-    void reserve(size_t n) {
+    void reserve(const size_t n) {
         state_posts_.reserve(n);
     };
 
@@ -369,11 +372,22 @@ public:
      */
     StatePost& mutable_state_post(State source);
 
-    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    /**
+     * @brief Defragment the Delta.
+     *
+     * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
+     * according to @p renaming.
+     *
+     * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+     * @param[in] renaming Vector of states to rename the remaining state posts to.
+     * @return Self with defragmented delta.
+     */
+    Delta& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
-	// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+    // Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
         return state_posts_.emplace_back(std::forward<Args>(args)...);
     }
 
@@ -456,7 +470,7 @@ public:
      * @param symbol Symbol
      * @param targets Set of states to
      */
-    void add(const State source, const Symbol symbol, const StateSet& targets);
+    void add(State source, Symbol symbol, const StateSet& targets);
 
     using const_iterator = std::vector<StatePost>::const_iterator;
     const_iterator cbegin() const { return state_posts_.cbegin(); }
@@ -491,6 +505,22 @@ public:
     std::vector<Transition> get_transitions_between(State state_from, State state_to) const;
 
     /**
+     * @brief Resize the delta to fit the given @p states.
+     * @tparam States A variadic parameter pack of states to resize the delta for.
+     * @param states States to resize the delta for.
+     */
+    template<typename... States> requires utils::AllOfType<State, States...>
+    Delta& resize_for_states(States... states) {
+        if constexpr (sizeof...(states) > 0) {
+            if (const State max_state{ std::max({ static_cast<State>(states)... }) }; max_state >= num_of_states()) {
+                reserve_on_insert(state_posts_, max_state);
+                state_posts_.resize(max_state + 1);
+            }
+        }
+        return *this;
+    }
+
+    /**
      * Get the set of states that are successors of the given @p state.
      * @param[in] state State from which successors are checked.
      * @return Set of states that are successors of the given @p state.
@@ -499,6 +529,7 @@ public:
 
     const StateSet& get_successors(State state, Symbol symbol) const;
 
+    // TODO(nfa): Implement.
     StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
     /**
@@ -542,9 +573,23 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
+
 protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+/**
+ * @brief Defragment the Delta.
+ *
+ * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
+ * according to @p renaming.
+ *
+ * @param[in] delta Delta to defragment.
+ * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+ * @param[in] renaming Vector of states to rename the remaining state posts to.
+ * @return The defragmented Delta.
+ */
+Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
 /**
  * @brief Iterator over transitions represented as @c Transition instances.
@@ -556,13 +601,14 @@ public:
     Transitions() = default;
     explicit Transitions(const Delta* delta): delta_{ delta } {}
     Transitions(Transitions&&) = default;
-    Transitions(Transitions&) = default;
+    Transitions(const Transitions&) = default;
     Transitions& operator=(Transitions&&) = default;
-    Transitions& operator=(Transitions&) = default;
+    Transitions& operator=(const Transitions&) = default;
 
     class const_iterator;
     const_iterator begin() const;
-    const_iterator end() const;
+
+    static const_iterator end();
 private:
     const Delta* delta_;
 }; // class Transitions.
@@ -599,7 +645,7 @@ public:
     // Prefix increment
     const_iterator& operator++();
     // Postfix increment
-    const const_iterator operator++(int);
+    const_iterator operator++(int);
 
     const_iterator& operator=(const const_iterator& other) noexcept = default;
     const_iterator& operator=(const_iterator&&) = default;

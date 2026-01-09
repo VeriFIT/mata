@@ -20,7 +20,7 @@ TEST_CASE("Mata::nft::compose()") {
         SECTION("Linear structure") {
 
             SECTION("Epsilon free") {
-                lhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                lhs = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
                 lhs.delta.add(0, 'e', 1);
                 lhs.delta.add(1, 'a', 2);
                 lhs.delta.add(2, 'g', 3);
@@ -28,7 +28,7 @@ TEST_CASE("Mata::nft::compose()") {
                 lhs.delta.add(4, 'i', 5);
                 lhs.delta.add(5, 'c', 6);
 
-                rhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                rhs = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
                 rhs.delta.add(0, 'a', 1);
                 rhs.delta.add(1, 'f', 2);
                 rhs.delta.add(2, 'b', 3);
@@ -36,7 +36,7 @@ TEST_CASE("Mata::nft::compose()") {
                 rhs.delta.add(4, 'c', 5);
                 rhs.delta.add(5, 'j', 6);
 
-                expected = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                expected = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
                 expected.delta.add(0, 'e', 1);
                 expected.delta.add(1, 'f', 2);
                 expected.delta.add(2, 'g', 3);
@@ -50,7 +50,7 @@ TEST_CASE("Mata::nft::compose()") {
             }
 
             SECTION("Epsilon perfectly matches") {
-                lhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                lhs = Nft(9, { 0 }, { 8 }, Levels({ 0, 1, 2, 3, 0, 1, 2, 3, 0 }));
                 lhs.delta.add(0, 'i', 1);
                 lhs.delta.add(1, 'b', 2);
                 lhs.delta.add(2, 'c', 3);
@@ -60,7 +60,7 @@ TEST_CASE("Mata::nft::compose()") {
                 lhs.delta.add(6, 'g', 7);
                 lhs.delta.add(7, 'l', 8);
 
-                rhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                rhs = Nft(9, { 0 }, { 8 }, Levels({ 0, 1, 2, 3, 0, 1, 2, 3, 0 }));
                 rhs.delta.add(0, 'a', 1);
                 rhs.delta.add(1, 'i', 2);
                 rhs.delta.add(2, EPSILON, 3);
@@ -70,7 +70,7 @@ TEST_CASE("Mata::nft::compose()") {
                 rhs.delta.add(6, 'l', 7);
                 rhs.delta.add(7, 'h', 8);
 
-                expected= Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                expected = Nft(9, { 0 }, { 8 }, Levels({ 0, 1, 2, 3, 0, 1, 2, 3, 0 }));
                 expected.delta.add(0, 'a', 1);
                 expected.delta.add(1, 'b', 2);
                 expected.delta.add(2, 'c', 3);
@@ -90,7 +90,7 @@ TEST_CASE("Mata::nft::compose()") {
         SECTION("Branching") {
 
             SECTION("Epsilon free") {
-                lhs = Nft(8, { 0 }, { 6, 7 }, { 0, 1, 0, 0, 1, 1, 0, 0 }, 2);
+                lhs = Nft::with_levels({2, { 0, 1, 0, 0, 1, 1, 0, 0 } }, 8, { 0 }, { 6, 7 });
                 lhs.delta.add(0, 'e', 1);
                 lhs.delta.add(1, 'a', 2);
                 lhs.delta.add(2, 'c', 4);
@@ -99,7 +99,7 @@ TEST_CASE("Mata::nft::compose()") {
                 lhs.delta.add(3, 'd', 5);
                 lhs.delta.add(5, 'f', 7);
 
-                rhs = Nft(11, { 0 }, { 8, 9, 10 }, { 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 }, 2);
+                rhs = Nft::with_levels({2, { 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 } }, 11, { 0 }, { 8, 9, 10 });
                 rhs.delta.add(0, 'e', 1);
                 rhs.delta.add(1, 'a', 3);
                 rhs.delta.add(3, 'c', 5);
@@ -111,7 +111,7 @@ TEST_CASE("Mata::nft::compose()") {
                 rhs.delta.add(4, 'f', 7);
                 rhs.delta.add(7, 'h', 10);
 
-                expected = Nft(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+                expected = Nft::with_levels({2, { 0, 1, 0, 1, 0 } }, 5, { 0 }, { 4 });
                 expected.delta.add(0, 'e', 1);
                 expected.delta.add(1, 'd', 2);
                 expected.delta.add(2, 'd', 3);
@@ -124,7 +124,7 @@ TEST_CASE("Mata::nft::compose()") {
             }
 
             SECTION("Epsilon perfectly matches.") {
-                lhs = Nft(8, { 0 }, { 6, 7 }, { 0, 1, 0, 0, 1, 1, 0, 0 }, 2);
+                lhs = Nft::with_levels({2, { 0, 1, 0, 0, 1, 1, 0, 0 } }, 8, { 0 }, { 6, 7 });
                 lhs.delta.add(0, 'e', 1);
                 lhs.delta.add(1, 'a', 2);
                 lhs.delta.add(2, 'c', 4);
@@ -133,7 +133,7 @@ TEST_CASE("Mata::nft::compose()") {
                 lhs.delta.add(3, EPSILON, 5);
                 lhs.delta.add(5, 'f', 7);
 
-                rhs = Nft(11, { 0 }, { 8, 9, 10 }, { 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 }, 2);
+                rhs = Nft::with_levels({2, { 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 } }, 11, { 0 }, { 8, 9, 10 });
                 rhs.delta.add(0, EPSILON, 1);
                 rhs.delta.add(1, 'a', 3);
                 rhs.delta.add(3, 'c', 5);
@@ -145,7 +145,7 @@ TEST_CASE("Mata::nft::compose()") {
                 rhs.delta.add(4, 'f', 7);
                 rhs.delta.add(7, 'h', 10);
 
-                expected = Nft(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+                expected = Nft::with_levels({2, { 0, 1, 0, 1, 0 } }, 5, { 0 }, { 4 });
                 expected.delta.add(0, 'e', 1);
                 expected.delta.add(1, 'd', 2);
                 expected.delta.add(2, EPSILON, 3);
@@ -159,14 +159,14 @@ TEST_CASE("Mata::nft::compose()") {
         }
 
         SECTION("Cycle") {
-            lhs = Nft(5, { 0 }, { 2, 4 }, { 0, 1, 0, 1, 0 }, 2);
+            lhs = Nft::with_levels({2, { 0, 1, 0, 1, 0 } }, 5, { 0 }, { 2, 4 });
             lhs.delta.add(0, 'a', 1);
             lhs.delta.add(1, 'b', 2);
             lhs.delta.add(2, 'c', 3);
             lhs.delta.add(3, 'e', 4);
             lhs.delta.add(3, 'd', 2);
 
-            rhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+            rhs = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
             rhs.delta.add(0, 'b', 1);
             rhs.delta.add(1, 'x', 2);
             rhs.delta.add(2, 'd', 3);
@@ -175,7 +175,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(4, 'd', 5);
             rhs.delta.add(5, 'z', 6);
 
-            expected = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+            expected = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'x', 2);
             expected.delta.add(2, 'c', 3);
@@ -192,7 +192,7 @@ TEST_CASE("Mata::nft::compose()") {
         SECTION("Epsilon does not match on synchronization level.") {
 
             SECTION("Epsilon only on synchronization levels") {
-                lhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                lhs = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
                 lhs.delta.add(0, 'x', 1);
                 lhs.delta.add(1, EPSILON, 2);
                 lhs.delta.add(2, 'y', 3);
@@ -200,13 +200,13 @@ TEST_CASE("Mata::nft::compose()") {
                 lhs.delta.add(4, 'x', 5);
                 lhs.delta.add(5, 'c', 6);
 
-                rhs = Nft(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+                rhs = Nft::with_levels({2, { 0, 1, 0, 1, 0 } }, 5, { 0 }, { 4 });
                 rhs.delta.add(0, 'a', 1);
                 rhs.delta.add(1, 'b', 2);
                 rhs.delta.add(2, 'c', 3);
                 rhs.delta.add(3, 'd', 4);
 
-                expected = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                expected = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
                 expected.delta.add(0, 'x', 1);
                 expected.delta.add(1, EPSILON, 2);
                 expected.delta.add(2, 'y', 3);
@@ -221,20 +221,20 @@ TEST_CASE("Mata::nft::compose()") {
             }
 
             SECTION("Epsilon is even on non-synchronization levels") {
-                lhs = Nft(7, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2);
+                lhs = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0 } }, 7, { 0 }, { 6 });
                 lhs.delta.add(0, 'x', 1);
                 lhs.delta.add(1, EPSILON, 2);
                 lhs.delta.add(2, EPSILON, 3);
                 lhs.delta.add(3, 'a', 4);
                 lhs.delta.add(4, 'x', 5);
                 lhs.delta.add(5, EPSILON, 6);
-                rhs = Nft(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+                rhs = Nft(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
                 rhs.delta.add(0, 'a', 1);
                 rhs.delta.add(1, 'b', 2);
                 rhs.delta.add(2, EPSILON, 3);
                 rhs.delta.add(3, 'd', 4);
 
-                expected = Nft(13, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1 }, 2);
+                expected = Nft::with_levels({2, { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1 } }, 13, { 0 }, { 6 });
                 expected.delta.add(0, 'x', 1);
                 expected.delta.add(1, EPSILON, 2);
                 expected.delta.add(2, EPSILON, 3);
@@ -257,21 +257,21 @@ TEST_CASE("Mata::nft::compose()") {
         }
     }
 
-    SECTION("lhs.num_of_levels != rhs.num_of_levels") {
-        SECTION("lhs.num_of_levels > rhs.num_of_levels") {
-            lhs = Nft(6, { 0 }, { 5 }, { 0, 1, 2, 3, 4, 0 }, 5);
+    SECTION("lhs.levels.num_of_levels != rhs.levels.num_of_levels") {
+        SECTION("lhs.levels.num_of_levels > rhs.levels.num_of_levels") {
+            lhs = Nft::with_levels({5, { 0, 1, 2, 3, 4, 0 } }, 6, { 0 }, { 5 });
             lhs.delta.add(0, 'a', 1);
             lhs.delta.add(1, 'b', 2);
             lhs.delta.add(2, 'c', 3);
             lhs.delta.add(3, 'e', 4);
             lhs.delta.add(4, 'd', 5);
 
-            rhs = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+            rhs = Nft::with_levels({3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 });
             rhs.delta.add(0, 'b', 1);
             rhs.delta.add(1, 'd', 2);
             rhs.delta.add(2, 'f', 3);
 
-            expected = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
+            expected = Nft::with_levels({4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'c', 2);
             expected.delta.add(2, 'e', 3);
@@ -282,20 +282,20 @@ TEST_CASE("Mata::nft::compose()") {
             CHECK(are_equivalent(result, expected));
         }
 
-        SECTION("lhs.num_of_levels < rhs.num_of_levels") {
-            lhs = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        SECTION("lhs.levels.num_of_levels < rhs.levels.num_of_levels") {
+            lhs = Nft::with_levels({3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 });
             lhs.delta.add(0, 'b', 1);
             lhs.delta.add(1, 'd', 2);
             lhs.delta.add(2, 'f', 3);
 
-            rhs = Nft(6, { 0 }, { 5 }, { 0, 1, 2, 3, 4, 0 }, 5);
+            rhs = Nft::with_levels({5, { 0, 1, 2, 3, 4, 0 } }, 6, { 0 }, { 5 });
             rhs.delta.add(0, 'a', 1);
             rhs.delta.add(1, 'b', 2);
             rhs.delta.add(2, 'c', 3);
             rhs.delta.add(3, 'e', 4);
             rhs.delta.add(4, 'd', 5);
 
-            expected = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
+            expected = Nft::with_levels({4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'c', 2);
             expected.delta.add(2, 'e', 3);
@@ -310,7 +310,7 @@ TEST_CASE("Mata::nft::compose()") {
     SECTION("num_of_levels == 4") {
 
         SECTION("Epsilon free") {
-            lhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            lhs = Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             lhs.delta.add(0, 'i', 1);
             lhs.delta.add(1, 'b', 2);
             lhs.delta.add(2, 'c', 3);
@@ -320,7 +320,7 @@ TEST_CASE("Mata::nft::compose()") {
             lhs.delta.add(6, 'g', 7);
             lhs.delta.add(7, 'l', 8);
 
-            rhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            rhs = Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             rhs.delta.add(0, 'a', 1);
             rhs.delta.add(1, 'i', 2);
             rhs.delta.add(2, 'j', 3);
@@ -330,7 +330,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(6, 'l', 7);
             rhs.delta.add(7, 'h', 8);
 
-            expected= Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            expected= Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'b', 2);
             expected.delta.add(2, 'c', 3);
@@ -346,7 +346,7 @@ TEST_CASE("Mata::nft::compose()") {
         }
 
         SECTION("Epsilon perfectly matches") {
-            lhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            lhs = Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             lhs.delta.add(0, 'i', 1);
             lhs.delta.add(1, 'b', 2);
             lhs.delta.add(2, 'c', 3);
@@ -356,7 +356,7 @@ TEST_CASE("Mata::nft::compose()") {
             lhs.delta.add(6, 'g', 7);
             lhs.delta.add(7, 'l', 8);
 
-            rhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            rhs = Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             rhs.delta.add(0, 'a', 1);
             rhs.delta.add(1, 'i', 2);
             rhs.delta.add(2, EPSILON, 3);
@@ -366,7 +366,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(6, 'l', 7);
             rhs.delta.add(7, 'h', 8);
 
-            expected= Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            expected= Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             expected.delta.add(0, 'a', 1);
             expected.delta.add(1, 'b', 2);
             expected.delta.add(2, 'c', 3);
@@ -382,7 +382,7 @@ TEST_CASE("Mata::nft::compose()") {
         }
 
         SECTION("Epsilon only on synchronization levels") {
-            lhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            lhs = Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             lhs.delta.add(0, EPSILON, 1);
             lhs.delta.add(1, 'c', 2);
             lhs.delta.add(2, 'd', 3);
@@ -392,7 +392,7 @@ TEST_CASE("Mata::nft::compose()") {
             lhs.delta.add(6, 'h', 7);
             lhs.delta.add(7, 'a', 8);
 
-            rhs = Nft(9, { 0 }, { 4, 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            rhs = Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 4, 8 });
             rhs.delta.add(0, 'e', 1);
             rhs.delta.add(1, 'b', 2);
             rhs.delta.add(2, 'a', 3);
@@ -402,7 +402,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(6, 'y', 7);
             rhs.delta.add(7, 'j', 8);
 
-            expected= Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            expected= Nft::with_levels({4, { 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, 9, { 0 }, { 8 });
             expected.delta.add(0, EPSILON, 1);
             expected.delta.add(1, 'c', 2);
             expected.delta.add(2, 'd', 3);
@@ -420,7 +420,7 @@ TEST_CASE("Mata::nft::compose()") {
 
     SECTION("level ordering") {
         SECTION("no jump") {
-            lhs = Nft(13, { 0 }, { 12 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
+            lhs = Nft::with_levels({12, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 } }, 13, { 0 }, { 12 });
             lhs.delta.add(0, 'u', 1);
             lhs.delta.add(1, 'a', 2);
             lhs.delta.add(2, 'b', 3);
@@ -434,7 +434,7 @@ TEST_CASE("Mata::nft::compose()") {
             lhs.delta.add(10, 'z', 11);
             lhs.delta.add(11, 'f', 12);
 
-            rhs = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            rhs = Nft::with_levels({13, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 } }, 14, { 0 }, { 13 });
             rhs.delta.add(0, 'g', 1);
             rhs.delta.add(1, 'h', 2);
             rhs.delta.add(2, 'u', 3);
@@ -449,7 +449,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(11, 'm', 12);
             rhs.delta.add(12, 'z', 13);
 
-            expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            expected = Nft::with_levels({13, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 } }, 14, { 0 }, { 13 });
             expected.delta.add(0, 'g', 1);
             expected.delta.add(1, 'h', 2);
             expected.delta.add(2, 'a', 3);
@@ -470,7 +470,7 @@ TEST_CASE("Mata::nft::compose()") {
         }
 
         SECTION("long jump - JumpMode::RepeatSymbol") {
-            lhs = Nft(12, { 0 }, { 11 }, { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
+            lhs = Nft::with_levels({12, { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 } }, 12, { 0 }, { 11 });
             lhs.delta.add(0, 'u', 1);
             lhs.delta.add(1, 'a', 2);
             lhs.delta.add(2, 'v', 3);
@@ -483,7 +483,7 @@ TEST_CASE("Mata::nft::compose()") {
             lhs.delta.add(9, 'z', 10);
             lhs.delta.add(10, 'f', 11);
 
-            rhs = Nft(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 0 }, 13);
+            rhs = Nft::with_levels({13, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 0 } }, 11, { 0 }, { 10 });
             rhs.delta.add(0, 'g', 1);
             rhs.delta.add(1, 'h', 2);
             rhs.delta.add(2, 'u', 3);
@@ -495,7 +495,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(8, 'y', 9);
             rhs.delta.add(9, 'z', 10);
 
-            expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            expected = Nft::with_levels({13, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 } }, 14, { 0 }, { 13 });
             expected.delta.add(0, 'g', 1);
             expected.delta.add(1, 'h', 2);
             expected.delta.add(2, 'a', 3);
@@ -516,7 +516,7 @@ TEST_CASE("Mata::nft::compose()") {
         }
 
         SECTION("long jump - JumpMode::AppendDontCares") {
-            lhs = Nft(12, { 0 }, { 11 }, { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
+            lhs = Nft::with_levels({12, { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 } }, 12, { 0 }, { 11 });
             lhs.delta.add(0, 'u', 1);
             lhs.delta.add(1, 'a', 2);
             lhs.delta.add(2, 'v', 3);
@@ -529,7 +529,7 @@ TEST_CASE("Mata::nft::compose()") {
             lhs.delta.add(9, 'z', 10);
             lhs.delta.add(10, 'f', 11);
 
-            rhs = Nft(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 0 }, 13);
+            rhs = Nft::with_levels({13, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 0 } }, 11, { 0 }, { 10 });
             rhs.delta.add(0, 'g', 1);
             rhs.delta.add(1, 'h', 2);
             rhs.delta.add(2, 'u', 3);
@@ -541,7 +541,7 @@ TEST_CASE("Mata::nft::compose()") {
             rhs.delta.add(8, 'y', 9);
             rhs.delta.add(9, 'z', 10);
 
-            expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            expected = Nft::with_levels({13, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 } }, 14, { 0 }, { 13 });
             expected.delta.add(0, 'g', 1);
             expected.delta.add(1, 'h', 2);
             expected.delta.add(2, 'a', 3);
@@ -565,7 +565,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
     SECTION("2 levels x 2 levels") {
-        Nft expected_full(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft expected_full(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, 'b', 2);
         expected_full.delta.add(2, 'e', 3);
@@ -574,13 +574,13 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         expected_full.delta.add(5, 'f', 6);
         Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
 
-        Nft lhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        Nft lhs(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
         lhs.delta.add(3, 'd', 4);
 
-        Nft rhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        Nft rhs(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
         rhs.delta.add(0, 'b', 1);
         rhs.delta.add(1, 'e', 2);
         rhs.delta.add(2, 'd', 3);
@@ -589,7 +589,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         SECTION("LHS | RHS") {
             Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -599,7 +599,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 
             Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -610,7 +610,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         SECTION("RHS | LHS") {
             Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -620,7 +620,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 
             Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -631,27 +631,27 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         }
     }
     SECTION("2 levels x 1 level") {
-        Nft expected_full(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        Nft expected_full(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, 'b', 2);
         expected_full.delta.add(2, 'c', 3);
         expected_full.delta.add(3, 'd', 4);
         Nft expected_proj = project_out(expected_full, { 1 }, JumpMode::NoJump);
 
-        Nft lhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        Nft lhs(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
         lhs.delta.add(3, 'd', 4);
 
-        Nft rhs(3, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+        Nft rhs(3, { 0 }, { 2 }, Levels(std::vector<Level>({ 0, 0, 0 })));
         rhs.delta.add(0, 'b', 1);
         rhs.delta.add(1, 'd', 2);
 
         SECTION("LHS | RHS") {
             Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -661,7 +661,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 
             Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -672,7 +672,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         SECTION("RHS | LHS") {
             Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -682,7 +682,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 
             Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -692,24 +692,24 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         }
     }
     SECTION("1 level x 1 level") {
-        Nft expected_full(4, { 0 }, { 3 }, { 0, 0, 0, 0 }, 1);
+        Nft expected_full(4, { 0 }, { 3 }, Levels({ 0, 0, 0, 0 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, 'b', 2);
         expected_full.delta.add(2, 'c', 3);
 
-        Nft lhs(4, { 0 }, { 3 }, { 0, 0, 0, 0 }, 1);
+        Nft lhs(4, { 0 }, { 3 }, Levels({ 0, 0, 0, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 0, 0, 0 }, 1);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 0, 0, 0 }));
         rhs.delta.add(0, 'a', 1);
         rhs.delta.add(1, 'b', 2);
         rhs.delta.add(2, 'c', 3);
 
         Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
         CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-        CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+        CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
         CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
         result_full.trim();
             result_full.remove_epsilon();
@@ -721,20 +721,20 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 
 TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     SECTION("sync level 0 x sync level 0") {
-        Nft lhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        Nft lhs(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'd', 3);
         lhs.delta.add(3, 'e', 4);
 
-        Nft rhs(5, { 0 }, { 4 }, { 0, 1, 0, 1, 0 }, 2);
+        Nft rhs(5, { 0 }, { 4 }, Levels({ 0, 1, 0, 1, 0 }));
         rhs.delta.add(0, 'a', 1);
         rhs.delta.add(1, 'c', 2);
         rhs.delta.add(2, 'd', 3);
         rhs.delta.add(3, 'f', 4);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+            Nft expected_full(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, 'c', 3);
@@ -745,7 +745,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -755,7 +755,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 0, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -764,7 +764,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+            Nft expected_full(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'c', 2);
             expected_full.delta.add(2, 'b', 3);
@@ -775,7 +775,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 0, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -785,7 +785,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 0, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -796,7 +796,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 0 x sync level 1") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -806,7 +806,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'x', 0);
         lhs.delta.add(2, 'z', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'a', 2);
         rhs.delta.add(2, 'h', 3);
@@ -817,7 +817,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'y', 6);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(13, { 0 }, { 12 }, { 0, 1, 2, 3, 4, 4, 0, 1, 2, 3, 4, 4, 0 }, 5);
+            Nft expected_full(13, { 0 }, { 12 }, Levels({ 0, 1, 2, 3, 4, 4, 0, 1, 2, 3, 4, 4, 0 }));
             expected_full.delta.add(0, 'g', 1);
             expected_full.delta.add(1, 'a', 2);
             expected_full.delta.add(2, 'b', 3);
@@ -836,7 +836,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -846,7 +846,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -855,7 +855,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(15, { 0 }, { 12 }, { 0, 4, 3, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }, 5);
+            Nft expected_full(15, { 0 }, { 12 }, Levels({ 0, 4, 3, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }));
             expected_full.delta.add(0, 'g', 3);
             expected_full.delta.add(3, 'a', 4);
             expected_full.delta.add(4, 'w', 2);
@@ -876,7 +876,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -886,7 +886,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 1, 0, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -897,7 +897,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 0 x sync level 2") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -907,7 +907,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'x', 0);
         lhs.delta.add(2, 'z', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'h', 2);
         rhs.delta.add(2, 'a', 3);
@@ -917,7 +917,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'a', 0);
         rhs.delta.add(2, 'a', 6);
 
-        Nft expected_full(15, { 0 }, { 12 }, { 0, 1, 2, 3, 4, 3, 4, 0, 1, 2, 3, 4, 0, 4, 3 }, 5);
+        Nft expected_full(15, { 0 }, { 12 }, Levels({ 0, 1, 2, 3, 4, 3, 4, 0, 1, 2, 3, 4, 0, 4, 3 }));
         expected_full.delta.add(0, 'g', 1);
         expected_full.delta.add(1, 'h', 2);
         expected_full.delta.add(2, 'a', 3);
@@ -939,7 +939,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         SECTION("LHS | RHS") {
             Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -949,7 +949,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 0, 2, true, JumpMode::RepeatSymbol).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -960,7 +960,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         SECTION("RHS | LHS") {
             Nft result_full = compose(rhs, lhs, 2, 0, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -970,7 +970,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 2, 0, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -981,7 +981,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sycn level 1 x sync level 0") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -991,7 +991,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'w', 0);
         lhs.delta.add(2, 'z', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'b', 1);
         rhs.delta.add(1, 'g', 2);
         rhs.delta.add(2, 'h', 3);
@@ -1002,7 +1002,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'y', 6);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(15, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 3, 3, 4 }, 5);
+            Nft expected_full(15, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 3, 3, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, 'c', 3);
@@ -1023,7 +1023,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1033,7 +1033,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1043,7 +1043,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         }
 
         SECTION("RHS | LHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, 'g', 3);
@@ -1062,7 +1062,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1072,7 +1072,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1083,7 +1083,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 1 x sync level 1") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1093,7 +1093,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'x', 0);
         lhs.delta.add(2, 'z', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'b', 2);
         rhs.delta.add(2, 'h', 3);
@@ -1104,7 +1104,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'y', 6);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'g', 2);
             expected_full.delta.add(2, 'b', 3);
@@ -1123,7 +1123,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1133,7 +1133,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 1, 1, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1142,7 +1142,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }));
             expected_full.delta.add(0, 'g', 1);
             expected_full.delta.add(1, 'a', 2);
             expected_full.delta.add(2, 'b', 3);
@@ -1161,7 +1161,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1171,7 +1171,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 1, 1, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1182,7 +1182,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 1 x sync level 2") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1192,7 +1192,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'x', 0);
         lhs.delta.add(2, 'z', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'h', 2);
         rhs.delta.add(2, 'b', 3);
@@ -1203,7 +1203,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'b', 6);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'g', 2);
             expected_full.delta.add(2, 'h', 3);
@@ -1222,7 +1222,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1232,7 +1232,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 1, 2, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1241,7 +1241,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }));
             expected_full.delta.add(0, 'g', 1);
             expected_full.delta.add(1, 'h', 2);
             expected_full.delta.add(2, 'a', 3);
@@ -1260,7 +1260,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1270,7 +1270,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 2, 1, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1281,7 +1281,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 2 x sync level 0") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1291,7 +1291,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'c', 0);
         lhs.delta.add(2, 'c', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'c', 1);
         rhs.delta.add(1, 'g', 2);
         rhs.delta.add(2, 'h', 3);
@@ -1301,7 +1301,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'x', 0);
         rhs.delta.add(2, 'y', 6);
 
-        Nft expected_full(15, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 3, 3, 4 }, 5);
+        Nft expected_full(15, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 3, 3, 4 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, 'b', 2);
         expected_full.delta.add(2, 'c', 3);
@@ -1323,7 +1323,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         SECTION("LHS | RHS") {
             Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1333,7 +1333,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 2, 0, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1344,7 +1344,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         SECTION("RHS | LHS") {
             Nft result_full = compose(rhs, lhs, 0, 2, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1354,7 +1354,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 0, 2, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1365,7 +1365,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 2 x sync level 1") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1375,7 +1375,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'c', 0);
         lhs.delta.add(2, 'c', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'c', 2);
         rhs.delta.add(2, 'h', 3);
@@ -1386,7 +1386,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'y', 6);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, 'g', 3);
@@ -1405,7 +1405,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1415,7 +1415,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 2, 1, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1424,7 +1424,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4}, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4, 4}));
             expected_full.delta.add(0, 'g', 1);
             expected_full.delta.add(1, 'a', 2);
             expected_full.delta.add(2, 'b', 3);
@@ -1443,7 +1443,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 1, 2, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1453,7 +1453,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 1, 2, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1464,7 +1464,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
     }
 
     SECTION("sync level 2 x sync level 2") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1474,7 +1474,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         lhs.delta.add(2, 'c', 0);
         lhs.delta.add(2, 'c', 6);
 
-        Nft rhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft rhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'h', 2);
         rhs.delta.add(2, 'c', 3);
@@ -1485,7 +1485,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
         rhs.delta.add(2, 'c', 6);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, 'g', 3);
@@ -1499,7 +1499,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             expected_full.delta.add(4, 'c', 0);
             expected_full.delta.add(4, 'c', 10);
 
-            Nft expected_proj(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            Nft expected_proj(9, { 0 }, { 8 }, Levels({ 0, 1, 2, 3, 0, 1, 2, 3, 0 }));
             expected_proj.delta.add(0, 'a', 1);
             expected_proj.delta.add(1, 'b', 2);
             expected_proj.delta.add(2, 'g', 3);
@@ -1513,7 +1513,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(lhs, rhs, 2, 2, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1523,7 +1523,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 2, 2, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1532,7 +1532,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'g', 1);
             expected_full.delta.add(1, 'h', 2);
             expected_full.delta.add(2, 'a', 3);
@@ -1546,7 +1546,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
             expected_full.delta.add(4, 'c', 0);
             expected_full.delta.add(4, 'c', 10);
 
-            Nft expected_proj(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+            Nft expected_proj(9, { 0 }, { 8 }, Levels({ 0, 1, 2, 3, 0, 1, 2, 3, 0 }));
             expected_proj.delta.add(0, 'g', 1);
             expected_proj.delta.add(1, 'h', 2);
             expected_proj.delta.add(2, 'a', 3);
@@ -1560,7 +1560,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_full = compose(rhs, lhs, 2, 2, false, JumpMode::NoJump).trim();
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1570,7 +1570,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 2, 2, true, JumpMode::NoJump).trim();
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1583,7 +1583,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 
 TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     SECTION("sync level 0 x sync level 0") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, EPSILON, 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1592,13 +1592,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, 'c', 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'd', 1);
         rhs.delta.add(1, 'g', 2);
         rhs.delta.add(2, 'h', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, 'c', 3);
@@ -1616,7 +1616,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1626,7 +1626,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 0, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1635,7 +1635,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -1651,7 +1651,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 0, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1661,7 +1661,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 0, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1672,7 +1672,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 0 x sync level 1") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, EPSILON, 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1681,13 +1681,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, 'c', 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'd', 2);
         rhs.delta.add(2, 'h', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(12, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }, 5);
+            Nft expected_full(12, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, 'b', 3);
@@ -1704,7 +1704,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1714,7 +1714,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1723,7 +1723,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -1739,7 +1739,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1749,7 +1749,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1760,7 +1760,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 0 x sync level 2") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, EPSILON, 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, 'c', 3);
@@ -1769,12 +1769,12 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, 'c', 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'h', 2);
         rhs.delta.add(2, 'd', 3);
 
-        Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+        Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
         expected_full.delta.add(0, EPSILON, 1);
         expected_full.delta.add(1, EPSILON, 2);
         expected_full.delta.add(2, EPSILON, 3);
@@ -1791,7 +1791,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         SECTION("LHS | RHS") {
             Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1801,7 +1801,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 0, 2, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1812,7 +1812,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         SECTION("RHS | LHS") {
             Nft result_full = compose(rhs, lhs, 2, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1822,7 +1822,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 2, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1833,7 +1833,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 1 x sync level 0") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, EPSILON, 2);
         lhs.delta.add(2, 'c', 3);
@@ -1842,13 +1842,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, 'c', 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'e', 1);
         rhs.delta.add(1, 'g', 2);
         rhs.delta.add(2, 'h', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(13, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }, 5);
+            Nft expected_full(13, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 3, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, 'c', 3);
@@ -1866,7 +1866,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1876,7 +1876,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1885,7 +1885,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -1901,7 +1901,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1911,7 +1911,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1922,7 +1922,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 1 x sync level 1") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, EPSILON, 2);
         lhs.delta.add(2, 'c', 3);
@@ -1931,13 +1931,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, 'c', 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'e', 2);
         rhs.delta.add(2, 'h', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(12, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }, 5);
+            Nft expected_full(12, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 4 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -1954,7 +1954,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1964,7 +1964,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 1, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -1973,7 +1973,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, 'a', 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -1989,7 +1989,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -1999,7 +1999,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 1, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2010,7 +2010,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 1 x sync level 2") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, EPSILON, 2);
         lhs.delta.add(2, 'c', 3);
@@ -2019,13 +2019,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, 'c', 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'h', 2);
         rhs.delta.add(2, 'e', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2041,7 +2041,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2051,7 +2051,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 1, 2, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2060,7 +2060,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, 'a', 3);
@@ -2076,7 +2076,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2086,7 +2086,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 2, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2097,7 +2097,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 2 x sync level 0") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, EPSILON, 3);
@@ -2106,13 +2106,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, EPSILON, 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'f', 1);
         rhs.delta.add(1, 'g', 2);
         rhs.delta.add(2, 'h', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2128,7 +2128,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2138,7 +2138,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 2, 0, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2148,7 +2148,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         }
 
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2164,7 +2164,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 0, 2, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2174,7 +2174,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 0, 2, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2185,7 +2185,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 2 x sync level 1") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, EPSILON, 3);
@@ -2194,13 +2194,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, EPSILON, 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'f', 2);
         rhs.delta.add(2, 'h', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2216,7 +2216,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2226,7 +2226,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 2, 1, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2235,7 +2235,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, 'a', 2);
             expected_full.delta.add(2, 'b', 3);
@@ -2251,7 +2251,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 1, 2, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2261,7 +2261,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 1, 2, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2272,7 +2272,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
     }
 
     SECTION("sync level 2 x sync level 2") {
-        Nft lhs(7, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, 'b', 2);
         lhs.delta.add(2, EPSILON, 3);
@@ -2281,13 +2281,13 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
         lhs.delta.add(5, 'f', 6);
         lhs.delta.add(2, EPSILON, 0);
 
-        Nft rhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'g', 1);
         rhs.delta.add(1, 'h', 2);
         rhs.delta.add(2, 'f', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, 'a', 1);
             expected_full.delta.add(1, 'b', 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2303,7 +2303,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(lhs, rhs, 2, 2, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2313,7 +2313,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(lhs, rhs, 2, 2, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2322,7 +2322,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+            Nft expected_full(11, { 0 }, { 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, 'a', 3);
@@ -2338,7 +2338,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_full = compose(rhs, lhs, 2, 2, false, JumpMode::NoJump);
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2348,7 +2348,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
             Nft result_proj = compose(rhs, lhs, 2, 2, true, JumpMode::NoJump);
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2361,19 +2361,19 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 
 TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
     SECTION("3 levels x 3 levels + fast EPSILON on LHS") {
-        Nft lhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft lhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         lhs.delta.add(0, EPSILON, 1);
         lhs.delta.add(0, EPSILON, 3);
         lhs.delta.add(1, 'a', 2);
         lhs.delta.add(2, 'b', 3);
 
-        Nft rhs(4, { 0 }, { 0, 3 }, { 0, 1, 2, 0 }, 3);
+        Nft rhs(4, { 0 }, { 0, 3 }, Levels({ 0, 1, 2, 0 }));
         rhs.delta.add(0, 'c', 1);
         rhs.delta.add(1, EPSILON, 2);
         rhs.delta.add(2, 'd', 3);
 
         SECTION("LHS | RHS") {
-            Nft expected_full(28, { 0 }, { 5, 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 }, 5);
+            Nft expected_full(28, { 0 }, { 5, 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2410,7 +2410,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 
             CHECK(result_full.final.size() == expected_full.final.size());
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2421,7 +2421,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_proj = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.final.size() == expected_proj.final.size());
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2430,7 +2430,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             CHECK(are_equivalent(result_proj, expected_proj));
         }
         SECTION("RHS | LHS") {
-            Nft expected_full(28, { 0 }, { 5, 10 }, { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 }, 5);
+            Nft expected_full(28, { 0 }, { 5, 10 }, Levels({ 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 }));
             expected_full.delta.add(0, EPSILON, 1);
             expected_full.delta.add(1, EPSILON, 2);
             expected_full.delta.add(2, EPSILON, 3);
@@ -2466,7 +2466,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.final.size() == expected_full.final.size());
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2477,7 +2477,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_proj = compose(rhs, lhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.final.size() == expected_proj.final.size());
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2488,15 +2488,15 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
     }
 
     SECTION("3 levels x 1 level") {
-        Nft lhs(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft lhs(4, { 0 }, { 3 }, Levels({ 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, EPSILON, 2);
         lhs.delta.add(2, 'b', 3);
 
-        Nft rhs(2, { 0 }, { 1 }, { 0, 0 }, 1);
+        Nft rhs(2, { 0 }, { 1 }, Levels(std::vector<Level>({ 0, 0 })));
         rhs.delta.add(0, EPSILON, 1);
 
-        Nft expected_full(14, { 0 }, { 3 }, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2 }, 3);
+        Nft expected_full(14, { 0 }, { 3 }, Levels({ 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, EPSILON, 2);
         expected_full.delta.add(2, 'b', 3);
@@ -2518,7 +2518,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.final.size() == expected_full.final.size());
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2529,7 +2529,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.final.size() == expected_proj.final.size());
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2541,7 +2541,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
             CHECK(result_full.final.size() == expected_full.final.size());
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2552,7 +2552,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.final.size() == expected_proj.final.size());
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2563,7 +2563,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
     }
 
     SECTION("3 levels x 1 level (long)") {
-        Nft lhs(7, { 0 }, { 3, 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3);
+        Nft lhs(7, { 0 }, { 3, 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0 }));
         lhs.delta.add(0, 'a', 1);
         lhs.delta.add(1, EPSILON, 2);
         lhs.delta.add(2, 'b', 3);
@@ -2571,10 +2571,10 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
         lhs.delta.add(4, EPSILON, 5);
         lhs.delta.add(5, 'd', 6);
 
-        Nft rhs(2, { 0 }, { 1 }, { 0, 0 }, 1);
+        Nft rhs(2, { 0 }, { 1 }, Levels(std::vector<Level>({ 0, 0 })));
         rhs.delta.add(0, EPSILON, 1);
 
-        Nft expected_full(24, { 0 }, { 3, 6 }, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2, 1, 2, 1, 2, 0, 1, 2 }, 3);
+        Nft expected_full(24, { 0 }, { 3, 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2, 1, 2, 1, 2, 0, 1, 2 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, EPSILON, 2);
         expected_full.delta.add(2, 'b', 3);
@@ -2611,7 +2611,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
             CHECK(result_full.final.size() == expected_full.final.size());
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2622,7 +2622,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_proj = compose(lhs, rhs, 1, 0, true, JumpMode::NoJump);
             CHECK(result_proj.final.size() == expected_proj.final.size());
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2635,7 +2635,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
             CHECK(result_full.final.size() == expected_full.final.size());
             CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-            CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+            CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
             CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
             result_full.trim();
             result_full.remove_epsilon();
@@ -2646,7 +2646,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
             Nft result_proj = compose(rhs, lhs, 0, 1, true, JumpMode::NoJump);
             CHECK(result_proj.final.size() == expected_proj.final.size());
             CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-            CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+            CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
             CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
             result_proj.trim();
             result_proj.remove_epsilon();
@@ -2658,7 +2658,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 }
 
 TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
-    Nft lhs(25, { 0 }, { 12, 14, 19, 24 }, { 0, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 0, 0, 0, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }, 5);
+    Nft lhs(25, { 0 }, { 12, 14, 19, 24 }, Levels({ 0, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 0, 0, 0, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0 }));
     lhs.delta.add(0, 'a', 1);
     lhs.delta.add(1, 'b', 2);
     lhs.delta.add(1, 'c', 3);
@@ -2684,7 +2684,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
     lhs.delta.add(22, 'y', 23);
     lhs.delta.add(23, 'r', 24);
 
-    Nft rhs(15, { 0 }, { 11, 12, 13, 14 }, { 0, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 0, 0, 0, 0 }, 5);
+    Nft rhs(15, { 0 }, { 11, 12, 13, 14 }, Levels({ 0, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 0, 0, 0, 0 }));
     rhs.delta.add(0, 's', 1);
     rhs.delta.add(1, 't', 2);
     rhs.delta.add(1, 'u', 3);
@@ -2701,7 +2701,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
     rhs.delta.add(10, 'b', 14);
 
     SECTION("LHS | RHS") {
-        Nft expected_full(64, { 0 }, { 12, 22, 44, 63 }, { 0, 1, 2, 3, 4, 5, 6, 5, 6, 6, 7, 8, 0, 2, 3, 4, 5, 6, 5, 6, 7, 8, 0, 6, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 5, 6, 6, 7, 8, 0, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 5, 6, 6, 7, 8, 0 }, 9);
+        Nft expected_full(64, { 0 }, { 12, 22, 44, 63 }, Levels({ 0, 1, 2, 3, 4, 5, 6, 5, 6, 6, 7, 8, 0, 2, 3, 4, 5, 6, 5, 6, 7, 8, 0, 6, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 5, 6, 6, 7, 8, 0, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 5, 6, 6, 7, 8, 0 }));
         expected_full.delta.add(0, 'a', 1);
         expected_full.delta.add(1, 'c', 2);
         expected_full.delta.add(1, 'b', 13);
@@ -2770,7 +2770,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
         Nft result_full = compose(lhs, rhs, 3, 3, false, JumpMode::NoJump);
         CHECK(result_full.final.size() == expected_full.final.size());
         CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-        CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+        CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
         CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
         result_full.trim();
         result_full.remove_epsilon();
@@ -2781,7 +2781,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
         Nft result_proj = compose(lhs, rhs, 3, 3, true, JumpMode::NoJump).trim();
         CHECK(result_proj.final.size() == expected_proj.final.size());
         CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-        CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+        CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
         CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
         result_proj.trim();
         result_proj.remove_epsilon();
@@ -2791,7 +2791,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
     }
 
     SECTION("RHS | LHS") {
-        Nft expected_full(77, { 0 }, { 18, 27, 54, 76 }, { 0, 1, 2, 3, 4, 5, 6, 5, 6, 2, 3, 4, 5, 6, 5, 6, 7, 8, 0, 3, 4, 5, 5, 6, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 0, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 0 }, 9);
+        Nft expected_full(77, { 0 }, { 18, 27, 54, 76 }, Levels({ 0, 1, 2, 3, 4, 5, 6, 5, 6, 2, 3, 4, 5, 6, 5, 6, 7, 8, 0, 3, 4, 5, 5, 6, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 0, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 0 }));
         expected_full.delta.add(0, 's', 1);
         expected_full.delta.add(1, 't', 2);
         expected_full.delta.add(2, 'v', 3);
@@ -2873,7 +2873,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
         Nft result_full = compose(rhs, lhs, 3, 3, false, JumpMode::NoJump);
         CHECK(result_full.final.size() == expected_full.final.size());
         CHECK(result_full.num_of_states() <= expected_full.num_of_states());
-        CHECK(result_full.num_of_levels == expected_full.num_of_levels);
+        CHECK(result_full.levels.num_of_levels == expected_full.levels.num_of_levels);
         CHECK(result_full.delta.num_of_transitions() <= expected_full.delta.num_of_transitions());
         result_full.trim();
         result_full.remove_epsilon();
@@ -2884,7 +2884,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
         Nft result_proj = compose(rhs, lhs, 3, 3, true, JumpMode::NoJump).trim();
         CHECK(result_proj.final.size() == expected_proj.final.size());
         CHECK(result_proj.num_of_states() <= expected_proj.num_of_states());
-        CHECK(result_proj.num_of_levels == expected_proj.num_of_levels);
+        CHECK(result_proj.levels.num_of_levels == expected_proj.levels.num_of_levels);
         CHECK(result_proj.delta.num_of_transitions() <= expected_proj.delta.num_of_transitions());
         result_proj.trim();
         result_proj.remove_epsilon();

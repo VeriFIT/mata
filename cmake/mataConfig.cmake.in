@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+# Include the exported targets
+include("${CMAKE_CURRENT_LIST_DIR}/mataTargets.cmake")
+find_package(Threads REQUIRED)

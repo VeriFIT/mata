@@ -282,4 +282,19 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 
         CHECK_THROWS_AS(mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density), std::runtime_error);
     }
+
+    SECTION("Same seed results in same NFA.") {
+        num_of_states = 10;
+        alphabet_size = 5;
+        states_trans_ratio_per_symbol = 0.5;
+        final_state_density = 0.5;
+        std::optional<unsigned int> seed1{ 3171643142 };
+        std::optional<unsigned int> seed2{ 4283451011 };
+
+        Nfa nfa1_1 = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density, seed1);
+        Nfa nfa1_2 = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density, seed1);
+        Nfa nfa2 = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density, seed2);
+        CHECK(nfa1_1.is_identical(nfa1_2));
+        CHECK(!nfa1_2.is_identical(nfa2));
+    }
 }

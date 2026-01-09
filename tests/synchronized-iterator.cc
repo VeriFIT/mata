@@ -1,8 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/utils/utils.hh"
 #include "mata/utils/synchronized-iterator.hh"
+#include "mata/utils/utils.hh"
+#include "mata/utils/ord-vector.hh"
 
 using namespace mata::utils;
 

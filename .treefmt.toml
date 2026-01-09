@@ -1,0 +1,27 @@
+allow-missing-formatter = true
+
+excludes = ["3rdparty/*"]
+
+[formatter.nixfmt]
+command = "nixfmt"
+excludes = []
+includes = ["*.nix"]
+options = []
+
+[formatter.yamlfmt]
+command = "yamlfmt"
+excludes = []
+includes = ["*.yaml", "*.yml"]
+options = []
+
+[formatter.taplo]
+command = "taplo"
+excludes = []
+includes = ["*.toml"]
+options = ["format"]
+
+[formatter.prettier]
+command = "prettier"
+excludes = []
+includes = ["*.md", "*.mdx"]
+options = ["--write"]
