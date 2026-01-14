@@ -667,7 +667,7 @@ State Nft::add_transition(const State source, const std::vector<Symbol>& symbols
     return insert_word(source, symbols);
 }
 
-State Nft::add_transition_with_lenght(const State source, const Symbol symbol, const size_t length, const JumpMode jump_mode) {
+State Nft::add_transition_with_length(const State source, const Symbol symbol, const size_t length, const JumpMode jump_mode) {
     assert(source < num_of_states());
 
     if (length == 0) { return source; }
