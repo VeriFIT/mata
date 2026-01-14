@@ -350,7 +350,7 @@ public:
      * @param length The length of the transition.
      * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
      */
-    State add_transition_with_lenght(State source, Symbol symbol, size_t length, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    State add_transition_with_length(State source, Symbol symbol, size_t length, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * @brief Add a single NFT transition from a source state @p source to a target state @p target
