@@ -438,6 +438,7 @@ Nfa mata::nfa::simple_revert(const Nfa& aut) {
 
     result.initial = aut.final;
     result.final = aut.initial;
+    result.alphabet = aut.alphabet;
 
     return result;
 }
@@ -1033,6 +1034,8 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         }
     }
 
+    result.alphabet = dfa_trimmed.alphabet;
+
     return result;
 }
 
@@ -1199,6 +1202,7 @@ Nfa mata::nfa::determinize(
                 && !(*macrostate_discover)(result, target_res, targets_orig)) { return result; }
         }
     }
+    result.alphabet = aut.alphabet;
     return result;
 }
 

@@ -248,6 +248,9 @@ Nft mata::nft::algorithms::product(
             }
         }
     }
+    // TODO is the following the best idea?
+    product.alphabet = lhs.alphabet;
+    product.alphabets = lhs.alphabets;
     return product;
 } // intersection().
 } // namespace mata::nft.

@@ -147,7 +147,8 @@ public:
             utils::SparseSet<State> final_states = {}, Levels levels = {},
             Alphabet* alphabet = nullptr, std::optional<std::vector<Alphabet*>> alphabets = std::nullopt)
         : Nfa{ std::move(delta), std::move(initial_states), std::move(final_states), alphabet },
-          levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states(), DEFAULT_LEVEL } : std::move(levels) } {}
+          levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states(), DEFAULT_LEVEL } : std::move(levels) },
+          alphabets{alphabets} {}
 
     /**
      * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.

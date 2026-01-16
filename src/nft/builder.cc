@@ -286,7 +286,7 @@ Nft builder::from_nfa_with_levels_zero(
     }
 
     const size_t nfa_num_of_states{ nfa.num_of_states() };
-    Nft nft{ Nft::with_levels(num_of_levels, nfa_num_of_states, nfa.initial, nfa.final) };
+    Nft nft{ Nft::with_levels(num_of_levels, nfa_num_of_states, nfa.initial, nfa.final, nfa.alphabet) };
 
     for(State src{ 0 }; src < nfa_num_of_states; ++src) {
         for (const SymbolPost& symbol_post: nfa.delta[src]) {

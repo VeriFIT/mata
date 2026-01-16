@@ -161,6 +161,7 @@ Nfa mata::nfa::algorithms::product(
             }
         }
     }
+    product.alphabet = lhs.alphabet; // TODO is this the best choice?
     return product;
 } // intersection().
 

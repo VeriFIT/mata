@@ -295,10 +295,16 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     // project out     x   x   x x
     // new levels    0 0 1 2 2 0 0
     std::vector<Level> new_levels(nft.levels.num_of_levels, 0);
+    std::vector<Level> old_levels {};
     Level lvl_sub{ 0 };
     for (Level lvl_old{ 0 }; lvl_old < seq_start_idx; lvl_old++) {
         new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
-        if (levels_to_project.find(lvl_old) != levels_to_project.end()) { lvl_sub++; }
+        if (levels_to_project.find(lvl_old) != levels_to_project.end()) {
+            lvl_sub++;
+        } else {
+            old_levels.push_back(lvl_old);
+            assert(old_levels[new_levels[lvl_old]] == lvl_old);
+        }
     }
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
@@ -339,6 +345,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 
     // Construct the automaton with projected levels.
     Nft result{ Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabet) };
+
     for (State src_state{ 0 }; src_state < num_of_states_in_delta; src_state++) { // For every state.
         for (const State cls_state : closure[src_state]) { // For every state in its epsilon closure.
             if (nft.final[cls_state] && can_be_final(src_state)) result.final.insert(src_state);
@@ -372,6 +379,15 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     // Repare levels
     for (State s{ 0 }; s < result.levels.size(); s++) { result.levels[s] = new_levels[result.levels[s]]; }
     result.levels.num_of_levels = static_cast<Level>(result.levels.num_of_levels - levels_to_project.size());
+
+    if (nft.alphabets.has_value()) {
+        // retain all alphabets that are not projected out
+        std::vector<Alphabet*> alphabet_ptrs(new_levels.size(), nullptr);
+        for (size_t i{ 0 }; i < result.levels.num_of_levels; ++i) {
+            alphabet_ptrs[i] = nft.alphabets->operator[](old_levels[i]);
+        }
+        result.alphabets = std::make_optional<std::vector<Alphabet*>>(alphabet_ptrs);
+    }
 
     return result;
 }
@@ -1033,6 +1049,7 @@ Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const Param
 Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map) {
     Nft result{ Nft::with_levels(nft.levels.num_of_levels) };
     result.alphabet = nft.alphabet;
+    result.alphabets = nft.alphabets;
     if (nft.initial.empty()) { return result; }
 
     // Assuming all sets targets are non-empty.
