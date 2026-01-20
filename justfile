@@ -16,6 +16,7 @@ alias c := clean
 alias r := release
 alias rd := release-debuginfo
 alias w := wip
+alias b := build
 alias d := docs
 alias h := help
 
