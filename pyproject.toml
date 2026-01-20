@@ -1,0 +1,2 @@
+[tool.uv.workspace]
+members = ["./tests-integration/", "./bindings/python/"]
