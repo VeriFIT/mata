@@ -22,5 +22,9 @@
         inherit mata mataGcc mataClang;
         default = mata;
       };
+
+      checks = {
+        inherit mataGcc mataClang;
+      };
     };
 }
