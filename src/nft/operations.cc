@@ -973,6 +973,9 @@ Nft& Nft::unite_nondet_with(const Nft& aut) {
     this->initial.reserve(n + aut_states);
     for (const State& aut_ini : aut_initial_copy) { this->initial.insert(upd_fnc(aut_ini)); }
 
+    // update levels
+    this->levels.append(aut.levels);
+
     return *this;
 }
 
