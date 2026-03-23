@@ -1,0 +1,10 @@
+**/__pycache__/
+**/*.cpp
+.coverage
+dist
+libmata.egg-info
+libmata.cpp
+**/*.dot
+**/*.pdf
+MANIFEST
+virtenv
