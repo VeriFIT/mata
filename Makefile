@@ -3,7 +3,7 @@ JOBS ?= 6
 MAKE_FLAGS ?= -j $(JOBS)
 TEST_FLAGS=-j 50 --output-on-failure
 
-.PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
+.PHONY: all debug debug-werror release release-werror coverage docs clean test test-coverage test-performance
 
 all:
 	mkdir -p $(BUILD_DIR)
@@ -49,8 +49,8 @@ coverage:
 	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=Debug -DMATA_ENABLE_COVERAGE:BOOL=ON
 	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
-doc:
-	$(MAKE) -C $(BUILD_DIR) $(MAKE_FLAGS) doc
+docs:
+	$(MAKE) -C $(BUILD_DIR) $(MAKE_FLAGS) docs
 
 # Runs tests
 test:
@@ -78,5 +78,5 @@ uninstall:
 	$(MAKE) -C $(BUILD_DIR) uninstall
 
 clean:
-	cd $(BUILD_DIR) && rm -rf *
-	find doc/_build -type f -not \( -name '.nojekyll' \) -exec rm -d {} +
+	rm -rf $(BUILD_DIR)
+	rm -rf docs/_build

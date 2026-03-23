@@ -44,6 +44,7 @@
                     # TODO: Enable building documentation through Nix.
                     sphinx
                     sphinxygen
+                    python3Packages.myst-parser
                     python3Packages.breathe
                     # lcov
                     # libgcc
