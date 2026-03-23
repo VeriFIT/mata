@@ -25,7 +25,18 @@
 
                 LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.stdenv.cc.cc ];
 
-                inputsFrom = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [ mata ];
+                inputsFrom = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
+                  mata
+                  mataPy
+                ];
+
+                packages = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
+                  mata
+                  (pkgs.python3.withPackages (ps: [
+                    mataPy
+                    ps.papermill
+                  ]))
+                ];
 
                 buildInputs =
                   with pkgs;
@@ -48,9 +59,6 @@
                     python3Packages.breathe
                     # lcov
                     # libgcc
-
-                    # Python
-                    python3Packages.papermill
 
                     # Formatting and linting.
                     clang-tools

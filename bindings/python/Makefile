@@ -18,7 +18,7 @@ test:
 	python3 -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
 
 init:
-	pip3 install -r requirements.txt
+	pip3 install ./
 
 build-install: build-ext install
 

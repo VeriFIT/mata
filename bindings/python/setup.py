@@ -46,6 +46,10 @@ project_includes = [
     os.path.join(src_dir, "3rdparty", "cudd", "include")
 ]
 
+extra_compile_args = ["-std=c++20", "-DNO_THROW_DISPATCHER"]
+if platform.system() == "Darwin":
+    extra_compile_args.append("-mmacosx-version-min=10.15")
+
 extensions = [
     Extension(
         f"libmata.{pkg}",
@@ -54,7 +58,7 @@ extensions = [
         libraries=['mata'],
         library_dirs=project_library_dirs,
         language="c++",
-        extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
+        extra_compile_args=extra_compile_args,
     ) for pkg in (
         'nfa.nfa', 'alphabets', 'utils', 'parser', 'nfa.strings', 'plotting'
     )
