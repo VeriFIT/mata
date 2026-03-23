@@ -49,7 +49,7 @@ coverage:
 	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=Debug -DMATA_ENABLE_COVERAGE:BOOL=ON
 	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
-docs:
+docs: debug
 	$(MAKE) -C $(BUILD_DIR) $(MAKE_FLAGS) docs
 
 # Runs tests
@@ -79,4 +79,5 @@ uninstall:
 
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -rf docs/_build
+	make -C docs/ clean
+	make -C bindings/python/ clean
