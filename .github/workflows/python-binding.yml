@@ -14,10 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
     steps:
-      - name: Checkout latest version
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          # fetch-depth: 0
+          # If PR, checkout the PR's repo (needed for PRs coming from forks).
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
         with:
@@ -44,10 +48,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
     steps:
-      - name: Checkout latest version
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          # fetch-depth: 0
+          # If PR, checkout the PR's repo (needed for PRs coming from forks).
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Setup Python environment
         uses: ./.github/workflows/actions/setup-python
         with:

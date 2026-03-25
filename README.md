@@ -77,7 +77,7 @@ brew install lcov gcovr
 Run the following to install the dependencies for Ubuntu:
 
 ```
-sudo apt-get install -y build-essential lcov gcovr xdg-utils
+sudo apt install -y build-essential lcov gcovr xdg-utils
 ```
 
 ## Python binding
@@ -102,8 +102,8 @@ system. We recommend using the virtual environemnt (`venv`) to install and use t
 python -m pip install --upgrade pip
 make -C bindings/python init
 
-sudo apt-get -qq update
-sudo apt-get -qq install -y graphviz graphviz-dev
+sudo apt -qq update
+sudo apt -qq install -y graphviz graphviz-dev
 ```
 
 Now, you can install the library.
