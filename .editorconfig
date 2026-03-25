@@ -13,5 +13,5 @@ trim_trailing_whitespace = true
 [*.{md,toml,yml,yaml,nix,html,css}]
 indent_size = 2
 
-[{Makefile,**/CMakeLists.txt}]
+[{**/Makefile,**/CMakeLists.txt}]
 indent_style = tab
