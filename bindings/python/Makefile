@@ -15,15 +15,15 @@ install:
 	python setup.py install --force
 
 test:
-	python3 -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
+	python -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
 
 init:
-	pip3 install ./
+	pip install ./
 
 build-install: build-ext install
 
 pypi-release:
-	python3 setup.py sdist
+	python setup.py sdist
 
 
 .PHONY: build-ext build-dist install init test pypi-release

@@ -1,0 +1,17 @@
+[project]
+name = "mata-tests-integration"
+version = "0.1.0"
+description = "Integration tests for Mata"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "pandas>=1.1.1",
+  "psutil>=5.7.0",
+  "pyyaml>=5.1",
+  "tabulate>=0.8.6",
+  "termcolor>=1.1.0",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

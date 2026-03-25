@@ -89,10 +89,10 @@ tmp_output=$(mktemp)
 "$rootdir/"pycobench >& "$tmp_output"
 if grep -q ModuleNotFoundError "$tmp_output"; then
   echo "[!] Your system is missing python modules for running pycobench."
-  read -p "Do you wish to install these requirements? [y/n] " choice
+  read -rp "Do you wish to install these requirements? [y/n] " choice
   case "$choice" in
-    y|Y ) python3 -m pip install -r requirements.txt;;
-    * ) die "missing pycobench depedencies; please, install then from 'test-integration/requirements.txt'";;
+    y|Y ) python3 -m pip install "$rootdir";;
+    * ) die "missing pycobench dependencies; please, install them from './tests-integration/pyproject.toml'";;
   esac
 fi
 rm "$tmp_output"

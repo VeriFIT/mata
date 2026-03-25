@@ -7,7 +7,7 @@ We have several repositories for all the NFA benchmarks and the benchmarking inf
 - **[VeriFIT/mata](https://github.com/VeriFIT/mata/)**
   - The main repository for Mata: A fast and simple automata library
   - `./tests-integration/`
-    - Repository with instructions on how to benchmark Mata using pycobench benchmarking tool
+    - Folder with instructions on how to benchmark Mata using pycobench benchmarking tool
 - **[VeriFIT/nfa-bench](https://github.com/VeriFIT/nfa-bench)**
   - Extensive benchmark for reasoning about regular properties
   - This repository contains benchmark automata that can be used to evaluate libraries accepting non-deterministic finite automata in `.mata` format.
@@ -26,26 +26,27 @@ We have several repositories for all the NFA benchmarks and the benchmarking inf
 
 # Benchmarking in VeriFIT/mata
 
-We first explain how to compile the library and test binary sources in `./tests-integration/src/`. We will explain how to profile or test performance in separate sections.
-
 First, build the Mata library with the release version:
 
 ```sh
 make release
 ```
 
-If you plan to use the existing benchmarking infrastructure in `./tests-integration/`, enter the Python environment in `./tests-integration/`:
-
-```sh
-python3 -m venv .venv
-pip install -r requirements.txt
-source .venv/bin/activate
-```
-
 If you want to use Mata as a library called from external programs outside of the VeriFIT/Mata repository, also install Mata as a system library:
 
 ```sh
 sudo make install
+```
+
+We first explain how to compile the library and test binary sources in `./tests-integration/src/`.
+Next, we explain how to test the performance of Mata and profile Mata in the following sections.
+
+If you plan to use the existing benchmarking infrastructure in `./tests-integration/`, enter the Python environment in `./tests-integration/`:
+
+```sh
+python3 -m venv .venv
+pip install ./tests-integration/
+source .venv/bin/activate
 ```
 
 ## Benchmarking through VeriFIT/mata `./tests-integration/`
