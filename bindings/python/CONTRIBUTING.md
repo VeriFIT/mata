@@ -144,9 +144,8 @@ The directory structure is as follows:
 - `tests/`: Tests for the Cython wrapper.
   - `conftest.py`: Global configuration of tests, containing fixtures, setups, etc.
 - `Manifest.in`: Specification of the contents of the wrapper distribution for PyPI.
-- `pyproject.toml`: Specification for the wrapper distribution for PyPI.
-- `requirements.txt`: Specification of the wrapper's requirements and dependencies. Run `make init` or `pip3 install -r requirements.txt` to install them.
-- `setup.py`: Specification of the build process.
+- `pyproject.toml`: Specification for the wrapper distribution for PyPI. Run `make init` or `pip install ./` to install them.
+- `setup.py`: Specification of the build process using `setuptools`.
 
 ## Adding a new function
 

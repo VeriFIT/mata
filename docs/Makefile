@@ -3,9 +3,9 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SOURCEDIR     = src/
-CONFIG_DIR    = ./
-BUILDDIR      = _build/
+SOURCEDIR     = src
+CONFIG_DIR    = .
+BUILDDIR      = _build
 
 # --fresh-env
 ALLSPHINXOPTS = --conf-dir "$(CONFIG_DIR)" --doctree-dir "$(BUILDDIR)/doctrees" $(SPHINXOPTS) "$(SOURCEDIR)"
@@ -18,12 +18,13 @@ help:
 .PHONY: help Makefile html dirhtml
 
 init:
-	pip3 install -r requirements.txt
+	pip3 install ./
 
 html:
 	breathe-apidoc --output-dir ./src/ --force --members ./xml/
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo "Finished generating HTML documentation in $(BUILDDIR)/html."
+	@echo "Open docs/${BUILDDIR}/html/index.html."
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
@@ -37,7 +38,18 @@ latex:
 	@echo "Finished generating latex pdf documentation in $(BUILDDIR)/latex."
 
 clean:
-	rm -rf $(BUILDDIR) ./api/ ./xml/
+	rm -rf \
+	   $(BUILDDIR)/ \
+	   api/ \
+	   xml/ \
+	   src/namespace/ \
+	   src/namespacelist.rst \
+	   src/file/ \
+	   src/filelist.rst \
+	   src/struct/ \
+	   src/structlist.rst \
+	   src/class/ \
+	   src/classlist.rst
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

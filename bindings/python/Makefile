@@ -15,15 +15,26 @@ install:
 	python setup.py install --force
 
 test:
-	python3 -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
+	python -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
 
 init:
-	pip3 install -r requirements.txt
+	pip install ./
 
 build-install: build-ext install
 
 pypi-release:
-	python3 setup.py sdist
+	python setup.py sdist
 
+clean:
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type f \( -name "*.cpp" -o -name "*.dot" -o -name "*.so" -o -name "*.pdf" \) -exec rm -f {} +
+	rm -rf \
+		.coverage \
+		dist/ \
+		libmata.egg-info/ \
+		mata_py.egg-info/ \
+		libmata.cpp \
+		MANIFEST \
+		virtenv
 
-.PHONY: build-ext build-dist install init test pypi-release
+.PHONY: build-ext build-dist install init test pypi-release clean

@@ -4,6 +4,8 @@ Thank you for your interest in contributing to `mata`.
 
 We welcome contributions from the community and appreciate your help in improving this project.
 
+For information on contributing to the Python bindings, refer to [bindings/python/CONTRIBUTING.md](bindings/python/CONTRIBUTING.md).
+
 ## Getting started
 
 1. If you'd like to contribute to the Mata project, please [fork the repository](https://github.com/VeriFIT/mata/fork).

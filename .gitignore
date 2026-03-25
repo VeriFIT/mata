@@ -48,19 +48,6 @@ result-*
 # direnv
 .direnv
 
-# documentation
-doc/api/
-doc/xml/
-doc/_build
-doc/src/namespace
-doc/src/namespacelist.rst
-doc/src/file
-doc/src/filelist.rst
-doc/src/struct
-doc/src/structlist.rst
-doc/src/class
-doc/src/classlist.rst
-
 coverage.info
 cov_html
 VERSION
@@ -74,17 +61,8 @@ VERSION
 .ccls-cache
 
 # Python binding related
-bindings/python/**/*.cpp
 .ipynb_checkpoints/
 **/__pycache__/
-bindings/python/.coverage
-bindings/python/dist
-bindings/python/libmata.egg-info
-bindings/python/libmata.cpp
-bindings/python/**/*.dot
-bindings/python/**/*.pdf
-bindings/python/MANIFEST
-bindings/python/virtenv
 
 # Code coverage profiles and other test artifacts
 *.out

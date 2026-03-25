@@ -1,0 +1,31 @@
+name: Build Documentation
+description: Build the documentation for Mata.
+inputs:
+  os:
+    description: "Operating system to run on"
+    required: false
+    default: ubuntu-latest
+  python-version:
+    description: "Python version to use"
+    required: false
+    default: "3.13"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python environment
+      uses: ./.github/workflows/actions/setup-python
+      with:
+        os: ${{ inputs.os }}
+        python-version: ${{ inputs.python-version }}
+    - name: Install Python Dependencies for documentation build
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        make -C docs init
+    - uses: ssciwr/doxygen-install@v1
+    - name: Compile the documentation
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        make docs
+        make -C docs/ html
