@@ -5,13 +5,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Class mata::nft::Nft &#8212; Mata  documentation</title>
+    <title>Class mata::nft::Nft &#8212; Mata 0.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
-    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/documentation_options.js?v=7026087e"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Class mata::utils::OrdVector" href="classmata_1_1utils_1_1OrdVector.html" />
@@ -54,7 +54,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>num_of_states</strong> – <strong>[in]</strong> Number of states for which to preallocate <a class="reference internal" href="../nft.html#namespacemata_1_1nft_1a981fb7c55e8804a7f9d4417e29f8cefe"><span class="std std-ref">Delta</span></a>. </p></li>
+<li><p><strong>num_of_states</strong> – Number of states for which to preallocate <a class="reference internal" href="../nft.html#namespacemata_1_1nft_1a981fb7c55e8804a7f9d4417e29f8cefe"><span class="std std-ref">Delta</span></a>. </p></li>
 <li><p><strong>initial_states</strong> – Initial states of the NFT. </p></li>
 <li><p><strong>final_states</strong> – Final states of the NFT. </p></li>
 <li><p><strong>levels</strong> – <a class="reference internal" href="../nft.html#classmata_1_1nft_1_1Levels"><span class="std std-ref">Levels</span></a> of the states. </p></li>
@@ -540,7 +540,7 @@
 <li><p><strong>decode_ascii_chars</strong> – <strong>[in]</strong> Whether to use ASCII characters for the output. </p></li>
 <li><p><strong>use_intervals</strong> – <strong>[in]</strong> Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels. </p></li>
 <li><p><strong>max_label_length</strong> – <strong>[in]</strong> Maximum label length for the output (-1 means no limit, 0 means no labels). If the label is longer than <code class="docutils literal notranslate"><span class="pre">max_label_length</span></code>, it will be truncated, with full label displayed on hover. </p></li>
-<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for printing labels. If nullptr, the automaton’s alphabet is used. If the automaton has no alphabet, symbols are printed as integers unless <code class="docutils literal notranslate"><span class="pre">decode_ascii_chars</span></code> is set. </p></li>
+<li><p><strong>alphabet</strong> – <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for printing labels. If nullptr, the automaton’s alphabet is used. If the automaton has no alphabet, symbols are printed as integers unless <code class="docutils literal notranslate"><span class="pre">decode_ascii_chars</span></code> is set. </p></li>
 </ul>
 </dd>
 </dl>
@@ -912,11 +912,11 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE">
 <span id="_CPPv3N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="_CPPv2N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="mata::nft::Nft::make_complete__AlphabetCP.std::optional:std::vector:State::CR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a1a3f0d3c6c6c3cd18d7fc03678d28fcc"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">make_complete</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sink_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nft3Nft13make_completeEPK8AlphabetRKNSt8optionalINSt6vectorI5StateEEEE" title="Link to this definition">¶</a><br /></dt>
 <dd><p>Make NFT complete in place. </p>
-<p>For each state <code class="docutils literal notranslate"><span class="pre">state</span></code>, add transitions with “missing” symbols from <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> (symbols that do not occur on transitions from given <code class="docutils literal notranslate"><span class="pre">state</span></code>) to <code class="docutils literal notranslate"><span class="pre">sink_states[next_level_after(level)]</span></code> where <code class="docutils literal notranslate"><span class="pre">level</span> <span class="pre">==</span> <span class="pre">this-&gt;levels[state]</span></code>. If NFT does not contain any states, this function does nothing.</p>
+<p>For each state <code class="docutils literal notranslate"><span class="pre">state</span></code>, add transitions with “missing” symbols from <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> (symbols that do not occur on transitions from given <code class="docutils literal notranslate"><span class="pre">state</span></code>) to <code class="docutils literal notranslate"><span class="pre">sink_states[next_level_after(level)]</span></code> where <code class="docutils literal notranslate"><span class="pre">level</span> <span class="pre">==</span> <span class="pre">this-&gt;</span><a class="reference internal" href="../nft.html#classmata_1_1nft_1_1Nft_1aa8f4240006c7a60846d0eb7573539f71"><span class="std std-ref"><span class="pre">levels</span></span></a><span class="pre">[state]</span></code>. If NFT does not contain any states, this function does nothing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing “missing” symbols. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, use <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise use <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>. </p></li>
+<li><p><strong>alphabet</strong> – <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing “missing” symbols. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, use <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise use <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>. </p></li>
 <li><p><strong>sink_states</strong> – <strong>[in]</strong> The level-indexed vector of sink states, one per level, already existing in the NFT, into which new transitions are added. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, add new sink states. </p></li>
 </ul>
 </dd>
@@ -930,7 +930,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE">
 <span id="_CPPv3N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="_CPPv2N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE"></span><span id="mata::nft::Nft::make_complete__utils::OrdVector:Symbol:CR.std::optional:std::vector:State::CR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ac10127a905bc7f5e746745a1f767df51"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">make_complete</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">symbols</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nft5StateE" title="mata::nft::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sink_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nft3Nft13make_completeERKN5utils9OrdVectorI6SymbolEERKNSt8optionalINSt6vectorI5StateEEEE" title="Link to this definition">¶</a><br /></dt>
 <dd><p>Make NFT complete in place. </p>
-<p>For each state <code class="docutils literal notranslate"><span class="pre">state</span></code>, add transitions with “missing” symbols from <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> (symbols that do not occur on transitions from given <code class="docutils literal notranslate"><span class="pre">state</span></code>) to <code class="docutils literal notranslate"><span class="pre">sink_states[next_level_after(level)]</span></code> where <code class="docutils literal notranslate"><span class="pre">level</span> <span class="pre">==</span> <span class="pre">this-&gt;levels[state]</span></code>. If NFT does not contain any states, this function does nothing.</p>
+<p>For each state <code class="docutils literal notranslate"><span class="pre">state</span></code>, add transitions with “missing” symbols from <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> (symbols that do not occur on transitions from given <code class="docutils literal notranslate"><span class="pre">state</span></code>) to <code class="docutils literal notranslate"><span class="pre">sink_states[next_level_after(level)]</span></code> where <code class="docutils literal notranslate"><span class="pre">level</span> <span class="pre">==</span> <span class="pre">this-&gt;</span><a class="reference internal" href="../nft.html#classmata_1_1nft_1_1Nft_1aa8f4240006c7a60846d0eb7573539f71"><span class="std std-ref"><span class="pre">levels</span></span></a><span class="pre">[state]</span></code>. If NFT does not contain any states, this function does nothing.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This overloaded version is a more efficient version which does not need to compute the set of symbols to complete to from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan to complete multiple automata over the same set of symbols.</p>
@@ -1183,7 +1183,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <p>If you need to parse the automaton again, use <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntAlphabet"><span class="std std-ref">IntAlphabet</span></a> in construct()</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p>
+<dd class="field-odd"><p><strong>alphabet</strong> – If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>automaton in mata format </p>
@@ -1200,7 +1200,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>output</strong> – <strong>[out]</strong> Output stream to print the automaton to. </p></li>
-<li><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
+<li><p><strong>alphabet</strong> – If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
 </ul>
 </dd>
 </dl>
@@ -1214,7 +1214,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
+<li><p><strong>alphabet</strong> – If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
 <li><p><strong>filename</strong> – Name of the file to print the automaton to </p></li>
 </ul>
 </dd>
@@ -1375,7 +1375,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <p>The automaton is lazily determinized and made complete. The algorithm returns an arbitrary word from the complemented NFA constructed until the first macrostate without any final states in the original automaton is encountered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing the complement. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, uses <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise uses <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>.</p>
+<dd class="field-odd"><p><strong>alphabet</strong> – <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing the complement. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, uses <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise uses <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>.</p>
 </dd>
 <dt class="field-even">Pre<span class="colon">:</span></dt>
 <dd class="field-even"><p>The automaton does not contain any epsilon transitions. TODO: Support lazy epsilon closure? </p>
@@ -1394,7 +1394,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing “missing” symbols. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, use <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise use <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>. </p></li>
+<li><p><strong>alphabet</strong> – <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to use for computing “missing” symbols. If <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>, use <code class="docutils literal notranslate"><span class="pre">this-&gt;alphabet</span></code> when defined, otherwise use <code class="docutils literal notranslate"><span class="pre">this-&gt;delta.get_used_symbols()</span></code>. </p></li>
 <li><p><strong>sink_state</strong> – <strong>[in]</strong> The state into which new transitions are added. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, add a new sink state. </p></li>
 </ul>
 </dd>
@@ -1450,7 +1450,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft6levelsE">
 <span id="_CPPv3N4mata3nft3Nft6levelsE"></span><span id="_CPPv2N4mata3nft3Nft6levelsE"></span><span id="mata::nft::Nft::levels__Levels"></span><span class="target" id="classmata_1_1nft_1_1Nft_1aa8f4240006c7a60846d0eb7573539f71"></span><a class="reference internal" href="classmata_1_1nft_1_1Levels.html#_CPPv4N4mata3nft6LevelsE" title="mata::nft::Levels"><span class="n"><span class="pre">Levels</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">levels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata3nft3Nft6levelsE" title="Link to this definition">¶</a><br /></dt>
 <dd><p>Vector of levels giving each state a level in range from 0 to <code class="docutils literal notranslate"><span class="pre">levels.num_of_levels</span></code> - 1. </p>
-<p>For state <code class="docutils literal notranslate"><span class="pre">q</span></code>, <code class="docutils literal notranslate"><span class="pre">levels[q]</span></code> gives the state <code class="docutils literal notranslate"><span class="pre">q</span></code> a level.</p>
+<p>For state <code class="docutils literal notranslate"><span class="pre">q</span></code>, <code class="docutils literal notranslate"><a class="reference internal" href="../nft.html#classmata_1_1nft_1_1Nft_1aa8f4240006c7a60846d0eb7573539f71"><span class="std std-ref"><span class="pre">levels</span></span></a><span class="pre">[q]</span></code> gives the state <code class="docutils literal notranslate"><span class="pre">q</span></code> a level.</p>
 <p>Also holds the number of levels in the NFT in <code class="docutils literal notranslate"><span class="pre">levels.num_of_levels</span></code>. </p>
 </dd></dl>
 
@@ -1593,7 +1593,7 @@ If you need to parse the automaton again, use <a class="reference internal" href
       &#169;2025, Automata@FIT Group, BUT, FIT.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |

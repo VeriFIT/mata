@@ -5,13 +5,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>File inter-aut.hh &#8212; Mata  documentation</title>
+    <title>File inter-aut.hh &#8212; Mata 0.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
-    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/documentation_options.js?v=7026087e"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="File mintermization.hh" href="mintermization_8hh.html" />
@@ -46,85 +46,6 @@
 <li><p>Closed sets. </p></li>
 </ol>
 </p>
-<dl class="cpp class">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphE">
-<span id="_CPPv3N4mata12FormulaGraphE"></span><span id="_CPPv2N4mata12FormulaGraphE"></span><span id="mata::FormulaGraph"></span><span class="target" id="classmata_1_1FormulaGraph"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><br /></dt>
-<dd><div class="docutils container">
-<em>#include &lt;inter-aut.hh&gt;</em></div>
-<p>Structure representing a transition formula using a graph. </p>
-<p>A node of graph consists of node itself and set of children nodes. Nodes are operators and operands of the formula. E.g., a formula q1 &amp; s1 will be transformed to a tree with &amp; as a root node and q1 and s2 being children nodes of the root. </p>
-<div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphEv">
-<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphEv"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphEv"></span><span id="mata::FormulaGraph::FormulaGraph"></span><span class="target" id="classmata_1_1FormulaGraph_1a8380d0306841d2cdf9ef8b5f14ea5e4a"></span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphEv" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERK11FormulaNode">
-<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERK11FormulaNode"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERK11FormulaNode"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaNodeCR"></span><span class="target" id="classmata_1_1FormulaGraph_1a204e364da9d95810c827a88b11d3fd6e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaNode.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERK11FormulaNode" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERR11FormulaNode">
-<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERR11FormulaNode"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERR11FormulaNode"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaNodeRR"></span><span class="target" id="classmata_1_1FormulaGraph_1ac6374cbd0c0554f712ba1d6402f5924e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1FormulaNode.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERR11FormulaNode" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph">
-<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaGraphCR"></span><span class="target" id="classmata_1_1FormulaGraph_1a4d16cd6a7e7aea18c6cb702a6975c234"></span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph" title="mata::FormulaGraph::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">g</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph">
-<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaGraphRR"></span><span class="target" id="classmata_1_1FormulaGraph_1a0af055b4b777637b96988137228cd144"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph" title="mata::FormulaGraph::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">g</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphaSERK12FormulaGraph">
-<span id="_CPPv3N4mata12FormulaGraphaSERK12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraphaSERK12FormulaGraph"></span><span id="mata::FormulaGraph::assign-operator__FormulaGraphCR"></span><span class="target" id="classmata_1_1FormulaGraph_1a8542c57d8c0fca6e279f888e6c6f1019"></span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraphaSERK12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphaSERR12FormulaGraph">
-<span id="_CPPv3N4mata12FormulaGraphaSERR12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraphaSERR12FormulaGraph"></span><span id="mata::FormulaGraph::assign-operator__FormulaGraphRR"></span><span class="target" id="classmata_1_1FormulaGraph_1ab6f0df0da4a5cdee35d04344c4861927"></span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraphaSERR12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4NK4mata12FormulaGraph18collect_node_namesEv">
-<span id="_CPPv3NK4mata12FormulaGraph18collect_node_namesEv"></span><span id="_CPPv2NK4mata12FormulaGraph18collect_node_namesEv"></span><span id="mata::FormulaGraph::collect_node_namesC"></span><span class="target" id="classmata_1_1FormulaGraph_1a14e2f30d106edf94daacf571071c8eac"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">collect_node_names</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata12FormulaGraph18collect_node_namesEv" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4NK4mata12FormulaGraph10print_treeERNSt7ostreamE">
-<span id="_CPPv3NK4mata12FormulaGraph10print_treeERNSt7ostreamE"></span><span id="_CPPv2NK4mata12FormulaGraph10print_treeERNSt7ostreamE"></span><span id="mata::FormulaGraph::print_tree__osRC"></span><span class="target" id="classmata_1_1FormulaGraph_1adcde51b2076924fde7ee4b99240d7160"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">print_tree</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata12FormulaGraph10print_treeERNSt7ostreamE" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-</div>
-<div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
-<dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph4nodeE">
-<span id="_CPPv3N4mata12FormulaGraph4nodeE"></span><span id="_CPPv2N4mata12FormulaGraph4nodeE"></span><span id="mata::FormulaGraph::node__FormulaNode"></span><span class="target" id="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37"></span><a class="reference internal" href="../class/classmata_1_1FormulaNode.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">node</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph4nodeE" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-<dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph8childrenE">
-<span id="_CPPv3N4mata12FormulaGraph8childrenE"></span><span id="_CPPv2N4mata12FormulaGraph8childrenE"></span><span id="mata::FormulaGraph::children__std::vector:FormulaGraph:"></span><span class="target" id="classmata_1_1FormulaGraph_1ab82357d5a1628f761bb4f0744610f96d"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">children</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph8childrenE" title="Link to this definition">¶</a><br /></dt>
-<dd></dd></dl>
-
-</div>
-<div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-attributes">Private Static Attributes</p>
-<dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph19max_num_of_childrenE">
-<span id="_CPPv3N4mata12FormulaGraph19max_num_of_childrenE"></span><span id="_CPPv2N4mata12FormulaGraph19max_num_of_childrenE"></span><span id="mata::FormulaGraph::max_num_of_children__s"></span><span class="target" id="classmata_1_1FormulaGraph_1a04d7a04494cc5e7d7a153414b2a91d71"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">max_num_of_children</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph19max_num_of_childrenE" title="Link to this definition">¶</a><br /></dt>
-<dd><p>Maximal number of <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1FormulaNode"><span class="std std-ref"><span class="pre">FormulaNode</span></span></a></code> children in any <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1FormulaGraph"><span class="std std-ref"><span class="pre">FormulaGraph</span></span></a></code> node (for AND, OR nodes). Only one (NOT node) or zero (<code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1FormulaNode"><span class="std std-ref"><span class="pre">FormulaNode</span></span></a></code> node) children may be used. Used as an optimization by pre-allocating <code class="docutils literal notranslate"><span class="pre">children</span></code> at node initialization. </p>
-</dd></dl>
-
-</div>
-</dd></dl>
-
 <dl class="cpp class">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata11FormulaNodeE">
 <span id="_CPPv3N4mata11FormulaNodeE"></span><span id="_CPPv2N4mata11FormulaNodeE"></span><span id="mata::FormulaNode"></span><span class="target" id="classmata_1_1FormulaNode"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaNode</span></span></span><br /></dt>
@@ -356,6 +277,85 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata11FormulaNode12operand_typeE">
 <span id="_CPPv3N4mata11FormulaNode12operand_typeE"></span><span id="_CPPv2N4mata11FormulaNode12operand_typeE"></span><span id="mata::FormulaNode::operand_type__OperandType"></span><span class="target" id="classmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f"></span><a class="reference internal" href="#_CPPv4N4mata11FormulaNode11OperandTypeE" title="mata::FormulaNode::OperandType"><span class="n"><span class="pre">OperandType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">operand_type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
 <dd><p>if a node is operand, it defines which one </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphE">
+<span id="_CPPv3N4mata12FormulaGraphE"></span><span id="_CPPv2N4mata12FormulaGraphE"></span><span id="mata::FormulaGraph"></span><span class="target" id="classmata_1_1FormulaGraph"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;inter-aut.hh&gt;</em></div>
+<p>Structure representing a transition formula using a graph. </p>
+<p>A node of graph consists of node itself and set of children nodes. Nodes are operators and operands of the formula. E.g., a formula q1 &amp; s1 will be transformed to a tree with &amp; as a root node and q1 and s2 being children nodes of the root. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphEv">
+<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphEv"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphEv"></span><span id="mata::FormulaGraph::FormulaGraph"></span><span class="target" id="classmata_1_1FormulaGraph_1a8380d0306841d2cdf9ef8b5f14ea5e4a"></span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERK11FormulaNode">
+<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERK11FormulaNode"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERK11FormulaNode"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaNodeCR"></span><span class="target" id="classmata_1_1FormulaGraph_1a204e364da9d95810c827a88b11d3fd6e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaNode.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERK11FormulaNode" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERR11FormulaNode">
+<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERR11FormulaNode"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERR11FormulaNode"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaNodeRR"></span><span class="target" id="classmata_1_1FormulaGraph_1ac6374cbd0c0554f712ba1d6402f5924e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1FormulaNode.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERR11FormulaNode" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph">
+<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaGraphCR"></span><span class="target" id="classmata_1_1FormulaGraph_1a4d16cd6a7e7aea18c6cb702a6975c234"></span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph" title="mata::FormulaGraph::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">g</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERK12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph">
+<span id="_CPPv3N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph"></span><span id="mata::FormulaGraph::FormulaGraph__FormulaGraphRR"></span><span class="target" id="classmata_1_1FormulaGraph_1a0af055b4b777637b96988137228cd144"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaGraph</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph" title="mata::FormulaGraph::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">g</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph12FormulaGraphERR12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphaSERK12FormulaGraph">
+<span id="_CPPv3N4mata12FormulaGraphaSERK12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraphaSERK12FormulaGraph"></span><span id="mata::FormulaGraph::assign-operator__FormulaGraphCR"></span><span class="target" id="classmata_1_1FormulaGraph_1a8542c57d8c0fca6e279f888e6c6f1019"></span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraphaSERK12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraphaSERR12FormulaGraph">
+<span id="_CPPv3N4mata12FormulaGraphaSERR12FormulaGraph"></span><span id="_CPPv2N4mata12FormulaGraphaSERR12FormulaGraph"></span><span id="mata::FormulaGraph::assign-operator__FormulaGraphRR"></span><span class="target" id="classmata_1_1FormulaGraph_1ab6f0df0da4a5cdee35d04344c4861927"></span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraphaSERR12FormulaGraph" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12FormulaGraph18collect_node_namesEv">
+<span id="_CPPv3NK4mata12FormulaGraph18collect_node_namesEv"></span><span id="_CPPv2NK4mata12FormulaGraph18collect_node_namesEv"></span><span id="mata::FormulaGraph::collect_node_namesC"></span><span class="target" id="classmata_1_1FormulaGraph_1a14e2f30d106edf94daacf571071c8eac"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">collect_node_names</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata12FormulaGraph18collect_node_namesEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata12FormulaGraph10print_treeERNSt7ostreamE">
+<span id="_CPPv3NK4mata12FormulaGraph10print_treeERNSt7ostreamE"></span><span id="_CPPv2NK4mata12FormulaGraph10print_treeERNSt7ostreamE"></span><span id="mata::FormulaGraph::print_tree__osRC"></span><span class="target" id="classmata_1_1FormulaGraph_1adcde51b2076924fde7ee4b99240d7160"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">print_tree</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata12FormulaGraph10print_treeERNSt7ostreamE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph4nodeE">
+<span id="_CPPv3N4mata12FormulaGraph4nodeE"></span><span id="_CPPv2N4mata12FormulaGraph4nodeE"></span><span id="mata::FormulaGraph::node__FormulaNode"></span><span class="target" id="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37"></span><a class="reference internal" href="../class/classmata_1_1FormulaNode.html#_CPPv4N4mata11FormulaNodeE" title="mata::FormulaNode"><span class="n"><span class="pre">FormulaNode</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">node</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph4nodeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph8childrenE">
+<span id="_CPPv3N4mata12FormulaGraph8childrenE"></span><span id="_CPPv2N4mata12FormulaGraph8childrenE"></span><span id="mata::FormulaGraph::children__std::vector:FormulaGraph:"></span><span class="target" id="classmata_1_1FormulaGraph_1ab82357d5a1628f761bb4f0744610f96d"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1FormulaGraph.html#_CPPv4N4mata12FormulaGraphE" title="mata::FormulaGraph"><span class="n"><span class="pre">FormulaGraph</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">children</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph8childrenE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-attributes">Private Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata12FormulaGraph19max_num_of_childrenE">
+<span id="_CPPv3N4mata12FormulaGraph19max_num_of_childrenE"></span><span id="_CPPv2N4mata12FormulaGraph19max_num_of_childrenE"></span><span id="mata::FormulaGraph::max_num_of_children__s"></span><span class="target" id="classmata_1_1FormulaGraph_1a04d7a04494cc5e7d7a153414b2a91d71"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">max_num_of_children</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata12FormulaGraph19max_num_of_childrenE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Maximal number of <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1FormulaNode"><span class="std std-ref"><span class="pre">FormulaNode</span></span></a></code> children in any <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1FormulaGraph"><span class="std std-ref"><span class="pre">FormulaGraph</span></span></a></code> node (for AND, OR nodes). Only one (NOT node) or zero (<code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1FormulaNode"><span class="std std-ref"><span class="pre">FormulaNode</span></span></a></code> node) children may be used. Used as an optimization by pre-allocating <code class="docutils literal notranslate"><span class="pre">children</span></code> at node initialization. </p>
 </dd></dl>
 
 </div>
@@ -762,7 +762,7 @@
       &#169;2025, Automata@FIT Group, BUT, FIT.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
