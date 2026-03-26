@@ -26,14 +26,11 @@ pypi-release:
 	python setup.py sdist
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d \( -name "__pycache__" -o -name "*.egg-info" \) -exec rm -rf {} +
 	find . -type f \( -name "*.cpp" -o -name "*.dot" -o -name "*.so" -o -name "*.pdf" \) -exec rm -f {} +
 	rm -rf \
 		.coverage \
 		dist/ \
-		libmata.egg-info/ \
-		mata_py.egg-info/ \
-		libmata.cpp \
 		MANIFEST \
 		virtenv
 

@@ -1,13 +1,23 @@
 [project]
-name = "mata-py"
-version = "0.1.0"
-description = "Mata Python bindings"
+name = "libmata"
+dynamic = ["version"]
+description = "Python bindings for Mata: A fast and simple automata library"
 readme = "README.md"
 requires-python = ">=3.13"
+keywords = ["automata", "finite automata", "alternating automata"]
+authors = [
+  {name = "Lukáš Holík", email = "holik@fit.vutbr.cz"},
+  {name = "Ondřej Lengál", email = "lengal@fit.vutbr.cz"},
+  {name = "Martin Hruška", email = "ihruskam@fit.vutbr.cz"},
+  {name = "Tomáš Fiedor", email = "ifiedortom@fit.vutbr.cz"},
+  {name = "David Chocholatý", email = "chocholaty.david@protonmail.com"},
+  {name = "Juraj Síč", email = "sicjuraj@fit.vutbr.cz"},
+  {name = "Tomáš Vojnar", email = "vojnar@fit.vutbr.cz"},
+]
 dependencies = [
   "coverage>=6.4.1",
   "cython>=0.29.32",
-  "graphviz>=0.20.0",
+  "graphviz>=0.20.1",
   "ipykernel>=7.2.0",
   "ipython>=7.9.0",
   "networkx>=2.6.3",
@@ -19,6 +29,17 @@ dependencies = [
   "setuptools>=82.0.1",
   "tabulate>=0.8.10",
 ]
+
+[project.urls]
+Homepage = "https://github.com/verifit/mata"
+
+[tool.setuptools]
+packages = ["libmata", "libmata.nfa"]
+
+[tool.setuptools.package-dir]
+"libmata" = "libmata"
+"libmata.nfa" = "libmata/nfa"
+
 [build-system]
 requires = ["setuptools", "wheel", "Cython>=0.29.32"]
 build-backend = "setuptools.build_meta"

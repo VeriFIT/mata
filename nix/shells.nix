@@ -28,13 +28,16 @@
                 inputsFrom = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
                   mata
                   mataPy
+                  mataDocs
                 ];
 
                 packages = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
                   mata
-                  (pkgs.python3.withPackages (ps: [
+                  (pkgs.python3.withPackages (ps: with ps; [
+                    pytest-cov
+                    papermill
+                  ] ++ [
                     mataPy
-                    ps.papermill
                   ]))
                 ];
 
