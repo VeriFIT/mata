@@ -1,9 +1,13 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-papermill ./example-01-ws1s-formulae.ipynb tmp_out.ipynb
-papermill ./example-02-redos-attacks.ipynb tmp_out.ipynb
-papermill ./example-03-exploring-maze.ipynb tmp_out.ipynb
-papermill ./example-04-visualization.ipynb tmp_out.ipynb
-rm tmp_out.ipynb
+SCRIPT_DIR="$(dirname "$0")"
+
+TMP_OUT="$(mktemp --tmpdir mata-papermill-XXXXXX.ipynb)"
+trap 'rm -f "$TMP_OUT"' EXIT
+
+for file in "$SCRIPT_DIR"/*.ipynb; do
+    echo "Running: $file."
+    papermill "$file" "$TMP_OUT"
+done
