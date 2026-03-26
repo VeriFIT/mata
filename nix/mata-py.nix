@@ -2,6 +2,7 @@
   lib,
   python3Packages,
   mata,
+  graphviz,
   version ? "dev",
 }:
 
@@ -12,52 +13,52 @@ let
     else
       "0.0.0+${lib.strings.sanitizeDerivationName version}";
 in
-python3Packages.buildPythonPackage {
+python3Packages.buildPythonPackage (finalAttrs: {
   pname = "mata-py";
   inherit version;
-  format = "setuptools";
+  pyproject = true;
 
-  doCheck = true;
   pythonImportsCheck = [
     "libmata"
     "libmata.nfa.nfa"
+    "libmata.alphabets"
+    "libmata.parser"
   ];
 
-  src =
-    let
-      root = ./..;
-    in
-    with lib.fileset;
-    toSource {
-      inherit root;
-      fileset = difference (gitTracked root) (
-        lib.fileset.unions [
-          (maybeMissing ./../tests-integration/nfa-bench)
-        ]
-      );
-    };
+  src = mata.src;
   sourceRoot = "source/bindings/python";
 
   nativeBuildInputs = with python3Packages; [
     cython
     setuptools
-    wheel
-    # pytest
-    # pytest-cov
   ];
 
-  propagatedBuildInputs = with python3Packages; [
-    graphviz
-    ipython
-    networkx
-    pandas
-    tabulate
-  ];
-
-  buildInputs = [
+  propagatedBuildInputs = [
     mata
-    # pkgs.graphviz
-  ];
+    graphviz
+    python3Packages.graphviz
+  ]
+  ++ (with python3Packages; [
+    graphviz
+  ]);
+
+  nativeCheckInputs = [
+    graphviz
+  ]
+  ++ (with python3Packages; [
+    pytestCheckHook
+    pytest-cov-stub
+    coverage
+    pytest-cov
+    papermill
+    ipykernel
+    ipython
+    tabulate
+    pandas
+    seaborn
+    scipy
+    networkx
+  ]);
 
   postPatch = ''
     substituteInPlace setup.py \
@@ -74,11 +75,15 @@ python3Packages.buildPythonPackage {
     export MATA_BUILD_DIR="$TMPDIR/mata-build"
   '';
 
-  meta = {
-    description = "Python bindings for the Mata automata library";
-    homepage = "https://github.com/VeriFIT/mata";
-    license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ adda ];
-    platforms = lib.platforms.unix;
+  preCheck = ''
+    make -C ../../bindings/python build-ext
+  '';
+
+  postCheck = ''
+    bash ../../examples/notebooks/run_papermill_examples.sh
+  '';
+
+  meta = mata.meta // {
+    description = "Python bindings for the Mata ${mata.meta.description}";
   };
-}
+})
