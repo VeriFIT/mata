@@ -69,6 +69,11 @@
                     taplo
                     prettier
                     prettierd
+                    (pkgs.python3.withPackages (
+                      ps: with ps; [
+                        jupytext
+                      ]
+                    ))
                   ]
                   ++ (
                     if pkgs.stdenv.hostPlatform.system != inputs.flake-utils.lib.system.aarch64-darwin then
