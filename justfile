@@ -66,3 +66,7 @@ help:
 alias f := fmt
 fmt:
   nix fmt
+
+[working-directory: "examples/notebooks/"]
+notebook-sync:
+  jupytext --sync examples/notebooks/*.ipynb
