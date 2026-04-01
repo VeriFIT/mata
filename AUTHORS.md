@@ -6,7 +6,7 @@ For a list of all people who have contributed to the codebase, see
 ## The Core Mata Group
 
 - **Lukáš Holík** ([kilohsakul](https://github.com/kilohsakul), [holik@fit.vut.cz](mailto:holik@fit.vut.cz)): the supreme leader, the emperor of theory;
-- **David Chocholatý** ([Adda0](https://github.com/Adda0), [chocholaty.david@protonmail.com](mailto:chocholaty.david@protonmail.com)): library maintainer;
+- **David Chocholatý** ([Adda0](https://github.com/Adda0), [ichocholaty@fit.vut.cz](mailto:ichocholaty@fit.vut.cz), [chocholaty.david@protonmail.com](mailto:chocholaty.david@protonmail.com)): library maintainer;
 - Juraj Síč ([jurajsic](https://github.com/jurajsic), [sicjuraj@fit.vut.cz](mailto:sicjuraj@fit.vut.cz)): library developer;
 - Vojtěch Havlena ([vhavlena](https://github.com/vhavlena/), [ihavlena@fit.vut.cz](mailto:ihavlena@fit.vut.cz)): library developer;
 - Ondřej Lengál ([ondrik](https://github.com/ondrik), [lengal@fit.vut.cz](mailto:lengal@fit.vut.cz)): prototype developer and the world's tallest hobbit;
