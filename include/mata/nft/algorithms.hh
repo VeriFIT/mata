@@ -133,14 +133,23 @@ Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool 
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 /**
- * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
+ * @brief Composes two NFTs.
  *
  * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
- * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
- * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
- * levels are projected out from the resulting NFT.
- *
- * Vectors of synchronization levels have to be non-empty and of the same size.
+ * Vectors of synchronization levels must be non-empty and of the same size. The levels of the resulting NFT
+ * are formed, iteratively, from the non-synchronizing levels of `lhs`, followed by the non-synchronizing levels of
+ * `rhs`, followed by the next synchronizing level (if not projected out by setting project_out_sync_levels to true).
+ * For example, given `lhs` with 7 levels, `rhs` with 8 levels, lhs_sync_levels=<0,2,5>, rhs_sync_levels=<1,4,5>, the
+ * resulting NFT levels will correspond to (assuming that we are not projecting out the synchronized levels)
+ *   - `rhs` level 0
+ *   - synchronized level from level 0 of `lhs` and level 1 of `rhs`
+ *   - `lhs` level 1
+ *   - `rhs` levels 2 and 3
+ *   - synchronized level from level 2 of `lhs` and level 4 of `rhs`
+ *   - `lhs` levels 3 and 4
+ *   - synchronized level from level 5 of `lhs` and level 5 of `rhs`
+ *   - `lhs` level 6
+ *   - `rhs` levels 6 and 7
  *
  * NOTE: If you have only a single synchronization level per NFT and don't use jump transitions, consider using
  *       no-jump varsion of the composition for better performance.
@@ -161,7 +170,14 @@ Nft compose_general(const Nft& lhs, const Nft& rhs,
             JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
- * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs") with a single synchronization level and no jumps.
+ * @brief Composes two NFTs with a single synchronization level and no jumps.
+ * 
+ * The levels of the resulting NFT are in the following order:
+ *  - levels of `lhs` before its synvhronization level
+ *  - levels of `rhs` before its synvhronization level
+ *  - the synchronizing level (possibly missing if project_out_sync_levels is true)
+ *  - levels of `lhs` after its synvhronization level
+ *  - levels of `rhs` after its synvhronization level
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.

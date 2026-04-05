@@ -950,7 +950,23 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
                  State lhs_first_aux_state = Limits::max_state, State rhs_first_aux_state = Limits::max_state);
 
 /**
- * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
+ * @brief Composes two NFTs.
+ *
+ * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
+ * Vectors of synchronization levels must be non-empty and of the same size. The levels of the resulting NFT
+ * are formed, iteratively, from the non-synchronizing levels of `lhs`, followed by the non-synchronizing levels of
+ * `rhs`, followed by the next synchronizing level (if not projected out by setting project_out_sync_levels to true).
+ * For example, given `lhs` with 7 levels, `rhs` with 8 levels, lhs_sync_levels=<0,2,5>, rhs_sync_levels=<1,4,5>, the
+ * resulting NFT levels will correspond to (assuming that we are not projecting out the synchronized levels)
+ *   - `rhs` level 0
+ *   - synchronized level from level 0 of `lhs` and level 1 of `rhs`
+ *   - `lhs` level 1
+ *   - `rhs` levels 2 and 3
+ *   - synchronized level from level 2 of `lhs` and level 4 of `rhs`
+ *   - `lhs` levels 3 and 4
+ *   - synchronized level from level 5 of `lhs` and level 5 of `rhs`
+ *   - `lhs` level 6
+ *   - `rhs` levels 6 and 7
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
@@ -972,8 +988,15 @@ Nft compose(const Nft& lhs, const Nft& rhs,
             CompositionMode composition_mode = CompositionMode::Auto);
 
 /**
- * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
+ * @brief Composes two NFTs with a single synchronization level.
  *
+ * The levels of the resulting NFT are in the following order:
+ *  - levels of `lhs` before its synvhronization level
+ *  - levels of `rhs` before its synvhronization level
+ *  - the synchronizing level (possibly missing if project_out_sync_levels is true)
+ *  - levels of `lhs` after its synvhronization level
+ *  - levels of `rhs` after its synvhronization level
+ * 
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
