@@ -528,9 +528,10 @@ void Nft::unwind_jumps(
 
 Nft& Nft::operator=(Nft&& other) noexcept {
     if (this != &other) {
-        Nfa::operator=(other);
+        Nfa::operator=(std::move(other));
         levels = std::move(other.levels);
         levels.num_of_levels = other.levels.num_of_levels;
+        level_alphabets = std::move(other.level_alphabets);
     }
     return *this;
 }
@@ -541,6 +542,7 @@ Nft& Nft::operator=(const Nfa& other) noexcept {
         Nfa::operator=(other);
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
         levels.num_of_levels = 1;
+        level_alphabets = Nft::repeated_level_alphabets(levels.num_of_levels, alphabet);
     }
     return *this;
 }
@@ -550,6 +552,7 @@ Nft& Nft::operator=(Nfa&& other) noexcept {
         Nfa::operator=(std::move(other));
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
         levels.num_of_levels = 1;
+        level_alphabets = Nft::repeated_level_alphabets(levels.num_of_levels, alphabet);
     }
     return *this;
 }
