@@ -208,6 +208,68 @@
 </dl>
 </dd></dl>
 
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms15compose_generalERK3NftRK3NftRKN5utils9OrdVectorI5LevelEERKN5utils9OrdVectorI5LevelEEb8JumpMode">
+<span id="_CPPv3N4mata3nft10algorithms15compose_generalERK3NftRK3NftRKN5utils9OrdVectorI5LevelEERKN5utils9OrdVectorI5LevelEEb8JumpMode"></span><span id="_CPPv2N4mata3nft10algorithms15compose_generalERK3NftRK3NftRKN5utils9OrdVectorI5LevelEERKN5utils9OrdVectorI5LevelEEb8JumpMode"></span><span id="mata::nft::algorithms::compose_general__NftCR.NftCR.utils::OrdVector:Level:CR.utils::OrdVector:Level:CR.b.JumpMode"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1ab44e7df81f07b3e23d70ce24c8edc11e"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compose_general</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs_sync_levels</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/ord-vector_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs_sync_levels</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">project_out_sync_levels</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">jump_mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpModeE" title="mata::nft::JumpMode"><span class="n"><span class="pre">JumpMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft8JumpMode12RepeatSymbolE" title="mata::nft::JumpMode::RepeatSymbol"><span class="n"><span class="pre">RepeatSymbol</span></span></a><span class="sig-paren">)</span><br /></dt>
+<dd><p>Composes two NFTs. </p>
+<p>This function computes the composition of two NFTs, <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and <code class="docutils literal notranslate"><span class="pre">rhs</span></code>, by aligning their synchronization levels. Vectors of synchronization levels must be non-empty and of the same size. The levels of the resulting NFT are formed, iteratively, from the non-synchronizing levels of <code class="docutils literal notranslate"><span class="pre">lhs</span></code>, followed by the non-synchronizing levels of <code class="docutils literal notranslate"><span class="pre">rhs</span></code>, followed by the next synchronizing level (if not projected out by setting project_out_sync_levels to true). For example, given <code class="docutils literal notranslate"><span class="pre">lhs</span></code> with 7 levels, <code class="docutils literal notranslate"><span class="pre">rhs</span></code> with 8 levels, lhs_sync_levels=&lt;0,2,5&gt;, rhs_sync_levels=&lt;1,4,5&gt;, the resulting NFT levels will correspond to (assuming that we are not projecting out the synchronized levels)<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">rhs</span></code> level 0</p></li>
+<li><p>synchronized level from level 0 of <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and level 1 of <code class="docutils literal notranslate"><span class="pre">rhs</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lhs</span></code> level 1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhs</span></code> levels 2 and 3</p></li>
+<li><p>synchronized level from level 2 of <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and level 4 of <code class="docutils literal notranslate"><span class="pre">rhs</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lhs</span></code> levels 3 and 4</p></li>
+<li><p>synchronized level from level 5 of <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and level 5 of <code class="docutils literal notranslate"><span class="pre">rhs</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lhs</span></code> level 6</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhs</span></code> levels 6 and 7</p></li>
+</ul>
+</p>
+<p>NOTE: If you have only a single synchronization level per NFT and don’t use jump transitions, consider using no-jump varsion of the composition for better performance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> – <strong>[in]</strong> First transducer to compose. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Second transducer to compose. </p></li>
+<li><p><strong>lhs_sync_levels</strong> – <strong>[in]</strong> Ordered vector of synchronization levels of the <code class="docutils literal notranslate"><span class="pre">lhs</span></code>. </p></li>
+<li><p><strong>rhs_sync_levels</strong> – <strong>[in]</strong> Ordered vector of synchronization levels of the <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p></li>
+<li><p><strong>project_out_sync_levels</strong> – <strong>[in]</strong> Whether we want to project out the synchronization levels. </p></li>
+<li><p><strong>jump_mode</strong> – <strong>[in]</strong> Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <code class="docutils literal notranslate"><span class="pre">DONT_CARE</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new NFT after the composition. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft10algorithms20compose_fast_no_jumpERK3NftRK3Nft5Level5Levelb">
+<span id="_CPPv3N4mata3nft10algorithms20compose_fast_no_jumpERK3NftRK3Nft5Level5Levelb"></span><span id="_CPPv2N4mata3nft10algorithms20compose_fast_no_jumpERK3NftRK3Nft5Level5Levelb"></span><span id="mata::nft::algorithms::compose_fast_no_jump__NftCR.NftCR.Level.Level.b"></span><span class="target" id="namespacemata_1_1nft_1_1algorithms_1a95eed401a0e4bb1f9d4f496b283ecb60"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compose_fast_no_jump</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lhs_sync_level</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft5LevelE" title="mata::nft::Level"><span class="n"><span class="pre">Level</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">rhs_sync_level</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">project_out_sync_levels</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Composes two NFTs with a single synchronization level and no jumps. </p>
+<p>The levels of the resulting NFT are in the following order:<ul class="simple">
+<li><p>levels of <code class="docutils literal notranslate"><span class="pre">lhs</span></code> before its synvhronization level</p></li>
+<li><p>levels of <code class="docutils literal notranslate"><span class="pre">rhs</span></code> before its synvhronization level</p></li>
+<li><p>the synchronizing level (possibly missing if project_out_sync_levels is true)</p></li>
+<li><p>levels of <code class="docutils literal notranslate"><span class="pre">lhs</span></code> after its synvhronization level</p></li>
+<li><p>levels of <code class="docutils literal notranslate"><span class="pre">rhs</span></code> after its synvhronization level</p></li>
+</ul>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs</strong> – <strong>[in]</strong> First transducer to compose. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Second transducer to compose. </p></li>
+<li><p><strong>lhs_sync_level</strong> – <strong>[in]</strong> The synchronization level of the <code class="docutils literal notranslate"><span class="pre">lhs</span></code>. </p></li>
+<li><p><strong>rhs_sync_level</strong> – <strong>[in]</strong> The synchronization level of the <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p></li>
+<li><p><strong>project_out_sync_levels</strong> – <strong>[in]</strong> Whether we wont to project out the synchronization levels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new NFT after the composition. </p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 </dd></dl>
 
