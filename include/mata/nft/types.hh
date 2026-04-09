@@ -56,7 +56,14 @@ class Nft; ///< A non-deterministic finite transducer.
 
 enum class JumpMode {
     RepeatSymbol, ///< Repeat the symbol on the jump.
-    AppendDontCares ///< Append a sequence of DONT_CAREs to the symbol on the jump.
+    AppendDontCares, ///< Append a sequence of DONT_CAREs to the symbol on the jump.
+    NoJump ///< No jumps are allowed.
+};
+
+enum class CompositionMode {
+    General, ///< General composition mode for arbitrary number or synchronization levels and jump modes.
+    FastNoJump, ///< Fast composition mode for a single synchronization level and no jumps.
+    Auto ///< Automatically select the best composition mode based on the parameters.
 };
 
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
@@ -99,8 +106,9 @@ public:
      */
     size_t num_of_levels{ DEFAULT_NUM_OF_LEVELS };
 
-    // explicit Levels(const std::vector<Level>& levels): super{ levels }, num_of_levels{ num_of_levels_of(levels).value_or(DEFAULT_NUM_OF_LEVELS) } {}
-    // explicit Levels(std::vector<Level>&& levels): super{ std::move(levels) } { num_of_levels = num_of_levels_of(*this).value_or(DEFAULT_NUM_OF_LEVELS); }
+    // explicit Levels(std::initializer_list<Level> levels): super{ levels }, num_of_levels{ num_of_levels_of(levels).value_or(DEFAULT_NUM_OF_LEVELS) } {}
+    explicit Levels(const std::vector<Level>& levels): super{ levels }, num_of_levels{ num_of_levels_of(levels).value_or(DEFAULT_NUM_OF_LEVELS) } {}
+    explicit Levels(std::vector<Level>&& levels): super{ std::move(levels) } { num_of_levels = num_of_levels_of(*this).value_or(DEFAULT_NUM_OF_LEVELS); }
     explicit Levels(const size_t num_of_levels, std::vector<Level> levels = {}): super{ std::move(levels) }, num_of_levels{ num_of_levels } {}
     Levels() = default;
     Levels(size_t num_of_levels, size_t count, Level value = DEFAULT_LEVEL);

@@ -667,6 +667,76 @@ State Nft::add_transition(const State source, const std::vector<Symbol>& symbols
     return insert_word(source, symbols);
 }
 
+State Nft::add_transition_with_length(const State source, const Symbol symbol, const size_t length, const JumpMode jump_mode) {
+    assert(source < num_of_states());
+
+    if (length == 0) { return source; }
+
+    assert(levels[source] + length <= levels.num_of_levels);
+    const Level target_level = static_cast<Level>((levels[source] + length) % levels.num_of_levels);
+    const State target = add_state_with_level(target_level);
+
+    if (length == 1 || jump_mode == JumpMode::RepeatSymbol) {
+        delta.add(source, symbol, target);
+        return target;
+    }
+
+    State inner_src = source;
+    Level inner_level = levels[inner_src] + 1;
+    for (size_t i = 0; i < length - 1; ++i, ++inner_level) {
+        assert(inner_level < levels.num_of_levels);
+        const State inner_target = add_state_with_level(inner_level);
+        delta.add(inner_src, symbol, inner_target);
+        inner_src = inner_target;
+    }
+    assert(inner_level == levels[source] + length);
+    delta.add(inner_src, symbol, target);
+
+    return target;
+}
+
+void Nft::add_transition_with_same_level_targets(State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode) {
+    assert(targets.size() > 0);
+    assert(source < num_of_states());
+    assert(std::all_of(targets.begin(), targets.end(), [&](State target) { return target < num_of_states(); }));
+
+    const Level target_level = levels[targets.front()];
+    const size_t trans_len = (target_level == 0 ? levels.num_of_levels : target_level) - levels[source];
+    assert(std::all_of(targets.begin(), targets.end(), [&](State target) { return levels[target] == target_level; }));
+    assert(target_level == 0 || target_level > levels[source]);
+    assert(trans_len > 0);
+
+    if (trans_len == 1 || jump_mode == JumpMode::RepeatSymbol) {
+        StatePost& mutable_state_post = delta.mutable_state_post(source);
+        auto mutable_symbol_post_it = mutable_state_post.find(symbol);
+        if (mutable_symbol_post_it == mutable_state_post.end()) {
+            if (mutable_state_post.empty() || mutable_state_post.back().symbol < symbol) {
+                // Optimization: If the new symbol is greater than the last one, we can simply push it back.
+                mutable_state_post.push_back({ symbol, targets });
+            } else {
+                // Otherwise, we need to insert it in the correct position to keep the order.
+                mutable_state_post.insert({ symbol, targets });
+            }
+        } else {
+            mutable_symbol_post_it->targets.insert(targets);
+        }
+        return;
+    }
+
+    State inner_src = source;
+    Level inner_level = levels[inner_src] + 1;
+    for (size_t i = 0; i < trans_len - 1; ++i, ++inner_level) {
+        assert(inner_level < levels.num_of_levels);
+        const State inner_target = add_state_with_level(inner_level);
+        delta.add(inner_src, symbol, inner_target);
+        inner_src = inner_target;
+    }
+    assert(inner_level == levels[source] + trans_len);
+    StatePost& mutable_inner_state_post = delta.mutable_state_post(inner_src);
+    assert(mutable_inner_state_post.find(symbol) == mutable_inner_state_post.end());
+    mutable_inner_state_post.insert(std::move(SymbolPost(symbol, targets)));
+}
+
 Nft& Nft::insert_identity(const State state, const std::vector<Symbol>& symbols, const JumpMode jump_mode) {
     for (const Symbol symbol : symbols) { insert_identity(state, symbol, jump_mode); }
     return *this;

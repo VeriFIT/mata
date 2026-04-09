@@ -469,9 +469,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         // we can do the following optimization. Let I1, ..., In be the input automata. Because T is homomorphic,
         // we can take the concatenation T(I1).T(I2)...T(In) connected with INPUT_DELIMITER instead of computing
         // the composition with concatenated_input_nft.
-        mata::nft::Nft concatenation{ mata::nft::compose(mata::nft::Nft(*input_automata[0]), *nft, 0, 0, false) };
+        mata::nft::Nft concatenation{ mata::nft::compose(mata::nft::Nft(*input_automata[0]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump) };
         for (size_t i = 1; i < input_automata.size(); ++i) {
-            mata::nft::Nft composition = mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false);
+            mata::nft::Nft composition = mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump);
             concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, input_delimiter, true);
         }
         intersection = std::move(concatenation);
@@ -480,7 +480,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         // we intersect input nfa with nft on the input track, but we need to add INPUT_DELIMITER as an "epsilon transition" of nft
         add_self_loop_for_every_default_state(intersection, input_delimiter);
 
-        intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+        intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false, mata::nft::JumpMode::NoJump);
     }
     intersection.trim();
 
@@ -491,7 +491,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // We also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it.
     add_self_loop_for_every_default_state(concatenated_output_nft, input_delimiter);
     add_self_loop_for_every_default_state(intersection, output_delimiter);
-    intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
+    intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false, mata::nft::JumpMode::NoJump);
     intersection.trim();
 
     if (intersection.final.empty()) { return {}; }

@@ -37,7 +37,7 @@ int main() {
     Nfa nfa = nfa::builder::create_from_regex("ABCDEFggg");
 
     // Compute the pre-image of an NFA (applies NFA to the image tape, i.e., tape 1)
-    Nft backward_applied_nft = nft.apply(nfa, 1);
+    Nft backward_applied_nft = nft.apply(nfa, 1, true, mata::nft::JumpMode::NoJump);
     // Extract a pre-image NFA.
     Nfa nfa_pre_image{ backward_applied_nft.to_nfa_move() };
     // Minimize the result pre-image using hopcroft minimization.

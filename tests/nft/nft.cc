@@ -5505,7 +5505,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
         Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
         Nft nft{ mata::applications::strings::replace::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
-        Nft nft_applied_nfa{ nft.apply(nfa, 0) };
+        Nft nft_applied_nfa{ nft.apply(nfa, 0, true, mata::nft::JumpMode::NoJump) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
         result.trim();
@@ -5521,10 +5521,8 @@ TEST_CASE("mata::nft::Nft::apply()") {
     SECTION("replace reluctant literal NFT") {
         Nfa nfa = nfa::builder::create_from_regex("dabce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{
-            mata::applications::strings::replace::replace_reluctant_literal({ 'a', 'b', 'c' }, { 'f' }, &alphabet)
-        };
-        Nft nft_applied_nfa{ nft.apply(nfa, 0) };
+        Nft nft{ mata::applications::strings::replace::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
+        Nft nft_applied_nfa{ nft.apply(nfa, 0, true, JumpMode::NoJump) };
         Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
         result.trim();
@@ -5541,8 +5539,8 @@ TEST_CASE("mata::nft::Nft::apply()") {
         Nfa nfa = nfa::builder::create_from_regex("(a|b)*");
         Nft nft{ Nft::with_levels({ 5, { 0, 0 } }, 1, { 0 }, { 0 }) };
         nft.insert_identity(0, 'a');
-        CHECK(nft.apply(nfa).levels.num_of_levels == 4);
-        CHECK(nft.apply(nfa, 3, false).levels.num_of_levels == 5);
+        CHECK(nft.apply(nfa, 0, true, JumpMode::NoJump).levels.num_of_levels == 4);
+        CHECK(nft.apply(nfa, 3, false, JumpMode::NoJump).levels.num_of_levels == 5);
     }
 }
 

@@ -341,6 +341,45 @@ public:
     State add_transition(State source, const std::vector<Symbol>& symbols);
 
     /**
+     * @brief Add a single NFT transition with a length @p length from a source state @p source
+     * to a newly created target state, creating as many inner states as needed for the transition
+     * @p length and the jump mode.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbol The symbol used for the transition.
+     * @param length The length of the transition.
+     * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
+     */
+    State add_transition_with_length(State source, Symbol symbol, size_t length, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
+     * @brief Add a single NFT transition from a source state @p source to a target state @p target
+     * creating as many inner states as needed for the transition length and the jump mode.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbol The symbol used for the transition.
+     * @param target The target state where the transition ends. @p target must already exist.
+     * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
+     */
+    void add_transition_with_target(const State source, const Symbol symbol, const State target, const JumpMode jump_mode = JumpMode::RepeatSymbol) {
+        add_transition_with_same_level_targets(source, symbol, { target }, jump_mode);
+    }
+
+    /**
+     * @brief Add a NFT transition from a source state @p source to a set of target states @p targets
+     * creating as many inner states as needed for the transition length and the jump mode.
+     *
+     * For transitions with a length `l` greater than 1, the common part (before the `l`-th symbol) of the
+     * is shared for all targets and only at the `l`-th symbol the transition branches to each target.
+     *
+     * @param source The source state where the transition begins. @p source must already exist.
+     * @param symbol The symbol used for the transition.
+     * @param targets The set of target states where the transition ends. Each target must already exist.
+     * @param jump_mode Specifies the semantic of jump transitions (transitions with a length greater than 1).
+     */
+    void add_transition_with_same_level_targets(State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
      * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT
      *  from a source state @p source to a target state @p target, creating new states along the path of @p word.
      *
@@ -911,14 +950,23 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
                  State lhs_first_aux_state = Limits::max_state, State rhs_first_aux_state = Limits::max_state);
 
 /**
- * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
+ * @brief Composes two NFTs.
  *
  * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
- * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
- * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
- * levels are projected out from the resulting NFT.
- *
- * Vectors of synchronization levels have to be non-empty and of the same size.
+ * Vectors of synchronization levels must be non-empty and of the same size. The levels of the resulting NFT
+ * are formed, iteratively, from the non-synchronizing levels of `lhs`, followed by the non-synchronizing levels of
+ * `rhs`, followed by the next synchronizing level (if not projected out by setting project_out_sync_levels to true).
+ * For example, given `lhs` with 7 levels, `rhs` with 8 levels, lhs_sync_levels=<0,2,5>, rhs_sync_levels=<1,4,5>, the
+ * resulting NFT levels will correspond to (assuming that we are not projecting out the synchronized levels)
+ *   - `rhs` level 0
+ *   - synchronized level from level 0 of `lhs` and level 1 of `rhs`
+ *   - `lhs` level 1
+ *   - `rhs` levels 2 and 3
+ *   - synchronized level from level 2 of `lhs` and level 4 of `rhs`
+ *   - `lhs` levels 3 and 4
+ *   - synchronized level from level 5 of `lhs` and level 5 of `rhs`
+ *   - `lhs` level 6
+ *   - `rhs` levels 6 and 7
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
@@ -927,31 +975,56 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
  * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
+ *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
+ *                             mode is optimized for NFTs without jump transitions and with only one synchronization level.
+ *
  * @return A new NFT after the composition.
  */
 Nft compose(const Nft& lhs, const Nft& rhs,
             const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
             bool project_out_sync_levels = true,
-            JumpMode jump_mode = JumpMode::RepeatSymbol);
+            JumpMode jump_mode = JumpMode::RepeatSymbol,
+            CompositionMode composition_mode = CompositionMode::Auto);
 
 /**
- * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
+ * @brief Composes two NFTs with a single synchronization level.
  *
- * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
- * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
- * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
- * levels are projected out from the resulting NFT.
- *
+ * The levels of the resulting NFT are in the following order:
+ *  - levels of `lhs` before its synvhronization level
+ *  - levels of `rhs` before its synvhronization level
+ *  - the synchronizing level (possibly missing if project_out_sync_levels is true)
+ *  - levels of `lhs` after its synvhronization level
+ *  - levels of `rhs` after its synvhronization level
+ * 
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
  * @param[in] rhs_sync_level The synchronization level of the @p rhs.
- * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
+ *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
+ *                             mode is optimized for NFTs without jump transitions and with only one synchronization level.
+ *
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::RepeatSymbol);
+inline Nft compose(const Nft& lhs, const Nft& rhs,
+                   const Level lhs_sync_level = 1, const Level rhs_sync_level = 0,
+                   const bool project_out_sync_levels = true,
+                   const JumpMode jump_mode = JumpMode::RepeatSymbol,
+                   const CompositionMode composition_mode = CompositionMode::Auto)
+{
+    return compose(
+        lhs, rhs,
+        utils::OrdVector<Level>{ lhs_sync_level },
+        utils::OrdVector<Level>{ rhs_sync_level },
+        project_out_sync_levels,
+        jump_mode,
+        composition_mode
+    );
+}
 
 /**
  * @brief Concatenate two NFTs.

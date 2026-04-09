@@ -53,12 +53,11 @@ Nft mata::nft::algorithms::product(
         if (lhs_first_aux_state <= lhs_target && rhs_first_aux_state <= rhs_target) { return; }
         State product_target = product_storage.get(lhs_target, rhs_target);
 
-        if (product_target == Limits::max_state) {
-            product_target = product.add_state_with_level(
-                (jump_mode == JumpMode::RepeatSymbol || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0)
-                    ? std::max(lhs.levels[lhs_target], rhs.levels[rhs_target])
-                    : std::min(lhs.levels[lhs_target], rhs.levels[rhs_target])
-            );
+        if (product_target == Limits::max_state)
+        {
+            product_target = product.add_state_with_level((jump_mode != JumpMode::AppendDontCares || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0) ?
+                                                          std::max(lhs.levels[lhs_target], rhs.levels[rhs_target]) :
+                                                          std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]));
             assert(product_target < Limits::max_state);
 
             product_storage.insert(lhs_target, rhs_target, product_target);
@@ -135,12 +134,22 @@ Nft mata::nft::algorithms::product(
                     create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
                 }
             }
-            if (product_symbol_post.empty()) { continue; }
-            StatePost& product_state_post{ product.delta.mutable_state_post(product_source) };
-            if (const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
-                product_state_post_find_it == product_state_post.end()) {
-                product_state_post.insert(product_symbol_post);
-            } else { product_state_post_find_it->targets.insert(product_symbol_post.targets); }
+            if (product_symbol_post.empty()) {
+                continue;
+            }
+            StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
+            const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
+            if (product_state_post_find_it == product_state_post.end()) {
+                if (product_state_post.empty() || product_state_post.back().symbol < product_symbol_post.symbol) {
+                    // Optimization: If the new symbol is greater than the last one, we can simply push it back.
+                    product_state_post.push_back(std::move(product_symbol_post));
+                } else {
+                    // Otherwise, we need to insert it in the correct position to keep the order.
+                    product_state_post.insert(std::move(product_symbol_post));
+                }
+            } else {
+                product_state_post_find_it->targets.insert(product_symbol_post.targets);
+            }
         }
     };
 
@@ -170,7 +179,7 @@ Nft mata::nft::algorithms::product(
         const bool rhs_source_is_deeper = (lhs_source_level < rhs_source_level && lhs_source_level != 0) || (
                                               lhs_source_level != 0 && rhs_source_level == 0);
 
-        if (sources_are_on_the_same_level || jump_mode == JumpMode::RepeatSymbol) {
+        if (sources_are_on_the_same_level || jump_mode != JumpMode::AppendDontCares) {
             // Compute classic product for current state pair.
             mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator>
                     sync_iterator(2);
