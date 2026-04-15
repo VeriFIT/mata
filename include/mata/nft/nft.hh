@@ -145,24 +145,19 @@ public:
     //  dictionary in the attributes.
 
 public:
-    static std::vector<Alphabet*> repeated_level_alphabets(const size_t num_of_levels, Alphabet* alphabet) {
-        return std::vector<Alphabet*>(num_of_levels, alphabet);
-    }
+    /**
+     * Create a repeated vector of @p num_of_levels entries of the same @p alphabet pointer for the level alphabets.
+     *
+     * @param num_of_levels The number of levels for which to create the vector.
+     */
+    static std::vector<Alphabet*> repeated_level_alphabets(const size_t num_of_levels, Alphabet* alphabet);
 
-    static Alphabet* shared_alphabet_or_null(const std::vector<Alphabet*>& level_alphabets) {
-        if (level_alphabets.empty()) {
-            return nullptr;
-        }
-
-        const Alphabet* first = level_alphabets.front();
-        for (const Alphabet* alphabet : level_alphabets) {
-            if (alphabet != first) {
-                return nullptr;
-            }
-        }
-
-        return const_cast<Alphabet*>(first);
-    }
+    /**
+     * Check if all entries in @p level_alphabets are the same pointer and return that pointer if so, or return nullptr
+     *
+     * @param level_alphabets The vector of level alphabets to check for being all the same pointer.
+     */
+    static Alphabet* shared_alphabet_or_null(const std::vector<Alphabet*>& level_alphabets);
 
     explicit Nft(
             Delta delta = {}, utils::SparseSet<State> initial_states = {},
@@ -344,20 +339,24 @@ public:
         : Nfa{ std::move(other) }, levels{ std::move(levels) },
           level_alphabets{ repeated_level_alphabets(this->levels.num_of_levels, alphabet) } {}
 
-    const Alphabet* alphabet_of_level(const size_t level) const {
-        if (!level_alphabets.empty() && level < level_alphabets.size() && level_alphabets[level] != nullptr) {
-            return level_alphabets[level];
-        }
-        return alphabet;
-    }
+    /**
+     * @brief Get the alphabet of the NFT for a given level.
+     * If the level has a specific alphabet in @c level_alphabets, return that alphabet;
+     * otherwise, return the shared @ref alphabet.
+     *
+     * @param level The level for which to get the alphabet.
+     */
+    const Alphabet* alphabet_of_level(const size_t level) const;
 
-    void set_level_alphabets(std::vector<Alphabet*> new_level_alphabets) {
-        if (!new_level_alphabets.empty()) {
-            assert(new_level_alphabets.size() == levels.num_of_levels);
-        }
-        alphabet = shared_alphabet_or_null(new_level_alphabets);
-        level_alphabets = std::move(new_level_alphabets);
-    }
+    /**
+     * @brief Set the level alphabets for the NFT.
+     *
+     * When the vector of level alphabets is non-empty, it must have a size equal to the number of levels in the NFT.
+     * If the vector is empty, the NFT falls back to using the shared @ref alphabet for all levels.
+     *
+     * @param new_level_alphabets The new vector of level alphabets to set for the NFT.
+     */
+    void set_level_alphabets(std::vector<Alphabet*> new_level_alphabets);
 
     Nft& operator=(const Nfa& other) noexcept;
     Nft& operator=(Nfa&& other) noexcept;

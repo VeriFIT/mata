@@ -886,3 +886,37 @@ bool Nft::make_complete(
 
     return transition_added;
 }
+
+std::vector<mata::Alphabet*> Nft::repeated_level_alphabets(const size_t num_of_levels, mata::Alphabet* alphabet) {
+    return std::vector<Alphabet*>(num_of_levels, alphabet);
+}
+
+mata::Alphabet* Nft::shared_alphabet_or_null(const std::vector<mata::Alphabet*>& level_alphabets) {
+    if (level_alphabets.empty()) {
+        return nullptr;
+    }
+
+    const mata::Alphabet* first = level_alphabets.front();
+    for (const mata::Alphabet* alphabet : level_alphabets) {
+        if (alphabet != first) {
+            return nullptr;
+        }
+    }
+
+    return const_cast<mata::Alphabet*>(first);
+}
+
+const mata::Alphabet* Nft::alphabet_of_level(const size_t level) const {
+    if (!level_alphabets.empty() && level < level_alphabets.size() && level_alphabets[level] != nullptr) {
+        return level_alphabets[level];
+    }
+    return alphabet;
+}
+
+void Nft::set_level_alphabets(std::vector<mata::Alphabet*> new_level_alphabets) {
+    if (!new_level_alphabets.empty()) {
+        assert(new_level_alphabets.size() == levels.num_of_levels);
+    }
+    alphabet = shared_alphabet_or_null(new_level_alphabets);
+    level_alphabets = std::move(new_level_alphabets);
+}
