@@ -4,6 +4,7 @@
 #include <mata/alphabet.hh>
 
 using mata::Symbol;
+using mata::LevelAlphabet;
 using mata::OnTheFlyAlphabet;
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
@@ -200,6 +201,49 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
         return 1;
     }
     return 0;
+}
+
+const mata::Alphabet& LevelAlphabet::resolve_alphabet(const size_t level) const {
+    if (alphabets_.empty()) {
+        throw std::runtime_error("LevelAlphabet has no underlying alphabets.");
+    }
+
+    if (level >= alphabets_.size()) {
+        throw std::runtime_error("Requested level " + std::to_string(level) + " is out of range.");
+    }
+    if (alphabets_[level] == nullptr) {
+        throw std::runtime_error("Requested level " + std::to_string(level) + " has no alphabet.");
+    }
+    return *alphabets_[level];
+}
+
+Symbol LevelAlphabet::translate_symb(const std::string& symb, const size_t level) {
+    return const_cast<Alphabet&>(resolve_alphabet(level)).translate_symb(symb);
+}
+
+std::string LevelAlphabet::reverse_translate_symbol(const Symbol symbol, const size_t level) const {
+    return resolve_alphabet(level).reverse_translate_symbol(symbol);
+}
+
+mata::utils::OrdVector<Symbol> LevelAlphabet::get_alphabet_symbols(const size_t level) const {
+    return resolve_alphabet(level).get_alphabet_symbols();
+}
+
+mata::utils::OrdVector<Symbol> LevelAlphabet::get_complement(
+    const mata::utils::OrdVector<Symbol>& symbols, const size_t level) const {
+    return resolve_alphabet(level).get_complement(symbols);
+}
+
+bool LevelAlphabet::empty(const size_t level) const {
+    return resolve_alphabet(level).empty();
+}
+
+void LevelAlphabet::clear(const size_t level) {
+    const_cast<Alphabet&>(resolve_alphabet(level)).clear();
+}
+
+const mata::Alphabet* LevelAlphabet::alphabet_of_level(const size_t level) const {
+    return level < alphabets_.size() ? alphabets_[level] : nullptr;
 }
 
 mata::Word mata::encode_word_utf8(const mata::Word& word) {

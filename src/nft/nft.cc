@@ -200,26 +200,27 @@ void Nft::print_to_dot(
         }
     };
 
-    auto translate_symbol = [&](const Symbol symbol) -> std::string {
+    auto translate_symbol = [&](const Symbol symbol, const size_t level) -> std::string {
         switch (symbol) {
             case EPSILON: return "<eps>";
             default: break;
         }
         if (decode_ascii_chars) { return to_ascii(symbol); } else if (alphabet != nullptr) {
-            return alphabet->reverse_translate_symbol(symbol);
-        } else if (this->alphabet != nullptr) { return this->alphabet->reverse_translate_symbol(symbol); } else {
+            return alphabet->reverse_translate_symbol(symbol, level);
+        } else if (this->alphabet != nullptr) { return this->alphabet->reverse_translate_symbol(symbol, level); } else {
             return std::to_string(symbol);
         }
     };
 
-    auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+    auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols, const size_t level) {
         std::string result;
-        for (const Symbol& symbol : symbols) { result += translate_symbol(symbol) + ","; }
+        for (const Symbol& symbol : symbols) { result += translate_symbol(symbol, level) + ","; }
         result.pop_back(); // Remove last comma
         return result;
     };
 
-    auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+    auto vec_of_symbols_to_string_with_intervals = [&](
+        const OrdVector<Symbol>& symbols, const size_t level) {
         std::string result;
 
         const auto intervals{
@@ -241,10 +242,12 @@ void Nft::print_to_dot(
 
         for (const auto& [symbol_from, symbol_to] : intervals) {
             if (const size_t interval_size{ symbol_to - symbol_from + 1 }; interval_size == 1) {
-                result += translate_symbol(symbol_from) + ",";
+                result += translate_symbol(symbol_from, level) + ",";
             } else if (interval_size == 2) {
-                result += translate_symbol(symbol_from) + "," + translate_symbol(symbol_to) + ",";
-            } else { result += "[" + translate_symbol(symbol_from) + "-" + translate_symbol(symbol_to) + "],"; }
+                result += translate_symbol(symbol_from, level) + "," + translate_symbol(symbol_to, level) + ",";
+            } else {
+                result += "[" + translate_symbol(symbol_from, level) + "-" + translate_symbol(symbol_to, level) + "],";
+            }
         }
 
         result.pop_back(); // Remove last comma
@@ -279,9 +282,10 @@ void Nft::print_to_dot(
                 continue;
             }
 
+            const size_t source_level = source < levels.size() ? levels[source] : 0;
             std::string label = use_intervals
-                                    ? vec_of_symbols_to_string_with_intervals(symbols)
-                                    : vec_of_symbols_to_string(symbols);
+                                    ? vec_of_symbols_to_string_with_intervals(symbols, source_level)
+                                    : vec_of_symbols_to_string(symbols, source_level);
             std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
             bool is_shortened = false;
             if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
@@ -363,11 +367,11 @@ void Nft::print_to_mata(std::ostream& output) const {
     output << "%LevelsNum " << levels.num_of_levels << std::endl;
 
     for (const Transition& trans : delta.transitions()) {
-        output << "q" << trans.source << " "
+                output << "q" << trans.source << " "
                 << ((alphabet != nullptr)
-                        ? alphabet->reverse_translate_symbol(trans.symbol)
+                        ? alphabet->reverse_translate_symbol(trans.symbol, levels[trans.source])
                         : ((this->alphabet != nullptr)
-                               ? this->alphabet->reverse_translate_symbol(trans.symbol)
+                               ? this->alphabet->reverse_translate_symbol(trans.symbol, levels[trans.source])
                                : std::to_string(trans.symbol)))
                 << " q" << trans.target << std::endl;
     }
@@ -531,7 +535,6 @@ Nft& Nft::operator=(Nft&& other) noexcept {
         Nfa::operator=(std::move(other));
         levels = std::move(other.levels);
         levels.num_of_levels = other.levels.num_of_levels;
-        level_alphabets = std::move(other.level_alphabets);
     }
     return *this;
 }
@@ -542,7 +545,6 @@ Nft& Nft::operator=(const Nfa& other) noexcept {
         Nfa::operator=(other);
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
         levels.num_of_levels = 1;
-        level_alphabets = Nft::repeated_level_alphabets(levels.num_of_levels, alphabet);
     }
     return *this;
 }
@@ -552,7 +554,6 @@ Nft& Nft::operator=(Nfa&& other) noexcept {
         Nfa::operator=(std::move(other));
         levels = Levels(num_of_states(), DEFAULT_LEVEL);
         levels.num_of_levels = 1;
-        level_alphabets = Nft::repeated_level_alphabets(levels.num_of_levels, alphabet);
     }
     return *this;
 }
@@ -885,38 +886,4 @@ bool Nft::make_complete(
     }
 
     return transition_added;
-}
-
-std::vector<mata::Alphabet*> Nft::repeated_level_alphabets(const size_t num_of_levels, mata::Alphabet* alphabet) {
-    return std::vector<Alphabet*>(num_of_levels, alphabet);
-}
-
-mata::Alphabet* Nft::shared_alphabet_or_null(const std::vector<mata::Alphabet*>& level_alphabets) {
-    if (level_alphabets.empty()) {
-        return nullptr;
-    }
-
-    const mata::Alphabet* first = level_alphabets.front();
-    for (const mata::Alphabet* alphabet : level_alphabets) {
-        if (alphabet != first) {
-            return nullptr;
-        }
-    }
-
-    return const_cast<mata::Alphabet*>(first);
-}
-
-const mata::Alphabet* Nft::alphabet_of_level(const size_t level) const {
-    if (!level_alphabets.empty() && level < level_alphabets.size() && level_alphabets[level] != nullptr) {
-        return level_alphabets[level];
-    }
-    return alphabet;
-}
-
-void Nft::set_level_alphabets(std::vector<mata::Alphabet*> new_level_alphabets) {
-    if (!new_level_alphabets.empty()) {
-        assert(new_level_alphabets.size() == levels.num_of_levels);
-    }
-    alphabet = shared_alphabet_or_null(new_level_alphabets);
-    level_alphabets = std::move(new_level_alphabets);
 }
