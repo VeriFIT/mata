@@ -10,11 +10,12 @@
 
 #include "utils/ord-vector.hh"
 #include "utils/utils.hh"
+#include "utils/custom_vector.h"
 
 namespace mata {
 
 using Symbol = unsigned;
-using Word = std::vector<Symbol>;
+using Word = CustomVector<Symbol>;
 using WordName = std::vector<std::string>;
 
  /**

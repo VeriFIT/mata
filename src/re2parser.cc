@@ -12,6 +12,8 @@
 #include "re2/regexp.h"
 #include "re2/prog.h"
 
+#include "mata/utils/custom_vector.h"
+
 namespace {
     using namespace mata::nfa;
 
@@ -26,11 +28,11 @@ namespace {
          * has_state_incoming_edge determines if there is an incoming edge to the state (true) or not (false)
          */
         struct StateCache {
-            std::vector<std::vector<mata::nfa::State>> state_mapping;
-            std::vector<bool> is_final_state;
-            std::vector<bool> is_state_nop_or_cap;
-            std::vector<bool> is_last;
-            std::vector<bool> has_state_incoming_edge;
+            std::vector<CustomVector<mata::nfa::State>> state_mapping;
+            CustomVector<bool> is_final_state;
+            CustomVector<bool> is_state_nop_or_cap;
+            CustomVector<bool> is_last;
+            CustomVector<bool> has_state_incoming_edge;
         };
 
     public:
@@ -79,7 +81,7 @@ namespace {
             const auto start_state = static_cast<size_t>(prog->start());
             const auto prog_size = static_cast<size_t>(prog->size());
             // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
-            std::vector<mata::Symbol> symbols;
+            CustomVector<mata::Symbol> symbols;
             Nfa explicit_nfa(prog_size);
 
             // Vectors are saved in this->state_cache after this
@@ -238,7 +240,7 @@ namespace {
          * @param epsilon_value value, that will represent epsilon on transitions
          */
         void create_explicit_nfa_transitions(const mata::nfa::State current_state, re2::Prog::Inst *inst,
-                                             const std::vector<mata::Symbol>& symbols,
+                                             const CustomVector<mata::Symbol>& symbols,
                                              Nfa &nfa, const bool use_epsilon, const mata::Symbol epsilon_value) {
             for (const auto mapped_state : this->state_cache.state_mapping[current_state]) {
                 for (auto mapped_target_state : this->state_cache.state_mapping[static_cast<unsigned long>(inst->
@@ -285,7 +287,7 @@ namespace {
          * @param prog RE2 prog corresponding to the parsed regex
          */
         void create_state_cache_without_epsilon(re2::Prog *prog) {
-            const std::vector<bool> default_false_vec(static_cast<size_t>(prog->size()), false);
+            const CustomVector<bool> default_false_vec(static_cast<size_t>(prog->size()), false);
             this->state_cache = {
                 // state_mapping holds states that map to each state (index) due to epsilon transitions
                 {},
@@ -302,7 +304,7 @@ namespace {
             const auto prog_size = static_cast<size_t>(prog->size());
 
             // Used for the first loop through states
-            std::vector<mata::nfa::State> tmp_state_mapping(prog_size);
+            CustomVector<mata::nfa::State> tmp_state_mapping(prog_size);
             for (mata::nfa::State state = 0; state < prog_size; state++) {
                 tmp_state_mapping[state] = state;
                 this->state_cache.state_mapping.push_back({state});
@@ -310,7 +312,7 @@ namespace {
 
             // When there is nop or capture type of state, we will be appending to it
             mata::nfa::State append_to_state = mata::nfa::Limits::max_state;
-            std::vector<mata::nfa::State> states_for_second_check(prog_size);
+            CustomVector<mata::nfa::State> states_for_second_check(prog_size);
 
             for (mata::nfa::State state = start_state; state < prog_size; state++) {
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(state));
@@ -373,8 +375,8 @@ namespace {
           * @param prog RE2 prog corresponding to the parsed regex
           */
         void create_state_cache_with_epsilon(re2::Prog *prog) {
-            const std::vector<bool> default_false_vec(static_cast<size_t>(prog->size()), false);
-            const std::vector<bool> default_true_vec(static_cast<size_t>(prog->size()), true);
+            const CustomVector<bool> default_false_vec(static_cast<size_t>(prog->size()), false);
+            const CustomVector<bool> default_true_vec(static_cast<size_t>(prog->size()), true);
             this->state_cache = {
                     {}, // stateMapping all states are mapped to itself when using epsilon transitions
                     default_false_vec, // is_final_state holds true for states that are final, false for the rest
@@ -419,10 +421,10 @@ namespace {
          * @param inst RE2 instruction for the state
          * @return All states that are mapped to the state
          */
-        std::vector<mata::nfa::State> get_mapped_states(
+        CustomVector<mata::nfa::State> get_mapped_states(
                 re2::Prog* prog, mata::nfa::State state, re2::Prog::Inst *inst) {
-            std::vector<mata::nfa::State> mapped_states;
-            std::vector<mata::nfa::State> states_to_check;
+            CustomVector<mata::nfa::State> mapped_states;
+            CustomVector<mata::nfa::State> states_to_check;
             std::set<mata::nfa::State> checked_states;
 
             states_to_check.push_back(state);

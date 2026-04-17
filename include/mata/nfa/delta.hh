@@ -10,6 +10,7 @@
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
+#include "utils/custom_vector.h"
 
 #include <iterator>
 
@@ -92,8 +93,8 @@ public:
 
     void erase(const State s) { targets.erase(s); }
 
-    std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
-    std::vector<State>::iterator find(const State s) { return targets.find(s); }
+    CustomVector<State>::const_iterator find(const State s) const { return targets.find(s); }
+    CustomVector<State>::iterator find(const State s) { return targets.find(s); }
 }; // class mata::nfa::SymbolPost.
 
 /**
@@ -382,8 +383,8 @@ public:
      * @param[in] renaming Vector of states to rename the remaining state posts to.
      * @return Self with defragmented delta.
      */
-    Delta& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
-    friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
+    Delta& defragment(const BoolVector& is_staying, const CustomVector<State>& renaming);
+    friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const CustomVector<State>& renaming);
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
@@ -566,7 +567,7 @@ public:
     utils::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
     utils::SparseSet<Symbol> get_used_symbols_sps() const;
-    std::vector<bool> get_used_symbols_bv() const;
+    CustomVector<bool> get_used_symbols_bv() const;
     BoolVector get_used_symbols_chv() const;
 
     /**
@@ -589,7 +590,7 @@ protected:
  * @param[in] renaming Vector of states to rename the remaining state posts to.
  * @return The defragmented Delta.
  */
-Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
+Delta defragment(const Delta& delta, const BoolVector& is_staying, const CustomVector<State>& renaming);
 
 /**
  * @brief Iterator over transitions represented as @c Transition instances.

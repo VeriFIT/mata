@@ -7,6 +7,7 @@
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/nft.hh"
+#include "utils/ord-vector.hh"
 
 /**
  * Operations on NFAs/NFTs used for string constraint solving.
@@ -112,7 +113,7 @@ std::set<Word> get_shortest_words(const Nfa& nfa);
  * @param lengths The lengths of the words of each tape (size of lengths == the levels of @p nft)
  * @return std::optional<std::vector<Word>> Either the resulting words of tapes, or std::nullopt if such words of specific lengths do not exist
  */
-std::optional<std::vector<Word>> get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths);
+std::optional<std::vector<Word>> get_words_of_lengths(const Nft& nft, CustomVector<unsigned> lengths);
 
 /**
  * @brief Get all the one symbol words accepted by @p nfa.
@@ -152,7 +153,7 @@ using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 /// Number of visited epsilons.
 using VisitedEpsilonsCounterMap = std::map<Symbol, unsigned>;
 /// Projection of VisitedEpsilonsNumberMap to sorted keys (in descending order).
-using VisitedEpsilonsCounterVector = std::vector<unsigned>;
+using VisitedEpsilonsCounterVector = CustomVector<unsigned>;
 
 /**
 * Class executing segmentation operations for a given segment automaton. Works only with segment automata.

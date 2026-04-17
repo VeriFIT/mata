@@ -3,6 +3,7 @@
 #include "mata/utils/utils.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nft/builder.hh"
+#include "mata/utils/custom_vector.h"
 
 #include <fstream>
 
@@ -216,7 +217,7 @@ void builder::construct(
     *result = construct(inter_aut, alphabet, state_map);
 }
 
-Nft builder::create_single_word_nft(const std::vector<Symbol>& word) {
+Nft builder::create_single_word_nft(const CustomVector<Symbol>& word) {
     return Nft(mata::nfa::builder::create_single_word_nfa(word));
 }
 
@@ -323,7 +324,7 @@ Nft builder::from_nfa_with_levels_zero(
 Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num_of_levels) {
     Nft result{ std::move(nfa) };
     // num_of_levels represents that the state does not have level assigned yet
-    std::vector<Level> levels(result.num_of_states(), static_cast<Level>(num_of_levels));
+    CustomVector<Level> levels(result.num_of_states(), static_cast<Level>(num_of_levels));
 
     // We apply simple DFS
     StateSet worklist; // worklist for DFS

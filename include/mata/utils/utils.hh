@@ -18,6 +18,8 @@
 #include <ranges>
 #include <cstdint>
 
+#include "custom_vector.h"
+
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
     if (mata::LOG_VERBOSITY >= (lvl)) {\
@@ -64,14 +66,14 @@ auto filter_indices(const std::vector<T>& vec, Predicate pred) {
 
 
 /// Representation of a bool vector by a vector of uint8_t.
-class BoolVector : public std::vector<uint8_t> {
+class BoolVector : public CustomVector<uint8_t> {
 public:
-    BoolVector(const size_t size, const bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
+    BoolVector(const size_t size, const bool value) : CustomVector<uint8_t>(size, value ? 1 : 0) {}
     BoolVector(const BoolVector&) = default;
     BoolVector(BoolVector&&) noexcept = default;
     BoolVector() = default;
-    BoolVector(const std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
-    explicit BoolVector(const std::vector<uint8_t>& uint8_ts): std::vector<uint8_t>(uint8_ts) {}
+    BoolVector(const std::initializer_list<uint8_t> uint8_ts): CustomVector<uint8_t>(uint8_ts) {}
+    explicit BoolVector(const CustomVector<uint8_t>& uint8_ts): CustomVector<uint8_t>(uint8_ts) {}
 
     BoolVector& operator=(const BoolVector&) = default;
     BoolVector& operator=(BoolVector&&) noexcept = default;
@@ -274,7 +276,7 @@ void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t ext
 // It assumes that vec is not longer than renaming.
 // The function is very fragile.
 template<class Vector,typename Index>
-void defragment(Vector & vec, const std::vector<Index> & renaming) {
+void defragment(Vector & vec, const CustomVector<Index> & renaming) {
     //assert(vec.size() <= renaming.size());
     size_t i = 0;
     for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize ; i++) {
@@ -291,7 +293,7 @@ void defragment(Vector & vec, const std::vector<Index> & renaming) {
 
 //In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
 template<class Vector,typename Index>
-void rename(Vector & vec, const std::vector<Index> & renaming) {
+void rename(Vector & vec, const CustomVector<Index> & renaming) {
     for (size_t i = 0,size = vec.size();i < size; ++i)
     {
         if (i != vec[i])
@@ -392,6 +394,18 @@ struct hash<std::vector<A>>
     } // operator() }}}
 };
 
+/**
+ * @brief  A hasher for custom vectors
+ */
+template <class A>
+struct hash<CustomVector<A>>
+{
+    inline size_t operator()(const CustomVector<A>& cont) const
+    { // {{{
+        return mata::utils::hash_range(cont.begin(), cont.end());
+    } // operator() }}}
+};
+
 /*#######################################################
  #                  std::to_string(TYPE)
  #######################################################*/
@@ -403,6 +417,7 @@ struct hash<std::vector<A>>
 template <class A> std::string to_string(const A& value);
 template <class A> std::string to_string(const std::set<A>& st);
 template <class A> std::string to_string(const std::vector<A>& vec);
+template <class A> std::string to_string(const CustomVector<A>& vec);
 template <class A> std::string to_string(const std::list<A>& vec);
 template <class A> std::string to_string(const std::stack<A>& stck);
 template <class A> std::string to_string(const std::function<A>& func);
@@ -444,6 +459,23 @@ std::string to_string(const std::vector<A>& vec)
 
     return result;
 } // to_string(std::vector) }}}
+
+/** Custom vector to string */
+template <class A>
+std::string to_string(const CustomVector<A>& vec)
+{ // {{{
+    std::string result = "[";
+    bool first = true;
+    for (auto elem : vec)
+    {
+        if (!first) { result += ", "; }
+        first = false;
+        result += std::to_string(elem);
+    }
+    result += "]";
+
+    return result;
+} // to_string(CustomVector) }}}
 
 /** List to string */
 template <class A>

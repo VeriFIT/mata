@@ -10,6 +10,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 
 #include <algorithm>
@@ -25,7 +26,7 @@ using namespace mata::utils;
 using namespace mata::nfa;
 using mata::Symbol;
 
-using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+using StateBoolArray = CustomVector<bool>; ///< Bool array for states in the automaton.
 
 SymbolPost& SymbolPost::operator=(SymbolPost&& rhs) noexcept {
     if (*this != rhs) {
@@ -339,7 +340,7 @@ StatePost& Delta::mutable_state_post(const State q) {
     return state_posts_[q];
 }
 
-Delta mata::nfa::defragment(const Delta &delta, const BoolVector &is_staying, const std::vector<State> &renaming) {
+Delta mata::nfa::defragment(const Delta &delta, const BoolVector &is_staying, const CustomVector<State> &renaming) {
     auto filter_rename_symbol_post = [&](const SymbolPost& symbol_post) {
         SymbolPost new_symbol_post{ symbol_post.symbol };
         for (const State& target : symbol_post.targets) {
@@ -366,7 +367,7 @@ Delta mata::nfa::defragment(const Delta &delta, const BoolVector &is_staying, co
     return delta_defragmented;
 }
 
-Delta& Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+Delta& Delta::defragment(const BoolVector& is_staying, const CustomVector<State>& renaming) {
     size_t source_new{ 0 };
     for (size_t source_orig{ 0 }, num_of_states{ this->num_of_states() }; source_orig < num_of_states; ++source_orig) {
         if (!is_staying[source_orig]) { continue; } // Skip source states not staying.
@@ -578,14 +579,14 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //WITH BOOL VECTOR (1.9s): (The fastest, it seems.)
     // However, it will try to allocate a vector indexed by the symbols. If there are epsilons in the automaton,
     //  for example, the bool vector implementation will implode.
-    // std::vector<bool> bv{ get_used_symbols_bv() };
+    // CustomVector<bool> bv{ get_used_symbols_bv() };
     // utils::OrdVector<Symbol> ov{};
     // const size_t bv_size{ bv.size() };
     // for (Symbol i{ 0 }; i < bv_size; ++i) { if (bv[i]) { ov.push_back(i); } }
     // return ov;
 
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
-    // std::vector<bool> bv = get_used_symbols_bv();
+    // CustomVector<bool> bv = get_used_symbols_bv();
     // utils::OrdVector<Symbol> ov{};
     // ov.reserve(static_cast<size_t>(std::count(bv.begin(), bv.end(), true)));
     // const size_t bv_size{ bv.size() };
@@ -611,10 +612,10 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
 mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
 #ifdef _STATIC_STRUCTURES_
-    static std::vector<Symbol> symbols{};
+    static CustomVector<Symbol> symbols{};
     symbols.clear();
 #else
-    std::vector<Symbol> symbols{};
+    CustomVector<Symbol> symbols{};
 #endif
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost & symbol_post: state_post) {
@@ -667,13 +668,13 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-std::vector<bool> Delta::get_used_symbols_bv() const {
+CustomVector<bool> Delta::get_used_symbols_bv() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static std::vector<bool> symbols(64, false);
+    static CustomVector<bool> symbols(64, false);
     symbols.clear();
 #else
-    std::vector<bool> symbols(64, false);
+    CustomVector<bool> symbols(64, false);
 #endif
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {

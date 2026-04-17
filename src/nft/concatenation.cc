@@ -93,7 +93,7 @@ Nft algorithms::concatenate_eps(
 
     // Add epsilon transitions connecting lhs and rhs automata.
     // The epsilon transitions lead from lhs original final states to rhs original initial states.
-    const std::vector<Symbol> nft_epsilon(result.levels.num_of_levels, epsilon);
+    const CustomVector<Symbol> nft_epsilon(result.levels.num_of_levels, epsilon);
     for (const auto& lhs_final_state : lhs.final) {
         for (const auto& rhs_initial_state : rhs.initial) {
             result.add_transition(

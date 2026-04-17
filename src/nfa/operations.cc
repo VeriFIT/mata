@@ -14,6 +14,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
+#include "mata/utils/custom_vector.h"
 
 using std::tie;
 
@@ -21,7 +22,7 @@ using namespace mata::utils;
 using namespace mata::nfa;
 using mata::Symbol;
 
-using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+using StateBoolArray = CustomVector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
@@ -149,15 +150,15 @@ namespace {
 
     void residual_recurse_coverable(
         const std::vector<StateSet>& macrostate_vec, // vector of nfa macrostates
-        const std::vector<State>& covering_indexes, // sub-vector of macrostates indexes
-        std::vector<bool>& covered, // flags of covered states
-        std::vector<bool>& visited, // flags for visited states
+        const CustomVector<State>& covering_indexes, // sub-vector of macrostates indexes
+        CustomVector<bool>& covered, // flags of covered states
+        CustomVector<bool>& visited, // flags for visited states
         const size_t start_index, // starting index for covering_indexes vec
         std::unordered_map<StateSet, State>* subset_map, // mapping of indexes to macrostates
         Nfa& nfa) {
         const StateSet& check_state = macrostate_vec[covering_indexes[start_index]];
         StateSet covering_set; // doesn't contain duplicates
-        std::vector<State> sub_covering_indexes; // // indexes of covering states
+        CustomVector<State> sub_covering_indexes; // // indexes of covering states
 
         for (auto i = covering_indexes.begin() + static_cast<long int>(start_index + 1), e = covering_indexes.end();
              i != e; ++i) {
@@ -317,10 +318,10 @@ Nfa mata::nfa::fragile_revert(const Nfa& aut) {
 #ifdef _STATIC_STRUCTURES_
     //STATIC DATA STRUCTURES:
     // Not sure that it works ideally, whether the space for the inner vectors stays there.
-    static std::vector<std::vector<State>> sources;
-    static std::vector<std::vector<State>> targets;
-    static std::vector<State> e_sources;
-    static std::vector<State> e_targets;
+    static std::vector<CustomVector<State>> sources;
+    static std::vector<CustomVector<State>> targets;
+    static CustomVector<State> e_sources;
+    static CustomVector<State> e_targets;
     if (alphabet_size>sources.size()) {
         sources.resize(alphabet_size);
         targets.resize(alphabet_size);
@@ -354,10 +355,10 @@ Nfa mata::nfa::fragile_revert(const Nfa& aut) {
     // There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in
     // the automaton, and epsilon is the maximum (so we don't want to have the maximum array length whenever epsilon is
     // present).
-    std::vector<std::vector<State>> sources (alphabet_size);
-    std::vector<std::vector<State>> targets (alphabet_size);
-    std::vector<State> e_sources;
-    std::vector<State> e_targets;
+    std::vector<CustomVector<State>> sources (alphabet_size);
+    std::vector<CustomVector<State>> targets (alphabet_size);
+    CustomVector<State> e_sources;
+    CustomVector<State> e_targets;
 #endif
 
     //Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
@@ -702,14 +703,14 @@ public:
     static const T no_more_elements = std::numeric_limits<T>::max();
     static constexpr size_t no_split = std::numeric_limits<size_t>::max();
     size_t num_of_sets;            ///< The number of sets in the partition.
-    std::vector<size_t> set_idx;   ///< For each element, tells the index of the set it belongs to.
+    CustomVector<size_t> set_idx;   ///< For each element, tells the index of the set it belongs to.
 
 private:
-    std::vector<T> elems_;       ///< Contains all elements in an order such that the elements of the same set are contiguous.
-    std::vector<T> location_;    ///< Contains the location of each element in the elements vector.
-    std::vector<size_t> first_;  ///< Contains the index of the first element of each set in the elements vector.
-    std::vector<size_t> end_;    ///< Contains the index after the last element of each set in the elements vector.
-    std::vector<size_t> mid_;    ///< Contains the index after the last element of the first half of the set in the elements vector.
+    CustomVector<T> elems_;       ///< Contains all elements in an order such that the elements of the same set are contiguous.
+    CustomVector<T> location_;    ///< Contains the location of each element in the elements vector.
+    CustomVector<size_t> first_;  ///< Contains the index of the first element of each set in the elements vector.
+    CustomVector<size_t> end_;    ///< Contains the index after the last element of each set in the elements vector.
+    CustomVector<size_t> mid_;    ///< Contains the index after the last element of the first half of the set in the elements vector.
 
 public:
     /**
@@ -738,7 +739,7 @@ public:
     explicit RefinablePartition(const Delta &delta)
         : num_of_sets(0), set_idx(), elems_(), location_(), first_(), end_(), mid_() {
         size_t num_of_transitions = 0;
-        std::vector<size_t> counts;
+        CustomVector<size_t> counts;
         std::unordered_map<Symbol, size_t> symbol_map;
 
         // Transitions are grouped by symbols using counting sort in time O(m).
@@ -930,8 +931,8 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
     // Initialize vector of incoming transitions for each state. Transitions
     // are represented only by their indices in the (flattened) delta.
     // Initialize mapping from transition index to its source state.
-    std::vector<State> trans_source_map(trp.size());
-    std::vector<std::vector<size_t>> incoming_trans_idxs(brp.size(), std::vector<size_t>());
+    CustomVector<State> trans_source_map(trp.size());
+    std::vector<CustomVector<size_t>> incoming_trans_idxs(brp.size(), CustomVector<size_t>());
     size_t trans_idx = 0;
     for (const auto &trans : dfa_trimmed.delta.transitions()) {
         trans_source_map[trans_idx] = trans.source;
@@ -1302,7 +1303,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 
     /// Current state state post iterator, its end iterator, and iterator in the current symbol post to target states.
     std::vector<std::tuple<StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
-    std::vector<bool> searched(num_of_states(), false);
+    CustomVector<bool> searched(num_of_states(), false);
     bool final_found{};
     for (const State initial_state: initial) {
         if (searched[initial_state]) { continue; }
@@ -1793,11 +1794,11 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
         );
     }
 
-    std::vector <bool> covered(subset_map.size(), false);          // flag of covered states, removed from nfa
-    std::vector <bool> visited(subset_map.size(), false);          // flag of processed state
+    CustomVector<bool> covered(subset_map.size(), false);          // flag of covered states, removed from nfa
+    CustomVector<bool> visited(subset_map.size(), false);          // flag of processed state
 
     StateSet covering_set;                // doesn't contain duplicates
-    std::vector<State> covering_indexes;        // indexes of covering states
+    CustomVector<State> covering_indexes;        // indexes of covering states
     size_t macrostate_size = macrostate_vec.size();
     for (size_t i = 0; i < macrostate_size-1; i++) {
         if (macrostate_vec[i].size() == 1)      // end searching on single-sized macrostates

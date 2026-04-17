@@ -9,6 +9,7 @@
 #include <cassert>
 
 #include "utils.hh"
+#include "custom_vector.h"
 
 namespace mata::utils {
 
@@ -27,7 +28,7 @@ bool are_disjoint(const utils::OrdVector<T>& lhs, const utils::OrdVector<T>& rhs
 }
 
 template <class Key>
-bool is_sorted(const std::vector<Key>& vec) {
+bool is_sorted(const CustomVector<Key>& vec) {
     for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
         if (!(*(it_vec - 1) < *it_vec)) {
             // In case there is an unordered pair (or there is one element twice).
@@ -48,7 +49,7 @@ bool is_sorted(const std::vector<Key>& vec) {
  */
 template<class Key> class OrdVector {
 public:   // Public data types
-    using VectorType = std::vector<Key>;
+    using VectorType = CustomVector<Key>;
     using value_type = Key;
     using size_type = size_t;
     using iterator = VectorType::iterator ;
@@ -391,8 +392,8 @@ public:
         return vec_ <=> rhs.vec_;
     }
 
-    const std::vector<Key>& to_vector() const { return vec_; }
-    std::vector<Key>& to_vector_mut() const { return vec_; }
+    const CustomVector<Key>& to_vector() const { return vec_; }
+    CustomVector<Key>& to_vector_mut() const { return vec_; }
 
     bool is_subset_of(const OrdVector& bigger) const {
         return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
@@ -425,7 +426,7 @@ public:
     }
 
     // Renames numbers in the vector according to the renaming, q becomes renaming[q].
-    void rename(const std::vector<Key> & renaming) { utils::rename(vec_, renaming); }
+    void rename(const CustomVector<Key> & renaming) { utils::rename(vec_, renaming); }
 
     static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
         assert(lhs.is_sorted());
@@ -541,7 +542,7 @@ public:
 template <class Key>
 struct std::hash<mata::utils::OrdVector<Key>> {
     std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
-        return std::hash<std::vector<Key>>{}(vec.to_vector());
+        return std::hash<CustomVector<Key>>{}(vec.to_vector());
     }
 };
 

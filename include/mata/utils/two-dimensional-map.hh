@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <unordered_map>
+#include "custom_vector.h"
 
 namespace mata::utils {
 
@@ -31,9 +32,9 @@ class TwoDimensionalMap {
 
 public:
     using Map = std::unordered_map<std::pair<T, T>, T>;
-    using MatrixStorage = std::vector<std::vector<T>>;
+    using MatrixStorage = std::vector<CustomVector<T>>;
     using VecMapStorage = std::vector<std::unordered_map<T, T>>;
-    using InvertedStorage = std::vector<T>;
+    using InvertedStorage = CustomVector<T>;
 
     /**
      * @brief Constructor for TwoDimensionalMap.

@@ -12,6 +12,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 namespace mata::nft {
 
@@ -75,8 +76,8 @@ constexpr Symbol DONT_CARE = EPSILON - 1;
 constexpr Level DEFAULT_LEVEL{ 0 };
 constexpr Level DEFAULT_NUM_OF_LEVELS{ 2 };
 
-class Levels: std::vector<Level> {
-    using super = std::vector<Level>;
+class Levels: CustomVector<Level> {
+    using super = CustomVector<Level>;
 public:
     /// @brief Orderings of levels.
     class Ordering {
@@ -107,9 +108,9 @@ public:
     size_t num_of_levels{ DEFAULT_NUM_OF_LEVELS };
 
     // explicit Levels(std::initializer_list<Level> levels): super{ levels }, num_of_levels{ num_of_levels_of(levels).value_or(DEFAULT_NUM_OF_LEVELS) } {}
-    explicit Levels(const std::vector<Level>& levels): super{ levels }, num_of_levels{ num_of_levels_of(levels).value_or(DEFAULT_NUM_OF_LEVELS) } {}
-    explicit Levels(std::vector<Level>&& levels): super{ std::move(levels) } { num_of_levels = num_of_levels_of(*this).value_or(DEFAULT_NUM_OF_LEVELS); }
-    explicit Levels(const size_t num_of_levels, std::vector<Level> levels = {}): super{ std::move(levels) }, num_of_levels{ num_of_levels } {}
+    explicit Levels(const CustomVector<Level>& levels): super{ levels }, num_of_levels{ num_of_levels_of(levels).value_or(DEFAULT_NUM_OF_LEVELS) } {}
+    explicit Levels(CustomVector<Level>&& levels): super{ std::move(levels) } { num_of_levels = num_of_levels_of(*this).value_or(DEFAULT_NUM_OF_LEVELS); }
+    explicit Levels(const size_t num_of_levels, CustomVector<Level> levels = {}): super{ std::move(levels) }, num_of_levels{ num_of_levels } {}
     Levels() = default;
     Levels(size_t num_of_levels, size_t count, Level value = DEFAULT_LEVEL);
     Levels(size_t num_of_levels, std::initializer_list<Level> levels);
@@ -134,7 +135,7 @@ public:
      *
      * @param[in] levels Levels to be assigned.
      */
-    Levels& operator=(const std::vector<Level>& levels);
+    Levels& operator=(const CustomVector<Level>& levels);
     /**
      * @brief Assign levels from @p levels to @c this.
      *
@@ -142,7 +143,7 @@ public:
      *
      * @param[in] levels Levels to be assigned.
      */
-    Levels& operator=(std::vector<Level>&& levels);
+    Levels& operator=(CustomVector<Level>&& levels);
 
     using
         // Member types.
@@ -198,7 +199,7 @@ public:
 
     std::weak_ordering operator<=>(const Levels& other) const = default;
     bool operator==(const Levels& other) const = default;
-    bool operator==(const std::vector<Level>& other) const { return static_cast<const std::vector<Level>&>(*this) == other; }
+    bool operator==(const CustomVector<Level>& other) const { return static_cast<const CustomVector<Level>&>(*this) == other; }
 
     /**
      * @brief Set level of @p state to @p level.
@@ -218,7 +219,7 @@ public:
      *
      * @param[in] levels Vector of levels to be set.
      */
-    Levels& set(const std::vector<Level>& levels);
+    Levels& set(const CustomVector<Level>& levels);
     /**
      * @brief Set levels of @c this to @p levels.
      *
@@ -226,7 +227,7 @@ public:
      *
      * @param[in] levels Vector of levels to be set.
      */
-    Levels& set(std::vector<Level>&& levels);
+    Levels& set(CustomVector<Level>&& levels);
 
     /**
      * @brief Append @p levels_vector to the end of @c this.
@@ -245,12 +246,12 @@ public:
     /**
      * @brief Get levels of states in @p states.
      */
-    std::vector<Level> get_levels_of(const utils::SparseSet<State>& states) const;
+    CustomVector<Level> get_levels_of(const utils::SparseSet<State>& states) const;
 
     /**
      * @brief Get levels of states in @p states.
      */
-    std::vector<Level> get_levels_of(const StateSet& states) const;
+    CustomVector<Level> get_levels_of(const StateSet& states) const;
 
 
     /**
@@ -319,7 +320,7 @@ public:
         if (levels.empty()) { return std::nullopt; }
         return std::ranges::max(levels) + 1;
     }
-    static std::optional<size_t> num_of_levels_of(const std::vector<Level>& levels) {
+    static std::optional<size_t> num_of_levels_of(const CustomVector<Level>& levels) {
         if (levels.empty()) { return std::nullopt; }
         return std::ranges::max(levels) + 1;
     }

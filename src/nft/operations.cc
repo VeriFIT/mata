@@ -13,6 +13,7 @@
 #include "mata/nft/delta.hh"
 #include "mata/nft/nft.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 using std::tie;
 
@@ -22,7 +23,7 @@ using namespace mata::nfa;
 using namespace mata;
 using mata::Symbol;
 
-using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+using StateBoolArray = CustomVector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
 Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nft& aut) {
@@ -130,7 +131,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     // that contains only epsilon transitions, and all states inbetween (i.e.
     // not-level-0 states) will have only one transition going to it and one
     // transition going from it (the epsilon transitions)
-    std::vector<std::vector<State>> safe_epsilon_runs;
+    std::vector<CustomVector<State>> safe_epsilon_runs;
 
     // for each level 0 state q, eps_delta[q] represents all states to which
     // we can get to by some safe epsilon run
@@ -140,10 +141,10 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
     for (State state = 0; state != num_of_states; ++state) {
         if (aut.levels[state] == DEFAULT_LEVEL) {
-            std::vector<std::vector<State>> state_safe_epsilon_runs{ { state } };
+            std::vector<CustomVector<State>> state_safe_epsilon_runs{ { state } };
             for (Level cur_level = 0; cur_level < aut.levels.num_of_levels; ++cur_level) {
-                std::vector<std::vector<State>> new_state_safe_epsilon_runs;
-                for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
+                std::vector<CustomVector<State>> new_state_safe_epsilon_runs;
+                for (const CustomVector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
                     State state_s = safe_epsilon_run.back();
                     const StatePost& post_s{ aut.delta[state_s] };
                     if (const auto eps_move_it_s{ post_s.find(epsilon) }; eps_move_it_s != post_s.end()) {
@@ -161,7 +162,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                             if (cur_level == aut.levels.num_of_levels - 1) {
                                 // we are at the last level, next level will be 0
                                 assert(aut.levels[target] == DEFAULT_LEVEL);
-                                std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
+                                CustomVector<State> new_safe_epsilon_run = safe_epsilon_run;
                                 new_safe_epsilon_run.push_back(target);
                                 // we finish with generating this safe epsilon run and push it to safe_epsilon_runs directly
                                 safe_epsilon_runs.push_back(new_safe_epsilon_run);
@@ -170,7 +171,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                             } else if (reversed_nfa.delta[target].size() == 1) {
                                 // we are not at the last level, next state must be level incremented by one (assuming no jumps)
                                 assert(aut.levels[target] == cur_level + 1);
-                                std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
+                                CustomVector<State> new_safe_epsilon_run = safe_epsilon_run;
                                 new_safe_epsilon_run.push_back(target);
                                 // this safe epsilon run is not finished yet, we save new_state_safe_epsilon_runs to return to it
                                 new_state_safe_epsilon_runs.push_back(new_safe_epsilon_run);
@@ -280,7 +281,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     //  of levels k, k+1, k+2, ..., levels.num_of_levels-1 in the ordered-vector levels_to_project.
     // If there is no such sequence, then k == levels.num_of_levels.
     size_t seq_start_idx = nft.levels.num_of_levels;
-    const std::vector<Level>& levels_to_proj_v = levels_to_project.to_vector();
+    const CustomVector<Level>& levels_to_proj_v = levels_to_project.to_vector();
     for (auto levels_to_proj_v_revit = levels_to_proj_v.rbegin();
          levels_to_proj_v_revit != levels_to_proj_v.rend() && *levels_to_proj_v_revit == seq_start_idx - 1;
          ++levels_to_proj_v_revit, --seq_start_idx) {}
@@ -294,7 +295,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     // old levels    0 1 2 3 4 5 6
     // project out     x   x   x x
     // new levels    0 0 1 2 2 0 0
-    std::vector<Level> new_levels(nft.levels.num_of_levels, 0);
+    CustomVector<Level> new_levels(nft.levels.num_of_levels, 0);
     Level lvl_sub{ 0 };
     for (Level lvl_old{ 0 }; lvl_old < seq_start_idx; lvl_old++) {
         new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
@@ -318,7 +319,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     }
 
     // We will focus only on those states that will be affected by projection.
-    std::vector<State> states_to_project;
+    CustomVector<State> states_to_project;
     for (State s{ 0 }; s < num_of_states_in_delta; s++) {
         if (closure[s].size() > 1) { states_to_project.push_back(s); }
     }
@@ -410,7 +411,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     //   Input (levels)      : 0 1 2
     //   Mask                : 1 1 0 1 1 0 0
     //   Output (new levels) : 0 3 6
-    std::vector<Level> updated_levels(nft.levels.num_of_levels, 0);
+    CustomVector<Level> updated_levels(nft.levels.num_of_levels, 0);
     Level old_lvl = 0;
     Level new_lvl = 0;
     auto mask_it = std::ranges::find(new_levels_mask, false);
@@ -423,7 +424,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         if (!*mask_it) { updated_levels[old_lvl++] = new_lvl; }
     }
     // Repare state levels
-    std::vector<Level> new_state_levels(nft.levels.size());
+    CustomVector<Level> new_state_levels(nft.levels.size());
     for (State s{ 0 }; s < nft.levels.size(); s++) { new_state_levels[s] = updated_levels[nft.levels[s]]; }
 
     // Construct vector of next inner levels for usable inner states.
@@ -434,7 +435,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     //  Output (JumpMode::NoJump):             1 3 3 4 5 6 8 8  9 12 12 12
     //  Output (JumpMode::AppendDontCares):    3 3 3 5 5 8 8 8 12 12 12 12
     const size_t mask_size = new_levels_mask.size();
-    std::vector<Level> next_inner_levels(mask_size);
+    CustomVector<Level> next_inner_levels(mask_size);
     auto next_level = static_cast<Level>(mask_size);
     size_t i = mask_size - 1;
     for (auto it = new_levels_mask.rbegin(); it != new_levels_mask.rend(); ++it, --i) {
@@ -464,7 +465,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         } else { result.delta.add(src, DONT_CARE, tgt); }
     };
 
-    std::vector<std::vector<State>> state_level_matrix(nft.num_of_states(), std::vector<State>());
+    std::vector<CustomVector<State>> state_level_matrix(nft.num_of_states(), CustomVector<State>());
     // Creates an inner state for a given source state and inner level.
     // If the inner state already exists, then it is reused.
     auto get_inner_state = [&](
@@ -542,10 +543,10 @@ Nft mata::nft::fragile_revert(const Nft& aut) {
     #ifdef _STATIC_STRUCTURES_
     //STATIC DATA STRUCTURES:
     // Not sure that it works ideally, whether the space for the inner vectors stays there.
-    static std::vector<std::vector<State>> sources;
-    static std::vector<std::vector<State>> targets;
-    static std::vector<State> e_sources;
-    static std::vector<State> e_targets;
+    static std::vector<CustomVector<State>> sources;
+    static std::vector<CustomVector<State>> targets;
+    static CustomVector<State> e_sources;
+    static CustomVector<State> e_targets;
     if (alphasize > sources.size()) {
         sources.resize(alphasize);
         targets.resize(alphasize);
@@ -577,10 +578,10 @@ Nft mata::nft::fragile_revert(const Nft& aut) {
     //All transition of delta are to be copied here, into two arrays of transition sources and targets indexed by the transition symbol.
     // There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in the automaton,
     // and epsilon is the maximum (so we don't want to have the maximum array length whenever epsilon is present)
-    std::vector<std::vector<State>> sources(alphasize);
-    std::vector<std::vector<State>> targets(alphasize);
-    std::vector<State> e_sources;
-    std::vector<State> e_targets;
+    std::vector<CustomVector<State>> sources(alphasize);
+    std::vector<CustomVector<State>> targets(alphasize);
+    CustomVector<State> e_sources;
+    CustomVector<State> e_targets;
     #endif
 
     //Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
@@ -706,7 +707,7 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     const size_t num_of_states = aut.num_of_states();
 
     // Find states with level zero and rename them.
-    std::vector<State> renaming(num_of_states, Limits::max_state);
+    CustomVector<State> renaming(num_of_states, Limits::max_state);
     size_t num_of_zero_states = 0;
     for (State s = 0; s < num_of_states; ++s) { if (aut.levels[s] == 0) { renaming[s] = num_of_zero_states++; } }
 
@@ -723,7 +724,7 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     );
 
     // Creates new states with inverted levels for each inner state in the path.
-    auto create_states_with_inverted_levels = [&](const std::vector<State>& path_states) {
+    auto create_states_with_inverted_levels = [&](const CustomVector<State>& path_states) {
         for (const State s : path_states) {
             if (aut.levels[s] == 0) { continue; }
             renaming[s] = aut_inv.add_state_with_level(static_cast<Level>(aut.levels.num_of_levels - aut.levels[s]));
@@ -731,7 +732,7 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     };
 
     // Returns transitions of the path.
-    auto get_path_transitions = [&](const std::vector<State>& path_states) {
+    auto get_path_transitions = [&](const CustomVector<State>& path_states) {
         std::vector<Transition> path_transitions;
         for (size_t i = 0; i < path_states.size() - 1; ++i) {
             const State src = path_states[i];
@@ -804,7 +805,7 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
             continue; // Not a head.
         }
         // Process all paths using dfs.
-        std::stack<std::pair<State, std::vector<State>>> stack;
+        std::stack<std::pair<State, CustomVector<State>>> stack;
         stack.push({ path_head, { path_head } });
         while (!stack.empty()) {
             auto [src, path] = stack.top();
@@ -820,7 +821,7 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 
             for (const State tgt : aut.delta[src].get_successors()) {
                 // Extend the path.
-                std::vector<State> new_path = path;
+                CustomVector<State> new_path = path;
                 new_path.push_back(tgt);
                 stack.emplace(tgt, std::move(new_path));
             }

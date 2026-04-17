@@ -88,6 +88,7 @@
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
+#include "mata/utils/custom_vector.h"
 
 namespace mata::nfa {
 
@@ -261,7 +262,7 @@ public:
         // event handler for the first-time state discovery
         std::function<bool(State)> state_discover;
         // event handler for SCC discovery (together with the whole Tarjan stack)
-        std::function<bool(const std::vector<State>&, const std::vector<State>&)> scc_discover;
+        std::function<bool(const CustomVector<State>&, const CustomVector<State>&)> scc_discover;
         // event handler for state in SCC discovery
         std::function<void(State)> scc_state_discover;
         // event handler for visiting of the state successors
@@ -307,17 +308,17 @@ public:
      * @param epsilons Set of symbols to consider as epsilons when computing the closure.
      * @return Epsilon closure of the given set of states.
      */
-    StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = { EPSILON }) const;
+    StateSet mk_epsilon_closure(const StateSet& source_states, const CustomVector<Symbol>& epsilons = { EPSILON }) const;
 
     /**
      * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
      */
-    std::vector<State> distances_from_initial() const;
+    CustomVector<State> distances_from_initial() const;
 
     /**
      * @brief Returns vector ret where ret[q] is the length of the shortest path from q to any final state
      */
-    std::vector<State> distances_to_final() const;
+    CustomVector<State> distances_to_final() const;
 
     /**
      * @brief Get some shortest accepting run from state @p state.
@@ -325,7 +326,7 @@ public:
      * @param state State from which the accepting run starts.
      * @param distances_to_final Vector of the lengths of the shortest runs from states (can be computed using distances_to_final())
      */
-    Run get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const;
+    Run get_shortest_accepting_run_from_state(State state, const CustomVector<State>& distances_to_final) const;
 
     /**
      * Remove epsilon transitions from the automaton.

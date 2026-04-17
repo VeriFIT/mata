@@ -1052,8 +1052,8 @@ Nft algorithms::compose_general(const Nft& lhs, const Nft& rhs, const OrdVector<
     //    - before the first synchronization level (i == 0) there are 2 non-synchronization levels
     //    - before the second synchronization level (i == 1) there are 0 non-synchronization levels
     //    - after the last synchronization level (i == |sync|) there is 1 non-synchronization level
-    std::vector<unsigned> lhs_nonsync_levels_cnt;
-    std::vector<unsigned> rhs_nonsync_levels_cnt;
+    CustomVector<unsigned> lhs_nonsync_levels_cnt;
+    CustomVector<unsigned> rhs_nonsync_levels_cnt;
     const size_t num_of_sync_levels = lhs_sync_levels.size();
     lhs_nonsync_levels_cnt.reserve(num_of_sync_levels + 1);
     rhs_nonsync_levels_cnt.reserve(num_of_sync_levels + 1);

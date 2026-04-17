@@ -3,6 +3,7 @@
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/utils/custom_vector.h"
 
 #include <optional>
 
@@ -54,7 +55,7 @@ void ShortestWordsMap::insert_initial_lengths() {
                 std::make_pair(
                     state, std::make_pair(
                         0,
-                        std::set<Word>{ std::vector<Symbol>{} }
+                        std::set<Word>{ CustomVector<Symbol>{} }
                     )
                 )
             );
@@ -140,7 +141,7 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
     }
 
     std::set<std::pair<int, int>> ret;
-    std::vector<int> handles(one_letter.num_of_states(), 0); // initialized to 0
+    CustomVector<int> handles(one_letter.num_of_states(), 0); // initialized to 0
     assert(one_letter.initial.size() == 1);
     std::optional<nfa::State> curr_state = *one_letter.initial.begin();
     std::set<nfa::State> visited;

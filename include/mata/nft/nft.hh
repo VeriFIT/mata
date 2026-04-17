@@ -325,7 +325,7 @@ public:
      * @param target The target state where the NFT transition ends. @p target must already exist.
      * @return The target state @p target.
      */
-    State add_transition(State source, const std::vector<Symbol>& symbols, State target);
+    State add_transition(State source, const CustomVector<Symbol>& symbols, State target);
 
     /**
      * @brief Add a single NFT transition to the NFT from a source state @p source to a newly created target state,
@@ -338,7 +338,7 @@ public:
      * @param symbols The nonempty set of symbols, one for each tape to be inserted into the NFT.
      * @return The target state @p target.
      */
-    State add_transition(State source, const std::vector<Symbol>& symbols);
+    State add_transition(State source, const CustomVector<Symbol>& symbols);
 
     /**
      * @brief Add a single NFT transition with a length @p length from a source state @p source
@@ -422,7 +422,7 @@ public:
      * of @c DONT_CARE symbols.
      * @return Self with inserted identity.
      */
-    Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
+    Nft& insert_identity(State state, const CustomVector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * Inserts identity transitions into the NFT.
@@ -877,7 +877,7 @@ public:
      */
     bool make_complete(
         const Alphabet* alphabet = nullptr,
-        const std::optional<std::vector<State>>& sink_states = std::nullopt
+        const std::optional<CustomVector<State>>& sink_states = std::nullopt
     );
 
     /**
@@ -898,7 +898,7 @@ public:
      */
     bool make_complete(
         const utils::OrdVector<Symbol>& symbols,
-        const std::optional<std::vector<State>>& sink_states = std::nullopt
+        const std::optional<CustomVector<State>>& sink_states = std::nullopt
     );
 
     using super::is_complete;
@@ -996,7 +996,7 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  *  - the synchronizing level (possibly missing if project_out_sync_levels is true)
  *  - levels of `lhs` after its synvhronization level
  *  - levels of `rhs` after its synvhronization level
- * 
+ *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.

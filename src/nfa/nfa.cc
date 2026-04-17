@@ -15,6 +15,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -22,7 +23,7 @@ using mata::Symbol;
 using mata::Word;
 using mata::BoolVector;
 
-using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+using StateBoolArray = CustomVector<bool>; ///< Bool array for states in the automaton.
 
 const std::string mata::nfa::TYPE_NFA = "NFA";
 
@@ -37,7 +38,7 @@ namespace {
      */
     StateBoolArray reachable_states(const Nfa& nfa,
                                        const std::optional<const StateBoolArray>& states_to_consider = std::nullopt) {
-        std::vector<State> worklist{};
+        CustomVector<State> worklist{};
         StateBoolArray reachable(nfa.num_of_states(), false);
         for (const State state: nfa.initial) {
             if (!states_to_consider.has_value() || states_to_consider.value()[state]) {
@@ -86,8 +87,8 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-std::vector<State> Nfa::distances_from_initial() const {
-    std::vector<State> distances(num_of_states()+1, Limits::max_state);
+CustomVector<State> Nfa::distances_from_initial() const {
+    CustomVector<State> distances(num_of_states()+1, Limits::max_state);
     BoolVector visited(num_of_states()+1, false);
     std::deque<State> que;
 
@@ -111,11 +112,11 @@ std::vector<State> Nfa::distances_from_initial() const {
     return distances;
 }
 
-std::vector<State> Nfa::distances_to_final() const {
+CustomVector<State> Nfa::distances_to_final() const {
     return revert(*this).distances_from_initial();
 }
 
-Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
+Run Nfa::get_shortest_accepting_run_from_state(State state, const CustomVector<State>& distances_to_final) const {
     Run result{{}, {state}};
     while (!final[state]) {
         for (auto [symbol, target] : delta[state].moves()) {
@@ -139,7 +140,7 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
     const BoolVector useful_states{ get_useful_states() };
 #endif
     const size_t useful_states_size{ useful_states.size() };
-    std::vector<State> renaming(useful_states_size);
+    CustomVector<State> renaming(useful_states_size);
     for(State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
         if (useful_states[orig_state]) {
             renaming[orig_state] = new_state;
@@ -189,7 +190,7 @@ Nfa mata::nfa::trim(
     Nfa nfa_trimmed{};
 
     const size_t useful_states_size{ useful_states.size() };
-    std::vector<State> renaming(useful_states_size);
+    CustomVector<State> renaming(useful_states_size);
     for (State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
         if (useful_states[orig_state]) {
             renaming[orig_state] = new_state;
@@ -288,8 +289,8 @@ void Nfa::tarjan_scc_discover(
     const TarjanDiscoverCallback& callback,
     const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
-    std::vector<State> program_stack;
-    std::vector<State> tarjan_stack;
+    CustomVector<State> program_stack;
+    CustomVector<State> tarjan_stack;
     unsigned long index_cnt = 0;
 
     for(const State& q0 : (initial_states.value_or(this->initial)).get()) {
@@ -346,7 +347,7 @@ void Nfa::tarjan_scc_discover(
         // check if we have the root of an SCC
         if(act_state_data.lowlink == act_state_data.index) {
             State st;
-            std::vector<State> scc;
+            CustomVector<State> scc;
             do {
                 st = tarjan_stack.back();
                 tarjan_stack.pop_back();
@@ -380,7 +381,7 @@ BoolVector Nfa::get_useful_states(const std::optional<std::reference_wrapper<con
         }
         return false;
     };
-    callback.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
+    callback.scc_discover = [&](const CustomVector<State>& scc, const CustomVector<State>& tarjan_stack) -> bool {
         if(final_scc) {
             // Propagate usefulness to the closed SCC.
             for(const State& st: scc) { useful[st] = true; }
@@ -429,7 +430,7 @@ bool Nfa::is_acyclic() const {
     bool acyclic = true;
 
     TarjanDiscoverCallback callback {};
-    callback.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
+    callback.scc_discover = [&](const CustomVector<State>& scc, const CustomVector<State>& tarjan_stack) -> bool {
         (void)tarjan_stack;
         if(scc.size() > 1) {
             acyclic = false;
@@ -453,7 +454,7 @@ bool Nfa::is_flat() const {
     bool flat = true;
 
     mata::nfa::Nfa::TarjanDiscoverCallback callback {};
-    callback.scc_discover = [&](const std::vector<mata::nfa::State>& scc, const std::vector<mata::nfa::State>& tarjan_stack) -> bool {
+    callback.scc_discover = [&](const CustomVector<mata::nfa::State>& scc, const CustomVector<mata::nfa::State>& tarjan_stack) -> bool {
         (void)tarjan_stack;
 
         for(const mata::nfa::State& st : scc) {
@@ -976,7 +977,7 @@ Nfa Nfa::decode_utf8() const {
     return result;
 }
 
-StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const CustomVector<Symbol>& epsilons) const {
     StateSet closure{ source_states };
     std::queue<State> worklist;
     for (const State state : source_states) { worklist.push(state); }

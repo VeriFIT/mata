@@ -11,6 +11,7 @@
 #include <limits>
 
 #include "types.hh"
+#include "mata/utils/custom_vector.h"
 
 namespace mata::nfa {
 
@@ -21,7 +22,7 @@ using StateSet = utils::OrdVector<State>;
 
 struct Run {
     Word word{}; ///< A finite-length word.
-    std::vector<State> path{}; ///< A finite-length path through automaton.
+    CustomVector<State> path{}; ///< A finite-length path through automaton.
 };
 
 enum class EpsilonClosureOpt : unsigned {

@@ -5,6 +5,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 using namespace mata::nfa;
 using namespace mata::utils;
@@ -81,8 +82,8 @@ bool mata::nfa::algorithms::is_included_antichains(
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
     // auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() < std::get<1>(b).size(); };
 
-    std::vector<State> distances_smaller = smaller.distances_to_final();
-    std::vector<State> distances_bigger = bigger.distances_to_final();
+    CustomVector<State> distances_smaller = smaller.distances_to_final();
+    CustomVector<State> distances_bigger = bigger.distances_to_final();
 
     // auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
     //     return distances_smaller[a.first] < distances_smaller[b.first];

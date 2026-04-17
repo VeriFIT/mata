@@ -7,6 +7,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
+#include "mata/utils/custom_vector.h"
 
 using namespace mata;
 using mata::Symbol;
@@ -153,7 +154,7 @@ namespace {
     void process_source(const nfa::Nfa& regex, const utils::OrdVector<Symbol>& alphabet_symbols, nfa::Nfa& dfa_generic_end_marker,
                         std::map<State, StateSet>& labeling,
                         std::unordered_map<StateSet, State>& labeling_inv, const State source,
-                        StateSet& source_label, std::vector<State>& worklist) {
+                        StateSet& source_label, CustomVector<State>& worklist) {
         const State generic_initial_state{ *regex.initial.begin() };
         for (const Symbol symbol: alphabet_symbols) {
             StateSet target_label{ generic_initial_state };
@@ -309,7 +310,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, Alphabet const* co
     labeling.emplace(0, *regex.initial.begin());
     labeling_inv.emplace(*regex.initial.begin(), 0);
 
-    std::vector<State> worklist{ 0 };
+    CustomVector<State> worklist{ 0 };
     while (!worklist.empty()) {
         State source{ worklist.back() };
         worklist.pop_back();

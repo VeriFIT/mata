@@ -15,6 +15,7 @@
 #include "mata/nft/nft.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 
 using namespace mata::utils;
@@ -23,7 +24,7 @@ using mata::Symbol;
 using mata::Word;
 using mata::BoolVector;
 
-using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+using StateBoolArray = CustomVector<bool>; ///< Bool array for states in the automaton.
 
 const std::string mata::nft::TYPE_NFT = "NFT";
 
@@ -48,7 +49,7 @@ Levels& Levels::operator=(const std::initializer_list<Level> other) {
     return *this;
 }
 
-Levels& Levels::operator=(const std::vector<Level>& levels) {
+Levels& Levels::operator=(const CustomVector<Level>& levels) {
     if (this != &levels) {
         super::operator=(levels);
         num_of_levels = num_of_levels_used().value_or(DEFAULT_NUM_OF_LEVELS);
@@ -56,7 +57,7 @@ Levels& Levels::operator=(const std::vector<Level>& levels) {
     return *this;
 }
 
-Levels& Levels::operator=(std::vector<Level>&& levels) {
+Levels& Levels::operator=(CustomVector<Level>&& levels) {
     if (this != &levels) {
         super::operator=(std::move(levels));
         num_of_levels = num_of_levels_used().value_or(DEFAULT_NUM_OF_LEVELS);
@@ -71,13 +72,13 @@ Levels& Levels::set(const State state, const Level level) {
     return *this;
 }
 
-Levels& Levels::set(const std::vector<Level>& levels) {
+Levels& Levels::set(const CustomVector<Level>& levels) {
     assign(levels.begin(), levels.end());
     assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
     return *this;
 }
 
-Levels& Levels::set(std::vector<Level>&& levels) {
+Levels& Levels::set(CustomVector<Level>&& levels) {
     const auto num_of_levels_orig{ num_of_levels };
     *this = std::move(levels);
     num_of_levels = num_of_levels_orig;
@@ -91,15 +92,15 @@ void Levels::append(const Levels& levels_vector) {
     assert(check_levels_in_range_() && "Levels::append: level is out of range of the set number of levels.");
 }
 
-std::vector<Level> Levels::get_levels_of(const SparseSet<State>& states) const {
-    std::vector<Level> result;
+CustomVector<Level> Levels::get_levels_of(const SparseSet<State>& states) const {
+    CustomVector<Level> result;
     result.reserve(states.size());
     for (const State state : states) { result.push_back((*this)[state]); }
     return result;
 }
 
-std::vector<Level> Levels::get_levels_of(const StateSet& states) const {
-    std::vector<Level> result;
+CustomVector<Level> Levels::get_levels_of(const StateSet& states) const {
+    CustomVector<Level> result;
     result.reserve(states.size());
     for (const State state : states) { result.push_back((*this)[state]); }
     return result;
@@ -134,7 +135,7 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     const BoolVector useful_states{ get_useful_states() };
     #endif
     const size_t useful_states_size{ useful_states.size() };
-    std::vector<State> renaming(useful_states_size);
+    CustomVector<State> renaming(useful_states_size);
     for (State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
         if (useful_states[orig_state]) {
             renaming[orig_state] = new_state;
@@ -659,11 +660,11 @@ State Nft::insert_word_by_levels(const State source, const std::vector<Word>& wo
     return insert_word_by_levels(source, word_parts_on_levels, add_state_with_level(levels[source]));
 }
 
-State Nft::add_transition(const State source, const std::vector<Symbol>& symbols, const State target) {
+State Nft::add_transition(const State source, const CustomVector<Symbol>& symbols, const State target) {
     return insert_word(source, symbols, target);
 }
 
-State Nft::add_transition(const State source, const std::vector<Symbol>& symbols) {
+State Nft::add_transition(const State source, const CustomVector<Symbol>& symbols) {
     return insert_word(source, symbols);
 }
 
@@ -737,7 +738,7 @@ void Nft::add_transition_with_same_level_targets(State source, Symbol symbol, co
     mutable_inner_state_post.insert(std::move(SymbolPost(symbol, targets)));
 }
 
-Nft& Nft::insert_identity(const State state, const std::vector<Symbol>& symbols, const JumpMode jump_mode) {
+Nft& Nft::insert_identity(const State state, const CustomVector<Symbol>& symbols, const JumpMode jump_mode) {
     for (const Symbol symbol : symbols) { insert_identity(state, symbol, jump_mode); }
     return *this;
 }
@@ -811,19 +812,19 @@ Nft Nft::apply(
 
 bool Nft::make_complete(
     const Alphabet* const alphabet,
-    const std::optional<std::vector<State>>& sink_states) {
+    const std::optional<CustomVector<State>>& sink_states) {
     return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
 }
 
 bool Nft::make_complete(
     const OrdVector<Symbol>& symbols,
-    const std::optional<std::vector<State>>& sink_states) {
+    const std::optional<CustomVector<State>>& sink_states) {
     const size_t num_of_states_orig{ this->num_of_states() };
     if (num_of_states_orig == 0) { return false; }
 
-    const std::vector<State> sinks{
+    const CustomVector<State> sinks{
         [&] {
-            auto sinks_val{ sink_states.value_or(std::vector<State>{}) };
+            auto sinks_val{ sink_states.value_or(CustomVector<State>{}) };
             if (sinks_val.empty()) {
                 for (Level level{ 0 }; level < levels.num_of_levels; ++level) {
                     sinks_val.push_back(add_state_with_level(level));

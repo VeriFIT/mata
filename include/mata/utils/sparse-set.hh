@@ -23,6 +23,7 @@
 #include <type_traits>
 
 #include "ord-vector.hh"
+#include "custom_vector.h"
 
 namespace mata::utils {
 
@@ -49,8 +50,8 @@ concept Iterable = requires(T t) {
         static_assert(std::is_unsigned_v<Number>, "SparseSet can only contain unsigned integers");
 
     private:
-        std::vector<Number> dense_{}; // Dense set of elements.
-        std::vector<Number> sparse_{}; // Map of elements to dense set indices.
+        CustomVector<Number> dense_{}; // Dense set of elements.
+        CustomVector<Number> sparse_{}; // Map of elements to dense set indices.
 
         /// Number of elements which are in the set (current size).
         size_t size_ = 0;
@@ -64,8 +65,8 @@ concept Iterable = requires(T t) {
         size_t domain_size_ = 0;
 
     public:
-        using iterator = typename std::vector<Number>::const_iterator;
-        using const_iterator = typename std::vector<Number>::const_iterator;
+        using iterator = typename CustomVector<Number>::const_iterator;
+        using const_iterator = typename CustomVector<Number>::const_iterator;
 
         iterator begin() { return dense_.begin(); }
 

@@ -5,6 +5,7 @@
 #include "mata/nfa/builder.hh"
 #include "mata/parser/mintermization.hh"
 #include "mata/parser/re2parser.hh"
+#include "mata/utils/custom_vector.h"
 
 #include <fstream>
 #include <random>
@@ -171,7 +172,7 @@ void builder::construct(
     *result = construct(inter_aut, alphabet, state_map);
 }
 
-Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
+Nfa builder::create_single_word_nfa(const CustomVector<Symbol>& word) {
     const size_t word_size{ word.size() };
     Nfa nfa{ word_size + 1, { 0 }, { word_size } };
 
@@ -226,7 +227,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     std::mt19937 gen(seed_value); // Mersenne Twister engine
 
     // Unique final state generator
-    std::vector<State> states(num_of_states);
+    CustomVector<State> states(num_of_states);
     std::iota(states.begin(), states.end(), 0);
     std::shuffle(states.begin() + 1, states.end(), gen); // Starting from 1, because 0 is allways final state.
 
@@ -237,7 +238,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
     }
 
     // Unique transition generator
-    std::vector<State> one_dimensional_transition_matrix(num_of_states * num_of_states);
+    CustomVector<State> one_dimensional_transition_matrix(num_of_states * num_of_states);
     std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
 
     // Create transitions

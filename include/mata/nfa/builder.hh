@@ -4,6 +4,7 @@
 #define LIBMATA_BUILDER_HH
 
 #include "nfa.hh"
+#include "utils/custom_vector.h"
 
 #include <filesystem>
 
@@ -20,7 +21,7 @@ using NameStateMap = std::unordered_map<std::string, State>;
 /**
  * Create an automaton accepting only a single @p word.
  */
-Nfa create_single_word_nfa(const std::vector<Symbol>& word);
+Nfa create_single_word_nfa(const CustomVector<Symbol>& word);
 
 /**
  * Create an automaton accepting only a single @p word.
