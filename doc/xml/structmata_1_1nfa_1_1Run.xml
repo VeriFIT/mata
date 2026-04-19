@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1nfa_1_1Run" kind="struct" language="C++" prot="public">
+    <compoundname>mata::nfa::Run</compoundname>
+    <includes refid="nfa_2types_8hh" local="no">types.hh</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Run_1a8eba7e80d9e3401773cf72ca063aa4ca" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref></type>
+        <definition>Word word</definition>
+        <argsstring></argsstring>
+        <name>word</name>
+        <qualifiedname>mata::nfa::Run::word</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+<para>A finite-length word. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="21" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="21" bodyend="21"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Run_1a021382e9c129a5353ec2efacd412aba2" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;</type>
+        <definition>std::vector&lt;State&gt; path</definition>
+        <argsstring></argsstring>
+        <name>path</name>
+        <qualifiedname>mata::nfa::Run::path</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+<para>A finite-length path through automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="22" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="22" bodyend="22"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="20" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="20" bodyend="23"/>
+    <listofallmembers>
+      <member refid="structmata_1_1nfa_1_1Run_1a021382e9c129a5353ec2efacd412aba2" prot="public" virt="non-virtual"><scope>mata::nfa::Run</scope><name>path</name></member>
+      <member refid="structmata_1_1nfa_1_1Run_1a8eba7e80d9e3401773cf72ca063aa4ca" prot="public" virt="non-virtual"><scope>mata::nfa::Run</scope><name>word</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

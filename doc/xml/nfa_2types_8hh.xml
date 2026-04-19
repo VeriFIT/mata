@@ -1,0 +1,331 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="nfa_2types_8hh" kind="file" language="C++">
+    <compoundname>types.hh</compoundname>
+    <includes refid="alphabet_8hh" local="yes">mata/alphabet.hh</includes>
+    <includes refid="parser_8hh" local="yes">mata/parser/parser.hh</includes>
+    <includes local="no">limits</includes>
+    <includedby refid="nfa_2delta_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</includedby>
+    <includedby refid="nfa_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</includedby>
+    <includedby refid="nfa_2plumbing_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh</includedby>
+    <includedby refid="nft_2types_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh</includedby>
+    <incdepgraph>
+      <node id="2">
+        <label>mata/alphabet.hh</label>
+        <link refid="alphabet_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh</label>
+        <link refid="nfa_2types_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>mata/parser/parser.hh</label>
+        <link refid="parser_8hh"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>utils/ord-vector.hh</label>
+        <link refid="ord-vector_8hh"/>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>utils/utils.hh</label>
+        <link refid="utils_8hh"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>algorithm</label>
+      </node>
+      <node id="15">
+        <label>cassert</label>
+      </node>
+      <node id="18">
+        <label>cstdint</label>
+      </node>
+      <node id="3">
+        <label>forward_list</label>
+      </node>
+      <node id="8">
+        <label>functional</label>
+      </node>
+      <node id="9">
+        <label>iostream</label>
+      </node>
+      <node id="22">
+        <label>limits</label>
+      </node>
+      <node id="10">
+        <label>list</label>
+      </node>
+      <node id="11">
+        <label>map</label>
+      </node>
+      <node id="21">
+        <label>ostream</label>
+      </node>
+      <node id="12">
+        <label>set</label>
+      </node>
+      <node id="13">
+        <label>sstream</label>
+      </node>
+      <node id="14">
+        <label>stack</label>
+      </node>
+      <node id="4">
+        <label>string</label>
+      </node>
+      <node id="16">
+        <label>unordered_map</label>
+      </node>
+      <node id="5">
+        <label>utility</label>
+      </node>
+      <node id="17">
+        <label>vector</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="4">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh</label>
+        <link refid="strings_8hh"/>
+      </node>
+      <node id="5">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/algorithms.hh</label>
+        <link refid="nfa_2algorithms_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh</label>
+        <link refid="nfa_2builder_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</label>
+        <link refid="nfa_2delta_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</label>
+        <link refid="nfa_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh</label>
+        <link refid="nfa_2plumbing_8hh"/>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh</label>
+        <link refid="nfa_2types_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh</label>
+        <link refid="nft_2algorithms_8hh"/>
+      </node>
+      <node id="8">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh</label>
+        <link refid="nft_2builder_8hh"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</label>
+        <link refid="nft_2delta_8hh"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</label>
+        <link refid="nft_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh</label>
+        <link refid="nft_2plumbing_8hh"/>
+      </node>
+      <node id="14">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh</label>
+        <link refid="nft_2types_8hh"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/re2parser.hh</label>
+        <link refid="re2parser_8hh"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="structmata_1_1nfa_1_1Run" prot="public">mata::nfa::Run</innerclass>
+    <innerclass refid="structmata_1_1nfa_1_1Limits" prot="public">mata::nfa::Limits</innerclass>
+    <innernamespace refid="namespacemata">mata</innernamespace>
+    <innernamespace refid="namespacemata_1_1nfa">mata::nfa</innernamespace>
+    <briefdescription>
+<para>Basic types used in the <computeroutput><ref refid="namespacemata_1_1nfa" kindref="compound">mata::nfa</ref></computeroutput> module for NFAs. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/**<sp/>@file</highlight></codeline>
+<codeline lineno="2"><highlight class="comment"><sp/>*<sp/>@brief<sp/>Basic<sp/>types<sp/>used<sp/>in<sp/>the<sp/>@c<sp/>mata::nfa<sp/>module<sp/>for<sp/>NFAs.</highlight></codeline>
+<codeline lineno="3"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>MATA_TYPES_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>MATA_TYPES_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="alphabet_8hh" kindref="compound">mata/alphabet.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="parser_8hh" kindref="compound">mata/parser/parser.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;limits&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1nfa" kindref="compound">mata::nfa</ref><sp/>{</highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/><ref refid="namespacemata_1_1nfa_1a0bb30514becdf091b7c18f69a307b774" kindref="member">TYPE_NFA</ref>;</highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight></codeline>
+<codeline lineno="17" refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref><sp/>=<sp/></highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/>long;</highlight></codeline>
+<codeline lineno="18" refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">StateSet</ref><sp/>=<sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector&lt;State&gt;</ref>;</highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20" refid="structmata_1_1nfa_1_1Run" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structmata_1_1nfa_1_1Run" kindref="compound">Run</ref><sp/>{</highlight></codeline>
+<codeline lineno="21" refid="structmata_1_1nfa_1_1Run_1a8eba7e80d9e3401773cf72ca063aa4ca" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/><ref refid="structmata_1_1nfa_1_1Run_1a8eba7e80d9e3401773cf72ca063aa4ca" kindref="member">word</ref>{};<sp/></highlight><highlight class="comment">///&lt;<sp/>A<sp/>finite-length<sp/>word.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22" refid="structmata_1_1nfa_1_1Run_1a021382e9c129a5353ec2efacd412aba2" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;State&gt;<sp/><ref refid="structmata_1_1nfa_1_1Run_1a021382e9c129a5353ec2efacd412aba2" kindref="member">path</ref>{};<sp/></highlight><highlight class="comment">///&lt;<sp/>A<sp/>finite-length<sp/>path<sp/>through<sp/>automaton.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight></codeline>
+<codeline lineno="25" refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum<sp/>class</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0" kindref="member">EpsilonClosureOpt</ref><sp/>:<sp/></highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="26"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0ab50339a10e1de285ac99d4c3990b8693" kindref="member">NONE</ref><sp/><sp/><sp/>=<sp/>1<sp/>&lt;&lt;<sp/>0,<sp/><sp/><sp/></highlight><highlight class="comment">///&lt;<sp/>No<sp/>epsilon<sp/>closure.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0a3525317285c6126ce3b62a8df8c00b07" kindref="member">BEFORE</ref><sp/>=<sp/>1<sp/>&lt;&lt;<sp/>1,<sp/><sp/><sp/></highlight><highlight class="comment">///&lt;<sp/>Epsilon<sp/>closure<sp/>before<sp/>the<sp/>transition.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0ac130fda0cb93540bf1574912e78964fb" kindref="member">AFTER</ref><sp/><sp/>=<sp/>1<sp/>&lt;&lt;<sp/>2,<sp/><sp/><sp/><sp/></highlight><highlight class="comment">///&lt;<sp/>Epsilon<sp/>closure<sp/>after<sp/>the<sp/>transition.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0a1259d5beade8955b50dec08a1f8e6304" kindref="member">BEFORE_AND_AFTER</ref><sp/>=<sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0a3525317285c6126ce3b62a8df8c00b07" kindref="member">BEFORE</ref><sp/>|<sp/><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0ac130fda0cb93540bf1574912e78964fb" kindref="member">AFTER</ref><sp/></highlight><highlight class="comment">///&lt;<sp/>Epsilon<sp/>closure<sp/>before<sp/>and<sp/>after<sp/>the<sp/>transition.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32" refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum<sp/>class</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912" kindref="member">ProductFinalStateCondition</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912a558ffc8f5770d8e4f95f51d822685532" kindref="member">AND</ref>,<sp/></highlight><highlight class="comment">///&lt;<sp/>Both<sp/>original<sp/>states<sp/>have<sp/>to<sp/>be<sp/>final.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912a1d00e7dce692e8dc3f6877f035e3a616" kindref="member">OR</ref>,<sp/><sp/></highlight><highlight class="comment">///&lt;<sp/>At<sp/>least<sp/>one<sp/>of<sp/>the<sp/>original<sp/>states<sp/>has<sp/>to<sp/>be<sp/>final.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="37" refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref><sp/>=<sp/>std::unordered_map&lt;State,<sp/>State&gt;;</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="39"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="40"><highlight class="comment"><sp/>*<sp/>@brief<sp/>Map<sp/>of<sp/>additional<sp/>parameter<sp/>name<sp/>and<sp/>value<sp/>pairs.</highlight></codeline>
+<codeline lineno="41"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="42"><highlight class="comment"><sp/>*<sp/>Used<sp/>by<sp/>certain<sp/>functions<sp/>for<sp/>specifying<sp/>some<sp/>additional<sp/>parameters<sp/>in<sp/>the<sp/>following<sp/>format:</highlight></codeline>
+<codeline lineno="43"><highlight class="comment"><sp/>*<sp/>```cpp</highlight></codeline>
+<codeline lineno="44"><highlight class="comment"><sp/>*<sp/>ParameterMap<sp/>{</highlight></codeline>
+<codeline lineno="45"><highlight class="comment"><sp/>*<sp/><sp/><sp/><sp/><sp/>{<sp/>&quot;algorithm&quot;,<sp/>&quot;classical&quot;<sp/>},</highlight></codeline>
+<codeline lineno="46"><highlight class="comment"><sp/>*<sp/><sp/><sp/><sp/><sp/>{<sp/>&quot;minimize&quot;,<sp/>&quot;true&quot;<sp/>}</highlight></codeline>
+<codeline lineno="47"><highlight class="comment"><sp/>*<sp/>}</highlight></codeline>
+<codeline lineno="48"><highlight class="comment"><sp/>*<sp/>```</highlight></codeline>
+<codeline lineno="49"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="50" refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref><sp/>=<sp/>std::unordered_map&lt;std::string,<sp/>std::string&gt;;</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"></highlight></codeline>
+<codeline lineno="52" refid="structmata_1_1nfa_1_1Limits" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structmata_1_1nfa_1_1Limits" kindref="compound">Limits</ref><sp/>{</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="54" refid="structmata_1_1nfa_1_1Limits_1a5a719bbc0112d26622e1f0a11e4fb073" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref><sp/><ref refid="structmata_1_1nfa_1_1Limits_1a5a719bbc0112d26622e1f0a11e4fb073" kindref="member">min_state</ref><sp/>=<sp/>std::numeric_limits&lt;State&gt;::min();</highlight></codeline>
+<codeline lineno="55" refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref><sp/><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">max_state</ref><sp/>=<sp/>std::numeric_limits&lt;State&gt;::max();</highlight></codeline>
+<codeline lineno="56" refid="structmata_1_1nfa_1_1Limits_1a708e31ee8969e648d3b39dfeffe58617" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="structmata_1_1nfa_1_1Limits_1a708e31ee8969e648d3b39dfeffe58617" kindref="member">min_symbol</ref><sp/>=<sp/>std::numeric_limits&lt;Symbol&gt;::min();</highlight></codeline>
+<codeline lineno="57" refid="structmata_1_1nfa_1_1Limits_1a6e4a56f89c6edead35e706291e23eda3" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="structmata_1_1nfa_1_1Limits_1a6e4a56f89c6edead35e706291e23eda3" kindref="member">max_symbol</ref><sp/>=<sp/>std::numeric_limits&lt;Symbol&gt;::max();</highlight></codeline>
+<codeline lineno="58"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref>;<sp/></highlight><highlight class="comment">///&lt;<sp/>A<sp/>non-deterministic<sp/>finite<sp/>automaton.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="62"><highlight class="comment">///<sp/>An<sp/>epsilon<sp/>symbol<sp/>which<sp/>is<sp/>now<sp/>defined<sp/>as<sp/>the<sp/>maximal<sp/>value<sp/>of<sp/>data<sp/>type<sp/>used<sp/>for<sp/>symbols.</highlight></codeline>
+<codeline lineno="63" refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" refkind="member"><highlight class="comment"></highlight><highlight class="keyword">constexpr</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref><sp/>=<sp/><ref refid="structmata_1_1nfa_1_1Limits_1a6e4a56f89c6edead35e706291e23eda3" kindref="member">Limits::max_symbol</ref>;</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight></codeline>
+<codeline lineno="65"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>mata::nfa.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal"></highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/></highlight><highlight class="comment">//MATA_TYPES_HH</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh"/>
+  </compounddef>
+</doxygen>

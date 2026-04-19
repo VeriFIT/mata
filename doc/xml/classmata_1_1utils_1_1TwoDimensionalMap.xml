@@ -1,0 +1,425 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1utils_1_1TwoDimensionalMap" kind="class" language="C++" prot="public">
+    <compoundname>mata::utils::TwoDimensionalMap</compoundname>
+    <includes refid="two-dimensional-map_8hh" local="no">two-dimensional-map.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>typename T</type>
+      </param>
+      <param>
+        <type>bool</type>
+        <declname>track_inverted</declname>
+        <defname>track_inverted</defname>
+        <defval>true</defval>
+      </param>
+      <param>
+        <type>size_t</type>
+        <declname>MAX_MATRIX_SIZE</declname>
+        <defname>MAX_MATRIX_SIZE</defname>
+        <defval>50&apos;000&apos;000</defval>
+      </param>
+    </templateparamlist>
+    <sectiondef kind="public-type">
+      <memberdef kind="typedef" id="classmata_1_1utils_1_1TwoDimensionalMap_1a326674a4b0c63bebcab8c14f2eec3a86" prot="public" static="no">
+        <type>std::unordered_map&lt; std::pair&lt; T, T &gt;, T &gt;</type>
+        <definition>using Map =  std::unordered_map&lt;std::pair&lt;T, T&gt;, T&gt;</definition>
+        <argsstring></argsstring>
+        <name>Map</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::Map</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="33" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="33" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="classmata_1_1utils_1_1TwoDimensionalMap_1a751069dc1d1137566f0a7799bafeecc7" prot="public" static="no">
+        <type>std::vector&lt; std::vector&lt; T &gt; &gt;</type>
+        <definition>using MatrixStorage =  std::vector&lt;std::vector&lt;T&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>MatrixStorage</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::MatrixStorage</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="34" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="classmata_1_1utils_1_1TwoDimensionalMap_1aed83b934c27e3d726491dd1a1f5442a5" prot="public" static="no">
+        <type>std::vector&lt; std::unordered_map&lt; T, T &gt; &gt;</type>
+        <definition>using VecMapStorage =  std::vector&lt;std::unordered_map&lt;T, T&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>VecMapStorage</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::VecMapStorage</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="35" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="35" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="classmata_1_1utils_1_1TwoDimensionalMap_1a8a12c600903489a8ebcc400c8e51c156" prot="public" static="no">
+        <type>std::vector&lt; T &gt;</type>
+        <definition>using InvertedStorage =  std::vector&lt;T&gt;</definition>
+        <argsstring></argsstring>
+        <name>InvertedStorage</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::InvertedStorage</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="36" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="36" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1a66d807abbdf6e5d165b00c4a3b2a3d67" prot="private" static="no" mutable="no">
+        <type>const bool</type>
+        <definition>const bool is_large</definition>
+        <argsstring></argsstring>
+        <name>is_large</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::is_large</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="117" column="16" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="117" bodyend="-1"/>
+        <referencedby refid="classmata_1_1utils_1_1TwoDimensionalMap_1af935e042d6212dd24be4848e0c689345" compoundref="two-dimensional-map_8hh" startline="66" endline="76">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::get</referencedby>
+        <referencedby refid="classmata_1_1utils_1_1TwoDimensionalMap_1aacddb220ca8b46e27bf8be72f61ca777" compoundref="two-dimensional-map_8hh" startline="84" endline="96">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::insert</referencedby>
+        <referencedby refid="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a" compoundref="two-dimensional-map_8hh" startline="43" endline="58">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::TwoDimensionalMap</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1a700c4d5df2a2f2acb7105d1307714bd2" prot="private" static="no" mutable="no">
+        <type>const size_t</type>
+        <definition>const size_t first_dim_size</definition>
+        <argsstring></argsstring>
+        <name>first_dim_size</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::first_dim_size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="118" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="118" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1aa5fcccabccd02b1f8c1d874d26f30de5" prot="private" static="no" mutable="no">
+        <type>const size_t</type>
+        <definition>const size_t second_dim_size</definition>
+        <argsstring></argsstring>
+        <name>second_dim_size</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::second_dim_size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="119" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="119" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1a18b6ff7afc8e50dfea7c892c974a709f" prot="private" static="no" mutable="no">
+        <type><ref refid="classmata_1_1utils_1_1TwoDimensionalMap_1a751069dc1d1137566f0a7799bafeecc7" kindref="member">MatrixStorage</ref></type>
+        <definition>MatrixStorage matrix_storage</definition>
+        <argsstring></argsstring>
+        <name>matrix_storage</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::matrix_storage</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="120" column="19" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="120" bodyend="120"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1a28b974ef812629992e8ca74edd583aa9" prot="private" static="no" mutable="no">
+        <type>std::vector&lt; std::unordered_map&lt; T, T &gt; &gt;</type>
+        <definition>std::vector&lt;std::unordered_map&lt;T, T&gt; &gt; vec_map_storage</definition>
+        <argsstring></argsstring>
+        <name>vec_map_storage</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::vec_map_storage</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="121" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="121" bodyend="121"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1a0606a218728f5377cc06f49236121a1a" prot="private" static="no" mutable="no">
+        <type><ref refid="classmata_1_1utils_1_1TwoDimensionalMap_1a8a12c600903489a8ebcc400c8e51c156" kindref="member">InvertedStorage</ref></type>
+        <definition>InvertedStorage first_dim_inverted</definition>
+        <argsstring></argsstring>
+        <name>first_dim_inverted</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::first_dim_inverted</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="122" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="122" bodyend="122"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1TwoDimensionalMap_1a54e0dc74704660fbcd96aecde4971cd4" prot="private" static="no" mutable="no">
+        <type><ref refid="classmata_1_1utils_1_1TwoDimensionalMap_1a8a12c600903489a8ebcc400c8e51c156" kindref="member">InvertedStorage</ref></type>
+        <definition>InvertedStorage second_dim_inverted</definition>
+        <argsstring></argsstring>
+        <name>second_dim_inverted</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::second_dim_inverted</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="123" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="123" bodyend="123"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>TwoDimensionalMap</definition>
+        <argsstring>(const size_t first_dim_size, const size_t second_dim_size)</argsstring>
+        <name>TwoDimensionalMap</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::TwoDimensionalMap</qualifiedname>
+        <param>
+          <type>const size_t</type>
+          <declname>first_dim_size</declname>
+        </param>
+        <param>
+          <type>const size_t</type>
+          <declname>second_dim_size</declname>
+        </param>
+        <briefdescription>
+<para>Constructor for <ref refid="classmata_1_1utils_1_1TwoDimensionalMap" kindref="compound">TwoDimensionalMap</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>first_dim_size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Size of the first dimension. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>second_dim_size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Size of the second dimension. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="43" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="43" bodyend="58"/>
+        <references refid="classmata_1_1utils_1_1TwoDimensionalMap_1a66d807abbdf6e5d165b00c4a3b2a3d67" compoundref="two-dimensional-map_8hh" startline="117">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::is_large</references>
+        <references refid="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a" compoundref="two-dimensional-map_8hh" startline="43" endline="58">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::TwoDimensionalMap</references>
+        <referencedby refid="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a" compoundref="two-dimensional-map_8hh" startline="43" endline="58">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::TwoDimensionalMap</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1TwoDimensionalMap_1af935e042d6212dd24be4848e0c689345" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get</definition>
+        <argsstring>(const T first, const T second) const</argsstring>
+        <name>get</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::get</qualifiedname>
+        <param>
+          <type>const T</type>
+          <declname>first</declname>
+        </param>
+        <param>
+          <type>const T</type>
+          <declname>second</declname>
+        </param>
+        <briefdescription>
+<para>Get the value associated with a pair of keys. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>first</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First key. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>second</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second key. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The value associated with the pair, or std::numeric_limits&lt;T&gt;::max() if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="66" column="7" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="66" bodyend="76"/>
+        <references refid="classmata_1_1utils_1_1TwoDimensionalMap_1a66d807abbdf6e5d165b00c4a3b2a3d67" compoundref="two-dimensional-map_8hh" startline="117">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::is_large</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1TwoDimensionalMap_1aacddb220ca8b46e27bf8be72f61ca777" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert</definition>
+        <argsstring>(const T first, const T second, const T value)</argsstring>
+        <name>insert</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::insert</qualifiedname>
+        <param>
+          <type>const T</type>
+          <declname>first</declname>
+        </param>
+        <param>
+          <type>const T</type>
+          <declname>second</declname>
+        </param>
+        <param>
+          <type>const T</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Insert a value associated with a pair of keys. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>first</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First key. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>second</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second key. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Value to associate with the pair. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="84" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="84" bodyend="96"/>
+        <references refid="classmata_1_1utils_1_1TwoDimensionalMap_1a66d807abbdf6e5d165b00c4a3b2a3d67" compoundref="two-dimensional-map_8hh" startline="117">TwoDimensionalMap&lt; T, track_inverted, MAX_MATRIX_SIZE &gt;::is_large</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1TwoDimensionalMap_1a0aa3d2e818b4851935792f8523e60d2a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get_first_inverted</definition>
+        <argsstring>(const T value) const</argsstring>
+        <name>get_first_inverted</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::get_first_inverted</qualifiedname>
+        <param>
+          <type>const T</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Get the first inverted index for a <computeroutput>value</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is only available if track_inverted is true. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="102" column="7" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="102" bodyend="105"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1TwoDimensionalMap_1abfb4c7c6e9d71d6aac6091d799437569" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get_second_inverted</definition>
+        <argsstring>(const T value) const</argsstring>
+        <name>get_second_inverted</name>
+        <qualifiedname>mata::utils::TwoDimensionalMap::get_second_inverted</qualifiedname>
+        <param>
+          <type>const T</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Get the second inverted index for a <computeroutput>value</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is only available if track_inverted is true. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="111" column="7" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="111" bodyend="114"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A two-dimensional map that can be used to store pairs of values and their associated value. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This class can handle both small and large maps efficiently.</para>
+<para>The largest matrix of pairs of we are brave enough to allocate is 50&apos;000&apos;000 for 8 Byte values. So ten million cells is close to 100 MB. If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (vec_map_storage). The unordered_map seems to be about twice slower.</para>
+<para><parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+<parametername>T</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Type of the values stored in the map. Must be an unsigned type. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>track_inverted</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to track inverted indices for the first and second dimensions. To use this feature correctly, the mapping has to be reversible. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>MAX_MATRIX_SIZE</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Maximum size of the matrix before switching to vector of unordered maps. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" line="29" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/two-dimensional-map.hh" bodystart="29" bodyend="125"/>
+    <listofallmembers>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a0606a218728f5377cc06f49236121a1a" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>first_dim_inverted</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a700c4d5df2a2f2acb7105d1307714bd2" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>first_dim_size</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1af935e042d6212dd24be4848e0c689345" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>get</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a0aa3d2e818b4851935792f8523e60d2a" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>get_first_inverted</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1abfb4c7c6e9d71d6aac6091d799437569" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>get_second_inverted</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1aacddb220ca8b46e27bf8be72f61ca777" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>insert</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a8a12c600903489a8ebcc400c8e51c156" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>InvertedStorage</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a66d807abbdf6e5d165b00c4a3b2a3d67" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>is_large</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a326674a4b0c63bebcab8c14f2eec3a86" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>Map</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a18b6ff7afc8e50dfea7c892c974a709f" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>matrix_storage</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a751069dc1d1137566f0a7799bafeecc7" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>MatrixStorage</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a54e0dc74704660fbcd96aecde4971cd4" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>second_dim_inverted</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1aa5fcccabccd02b1f8c1d874d26f30de5" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>second_dim_size</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1adc742692d2129ca040aa917074d52a4a" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>TwoDimensionalMap</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1a28b974ef812629992e8ca74edd583aa9" prot="private" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>vec_map_storage</name></member>
+      <member refid="classmata_1_1utils_1_1TwoDimensionalMap_1aed83b934c27e3d726491dd1a1f5442a5" prot="public" virt="non-virtual"><scope>mata::utils::TwoDimensionalMap</scope><name>VecMapStorage</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

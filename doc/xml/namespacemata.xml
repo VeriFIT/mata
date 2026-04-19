@@ -1,0 +1,248 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata" kind="namespace" language="C++">
+    <compoundname>mata</compoundname>
+    <innerclass refid="classmata_1_1Alphabet" prot="public">mata::Alphabet</innerclass>
+    <innerclass refid="classmata_1_1BoolVector" prot="public">mata::BoolVector</innerclass>
+    <innerclass refid="structmata_1_1ClosedSet" prot="public">mata::ClosedSet</innerclass>
+    <innerclass refid="classmata_1_1EnumAlphabet" prot="public">mata::EnumAlphabet</innerclass>
+    <innerclass refid="classmata_1_1FormulaGraph" prot="public">mata::FormulaGraph</innerclass>
+    <innerclass refid="structmata_1_1FormulaNode" prot="public">mata::FormulaNode</innerclass>
+    <innerclass refid="classmata_1_1IntAlphabet" prot="public">mata::IntAlphabet</innerclass>
+    <innerclass refid="classmata_1_1IntermediateAut" prot="public">mata::IntermediateAut</innerclass>
+    <innerclass refid="classmata_1_1Mintermization" prot="public">mata::Mintermization</innerclass>
+    <innerclass refid="classmata_1_1OnTheFlyAlphabet" prot="public">mata::OnTheFlyAlphabet</innerclass>
+    <innernamespace refid="namespacemata_1_1applications">mata::applications</innernamespace>
+    <innernamespace refid="namespacemata_1_1nfa">mata::nfa</innernamespace>
+    <innernamespace refid="namespacemata_1_1nft">mata::nft</innernamespace>
+    <innernamespace refid="namespacemata_1_1parser">mata::parser</innernamespace>
+    <innernamespace refid="namespacemata_1_1utils">mata::utils</innernamespace>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="namespacemata_1abae2e619c22853c3329748e827d9414a" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>ClosedSetType</name>
+        <qualifiedname>mata::ClosedSetType</qualifiedname>
+        <enumvalue id="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3" prot="public">
+          <name>upward_closed_set</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="namespacemata_1abae2e619c22853c3329748e827d9414aa9306b42da533d2c4f656c2138ef30b00" prot="public">
+          <name>downward_closed_set</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="63" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="63" bodyend="63"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" prot="public" static="no">
+        <type>unsigned</type>
+        <definition>using Symbol =  unsigned</definition>
+        <argsstring></argsstring>
+        <name>Symbol</name>
+        <qualifiedname>mata::Symbol</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="16" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="16" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" prot="public" static="no">
+        <type>std::vector&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt;</type>
+        <definition>using Word =  std::vector&lt;Symbol&gt;</definition>
+        <argsstring></argsstring>
+        <name>Word</name>
+        <qualifiedname>mata::Word</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="17" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="17" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" prot="public" static="no">
+        <type>std::vector&lt; std::string &gt;</type>
+        <definition>using WordName =  std::vector&lt;std::string&gt;</definition>
+        <argsstring></argsstring>
+        <name>WordName</name>
+        <qualifiedname>mata::WordName</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="18" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="18" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1aa9666d365861fc21a52d3639aef76d17" prot="public" static="no">
+        <templateparamlist>
+          <param>
+            <type>typename T</type>
+          </param>
+        </templateparamlist>
+        <type><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector</ref>&lt; T &gt;</type>
+        <definition>using OrdVec =  mata::utils::OrdVector&lt;T&gt;</definition>
+        <argsstring></argsstring>
+        <name>OrdVec</name>
+        <qualifiedname>mata::OrdVec</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="60" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="60" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="namespacemata_1ae616a42f5bbff8b0a18d7175996ee832" prot="public" static="no" extern="yes" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned LOG_VERBOSITY</definition>
+        <argsstring></argsstring>
+        <name>LOG_VERBOSITY</name>
+        <qualifiedname>mata::LOG_VERBOSITY</qualifiedname>
+        <briefdescription>
+<para>log verbosity </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="98" column="17" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="98" declcolumn="17"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacemata_1ab3a9a2f6a07120bd888cc20580a0fbb3" prot="public" static="no" extern="yes" mutable="no">
+        <type>const std::string</type>
+        <definition>const std::string g_GIT_SHA1</definition>
+        <argsstring></argsstring>
+        <name>g_GIT_SHA1</name>
+        <qualifiedname>mata::g_GIT_SHA1</qualifiedname>
+        <briefdescription>
+<para>git sha </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="101" column="26" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="101" declcolumn="26"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1a4da1dc4063c3a7abe947f2b86920b4cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref></type>
+        <definition>Word encode_word_utf8</definition>
+        <argsstring>(const Word &amp;word)</argsstring>
+        <name>encode_word_utf8</name>
+        <qualifiedname>mata::encode_word_utf8</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>word</declname>
+        </param>
+        <briefdescription>
+<para>Encode a word using UTF-8 encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">word</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The word to encode. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The UTF-8 encoded word. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="453" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" declline="453" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1a3481bf9f6a17bbfce374c302e5f1e477" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref></type>
+        <definition>Word decode_word_utf8</definition>
+        <argsstring>(const Word &amp;word)</argsstring>
+        <name>decode_word_utf8</name>
+        <qualifiedname>mata::decode_word_utf8</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>word</declname>
+        </param>
+        <briefdescription>
+<para>Decode a word using UTF-8 encoding. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">word</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The word to decode. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The UTF-8 decoded word. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="461" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" declline="461" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1a0ac835fe0b85dc7987a4117cf3d20986" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename T</type>
+          </param>
+        </templateparamlist>
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const ClosedSet&lt; T &gt; &amp;cs)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>mata::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref>&lt; T &gt; &amp;</type>
+          <declname>cs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="173" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="173" bodyend="188" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" declline="66" declcolumn="13"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Main namespace including structs and algorithms for all automata. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>In particular, this includes:<orderedlist>
+<listitem><para>Alphabets,</para>
+</listitem><listitem><para>Formula graphs and nodes,</para>
+</listitem><listitem><para><ref refid="classmata_1_1Mintermization" kindref="compound">Mintermization</ref>,</para>
+</listitem><listitem><para>Closed sets. </para>
+</listitem></orderedlist>
+</para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="14" column="1"/>
+  </compounddef>
+</doxygen>

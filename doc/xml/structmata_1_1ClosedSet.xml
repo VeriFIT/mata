@@ -1,0 +1,814 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1ClosedSet" kind="struct" language="C++" prot="public">
+    <compoundname>mata::ClosedSet</compoundname>
+    <includes refid="closed-set_8hh" local="no">closed-set.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>typename T</type>
+      </param>
+    </templateparamlist>
+    <sectiondef kind="public-type">
+      <memberdef kind="typedef" id="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" prot="public" static="no">
+        <type><ref refid="namespacemata_1aa9666d365861fc21a52d3639aef76d17" kindref="member">OrdVec</ref>&lt; T &gt;</type>
+        <definition>using Node =  OrdVec&lt;T&gt;</definition>
+        <argsstring></argsstring>
+        <name>Node</name>
+        <qualifiedname>mata::ClosedSet::Node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="77" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="77" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" prot="public" static="no">
+        <type><ref refid="namespacemata_1aa9666d365861fc21a52d3639aef76d17" kindref="member">OrdVec</ref>&lt; <ref refid="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" kindref="member">Node</ref> &gt;</type>
+        <definition>using Nodes =  OrdVec&lt;Node&gt;</definition>
+        <argsstring></argsstring>
+        <name>Nodes</name>
+        <qualifiedname>mata::ClosedSet::Nodes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="78" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="78" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" prot="private" static="no" mutable="no">
+        <type><ref refid="namespacemata_1abae2e619c22853c3329748e827d9414a" kindref="member">ClosedSetType</ref></type>
+        <definition>ClosedSetType type_</definition>
+        <argsstring></argsstring>
+        <name>type_</name>
+        <qualifiedname>mata::ClosedSet::type_</qualifiedname>
+        <initializer>{ <ref refid="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3" kindref="member">ClosedSetType::upward_closed_set</ref> }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="82" column="22" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="82" bodyend="82"/>
+        <referencedby refid="structmata_1_1ClosedSet_1ac756e6c61d908a68e2c06c8252e6f7f7" compoundref="closed-set_8hh" startline="90" endline="90">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" compoundref="closed-set_8hh" startline="100" endline="104">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a664c38a5c13bc4b4a68556ccfa1ab63a" compoundref="closed-set_8hh" startline="107" endline="111">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" compoundref="closed-set_8hh" startline="93" endline="97">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aa8d9ace4d08b9f29bd38a28f554057ad" compoundref="closed-set_8hh" startline="363" endline="432">ClosedSet&lt; T &gt;::complement</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a8b030162112b25f4233699858729218d" compoundref="closed-set_8hh" startline="197" endline="213">ClosedSet&lt; T &gt;::contains</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1af50ad7a751542ac64b6be1555c251104" compoundref="closed-set_8hh" startline="253" endline="303">ClosedSet&lt; T &gt;::insert</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aaa3c5f16774752aaf6afbd183d57905f" compoundref="closed-set_8hh" startline="327" endline="354">ClosedSet&lt; T &gt;::intersection</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a99cbfb62684b9756b6418f720ef2f95f" compoundref="closed-set_8hh" startline="144" endline="144">ClosedSet&lt; T &gt;::is_downward_closed</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aa2f11b0a8f8b5aa1b41c607bbf757754" compoundref="closed-set_8hh" startline="143" endline="143">ClosedSet&lt; T &gt;::is_upward_closed</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a4f5acf9c316718675c5e334e65feaf7d" compoundref="closed-set_8hh" startline="146" endline="146">ClosedSet&lt; T &gt;::type</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a23b824ab2821cf24b7bb8b73bed22293" compoundref="closed-set_8hh" startline="147" endline="147">ClosedSet&lt; T &gt;::type</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" prot="private" static="no" mutable="no">
+        <type>T</type>
+        <definition>T min_val_</definition>
+        <argsstring></argsstring>
+        <name>min_val_</name>
+        <qualifiedname>mata::ClosedSet::min_val_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="83" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="83" bodyend="-1"/>
+        <referencedby refid="structmata_1_1ClosedSet_1ac756e6c61d908a68e2c06c8252e6f7f7" compoundref="closed-set_8hh" startline="90" endline="90">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" compoundref="closed-set_8hh" startline="100" endline="104">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a664c38a5c13bc4b4a68556ccfa1ab63a" compoundref="closed-set_8hh" startline="107" endline="111">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" compoundref="closed-set_8hh" startline="93" endline="97">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1ab0c22d383fa19e56c3b4663da15fbcd1" compoundref="closed-set_8hh" startline="152" endline="152">ClosedSet&lt; T &gt;::get_min</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1abe9ee54ea92f06d2333df7f277dc6842" compoundref="closed-set_8hh" startline="153" endline="153">ClosedSet&lt; T &gt;::get_min</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aaa3c5f16774752aaf6afbd183d57905f" compoundref="closed-set_8hh" startline="327" endline="354">ClosedSet&lt; T &gt;::intersection</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" prot="private" static="no" mutable="no">
+        <type>T</type>
+        <definition>T max_val_</definition>
+        <argsstring></argsstring>
+        <name>max_val_</name>
+        <qualifiedname>mata::ClosedSet::max_val_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="84" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="84" bodyend="-1"/>
+        <referencedby refid="structmata_1_1ClosedSet_1ac756e6c61d908a68e2c06c8252e6f7f7" compoundref="closed-set_8hh" startline="90" endline="90">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" compoundref="closed-set_8hh" startline="100" endline="104">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a664c38a5c13bc4b4a68556ccfa1ab63a" compoundref="closed-set_8hh" startline="107" endline="111">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" compoundref="closed-set_8hh" startline="93" endline="97">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aa8d9ace4d08b9f29bd38a28f554057ad" compoundref="closed-set_8hh" startline="363" endline="432">ClosedSet&lt; T &gt;::complement</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a872c3ff6a667b43cc244de70138b9f52" compoundref="closed-set_8hh" startline="155" endline="155">ClosedSet&lt; T &gt;::get_max</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a52ca41f9d812899820ce292c86680387" compoundref="closed-set_8hh" startline="156" endline="156">ClosedSet&lt; T &gt;::get_max</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aaa3c5f16774752aaf6afbd183d57905f" compoundref="closed-set_8hh" startline="327" endline="354">ClosedSet&lt; T &gt;::intersection</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1ClosedSet_1adf2ce2c1e6bf4fa71466ba4563b15453" prot="private" static="no" mutable="no">
+        <type><ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref></type>
+        <definition>Nodes antichain_</definition>
+        <argsstring></argsstring>
+        <name>antichain_</name>
+        <qualifiedname>mata::ClosedSet::antichain_</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="85" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="85" bodyend="85"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1ac756e6c61d908a68e2c06c8252e6f7f7" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>ClosedSet</definition>
+        <argsstring>()</argsstring>
+        <name>ClosedSet</name>
+        <qualifiedname>mata::ClosedSet::ClosedSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="90" column="8" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="90" bodyend="90"/>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>ClosedSet</definition>
+        <argsstring>(const ClosedSetType type, const T &amp;min_val, const T &amp;max_val, const T &amp;value)</argsstring>
+        <name>ClosedSet</name>
+        <qualifiedname>mata::ClosedSet::ClosedSet</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1abae2e619c22853c3329748e827d9414a" kindref="member">ClosedSetType</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>min_val</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>max_val</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="93" column="8" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="93" bodyend="97"/>
+        <references refid="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" compoundref="closed-set_8hh" startline="93" endline="97">ClosedSet&lt; T &gt;::ClosedSet</references>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" compoundref="closed-set_8hh" startline="93" endline="97">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>ClosedSet</definition>
+        <argsstring>(ClosedSetType type, const T &amp;min_val, const T &amp;max_val, const Node &amp;node)</argsstring>
+        <name>ClosedSet</name>
+        <qualifiedname>mata::ClosedSet::ClosedSet</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1abae2e619c22853c3329748e827d9414a" kindref="member">ClosedSetType</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>min_val</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>max_val</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" kindref="member">Node</ref> &amp;</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="100" column="8" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="100" bodyend="104"/>
+        <references refid="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" compoundref="closed-set_8hh" startline="100" endline="104">ClosedSet&lt; T &gt;::ClosedSet</references>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <referencedby refid="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" compoundref="closed-set_8hh" startline="100" endline="104">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a664c38a5c13bc4b4a68556ccfa1ab63a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>ClosedSet</definition>
+        <argsstring>(const ClosedSetType type, const T &amp;min_val, const T &amp;max_val, const Nodes &amp;antichain=Nodes())</argsstring>
+        <name>ClosedSet</name>
+        <qualifiedname>mata::ClosedSet::ClosedSet</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1abae2e619c22853c3329748e827d9414a" kindref="member">ClosedSetType</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>min_val</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>max_val</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref> &amp;</type>
+          <declname>antichain</declname>
+          <defval><ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref>()</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="107" column="8" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="107" bodyend="111"/>
+        <references refid="structmata_1_1ClosedSet_1a904eead46944b85dc8ba8df4f91aca19" compoundref="closed-set_8hh" startline="163" endline="163">ClosedSet&lt; T &gt;::insert</references>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a35eebeeab9453ab8e0549fb1f25d8e64" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator==</definition>
+        <argsstring>(const ClosedSet&lt; T &gt; &amp;rhs) const =default</argsstring>
+        <name>operator==</name>
+        <qualifiedname>mata::ClosedSet::operator==</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref>&lt; T &gt; &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Two closed sets are equivalent iff their type, borders and corresponding antichains are the same. They are not equivalent otherwise. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="115" column="13"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a6744ff402b1be5370f38647c895bbd81" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator&lt;=</definition>
+        <argsstring>(const ClosedSet&lt; T &gt; &amp;rhs) const</argsstring>
+        <name>operator&lt;=</name>
+        <qualifiedname>mata::ClosedSet::operator&lt;=</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref>&lt; T &gt; &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="121" column="9" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="121" bodyend="126"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a62a335304d713b23dcbcab9bce406081" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator&gt;=</definition>
+        <argsstring>(const ClosedSet&lt; T &gt; &amp;rhs) const</argsstring>
+        <name>operator&gt;=</name>
+        <qualifiedname>mata::ClosedSet::operator&gt;=</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref>&lt; T &gt; &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="133" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="133" bodyend="138"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1aa2f11b0a8f8b5aa1b41c607bbf757754" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_upward_closed</definition>
+        <argsstring>() const</argsstring>
+        <name>is_upward_closed</name>
+        <qualifiedname>mata::ClosedSet::is_upward_closed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="143" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="143" bodyend="143"/>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3">mata::upward_closed_set</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a99cbfb62684b9756b6418f720ef2f95f" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_downward_closed</definition>
+        <argsstring>() const</argsstring>
+        <name>is_downward_closed</name>
+        <qualifiedname>mata::ClosedSet::is_downward_closed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="144" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="144" bodyend="144"/>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aa9306b42da533d2c4f656c2138ef30b00">mata::downward_closed_set</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a4f5acf9c316718675c5e334e65feaf7d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="namespacemata_1abae2e619c22853c3329748e827d9414a" kindref="member">ClosedSetType</ref></type>
+        <definition>ClosedSetType type</definition>
+        <argsstring>()</argsstring>
+        <name>type</name>
+        <qualifiedname>mata::ClosedSet::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="146" column="23" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="146" bodyend="146"/>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a23b824ab2821cf24b7bb8b73bed22293" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="namespacemata_1abae2e619c22853c3329748e827d9414a" kindref="member">ClosedSetType</ref></type>
+        <definition>ClosedSetType type</definition>
+        <argsstring>() const</argsstring>
+        <name>type</name>
+        <qualifiedname>mata::ClosedSet::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="147" column="23" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="147" bodyend="147"/>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a218257a0b3cba868d94f04f29b154202" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref></type>
+        <definition>Nodes antichain</definition>
+        <argsstring>()</argsstring>
+        <name>antichain</name>
+        <qualifiedname>mata::ClosedSet::antichain</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="149" column="15" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="149" bodyend="149"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a3bf2eb6c48adbc51434839b6694de01c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref></type>
+        <definition>Nodes antichain</definition>
+        <argsstring>() const</argsstring>
+        <name>antichain</name>
+        <qualifiedname>mata::ClosedSet::antichain</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="150" column="15" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="150" bodyend="150"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1ab0c22d383fa19e56c3b4663da15fbcd1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get_min</definition>
+        <argsstring>()</argsstring>
+        <name>get_min</name>
+        <qualifiedname>mata::ClosedSet::get_min</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="152" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="152" bodyend="152"/>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1abe9ee54ea92f06d2333df7f277dc6842" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get_min</definition>
+        <argsstring>() const</argsstring>
+        <name>get_min</name>
+        <qualifiedname>mata::ClosedSet::get_min</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="153" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="153" bodyend="153"/>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a872c3ff6a667b43cc244de70138b9f52" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get_max</definition>
+        <argsstring>()</argsstring>
+        <name>get_max</name>
+        <qualifiedname>mata::ClosedSet::get_max</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="155" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="155" bodyend="155"/>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a52ca41f9d812899820ce292c86680387" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>T</type>
+        <definition>T get_max</definition>
+        <argsstring>() const</argsstring>
+        <name>get_max</name>
+        <qualifiedname>mata::ClosedSet::get_max</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="156" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="156" bodyend="156"/>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a8b030162112b25f4233699858729218d" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool contains</definition>
+        <argsstring>(const Node &amp;node) const</argsstring>
+        <name>contains</name>
+        <qualifiedname>mata::ClosedSet::contains</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" kindref="member">Node</ref> &amp;</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>This function decides whether a set of elements is part of the closed set by subset-compraring the input with all elements of the antichain. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>decides whether the closed set contains a given element <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a given ordered vector of elements of the type T </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true iff the given ordered vector belongs to the current closed set </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="158" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="197" bodyend="213"/>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aa9306b42da533d2c4f656c2138ef30b00">mata::downward_closed_set</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3">mata::upward_closed_set</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a1a4ca73f11d8a3222822445e008e7928" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool contains</definition>
+        <argsstring>(const Nodes &amp;nodes) const</argsstring>
+        <name>contains</name>
+        <qualifiedname>mata::ClosedSet::contains</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref> &amp;</type>
+          <declname>nodes</declname>
+        </param>
+        <briefdescription>
+<para>This function decides whether a set of sets of elements is a part of the closed set by subset-compraring the input with all elements of the antichain. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>decides whether the closed set contains a given set of sets of elements <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a given ordered vector of ordered vectors of elements of the type T </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true iff the given ordered vector of ordered vectors belongs to the current closed set </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="159" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="222" bodyend="229"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a774856271d28496c800ac1b5b46fa62e" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool in_interval</definition>
+        <argsstring>(const Node &amp;node) const</argsstring>
+        <name>in_interval</name>
+        <qualifiedname>mata::ClosedSet::in_interval</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" kindref="member">Node</ref> &amp;</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>This function decides whether a given ordered vector of elements of the datatype T belongs to the discrete interval of the current closed set. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>decides whether the given vector respects the borders <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a given ordered vector of elements of the type T which will be inspected </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true iff the given ordered vector respects the borders </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="161" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="238" bodyend="245"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a904eead46944b85dc8ba8df4f91aca19" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert</definition>
+        <argsstring>(const T &amp;el)</argsstring>
+        <name>insert</name>
+        <qualifiedname>mata::ClosedSet::insert</qualifiedname>
+        <param>
+          <type>const T &amp;</type>
+          <declname>el</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="163" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="163" bodyend="163"/>
+        <referencedby refid="structmata_1_1ClosedSet_1a664c38a5c13bc4b4a68556ccfa1ab63a" compoundref="closed-set_8hh" startline="107" endline="111">ClosedSet&lt; T &gt;::ClosedSet</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1aa8d9ace4d08b9f29bd38a28f554057ad" compoundref="closed-set_8hh" startline="363" endline="432">ClosedSet&lt; T &gt;::complement</referencedby>
+        <referencedby refid="structmata_1_1ClosedSet_1a78d4b53e54eafc848209c515c677a45c" compoundref="closed-set_8hh" startline="313" endline="319">ClosedSet&lt; T &gt;::set_union</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1af50ad7a751542ac64b6be1555c251104" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert</definition>
+        <argsstring>(const Node &amp;node)</argsstring>
+        <name>insert</name>
+        <qualifiedname>mata::ClosedSet::insert</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" kindref="member">Node</ref> &amp;</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Adds a new element to the closed set. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If the element is already contained in the closed set, the closed set remains unchanged. Otherwise, the antichain will be recomputed.</para>
+<para>inserts a new element to the closed set <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a given node which will be added to the closed set </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="164" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="253" bodyend="303"/>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aa9306b42da533d2c4f656c2138ef30b00">mata::downward_closed_set</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3">mata::upward_closed_set</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a4651c9ce89b7f0868d3398e5256ee1b2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert</definition>
+        <argsstring>(const Nodes &amp;nodes)</argsstring>
+        <name>insert</name>
+        <qualifiedname>mata::ClosedSet::insert</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" kindref="member">Nodes</ref> &amp;</type>
+          <declname>nodes</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="165" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="165" bodyend="165"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1a78d4b53e54eafc848209c515c677a45c" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref></type>
+        <definition>ClosedSet&lt; T &gt; set_union</definition>
+        <argsstring>(const ClosedSet &amp;rhs) const</argsstring>
+        <name>set_union</name>
+        <qualifiedname>mata::ClosedSet::set_union</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Performs an union over two closed sets with the same type and carrier. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function simply adds all the elements of the antichain of the first closed set to the second closed set</para>
+<para>performs an union over closed sets <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a given closed set which will be unioned with the current one </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an union of the given closed sets </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="167" column="19" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="313" bodyend="319"/>
+        <references refid="structmata_1_1ClosedSet_1a904eead46944b85dc8ba8df4f91aca19" compoundref="closed-set_8hh" startline="163" endline="163">ClosedSet&lt; T &gt;::insert</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1aaa3c5f16774752aaf6afbd183d57905f" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref></type>
+        <definition>ClosedSet&lt; T &gt; intersection</definition>
+        <argsstring>(const ClosedSet &amp;rhs) const</argsstring>
+        <name>intersection</name>
+        <qualifiedname>mata::ClosedSet::intersection</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Performs an intersection over two closed sets with the same type and carrier. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>performs an intersection over closed sets <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a given closed set which will be intersectioned with the current one </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an intersection of the given closed sets </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="168" column="19" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="327" bodyend="354"/>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aa9306b42da533d2c4f656c2138ef30b00">mata::downward_closed_set</references>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" compoundref="closed-set_8hh" startline="83">ClosedSet&lt; T &gt;::min_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3">mata::upward_closed_set</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1ClosedSet_1aa8d9ace4d08b9f29bd38a28f554057ad" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref></type>
+        <definition>ClosedSet&lt; T &gt; complement</definition>
+        <argsstring>() const</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::ClosedSet::complement</qualifiedname>
+        <briefdescription>
+<para>Performs a complementation over a closed set. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The result will contain nodes which are not elements of the former closed set. The complement of an upward-closed set is always downward-closed and vice versa.</para>
+<para>performs a complementation over a closed set <simplesect kind="return"><para>a complement of a closed set </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="169" column="19" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="363" bodyend="432"/>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aa9306b42da533d2c4f656c2138ef30b00">mata::downward_closed_set</references>
+        <references refid="structmata_1_1ClosedSet_1a904eead46944b85dc8ba8df4f91aca19" compoundref="closed-set_8hh" startline="163" endline="163">ClosedSet&lt; T &gt;::insert</references>
+        <references refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" compoundref="closed-set_8hh" startline="84">ClosedSet&lt; T &gt;::max_val_</references>
+        <references refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" compoundref="closed-set_8hh" startline="82" endline="82">ClosedSet&lt; T &gt;::type_</references>
+        <references refid="namespacemata_1abae2e619c22853c3329748e827d9414aaf3741a3a095d4bebd9308ae874205cb3">mata::upward_closed_set</references>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="friend">
+      <memberdef kind="friend" id="structmata_1_1ClosedSet_1a6516527f073ea06a80e2b4b3e79b27e8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const ClosedSet&lt; T &gt; &amp;cs)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>mata::ClosedSet::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1ClosedSet" kindref="compound">ClosedSet</ref>&lt; T &gt; &amp;</type>
+          <declname>cs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="141" column="16" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="173" bodyend="188"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Closed set. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>Contains discrete range borders, its type and the corresponding anti-chain. It is necessary to be able to evaluate relation operators &lt;, &lt;=, &gt;, &gt;=, ==, != over instances of this datatype T. <parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+<parametername>T</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Datatype the closed set contains. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>ClosedSet&lt; T &gt;</label>
+        <link refid="structmata_1_1ClosedSet"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>antichain_</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>OrdVector&lt; Node &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+        <childnode refid="3" relation="template-instance">
+          <edgelabel>&lt; Node &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>OrdVector&lt; Key &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" line="76" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/closed-set.hh" bodystart="76" bodyend="170"/>
+    <listofallmembers>
+      <member refid="structmata_1_1ClosedSet_1a218257a0b3cba868d94f04f29b154202" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>antichain</name></member>
+      <member refid="structmata_1_1ClosedSet_1a3bf2eb6c48adbc51434839b6694de01c" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>antichain</name></member>
+      <member refid="structmata_1_1ClosedSet_1adf2ce2c1e6bf4fa71466ba4563b15453" prot="private" virt="non-virtual"><scope>mata::ClosedSet</scope><name>antichain_</name></member>
+      <member refid="structmata_1_1ClosedSet_1ac756e6c61d908a68e2c06c8252e6f7f7" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>ClosedSet</name></member>
+      <member refid="structmata_1_1ClosedSet_1a5a595fb18ca4f98d527aa46e48123ed1" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>ClosedSet</name></member>
+      <member refid="structmata_1_1ClosedSet_1a5a51830a9e5504ff87330e0b9756cd47" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>ClosedSet</name></member>
+      <member refid="structmata_1_1ClosedSet_1a664c38a5c13bc4b4a68556ccfa1ab63a" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>ClosedSet</name></member>
+      <member refid="structmata_1_1ClosedSet_1aa8d9ace4d08b9f29bd38a28f554057ad" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>complement</name></member>
+      <member refid="structmata_1_1ClosedSet_1a8b030162112b25f4233699858729218d" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>contains</name></member>
+      <member refid="structmata_1_1ClosedSet_1a1a4ca73f11d8a3222822445e008e7928" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>contains</name></member>
+      <member refid="structmata_1_1ClosedSet_1a872c3ff6a667b43cc244de70138b9f52" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>get_max</name></member>
+      <member refid="structmata_1_1ClosedSet_1a52ca41f9d812899820ce292c86680387" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>get_max</name></member>
+      <member refid="structmata_1_1ClosedSet_1ab0c22d383fa19e56c3b4663da15fbcd1" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>get_min</name></member>
+      <member refid="structmata_1_1ClosedSet_1abe9ee54ea92f06d2333df7f277dc6842" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>get_min</name></member>
+      <member refid="structmata_1_1ClosedSet_1a774856271d28496c800ac1b5b46fa62e" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>in_interval</name></member>
+      <member refid="structmata_1_1ClosedSet_1a904eead46944b85dc8ba8df4f91aca19" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>insert</name></member>
+      <member refid="structmata_1_1ClosedSet_1af50ad7a751542ac64b6be1555c251104" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>insert</name></member>
+      <member refid="structmata_1_1ClosedSet_1a4651c9ce89b7f0868d3398e5256ee1b2" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>insert</name></member>
+      <member refid="structmata_1_1ClosedSet_1aaa3c5f16774752aaf6afbd183d57905f" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>intersection</name></member>
+      <member refid="structmata_1_1ClosedSet_1a99cbfb62684b9756b6418f720ef2f95f" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>is_downward_closed</name></member>
+      <member refid="structmata_1_1ClosedSet_1aa2f11b0a8f8b5aa1b41c607bbf757754" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>is_upward_closed</name></member>
+      <member refid="structmata_1_1ClosedSet_1acd4ee01241a220cc0444154336159b9f" prot="private" virt="non-virtual"><scope>mata::ClosedSet</scope><name>max_val_</name></member>
+      <member refid="structmata_1_1ClosedSet_1a463f947f0156b32edb890936325852fd" prot="private" virt="non-virtual"><scope>mata::ClosedSet</scope><name>min_val_</name></member>
+      <member refid="structmata_1_1ClosedSet_1a8f804f9d98fa4c12ddec70d2d290a57b" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>Node</name></member>
+      <member refid="structmata_1_1ClosedSet_1a0feb3e0e52dc4da36b8b1c5e8e9248da" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>Nodes</name></member>
+      <member refid="structmata_1_1ClosedSet_1a6516527f073ea06a80e2b4b3e79b27e8" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>operator&lt;&lt;</name></member>
+      <member refid="structmata_1_1ClosedSet_1a6744ff402b1be5370f38647c895bbd81" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>operator&lt;=</name></member>
+      <member refid="structmata_1_1ClosedSet_1a35eebeeab9453ab8e0549fb1f25d8e64" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>operator==</name></member>
+      <member refid="structmata_1_1ClosedSet_1a62a335304d713b23dcbcab9bce406081" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>operator&gt;=</name></member>
+      <member refid="structmata_1_1ClosedSet_1a78d4b53e54eafc848209c515c677a45c" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>set_union</name></member>
+      <member refid="structmata_1_1ClosedSet_1a4f5acf9c316718675c5e334e65feaf7d" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>type</name></member>
+      <member refid="structmata_1_1ClosedSet_1a23b824ab2821cf24b7bb8b73bed22293" prot="public" virt="non-virtual"><scope>mata::ClosedSet</scope><name>type</name></member>
+      <member refid="structmata_1_1ClosedSet_1a5b2fe81975d5b8345fd15e26c9f2abfb" prot="private" virt="non-virtual"><scope>mata::ClosedSet</scope><name>type_</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File ord-vector.hh &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File parser.hh" href="parser_8hh.html" />
+    <link rel="prev" title="File nft.hh" href="nft_8hh.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-ord-vector-hh">
+<h1>File ord-vector.hh<a class="headerlink" href="#file-ord-vector-hh" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utilsE">
+<span id="_CPPv3N4mata5utilsE"></span><span id="_CPPv2N4mata5utilsE"></span><span id="mata::utils"></span><span class="target" id="namespacemata_1_1utils"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">utils</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utilsE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>SparseSet.h Implements a class template of a sparse set of unsigned integers. </p>
+<p>Non-automata-related structures and algorithms.</p>
+<p>
+In particular, this includes:<ol class="lowerroman simple">
+<li><p>Predicates,</p></li>
+<li><p>Ordered Vectors,</p></li>
+<li><p>Iterators,</p></li>
+<li><p>Printers,</p></li>
+<li><p>Other helper functions. </p></li>
+</ol>
+<dl class="simple">
+<dt><strong>Author</strong></dt><dd><p>Sam Griffiths www.computist.xyz <a class="reference external" href="https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a">https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a</a></p>
+</dd>
+</dl>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE">
+<span id="_CPPv3I0EN4mata5utils12are_disjointERKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE"></span><span id="_CPPv2I0EN4mata5utils12are_disjointERKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a45bacd213d85651e04c4b970a4843fa1"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">are_disjoint</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE" title="mata::utils::are_disjoint::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE" title="mata::utils::are_disjoint::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9is_sortedEbRKNSt6vectorI3KeyEE">
+<span id="_CPPv3I0EN4mata5utils9is_sortedERKNSt6vectorI3KeyEE"></span><span id="_CPPv2I0EN4mata5utils9is_sortedERKNSt6vectorI3KeyEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a12d5e11556b2ae3c4f96fb21c9176061"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_sorted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9is_sortedEbRKNSt6vectorI3KeyEE" title="mata::utils::is_sorted::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9is_sortedEbRKNSt6vectorI3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVectorE">
+<span id="_CPPv3I0EN4mata5utils9OrdVectorE"></span><span id="_CPPv2I0EN4mata5utils9OrdVectorE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;ord-vector.hh&gt;</em></div>
+<p>Implementation of a set using ordered vector. </p>
+<p>This class implements the interface of a set (the same interface as std::set) using ordered vector as the underlying data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Key</strong> – Key type: type of the elements contained in the container. Each elements in a set is also its key. </p>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector10VectorTypeE">
+<span id="_CPPv3N4mata5utils9OrdVector10VectorTypeE"></span><span id="_CPPv2N4mata5utils9OrdVector10VectorTypeE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aac33bb63d75375b421dd3fe64d20b33b"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">VectorType</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector10value_typeE">
+<span id="_CPPv3N4mata5utils9OrdVector10value_typeE"></span><span id="_CPPv2N4mata5utils9OrdVector10value_typeE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a5c1df1ab65750946a228fd036417792e"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">value_type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector10value_typeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9size_typeE">
+<span id="_CPPv3N4mata5utils9OrdVector9size_typeE"></span><span id="_CPPv2N4mata5utils9OrdVector9size_typeE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a8560ac5527cd0ed38d71e0e58acc8021"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size_type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9size_typeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector8iteratorE">
+<span id="_CPPv3N4mata5utils9OrdVector8iteratorE"></span><span id="_CPPv2N4mata5utils9OrdVector8iteratorE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a2b8f0ba308c4037e39ec503b9a1e4d0b"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">iterator</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector14const_iteratorE">
+<span id="_CPPv3N4mata5utils9OrdVector14const_iteratorE"></span><span id="_CPPv2N4mata5utils9OrdVector14const_iteratorE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a0b878024ac2eb388b20acaf63eb29780"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">const_iterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_iterator</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector15const_referenceE">
+<span id="_CPPv3N4mata5utils9OrdVector15const_referenceE"></span><span id="_CPPv2N4mata5utils9OrdVector15const_referenceE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a26f1ec9da8d343811868fe6cd475976d"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">const_reference</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">const_reference</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector15const_referenceE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9referenceE">
+<span id="_CPPv3N4mata5utils9OrdVector9referenceE"></span><span id="_CPPv2N4mata5utils9OrdVector9referenceE"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a24e1cc28757f0776d455faa2a92cc094"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reference</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">reference</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9referenceE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorEv">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorEv"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorEv"></span><span id="mata::utils::OrdVector::OrdVector"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a04f45ed0a775dc5ac3625d9b8e9e074a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorERK10VectorType">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorERK10VectorType"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorERK10VectorType"></span><span id="mata::utils::OrdVector::OrdVector__VectorTypeCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aa0f4c5075c313d447c3fb0e525074b85"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERK10VectorType" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorERKNSt3setI3KeyEE">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorERKNSt3setI3KeyEE"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorERKNSt3setI3KeyEE"></span><span id="mata::utils::OrdVector::OrdVector__std::set:Key:CR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a23db888466b41bf2a52ba0d3f533e292"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">set</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERKNSt3setI3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVector9OrdVectorERK1T">
+<span id="_CPPv3I0EN4mata5utils9OrdVector9OrdVectorERK1T"></span><span id="_CPPv2I0EN4mata5utils9OrdVector9OrdVectorERK1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1a4bfb9496a65045c1967533080f4ec76a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorERK1T" title="mata::utils::OrdVector::OrdVector::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorERK1T" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorENSt16initializer_listI3KeyEE">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorENSt16initializer_listI3KeyEE"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorENSt16initializer_listI3KeyEE"></span><span id="mata::utils::OrdVector::OrdVector__std::initializer_list:Key:"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a5dc5c8e272e0b20e659cb2848ea19b93"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">list</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorENSt16initializer_listI3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorERK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorERK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorERK9OrdVector"></span><span id="mata::utils::OrdVector::OrdVector__OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a6335f92d947a38ea3086237f287c4e51"></span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERK9OrdVector" title="mata::utils::OrdVector::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorERR9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorERR9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorERR9OrdVector"></span><span id="mata::utils::OrdVector::OrdVector__OrdVectorRR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1afaa1a1cf418e43276ff2a47b9eea5aed"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERR9OrdVector" title="mata::utils::OrdVector::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERR9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9OrdVectorERK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector9OrdVectorERK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector9OrdVectorERK3Key"></span><span id="mata::utils::OrdVector::OrdVector__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a8f573e83366e2ae1611e481ad9305892"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9OrdVectorERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVector9OrdVectorE13InputIterator13InputIterator">
+<span id="_CPPv3I0EN4mata5utils9OrdVector9OrdVectorE13InputIterator13InputIterator"></span><span id="_CPPv2I0EN4mata5utils9OrdVector9OrdVectorE13InputIterator13InputIterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1aa5eb56f2dd94e186fbefe58263db475d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorE13InputIterator13InputIterator" title="mata::utils::OrdVector::OrdVector::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorE13InputIterator13InputIterator" title="mata::utils::OrdVector::OrdVector::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorE13InputIterator13InputIterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVectoraSERK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVectoraSERK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVectoraSERK9OrdVector"></span><span id="mata::utils::OrdVector::assign-operator__OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a09bc94f737ff9d577bf33031fa9e7d30"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVectoraSERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVectoraSERR9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVectoraSERR9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVectoraSERR9OrdVector"></span><span id="mata::utils::OrdVector::assign-operator__OrdVectorRR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aa5ab385d5b9d0541562e2a37446ef670"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVectoraSERR9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVectorD0Ev">
+<span id="_CPPv3N4mata5utils9OrdVectorD0Ev"></span><span id="_CPPv2N4mata5utils9OrdVectorD0Ev"></span><span id="mata::utils::OrdVector::~OrdVector"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ad2e9358058fb1c050912dadf2e8d4338"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~OrdVector</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVectorD0Ev" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector6insertE8iteratorRK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector6insertE8iteratorRK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector6insertE8iteratorRK3Key"></span><span id="mata::utils::OrdVector::insert__iterator.KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a1e6c7851f422a7bceb5fb5d0840aaf1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="mata::utils::OrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">itr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector6insertE8iteratorRK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IDpEN4mata5utils9OrdVector12emplace_backE9referenceDpRR4Args">
+<span id="_CPPv3IDpEN4mata5utils9OrdVector12emplace_backEDpRR4Args"></span><span id="_CPPv2IDpEN4mata5utils9OrdVector12emplace_backEDpRR4Args"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">Args</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1a4e4627c3c581025a21ea2e400ad582d1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector9referenceE" title="mata::utils::OrdVector::reference"><span class="n"><span class="pre">reference</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">emplace_back</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4IDpEN4mata5utils9OrdVector12emplace_backE9referenceDpRR4Args" title="mata::utils::OrdVector::emplace_back::Args"><span class="n"><span class="pre">Args</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">args</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4IDpEN4mata5utils9OrdVector12emplace_backE9referenceDpRR4Args" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9push_backERK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector9push_backERK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector9push_backERK3Key"></span><span id="mata::utils::OrdVector::push_back__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a1b409dcfa2c3206eea15b5fd8146a387"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector9referenceE" title="mata::utils::OrdVector::reference"><span class="n"><span class="pre">reference</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9push_backERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9push_backERR3Key">
+<span id="_CPPv3N4mata5utils9OrdVector9push_backERR3Key"></span><span id="_CPPv2N4mata5utils9OrdVector9push_backERR3Key"></span><span id="mata::utils::OrdVector::push_back__KeyRR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a9d1ddcfe343bbca49ce21683ec2fd8b9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector9referenceE" title="mata::utils::OrdVector::reference"><span class="n"><span class="pre">reference</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9push_backERR3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector7reserveE6size_t">
+<span id="_CPPv3N4mata5utils9OrdVector7reserveE6size_t"></span><span id="_CPPv2N4mata5utils9OrdVector7reserveE6size_t"></span><span id="mata::utils::OrdVector::reserve__s"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a0eafb81934ad28374eccbff57d839aaa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector7reserveE6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector6resizeE6size_t">
+<span id="_CPPv3N4mata5utils9OrdVector6resizeE6size_t"></span><span id="_CPPv2N4mata5utils9OrdVector6resizeE6size_t"></span><span id="mata::utils::OrdVector::resize__s"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ab6407eb6c692f6cbfe7e5bc0881a3981"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resize</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector6resizeE6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5eraseE14const_iterator">
+<span id="_CPPv3N4mata5utils9OrdVector5eraseE14const_iterator"></span><span id="_CPPv2N4mata5utils9OrdVector5eraseE14const_iterator"></span><span id="mata::utils::OrdVector::erase__const_iterator"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a1e7daca49c123fc215f6f46d6563d766"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="mata::utils::OrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector5eraseE14const_iterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5eraseE14const_iterator14const_iterator">
+<span id="_CPPv3N4mata5utils9OrdVector5eraseE14const_iterator14const_iterator"></span><span id="_CPPv2N4mata5utils9OrdVector5eraseE14const_iterator14const_iterator"></span><span id="mata::utils::OrdVector::erase__const_iterator.const_iterator"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aa8eceb0af5b4d14aefd44611cd2c9a4b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="mata::utils::OrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector5eraseE14const_iterator14const_iterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector6insertERK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector6insertERK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector6insertERK3Key"></span><span id="mata::utils::OrdVector::insert__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a6b58223ba71b3b6dd067140dbd2ce9cd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector6insertERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector6insertERK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector6insertERK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector6insertERK9OrdVector"></span><span id="mata::utils::OrdVector::insert__OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ae22aac51ae3a8b735324ff19cf3f6e68"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector6insertERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5clearEv">
+<span id="_CPPv3N4mata5utils9OrdVector5clearEv"></span><span id="_CPPv2N4mata5utils9OrdVector5clearEv"></span><span id="mata::utils::OrdVector::clear"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ac8bb3912a3ce86b15842e79d0b421204"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector5clearEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector4sizeEv">
+<span id="_CPPv3NK4mata5utils9OrdVector4sizeEv"></span><span id="_CPPv2NK4mata5utils9OrdVector4sizeEv"></span><span id="mata::utils::OrdVector::sizeC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a7fd4678662f9e4d095477fecf01935df"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector4sizeEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector5countERK3Key">
+<span id="_CPPv3NK4mata5utils9OrdVector5countERK3Key"></span><span id="_CPPv2NK4mata5utils9OrdVector5countERK3Key"></span><span id="mata::utils::OrdVector::count__KeyCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1abf54c2e1df459f04b8f2f1cb8a3ff75f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector5countERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector10differenceERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVector10differenceERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVector10differenceERK9OrdVector"></span><span id="mata::utils::OrdVector::difference__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a76b66e225ae187f3f69d870fd07080d7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">difference</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Compute set difference as <code class="docutils literal notranslate"><span class="pre">this</span></code> minus <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rhs</strong> – Other vector with symbols to be excluded. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> minus <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector12intersectionERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVector12intersectionERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVector12intersectionERK9OrdVector"></span><span id="mata::utils::OrdVector::intersection__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ae9ca992a9ffb1b23ae1e092341156fd8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">intersection</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector12intersectionERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector4findERK3Key">
+<span id="_CPPv3NK4mata5utils9OrdVector4findERK3Key"></span><span id="_CPPv2NK4mata5utils9OrdVector4findERK3Key"></span><span id="mata::utils::OrdVector::find__KeyCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1abadf80fcb86959257da0484986e85cd6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector4findERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector4findERK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector4findERK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector4findERK3Key"></span><span id="mata::utils::OrdVector::find__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a68bbb7a71d3b8e0ce426c9ae40b0e7c1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="mata::utils::OrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector4findERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector5frontEv">
+<span id="_CPPv3NK4mata5utils9OrdVector5frontEv"></span><span id="_CPPv2NK4mata5utils9OrdVector5frontEv"></span><span id="mata::utils::OrdVector::frontC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aaf601a1514af84144fb8054178bd288d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">front</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector5frontEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5frontEv">
+<span id="_CPPv3N4mata5utils9OrdVector5frontEv"></span><span id="_CPPv2N4mata5utils9OrdVector5frontEv"></span><span id="mata::utils::OrdVector::front"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a679833f6f29b65f952590ee86e2a935a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">front</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector5frontEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector3minEv">
+<span id="_CPPv3NK4mata5utils9OrdVector3minEv"></span><span id="_CPPv2NK4mata5utils9OrdVector3minEv"></span><span id="mata::utils::OrdVector::minC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a1f7fe057c0f302fe5acb031aacfb043e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">min</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector3minEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector3minEv">
+<span id="_CPPv3N4mata5utils9OrdVector3minEv"></span><span id="_CPPv2N4mata5utils9OrdVector3minEv"></span><span id="mata::utils::OrdVector::min"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a29e29178394712b5e00778327c44f88b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">min</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector3minEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector3maxEv">
+<span id="_CPPv3NK4mata5utils9OrdVector3maxEv"></span><span id="_CPPv2NK4mata5utils9OrdVector3maxEv"></span><span id="mata::utils::OrdVector::maxC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ac9703c2202394341aa9dc6ecaf44a95a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">max</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector3maxEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector3maxEv">
+<span id="_CPPv3N4mata5utils9OrdVector3maxEv"></span><span id="_CPPv2N4mata5utils9OrdVector3maxEv"></span><span id="mata::utils::OrdVector::max"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a571e1fa6633e7a8403e0b7c03d4bfa00"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">max</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector3maxEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector2atEK6size_t">
+<span id="_CPPv3NK4mata5utils9OrdVector2atEK6size_t"></span><span id="_CPPv2NK4mata5utils9OrdVector2atEK6size_t"></span><span id="mata::utils::OrdVector::at__sCC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a758a016960e701ba83825c46c23ab1e2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">at</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector2atEK6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector2atEK6size_t">
+<span id="_CPPv3N4mata5utils9OrdVector2atEK6size_t"></span><span id="_CPPv2N4mata5utils9OrdVector2atEK6size_t"></span><span id="mata::utils::OrdVector::at__sC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a511811153be56f6c1ffffbc0d4200b4d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">at</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector2atEK6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector8containsERK3Key">
+<span id="_CPPv3NK4mata5utils9OrdVector8containsERK3Key"></span><span id="_CPPv2NK4mata5utils9OrdVector8containsERK3Key"></span><span id="mata::utils::OrdVector::contains__KeyCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a4ba0005e319eda1ba871a1a01be7764e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check whether <code class="docutils literal notranslate"><span class="pre">key</span></code> exists in the ordered vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5eraseERK3Key">
+<span id="_CPPv3N4mata5utils9OrdVector5eraseERK3Key"></span><span id="_CPPv2N4mata5utils9OrdVector5eraseERK3Key"></span><span id="mata::utils::OrdVector::erase__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a769571751cba2fa78c6b556f2f6d3b94"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Remove <code class="docutils literal notranslate"><span class="pre">k</span></code> from sorted vector. </p>
+<p>This function expects the vector to be sorted. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector5emptyEv">
+<span id="_CPPv3NK4mata5utils9OrdVector5emptyEv"></span><span id="_CPPv2NK4mata5utils9OrdVector5emptyEv"></span><span id="mata::utils::OrdVector::emptyC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a5dc9d7494d137f8725d90c21d037fe4a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector5emptyEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVector14filter_indexesEvRRK3Fun">
+<span id="_CPPv3I0EN4mata5utils9OrdVector14filter_indexesERRK3Fun"></span><span id="_CPPv2I0EN4mata5utils9OrdVector14filter_indexesERRK3Fun"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fun</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1a371edbd980bfd0b59c6fc68b42b96848"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filter_indexes</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector14filter_indexesEvRRK3Fun" title="mata::utils::OrdVector::filter_indexes::Fun"><span class="n"><span class="pre">Fun</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9OrdVector14filter_indexesEvRRK3Fun" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVector6filterEvRRK3Fun">
+<span id="_CPPv3I0EN4mata5utils9OrdVector6filterERRK3Fun"></span><span id="_CPPv2I0EN4mata5utils9OrdVector6filterERRK3Fun"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fun</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1aa67e934d76e18758b93db31b5c024b40"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filter</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector6filterEvRRK3Fun" title="mata::utils::OrdVector::filter::Fun"><span class="n"><span class="pre">Fun</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">is_staying</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9OrdVector6filterEvRRK3Fun" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector4backEv">
+<span id="_CPPv3NK4mata5utils9OrdVector4backEv"></span><span id="_CPPv2NK4mata5utils9OrdVector4backEv"></span><span id="mata::utils::OrdVector::backC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a3650fd43d2b73d7d35bd5629fac250b1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector15const_referenceE" title="mata::utils::OrdVector::const_reference"><span class="n"><span class="pre">const_reference</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector4backEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector4backEv">
+<span id="_CPPv3N4mata5utils9OrdVector4backEv"></span><span id="_CPPv2N4mata5utils9OrdVector4backEv"></span><span id="mata::utils::OrdVector::back"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1af6a356cfb0cc9438197d4f2224507bee"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector9referenceE" title="mata::utils::OrdVector::reference"><span class="n"><span class="pre">reference</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Get reference to the last element in the vector. </p>
+<p>Modifying the underlying value in the reference could break sortedness. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector8pop_backEv">
+<span id="_CPPv3N4mata5utils9OrdVector8pop_backEv"></span><span id="_CPPv2N4mata5utils9OrdVector8pop_backEv"></span><span id="mata::utils::OrdVector::pop_back"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ab2149c97d09f22e014fae75a251096db"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pop_back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector8pop_backEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector5beginEv">
+<span id="_CPPv3NK4mata5utils9OrdVector5beginEv"></span><span id="_CPPv2NK4mata5utils9OrdVector5beginEv"></span><span id="mata::utils::OrdVector::beginC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a75c8622768cc198b593fc462556dcf51"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector5beginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector3endEv">
+<span id="_CPPv3NK4mata5utils9OrdVector3endEv"></span><span id="_CPPv2NK4mata5utils9OrdVector3endEv"></span><span id="mata::utils::OrdVector::endC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a5a3964d604cda325230be2b5972f9cb6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector3endEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector5beginEv">
+<span id="_CPPv3N4mata5utils9OrdVector5beginEv"></span><span id="_CPPv2N4mata5utils9OrdVector5beginEv"></span><span id="mata::utils::OrdVector::begin"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a50ecf97008068a253fbe8e484c4b73cc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="mata::utils::OrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector5beginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector3endEv">
+<span id="_CPPv3N4mata5utils9OrdVector3endEv"></span><span id="_CPPv2N4mata5utils9OrdVector3endEv"></span><span id="mata::utils::OrdVector::end"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a876b60564ad601d92339187b91866394"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector8iteratorE" title="mata::utils::OrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector3endEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector6cbeginEv">
+<span id="_CPPv3NK4mata5utils9OrdVector6cbeginEv"></span><span id="_CPPv2NK4mata5utils9OrdVector6cbeginEv"></span><span id="mata::utils::OrdVector::cbeginC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1adecfd45eb2eafcf246051146c6c15644"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cbegin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector6cbeginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector4cendEv">
+<span id="_CPPv3NK4mata5utils9OrdVector4cendEv"></span><span id="_CPPv2NK4mata5utils9OrdVector4cendEv"></span><span id="mata::utils::OrdVector::cendC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a6f1dd6da812fc08fd26c7d6b1692b201"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector14const_iteratorE" title="mata::utils::OrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cend</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector4cendEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVectoreqERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVectoreqERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVectoreqERK9OrdVector"></span><span id="mata::utils::OrdVector::eq-operator__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aad4ffe329d82e5a424b9742a20c7221d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVectoreqERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVectorltERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVectorltERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVectorltERK9OrdVector"></span><span id="mata::utils::OrdVector::lt-operator__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ac52550734a9b7b2844704648f704e504"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVectorltERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector9to_vectorEv">
+<span id="_CPPv3NK4mata5utils9OrdVector9to_vectorEv"></span><span id="_CPPv2NK4mata5utils9OrdVector9to_vectorEv"></span><span id="mata::utils::OrdVector::to_vectorC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a0b090ebcfc153c006e13729401e43923"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">to_vector</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector9to_vectorEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector12is_subset_ofERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVector12is_subset_ofERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVector12is_subset_ofERK9OrdVector"></span><span id="mata::utils::OrdVector::is_subset_of__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a7249724996be814bd9849b5f09982b48"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_subset_of</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bigger</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector12is_subset_ofERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector26is_intersection_empty_withERK9OrdVector">
+<span id="_CPPv3NK4mata5utils9OrdVector26is_intersection_empty_withERK9OrdVector"></span><span id="_CPPv2NK4mata5utils9OrdVector26is_intersection_empty_withERK9OrdVector"></span><span id="mata::utils::OrdVector::is_intersection_empty_with__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a9397593a75c5283ca66b4835a6f4023c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_intersection_empty_with</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector26is_intersection_empty_withERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector6renameERKNSt6vectorI3KeyEE">
+<span id="_CPPv3N4mata5utils9OrdVector6renameERKNSt6vectorI3KeyEE"></span><span id="_CPPv2N4mata5utils9OrdVector6renameERKNSt6vectorI3KeyEE"></span><span id="mata::utils::OrdVector::rename__std::vector:Key:CR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a3a4d7a069691e20bb38362401065e958"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rename</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">renaming</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector6renameERKNSt6vectorI3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector13with_reservedEK6size_t">
+<span id="_CPPv3N4mata5utils9OrdVector13with_reservedEK6size_t"></span><span id="_CPPv2N4mata5utils9OrdVector13with_reservedEK6size_t"></span><span id="mata::utils::OrdVector::with_reserved__sC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a52563bb89bd17a96b35242ecc23af261"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">with_reserved</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Create <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a> with reserved <code class="docutils literal notranslate"><span class="pre">capacity</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>capacity</strong> – <strong>[in]</strong> Capacity of <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a> to reserve. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Newly create <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector10differenceERK9OrdVectorRK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector10differenceERK9OrdVectorRK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector10differenceERK9OrdVectorRK9OrdVector"></span><span id="mata::utils::OrdVector::difference__OrdVectorCR.OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aa12fda36a157f8be0060a456b38051c1"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">difference</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector10differenceERK9OrdVectorRK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector"></span><span id="mata::utils::OrdVector::set_union__OrdVectorCR.OrdVectorCR.OrdVectorR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a58cfa840b9de46a565a3b66fa99f96ff"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_union</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">result</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVector"></span><span id="mata::utils::OrdVector::set_union__OrdVectorCR.OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1acb60466266e6d7ee340ae31c91d02cdb"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_union</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector9set_unionERK9OrdVectorRK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector12intersectionERK9OrdVectorRK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVector12intersectionERK9OrdVectorRK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVector12intersectionERK9OrdVectorRK9OrdVector"></span><span id="mata::utils::OrdVector::intersection__OrdVectorCR.OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a765d72f1b61a602e73ad4b9c23de49e2"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">intersection</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector12intersectionERK9OrdVectorRK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-functions">Private Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector9is_sortedEv">
+<span id="_CPPv3NK4mata5utils9OrdVector9is_sortedEv"></span><span id="_CPPv2NK4mata5utils9OrdVector9is_sortedEv"></span><span id="mata::utils::OrdVector::is_sortedC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a343961e93957293edc0602052f9d9abf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_sorted</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector9is_sortedEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector4vec_E">
+<span id="_CPPv3N4mata5utils9OrdVector4vec_E"></span><span id="_CPPv2N4mata5utils9OrdVector4vec_E"></span><span id="mata::utils::OrdVector::vec___VectorType"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1aac04a11d284ee967c7122bc253787a73"></span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">vec_</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector4vec_E" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-functions">Private Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVector6to_strENSt6stringERK1T">
+<span id="_CPPv3I0EN4mata5utils9OrdVector6to_strERK1T"></span><span id="_CPPv2I0EN4mata5utils9OrdVector6to_strERK1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1af2d75115a89bd6720db09453a8a1231f"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">to_str</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector6to_strENSt6stringERK1T" title="mata::utils::OrdVector::to_str::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9OrdVector6to_strENSt6stringERK1T" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Converts an object to string. </p>
+<p>Static method for conversion of an object of any class with the &lt;&lt; output operator into a string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> – <strong>[in]</strong> The object for the conversion.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The string representation of the object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVectorlsERNSt7ostreamERK9OrdVector">
+<span id="_CPPv3N4mata5utils9OrdVectorlsERNSt7ostreamERK9OrdVector"></span><span id="_CPPv2N4mata5utils9OrdVectorlsERNSt7ostreamERK9OrdVector"></span><span id="mata::utils::OrdVector::lshift-operator__osR.OrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ac973a20c0b03b6bedaca75e709983993"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Overloaded &lt;&lt; operator. </p>
+<p>Overloaded &lt;&lt; operator for output stream.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector_1af2d75115a89bd6720db09453a8a1231f"><span class="std std-ref">to_str()</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>os</strong> – <strong>[in]</strong> The output stream </p></li>
+<li><p><strong>vec</strong> – <strong>[in]</strong> Assignment to the variables</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Modified output stream </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4St">
+<span id="_CPPv3St"></span><span id="_CPPv2St"></span><span id="std"></span><span class="target" id="namespacestd"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">std</span></span></span><br /></dt>
+<dd><dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENSt4hashIN4mata5utils9OrdVectorI3KeyEEEE">
+<span id="_CPPv3I0ENSt4hashIN4mata5utils9OrdVectorI3KeyEEEE"></span><span id="_CPPv2I0ENSt4hashIN4mata5utils9OrdVectorI3KeyEEEE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_01_4_01_4"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hash</span></span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0ENSt4hashIN4mata5utils9OrdVectorI3KeyEEEE" title="std::hash&lt;mata::utils::OrdVector&lt;Key&gt;&gt;::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4I0ENSt4hashIN4mata5utils9OrdVectorI3KeyEEEE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;ord-vector.hh&gt;</em></div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NKSt4hashIN4mata5utils9OrdVectorI3KeyEEEclERKN4mata5utils9OrdVectorI3KeyEE">
+<span id="_CPPv3NKSt4hashIN4mata5utils9OrdVectorI3KeyEEEclERKN4mata5utils9OrdVectorI3KeyEE"></span><span id="_CPPv2NKSt4hashIN4mata5utils9OrdVectorI3KeyEEEclERKN4mata5utils9OrdVectorI3KeyEE"></span><span id="std::hash:mata::utils::OrdVector:Key::::call-operator__mata::utils::OrdVector:Key:CRC"></span><span class="target" id="structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_01_4_01_4_1a8cd78bf6fd9df017097d26d01479d6ef"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0ENSt4hashIN4mata5utils9OrdVectorI3KeyEEEE" title="std::hash&lt;mata::utils::OrdVector&lt;Key&gt;&gt;::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vec</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NKSt4hashIN4mata5utils9OrdVectorI3KeyEEEclERKN4mata5utils9OrdVectorI3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparse-set_8hh.html">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="nft_8hh.html" title="previous chapter">File nft.hh</a></li>
+      <li>Next: <a href="parser_8hh.html" title="next chapter">File parser.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/ord-vector_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1utils_1_1TuplePrinter" kind="struct" language="C++" prot="public">
+    <compoundname>mata::utils::TuplePrinter</compoundname>
+    <includes refid="utils_8hh" local="no">utils.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>class Tuple</type>
+      </param>
+      <param>
+        <type>size_t</type>
+        <declname>N</declname>
+        <defname>N</defname>
+      </param>
+    </templateparamlist>
+    <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="structmata_1_1utils_1_1TuplePrinter_1a3316febe84493648cabcb6b512659a70" prot="public" static="yes" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>static std::string print</definition>
+        <argsstring>(const Tuple &amp;t)</argsstring>
+        <name>print</name>
+        <qualifiedname>mata::utils::TuplePrinter::print</qualifiedname>
+        <param>
+          <type>const Tuple &amp;</type>
+          <declname>t</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="224" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="224" bodyend="228"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="222" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="223" bodyend="229"/>
+    <listofallmembers>
+      <member refid="structmata_1_1utils_1_1TuplePrinter_1a3316febe84493648cabcb6b512659a70" prot="public" virt="non-virtual"><scope>mata::utils::TuplePrinter</scope><name>print</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

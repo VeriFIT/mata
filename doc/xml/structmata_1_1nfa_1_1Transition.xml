@@ -1,0 +1,220 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1nfa_1_1Transition" kind="struct" language="C++" prot="public">
+    <compoundname>mata::nfa::Transition</compoundname>
+    <includes refid="nfa_2delta_8hh" local="no">delta.hh</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Transition_1a8e76c5f9192d5bd73b0cc4b371f8f72e" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+        <definition>State source</definition>
+        <argsstring></argsstring>
+        <name>source</name>
+        <qualifiedname>mata::nfa::Transition::source</qualifiedname>
+        <briefdescription>
+<para>Source state. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="20" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="20" bodyend="-1"/>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1a1eb2f6799a88b8b4c3464a5538748d3a" compoundref="nfa_2delta_8hh" startline="413" endline="413">Delta::add</referencedby>
+        <referencedby refid="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4_1ac97dd2523ff2b65906f89ffd58fb2bf5" compoundref="nfa_8hh" startline="997" endline="1002">hash&lt; mata::nfa::Transition &gt;::operator()</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1a6f88f3881f39e27c24d8cda81dfdb4b9" compoundref="nfa_2delta_8hh" startline="415" endline="415">Delta::remove</referencedby>
+        <referencedby refid="structmata_1_1nfa_1_1Transition_1a5cff3a67b77de17d053a190f241aa753" compoundref="nfa_2delta_8hh" startline="24" endline="24">Transition::Transition</referencedby>
+        <referencedby refid="structmata_1_1nfa_1_1Transition_1a6e63d9acc31513dc266ec0751825ba54" compoundref="nfa_2delta_8hh" startline="29" endline="30">Transition::Transition</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Transition_1a86b1fd052877425f029f5528edab94d1" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>Symbol symbol</definition>
+        <argsstring></argsstring>
+        <name>symbol</name>
+        <qualifiedname>mata::nfa::Transition::symbol</qualifiedname>
+        <briefdescription>
+<para><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> symbol. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="21" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="21" bodyend="-1"/>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1a1eb2f6799a88b8b4c3464a5538748d3a" compoundref="nfa_2delta_8hh" startline="413" endline="413">Delta::add</referencedby>
+        <referencedby refid="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4_1ac97dd2523ff2b65906f89ffd58fb2bf5" compoundref="nfa_8hh" startline="997" endline="1002">hash&lt; mata::nfa::Transition &gt;::operator()</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1a6f88f3881f39e27c24d8cda81dfdb4b9" compoundref="nfa_2delta_8hh" startline="415" endline="415">Delta::remove</referencedby>
+        <referencedby refid="structmata_1_1nfa_1_1Transition_1a5cff3a67b77de17d053a190f241aa753" compoundref="nfa_2delta_8hh" startline="24" endline="24">Transition::Transition</referencedby>
+        <referencedby refid="structmata_1_1nfa_1_1Transition_1a6e63d9acc31513dc266ec0751825ba54" compoundref="nfa_2delta_8hh" startline="29" endline="30">Transition::Transition</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Transition_1ad29d51e23c4870e586c79c7e47197d08" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+        <definition>State target</definition>
+        <argsstring></argsstring>
+        <name>target</name>
+        <qualifiedname>mata::nfa::Transition::target</qualifiedname>
+        <briefdescription>
+<para>Target state. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="22" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="22" bodyend="-1"/>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1a1eb2f6799a88b8b4c3464a5538748d3a" compoundref="nfa_2delta_8hh" startline="413" endline="413">Delta::add</referencedby>
+        <referencedby refid="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4_1ac97dd2523ff2b65906f89ffd58fb2bf5" compoundref="nfa_8hh" startline="997" endline="1002">hash&lt; mata::nfa::Transition &gt;::operator()</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1a6f88f3881f39e27c24d8cda81dfdb4b9" compoundref="nfa_2delta_8hh" startline="415" endline="415">Delta::remove</referencedby>
+        <referencedby refid="structmata_1_1nfa_1_1Transition_1a5cff3a67b77de17d053a190f241aa753" compoundref="nfa_2delta_8hh" startline="24" endline="24">Transition::Transition</referencedby>
+        <referencedby refid="structmata_1_1nfa_1_1Transition_1a6e63d9acc31513dc266ec0751825ba54" compoundref="nfa_2delta_8hh" startline="29" endline="30">Transition::Transition</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1a5cff3a67b77de17d053a190f241aa753" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>Transition</definition>
+        <argsstring>()</argsstring>
+        <name>Transition</name>
+        <qualifiedname>mata::nfa::Transition::Transition</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="24" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="24" bodyend="24"/>
+        <references refid="structmata_1_1nfa_1_1Transition_1a8e76c5f9192d5bd73b0cc4b371f8f72e" compoundref="nfa_2delta_8hh" startline="20">Transition::source</references>
+        <references refid="structmata_1_1nfa_1_1Transition_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="21">Transition::symbol</references>
+        <references refid="structmata_1_1nfa_1_1Transition_1ad29d51e23c4870e586c79c7e47197d08" compoundref="nfa_2delta_8hh" startline="22">Transition::target</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1a6c3ca4addba8dbb0dac33fb05d9fdc4b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>Transition</definition>
+        <argsstring>(const Transition &amp;)=default</argsstring>
+        <name>Transition</name>
+        <qualifiedname>mata::nfa::Transition::Transition</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="25" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1a2326aefd437eecea37e4bc8fec81f499" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>Transition</definition>
+        <argsstring>(Transition &amp;&amp;)=default</argsstring>
+        <name>Transition</name>
+        <qualifiedname>mata::nfa::Transition::Transition</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="26" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1ab417a1e03626027391168d23bd891de7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;</type>
+        <definition>Transition &amp; operator=</definition>
+        <argsstring>(const Transition &amp;)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nfa::Transition::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="27" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1a8e371af7688e56cc024745df285e32dc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;</type>
+        <definition>Transition &amp; operator=</definition>
+        <argsstring>(Transition &amp;&amp;)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nfa::Transition::operator=</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="28" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1a6e63d9acc31513dc266ec0751825ba54" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>Transition</definition>
+        <argsstring>(const State source, const Symbol symbol, const State target)</argsstring>
+        <name>Transition</name>
+        <qualifiedname>mata::nfa::Transition::Transition</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>source</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>symbol</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>target</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="29" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="29" bodyend="30"/>
+        <references refid="structmata_1_1nfa_1_1Transition_1a8e76c5f9192d5bd73b0cc4b371f8f72e" compoundref="nfa_2delta_8hh" startline="20">Transition::source</references>
+        <references refid="structmata_1_1nfa_1_1Transition_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="21">Transition::symbol</references>
+        <references refid="structmata_1_1nfa_1_1Transition_1ad29d51e23c4870e586c79c7e47197d08" compoundref="nfa_2delta_8hh" startline="22">Transition::target</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1nfa_1_1Transition_1a273242f583700fc6f0f2afeac1bc3268" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>auto</type>
+        <definition>auto operator&lt;=&gt;</definition>
+        <argsstring>(const Transition &amp;) const =default</argsstring>
+        <name>operator&lt;=&gt;</name>
+        <qualifiedname>mata::nfa::Transition::operator&lt;=&gt;</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="32" column="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A single transition in <ref refid="classmata_1_1nfa_1_1Delta" kindref="compound">Delta</ref> represented as a triple(source, symbol, target). </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="19" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="19" bodyend="33"/>
+    <listofallmembers>
+      <member refid="structmata_1_1nfa_1_1Transition_1a273242f583700fc6f0f2afeac1bc3268" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>operator&lt;=&gt;</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1ab417a1e03626027391168d23bd891de7" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>operator=</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a8e371af7688e56cc024745df285e32dc" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>operator=</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a8e76c5f9192d5bd73b0cc4b371f8f72e" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>source</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a86b1fd052877425f029f5528edab94d1" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>symbol</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1ad29d51e23c4870e586c79c7e47197d08" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>target</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a5cff3a67b77de17d053a190f241aa753" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>Transition</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a6c3ca4addba8dbb0dac33fb05d9fdc4b" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>Transition</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a2326aefd437eecea37e4bc8fec81f499" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>Transition</name></member>
+      <member refid="structmata_1_1nfa_1_1Transition_1a6e63d9acc31513dc266ec0751825ba54" prot="public" virt="non-virtual"><scope>mata::nfa::Transition</scope><name>Transition</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

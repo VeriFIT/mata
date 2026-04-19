@@ -1,0 +1,207 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1nfa_1_1Delta_1_1Transitions" kind="class" language="C++" prot="public">
+    <compoundname>mata::nfa::Delta::Transitions</compoundname>
+    <includes refid="nfa_2delta_8hh" local="no">delta.hh</includes>
+    <innerclass refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator" prot="public">mata::nfa::Delta::Transitions::const_iterator</innerclass>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1a4c5bc283de9a7698c5ee71dd3331ab0a" prot="private" static="no" mutable="no">
+        <type>const <ref refid="classmata_1_1nfa_1_1Delta" kindref="compound">Delta</ref> *</type>
+        <definition>const Delta* delta_</definition>
+        <argsstring></argsstring>
+        <name>delta_</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::delta_</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="570" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="570" bodyend="-1"/>
+        <referencedby refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1af9333625e0fae2e72c8d076c2e56d23f" compoundref="nfa_2delta_8hh" startline="560" endline="560">Delta::Transitions::Transitions</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1ad09399dd65846011d8d546fedc3061f0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>Transitions</definition>
+        <argsstring>()=default</argsstring>
+        <name>Transitions</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::Transitions</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="559" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1af9333625e0fae2e72c8d076c2e56d23f" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>Transitions</definition>
+        <argsstring>(const Delta *delta)</argsstring>
+        <name>Transitions</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::Transitions</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Delta" kindref="compound">Delta</ref> *</type>
+          <declname>delta</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="560" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="560" bodyend="560"/>
+        <references refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1a4c5bc283de9a7698c5ee71dd3331ab0a" compoundref="nfa_2delta_8hh" startline="570">Delta::Transitions::delta_</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1a560c52df8043f13ab18f60f5ce8ba0ed" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>Transitions</definition>
+        <argsstring>(Transitions &amp;&amp;)=default</argsstring>
+        <name>Transitions</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::Transitions</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions" kindref="compound">Transitions</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="561" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1a3740eac8752e6b4ba13e4ef96d08c464" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>Transitions</definition>
+        <argsstring>(Transitions &amp;)=default</argsstring>
+        <name>Transitions</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::Transitions</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions" kindref="compound">Transitions</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="562" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1ad029dec40dd8ba902cbee367a95e6472" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions" kindref="compound">Transitions</ref> &amp;</type>
+        <definition>Transitions &amp; operator=</definition>
+        <argsstring>(Transitions &amp;&amp;)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions" kindref="compound">Transitions</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="563" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1a15265b39b09794a5f940508614d0b7b5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions" kindref="compound">Transitions</ref> &amp;</type>
+        <definition>Transitions &amp; operator=</definition>
+        <argsstring>(Transitions &amp;)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions" kindref="compound">Transitions</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="564" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1a29305669b60ca1680752e2fc3592ba99" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator" kindref="compound">const_iterator</ref></type>
+        <definition>const_iterator begin</definition>
+        <argsstring>() const</argsstring>
+        <name>begin</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::begin</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="567" column="20"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Delta_1_1Transitions_1accf9a4bd0c34d4a5f6a7dab66ea10cdc" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator" kindref="compound">const_iterator</ref></type>
+        <definition>const_iterator end</definition>
+        <argsstring>() const</argsstring>
+        <name>end</name>
+        <qualifiedname>mata::nfa::Delta::Transitions::end</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="568" column="20"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Iterator over transitions represented as <computeroutput><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref></computeroutput> instances. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>It iterates over triples (State source, Symbol symbol, State target). </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>Delta::Transitions</label>
+        <link refid="classmata_1_1nfa_1_1Delta_1_1Transitions"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>delta_</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>OrdVector&lt; SymbolPost &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+        <childnode refid="5" relation="template-instance">
+          <edgelabel>&lt; SymbolPost &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>Delta</label>
+        <link refid="classmata_1_1nfa_1_1Delta"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>empty_state_post</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>StatePost</label>
+        <link refid="classmata_1_1nfa_1_1StatePost"/>
+        <childnode refid="4" relation="private-inheritance">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>OrdVector&lt; Key &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="557" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="557" bodyend="571"/>
+    <listofallmembers>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1a29305669b60ca1680752e2fc3592ba99" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>begin</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1a4c5bc283de9a7698c5ee71dd3331ab0a" prot="private" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>delta_</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1accf9a4bd0c34d4a5f6a7dab66ea10cdc" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>end</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1ad029dec40dd8ba902cbee367a95e6472" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>operator=</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1a15265b39b09794a5f940508614d0b7b5" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>operator=</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1ad09399dd65846011d8d546fedc3061f0" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>Transitions</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1af9333625e0fae2e72c8d076c2e56d23f" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>Transitions</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1a560c52df8043f13ab18f60f5ce8ba0ed" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>Transitions</name></member>
+      <member refid="classmata_1_1nfa_1_1Delta_1_1Transitions_1a3740eac8752e6b4ba13e4ef96d08c464" prot="public" virt="non-virtual"><scope>mata::nfa::Delta::Transitions</scope><name>Transitions</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

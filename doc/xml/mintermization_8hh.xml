@@ -1,0 +1,255 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="mintermization_8hh" kind="file" language="C++">
+    <compoundname>mintermization.hh</compoundname>
+    <includes local="yes">mata/cudd/cuddObj.hh</includes>
+    <includes refid="inter-aut_8hh" local="yes">inter-aut.hh</includes>
+    <incdepgraph>
+      <node id="3">
+        <label>inter-aut.hh</label>
+        <link refid="inter-aut_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh</label>
+        <link refid="mintermization_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>parser.hh</label>
+        <link refid="parser_8hh"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>mata/utils/utils.hh</label>
+        <link refid="utils_8hh"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>algorithm</label>
+      </node>
+      <node id="10">
+        <label>cassert</label>
+      </node>
+      <node id="21">
+        <label>cstdint</label>
+      </node>
+      <node id="16">
+        <label>functional</label>
+      </node>
+      <node id="17">
+        <label>iostream</label>
+      </node>
+      <node id="11">
+        <label>list</label>
+      </node>
+      <node id="12">
+        <label>map</label>
+      </node>
+      <node id="2">
+        <label>mata/cudd/cuddObj.hh</label>
+      </node>
+      <node id="13">
+        <label>ostream</label>
+      </node>
+      <node id="18">
+        <label>set</label>
+      </node>
+      <node id="19">
+        <label>sstream</label>
+      </node>
+      <node id="20">
+        <label>stack</label>
+      </node>
+      <node id="6">
+        <label>string</label>
+      </node>
+      <node id="4">
+        <label>unordered_map</label>
+      </node>
+      <node id="5">
+        <label>unordered_set</label>
+      </node>
+      <node id="7">
+        <label>utility</label>
+      </node>
+      <node id="8">
+        <label>vector</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="classmata_1_1Mintermization" prot="public">mata::Mintermization</innerclass>
+    <innerclass refid="structmata_1_1Mintermization_1_1OptionalBdd" prot="private">mata::Mintermization::OptionalBdd</innerclass>
+    <innernamespace refid="namespacemata">mata</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/*<sp/>mintermization.hh<sp/>--<sp/>Mintermization<sp/>of<sp/>automaton.</highlight></codeline>
+<codeline lineno="2"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="3"><highlight class="comment"><sp/>*<sp/>It<sp/>transforms<sp/>an<sp/>automaton<sp/>with<sp/>a<sp/>bitvector<sp/>formula<sp/>used<sp/>as<sp/>a<sp/>symbol<sp/>to<sp/>minterminized<sp/>version<sp/>of<sp/>the<sp/>automaton.</highlight></codeline>
+<codeline lineno="4"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>MATA_MINTERM_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>MATA_MINTERM_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;mata/cudd/cuddObj.hh&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="inter-aut_8hh" kindref="compound">inter-aut.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacemata" kindref="compound">mata</ref><sp/>{</highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="15" refid="classmata_1_1Mintermization" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1Mintermization" kindref="compound">Mintermization</ref><sp/>{</highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:<sp/></highlight><highlight class="comment">//<sp/>data<sp/>types</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17" refid="structmata_1_1Mintermization_1_1OptionalBdd" refkind="compound"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref><sp/>{</highlight></codeline>
+<codeline lineno="18" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">enum<sp/>class</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref><sp/>{<ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a70acc97a4853e98b4cd0656dd8f5f5e6" kindref="member">NOTHING_E</ref>,<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a4bf9bd393de504fb734e5250a082071b" kindref="member">BDD_E</ref>};</highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" kindref="member">type</ref>{};</highlight></codeline>
+<codeline lineno="21" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>BDD<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" kindref="member">val</ref>{};</highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight></codeline>
+<codeline lineno="23" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a6cb8582a22bb1db806fda34f3dfd1965" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a6cb8582a22bb1db806fda34f3dfd1965" kindref="member">OptionalBdd</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="24" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a43a1fb159c6a95ed77b3987e022ccfbc" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a43a1fb159c6a95ed77b3987e022ccfbc" kindref="member">OptionalBdd</ref>(<ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref><sp/>t)<sp/>:<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" kindref="member">type</ref>(t)<sp/>{}</highlight></codeline>
+<codeline lineno="25" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9" kindref="member">OptionalBdd</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>BDD&amp;<sp/>bdd)<sp/>:<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" kindref="member">type</ref>(<ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref>::<ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a4bf9bd393de504fb734e5250a082071b" kindref="member">BDD_E</ref>),<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" kindref="member">val</ref>(bdd)<sp/>{}</highlight></codeline>
+<codeline lineno="26" refid="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af" kindref="member">OptionalBdd</ref>(<ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref><sp/>t,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>BDD&amp;<sp/>bdd)<sp/>:<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" kindref="member">type</ref>(t),<sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" kindref="member">val</ref>(bdd)<sp/>{}</highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="structmata_1_1Mintermization_1_1OptionalBdd_1afe01caa5028bedb1201624921e939b51" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1afe01caa5028bedb1201624921e939b51" kindref="member">operator*</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref>&amp;<sp/>b)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="29" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0ecd32513a4c89a638adc930b904ee16" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0ecd32513a4c89a638adc930b904ee16" kindref="member">operator+</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref>&amp;<sp/>b)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="30" refid="structmata_1_1Mintermization_1_1OptionalBdd_1a37336d79949a81598b396ee63f7626f3" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a37336d79949a81598b396ee63f7626f3" kindref="member">operator!</ref>()<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"><sp/><sp/><sp/><sp/>};</highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight></codeline>
+<codeline lineno="33" refid="classmata_1_1Mintermization_1acd2abc6da71d06e038f1db50bf409cab" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1Mintermization_1acd2abc6da71d06e038f1db50bf409cab" kindref="member">DisjunctStatesPair</ref><sp/>=<sp/>std::pair&lt;const<sp/>FormulaGraph<sp/>*,<sp/>const<sp/>FormulaGraph<sp/>*&gt;;</highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:<sp/></highlight><highlight class="comment">//<sp/>private<sp/>data<sp/>members</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="36" refid="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>Cudd<sp/><ref refid="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa" kindref="member">bdd_mng</ref>{};<sp/></highlight><highlight class="comment">//<sp/>Manager<sp/>of<sp/>BDDs<sp/>from<sp/>lib<sp/>cubdd,<sp/>it<sp/>allocates<sp/>and<sp/>manages<sp/>BDDs.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="37" refid="classmata_1_1Mintermization_1a987006074fa55dbb95612164bd4c1707" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::unordered_map&lt;std::string,<sp/>BDD&gt;<sp/><ref refid="classmata_1_1Mintermization_1a987006074fa55dbb95612164bd4c1707" kindref="member">symbol_to_bddvar</ref>{};</highlight></codeline>
+<codeline lineno="38" refid="classmata_1_1Mintermization_1a0f865290bd6ebaeab385219a259d4a52" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::unordered_map&lt;const<sp/>FormulaGraph*,<sp/>BDD&gt;<sp/><ref refid="classmata_1_1Mintermization_1a0f865290bd6ebaeab385219a259d4a52" kindref="member">trans_to_bddvar</ref>{};</highlight></codeline>
+<codeline lineno="39" refid="classmata_1_1Mintermization_1acc9fd42a9fe0f4c16812e189806d1b1f" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::unordered_map&lt;const<sp/>FormulaNode*,<sp/>std::vector&lt;DisjunctStatesPair&gt;&gt;<sp/><ref refid="classmata_1_1Mintermization_1acc9fd42a9fe0f4c16812e189806d1b1f" kindref="member">lhs_to_disjuncts_and_states</ref>{};</highlight></codeline>
+<codeline lineno="40" refid="classmata_1_1Mintermization_1a2be3a3f43e32f7859c8cdb26f7a42a53" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::unordered_set&lt;BDD&gt;<sp/><ref refid="classmata_1_1Mintermization_1a2be3a3f43e32f7859c8cdb26f7a42a53" kindref="member">bdds</ref>{};<sp/></highlight><highlight class="comment">//<sp/>bdds<sp/>created<sp/>from<sp/>transitions</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="43" refid="classmata_1_1Mintermization_1ae8e93ff40af3d2183e2595608dadba9b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Mintermization_1ae8e93ff40af3d2183e2595608dadba9b" kindref="member">trans_to_bdd_nfa</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref>&amp;<sp/>aut);</highlight></codeline>
+<codeline lineno="44" refid="classmata_1_1Mintermization_1a73b87c34fc1b3dcb11f89994410e4afc" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Mintermization_1a73b87c34fc1b3dcb11f89994410e4afc" kindref="member">trans_to_bdd_afa</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref>&amp;<sp/>aut);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="47"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="48"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Takes<sp/>a<sp/>set<sp/>of<sp/>BDDs<sp/>and<sp/>build<sp/>a<sp/>minterm<sp/>tree<sp/>over<sp/>it.</highlight></codeline>
+<codeline lineno="49"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>The<sp/>leaves<sp/>of<sp/>BDDs,<sp/>which<sp/>are<sp/>minterms<sp/>of<sp/>input<sp/>set,<sp/>are<sp/>returned</highlight></codeline>
+<codeline lineno="50"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>source_bdds<sp/>BDDs<sp/>for<sp/>which<sp/>minterms<sp/>are<sp/>computed</highlight></codeline>
+<codeline lineno="51"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Computed<sp/>minterms</highlight></codeline>
+<codeline lineno="52"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53" refid="classmata_1_1Mintermization_1a811b8eda0757e03065aa5aa823603cbf" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::unordered_set&lt;BDD&gt;<sp/><ref refid="classmata_1_1Mintermization_1a811b8eda0757e03065aa5aa823603cbf" kindref="member">compute_minterms</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::unordered_set&lt;BDD&gt;&amp;<sp/>source_bdds);</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="55"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="56"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Transforms<sp/>a<sp/>graph<sp/>representing<sp/>formula<sp/>at<sp/>transition<sp/>to<sp/>bdd.</highlight></codeline>
+<codeline lineno="57"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>graph<sp/>Graph<sp/>to<sp/>be<sp/>transformed</highlight></codeline>
+<codeline lineno="58"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Resulting<sp/>BDD</highlight></codeline>
+<codeline lineno="59"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="60" refid="classmata_1_1Mintermization_1aaa9a7e7f3f1cbb2e6d6e331ecdbe82b7" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>BDD<sp/><ref refid="classmata_1_1Mintermization_1aaa9a7e7f3f1cbb2e6d6e331ecdbe82b7" kindref="member">graph_to_bdd_nfa</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref>&amp;<sp/>graph);</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="62"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="63"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Transforms<sp/>a<sp/>graph<sp/>representing<sp/>formula<sp/>at<sp/>transition<sp/>to<sp/>bdd.</highlight></codeline>
+<codeline lineno="64"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>This<sp/>version<sp/>of<sp/>method<sp/>is<sp/>a<sp/>more<sp/>general<sp/>one<sp/>and<sp/>accepts<sp/>also</highlight></codeline>
+<codeline lineno="65"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>formula<sp/>including<sp/>states.</highlight></codeline>
+<codeline lineno="66"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>graph<sp/>Graph<sp/>to<sp/>be<sp/>transformed</highlight></codeline>
+<codeline lineno="67"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Resulting<sp/>BDD</highlight></codeline>
+<codeline lineno="68"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="69" refid="classmata_1_1Mintermization_1a27472854ea5a8b27b24a577515736b14" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref><sp/><ref refid="classmata_1_1Mintermization_1a27472854ea5a8b27b24a577515736b14" kindref="member">graph_to_bdd_afa</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref>&amp;<sp/>graph);</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="71"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="72"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Method<sp/>mintermizes<sp/>given<sp/>automaton<sp/>which<sp/>has<sp/>bitvector<sp/>alphabet.</highlight></codeline>
+<codeline lineno="73"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>It<sp/>transforms<sp/>its<sp/>transitions<sp/>to<sp/>BDDs,<sp/>then<sp/>build<sp/>a<sp/>minterm<sp/>tree<sp/>over<sp/>the<sp/>BDDs</highlight></codeline>
+<codeline lineno="74"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>and<sp/>finally<sp/>transforms<sp/>automaton<sp/>to<sp/>explicit<sp/>one.</highlight></codeline>
+<codeline lineno="75"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>aut<sp/>Automaton<sp/>to<sp/>be<sp/>mintermized.</highlight></codeline>
+<codeline lineno="76"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Mintermized<sp/>automaton</highlight></codeline>
+<codeline lineno="77"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="78" refid="classmata_1_1Mintermization_1a6518a351ad9194b6d1d1dc43420836f2" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref><sp/><ref refid="classmata_1_1Mintermization_1a6518a351ad9194b6d1d1dc43420836f2" kindref="member">mintermize</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref>&amp;<sp/>aut);</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="80"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="81"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Methods<sp/>mintermize<sp/>given<sp/>automata<sp/>which<sp/>have<sp/>bitvector<sp/>alphabet.</highlight></codeline>
+<codeline lineno="82"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>It<sp/>transforms<sp/>transitions<sp/>of<sp/>all<sp/>automata<sp/>to<sp/>BDDs,<sp/>then<sp/>build<sp/>a<sp/>minterm<sp/>tree<sp/>over<sp/>the<sp/>BDDs</highlight></codeline>
+<codeline lineno="83"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>and<sp/>finally<sp/>transforms<sp/>automata<sp/>to<sp/>explicit<sp/>one<sp/>(sharing<sp/>the<sp/>same<sp/>minterms).</highlight></codeline>
+<codeline lineno="84"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>auts<sp/>Automata<sp/>to<sp/>be<sp/>mintermized.</highlight></codeline>
+<codeline lineno="85"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Mintermized<sp/>automata<sp/>corresponding<sp/>to<sp/>the<sp/>input<sp/>autamata</highlight></codeline>
+<codeline lineno="86"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="87" refid="classmata_1_1Mintermization_1a7212d3052d3aee0104e98fbc8a0bbb0c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;mata::IntermediateAut&gt;<sp/><ref refid="classmata_1_1Mintermization_1a7212d3052d3aee0104e98fbc8a0bbb0c" kindref="member">mintermize</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;const<sp/>mata::IntermediateAut<sp/>*&gt;<sp/>&amp;auts);</highlight></codeline>
+<codeline lineno="88" refid="classmata_1_1Mintermization_1aad02530c1feda3d4e02ab74f37729107" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;mata::IntermediateAut&gt;<sp/><ref refid="classmata_1_1Mintermization_1aad02530c1feda3d4e02ab74f37729107" kindref="member">mintermize</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;mata::IntermediateAut&gt;<sp/>&amp;auts);</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="90"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="91"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>The<sp/>method<sp/>performs<sp/>the<sp/>mintermization<sp/>over<sp/>@aut<sp/>with<sp/>given<sp/>@minterms.</highlight></codeline>
+<codeline lineno="92"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>It<sp/>is<sp/>method<sp/>specialized<sp/>for<sp/>NFA.</highlight></codeline>
+<codeline lineno="93"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>res<sp/>The<sp/>resulting<sp/>mintermized<sp/>automaton</highlight></codeline>
+<codeline lineno="94"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>aut<sp/>Automaton<sp/>to<sp/>be<sp/>mintermized</highlight></codeline>
+<codeline lineno="95"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>minterms<sp/>Set<sp/>of<sp/>minterms<sp/>for<sp/>mintermization</highlight></codeline>
+<codeline lineno="96"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="97" refid="classmata_1_1Mintermization_1ad38987aa2a54f4c6816098a83519dc0c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Mintermization_1ad38987aa2a54f4c6816098a83519dc0c" kindref="member">minterms_to_aut_nfa</ref>(<ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref>&amp;<sp/>res,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref>&amp;<sp/>aut,</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::unordered_set&lt;BDD&gt;&amp;<sp/>minterms);</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="100"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="101"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>The<sp/>method<sp/>for<sp/>mintermization<sp/>of<sp/>alternating<sp/>finite<sp/>automaton<sp/>using</highlight></codeline>
+<codeline lineno="102"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>a<sp/>given<sp/>set<sp/>of<sp/>minterms</highlight></codeline>
+<codeline lineno="103"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>res<sp/>The<sp/>resulting<sp/>mintermized<sp/>automaton</highlight></codeline>
+<codeline lineno="104"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>aut<sp/>Automaton<sp/>to<sp/>be<sp/>mintermized</highlight></codeline>
+<codeline lineno="105"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>minterms<sp/>Set<sp/>of<sp/>minterms<sp/>for<sp/>mintermization</highlight></codeline>
+<codeline lineno="106"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="107" refid="classmata_1_1Mintermization_1a8a54d61c09a74c22be2965a04967ec9f" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Mintermization_1a8a54d61c09a74c22be2965a04967ec9f" kindref="member">minterms_to_aut_afa</ref>(<ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref>&amp;<sp/>res,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref>&amp;<sp/>aut,</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::unordered_set&lt;BDD&gt;&amp;<sp/>minterms);</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"></highlight></codeline>
+<codeline lineno="110" refid="classmata_1_1Mintermization_1a7928670a27b65e045e877726a0c4479b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1Mintermization_1a7928670a27b65e045e877726a0c4479b" kindref="member">Mintermization</ref>()<sp/>:<sp/><ref refid="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa" kindref="member">bdd_mng</ref>(0),<sp/><ref refid="classmata_1_1Mintermization_1a987006074fa55dbb95612164bd4c1707" kindref="member">symbol_to_bddvar</ref>{},<sp/><ref refid="classmata_1_1Mintermization_1a0f865290bd6ebaeab385219a259d4a52" kindref="member">trans_to_bddvar</ref>()<sp/>{}</highlight></codeline>
+<codeline lineno="111"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>Mintermization.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="112"><highlight class="normal"></highlight></codeline>
+<codeline lineno="113"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>mata</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="114"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/></highlight><highlight class="comment">//MATA_MINTERM_HH</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh"/>
+  </compounddef>
+</doxygen>

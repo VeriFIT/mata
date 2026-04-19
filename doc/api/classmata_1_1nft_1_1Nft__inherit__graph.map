@@ -1,0 +1,5 @@
+<map id="Nft" name="Nft">
+<area shape="rect" id="Node000001" title="A class representing an NFT." alt="" coords="7,79,49,104"/>
+<area shape="rect" id="Node000002" href="$classmata_1_1nfa_1_1Nfa.html" title="A class representing an NFA." alt="" coords="5,5,51,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="31,44,31,79,25,79,25,44"/>
+</map>

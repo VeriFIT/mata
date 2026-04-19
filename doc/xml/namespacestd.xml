@@ -1,0 +1,466 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacestd" kind="namespace" language="C++">
+    <compoundname>std</compoundname>
+    <innerclass refid="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4" prot="public">std::hash&lt; mata::nfa::Transition &gt;</innerclass>
+    <innerclass refid="structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_01_4_01_4" prot="public">std::hash&lt; mata::utils::OrdVector&lt; Key &gt; &gt;</innerclass>
+    <innerclass refid="structstd_1_1hash_3_01std_1_1pair_3_01A_00_01B_01_4_01_4" prot="public">std::hash&lt; std::pair&lt; A, B &gt; &gt;</innerclass>
+    <innerclass refid="structstd_1_1hash_3_01std_1_1set_3_01A_01_4_01_4" prot="public">std::hash&lt; std::set&lt; A &gt; &gt;</innerclass>
+    <innerclass refid="structstd_1_1hash_3_01std_1_1vector_3_01A_01_4_01_4" prot="public">std::hash&lt; std::vector&lt; A &gt; &gt;</innerclass>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacestd_1a9647819234fc49f9ff28f5e4a8d30714" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const mata::Alphabet &amp;alphabet)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>std::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">mata::Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="467" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" declline="467" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1af6de28f0438c9a1015fe9c9f18329f3a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const mata::nfa::Transition &amp;trans)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>std::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">mata::nfa::Transition</ref> &amp;</type>
+          <declname>trans</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="1005" column="1" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="1005" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1afabcc92b8b793e607f3ad9449e41d14e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const mata::nfa::Nfa &amp;nfa)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>std::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">mata::nfa::Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="1006" column="1" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="1006" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1aedb8a978e568540b369152b062c90a97" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const mata::nft::Nft &amp;nft)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>std::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">mata::nft::Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1139" column="1" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1139" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a9e5c241498a30c2af802d5dc31d0a22d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const mata::IntermediateAut &amp;inter_aut)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>std::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>inter_aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="263" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" declline="263" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1ae07c36a2350aa2d0284ec3b11389a83d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::ostream &amp;</type>
+        <definition>std::ostream &amp; operator&lt;&lt;</definition>
+        <argsstring>(std::ostream &amp;os, const mata::parser::ParsedSection &amp;parsec)</argsstring>
+        <name>operator&lt;&lt;</name>
+        <qualifiedname>std::operator&lt;&lt;</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">mata::parser::ParsedSection</ref> &amp;</type>
+          <declname>parsec</declname>
+        </param>
+        <briefdescription>
+<para>Output stream operator. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="70" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" declline="70" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a6ac1135ef1b72d914b27c133a43fcf30" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const A &amp;value)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const A &amp;</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>arbitrary type with the &lt;&lt; operator </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="570" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="570" bodyend="575" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="388" declcolumn="25"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a77962640ce994a91d64512e6e18090cf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::set&lt; A &gt; &amp;st)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::set&lt; A &gt; &amp;</type>
+          <declname>st</declname>
+        </param>
+        <briefdescription>
+<para>set to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="515" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="515" bodyend="528" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="389" declcolumn="25"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a914328938275eaed62859ec2ed3fb24a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::vector&lt; A &gt; &amp;vec)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::vector&lt; A &gt; &amp;</type>
+          <declname>vec</declname>
+        </param>
+        <briefdescription>
+<para>Vector to string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="418" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="418" bodyend="431" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="390" declcolumn="25"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a2e6d9791cf8deca8dfc2a00ede0acff5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::list&lt; A &gt; &amp;vec)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::list&lt; A &gt; &amp;</type>
+          <declname>vec</declname>
+        </param>
+        <briefdescription>
+<para>List to string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="435" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="435" bodyend="448" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="391" declcolumn="25"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1ad0a0b64dfea5b7fc21f9c256d30550e5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::stack&lt; A &gt; &amp;stck)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::stack&lt; A &gt; &amp;</type>
+          <declname>stck</declname>
+        </param>
+        <briefdescription>
+<para>stack to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="532" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="532" bodyend="542" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="392" declcolumn="25"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1ac970382d45c9d5a2732656a4196e2df4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::function&lt; A &gt; &amp;fun)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::function&lt; A &gt; &amp;</type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>function to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="546" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="546" bodyend="549" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="393" declcolumn="25"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a00641139d5c1f3df2fc6a7fc13d3bb7a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+          <param>
+            <type>class B</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::pair&lt; A, B &gt; &amp;p)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::pair&lt; A, B &gt; &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="563" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="563" bodyend="566" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="394" declcolumn="27"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a0c3e1ffc6ee06d9be6d4481f71bfd8b6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+          <param>
+            <type>class B</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::map&lt; A, B &gt; &amp;mp)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::map&lt; A, B &gt; &amp;</type>
+          <declname>mp</declname>
+        </param>
+        <briefdescription>
+<para>map to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="474" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="474" bodyend="490" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="395" declcolumn="27"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a8fe41d5b7ef23c119050fc24c5146080" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+          <param>
+            <type>class B</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::unordered_map&lt; A, B &gt; &amp;unmap)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::unordered_map&lt; A, B &gt; &amp;</type>
+          <declname>unmap</declname>
+        </param>
+        <briefdescription>
+<para>unordered_map to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="454" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="454" bodyend="470" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="396" declcolumn="27"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1aa6e6f1e9015ce08a07767ff849d1c2f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class A</type>
+          </param>
+          <param>
+            <type>class B</type>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::unordered_multimap&lt; A, B &gt; &amp;unmap)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::unordered_multimap&lt; A, B &gt; &amp;</type>
+          <declname>unmmap</declname>
+        </param>
+        <briefdescription>
+<para>unordered_multimap to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="494" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="494" bodyend="510" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" declline="397" declcolumn="27"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1af3aa4d42a0786fb2a7131bb788936709" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(char ch)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>char</type>
+          <declname>ch</declname>
+        </param>
+        <briefdescription>
+<para>Character to string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="406" column="20" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="406" bodyend="411"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1a952a1894765e9297f575b22b6ba60fa8" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::string &amp;str)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>String to string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="414" column="20" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="414" bodyend="414"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacestd_1ab133b6c6fb3eee4ee1cf4a32adc34d51" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class...</type>
+            <declname>Ts</declname>
+            <defname>Ts</defname>
+          </param>
+        </templateparamlist>
+        <type>std::string</type>
+        <definition>std::string to_string</definition>
+        <argsstring>(const std::tuple&lt; Ts... &gt; &amp;tup)</argsstring>
+        <name>to_string</name>
+        <qualifiedname>std::to_string</qualifiedname>
+        <param>
+          <type>const std::tuple&lt; Ts... &gt; &amp;</type>
+          <declname>tup</declname>
+        </param>
+        <briefdescription>
+<para>tuple to string </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="553" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="553" bodyend="560"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="465" column="1"/>
+  </compounddef>
+</doxygen>

@@ -9,6 +9,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/utils/custom_vector.h"
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -263,7 +264,7 @@ TEST_CASE("mata::applications::strings::is_lang_eps()") {
 TEST_CASE("mata::nfa::create_single_word_nfa()") {
     SECTION("From numbers") {
         SECTION("Simple word") {
-            std::vector<mata::Symbol> word{ 10, 20, 30, 40, 50, 60 };
+            CustomVector<mata::Symbol> word{ 10, 20, 30, 40, 50, 60 };
             auto nfa{ builder::create_single_word_nfa(word) };
             CHECK(nfa.is_in_lang(word));
             CHECK(nfa.final.size() == 1);
@@ -272,7 +273,7 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
         }
 
         SECTION("Empty string") {
-            std::vector<mata::Symbol> word{};
+            CustomVector<mata::Symbol> word{};
             auto nfa{ builder::create_single_word_nfa(word) };
             CHECK(nfa.is_in_lang(word));
             CHECK(mata::applications::strings::is_lang_eps(nfa));
@@ -293,7 +294,7 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
         }
 
         SECTION("Empty string") {
-            std::vector<mata::Symbol> word{};
+            CustomVector<mata::Symbol> word{};
             auto nfa{ builder::create_single_word_nfa(word) };
             CHECK(nfa.is_in_lang(word));
             CHECK(mata::applications::strings::is_lang_eps(nfa));

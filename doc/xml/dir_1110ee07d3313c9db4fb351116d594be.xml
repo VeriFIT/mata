@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_1110ee07d3313c9db4fb351116d594be" kind="dir">
+    <compoundname>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa</compoundname>
+    <innerfile refid="nfa_2algorithms_8hh">algorithms.hh</innerfile>
+    <innerfile refid="nfa_2builder_8hh">builder.hh</innerfile>
+    <innerfile refid="nfa_2delta_8hh">delta.hh</innerfile>
+    <innerfile refid="nfa_8hh">nfa.hh</innerfile>
+    <innerfile refid="nfa_2plumbing_8hh">plumbing.hh</innerfile>
+    <innerfile refid="nfa_2types_8hh">types.hh</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/"/>
+  </compounddef>
+</doxygen>

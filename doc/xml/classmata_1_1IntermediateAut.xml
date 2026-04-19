@@ -1,0 +1,744 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1IntermediateAut" kind="class" language="C++" prot="public">
+    <compoundname>mata::IntermediateAut</compoundname>
+    <includes refid="inter-aut_8hh" local="no">inter-aut.hh</includes>
+    <innerclass refid="structmata_1_1IntermediateAut_1_1transitions" prot="public">mata::IntermediateAut::transitions</innerclass>
+    <sectiondef kind="public-type">
+      <memberdef kind="enum" id="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>AutomatonType</name>
+        <qualifiedname>mata::IntermediateAut::AutomatonType</qualifiedname>
+        <enumvalue id="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6a1e652bf53c4bbe8b46ca8803c70f3e62" prot="public">
+          <name>NFA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6ae93a8423a46c546f6241b4ff0b3c78d5" prot="public">
+          <name>AFA</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6aa692c529f241845ae00b47284e09e76a" prot="public">
+          <name>NFT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Type of automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>So far we support nondeterministic finite automata (NFA) and alternating finite automata (AFA) </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="148" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="148" bodyend="152"/>
+      </memberdef>
+      <memberdef kind="enum" id="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>Naming</name>
+        <qualifiedname>mata::IntermediateAut::Naming</qualifiedname>
+        <enumvalue id="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07ae1f2d5134ed2543d38a0de9751cf75d9" prot="public">
+          <name>AUTO</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07ababf52731db6daa868888536af70aeb0" prot="public">
+          <name>MARKED</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07a85a1979d26d0ef93dcc13a72fee80705" prot="public">
+          <name>ENUM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07adb8615d2de129806499e1c0b9ed16f9f" prot="public">
+          <name>CHARS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07ab0a0ad647d82115f6f3cf54965a69c91" prot="public">
+          <name>UTF</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>The possible kinds of naming of items in sets of states, nodes, or symbols. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It implies how the given set is defined. Naming could be automatic (all things in formula not belonging to other sets will be assigned to a set with automatic naming), marker based (everything beginning with <computeroutput>q</computeroutput> is a state, with <computeroutput>s</computeroutput> is a symbol, with <computeroutput>n</computeroutput> is a node), or enumerated (the given set is defined by enumeration). There are two special cases used for alphabet - symbols could be any character (CHARS) or anything from utf (UTF). </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="162" column="6" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="162" bodyend="168"/>
+      </memberdef>
+      <memberdef kind="enum" id="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>AlphabetType</name>
+        <qualifiedname>mata::IntermediateAut::AlphabetType</qualifiedname>
+        <enumvalue id="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315a440806ada035e97a59ec9d2ca6796cb3" prot="public">
+          <name>EXPLICIT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315a1dd0801f2b4551424733708e3e564565" prot="public">
+          <name>BITVECTOR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315ac18e8f1f430ea227dbd63d0d9a2bc5fb" prot="public">
+          <name>CLASS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315a4422781eb702d420ad1248f3d7ef7e7d" prot="public">
+          <name>INTERVALS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Type of alphabet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>We can have explicit alphabet (containing explicit symbols), or bitvector, or class of symbols (e.g., alphabet is everything in utf), or intervals. So far, only explicit representation is supported. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="175" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="175" bodyend="180"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1aefee8e27a12dde8ce7e37f32f6285c7a" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07" kindref="member">Naming</ref></type>
+        <definition>Naming state_naming</definition>
+        <argsstring></argsstring>
+        <name>state_naming</name>
+        <qualifiedname>mata::IntermediateAut::state_naming</qualifiedname>
+        <initializer>= <ref refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07ababf52731db6daa868888536af70aeb0" kindref="member">Naming::MARKED</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="182" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="182" bodyend="-1"/>
+        <referencedby refid="classmata_1_1IntermediateAut_1aea9013428178e74ab6a8f688161f3e86" compoundref="inter-aut_8hh" startline="228" endline="228">IntermediateAut::are_states_enum_type</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1ace332fa9864f7580faa15a2cc74a9f87" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07" kindref="member">Naming</ref></type>
+        <definition>Naming symbol_naming</definition>
+        <argsstring></argsstring>
+        <name>symbol_naming</name>
+        <qualifiedname>mata::IntermediateAut::symbol_naming</qualifiedname>
+        <initializer>= <ref refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07ababf52731db6daa868888536af70aeb0" kindref="member">Naming::MARKED</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="183" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="183" bodyend="-1"/>
+        <referencedby refid="classmata_1_1IntermediateAut_1a7844a25b27d3ef66321309c92d17708b" compoundref="inter-aut_8hh" startline="229" endline="229">IntermediateAut::are_symbols_enum_type</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1a26b297286bc7af8bd0e2d87d72da0a36" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07" kindref="member">Naming</ref></type>
+        <definition>Naming node_naming</definition>
+        <argsstring></argsstring>
+        <name>node_naming</name>
+        <qualifiedname>mata::IntermediateAut::node_naming</qualifiedname>
+        <initializer>= <ref refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07ababf52731db6daa868888536af70aeb0" kindref="member">Naming::MARKED</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="184" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="184" bodyend="-1"/>
+        <referencedby refid="classmata_1_1IntermediateAut_1ac09fe806e90cb4a220f5dd2742150ba0" compoundref="inter-aut_8hh" startline="230" endline="230">IntermediateAut::are_nodes_enum_type</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1a94fdaa32b3e62fa8c45f962666e95e9b" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315" kindref="member">AlphabetType</ref></type>
+        <definition>AlphabetType alphabet_type</definition>
+        <argsstring></argsstring>
+        <name>alphabet_type</name>
+        <qualifiedname>mata::IntermediateAut::alphabet_type</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="185" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="185" bodyend="185"/>
+        <referencedby refid="classmata_1_1IntermediateAut_1a7e2d628760eeab67b3d3d5f9481512b6" compoundref="inter-aut_8hh" startline="232" endline="232">IntermediateAut::is_bitvector</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1a85a0b8fb7c2f551d8fd2085f3c193f3f" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6" kindref="member">AutomatonType</ref></type>
+        <definition>AutomatonType automaton_type</definition>
+        <argsstring></argsstring>
+        <name>automaton_type</name>
+        <qualifiedname>mata::IntermediateAut::automaton_type</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="186" column="19" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="186" bodyend="186"/>
+        <referencedby refid="classmata_1_1IntermediateAut_1a347d61bfa7b3c998186420349e3cb7bd" compoundref="inter-aut_8hh" startline="235" endline="235">IntermediateAut::is_afa</referencedby>
+        <referencedby refid="classmata_1_1IntermediateAut_1a13757e94512d94caa1f44f480ddbc870" compoundref="inter-aut_8hh" startline="234" endline="234">IntermediateAut::is_nfa</referencedby>
+        <referencedby refid="classmata_1_1IntermediateAut_1ac05b5b6ff40aae610924e4c02148d34a" compoundref="inter-aut_8hh" startline="233" endline="233">IntermediateAut::is_nft</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1ab81e52c95e3a6940bac87320f3077c72" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; std::string &gt;</type>
+        <definition>std::vector&lt;std::string&gt; states_names</definition>
+        <argsstring></argsstring>
+        <name>states_names</name>
+        <qualifiedname>mata::IntermediateAut::states_names</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="189" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="189" bodyend="189"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1a9a4631c2c3de603730c2e078a3e3cd00" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; std::string &gt;</type>
+        <definition>std::vector&lt;std::string&gt; symbols_names</definition>
+        <argsstring></argsstring>
+        <name>symbols_names</name>
+        <qualifiedname>mata::IntermediateAut::symbols_names</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="190" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="190" bodyend="190"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1a165dd43a4ff5ad533342dfd568837100" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; std::string &gt;</type>
+        <definition>std::vector&lt;std::string&gt; nodes_names</definition>
+        <argsstring></argsstring>
+        <name>nodes_names</name>
+        <qualifiedname>mata::IntermediateAut::nodes_names</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="191" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="191" bodyend="191"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1ab71326fbf9f80bcd1b83e930bec97639" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref></type>
+        <definition>FormulaGraph initial_formula</definition>
+        <argsstring></argsstring>
+        <name>initial_formula</name>
+        <qualifiedname>mata::IntermediateAut::initial_formula</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="193" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="193" bodyend="193"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1ac9124c62a2e7d69e96223ed7a7ace39d" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref></type>
+        <definition>FormulaGraph final_formula</definition>
+        <argsstring></argsstring>
+        <name>final_formula</name>
+        <qualifiedname>mata::IntermediateAut::final_formula</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="194" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="194" bodyend="194"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1ad5013794391686b13d48b1b0a043f574" prot="public" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool initial_enumerated</definition>
+        <argsstring></argsstring>
+        <name>initial_enumerated</name>
+        <qualifiedname>mata::IntermediateAut::initial_enumerated</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="196" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="196" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1IntermediateAut_1ada540035c20f6e57fc6a725b531f6a9a" prot="public" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool final_enumerated</definition>
+        <argsstring></argsstring>
+        <name>final_enumerated</name>
+        <qualifiedname>mata::IntermediateAut::final_enumerated</qualifiedname>
+        <initializer>= false</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="197" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="197" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a9d2d0ae6a12bb690a4e25fd07296fd0e" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+        <definition>const FormulaGraph &amp; get_symbol_part_of_transition</definition>
+        <argsstring>(const std::pair&lt; FormulaNode, FormulaGraph &gt; &amp;trans) const</argsstring>
+        <name>get_symbol_part_of_transition</name>
+        <qualifiedname>mata::IntermediateAut::get_symbol_part_of_transition</qualifiedname>
+        <param>
+          <type>const std::pair&lt; <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref>, <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &gt; &amp;</type>
+          <declname>trans</declname>
+        </param>
+        <briefdescription>
+<para>Returns symbolic part of transition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>That may be just a symbol or bitvector formula. This function is supported only for NFA where transitions have a rhs state at the end of right handed side of transition. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>transition</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Transition from which symbol is returned </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Graph representing symbol. It maybe just an explicit symbol or graph representing bitvector formula </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="212" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1aea9013428178e74ab6a8f688161f3e86" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_states_enum_type</definition>
+        <argsstring>() const</argsstring>
+        <name>are_states_enum_type</name>
+        <qualifiedname>mata::IntermediateAut::are_states_enum_type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="228" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="228" bodyend="228"/>
+        <references refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07a85a1979d26d0ef93dcc13a72fee80705">IntermediateAut::ENUM</references>
+        <references refid="classmata_1_1IntermediateAut_1aefee8e27a12dde8ce7e37f32f6285c7a" compoundref="inter-aut_8hh" startline="182">IntermediateAut::state_naming</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a7844a25b27d3ef66321309c92d17708b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_symbols_enum_type</definition>
+        <argsstring>() const</argsstring>
+        <name>are_symbols_enum_type</name>
+        <qualifiedname>mata::IntermediateAut::are_symbols_enum_type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="229" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="229" bodyend="229"/>
+        <references refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07a85a1979d26d0ef93dcc13a72fee80705">IntermediateAut::ENUM</references>
+        <references refid="classmata_1_1IntermediateAut_1ace332fa9864f7580faa15a2cc74a9f87" compoundref="inter-aut_8hh" startline="183">IntermediateAut::symbol_naming</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1ac09fe806e90cb4a220f5dd2742150ba0" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_nodes_enum_type</definition>
+        <argsstring>() const</argsstring>
+        <name>are_nodes_enum_type</name>
+        <qualifiedname>mata::IntermediateAut::are_nodes_enum_type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="230" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="230" bodyend="230"/>
+        <references refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07a85a1979d26d0ef93dcc13a72fee80705">IntermediateAut::ENUM</references>
+        <references refid="classmata_1_1IntermediateAut_1a26b297286bc7af8bd0e2d87d72da0a36" compoundref="inter-aut_8hh" startline="184">IntermediateAut::node_naming</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a7e2d628760eeab67b3d3d5f9481512b6" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_bitvector</definition>
+        <argsstring>() const</argsstring>
+        <name>is_bitvector</name>
+        <qualifiedname>mata::IntermediateAut::is_bitvector</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="232" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="232" bodyend="232"/>
+        <references refid="classmata_1_1IntermediateAut_1a94fdaa32b3e62fa8c45f962666e95e9b" compoundref="inter-aut_8hh" startline="185" endline="185">IntermediateAut::alphabet_type</references>
+        <references refid="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315a1dd0801f2b4551424733708e3e564565">IntermediateAut::BITVECTOR</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1ac05b5b6ff40aae610924e4c02148d34a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_nft</definition>
+        <argsstring>() const</argsstring>
+        <name>is_nft</name>
+        <qualifiedname>mata::IntermediateAut::is_nft</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="233" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="233" bodyend="233"/>
+        <references refid="classmata_1_1IntermediateAut_1a85a0b8fb7c2f551d8fd2085f3c193f3f" compoundref="inter-aut_8hh" startline="186" endline="186">IntermediateAut::automaton_type</references>
+        <references refid="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6aa692c529f241845ae00b47284e09e76a">IntermediateAut::NFT</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a13757e94512d94caa1f44f480ddbc870" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_nfa</definition>
+        <argsstring>() const</argsstring>
+        <name>is_nfa</name>
+        <qualifiedname>mata::IntermediateAut::is_nfa</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="234" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="234" bodyend="234"/>
+        <references refid="classmata_1_1IntermediateAut_1a85a0b8fb7c2f551d8fd2085f3c193f3f" compoundref="inter-aut_8hh" startline="186" endline="186">IntermediateAut::automaton_type</references>
+        <references refid="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6a1e652bf53c4bbe8b46ca8803c70f3e62">IntermediateAut::NFA</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a347d61bfa7b3c998186420349e3cb7bd" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_afa</definition>
+        <argsstring>() const</argsstring>
+        <name>is_afa</name>
+        <qualifiedname>mata::IntermediateAut::is_afa</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="235" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="235" bodyend="235"/>
+        <references refid="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6ae93a8423a46c546f6241b4ff0b3c78d5">IntermediateAut::AFA</references>
+        <references refid="classmata_1_1IntermediateAut_1a85a0b8fb7c2f551d8fd2085f3c193f3f" compoundref="inter-aut_8hh" startline="186" endline="186">IntermediateAut::automaton_type</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a65213f4429251a3b7ebc0d119309183b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::unordered_set&lt; std::string &gt;</type>
+        <definition>std::unordered_set&lt; std::string &gt; get_enumerated_initials</definition>
+        <argsstring>() const</argsstring>
+        <name>get_enumerated_initials</name>
+        <qualifiedname>mata::IntermediateAut::get_enumerated_initials</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="237" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="237" bodyend="237"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a2674758dd01a3aef9061500d60dbf5ef" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::unordered_set&lt; std::string &gt;</type>
+        <definition>std::unordered_set&lt; std::string &gt; get_enumerated_finals</definition>
+        <argsstring>() const</argsstring>
+        <name>get_enumerated_finals</name>
+        <qualifiedname>mata::IntermediateAut::get_enumerated_finals</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="238" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="238" bodyend="238"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1ac085c3fbe614fdd0f50ba57040e0a75a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_final_states_conjunction_of_negation</definition>
+        <argsstring>() const</argsstring>
+        <name>are_final_states_conjunction_of_negation</name>
+        <qualifiedname>mata::IntermediateAut::are_final_states_conjunction_of_negation</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="240" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="240" bodyend="242"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a06f9c91b6dd55b32362521ac37ffe7c1" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::unordered_set&lt; std::string &gt;</type>
+        <definition>std::unordered_set&lt; std::string &gt; get_positive_finals</definition>
+        <argsstring>() const</argsstring>
+        <name>get_positive_finals</name>
+        <qualifiedname>mata::IntermediateAut::get_positive_finals</qualifiedname>
+        <briefdescription>
+<para>Method returns a set of final states in the case that they were entered as a conjunction of negated states. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It collects all negated states and subtracts them from set of all states. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="250" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a086d9bca4d8243724f506794f587b931" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t get_number_of_disjuncts</definition>
+        <argsstring>() const</argsstring>
+        <name>get_number_of_disjuncts</name>
+        <qualifiedname>mata::IntermediateAut::get_number_of_disjuncts</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="252" column="12"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a013da5b2bdc77254098b1c23a3e4d46f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void add_transition</definition>
+        <argsstring>(const FormulaNode &amp;lhs, const FormulaNode &amp;symbol, const FormulaGraph &amp;rhs)</argsstring>
+        <name>add_transition</name>
+        <qualifiedname>mata::IntermediateAut::add_transition</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>symbol</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="255" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a82d0976df8265d6510cecac8ca29ab4c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void add_transition</definition>
+        <argsstring>(const FormulaNode &amp;lhs, const FormulaNode &amp;rhs)</argsstring>
+        <name>add_transition</name>
+        <qualifiedname>mata::IntermediateAut::add_transition</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="256" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a3cb9f1c039cf9e05639a8b86b6c1f115" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void print_transitions_trees</definition>
+        <argsstring>(std::ostream &amp;) const</argsstring>
+        <name>print_transitions_trees</name>
+        <qualifiedname>mata::IntermediateAut::print_transitions_trees</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="257" column="10"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a54ff0cacda397551e06fa8a496ae5232" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref> &gt;</type>
+        <definition>static std::vector&lt; IntermediateAut &gt; parse_from_mf</definition>
+        <argsstring>(const mata::parser::Parsed &amp;parsed)</argsstring>
+        <name>parse_from_mf</name>
+        <qualifiedname>mata::IntermediateAut::parse_from_mf</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1parser_1a3e200746226a7d10b9019bd92eec2ee4" kindref="member">mata::parser::Parsed</ref> &amp;</type>
+          <declname>parsed</declname>
+        </param>
+        <briefdescription>
+<para>A method for building a vector of <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref> for a parsed input. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For each section in input is created one <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref>. It parses basic information about type of automata, its naming conventions etc. Then it parses input and final formula of automaton. Finally, transition formulas are transformed to graph representation by turning an input stream of tokens to postfix notation and then a tree representing the formula is built from it. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>parsed</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsed input in MATA format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A vector of InterAutomata from each section in parsed input. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="226" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a1890b41178993c01d5e713de11f7f246" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>static bool is_graph_conjunction_of_negations</definition>
+        <argsstring>(const FormulaGraph &amp;graph)</argsstring>
+        <name>is_graph_conjunction_of_negations</name>
+        <qualifiedname>mata::IntermediateAut::is_graph_conjunction_of_negations</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+          <declname>graph</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="244" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntermediateAut_1a65cf643ea1b2c2ca1d25309c56d7f787" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void parse_transition</definition>
+        <argsstring>(mata::IntermediateAut &amp;aut, const std::vector&lt; std::string &gt; &amp;tokens)</argsstring>
+        <name>parse_transition</name>
+        <qualifiedname>mata::IntermediateAut::parse_transition</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; std::string &gt; &amp;</type>
+          <declname>tokens</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="254" column="17"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Structure for a general intermediate representation of parsed automaton. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>It contains information about type of automata, type of naming of nodes, symbols and states and type of alphabet. It contains also the transitions formula and formula for initial and final states. The formulas are represented as tree where nodes are either operands or operators. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>IntermediateAut</label>
+        <link refid="classmata_1_1IntermediateAut"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>final_formula</edgelabel>
+          <edgelabel>initial_formula</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>FormulaGraph</label>
+        <link refid="classmata_1_1FormulaGraph"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>FormulaNode</label>
+        <link refid="structmata_1_1FormulaNode"/>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="142" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="142" bodyend="258"/>
+    <listofallmembers>
+      <member refid="classmata_1_1IntermediateAut_1a013da5b2bdc77254098b1c23a3e4d46f" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>add_transition</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a82d0976df8265d6510cecac8ca29ab4c" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>add_transition</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a94fdaa32b3e62fa8c45f962666e95e9b" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>alphabet_type</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a103da1003f534c8438b0b32c9ab81315" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>AlphabetType</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ac085c3fbe614fdd0f50ba57040e0a75a" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>are_final_states_conjunction_of_negation</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ac09fe806e90cb4a220f5dd2742150ba0" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>are_nodes_enum_type</name></member>
+      <member refid="classmata_1_1IntermediateAut_1aea9013428178e74ab6a8f688161f3e86" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>are_states_enum_type</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a7844a25b27d3ef66321309c92d17708b" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>are_symbols_enum_type</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a85a0b8fb7c2f551d8fd2085f3c193f3f" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>automaton_type</name></member>
+      <member refid="classmata_1_1IntermediateAut_1af75360e5995130bca4303e65a26275f6" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>AutomatonType</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ada540035c20f6e57fc6a725b531f6a9a" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>final_enumerated</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ac9124c62a2e7d69e96223ed7a7ace39d" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>final_formula</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a2674758dd01a3aef9061500d60dbf5ef" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>get_enumerated_finals</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a65213f4429251a3b7ebc0d119309183b" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>get_enumerated_initials</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a086d9bca4d8243724f506794f587b931" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>get_number_of_disjuncts</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a06f9c91b6dd55b32362521ac37ffe7c1" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>get_positive_finals</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a9d2d0ae6a12bb690a4e25fd07296fd0e" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>get_symbol_part_of_transition</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ad5013794391686b13d48b1b0a043f574" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>initial_enumerated</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ab71326fbf9f80bcd1b83e930bec97639" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>initial_formula</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a347d61bfa7b3c998186420349e3cb7bd" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>is_afa</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a7e2d628760eeab67b3d3d5f9481512b6" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>is_bitvector</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a1890b41178993c01d5e713de11f7f246" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>is_graph_conjunction_of_negations</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a13757e94512d94caa1f44f480ddbc870" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>is_nfa</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ac05b5b6ff40aae610924e4c02148d34a" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>is_nft</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ae702fd52a8083ddd65917e4bcda5db07" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>Naming</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a26b297286bc7af8bd0e2d87d72da0a36" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>node_naming</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a165dd43a4ff5ad533342dfd568837100" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>nodes_names</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a54ff0cacda397551e06fa8a496ae5232" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>parse_from_mf</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a65cf643ea1b2c2ca1d25309c56d7f787" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>parse_transition</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a3cb9f1c039cf9e05639a8b86b6c1f115" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>print_transitions_trees</name></member>
+      <member refid="classmata_1_1IntermediateAut_1aefee8e27a12dde8ce7e37f32f6285c7a" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>state_naming</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ab81e52c95e3a6940bac87320f3077c72" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>states_names</name></member>
+      <member refid="classmata_1_1IntermediateAut_1ace332fa9864f7580faa15a2cc74a9f87" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>symbol_naming</name></member>
+      <member refid="classmata_1_1IntermediateAut_1a9a4631c2c3de603730c2e078a3e3cd00" prot="public" virt="non-virtual"><scope>mata::IntermediateAut</scope><name>symbols_names</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,721 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="alphabet_8hh" kind="file" language="C++">
+    <compoundname>alphabet.hh</compoundname>
+    <includes local="no">forward_list</includes>
+    <includes local="no">string</includes>
+    <includes local="no">utility</includes>
+    <includes refid="utils_8hh" local="yes">utils/utils.hh</includes>
+    <includes refid="ord-vector_8hh" local="yes">utils/ord-vector.hh</includes>
+    <includedby refid="nfa_2delta_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</includedby>
+    <includedby refid="nfa_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</includedby>
+    <includedby refid="nfa_2types_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh</includedby>
+    <includedby refid="nft_2delta_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</includedby>
+    <includedby refid="nft_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</includedby>
+    <includedby refid="nft_2types_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh</label>
+        <link refid="alphabet_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>utils/ord-vector.hh</label>
+        <link refid="ord-vector_8hh"/>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>utils/utils.hh</label>
+        <link refid="utils_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>algorithm</label>
+      </node>
+      <node id="14">
+        <label>cassert</label>
+      </node>
+      <node id="17">
+        <label>cstdint</label>
+      </node>
+      <node id="2">
+        <label>forward_list</label>
+      </node>
+      <node id="7">
+        <label>functional</label>
+      </node>
+      <node id="8">
+        <label>iostream</label>
+      </node>
+      <node id="9">
+        <label>list</label>
+      </node>
+      <node id="10">
+        <label>map</label>
+      </node>
+      <node id="11">
+        <label>set</label>
+      </node>
+      <node id="12">
+        <label>sstream</label>
+      </node>
+      <node id="13">
+        <label>stack</label>
+      </node>
+      <node id="3">
+        <label>string</label>
+      </node>
+      <node id="15">
+        <label>unordered_map</label>
+      </node>
+      <node id="4">
+        <label>utility</label>
+      </node>
+      <node id="16">
+        <label>vector</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh</label>
+        <link refid="alphabet_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh</label>
+        <link refid="strings_8hh"/>
+      </node>
+      <node id="5">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/algorithms.hh</label>
+        <link refid="nfa_2algorithms_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh</label>
+        <link refid="nfa_2builder_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</label>
+        <link refid="nfa_2delta_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</label>
+        <link refid="nfa_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh</label>
+        <link refid="nfa_2plumbing_8hh"/>
+      </node>
+      <node id="14">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh</label>
+        <link refid="nfa_2types_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh</label>
+        <link refid="nft_2algorithms_8hh"/>
+      </node>
+      <node id="8">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh</label>
+        <link refid="nft_2builder_8hh"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</label>
+        <link refid="nft_2delta_8hh"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</label>
+        <link refid="nft_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh</label>
+        <link refid="nft_2plumbing_8hh"/>
+      </node>
+      <node id="15">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh</label>
+        <link refid="nft_2types_8hh"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/re2parser.hh</label>
+        <link refid="re2parser_8hh"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classmata_1_1Alphabet" prot="public">mata::Alphabet</innerclass>
+    <innerclass refid="classmata_1_1IntAlphabet" prot="public">mata::IntAlphabet</innerclass>
+    <innerclass refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" prot="private">mata::IntAlphabet::IntAlphabetSingleton</innerclass>
+    <innerclass refid="classmata_1_1EnumAlphabet" prot="public">mata::EnumAlphabet</innerclass>
+    <innerclass refid="classmata_1_1OnTheFlyAlphabet" prot="public">mata::OnTheFlyAlphabet</innerclass>
+    <innernamespace refid="namespacemata">mata</innernamespace>
+    <innernamespace refid="namespacestd">std</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/*<sp/>alphabet.hh<sp/>--<sp/>File<sp/>containing<sp/>alphabets<sp/>for<sp/>automata.</highlight></codeline>
+<codeline lineno="2"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>MATA_ALPHABET_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>MATA_ALPHABET_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;forward_list&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;string&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;utility&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="utils_8hh" kindref="compound">utils/utils.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="ord-vector_8hh" kindref="compound">utils/ord-vector.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight></codeline>
+<codeline lineno="14" refid="namespacemata" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacemata" kindref="compound">mata</ref><sp/>{</highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight></codeline>
+<codeline lineno="16" refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>=<sp/>unsigned;</highlight></codeline>
+<codeline lineno="17" refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/>=<sp/>std::vector&lt;Symbol&gt;;</highlight></codeline>
+<codeline lineno="18" refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" kindref="member">WordName</ref><sp/>=<sp/>std::vector&lt;std::string&gt;;</highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="20"><highlight class="comment"><sp/>/**</highlight></codeline>
+<codeline lineno="21"><highlight class="comment"><sp/><sp/>*<sp/>The<sp/>abstract<sp/>interface<sp/>for<sp/>NFA<sp/>alphabets.</highlight></codeline>
+<codeline lineno="22"><highlight class="comment"><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23" refid="classmata_1_1Alphabet" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>{</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="25"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>translates<sp/>a<sp/>string<sp/>into<sp/>a<sp/>symbol</highlight></codeline>
+<codeline lineno="26" refid="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9" kindref="member">translate_symb</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>&amp;symb)<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="28"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="29"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Translate<sp/>sequence<sp/>of<sp/>symbol<sp/>names<sp/>to<sp/>sequence<sp/>of<sp/>their<sp/>respective<sp/>values.</highlight></codeline>
+<codeline lineno="30"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31" refid="classmata_1_1Alphabet_1a839198a10c8040bfb498117fa299aa3b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/><ref refid="classmata_1_1Alphabet_1a839198a10c8040bfb498117fa299aa3b" kindref="member">translate_word</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" kindref="member">WordName</ref>&amp;<sp/>word_name)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="32"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>(void)word_name;</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Unimplemented&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="34"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="36"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="37"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Translate<sp/>internal<sp/>@p<sp/>symbol<sp/>representation<sp/>back<sp/>to<sp/>its<sp/>original<sp/>string<sp/>name.</highlight></codeline>
+<codeline lineno="38"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="39"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Throws<sp/>an<sp/>exception<sp/>when<sp/>the<sp/>@p<sp/>symbol<sp/>is<sp/>missing<sp/>in<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="40"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>symbol<sp/>Symbol<sp/>to<sp/>translate.</highlight></codeline>
+<codeline lineno="41"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>@p<sp/>symbol<sp/>original<sp/>name.</highlight></codeline>
+<codeline lineno="42"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classmata_1_1Alphabet_1a9043bb698e3a1ac5a702a2de113d8e1a" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/>std::string<sp/><ref refid="classmata_1_1Alphabet_1a9043bb698e3a1ac5a702a2de113d8e1a" kindref="member">reverse_translate_symbol</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="45"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>also<sp/>translates<sp/>strings<sp/>to<sp/>symbols</highlight></codeline>
+<codeline lineno="46" refid="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b" kindref="member">operator[]</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>&amp;symb)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>this-&gt;<ref refid="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9" kindref="member">translate_symb</ref>(symb);<sp/>}</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="48"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="49"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Get<sp/>a<sp/>set<sp/>of<sp/>all<sp/>symbols<sp/>in<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="50"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="51"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>The<sp/>result<sp/>does<sp/>not<sp/>have<sp/>to<sp/>equal<sp/>the<sp/>list<sp/>of<sp/>symbols<sp/>in<sp/>the<sp/>automaton<sp/>using<sp/>this<sp/>alphabet.</highlight></codeline>
+<codeline lineno="52"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53" refid="classmata_1_1Alphabet_1ae1edf8c949d5c0523b05eb58192b2884" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1Alphabet_1ae1edf8c949d5c0523b05eb58192b2884" kindref="member">get_alphabet_symbols</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Unimplemented&quot;</highlight><highlight class="normal">);<sp/>}</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="55"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>complement<sp/>of<sp/>a<sp/>set<sp/>of<sp/>symbols<sp/>wrt<sp/>the<sp/>alphabet</highlight></codeline>
+<codeline lineno="56" refid="classmata_1_1Alphabet_1a657cec0fd4934edfe40e7d70a5219774" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1Alphabet_1a657cec0fd4934edfe40e7d70a5219774" kindref="member">get_complement</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref>&amp;<sp/>symbols)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="comment">//<sp/>{{{</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>(void)<sp/>symbols;</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Unimplemented&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="comment">//<sp/>}}}</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="61" refid="classmata_1_1Alphabet_1a9dbe39c3ff6adeeea62bb9751077b4d0" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1a9dbe39c3ff6adeeea62bb9751077b4d0" kindref="member">~Alphabet</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="63"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="64"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Check<sp/>whether<sp/>two<sp/>alphabets<sp/>are<sp/>equal.</highlight></codeline>
+<codeline lineno="65"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="66"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>In<sp/>general,<sp/>two<sp/>alphabets<sp/>are<sp/>equal<sp/>if<sp/>and<sp/>only<sp/>if<sp/>they<sp/>are<sp/>of<sp/>the<sp/>same<sp/>class<sp/>instance.</highlight></codeline>
+<codeline lineno="67"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>other_alphabet<sp/>The<sp/>other<sp/>alphabet<sp/>to<sp/>compare<sp/>with<sp/>for<sp/>equality.</highlight></codeline>
+<codeline lineno="68"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>True<sp/>if<sp/>equal,<sp/>false<sp/>otherwise.</highlight></codeline>
+<codeline lineno="69"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="70" refid="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b" kindref="member">is_equal</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>&amp;other_alphabet)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" kindref="member">address</ref>()<sp/>==<sp/>other_alphabet.<ref refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" kindref="member">address</ref>();<sp/>}</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="72"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="73"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Check<sp/>whether<sp/>two<sp/>alphabets<sp/>are<sp/>equal.</highlight></codeline>
+<codeline lineno="74"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="75"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>In<sp/>general,<sp/>two<sp/>alphabets<sp/>are<sp/>equal<sp/>if<sp/>and<sp/>only<sp/>if<sp/>they<sp/>are<sp/>of<sp/>the<sp/>same<sp/>class<sp/>instance.</highlight></codeline>
+<codeline lineno="76"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>other_alphabet<sp/>The<sp/>other<sp/>alphabet<sp/>to<sp/>compare<sp/>with<sp/>for<sp/>equality.</highlight></codeline>
+<codeline lineno="77"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>True<sp/>if<sp/>equal,<sp/>false<sp/>otherwise.</highlight></codeline>
+<codeline lineno="78"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="79" refid="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043" kindref="member">is_equal</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>*</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>other_alphabet)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" kindref="member">address</ref>()<sp/>==<sp/>other_alphabet-&gt;<ref refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" kindref="member">address</ref>();</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"></highlight></codeline>
+<codeline lineno="83" refid="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421" kindref="member">operator==</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>&amp;)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="85"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="86"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Checks<sp/>whether<sp/>the<sp/>alphabet<sp/>has<sp/>any<sp/>symbols.</highlight></codeline>
+<codeline lineno="87"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="88" refid="classmata_1_1Alphabet_1ae22f66718bb2160cb671c4355ceeb1a2" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1ae22f66718bb2160cb671c4355ceeb1a2" kindref="member">empty</ref>()<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"></highlight></codeline>
+<codeline lineno="90" refid="classmata_1_1Alphabet_1aae048282c7011eedc2e0492f6421ea73" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet_1aae048282c7011eedc2e0492f6421ea73" kindref="member">clear</ref>()<sp/>{<sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Unimplemented&quot;</highlight><highlight class="normal">);<sp/>}</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"></highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="93" refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal">*<sp/><ref refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" kindref="member">address</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">this</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="94"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>Alphabet.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="96"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="97"><highlight class="comment">*<sp/>Direct<sp/>alphabet<sp/>(also<sp/>identity<sp/>alphabet<sp/>or<sp/>integer<sp/>alphabet)<sp/>using<sp/>integers<sp/>as<sp/>symbols.</highlight></codeline>
+<codeline lineno="98"><highlight class="comment">*</highlight></codeline>
+<codeline lineno="99"><highlight class="comment">*<sp/>This<sp/>alphabet<sp/>presumes<sp/>that<sp/>all<sp/>integers<sp/>are<sp/>valid<sp/>symbols.</highlight></codeline>
+<codeline lineno="100"><highlight class="comment">*<sp/>Therefore,<sp/>calling<sp/>member<sp/>functions<sp/>get_complement()<sp/>and<sp/>get_alphabet_symbols()<sp/>makes<sp/>no<sp/>sense<sp/>in<sp/>this<sp/>context<sp/>and<sp/>the<sp/>methods</highlight></codeline>
+<codeline lineno="101"><highlight class="comment">*<sp/><sp/>will<sp/>throw<sp/>exceptions<sp/>warning<sp/>about<sp/>the<sp/>inappropriate<sp/>use<sp/>of<sp/>IntAlphabet.<sp/>If<sp/>one<sp/>needs<sp/>these<sp/>functions,<sp/>they<sp/>should</highlight></codeline>
+<codeline lineno="102"><highlight class="comment">*<sp/><sp/>use<sp/>OnTheFlyAlphabet<sp/>instead<sp/>of<sp/>IntAlphabet.</highlight></codeline>
+<codeline lineno="103"><highlight class="comment">*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="104" refid="classmata_1_1IntAlphabet" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1IntAlphabet" kindref="compound">IntAlphabet</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>{</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="106" refid="classmata_1_1IntAlphabet_1a3d4df17a353ac7de40c9ad90167df9e3" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1a3d4df17a353ac7de40c9ad90167df9e3" kindref="member">IntAlphabet</ref>()<sp/>:<sp/><ref refid="classmata_1_1IntAlphabet_1a2ea31609a6e8ff16d2859d58811d84ce" kindref="member">alphabet_instance</ref>(<ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>::get())<sp/>{}</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"></highlight></codeline>
+<codeline lineno="108" refid="classmata_1_1IntAlphabet_1a5956fe34c120b11bb74e2ecb3f9f7df6" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1IntAlphabet_1a5956fe34c120b11bb74e2ecb3f9f7df6" kindref="member">translate_symb</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>&amp;symb)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"></highlight></codeline>
+<codeline lineno="110" refid="classmata_1_1IntAlphabet_1a04dc585772dae7a5187640961e9f3726" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/><ref refid="classmata_1_1IntAlphabet_1a04dc585772dae7a5187640961e9f3726" kindref="member">reverse_translate_symbol</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="namespacestd_1a6ac1135ef1b72d914b27c133a43fcf30" kindref="member">std::to_string</ref>(symbol);<sp/>}</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="112" refid="classmata_1_1IntAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1IntAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" kindref="member">get_alphabet_symbols</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Nonsensical<sp/>use<sp/>of<sp/>get_alphabet_symbols()<sp/>on<sp/>IntAlphabet.&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116" refid="classmata_1_1IntAlphabet_1ac49a8b966d82d52bec89a62be2e913b5" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1IntAlphabet_1ac49a8b966d82d52bec89a62be2e913b5" kindref="member">get_complement</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref>&amp;<sp/>symbols)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>(void)<sp/>symbols;</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Nonsensical<sp/>use<sp/>of<sp/>get_complement()<sp/>on<sp/>IntAlphabet.&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"></highlight></codeline>
+<codeline lineno="121" refid="classmata_1_1IntAlphabet_1af2cc334c6009f389096ae9d5330a9cdd" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1af2cc334c6009f389096ae9d5330a9cdd" kindref="member">IntAlphabet</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet" kindref="compound">IntAlphabet</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"></highlight></codeline>
+<codeline lineno="123" refid="classmata_1_1IntAlphabet_1a81680b3bf453517f835fa60032e9f9d8" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet" kindref="compound">IntAlphabet</ref>&amp;<sp/><ref refid="classmata_1_1IntAlphabet_1a81680b3bf453517f835fa60032e9f9d8" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet" kindref="compound">IntAlphabet</ref>&amp;<sp/>int_alphabet)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"></highlight></codeline>
+<codeline lineno="125" refid="classmata_1_1IntAlphabet_1a108bb972911adff5dd227f4f645a7967" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet_1a108bb972911adff5dd227f4f645a7967" kindref="member">empty</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"></highlight></codeline>
+<codeline lineno="127" refid="classmata_1_1IntAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82" kindref="member">clear</ref>()</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Nonsensical<sp/>use<sp/>of<sp/>clear()<sp/>on<sp/>IntAlphabet.&quot;</highlight><highlight class="normal">);<sp/>}</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"></highlight></codeline>
+<codeline lineno="129"><highlight class="normal"></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="130" refid="classmata_1_1IntAlphabet_1ae3fc574f2bd60d3a15cda26b4a24565f" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal">*<sp/><ref refid="classmata_1_1IntAlphabet_1ae3fc574f2bd60d3a15cda26b4a24565f" kindref="member">address</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>&amp;<ref refid="classmata_1_1IntAlphabet_1a2ea31609a6e8ff16d2859d58811d84ce" kindref="member">alphabet_instance</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"></highlight></codeline>
+<codeline lineno="132"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="133"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="134"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Singleton<sp/>class<sp/>implementing<sp/>integer<sp/>alphabet_instance<sp/>for<sp/>class<sp/>IntAlphabet.</highlight></codeline>
+<codeline lineno="135"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="136"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Users<sp/>have<sp/>to<sp/>use<sp/>IntAlphabet<sp/>instead<sp/>which<sp/>provides<sp/>interface<sp/>identical<sp/>to<sp/>other<sp/>alphabets<sp/>and<sp/>can<sp/>be<sp/>used<sp/>in</highlight></codeline>
+<codeline lineno="137"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/><sp/>places<sp/>where<sp/>an<sp/>instance<sp/>of<sp/>the<sp/>abstract<sp/>class<sp/>Alphabet<sp/>is<sp/>required.</highlight></codeline>
+<codeline lineno="138"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="139" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" refkind="compound"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref><sp/>{</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="141" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aff2d2aa24b78e6c19e0a87af2629c2eb" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;<sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aff2d2aa24b78e6c19e0a87af2629c2eb" kindref="member">get</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref><sp/>alphabet;</highlight></codeline>
+<codeline lineno="143"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>alphabet;</highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="145"><highlight class="normal"></highlight></codeline>
+<codeline lineno="146" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0a7fb1b7c97e861246d41f2556d70a36" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0a7fb1b7c97e861246d41f2556d70a36" kindref="member">IntAlphabetSingleton</ref>(<ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="147" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aba1c0059a71cab0a807bdb8c0b37877e" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aba1c0059a71cab0a807bdb8c0b37877e" kindref="member">IntAlphabetSingleton</ref>(<ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="148" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a12ad75118ad7b2cd4b0da3ddce3c2e19" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;<sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a12ad75118ad7b2cd4b0da3ddce3c2e19" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="149" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1ac950d77643d5966ec16a94a9da8ec516" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;<sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1ac950d77643d5966ec16a94a9da8ec516" kindref="member">operator=</ref>(<ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;&amp;)<sp/>=<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="150"><highlight class="normal"></highlight></codeline>
+<codeline lineno="151" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a344f1d32162e65175ddda4ab3dbb28c1" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a344f1d32162e65175ddda4ab3dbb28c1" kindref="member">~IntAlphabetSingleton</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="152"><highlight class="normal"></highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="154" refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0ae91b03564d5b6da3f3a70d56a745dc" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0ae91b03564d5b6da3f3a70d56a745dc" kindref="member">IntAlphabetSingleton</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/><sp/><sp/>};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>IntAlphabetSingleton.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="156"><highlight class="normal"></highlight></codeline>
+<codeline lineno="157" refid="classmata_1_1IntAlphabet_1a2ea31609a6e8ff16d2859d58811d84ce" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref>&amp;<sp/><ref refid="classmata_1_1IntAlphabet_1a2ea31609a6e8ff16d2859d58811d84ce" kindref="member">alphabet_instance</ref>;</highlight></codeline>
+<codeline lineno="158"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>IntAlphabet.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="159"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="160"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="161"><highlight class="comment"><sp/>*<sp/>Enumerated<sp/>alphabet<sp/>using<sp/>a<sp/>set<sp/>of<sp/>integers<sp/>as<sp/>symbols<sp/>maintaining<sp/>a<sp/>set<sp/>of<sp/>specified<sp/>symbols.</highlight></codeline>
+<codeline lineno="162"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="163"><highlight class="comment"><sp/>*<sp/>@c<sp/>EnumAlphabet<sp/>is<sp/>a<sp/>version<sp/>of<sp/>direct<sp/>(identity)<sp/>alphabet<sp/>(does<sp/>not<sp/>give<sp/>names<sp/>to<sp/>symbols,<sp/>their<sp/>name<sp/>is<sp/>their</highlight></codeline>
+<codeline lineno="164"><highlight class="comment"><sp/>*<sp/><sp/>integer<sp/>value<sp/>directly).<sp/>However,<sp/>unlike<sp/>@c<sp/>IntAlphabet,<sp/>@c<sp/>EnumAlphabet<sp/>maintains<sp/>an<sp/>ordered<sp/>set<sp/>of<sp/>symbols<sp/>in</highlight></codeline>
+<codeline lineno="165"><highlight class="comment"><sp/>*<sp/><sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="166"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="167"><highlight class="comment"><sp/>*<sp/>Therefore,<sp/>calling<sp/>member<sp/>functions<sp/>@c<sp/>get_complement()<sp/>and<sp/>@c<sp/>get_alphabet_symbols()<sp/>makes<sp/>sense<sp/>in<sp/>the<sp/>context</highlight></codeline>
+<codeline lineno="168"><highlight class="comment"><sp/>*<sp/><sp/>of<sp/>@c<sp/>EnumAlphabet<sp/>and<sp/>the<sp/>functions<sp/>give<sp/>the<sp/>expected<sp/>results.</highlight></codeline>
+<codeline lineno="169"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="170"><highlight class="comment"><sp/>*<sp/><sp/>Example:</highlight></codeline>
+<codeline lineno="171"><highlight class="comment"><sp/>*<sp/><sp/>```cpp</highlight></codeline>
+<codeline lineno="172"><highlight class="comment"><sp/>*<sp/><sp/>Alphabet<sp/>alph{<sp/>EnumAlphabet{<sp/>0,<sp/>4,<sp/>6,<sp/>8,<sp/>9<sp/>}<sp/>};</highlight></codeline>
+<codeline lineno="173"><highlight class="comment"><sp/>*<sp/><sp/>CHECK(alph.translate_symb(&quot;6&quot;)<sp/>==<sp/>6);</highlight></codeline>
+<codeline lineno="174"><highlight class="comment"><sp/>*<sp/><sp/>CHECK_THROWS(alph.translate_symb(&quot;5&quot;));<sp/>//<sp/>Throws<sp/>an<sp/>exception<sp/>about<sp/>an<sp/>unknown<sp/>symbol.</highlight></codeline>
+<codeline lineno="175"><highlight class="comment"><sp/>*<sp/><sp/>CHECK(alph.get_complement({<sp/>utils::OrdVector&lt;Symbol&gt;{<sp/>0,<sp/>6,<sp/>9<sp/>}<sp/>})<sp/>==<sp/>utils::OrdVector&lt;Symbol&gt;{<sp/>4,<sp/>8<sp/>});</highlight></codeline>
+<codeline lineno="176"><highlight class="comment"><sp/>*<sp/><sp/>```</highlight></codeline>
+<codeline lineno="177"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="178" refid="classmata_1_1EnumAlphabet" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>{</highlight></codeline>
+<codeline lineno="179"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="180" refid="classmata_1_1EnumAlphabet_1ac3b6721a5c35f67481b338d520e94181" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1ac3b6721a5c35f67481b338d520e94181" kindref="member">EnumAlphabet</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="181" refid="classmata_1_1EnumAlphabet_1af5704774258eca5a277ee122f51e5f1f" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet_1af5704774258eca5a277ee122f51e5f1f" kindref="member">EnumAlphabet</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;<sp/>alphabet)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="182" refid="classmata_1_1EnumAlphabet_1abf14078d760fbb9f12cb5e807ec4bb1e" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1abf14078d760fbb9f12cb5e807ec4bb1e" kindref="member">EnumAlphabet</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>*<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>alphabet):<sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>(*alphabet)<sp/>{}</highlight></codeline>
+<codeline lineno="183" refid="classmata_1_1EnumAlphabet_1a4d2331198c8eda2d4ea517fe12c2f3b6" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet_1a4d2331198c8eda2d4ea517fe12c2f3b6" kindref="member">EnumAlphabet</ref>(<ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;&amp;<sp/>rhs)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="184"><highlight class="normal"></highlight></codeline>
+<codeline lineno="185" refid="classmata_1_1EnumAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" kindref="member">get_alphabet_symbols</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="186" refid="classmata_1_1EnumAlphabet_1ac49a8b966d82d52bec89a62be2e913b5" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1ac49a8b966d82d52bec89a62be2e913b5" kindref="member">get_complement</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref>&amp;<sp/>symbols)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a76b66e225ae187f3f69d870fd07080d7" kindref="member">difference</ref>(symbols);</highlight></codeline>
+<codeline lineno="188"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="189"><highlight class="normal"></highlight></codeline>
+<codeline lineno="190" refid="classmata_1_1EnumAlphabet_1a04dc585772dae7a5187640961e9f3726" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/><ref refid="classmata_1_1EnumAlphabet_1a04dc585772dae7a5187640961e9f3726" kindref="member">reverse_translate_symbol</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol)<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"></highlight></codeline>
+<codeline lineno="192" refid="classmata_1_1EnumAlphabet_1aba52e7ef9fefa320cf64274e3f11854b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;<sp/><ref refid="classmata_1_1EnumAlphabet_1aba52e7ef9fefa320cf64274e3f11854b" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;<sp/>rhs)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="193" refid="classmata_1_1EnumAlphabet_1a97db905d8dbab31f3451d229d978ba48" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;<sp/><ref refid="classmata_1_1EnumAlphabet_1a97db905d8dbab31f3451d229d978ba48" kindref="member">operator=</ref>(<ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;&amp;<sp/>rhs)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="195"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="196"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Expand<sp/>alphabet<sp/>by<sp/>symbols<sp/>from<sp/>the<sp/>passed<sp/>@p<sp/>symbols.</highlight></codeline>
+<codeline lineno="197"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="198"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Adding<sp/>a<sp/>symbol<sp/>name<sp/>which<sp/>already<sp/>exists<sp/>will<sp/>throw<sp/>an<sp/>exception.</highlight></codeline>
+<codeline lineno="199"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>symbols<sp/>Vector<sp/>of<sp/>symbols<sp/>to<sp/>add.</highlight></codeline>
+<codeline lineno="200"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="201" refid="classmata_1_1EnumAlphabet_1ae3e7b8f4960c25f6f2a21d184155ad47" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1ae3e7b8f4960c25f6f2a21d184155ad47" kindref="member">add_symbols_from</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector&lt;Symbol&gt;</ref>&amp;<sp/>symbols)<sp/>{<sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a1e6c7851f422a7bceb5fb5d0840aaf1e" kindref="member">insert</ref>(symbols);<sp/>}</highlight></codeline>
+<codeline lineno="202"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="203"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="204"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Expand<sp/>alphabet<sp/>by<sp/>symbols<sp/>from<sp/>the<sp/>passed<sp/>@p<sp/>alphabet.</highlight></codeline>
+<codeline lineno="205"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="206"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>symbols_to_add<sp/>Vector<sp/>of<sp/>symbols<sp/>to<sp/>add.</highlight></codeline>
+<codeline lineno="207"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="208" refid="classmata_1_1EnumAlphabet_1a25411a7470524561db74bca90916ff41" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a25411a7470524561db74bca90916ff41" kindref="member">add_symbols_from</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>&amp;<sp/>alphabet)<sp/>{<sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a1e6c7851f422a7bceb5fb5d0840aaf1e" kindref="member">insert</ref>(alphabet.<ref refid="classmata_1_1EnumAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" kindref="member">get_alphabet_symbols</ref>());<sp/>}</highlight></codeline>
+<codeline lineno="209"><highlight class="normal"></highlight></codeline>
+<codeline lineno="210" refid="classmata_1_1EnumAlphabet_1a97fd7cce062c059708d0936826b03f4e" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet_1a97fd7cce062c059708d0936826b03f4e" kindref="member">EnumAlphabet</ref>(std::initializer_list&lt;Symbol&gt;<sp/>symbols)<sp/>:<sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>(symbols.begin(),<sp/>symbols.end())<sp/>{}</highlight></codeline>
+<codeline lineno="211" refid="classmata_1_1EnumAlphabet_1a5e789b6fb1dd2953c1fb4e3ba7e1185a" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">template</highlight><highlight class="normal"><sp/>&lt;</highlight><highlight class="keyword">class</highlight><highlight class="normal"><sp/>InputIt&gt;<sp/><ref refid="classmata_1_1EnumAlphabet_1a5e789b6fb1dd2953c1fb4e3ba7e1185a" kindref="member">EnumAlphabet</ref>(InputIt<sp/>first,<sp/>InputIt<sp/>last)<sp/>:<sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="212"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(;<sp/>first<sp/>!=<sp/>last;<sp/>++first)<sp/>{<sp/><ref refid="classmata_1_1EnumAlphabet_1aa8a976c3b774fafa845e21b1b3be511a" kindref="member">add_new_symbol</ref>(*first);<sp/>}</highlight></codeline>
+<codeline lineno="213"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="214" refid="classmata_1_1EnumAlphabet_1ab7ee64518fe11a01a6bf8871b2a76dbc" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet_1ab7ee64518fe11a01a6bf8871b2a76dbc" kindref="member">EnumAlphabet</ref>(std::initializer_list&lt;std::string&gt;<sp/>l)<sp/>:<sp/><ref refid="classmata_1_1EnumAlphabet" kindref="compound">EnumAlphabet</ref>(l.begin(),<sp/>l.end())<sp/>{}</highlight></codeline>
+<codeline lineno="215"><highlight class="normal"></highlight></codeline>
+<codeline lineno="216" refid="classmata_1_1EnumAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5" kindref="member">translate_symb</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>str)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="217" refid="classmata_1_1EnumAlphabet_1a9affe447067c5e36080fe61f90a8e207" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1a9affe447067c5e36080fe61f90a8e207" kindref="member">translate_word</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" kindref="member">WordName</ref>&amp;<sp/>word_name)<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="218"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="219"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="220"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Add<sp/>new<sp/>symbol<sp/>to<sp/>the<sp/>alphabet<sp/>with<sp/>the<sp/>value<sp/>identical<sp/>to<sp/>its<sp/>string<sp/>representation.</highlight></codeline>
+<codeline lineno="221"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="222"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>symbol<sp/>User-space<sp/>representation<sp/>of<sp/>the<sp/>symbol.</highlight></codeline>
+<codeline lineno="223"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Result<sp/>of<sp/>the<sp/>insertion<sp/>as<sp/>@c<sp/>InsertionResult.</highlight></codeline>
+<codeline lineno="224"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="225" refid="classmata_1_1EnumAlphabet_1aa8a976c3b774fafa845e21b1b3be511a" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1aa8a976c3b774fafa845e21b1b3be511a" kindref="member">add_new_symbol</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>symbol);</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="227"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="228"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Add<sp/>new<sp/>symbol<sp/>to<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="229"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="230"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>key<sp/>User-space<sp/>representation<sp/>of<sp/>the<sp/>symbol.</highlight></codeline>
+<codeline lineno="231"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>symbol<sp/>Number<sp/>of<sp/>the<sp/>symbol<sp/>to<sp/>be<sp/>used<sp/>on<sp/>transitions.</highlight></codeline>
+<codeline lineno="232"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Result<sp/>of<sp/>the<sp/>insertion<sp/>as<sp/>@c<sp/>InsertionResult.</highlight></codeline>
+<codeline lineno="233"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="234" refid="classmata_1_1EnumAlphabet_1ab290f67a6d7f091e3a71475f78ae1857" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1ab290f67a6d7f091e3a71475f78ae1857" kindref="member">add_new_symbol</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol);</highlight></codeline>
+<codeline lineno="235"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="236"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="237"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Get<sp/>the<sp/>next<sp/>value<sp/>for<sp/>a<sp/>potential<sp/>new<sp/>symbol.</highlight></codeline>
+<codeline lineno="238"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Next<sp/>Symbol<sp/>value.</highlight></codeline>
+<codeline lineno="239"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="240" refid="classmata_1_1EnumAlphabet_1a4d70d60280982e782db2e8a02bb301f9" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1a4d70d60280982e782db2e8a02bb301f9" kindref="member">get_next_value</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="241"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="242"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="243"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Get<sp/>the<sp/>number<sp/>of<sp/>existing<sp/>symbols,<sp/>epsilon<sp/>symbols<sp/>excluded.</highlight></codeline>
+<codeline lineno="244"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>The<sp/>number<sp/>of<sp/>symbols.</highlight></codeline>
+<codeline lineno="245"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="246" refid="classmata_1_1EnumAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1" kindref="member">get_number_of_symbols</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a7fd4678662f9e4d095477fecf01935df" kindref="member">size</ref>();<sp/>}</highlight></codeline>
+<codeline lineno="247"><highlight class="normal"></highlight></codeline>
+<codeline lineno="248" refid="classmata_1_1EnumAlphabet_1a108bb972911adff5dd227f4f645a7967" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a108bb972911adff5dd227f4f645a7967" kindref="member">empty</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a5dc9d7494d137f8725d90c21d037fe4a" kindref="member">empty</ref>();<sp/>}</highlight></codeline>
+<codeline lineno="249"><highlight class="normal"></highlight></codeline>
+<codeline lineno="250"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="251" refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>{};<sp/></highlight><highlight class="comment">///&lt;<sp/>Map<sp/>of<sp/>string<sp/>transition<sp/>symbols<sp/>to<sp/>symbol<sp/>values.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="252" refid="classmata_1_1EnumAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1EnumAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>{<sp/>0<sp/>};<sp/></highlight><highlight class="comment">///&lt;<sp/>Next<sp/>value<sp/>to<sp/>be<sp/>used<sp/>for<sp/>a<sp/>newly<sp/>added<sp/>symbol.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="253"><highlight class="normal"></highlight></codeline>
+<codeline lineno="254"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="255"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="256"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Update<sp/>next<sp/>symbol<sp/>value<sp/>when<sp/>appropriate.</highlight></codeline>
+<codeline lineno="257"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="258"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>When<sp/>the<sp/>newly<sp/>inserted<sp/>value<sp/>is<sp/>larger<sp/>or<sp/>equal<sp/>to<sp/>the<sp/>current<sp/>next<sp/>symbol<sp/>value,<sp/>update<sp/>the<sp/>next<sp/>symbol</highlight></codeline>
+<codeline lineno="259"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/><sp/>value<sp/>to<sp/>a<sp/>value<sp/>one<sp/>larger<sp/>than<sp/>the<sp/>new<sp/>value.</highlight></codeline>
+<codeline lineno="260"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>value<sp/>The<sp/>value<sp/>of<sp/>the<sp/>newly<sp/>added<sp/>symbol.</highlight></codeline>
+<codeline lineno="261"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="262" refid="classmata_1_1EnumAlphabet_1aeb27901599fe497fd719a6aa5128a046" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1aeb27901599fe497fd719a6aa5128a046" kindref="member">update_next_symbol_value</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>value);</highlight></codeline>
+<codeline lineno="263"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="264"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="265"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Erase<sp/>a<sp/>symbol<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="266"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Number<sp/>of<sp/>symbols<sp/>erased<sp/>(0<sp/>or<sp/>1).</highlight></codeline>
+<codeline lineno="267"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="268" refid="classmata_1_1EnumAlphabet_1af17b5b7e725c1bf48028d75f046b2a94" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1af17b5b7e725c1bf48028d75f046b2a94" kindref="member">erase</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol);</highlight></codeline>
+<codeline lineno="269"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="270"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="271"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Remove<sp/>a<sp/>symbol<sp/>name<sp/>value<sp/>pair<sp/>from<sp/>the<sp/>position<sp/>@p<sp/>pos<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="272"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Iterator<sp/>following<sp/>the<sp/>last<sp/>removed<sp/>element.</highlight></codeline>
+<codeline lineno="273"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="274" refid="classmata_1_1EnumAlphabet_1acdb070ebdf73ceb7854951e80a24fce8" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1acdb070ebdf73ceb7854951e80a24fce8" kindref="member">erase</ref>(<ref refid="classmata_1_1utils_1_1OrdVector_1a0b878024ac2eb388b20acaf63eb29780" kindref="member">utils::OrdVector&lt;Symbol&gt;::const_iterator</ref><sp/>pos)<sp/>{<sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a1e7daca49c123fc215f6f46d6563d766" kindref="member">erase</ref>(pos);<sp/>}</highlight></codeline>
+<codeline lineno="275"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="276"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="277"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Remove<sp/>a<sp/>symbol<sp/>name<sp/>value<sp/>pair<sp/>from<sp/>the<sp/>positions<sp/>between<sp/>@p<sp/>first<sp/>and<sp/>@p<sp/>last<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="278"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Iterator<sp/>following<sp/>the<sp/>last<sp/>removed<sp/>element.</highlight></codeline>
+<codeline lineno="279"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="280" refid="classmata_1_1EnumAlphabet_1a59d593db7e2921fa73ddb8b96d1b3bb6" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1a59d593db7e2921fa73ddb8b96d1b3bb6" kindref="member">erase</ref>(<ref refid="classmata_1_1utils_1_1OrdVector_1a0b878024ac2eb388b20acaf63eb29780" kindref="member">utils::OrdVector&lt;Symbol&gt;::const_iterator</ref><sp/>first,<sp/><ref refid="classmata_1_1utils_1_1OrdVector_1a0b878024ac2eb388b20acaf63eb29780" kindref="member">utils::OrdVector&lt;Symbol&gt;::const_iterator</ref><sp/>last)<sp/>{</highlight></codeline>
+<codeline lineno="281"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1a1e7daca49c123fc215f6f46d6563d766" kindref="member">erase</ref>(first,<sp/>last);</highlight></codeline>
+<codeline lineno="282"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="283"><highlight class="normal"></highlight></codeline>
+<codeline lineno="284" refid="classmata_1_1EnumAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1EnumAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82" kindref="member">clear</ref>()</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{<sp/><ref refid="classmata_1_1EnumAlphabet_1a76ac85b3037fd56933031471b2c9b4f0" kindref="member">symbols_</ref>.<ref refid="classmata_1_1utils_1_1OrdVector_1ac8bb3912a3ce86b15842e79d0b421204" kindref="member">clear</ref>();<sp/><ref refid="classmata_1_1EnumAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref><sp/>=<sp/>0;<sp/>}</highlight></codeline>
+<codeline lineno="285"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>EnumAlphabet.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="286"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="287"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="288"><highlight class="comment"><sp/>*<sp/>An<sp/>alphabet<sp/>constructed<sp/>&apos;on<sp/>the<sp/>fly&apos;.</highlight></codeline>
+<codeline lineno="289"><highlight class="comment"><sp/>*<sp/>Should<sp/>be<sp/>use<sp/>anytime<sp/>the<sp/>automata<sp/>have<sp/>a<sp/>specific<sp/>names<sp/>for<sp/>the<sp/>symbols.</highlight></codeline>
+<codeline lineno="290"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="291" refid="classmata_1_1OnTheFlyAlphabet" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref><sp/>{</highlight></codeline>
+<codeline lineno="292"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="293" refid="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c" kindref="member">StringToSymbolMap</ref><sp/>=<sp/>std::unordered_map&lt;std::string,<sp/>Symbol&gt;;</highlight></codeline>
+<codeline lineno="294"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="295"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>Result<sp/>of<sp/>the<sp/>insertion<sp/>of<sp/>a<sp/>new<sp/>symbol.</highlight></codeline>
+<codeline lineno="296" refid="classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e" kindref="member">InsertionResult</ref><sp/>=<sp/>std::pair&lt;StringToSymbolMap::const_iterator,<sp/>bool&gt;;</highlight></codeline>
+<codeline lineno="297"><highlight class="normal"></highlight></codeline>
+<codeline lineno="298" refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" kindref="member">OnTheFlyAlphabet</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>init_symbol<sp/>=<sp/>0)<sp/>:<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>(init_symbol)<sp/>{};</highlight></codeline>
+<codeline lineno="299" refid="classmata_1_1OnTheFlyAlphabet_1a10a915917eb633cc02d0581b9df92133" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a10a915917eb633cc02d0581b9df92133" kindref="member">OnTheFlyAlphabet</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>&amp;<sp/>alphabet)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="300" refid="classmata_1_1OnTheFlyAlphabet_1ab09ccbdebb101ef685749dedc8d8f6f6" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ab09ccbdebb101ef685749dedc8d8f6f6" kindref="member">OnTheFlyAlphabet</ref>(<ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>&amp;&amp;<sp/>alphabet)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="301" refid="classmata_1_1OnTheFlyAlphabet_1af9ee1dd5510f4c9a601fc1a3d08eb5fc" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1af9ee1dd5510f4c9a601fc1a3d08eb5fc" kindref="member">OnTheFlyAlphabet</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>*<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>alphabet):<sp/><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>(*alphabet)<sp/>{}</highlight></codeline>
+<codeline lineno="302" refid="classmata_1_1OnTheFlyAlphabet_1a240058630c0ab23f299edb8652ab399f" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a240058630c0ab23f299edb8652ab399f" kindref="member">OnTheFlyAlphabet</ref>(<ref refid="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c" kindref="member">StringToSymbolMap</ref><sp/>str_sym_map)<sp/>:<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>(<ref refid="namespacestd" kindref="compound">std</ref>::move(str_sym_map))<sp/>{}</highlight></codeline>
+<codeline lineno="303"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="304"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="305"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Create<sp/>alphabet<sp/>from<sp/>a<sp/>list<sp/>of<sp/>symbol<sp/>names.</highlight></codeline>
+<codeline lineno="306"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>symbol_names<sp/>Names<sp/>for<sp/>symbols<sp/>on<sp/>transitions.</highlight></codeline>
+<codeline lineno="307"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>init_symbol<sp/>Start<sp/>of<sp/>a<sp/>sequence<sp/>of<sp/>values<sp/>to<sp/>use<sp/>for<sp/>new<sp/>symbols.</highlight></codeline>
+<codeline lineno="308"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="309" refid="classmata_1_1OnTheFlyAlphabet_1a5d09ea7c966a609aca9edd50fa8c1d83" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a5d09ea7c966a609aca9edd50fa8c1d83" kindref="member">OnTheFlyAlphabet</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;std::string&gt;&amp;<sp/>symbol_names,<sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>init_symbol<sp/>=<sp/>0)</highlight></codeline>
+<codeline lineno="310"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>:<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>(),<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>(init_symbol)<sp/>{<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a87945241f2758044b2da72c86979c890" kindref="member">add_symbols_from</ref>(symbol_names);<sp/>}</highlight></codeline>
+<codeline lineno="311"><highlight class="normal"></highlight></codeline>
+<codeline lineno="312" refid="classmata_1_1OnTheFlyAlphabet_1afdb0d054f3f5405752dfb8ff7225d12c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">template</highlight><highlight class="normal"><sp/>&lt;</highlight><highlight class="keyword">class</highlight><highlight class="normal"><sp/>InputIt&gt;<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1afdb0d054f3f5405752dfb8ff7225d12c" kindref="member">OnTheFlyAlphabet</ref>(InputIt<sp/>first,<sp/>InputIt<sp/>last)<sp/>{</highlight></codeline>
+<codeline lineno="313"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(;<sp/>first<sp/>!=<sp/>last;<sp/>++first)<sp/>{</highlight></codeline>
+<codeline lineno="314"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0882c1b5fd8acdeae986ede9b1094b4d" kindref="member">add_new_symbol</ref>(*first,<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>);</highlight></codeline>
+<codeline lineno="315"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="316"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="317" refid="classmata_1_1OnTheFlyAlphabet_1a7291c3160e5746c24897c0e6009601e8" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a7291c3160e5746c24897c0e6009601e8" kindref="member">OnTheFlyAlphabet</ref>(std::initializer_list&lt;std::pair&lt;std::string,<sp/>Symbol&gt;&gt;<sp/>name_symbol_map)<sp/>:<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>{}<sp/>{</highlight></codeline>
+<codeline lineno="318"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;&amp;<sp/>[name,<sp/>symbol]:<sp/>name_symbol_map)<sp/>{</highlight></codeline>
+<codeline lineno="319"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0882c1b5fd8acdeae986ede9b1094b4d" kindref="member">add_new_symbol</ref>(name,<sp/>symbol);</highlight></codeline>
+<codeline lineno="320"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="321"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="322"><highlight class="normal"></highlight></codeline>
+<codeline lineno="323" refid="classmata_1_1OnTheFlyAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec" kindref="member">get_alphabet_symbols</ref>()<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="324" refid="classmata_1_1OnTheFlyAlphabet_1ac49a8b966d82d52bec89a62be2e913b5" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ac49a8b966d82d52bec89a62be2e913b5" kindref="member">get_complement</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector&lt;Symbol&gt;</ref>&amp;<sp/>symbols)<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="325"><highlight class="normal"></highlight></codeline>
+<codeline lineno="326" refid="classmata_1_1OnTheFlyAlphabet_1a04dc585772dae7a5187640961e9f3726" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a04dc585772dae7a5187640961e9f3726" kindref="member">reverse_translate_symbol</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol)<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="327"><highlight class="normal"></highlight></codeline>
+<codeline lineno="328"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="329" refid="classmata_1_1OnTheFlyAlphabet_1a08e07cbc2fa8239b9396769a4aa9241f" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>&amp;<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a08e07cbc2fa8239b9396769a4aa9241f" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>&amp;<sp/>rhs)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="330" refid="classmata_1_1OnTheFlyAlphabet_1af3c55ae216db46f881a589dcc1b47189" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>&amp;<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1af3c55ae216db46f881a589dcc1b47189" kindref="member">operator=</ref>(<ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>&amp;&amp;<sp/>rhs)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="331"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="332"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="333"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Expand<sp/>alphabet<sp/>by<sp/>symbols<sp/>from<sp/>the<sp/>passed<sp/>@p<sp/>symbol_names.</highlight></codeline>
+<codeline lineno="334"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="335"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Adding<sp/>a<sp/>symbol<sp/>name<sp/>which<sp/>already<sp/>exists<sp/>will<sp/>throw<sp/>an<sp/>exception.</highlight></codeline>
+<codeline lineno="336"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>symbol_names<sp/>Vector<sp/>of<sp/>symbol<sp/>names.</highlight></codeline>
+<codeline lineno="337"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="338" refid="classmata_1_1OnTheFlyAlphabet_1a87945241f2758044b2da72c86979c890" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a87945241f2758044b2da72c86979c890" kindref="member">add_symbols_from</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;std::string&gt;&amp;<sp/>symbol_names);</highlight></codeline>
+<codeline lineno="339"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="340"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="341"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Expand<sp/>alphabet<sp/>by<sp/>symbols<sp/>from<sp/>the<sp/>passed<sp/>@p<sp/>symbol_map.</highlight></codeline>
+<codeline lineno="342"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="343"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>The<sp/>value<sp/>of<sp/>the<sp/>already<sp/>existing<sp/>symbols<sp/>will<sp/>NOT<sp/>be<sp/>overwritten.</highlight></codeline>
+<codeline lineno="344"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>new_symbol_map<sp/>Map<sp/>of<sp/>strings<sp/>to<sp/>symbols.</highlight></codeline>
+<codeline lineno="345"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="346" refid="classmata_1_1OnTheFlyAlphabet_1ab09415483853bf9cdc6be99638bf881c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ab09415483853bf9cdc6be99638bf881c" kindref="member">add_symbols_from</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c" kindref="member">StringToSymbolMap</ref>&amp;<sp/>new_symbol_map);</highlight></codeline>
+<codeline lineno="347"><highlight class="normal"></highlight></codeline>
+<codeline lineno="348" refid="classmata_1_1OnTheFlyAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5" kindref="member">translate_symb</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>str)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="349"><highlight class="normal"></highlight></codeline>
+<codeline lineno="350" refid="classmata_1_1OnTheFlyAlphabet_1a4a1802522d33536e48a5cc8b8b3c88cb" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a4a1802522d33536e48a5cc8b8b3c88cb" kindref="member">translate_word</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" kindref="member">WordName</ref>&amp;<sp/>word_name)<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="351"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="352"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="353"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Add<sp/>new<sp/>symbol<sp/>to<sp/>the<sp/>alphabet<sp/>with<sp/>the<sp/>value<sp/>of<sp/>@c<sp/>next_symbol_value.</highlight></codeline>
+<codeline lineno="354"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="355"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Throws<sp/>an<sp/>exception<sp/>when<sp/>the<sp/>adding<sp/>fails.</highlight></codeline>
+<codeline lineno="356"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="357"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>key<sp/>User-space<sp/>representation<sp/>of<sp/>the<sp/>symbol.</highlight></codeline>
+<codeline lineno="358"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Result<sp/>of<sp/>the<sp/>insertion<sp/>as<sp/>@c<sp/>InsertionResult.</highlight></codeline>
+<codeline lineno="359"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="360" refid="classmata_1_1OnTheFlyAlphabet_1a0882c1b5fd8acdeae986ede9b1094b4d" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e" kindref="member">InsertionResult</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0882c1b5fd8acdeae986ede9b1094b4d" kindref="member">add_new_symbol</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>key);</highlight></codeline>
+<codeline lineno="361"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="362"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="363"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Add<sp/>new<sp/>symbol<sp/>to<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="364"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="365"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Throws<sp/>an<sp/>exception<sp/>when<sp/>the<sp/>adding<sp/>fails.</highlight></codeline>
+<codeline lineno="366"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="367"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>key<sp/>User-space<sp/>representation<sp/>of<sp/>the<sp/>symbol.</highlight></codeline>
+<codeline lineno="368"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>value<sp/>Number<sp/>of<sp/>the<sp/>symbol<sp/>to<sp/>be<sp/>used<sp/>on<sp/>transitions.</highlight></codeline>
+<codeline lineno="369"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Result<sp/>of<sp/>the<sp/>insertion<sp/>as<sp/>@c<sp/>InsertionResult.</highlight></codeline>
+<codeline lineno="370"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="371" refid="classmata_1_1OnTheFlyAlphabet_1a7356ee4f29ea31b538960f0d5b1a81a3" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e" kindref="member">InsertionResult</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a7356ee4f29ea31b538960f0d5b1a81a3" kindref="member">add_new_symbol</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>key,<sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>value);</highlight></codeline>
+<codeline lineno="372"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="373"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="374"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Try<sp/>to<sp/>add<sp/>symbol<sp/>to<sp/>the<sp/>alphabet<sp/>map.</highlight></codeline>
+<codeline lineno="375"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="376"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Does<sp/>not<sp/>throw<sp/>an<sp/>exception<sp/>when<sp/>the<sp/>adding<sp/>fails.</highlight></codeline>
+<codeline lineno="377"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="378"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>key<sp/>User-space<sp/>representation<sp/>of<sp/>the<sp/>symbol.</highlight></codeline>
+<codeline lineno="379"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param[in]<sp/>value<sp/>Number<sp/>of<sp/>the<sp/>symbol<sp/>to<sp/>be<sp/>used<sp/>on<sp/>transitions.</highlight></codeline>
+<codeline lineno="380"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Result<sp/>of<sp/>the<sp/>insertion<sp/>as<sp/>@c<sp/>InsertionResult.</highlight></codeline>
+<codeline lineno="381"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="382" refid="classmata_1_1OnTheFlyAlphabet_1afd59120b2bc374a0a879ea00e082bd2d" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a17aa92630e4ecbb62e633c14921ec66e" kindref="member">InsertionResult</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1afd59120b2bc374a0a879ea00e082bd2d" kindref="member">try_add_new_symbol</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>key,<sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>value)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>.insert({<sp/>key,<sp/>value});<sp/>}</highlight></codeline>
+<codeline lineno="383"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="384"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="385"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Get<sp/>the<sp/>next<sp/>value<sp/>for<sp/>a<sp/>potential<sp/>new<sp/>symbol.</highlight></codeline>
+<codeline lineno="386"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Next<sp/>Symbol<sp/>value.</highlight></codeline>
+<codeline lineno="387"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="388" refid="classmata_1_1OnTheFlyAlphabet_1a4d70d60280982e782db2e8a02bb301f9" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a4d70d60280982e782db2e8a02bb301f9" kindref="member">get_next_value</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="389"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="390"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="391"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Get<sp/>the<sp/>number<sp/>of<sp/>existing<sp/>symbols,<sp/>epsilon<sp/>symbols<sp/>excluded.</highlight></codeline>
+<codeline lineno="392"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>The<sp/>number<sp/>of<sp/>symbols.</highlight></codeline>
+<codeline lineno="393"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="394" refid="classmata_1_1OnTheFlyAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1" kindref="member">get_number_of_symbols</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="395"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="396"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="397"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Get<sp/>the<sp/>symbol<sp/>map<sp/>used<sp/>in<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="398"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Map<sp/>mapping<sp/>strings<sp/>to<sp/>symbols<sp/>used<sp/>internally<sp/>in<sp/>Mata.</highlight></codeline>
+<codeline lineno="399"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="400" refid="classmata_1_1OnTheFlyAlphabet_1aaddd2560a343f3a189043c75f71503a0" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c" kindref="member">StringToSymbolMap</ref>&amp;<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1aaddd2560a343f3a189043c75f71503a0" kindref="member">get_symbol_map</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="401"><highlight class="normal"></highlight></codeline>
+<codeline lineno="402" refid="classmata_1_1OnTheFlyAlphabet_1a108bb972911adff5dd227f4f645a7967" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a108bb972911adff5dd227f4f645a7967" kindref="member">empty</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>.empty();<sp/>}</highlight></codeline>
+<codeline lineno="403"><highlight class="normal"></highlight></codeline>
+<codeline lineno="404"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="405" refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ac27704d24fe08d08b21fa4eff7b2650c" kindref="member">StringToSymbolMap</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>{};<sp/></highlight><highlight class="comment">///&lt;<sp/>Map<sp/>of<sp/>string<sp/>transition<sp/>symbols<sp/>to<sp/>symbol<sp/>values.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="406" refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref>{};<sp/></highlight><highlight class="comment">///&lt;<sp/>Next<sp/>value<sp/>to<sp/>be<sp/>used<sp/>for<sp/>a<sp/>newly<sp/>added<sp/>symbol.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="407"><highlight class="normal"></highlight></codeline>
+<codeline lineno="408"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="409"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="410"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Update<sp/>next<sp/>symbol<sp/>value<sp/>when<sp/>appropriate.</highlight></codeline>
+<codeline lineno="411"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="412"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>When<sp/>the<sp/>newly<sp/>inserted<sp/>value<sp/>is<sp/>larger<sp/>or<sp/>equal<sp/>to<sp/>the<sp/>current<sp/>next<sp/>symbol<sp/>value,<sp/>update<sp/>the<sp/>next<sp/>symbol</highlight></codeline>
+<codeline lineno="413"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/><sp/>value<sp/>to<sp/>a<sp/>value<sp/>one<sp/>larger<sp/>than<sp/>the<sp/>new<sp/>value.</highlight></codeline>
+<codeline lineno="414"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>value<sp/>The<sp/>value<sp/>of<sp/>the<sp/>newly<sp/>added<sp/>symbol.</highlight></codeline>
+<codeline lineno="415"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="416" refid="classmata_1_1OnTheFlyAlphabet_1aeb27901599fe497fd719a6aa5128a046" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1aeb27901599fe497fd719a6aa5128a046" kindref="member">update_next_symbol_value</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>value);</highlight></codeline>
+<codeline lineno="417"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="418"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="419"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Remove<sp/>a<sp/>symbol<sp/>name<sp/>value<sp/>pair<sp/>specified<sp/>by<sp/>its<sp/>@p<sp/>symbol<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="420"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="421"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@warning<sp/>Complexity:<sp/>O(n),<sp/>where<sp/>n<sp/>is<sp/>the<sp/>number<sp/>of<sp/>symbols<sp/>in<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="422"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Number<sp/>of<sp/>symbols<sp/>removed<sp/>(0<sp/>or<sp/>1).</highlight></codeline>
+<codeline lineno="423"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="424" refid="classmata_1_1OnTheFlyAlphabet_1a7650ff24ca0062b4bab0086c4ea70c41" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a7650ff24ca0062b4bab0086c4ea70c41" kindref="member">erase</ref>(<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref><sp/>symbol);</highlight></codeline>
+<codeline lineno="425"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="426"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="427"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Remove<sp/>a<sp/>symbol<sp/>name<sp/>value<sp/>pair<sp/>specified<sp/>by<sp/>its<sp/>@p<sp/>symbol_name<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="428"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@return<sp/>Number<sp/>of<sp/>symbols<sp/>removed<sp/>(0<sp/>or<sp/>1).</highlight></codeline>
+<codeline lineno="429"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="430" refid="classmata_1_1OnTheFlyAlphabet_1a085f781ed9067042166e721bbbbd3752" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a085f781ed9067042166e721bbbbd3752" kindref="member">erase</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>symbol_name);</highlight></codeline>
+<codeline lineno="431"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="432"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="433"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Remove<sp/>a<sp/>symbol<sp/>name<sp/>value<sp/>pair<sp/>from<sp/>the<sp/>position<sp/>@p<sp/>pos<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="434"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="435" refid="classmata_1_1OnTheFlyAlphabet_1aebb173a751925d7456f340eb0525ae80" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1aebb173a751925d7456f340eb0525ae80" kindref="member">erase</ref>(StringToSymbolMap::const_iterator<sp/>pos)<sp/>{<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>.erase(pos);<sp/>}</highlight></codeline>
+<codeline lineno="436"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="437"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="438"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Remove<sp/>a<sp/>symbol<sp/>name<sp/>value<sp/>pair<sp/>from<sp/>the<sp/>positions<sp/>between<sp/>@p<sp/>first<sp/>and<sp/>@p<sp/>last<sp/>from<sp/>the<sp/>alphabet.</highlight></codeline>
+<codeline lineno="439"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="440" refid="classmata_1_1OnTheFlyAlphabet_1a7503f5e4d42290e2f4a6853ad6fd1da4" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a7503f5e4d42290e2f4a6853ad6fd1da4" kindref="member">erase</ref>(StringToSymbolMap::const_iterator<sp/>first,<sp/>StringToSymbolMap::const_iterator<sp/>last)<sp/>{</highlight></codeline>
+<codeline lineno="441"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>.erase(first,<sp/>last);</highlight></codeline>
+<codeline lineno="442"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="443"><highlight class="normal"></highlight></codeline>
+<codeline lineno="444" refid="classmata_1_1OnTheFlyAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82" kindref="member">clear</ref>()</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1a0d986c2eaa074ce27c60d658bd3f426d" kindref="member">symbol_map_</ref>.clear();<sp/><ref refid="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29" kindref="member">next_symbol_value_</ref><sp/>=<sp/>0;<sp/>}</highlight></codeline>
+<codeline lineno="445"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>OnTheFlyAlphabet.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="446"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="447"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="448"><highlight class="comment"><sp/>*<sp/>@brief<sp/>Encode<sp/>a<sp/>word<sp/>using<sp/>UTF-8<sp/>encoding.</highlight></codeline>
+<codeline lineno="449"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="450"><highlight class="comment"><sp/>*<sp/>@param[in]<sp/>word<sp/>The<sp/>word<sp/>to<sp/>encode.</highlight></codeline>
+<codeline lineno="451"><highlight class="comment"><sp/>*<sp/>@return<sp/>The<sp/>UTF-8<sp/>encoded<sp/>word.</highlight></codeline>
+<codeline lineno="452"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="453" refid="namespacemata_1a4da1dc4063c3a7abe947f2b86920b4cc" refkind="member"><highlight class="normal"><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/><ref refid="namespacemata_1a4da1dc4063c3a7abe947f2b86920b4cc" kindref="member">encode_word_utf8</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref>&amp;<sp/>word);</highlight></codeline>
+<codeline lineno="454"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="455"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="456"><highlight class="comment"><sp/>*<sp/>@brief<sp/>Decode<sp/>a<sp/>word<sp/>using<sp/>UTF-8<sp/>encoding.</highlight></codeline>
+<codeline lineno="457"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="458"><highlight class="comment"><sp/>*<sp/>@param[in]<sp/>word<sp/>The<sp/>word<sp/>to<sp/>decode.</highlight></codeline>
+<codeline lineno="459"><highlight class="comment"><sp/>*<sp/>@return<sp/>The<sp/>UTF-8<sp/>decoded<sp/>word.</highlight></codeline>
+<codeline lineno="460"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="461" refid="namespacemata_1a3481bf9f6a17bbfce374c302e5f1e477" refkind="member"><highlight class="normal"><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref><sp/><ref refid="namespacemata_1a3481bf9f6a17bbfce374c302e5f1e477" kindref="member">decode_word_utf8</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref>&amp;<sp/>word);</highlight></codeline>
+<codeline lineno="462"><highlight class="normal"></highlight></codeline>
+<codeline lineno="463"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>mata</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="464"><highlight class="normal"></highlight></codeline>
+<codeline lineno="465" refid="namespacestd" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacestd" kindref="compound">std</ref></highlight></codeline>
+<codeline lineno="466"><highlight class="normal">{<sp/></highlight><highlight class="comment">//<sp/>{{{</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="467" refid="namespacestd_1a9647819234fc49f9ff28f5e4a8d30714" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::ostream&amp;<sp/><ref refid="namespacestd_1a9647819234fc49f9ff28f5e4a8d30714" kindref="member">operator&lt;&lt;</ref>(std::ostream&amp;<sp/>os,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1Alphabet" kindref="compound">mata::Alphabet</ref>&amp;<sp/>alphabet);</highlight></codeline>
+<codeline lineno="468"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="469"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/></highlight><highlight class="comment">//MATA_ALPHABET_HH</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh"/>
+  </compounddef>
+</doxygen>

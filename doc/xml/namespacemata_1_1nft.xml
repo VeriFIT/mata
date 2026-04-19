@@ -1,0 +1,1986 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nft" kind="namespace" language="C++">
+    <compoundname>mata::nft</compoundname>
+    <innerclass refid="structmata_1_1nft_1_1bool__pack" prot="public">mata::nft::bool_pack</innerclass>
+    <innerclass refid="classmata_1_1nft_1_1Levels" prot="public">mata::nft::Levels</innerclass>
+    <innerclass refid="classmata_1_1nft_1_1Nft" prot="public">mata::nft::Nft</innerclass>
+    <innernamespace refid="namespacemata_1_1nft_1_1algorithms">mata::nft::algorithms</innernamespace>
+    <innernamespace refid="namespacemata_1_1nft_1_1builder">mata::nft::builder</innernamespace>
+    <innernamespace refid="namespacemata_1_1nft_1_1plumbing">mata::nft::plumbing</innernamespace>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>JumpMode</name>
+        <qualifiedname>mata::nft::JumpMode</qualifiedname>
+        <enumvalue id="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" prot="public">
+          <name>RepeatSymbol</name>
+          <briefdescription>
+<para>Repeat the symbol on the jump. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48ac2b1d7441dc8f360d080f0acce6df131" prot="public">
+          <name>AppendDontCares</name>
+          <briefdescription>
+<para>Append a sequence of DONT_CAREs to the symbol on the jump. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>A non-deterministic finite transducer. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="42" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="42" bodyend="45"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a9bead4c2acf85d4757cadd81eb9600de" prot="public" static="no">
+        <type><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">mata::nfa::Transition</ref></type>
+        <definition>using Transition =  mata::nfa::Transition</definition>
+        <argsstring></argsstring>
+        <name>Transition</name>
+        <qualifiedname>mata::nft::Transition</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" line="20" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" bodystart="20" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a90f1e3a9c7bf925f28d40e1932bad730" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1Move" kindref="compound">mata::nfa::Move</ref></type>
+        <definition>using Move =  mata::nfa::Move</definition>
+        <argsstring></argsstring>
+        <name>Move</name>
+        <qualifiedname>mata::nft::Move</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" line="22" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" bodystart="22" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a4008bd015048f38a6223963f30d65c2c" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">mata::nfa::SymbolPost</ref></type>
+        <definition>using SymbolPost =  mata::nfa::SymbolPost</definition>
+        <argsstring></argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nft::SymbolPost</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" line="24" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" bodystart="24" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a77b7eae9ec734132800451cc559dd7f2" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1StatePost" kindref="compound">mata::nfa::StatePost</ref></type>
+        <definition>using StatePost =  mata::nfa::StatePost</definition>
+        <argsstring></argsstring>
+        <name>StatePost</name>
+        <qualifiedname>mata::nft::StatePost</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" line="26" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" bodystart="26" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a99204ac025ce35e7b2d6ddfe92825e2e" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator" kindref="compound">mata::nfa::SynchronizedExistentialSymbolPostIterator</ref></type>
+        <definition>using SynchronizedExistentialSymbolPostIterator =  mata::nfa::SynchronizedExistentialSymbolPostIterator</definition>
+        <argsstring></argsstring>
+        <name>SynchronizedExistentialSymbolPostIterator</name>
+        <qualifiedname>mata::nft::SynchronizedExistentialSymbolPostIterator</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" line="28" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a7d4198ab11320a2e080b1fe3006a1179" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1Delta" kindref="compound">mata::nfa::Delta</ref></type>
+        <definition>using Delta =  mata::nfa::Delta</definition>
+        <argsstring></argsstring>
+        <name>Delta</name>
+        <qualifiedname>mata::nft::Delta</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" line="30" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a301e2ce3a037dd5e05a055a81b8aef58" prot="public" static="no">
+        <templateparamlist>
+          <param>
+            <type>typename...</type>
+            <declname>Ts</declname>
+            <defname>Ts</defname>
+          </param>
+        </templateparamlist>
+        <type>std::is_same&lt; <ref refid="structmata_1_1nft_1_1bool__pack" kindref="compound">bool_pack</ref>&lt; true, Ts::value... &gt;, <ref refid="structmata_1_1nft_1_1bool__pack" kindref="compound">bool_pack</ref>&lt; Ts::value..., true &gt; &gt;</type>
+        <definition>using conjunction =  std::is_same&lt;bool_pack&lt;true,Ts::value...&gt;, bool_pack&lt;Ts::value..., true&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>conjunction</name>
+        <qualifiedname>mata::nft::conjunction</qualifiedname>
+        <briefdescription>
+<para>Check that for all values in a pack <computeroutput>Ts</computeroutput> are &apos;true&apos;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="757" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="757" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1aa4585c777221005d6c2020145f49a74a" prot="public" static="no">
+        <templateparamlist>
+          <param>
+            <type>typename T</type>
+          </param>
+          <param>
+            <type>typename...</type>
+            <declname>Ts</declname>
+            <defname>Ts</defname>
+          </param>
+        </templateparamlist>
+        <type>typename <ref refid="namespacemata_1_1nft_1a301e2ce3a037dd5e05a055a81b8aef58" kindref="member">conjunction</ref>&lt; std::is_same&lt; Ts, T &gt;... &gt;::type</type>
+        <definition>using AreAllOfType =  typename conjunction&lt;std::is_same&lt;Ts, T&gt;...&gt;::type</definition>
+        <argsstring></argsstring>
+        <name>AreAllOfType</name>
+        <qualifiedname>mata::nft::AreAllOfType</qualifiedname>
+        <briefdescription>
+<para>Check that all types in a sequence of parameters <computeroutput>Ts</computeroutput> are of type <computeroutput>T</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="759" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="759" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" prot="public" static="no">
+        <type>unsigned</type>
+        <definition>using Level =  unsigned</definition>
+        <argsstring></argsstring>
+        <name>Level</name>
+        <qualifiedname>mata::nft::Level</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="16" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="16" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">mata::nfa::State</ref></type>
+        <definition>using State =  mata::nfa::State</definition>
+        <argsstring></argsstring>
+        <name>State</name>
+        <qualifiedname>mata::nft::State</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="17" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="17" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1ab52391ee57e45ffeaff4785f74a98a03" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">mata::nfa::StateSet</ref></type>
+        <definition>using StateSet =  mata::nfa::StateSet</definition>
+        <argsstring></argsstring>
+        <name>StateSet</name>
+        <qualifiedname>mata::nft::StateSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="18" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="18" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" prot="public" static="no">
+        <type><ref refid="structmata_1_1nfa_1_1Run" kindref="compound">mata::nfa::Run</ref></type>
+        <definition>using Run =  mata::nfa::Run</definition>
+        <argsstring></argsstring>
+        <name>Run</name>
+        <qualifiedname>mata::nft::Run</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="20" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="20" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a4b32f53081d854ca2aeb4d743a7919fd" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0" kindref="member">mata::nfa::EpsilonClosureOpt</ref></type>
+        <definition>using EpsilonClosureOpt =  mata::nfa::EpsilonClosureOpt</definition>
+        <argsstring></argsstring>
+        <name>EpsilonClosureOpt</name>
+        <qualifiedname>mata::nft::EpsilonClosureOpt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="21" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="21" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">mata::nfa::StateRenaming</ref></type>
+        <definition>using StateRenaming =  mata::nfa::StateRenaming</definition>
+        <argsstring></argsstring>
+        <name>StateRenaming</name>
+        <qualifiedname>mata::nft::StateRenaming</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="23" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="23" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">mata::nfa::ParameterMap</ref></type>
+        <definition>using ParameterMap =  mata::nfa::ParameterMap</definition>
+        <argsstring></argsstring>
+        <name>ParameterMap</name>
+        <qualifiedname>mata::nft::ParameterMap</qualifiedname>
+        <briefdescription>
+<para>Map of additional parameter name and value pairs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Used by certain functions for specifying some additional parameters in the following format: <programlisting filename=".cpp"><codeline><highlight class="normal"><ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref><sp/>{</highlight></codeline>
+<codeline><highlight class="normal"><sp/><sp/><sp/><sp/>{<sp/></highlight><highlight class="stringliteral">&quot;algorithm&quot;</highlight><highlight class="normal">,<sp/></highlight><highlight class="stringliteral">&quot;classical&quot;</highlight><highlight class="normal"><sp/>},</highlight></codeline>
+<codeline><highlight class="normal"><sp/><sp/><sp/><sp/>{<sp/></highlight><highlight class="stringliteral">&quot;minimize&quot;</highlight><highlight class="normal">,<sp/></highlight><highlight class="stringliteral">&quot;true&quot;</highlight><highlight class="normal"><sp/>}</highlight></codeline>
+<codeline><highlight class="normal">}</highlight></codeline>
+</programlisting> </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="36" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="36" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a27fd614112ddc82073a51193987f5470" prot="public" static="no">
+        <type><ref refid="structmata_1_1nfa_1_1Limits" kindref="compound">mata::nfa::Limits</ref></type>
+        <definition>using Limits =  mata::nfa::Limits</definition>
+        <argsstring></argsstring>
+        <name>Limits</name>
+        <qualifiedname>mata::nft::Limits</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="38" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1a230c5a8a3db74ddcdb754ef946d602d5" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912" kindref="member">mata::nfa::ProductFinalStateCondition</ref></type>
+        <definition>using ProductFinalStateCondition =  mata::nfa::ProductFinalStateCondition</definition>
+        <argsstring></argsstring>
+        <name>ProductFinalStateCondition</name>
+        <qualifiedname>mata::nft::ProductFinalStateCondition</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="47" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="47" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="namespacemata_1_1nft_1a2b14679fff911437179d8992a300a8a5" prot="public" static="no" extern="yes" mutable="no">
+        <type>const std::string</type>
+        <definition>const std::string TYPE_NFT</definition>
+        <argsstring></argsstring>
+        <name>TYPE_NFT</name>
+        <qualifiedname>mata::nft::TYPE_NFT</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="14" column="26" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" declline="14" declcolumn="26"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacemata_1_1nft_1a7ab819e148ca173289b95c321befc27e" prot="public" static="no" constexpr="yes" mutable="no">
+        <type>constexpr <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>constexpr Symbol EPSILON</definition>
+        <argsstring></argsstring>
+        <name>EPSILON</name>
+        <qualifiedname>mata::nft::EPSILON</qualifiedname>
+        <initializer>= mata::nfa::EPSILON</initializer>
+        <briefdescription>
+<para>An epsilon symbol which is now defined as the maximal value of data type used for symbols. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="50" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacemata_1_1nft_1ac28dae8f2bcd2bd24bc5d81acd703a12" prot="public" static="no" constexpr="yes" mutable="no">
+        <type>constexpr <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>constexpr Symbol DONT_CARE</definition>
+        <argsstring></argsstring>
+        <name>DONT_CARE</name>
+        <qualifiedname>mata::nft::DONT_CARE</qualifiedname>
+        <initializer>= <ref refid="namespacemata_1_1nft_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref> - 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="51" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="51" bodyend="-1"/>
+        <referencedby refid="classmata_1_1nft_1_1Nft_1a5bed11aec7f25d3161cb946a21b96e79">Nft::to_nfa_update_copy</referencedby>
+        <referencedby refid="classmata_1_1nft_1_1Nft_1a2ed61ccb48fc5adbafd8721afb90240a">Nft::to_nfa_update_move</referencedby>
+        <referencedby refid="classmata_1_1nft_1_1Nft_1a97d80031d1d1ba1e85a4824658af5d4d">Nft::unwind_jumps</referencedby>
+        <referencedby refid="classmata_1_1nft_1_1Nft_1a4977754e623e48bd99f694260f8e13e9">Nft::unwind_jumps</referencedby>
+        <referencedby refid="classmata_1_1nft_1_1Nft_1a30af3cfbf91d40c41de02f7bc840d6e3">Nft::unwind_jumps_inplace</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="namespacemata_1_1nft_1a5ba6c1349fd21bdd8d8d3f086f01fec6" prot="public" static="no" constexpr="yes" mutable="no">
+        <type>constexpr <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+        <definition>constexpr Level DEFAULT_LEVEL</definition>
+        <argsstring></argsstring>
+        <name>DEFAULT_LEVEL</name>
+        <qualifiedname>mata::nft::DEFAULT_LEVEL</qualifiedname>
+        <initializer>{ 0 }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="53" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="53" bodyend="53"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacemata_1_1nft_1a7a6543e24742ec94a8261a55b5ead0ff" prot="public" static="no" constexpr="yes" mutable="no">
+        <type>constexpr <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+        <definition>constexpr Level DEFAULT_NUM_OF_LEVELS</definition>
+        <argsstring></argsstring>
+        <name>DEFAULT_NUM_OF_LEVELS</name>
+        <qualifiedname>mata::nft::DEFAULT_NUM_OF_LEVELS</qualifiedname>
+        <initializer>{ 2 }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" line="54" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh" bodystart="54" bodyend="54"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nft_1aea1a46dad5bffc1ce72e174a798774b1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft union_nondet</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs)</argsstring>
+        <name>union_nondet</name>
+        <qualifiedname>mata::nft::union_nondet</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Compute non-deterministic union. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Does not add epsilon transitions, just unites initial and final states. <simplesect kind="return"><para>Non-deterministic union of <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="767" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="767" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nft_1_1plumbing_1a438d6a7a05e1884a5fcea0990ae22e92" compoundref="nft_2plumbing_8hh" startline="65" endline="65">mata::nft::plumbing::union_nondet</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a04b39ac15a81e3115db002d4a894d014" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft union_det_complete</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs)=delete</argsstring>
+        <name>union_det_complete</name>
+        <qualifiedname>mata::nft::union_det_complete</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="769" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="769" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1abc75663566a3b3ac3970a23fa8f4f3ba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft product</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, ProductFinalStateCondition final_condition, Symbol first_epsilon, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map)=delete</argsstring>
+        <name>product</name>
+        <qualifiedname>mata::nft::product</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912" kindref="member">ProductFinalStateCondition</ref></type>
+          <declname>final_condition</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>first_epsilon</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="770" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="770" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a14cb1af39e34e683b568ac2980e1a57b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft intersection</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map=nullptr, JumpMode jump_mode=JumpMode::RepeatSymbol, State lhs_first_aux_state=Limits::max_state, State rhs_first_aux_state=Limits::max_state)</argsstring>
+        <name>intersection</name>
+        <qualifiedname>mata::nft::intersection</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>lhs_first_aux_state</declname>
+          <defval><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">Limits::max_state</ref></defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>rhs_first_aux_state</declname>
+          <defval><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">Limits::max_state</ref></defval>
+        </param>
+        <briefdescription>
+<para>Compute intersection of two NFTs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Both automata can contain ε-transitions. Epsilons will be handled as alphabet symbols.</para>
+<para>Automata must share alphabets. //TODO: this is not implemented yet. Transducers must have equal values of <computeroutput>num_of_levels</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First NFT to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second NFT to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">prod_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_first_aux_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The first auxiliary state in <computeroutput>lhs</computeroutput>. Two auxiliary states does not form a product state. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_first_aux_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The first auxiliary state in <computeroutput>rhs</computeroutput>. Two auxiliary states does not form a product state. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFT as a product of NFTs <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="790" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="790" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1acb47e55c3ecd217f4b5bdfcd1f0fba3d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft compose</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, const utils::OrdVector&lt; Level &gt; &amp;lhs_sync_levels, const utils::OrdVector&lt; Level &gt; &amp;rhs_sync_levels, bool project_out_sync_levels=true, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>compose</name>
+        <qualifiedname>mata::nft::compose</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;</type>
+          <declname>lhs_sync_levels</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;</type>
+          <declname>rhs_sync_levels</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>project_out_sync_levels</declname>
+          <defval>true</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Composes two NFTs (lhs || rhs; read as &quot;rhs after lhs&quot;). </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function computes the composition of two NFTs, <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>, by aligning their synchronization levels. Transitions between two synchronization levels are ordered as follows: first the transitions of <computeroutput>lhs</computeroutput>, then the transitions of <computeroutput>rhs</computeroutput> followed by next synchronization level (if exists). By default, synchronization levels are projected out from the resulting NFT.</para>
+<para>Vectors of synchronization levels have to be non-empty and of the the same size.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First transducer to compose. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second transducer to compose. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_sync_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Ordered vector of synchronization levels of the <computeroutput>lhs</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_sync_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Ordered vector of synchronization levels of the <computeroutput>rhs</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">project_out_sync_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether we want to project out the synchronization levels. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new NFT after the composition. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="813" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="813" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1aabefe5cd260259e0dc5cae2f0c192f90" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft compose</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, Level lhs_sync_level=1, Level rhs_sync_level=0, bool project_out_sync_levels=true, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>compose</name>
+        <qualifiedname>mata::nft::compose</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>lhs_sync_level</declname>
+          <defval>1</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>rhs_sync_level</declname>
+          <defval>0</defval>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>project_out_sync_levels</declname>
+          <defval>true</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Composes two NFTs (lhs || rhs; read as &quot;rhs after lhs&quot;). </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function computes the composition of two NFTs, <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>, by aligning their synchronization levels. Transitions between two synchronization levels are ordered as follows: first the transitions of <computeroutput>lhs</computeroutput>, then the transitions of <computeroutput>rhs</computeroutput> followed by next synchronization level (if exists). By default, synchronization levels are projected out from the resulting NFT.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First transducer to compose. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second transducer to compose. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_sync_level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The synchronization level of the <computeroutput>lhs</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_sync_level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The synchronization level of the <computeroutput>rhs</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">project_out_sync_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether we wont to project out the synchronization levels. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new NFT after the composition. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="835" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="835" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a3d7c7a5c838c26e7b2423e87c10d83a5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft concatenate</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, bool use_epsilon=false, StateRenaming *lhs_state_renaming=nullptr, StateRenaming *rhs_state_renaming=nullptr)</argsstring>
+        <name>concatenate</name>
+        <qualifiedname>mata::nft::concatenate</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>use_epsilon</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>lhs_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>rhs_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Concatenate two NFTs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Supports epsilon symbols when <computeroutput>use_epsilon</computeroutput> is set to true. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">use_epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to concatenate over epsilon symbol. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">lhs_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping lhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">rhs_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping rhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Concatenated automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="849" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="849" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a56b30a9e050f9eba69385c6fafd28872" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft complement</definition>
+        <argsstring>(const Nft &amp;aut, const Alphabet &amp;alphabet, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;classical&quot; }, { &quot;minimize&quot;, &quot;false&quot; }})</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::nft::complement</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;classical&quot; }, { &quot;minimize&quot;, &quot;false&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Compute automaton accepting complement of <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton whose complement to compute. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> used for complementation. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the complementation algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;classical&quot; (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);</para>
+</listitem><listitem><para>&quot;minimize&quot;: &quot;true&quot;/&quot;false&quot; (whether to compute minimal deterministic automaton for classical algorithm); </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Complemented automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="862" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="862" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1af3974a68d8e7bd449fa6cc6e7a683d4b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft complement</definition>
+        <argsstring>(const Nft &amp;aut, const utils::OrdVector&lt; Symbol &gt; &amp;symbols, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;classical&quot; }, { &quot;minimize&quot;, &quot;false&quot; }})</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::nft::complement</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt; &amp;</type>
+          <declname>symbols</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;classical&quot; }, { &quot;minimize&quot;, &quot;false&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Compute automaton accepting complement of <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This overloaded version complements over an already created ordered set of <computeroutput>symbols</computeroutput> instead of an alphabet. This is a more efficient solution in case you already have <computeroutput>symbols</computeroutput> precomputed or want to complement multiple automata over the same set of <computeroutput>symbols:</computeroutput> the function does not need to compute the ordered set of symbols from the alphabet again (and for each automaton).</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton whose complement to compute. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">symbols</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbols to complement over. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the complementation algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;classical&quot; (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);</para>
+</listitem><listitem><para>&quot;minimize&quot;: &quot;true&quot;/&quot;false&quot; (whether to compute minimal deterministic automaton for classical algorithm); </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Complemented automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="880" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="880" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1aa9a835272e7986da9552b1f7fe542793" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft minimize</definition>
+        <argsstring>(const Nft &amp;aut, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;brzozowski&quot; }})</argsstring>
+        <name>minimize</name>
+        <qualifiedname>mata::nft::minimize</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;brzozowski&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Compute minimal deterministic automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton whose minimal version to compute. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the minimization algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;brzozowski&quot; </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Minimal deterministic automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="891" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="891" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nft_1_1plumbing_1a4e2e9af6ad07d073651c9736c6d5d9a9" compoundref="nft_2plumbing_8hh" startline="41" endline="41">mata::nft::plumbing::minimize</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a5536906352245035bc5d02bbacd31372" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft determinize</definition>
+        <argsstring>(const Nft &amp;aut, std::unordered_map&lt; StateSet, State &gt; *subset_map=nullptr)</argsstring>
+        <name>determinize</name>
+        <qualifiedname>mata::nft::determinize</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; <ref refid="namespacemata_1_1nft_1ab52391ee57e45ffeaff4785f74a98a03" kindref="member">StateSet</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt; *</type>
+          <declname>subset_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Determinize automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to determinize. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">subset_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map that maps sets of states of input automaton to states of determinized automaton. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Determinized automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="900" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="900" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a94af3873f61d2ab5687104b97f8575e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft reduce</definition>
+        <argsstring>(const Nft &amp;aut, StateRenaming *state_renaming=nullptr, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;simulation&quot; } })</argsstring>
+        <name>reduce</name>
+        <qualifiedname>mata::nft::reduce</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;simulation&quot; } }</defval>
+        </param>
+        <briefdescription>
+<para>Reduce the size of the automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to reduce. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of original states to reduced states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the reduction algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;simulation&quot;. </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Reduced automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="911" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="911" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a5827d588e09b789e3dae946a7cdc41e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_included</definition>
+        <argsstring>(const Nft &amp;smaller, const Nft &amp;bigger, Run *cex, const Alphabet *alphabet=nullptr, JumpMode jump_mode=JumpMode::RepeatSymbol, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot; }})</argsstring>
+        <name>is_included</name>
+        <qualifiedname>mata::nft::is_included</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>smaller</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>bigger</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" kindref="member">Run</ref> *</type>
+          <declname>cex</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Checks inclusion of languages of two NFTs: <computeroutput>smaller</computeroutput> and <computeroutput>bigger</computeroutput> (smaller &lt;= bigger). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">smaller</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">bigger</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">cex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Counterexample for the inclusion. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both NFTs to compute with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>smaller</computeroutput> is included in <computeroutput>bigger</computeroutput>, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="928" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="928" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a81131d11289dd2dcebc9f03851b3308c" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_included</definition>
+        <argsstring>(const Nft &amp;smaller, const Nft &amp;bigger, const Alphabet *const alphabet=nullptr, JumpMode jump_mode=JumpMode::RepeatSymbol, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot; }})</argsstring>
+        <name>is_included</name>
+        <qualifiedname>mata::nft::is_included</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>smaller</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>bigger</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *const</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Checks inclusion of languages of two NFTs: <computeroutput>smaller</computeroutput> and <computeroutput>bigger</computeroutput> (smaller &lt;= bigger). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">smaller</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">bigger</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both NFTs to compute with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>smaller</computeroutput> is included in <computeroutput>bigger</computeroutput>, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="944" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="944" bodyend="947"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a16a6e134e971c06a44a9893206040ca1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_equivalent</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, const Alphabet *alphabet, JumpMode jump_mode=JumpMode::RepeatSymbol, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot;}})</argsstring>
+        <name>are_equivalent</name>
+        <qualifiedname>mata::nft::are_equivalent</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Perform equivalence check of two NFTs: <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both NFTs to compute with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params[</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> are equivalent, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="962" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="962" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a0bce74ca3ce0d6b67e2579b858eb63e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_equivalent</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, JumpMode JumpMode=JumpMode::RepeatSymbol, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot;}})</argsstring>
+        <name>are_equivalent</name>
+        <qualifiedname>mata::nft::are_equivalent</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>JumpMode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Perform equivalence check of two NFTs: <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The current implementation of <computeroutput><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></computeroutput> does not accept input alphabet. For this reason, an alphabet has to be created from all transitions each time an operation on alphabet is called. When calling this function, the alphabet has to be computed first.</para>
+<para>Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter. That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet. The use of the alternative with defined alphabet should be preferred.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> are equivalent, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="985" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="985" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a81349c56768b55a257111bf57985d4f1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft revert</definition>
+        <argsstring>(const Nft &amp;aut)</argsstring>
+        <name>revert</name>
+        <qualifiedname>mata::nft::revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="989" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="989" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nft_1_1plumbing_1a37853ae62402f3c7e2868241cee56d93" compoundref="nft_2plumbing_8hh" startline="52" endline="52">mata::nft::plumbing::revert</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a8f6a891dbd3c6eb1f90a7a3e3ef3c003" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft fragile_revert</definition>
+        <argsstring>(const Nft &amp;aut)</argsstring>
+        <name>fragile_revert</name>
+        <qualifiedname>mata::nft::fragile_revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="996" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="996" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1aa054b6c833d9006b6f63e3586f8d02c2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft simple_revert</definition>
+        <argsstring>(const Nft &amp;aut)</argsstring>
+        <name>simple_revert</name>
+        <qualifiedname>mata::nft::simple_revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1000" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1000" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a354d3a084fde62fb0c854bbb23d5fbc2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft somewhat_simple_revert</definition>
+        <argsstring>(const Nft &amp;aut)</argsstring>
+        <name>somewhat_simple_revert</name>
+        <qualifiedname>mata::nft::somewhat_simple_revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1005" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1005" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1ae9146b754aa856806af21af348ae94f9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft invert_levels</definition>
+        <argsstring>(const Nft &amp;aut, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>invert_levels</name>
+        <qualifiedname>mata::nft::invert_levels</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Inverts the levels of the given transducer <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The function inverts the levels of the transducer, i.e., the level 0 becomes the last level, level 1 becomes the second last level, and so on.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The transducer for inverting levels. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new transducer with inverted levels. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1019" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1019" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a78c6446331a7ba2ade97480ac089ff30" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft remove_epsilon</definition>
+        <argsstring>(const Nft &amp;aut, Symbol epsilon=EPSILON)</argsstring>
+        <name>remove_epsilon</name>
+        <qualifiedname>mata::nft::remove_epsilon</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <briefdescription>
+<para>Remove simple epsilon transitions. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Simple epsilon transitions are the transitions of the form q0 -epsilon-&gt; q1 -epsilon-&gt; q2 -epsilon-&gt; ... -epsilon-&gt; qn where q0 and qn are level 0 states, the states in-between are states with level 1, 2, ..., num_of_levels and for each qi, for 0 &lt; i &lt; n, there is only 1 transition going to qi (the transition qi-1 -epsilon-&gt; qi) and only 1 transition going from qi (the transition qi -epsilon -&gt; qi+1). This means that if there was some state p0 going with epsilon to q1, these to epsilon transitions would not be removed.</para>
+<para>Furthermore, this assumes that the NFT <computeroutput>aut</computeroutput> does not have jump transitions.</para>
+<para>The resulting automaton has the same number of states as <computeroutput>aut</computeroutput>, just the transitions can change. It is recommended to run trim() after this function.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFT without jump transitions </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>symbol representing epsilon </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFT whose language is same as <computeroutput>aut</computeroutput> but does not contain simple epsilon transitions </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1042" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1042" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nft_1_1plumbing_1a883d502471f199296ebed527af7aa206" compoundref="nft_2plumbing_8hh" startline="54" endline="54">mata::nft::plumbing::remove_epsilon</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a2b24316dabc2d5e1a3d88171a6a5f45b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft project_out</definition>
+        <argsstring>(const Nft &amp;nft, const utils::OrdVector&lt; Level &gt; &amp;levels_to_project, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>project_out</name>
+        <qualifiedname>mata::nft::project_out</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;</type>
+          <declname>levels_to_project</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Projects out specified levels <computeroutput>levels_to_project</computeroutput> in the given transducer <computeroutput>nft</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The transducer for projection. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">levels_to_project</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A non-empty ordered vector of levels to be projected out from the transducer. It must contain only values that are greater than or equal to 0 and smaller than <computeroutput>num_of_levels</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new projected transducer. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1055" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1055" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a53b19c8a1f22df9153576684e0053c6f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft project_out</definition>
+        <argsstring>(const Nft &amp;nft, Level level_to_project, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>project_out</name>
+        <qualifiedname>mata::nft::project_out</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>level_to_project</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Projects out specified level <computeroutput>level_to_project</computeroutput> in the given transducer <computeroutput>nft</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The transducer for projection. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">level_to_project</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A level that is going to be projected out from the transducer. It has to be greater than or equal to 0 and smaller than <computeroutput>num_of_levels</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new projected transducer. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1068" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1068" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a01fcb749c1cef421899fdd2887f8f865" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft project_to</definition>
+        <argsstring>(const Nft &amp;nft, const utils::OrdVector&lt; Level &gt; &amp;levels_to_project, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>project_to</name>
+        <qualifiedname>mata::nft::project_to</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;</type>
+          <declname>levels_to_project</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Projects to specified levels <computeroutput>levels_to_project</computeroutput> in the given transducer <computeroutput>nft</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The transducer for projection. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">levels_to_project</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A non-empty ordered vector of levels the transducer is going to be projected to. It must contain only values greater than or equal to 0 and smaller than <computeroutput>num_of_levels</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new projected transducer. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1081" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1081" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1afccea7193a0c3783d2103d93232421b0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft project_to</definition>
+        <argsstring>(const Nft &amp;nft, Level level_to_project, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>project_to</name>
+        <qualifiedname>mata::nft::project_to</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>level_to_project</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Projects to a specified level <computeroutput>level_to_project</computeroutput> in the given transducer <computeroutput>nft</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The transducer for projection. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">level_to_project</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A level the transducer is going to be projected to. It has to be greater than or equal to 0 and smaller than <computeroutput>num_of_levels</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A new projected transducer. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1094" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1094" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a1c740f2cf570198fefeab80e131cbcc6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft insert_levels</definition>
+        <argsstring>(const Nft &amp;nft, const BoolVector &amp;new_levels_mask, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>insert_levels</name>
+        <qualifiedname>mata::nft::insert_levels</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+          <declname>new_levels_mask</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Inserts new levels, as specified by the mask <computeroutput>new_levels_mask</computeroutput>, into the given transducer <computeroutput>nft</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><computeroutput>num_of_levels</computeroutput> must be greater than 0. The vector <computeroutput>new_levels_mask</computeroutput> must be nonempty, its length must be greater than <computeroutput>num_of_levels</computeroutput>, and it must contain exactly <computeroutput>num_of_levels</computeroutput> occurrences of false.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The original transducer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">new_levels_mask</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A mask representing the old and new levels. The vector {1, 0, 1, 1, 0} indicates that one level is inserted before level 0 and two levels are inserted before level 1. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies whether the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1110" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1110" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1a0c99b1e068d7018105e59bd91352c830" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft insert_level</definition>
+        <argsstring>(const Nft &amp;nft, Level new_level, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>insert_level</name>
+        <qualifiedname>mata::nft::insert_level</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>new_level</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Inserts a new level <computeroutput>new_level</computeroutput> into the given transducer <computeroutput>nft</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><computeroutput>num_of_levels</computeroutput> must be greater than 0.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The original transducer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">new_level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies the new level to be inserted into the transducer. If <computeroutput>new_level</computeroutput> is 0, then it is inserted before the 0-th level. If <computeroutput>new_level</computeroutput> is less than <computeroutput>num_of_levels</computeroutput>, then it is inserted before the level <computeroutput>new_level-1</computeroutput>. If <computeroutput>new_level</computeroutput> is greater than or equal to <computeroutput>num_of_levels</computeroutput>, then all levels from <computeroutput>num_of_levels</computeroutput> through <computeroutput>new_level</computeroutput> are appended after the last level. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies whether the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> symbols. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1126" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1126" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1abc96a1fa1b3cba4949016107d35d50d0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" kindref="member">Run</ref></type>
+        <definition>Run encode_word</definition>
+        <argsstring>(const Alphabet *alphabet, const std::vector&lt; std::string &gt; &amp;input)</argsstring>
+        <name>encode_word</name>
+        <qualifiedname>mata::nft::encode_word</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; std::string &gt; &amp;</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Encodes a vector of strings (each corresponding to one symbol) into a <computeroutput>Word</computeroutput> instance. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="1134" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" declline="1134" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="27" column="1"/>
+  </compounddef>
+</doxygen>

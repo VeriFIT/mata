@@ -1,0 +1,460 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1Mintermization" kind="class" language="C++" prot="public">
+    <compoundname>mata::Mintermization</compoundname>
+    <includes refid="mintermization_8hh" local="no">mintermization.hh</includes>
+    <innerclass refid="structmata_1_1Mintermization_1_1OptionalBdd" prot="private">mata::Mintermization::OptionalBdd</innerclass>
+    <sectiondef kind="private-type">
+      <memberdef kind="typedef" id="classmata_1_1Mintermization_1acd2abc6da71d06e038f1db50bf409cab" prot="private" static="no">
+        <type>std::pair&lt; const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> *, const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> * &gt;</type>
+        <definition>using DisjunctStatesPair =  std::pair&lt;const FormulaGraph *, const FormulaGraph *&gt;</definition>
+        <argsstring></argsstring>
+        <name>DisjunctStatesPair</name>
+        <qualifiedname>mata::Mintermization::DisjunctStatesPair</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="33" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="33" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa" prot="private" static="no" mutable="no">
+        <type>Cudd</type>
+        <definition>Cudd bdd_mng</definition>
+        <argsstring></argsstring>
+        <name>bdd_mng</name>
+        <qualifiedname>mata::Mintermization::bdd_mng</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="36" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="36" bodyend="36"/>
+        <referencedby refid="classmata_1_1Mintermization_1a7928670a27b65e045e877726a0c4479b" compoundref="mintermization_8hh" startline="110" endline="110">Mintermization::Mintermization</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1Mintermization_1a987006074fa55dbb95612164bd4c1707" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; std::string, BDD &gt;</type>
+        <definition>std::unordered_map&lt;std::string, BDD&gt; symbol_to_bddvar</definition>
+        <argsstring></argsstring>
+        <name>symbol_to_bddvar</name>
+        <qualifiedname>mata::Mintermization::symbol_to_bddvar</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="37" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="37" bodyend="37"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1Mintermization_1a0f865290bd6ebaeab385219a259d4a52" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> *, BDD &gt;</type>
+        <definition>std::unordered_map&lt;const FormulaGraph*, BDD&gt; trans_to_bddvar</definition>
+        <argsstring></argsstring>
+        <name>trans_to_bddvar</name>
+        <qualifiedname>mata::Mintermization::trans_to_bddvar</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="38" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="38" bodyend="38"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1Mintermization_1acc9fd42a9fe0f4c16812e189806d1b1f" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> *, std::vector&lt; <ref refid="classmata_1_1Mintermization_1acd2abc6da71d06e038f1db50bf409cab" kindref="member">DisjunctStatesPair</ref> &gt; &gt;</type>
+        <definition>std::unordered_map&lt;const FormulaNode*, std::vector&lt;DisjunctStatesPair&gt; &gt; lhs_to_disjuncts_and_states</definition>
+        <argsstring></argsstring>
+        <name>lhs_to_disjuncts_and_states</name>
+        <qualifiedname>mata::Mintermization::lhs_to_disjuncts_and_states</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="39" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="39" bodyend="39"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1Mintermization_1a2be3a3f43e32f7859c8cdb26f7a42a53" prot="private" static="no" mutable="no">
+        <type>std::unordered_set&lt; BDD &gt;</type>
+        <definition>std::unordered_set&lt;BDD&gt; bdds</definition>
+        <argsstring></argsstring>
+        <name>bdds</name>
+        <qualifiedname>mata::Mintermization::bdds</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="40" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="40" bodyend="40"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classmata_1_1Mintermization_1ae8e93ff40af3d2183e2595608dadba9b" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void trans_to_bdd_nfa</definition>
+        <argsstring>(const IntermediateAut &amp;aut)</argsstring>
+        <name>trans_to_bdd_nfa</name>
+        <qualifiedname>mata::Mintermization::trans_to_bdd_nfa</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="43" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a73b87c34fc1b3dcb11f89994410e4afc" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void trans_to_bdd_afa</definition>
+        <argsstring>(const IntermediateAut &amp;aut)</argsstring>
+        <name>trans_to_bdd_afa</name>
+        <qualifiedname>mata::Mintermization::trans_to_bdd_afa</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="44" column="10"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a811b8eda0757e03065aa5aa823603cbf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::unordered_set&lt; BDD &gt;</type>
+        <definition>std::unordered_set&lt; BDD &gt; compute_minterms</definition>
+        <argsstring>(const std::unordered_set&lt; BDD &gt; &amp;source_bdds)</argsstring>
+        <name>compute_minterms</name>
+        <qualifiedname>mata::Mintermization::compute_minterms</qualifiedname>
+        <param>
+          <type>const std::unordered_set&lt; BDD &gt; &amp;</type>
+          <declname>source_bdds</declname>
+        </param>
+        <briefdescription>
+<para>Takes a set of BDDs and build a minterm tree over it. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The leaves of BDDs, which are minterms of input set, are returned <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>source_bdds</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>BDDs for which minterms are computed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Computed minterms </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="53" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1aaa9a7e7f3f1cbb2e6d6e331ecdbe82b7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>BDD</type>
+        <definition>BDD graph_to_bdd_nfa</definition>
+        <argsstring>(const FormulaGraph &amp;graph)</argsstring>
+        <name>graph_to_bdd_nfa</name>
+        <qualifiedname>mata::Mintermization::graph_to_bdd_nfa</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+          <declname>graph</declname>
+        </param>
+        <briefdescription>
+<para>Transforms a graph representing formula at transition to bdd. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>graph</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Graph to be transformed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Resulting BDD </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="60" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a27472854ea5a8b27b24a577515736b14" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref></type>
+        <definition>OptionalBdd graph_to_bdd_afa</definition>
+        <argsstring>(const FormulaGraph &amp;graph)</argsstring>
+        <name>graph_to_bdd_afa</name>
+        <qualifiedname>mata::Mintermization::graph_to_bdd_afa</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+          <declname>graph</declname>
+        </param>
+        <briefdescription>
+<para>Transforms a graph representing formula at transition to bdd. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This version of method is a more general one and accepts also formula including states. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>graph</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Graph to be transformed </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Resulting BDD </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="69" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a6518a351ad9194b6d1d1dc43420836f2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref></type>
+        <definition>mata::IntermediateAut mintermize</definition>
+        <argsstring>(const mata::IntermediateAut &amp;aut)</argsstring>
+        <name>mintermize</name>
+        <qualifiedname>mata::Mintermization::mintermize</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+<para>Method mintermizes given automaton which has bitvector alphabet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It transforms its transitions to BDDs, then build a minterm tree over the BDDs and finally transforms automaton to explicit one. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to be mintermized. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Mintermized automaton </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="78" column="27"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a7212d3052d3aee0104e98fbc8a0bbb0c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &gt;</type>
+        <definition>std::vector&lt; mata::IntermediateAut &gt; mintermize</definition>
+        <argsstring>(const std::vector&lt; const mata::IntermediateAut * &gt; &amp;auts)</argsstring>
+        <name>mintermize</name>
+        <qualifiedname>mata::Mintermization::mintermize</qualifiedname>
+        <param>
+          <type>const std::vector&lt; const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> * &gt; &amp;</type>
+          <declname>auts</declname>
+        </param>
+        <briefdescription>
+<para>Methods mintermize given automata which have bitvector alphabet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It transforms transitions of all automata to BDDs, then build a minterm tree over the BDDs and finally transforms automata to explicit one (sharing the same minterms). <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>auts</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automata to be mintermized. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Mintermized automata corresponding to the input autamata </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="87" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1aad02530c1feda3d4e02ab74f37729107" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &gt;</type>
+        <definition>std::vector&lt; mata::IntermediateAut &gt; mintermize</definition>
+        <argsstring>(const std::vector&lt; mata::IntermediateAut &gt; &amp;auts)</argsstring>
+        <name>mintermize</name>
+        <qualifiedname>mata::Mintermization::mintermize</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &gt; &amp;</type>
+          <declname>auts</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="88" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1ad38987aa2a54f4c6816098a83519dc0c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void minterms_to_aut_nfa</definition>
+        <argsstring>(mata::IntermediateAut &amp;res, const mata::IntermediateAut &amp;aut, const std::unordered_set&lt; BDD &gt; &amp;minterms)</argsstring>
+        <name>minterms_to_aut_nfa</name>
+        <qualifiedname>mata::Mintermization::minterms_to_aut_nfa</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const std::unordered_set&lt; BDD &gt; &amp;</type>
+          <declname>minterms</declname>
+        </param>
+        <briefdescription>
+<para>The method performs the mintermization over @aut with given @minterms. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It is method specialized for NFA. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>res</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The resulting mintermized automaton </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to be mintermized </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>minterms</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Set of minterms for mintermization </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="97" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a8a54d61c09a74c22be2965a04967ec9f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void minterms_to_aut_afa</definition>
+        <argsstring>(mata::IntermediateAut &amp;res, const mata::IntermediateAut &amp;aut, const std::unordered_set&lt; BDD &gt; &amp;minterms)</argsstring>
+        <name>minterms_to_aut_afa</name>
+        <qualifiedname>mata::Mintermization::minterms_to_aut_afa</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const std::unordered_set&lt; BDD &gt; &amp;</type>
+          <declname>minterms</declname>
+        </param>
+        <briefdescription>
+<para>The method for mintermization of alternating finite automaton using a given set of minterms. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>res</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The resulting mintermized automaton </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to be mintermized </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>minterms</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Set of minterms for mintermization </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="107" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Mintermization_1a7928670a27b65e045e877726a0c4479b" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>Mintermization</definition>
+        <argsstring>()</argsstring>
+        <name>Mintermization</name>
+        <qualifiedname>mata::Mintermization::Mintermization</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="110" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="110" bodyend="110"/>
+        <references refid="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa" compoundref="mintermization_8hh" startline="36" endline="36">Mintermization::bdd_mng</references>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="15" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="15" bodyend="111"/>
+    <listofallmembers>
+      <member refid="classmata_1_1Mintermization_1a34d58a85e4e8af341129ef1e30246faa" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>bdd_mng</name></member>
+      <member refid="classmata_1_1Mintermization_1a2be3a3f43e32f7859c8cdb26f7a42a53" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>bdds</name></member>
+      <member refid="classmata_1_1Mintermization_1a811b8eda0757e03065aa5aa823603cbf" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>compute_minterms</name></member>
+      <member refid="classmata_1_1Mintermization_1acd2abc6da71d06e038f1db50bf409cab" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>DisjunctStatesPair</name></member>
+      <member refid="classmata_1_1Mintermization_1a27472854ea5a8b27b24a577515736b14" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>graph_to_bdd_afa</name></member>
+      <member refid="classmata_1_1Mintermization_1aaa9a7e7f3f1cbb2e6d6e331ecdbe82b7" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>graph_to_bdd_nfa</name></member>
+      <member refid="classmata_1_1Mintermization_1acc9fd42a9fe0f4c16812e189806d1b1f" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>lhs_to_disjuncts_and_states</name></member>
+      <member refid="classmata_1_1Mintermization_1a7928670a27b65e045e877726a0c4479b" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>Mintermization</name></member>
+      <member refid="classmata_1_1Mintermization_1a6518a351ad9194b6d1d1dc43420836f2" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>mintermize</name></member>
+      <member refid="classmata_1_1Mintermization_1a7212d3052d3aee0104e98fbc8a0bbb0c" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>mintermize</name></member>
+      <member refid="classmata_1_1Mintermization_1aad02530c1feda3d4e02ab74f37729107" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>mintermize</name></member>
+      <member refid="classmata_1_1Mintermization_1a8a54d61c09a74c22be2965a04967ec9f" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>minterms_to_aut_afa</name></member>
+      <member refid="classmata_1_1Mintermization_1ad38987aa2a54f4c6816098a83519dc0c" prot="public" virt="non-virtual"><scope>mata::Mintermization</scope><name>minterms_to_aut_nfa</name></member>
+      <member refid="classmata_1_1Mintermization_1a987006074fa55dbb95612164bd4c1707" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>symbol_to_bddvar</name></member>
+      <member refid="classmata_1_1Mintermization_1a73b87c34fc1b3dcb11f89994410e4afc" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>trans_to_bdd_afa</name></member>
+      <member refid="classmata_1_1Mintermization_1ae8e93ff40af3d2183e2595608dadba9b" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>trans_to_bdd_nfa</name></member>
+      <member refid="classmata_1_1Mintermization_1a0f865290bd6ebaeab385219a259d4a52" prot="private" virt="non-virtual"><scope>mata::Mintermization</scope><name>trans_to_bddvar</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Contributing &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Nondeterministic Finite automata" href="nfa.html" />
+    <link rel="prev" title="Automata Format" href="automata-format.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">¶</a></h1>
+<section id="contributing-guidelines">
+<h2>Contributing guidelines<a class="headerlink" href="#contributing-guidelines" title="Link to this heading">¶</a></h2>
+<p>In case you run into some unexpected behaviour, error or anything suspicious either contact us directly through mail or
+<a class="reference external" href="https://github.com/VeriFIT/mata/issues/new/choose">create a new issue</a>.
+When creating a new issue, please, try to include everything necessary for us to know (such as the version, operating
+system, etc.) so we can sucessfully replicate the issue.</p>
+<p>If you’d like to contribute to the Mata project, please <a class="reference external" href="https://github.com/VeriFIT/mata/fork">fork the repository</a>,
+create a new feature branch, and finally <a class="reference external" href="https://github.com/VeriFIT/mata/compare">create a new pull request</a>.
+When opening a PR, either set its status to <code class="docutils literal notranslate"><span class="pre">Open</span></code> (the default behaviour) when you want the PR to be immediately
+up for review, or set its status to <code class="docutils literal notranslate"><span class="pre">Draft</span></code> when the PR is work-in-progress and you do not want the PR to be
+reviewed yet.
+When the draft PR is finished and ready for review, switch the status to <code class="docutils literal notranslate"><span class="pre">Open</span></code> to indicate we should review the PR.
+Optionally, you can tag <code class="docutils literal notranslate"><span class="pre">&#64;Adda0</span></code> (and any other contributors you explicitly want to review the PR) to request the
+review directly, be it an open PR or a draft.</p>
+<section id="design-style">
+<h3>Design style<a class="headerlink" href="#design-style" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>private</strong> attributes of classes/structs should use <code class="docutils literal notranslate"><span class="pre">snake_case_</span></code> (note the trailing <code class="docutils literal notranslate"><span class="pre">_</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">snake_case</span></code> is to be used in context of:</p>
+<ul>
+<li><p>variables, and</p></li>
+<li><p>functions / class methods (which are neither constructors nor destructors).</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UpperCamelCase</span></code> is to be used in the context of:</p>
+<ul>
+<li><p>class/structure names,</p></li>
+<li><p>aliases of types created using <code class="docutils literal notranslate"><span class="pre">using</span></code>,</p></li>
+<li><p>constructors and destructors, and</p></li>
+<li><p>elements of the type <code class="docutils literal notranslate"><span class="pre">enum</span></code> (prefer using <code class="docutils literal notranslate"><span class="pre">enum</span> <span class="pre">class</span></code>).</p></li>
+</ul>
+</li>
+</ul>
+<section id="todo-and-similar-message-format">
+<h4>TODO and similar message format<a class="headerlink" href="#todo-and-similar-message-format" title="Link to this heading">¶</a></h4>
+<p>When commenting on a future TODO, an unresolved issue to be fixed, a bug or an unresolved note which is to be
+resolved later on, use one of the following comment formats:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// TODO: &lt;message&gt;.</span>
+<span class="c1">// FIXME: &lt;message&gt;.</span>
+<span class="c1">// BUG: &lt;message&gt;.</span>
+<span class="c1">// NOTE: &lt;message&gt;.</span>
+</pre></div>
+</div>
+<p>For normal, permanent comments, <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">NOTE:</span></code> should not be used (use just <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">&lt;message&gt;.</span></code> instead).
+Use <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">NOTE:</span></code> only when specifically making a note supposed to be resolved later on
+and which is to be removed afterwards.</p>
+<p>Optionally, to limit the scope of the comment, <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">TYPE(&lt;scope&gt;):</span> <span class="pre">&lt;message&gt;</span></code> can be used, e.g., <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">TODO(nfa):</span> <span class="pre">Add</span> <span class="pre">a</span> <span class="pre">new</span> <span class="pre">function.</span></code>.</p>
+</section>
+<section id="code-quality">
+<h4>Code quality<a class="headerlink" href="#code-quality" title="Link to this heading">¶</a></h4>
+<p>If possible, go over the code and extract all repeatedly computed code in {for, while, do-while} loop bodies,
+but also in loop declarations (headers) such as:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="n">it</span><span class="o">++</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">xyz_end</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">xyz_end</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="c1">// Note: Using prefix is more performant. Use</span>
+<span class="n">whenever</span><span class="w"> </span><span class="n">possible</span><span class="p">.</span>
+</pre></div>
+</div>
+<p>or (if the iterated variable and the end condition variable are not of the same data type, or you want to make the
+condition variable explicitly <code class="docutils literal notranslate"><span class="pre">const</span></code>):</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">xyz_end</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="p">};</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="p">{</span><span class="w"> </span><span class="n">xyz</span><span class="p">.</span><span class="n">begin</span><span class="p">()</span><span class="w"> </span><span class="p">};</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">xyz_end</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="c1">// Note: Using prefix is more performant. Use whenever possible.</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="for-maintainers">
+<h2>For maintainers<a class="headerlink" href="#for-maintainers" title="Link to this heading">¶</a></h2>
+<p>The information in this section concerns only maintainers of the project.</p>
+<section id="versioning-during-pr-merge">
+<h3>Versioning during PR merge<a class="headerlink" href="#versioning-during-pr-merge" title="Link to this heading">¶</a></h3>
+<p>By default, each merge automatically increases the <code class="docutils literal notranslate"><span class="pre">minor</span></code> version of the library
+(i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.1.0</span></code> ). This can be overruled using either tag <code class="docutils literal notranslate"><span class="pre">#patch</span></code> (increasing
+patch version, i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.0.1</span></code>) or <code class="docutils literal notranslate"><span class="pre">#major</span></code> (increasing major version, i.e.,
+<code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">1.0.0</span></code>). This tag is specified in the merge message.</p>
+<p>Generally, it is recommended to use <code class="docutils literal notranslate"><span class="pre">#major</span></code> for changes that introduces backward-incompatible
+changes for people that used previous versions, and <code class="docutils literal notranslate"><span class="pre">#patch</span></code> for minor changes, such as bug-fixes,
+performance fixes or refactoring.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#contributing-guidelines">Contributing guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#for-maintainers">For maintainers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="automata-format.html" title="previous chapter">Automata Format</a></li>
+      <li>Next: <a href="nfa.html" title="next chapter">Nondeterministic Finite automata</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/contributing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

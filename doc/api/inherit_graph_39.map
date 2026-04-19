@@ -1,0 +1,11 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" href="$classmata_1_1utils_1_1SynchronizedIterator.html" title="Synchronized iteration." alt="" coords="5,85,163,125"/>
+<area shape="rect" id="Node000001" href="$classmata_1_1utils_1_1SynchronizedExistentialIterator.html" title=" " alt="" coords="211,5,440,60"/>
+<area shape="poly" id="edge6_Node000000_Node000001" title=" " alt="" coords="164,78,233,57,234,63,166,83"/>
+<area shape="rect" id="Node000003" href="$classmata_1_1utils_1_1SynchronizedExistentialIterator.html" title=" " alt="" coords="212,85,439,125"/>
+<area shape="poly" id="edge8_Node000000_Node000003" title=" " alt="" coords="176,102,212,102,212,107,176,107"/>
+<area shape="rect" id="Node000004" href="$classmata_1_1utils_1_1SynchronizedUniversalIterator.html" title=" " alt="" coords="216,149,435,189"/>
+<area shape="poly" id="edge9_Node000000_Node000004" title=" " alt="" coords="174,126,250,146,249,151,172,131"/>
+<area shape="rect" id="Node000002" href="$classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html" title="Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts." alt="" coords="488,13,715,53"/>
+<area shape="poly" id="edge7_Node000001_Node000002" title=" " alt="" coords="454,30,488,30,488,35,454,35"/>
+</map>

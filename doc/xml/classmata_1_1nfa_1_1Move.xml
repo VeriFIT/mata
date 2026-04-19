@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1nfa_1_1Move" kind="class" language="C++" prot="public">
+    <compoundname>mata::nfa::Move</compoundname>
+    <includes refid="nfa_2delta_8hh" local="no">delta.hh</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classmata_1_1nfa_1_1Move_1a86b1fd052877425f029f5528edab94d1" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>Symbol symbol</definition>
+        <argsstring></argsstring>
+        <name>symbol</name>
+        <qualifiedname>mata::nfa::Move::symbol</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="40" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1nfa_1_1Move_1ad29d51e23c4870e586c79c7e47197d08" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+        <definition>State target</definition>
+        <argsstring></argsstring>
+        <name>target</name>
+        <qualifiedname>mata::nfa::Move::target</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="41" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="41" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1nfa_1_1Move_1a99ee96f004edcccddef1009ada089109" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator==</definition>
+        <argsstring>(const Move &amp;) const =default</argsstring>
+        <name>operator==</name>
+        <qualifiedname>mata::nfa::Move::operator==</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Move" kindref="compound">Move</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="43" column="10"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para><ref refid="classmata_1_1nfa_1_1Move" kindref="compound">Move</ref> from a <computeroutput><ref refid="classmata_1_1nfa_1_1StatePost" kindref="compound">StatePost</ref></computeroutput> for a single source state, represented as a pair of <computeroutput>symbol</computeroutput> and target state <computeroutput>target</computeroutput>. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="38" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="38" bodyend="44"/>
+    <listofallmembers>
+      <member refid="classmata_1_1nfa_1_1Move_1a99ee96f004edcccddef1009ada089109" prot="public" virt="non-virtual"><scope>mata::nfa::Move</scope><name>operator==</name></member>
+      <member refid="classmata_1_1nfa_1_1Move_1a86b1fd052877425f029f5528edab94d1" prot="public" virt="non-virtual"><scope>mata::nfa::Move</scope><name>symbol</name></member>
+      <member refid="classmata_1_1nfa_1_1Move_1ad29d51e23c4870e586c79c7e47197d08" prot="public" virt="non-virtual"><scope>mata::nfa::Move</scope><name>target</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

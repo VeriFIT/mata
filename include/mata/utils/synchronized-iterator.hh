@@ -170,6 +170,11 @@ public:
 template<typename Iterator>
 class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
 public:
+    SynchronizedExistentialIterator(const SynchronizedExistentialIterator&) = default;
+    SynchronizedExistentialIterator(SynchronizedExistentialIterator&&) = default;
+    SynchronizedExistentialIterator& operator=(const SynchronizedExistentialIterator&) = default;
+    SynchronizedExistentialIterator& operator=(SynchronizedExistentialIterator&&) = default;
+
     Iterator get_current_minimum() {
         if (currently_synchronized.empty()) {
             throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minimum. Don't do "

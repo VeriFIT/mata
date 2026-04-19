@@ -1,0 +1,5 @@
+<map id="FormulaGraph" name="FormulaGraph">
+<area shape="rect" id="Node000001" title="Structure representing a transition formula using a graph." alt="" coords="5,93,120,119"/>
+<area shape="rect" id="Node000002" href="$structmata_1_1FormulaNode.html" title="A node of graph representing transition formula." alt="" coords="8,5,117,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="65,45,65,93,60,93,60,45"/>
+</map>

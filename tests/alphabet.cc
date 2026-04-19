@@ -8,6 +8,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/utils/custom_vector.h"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
@@ -17,7 +18,7 @@ using namespace mata::parser;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
-using Word = std::vector<Symbol>;
+using Word = CustomVector<Symbol>;
 
 template<class T> void unused(const T &) {}
 

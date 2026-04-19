@@ -1,0 +1,321 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="parser_8hh" kind="file" language="C++">
+    <compoundname>parser.hh</compoundname>
+    <includes local="no">cassert</includes>
+    <includes local="no">list</includes>
+    <includes local="no">map</includes>
+    <includes local="no">ostream</includes>
+    <includes local="no">string</includes>
+    <includes local="no">vector</includes>
+    <includes refid="utils_8hh" local="yes">mata/utils/utils.hh</includes>
+    <includedby refid="nfa_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</includedby>
+    <includedby refid="nfa_2types_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh</includedby>
+    <includedby refid="nft_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</includedby>
+    <includedby refid="inter-aut_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh</label>
+        <link refid="parser_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>mata/utils/utils.hh</label>
+        <link refid="utils_8hh"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>algorithm</label>
+      </node>
+      <node id="2">
+        <label>cassert</label>
+      </node>
+      <node id="16">
+        <label>cstdint</label>
+      </node>
+      <node id="10">
+        <label>functional</label>
+      </node>
+      <node id="11">
+        <label>iostream</label>
+      </node>
+      <node id="3">
+        <label>list</label>
+      </node>
+      <node id="4">
+        <label>map</label>
+      </node>
+      <node id="5">
+        <label>ostream</label>
+      </node>
+      <node id="12">
+        <label>set</label>
+      </node>
+      <node id="13">
+        <label>sstream</label>
+      </node>
+      <node id="14">
+        <label>stack</label>
+      </node>
+      <node id="6">
+        <label>string</label>
+      </node>
+      <node id="15">
+        <label>unordered_map</label>
+      </node>
+      <node id="7">
+        <label>vector</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="3">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh</label>
+        <link refid="strings_8hh"/>
+      </node>
+      <node id="4">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/algorithms.hh</label>
+        <link refid="nfa_2algorithms_8hh"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh</label>
+        <link refid="nfa_2builder_8hh"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</label>
+        <link refid="nfa_2delta_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</label>
+        <link refid="nfa_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh</label>
+        <link refid="nfa_2plumbing_8hh"/>
+      </node>
+      <node id="12">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh</label>
+        <link refid="nfa_2types_8hh"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh</label>
+        <link refid="nft_2algorithms_8hh"/>
+      </node>
+      <node id="7">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh</label>
+        <link refid="nft_2builder_8hh"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</label>
+        <link refid="nft_2delta_8hh"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</label>
+        <link refid="nft_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh</label>
+        <link refid="nft_2plumbing_8hh"/>
+      </node>
+      <node id="15">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/types.hh</label>
+        <link refid="nft_2types_8hh"/>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh</label>
+        <link refid="inter-aut_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh</label>
+        <link refid="mintermization_8hh"/>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh</label>
+        <link refid="parser_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/re2parser.hh</label>
+        <link refid="re2parser_8hh"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="structmata_1_1parser_1_1ParsedSection" prot="public">mata::parser::ParsedSection</innerclass>
+    <innernamespace refid="namespacemata">mata</innernamespace>
+    <innernamespace refid="namespacemata_1_1parser">mata::parser</innernamespace>
+    <innernamespace refid="namespacestd">std</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/*<sp/>parser.hh<sp/>--<sp/>Mata<sp/>Format<sp/>(MF)<sp/>parser.</highlight></codeline>
+<codeline lineno="2"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>MATA_PARSER_HH_</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>MATA_PARSER_HH_</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cassert&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;list&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;map&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;ostream&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;string&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;vector&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="utils_8hh" kindref="compound">mata/utils/utils.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="16"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="17"><highlight class="comment"><sp/>*<sp/>Parser<sp/>from<sp/>`.mata`<sp/>format<sp/>to<sp/>automata<sp/>(currently<sp/>`Nfa`<sp/>and<sp/>`Afa`<sp/>are<sp/>supported).</highlight></codeline>
+<codeline lineno="18"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="19"><highlight class="comment"><sp/>*<sp/>This<sp/>includes<sp/>parsing<sp/>either<sp/>from<sp/>files<sp/>or<sp/>from<sp/>other<sp/>streams<sp/>(strings,<sp/>etc.).</highlight></codeline>
+<codeline lineno="20"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21" refid="namespacemata_1_1parser" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1parser" kindref="compound">mata::parser</ref><sp/>{</highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>TODO:<sp/>make<sp/>into<sp/>a<sp/>multimap</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24" refid="namespacemata_1_1parser_1a32b31392a3c303c20427c367fb3a733a" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1parser_1a32b31392a3c303c20427c367fb3a733a" kindref="member">KeyListStore</ref><sp/>=<sp/>std::map&lt;std::string,<sp/>std::vector&lt;std::string&gt;&gt;;</highlight></codeline>
+<codeline lineno="25" refid="namespacemata_1_1parser_1aa0fe9a04182601237d66241a75595bd3" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1parser_1aa0fe9a04182601237d66241a75595bd3" kindref="member">BodyLine</ref><sp/>=<sp/>std::vector&lt;std::string&gt;;</highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="27"><highlight class="comment">/**<sp/>Parsed<sp/>data<sp/>(single<sp/>section)<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="structmata_1_1parser_1_1ParsedSection" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">ParsedSection</ref><sp/>{</highlight></codeline>
+<codeline lineno="29" refid="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" kindref="member">type</ref>;</highlight></codeline>
+<codeline lineno="30" refid="structmata_1_1parser_1_1ParsedSection_1a7fa9fb432f804051ae128219b819973d" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacemata_1_1parser_1a32b31392a3c303c20427c367fb3a733a" kindref="member">KeyListStore</ref><sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a7fa9fb432f804051ae128219b819973d" kindref="member">dict</ref>;</highlight></codeline>
+<codeline lineno="31" refid="structmata_1_1parser_1_1ParsedSection_1a5efb3614da4ae6aa0e3cf4308d7ce3f7" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::list&lt;BodyLine&gt;<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a5efb3614da4ae6aa0e3cf4308d7ce3f7" kindref="member">body</ref>;</highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight></codeline>
+<codeline lineno="33" refid="structmata_1_1parser_1_1ParsedSection_1a89f31ee46d83202d2c00560e6aa8918c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a89f31ee46d83202d2c00560e6aa8918c" kindref="member">ParsedSection</ref>()<sp/>:<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" kindref="member">type</ref>(),<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a7fa9fb432f804051ae128219b819973d" kindref="member">dict</ref>(),<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a5efb3614da4ae6aa0e3cf4308d7ce3f7" kindref="member">body</ref>()<sp/>{}</highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="35"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>Is<sp/>the<sp/>section<sp/>empty?</highlight></codeline>
+<codeline lineno="36" refid="structmata_1_1parser_1_1ParsedSection_1a644718bb2fb240de962dc3c9a1fdf0dc" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a644718bb2fb240de962dc3c9a1fdf0dc" kindref="member">empty</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" kindref="member">type</ref>.empty()<sp/>&amp;&amp;<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a7fa9fb432f804051ae128219b819973d" kindref="member">dict</ref>.empty()<sp/>&amp;&amp;<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a5efb3614da4ae6aa0e3cf4308d7ce3f7" kindref="member">body</ref>.empty();<sp/>}</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="38"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>Equality<sp/>operator</highlight></codeline>
+<codeline lineno="39" refid="structmata_1_1parser_1_1ParsedSection_1a3bd292f9893120980d41415dd4115e68" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a3bd292f9893120980d41415dd4115e68" kindref="member">operator==</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">ParsedSection</ref>&amp;<sp/>rhs)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="41"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>subscript<sp/>operator<sp/>for<sp/>the<sp/>key-value<sp/>store</highlight></codeline>
+<codeline lineno="42" refid="structmata_1_1parser_1_1ParsedSection_1a18447eb8c675d0eb6c16b37242960d89" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;std::string&gt;&amp;<sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a18447eb8c675d0eb6c16b37242960d89" kindref="member">operator[]</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>key)<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="44"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>check<sp/>whether<sp/>the<sp/>key-value<sp/>store<sp/>contains<sp/>a<sp/>key</highlight></codeline>
+<codeline lineno="45" refid="structmata_1_1parser_1_1ParsedSection_1a55c37b06be38e3f9772cefe487c4464e" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1parser_1_1ParsedSection_1a55c37b06be38e3f9772cefe487c4464e" kindref="member">haskey</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>key)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>this-&gt;dict.end()<sp/>!=<sp/>this-&gt;dict.find(key);<sp/>}</highlight></codeline>
+<codeline lineno="46"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="48"><highlight class="comment">/**<sp/>Parsed<sp/>data<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="49" refid="namespacemata_1_1parser_1a3e200746226a7d10b9019bd92eec2ee4" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1parser_1a3e200746226a7d10b9019bd92eec2ee4" kindref="member">Parsed</ref><sp/>=<sp/>std::vector&lt;ParsedSection&gt;;</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="51"><highlight class="comment">/**<sp/>Parses<sp/>a<sp/>string<sp/>into<sp/>an<sp/>intermediary<sp/>structure<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="52" refid="namespacemata_1_1parser_1a44559420c249dfde76e9b385fee2f4d5" refkind="member"><highlight class="normal"><ref refid="namespacemata_1_1parser_1a3e200746226a7d10b9019bd92eec2ee4" kindref="member">Parsed</ref><sp/><ref refid="namespacemata_1_1parser_1a44559420c249dfde76e9b385fee2f4d5" kindref="member">parse_mf</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>input,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>keepQuotes<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="54"><highlight class="comment">/**<sp/>Parses<sp/>a<sp/>stream<sp/>into<sp/>an<sp/>intermediary<sp/>structure<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="55" refid="namespacemata_1_1parser_1a8a584203d1d33fe0b62e7317556f4ece" refkind="member"><highlight class="normal"><ref refid="namespacemata_1_1parser_1a3e200746226a7d10b9019bd92eec2ee4" kindref="member">Parsed</ref><sp/><ref refid="namespacemata_1_1parser_1a44559420c249dfde76e9b385fee2f4d5" kindref="member">parse_mf</ref>(std::istream&amp;<sp/>input,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>keepQuotes<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="57"><highlight class="comment">/**<sp/>Parses<sp/>one<sp/>section<sp/>from<sp/>a<sp/>stream<sp/>into<sp/>an<sp/>intermediary<sp/>structure<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="58" refid="namespacemata_1_1parser_1a4a1d71feaafcc75716e75bd482cfce6f" refkind="member"><highlight class="normal"><ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">ParsedSection</ref><sp/><ref refid="namespacemata_1_1parser_1a4a1d71feaafcc75716e75bd482cfce6f" kindref="member">parse_mf_section</ref>(std::istream&amp;<sp/>input,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>keepQuotes<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="60"><highlight class="comment">/**<sp/>Parses<sp/>one<sp/>section<sp/>from<sp/>a<sp/>string<sp/>into<sp/>an<sp/>intermediary<sp/>structure<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="61" refid="namespacemata_1_1parser_1ade18d05c9c6f728d5b5dc11c0eebbd1b" refkind="member"><highlight class="normal"><ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">ParsedSection</ref><sp/><ref refid="namespacemata_1_1parser_1a4a1d71feaafcc75716e75bd482cfce6f" kindref="member">parse_mf_section</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string&amp;<sp/>input,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>keepQuotes<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="63"><highlight class="comment">///<sp/>registers<sp/>dispatcher</highlight></codeline>
+<codeline lineno="64" refid="namespacemata_1_1parser_1a02fd73d861ef2e4aabb38c0c9ff82947" refkind="member"><highlight class="comment"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1_1parser_1a02fd73d861ef2e4aabb38c0c9ff82947" kindref="member">init</ref>();</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>mata::Parser.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacestd" kindref="compound">std</ref><sp/>{</highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="69"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>Output<sp/>stream<sp/>operator</highlight></codeline>
+<codeline lineno="70" refid="namespacestd_1ae07c36a2350aa2d0284ec3b11389a83d" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/>std::ostream&amp;<sp/><ref refid="namespacestd_1a9647819234fc49f9ff28f5e4a8d30714" kindref="member">operator&lt;&lt;</ref>(std::ostream&amp;<sp/>os,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">mata::parser::ParsedSection</ref>&amp;<sp/>parsec);</highlight></codeline>
+<codeline lineno="71"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"></highlight></codeline>
+<codeline lineno="73"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/></highlight><highlight class="comment">/*<sp/>MATA_PARSER_HH_<sp/>*/</highlight><highlight class="preprocessor"></highlight></codeline>
+    </programlisting>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh"/>
+  </compounddef>
+</doxygen>

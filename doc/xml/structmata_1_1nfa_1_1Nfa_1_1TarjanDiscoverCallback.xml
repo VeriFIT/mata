@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback" kind="struct" language="C++" prot="public">
+    <compoundname>mata::nfa::Nfa::TarjanDiscoverCallback</compoundname>
+    <includes refid="nfa_8hh" local="no">nfa.hh</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1a17f0dc0ed8d7acc57230af27ced1c63b" prot="public" static="no" mutable="no">
+        <type>std::function&lt; bool(<ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>)&gt;</type>
+        <definition>std::function&lt;bool(State)&gt; state_discover</definition>
+        <argsstring></argsstring>
+        <name>state_discover</name>
+        <qualifiedname>mata::nfa::Nfa::TarjanDiscoverCallback::state_discover</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="207" column="23" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="207" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1af84330fce4afa9362318bb12ccbbbb7a" prot="public" static="no" mutable="no">
+        <type>std::function&lt; bool(const std::vector&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; &amp;, const std::vector&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; &amp;)&gt;</type>
+        <definition>std::function&lt;bool(const std::vector&lt;State&gt;&amp;, const std::vector&lt;State&gt;&amp;)&gt; scc_discover</definition>
+        <argsstring></argsstring>
+        <name>scc_discover</name>
+        <qualifiedname>mata::nfa::Nfa::TarjanDiscoverCallback::scc_discover</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="209" column="23" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="209" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1a673cef11b8c259bb16cc5d29be5f4ffc" prot="public" static="no" mutable="no">
+        <type>std::function&lt; void(<ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>)&gt;</type>
+        <definition>std::function&lt;void(State)&gt; scc_state_discover</definition>
+        <argsstring></argsstring>
+        <name>scc_state_discover</name>
+        <qualifiedname>mata::nfa::Nfa::TarjanDiscoverCallback::scc_state_discover</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="211" column="23" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="211" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1a527b94101bac0a7e548c8d2a87577434" prot="public" static="no" mutable="no">
+        <type>std::function&lt; void(<ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>)&gt;</type>
+        <definition>std::function&lt;void(State,State)&gt; succ_state_discover</definition>
+        <argsstring></argsstring>
+        <name>succ_state_discover</name>
+        <qualifiedname>mata::nfa::Nfa::TarjanDiscoverCallback::succ_state_discover</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="213" column="23" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="213" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Structure for storing callback functions (event handlers) utilizing Tarjan&apos;s SCC discover algorithm. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="205" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="205" bodyend="214"/>
+    <listofallmembers>
+      <member refid="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1af84330fce4afa9362318bb12ccbbbb7a" prot="public" virt="non-virtual"><scope>mata::nfa::Nfa::TarjanDiscoverCallback</scope><name>scc_discover</name></member>
+      <member refid="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1a673cef11b8c259bb16cc5d29be5f4ffc" prot="public" virt="non-virtual"><scope>mata::nfa::Nfa::TarjanDiscoverCallback</scope><name>scc_state_discover</name></member>
+      <member refid="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1a17f0dc0ed8d7acc57230af27ced1c63b" prot="public" virt="non-virtual"><scope>mata::nfa::Nfa::TarjanDiscoverCallback</scope><name>state_discover</name></member>
+      <member refid="structmata_1_1nfa_1_1Nfa_1_1TarjanDiscoverCallback_1a527b94101bac0a7e548c8d2a87577434" prot="public" virt="non-virtual"><scope>mata::nfa::Nfa::TarjanDiscoverCallback</scope><name>succ_state_discover</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

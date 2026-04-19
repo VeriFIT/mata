@@ -1,0 +1,139 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kind="class" language="C++" prot="private">
+    <compoundname>mata::IntAlphabet::IntAlphabetSingleton</compoundname>
+    <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aff2d2aa24b78e6c19e0a87af2629c2eb" prot="public" static="yes" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;</type>
+        <definition>static IntAlphabetSingleton &amp; get</definition>
+        <argsstring>()</argsstring>
+        <name>get</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::get</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="141" column="37" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="141" bodyend="144"/>
+        <referencedby refid="classmata_1_1IntAlphabet_1a3d4df17a353ac7de40c9ad90167df9e3" compoundref="alphabet_8hh" startline="106" endline="106">IntAlphabet::IntAlphabet</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0a7fb1b7c97e861246d41f2556d70a36" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>IntAlphabetSingleton</definition>
+        <argsstring>(IntAlphabetSingleton &amp;)=delete</argsstring>
+        <name>IntAlphabetSingleton</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="146" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aba1c0059a71cab0a807bdb8c0b37877e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>IntAlphabetSingleton</definition>
+        <argsstring>(IntAlphabetSingleton &amp;&amp;)=delete</argsstring>
+        <name>IntAlphabetSingleton</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="147" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a12ad75118ad7b2cd4b0da3ddce3c2e19" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;</type>
+        <definition>IntAlphabetSingleton &amp; operator=</definition>
+        <argsstring>(const IntAlphabetSingleton &amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="148" column="30"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1ac950d77643d5966ec16a94a9da8ec516" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;</type>
+        <definition>IntAlphabetSingleton &amp; operator=</definition>
+        <argsstring>(IntAlphabetSingleton &amp;&amp;)=delete</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton" kindref="compound">IntAlphabetSingleton</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="149" column="30"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a344f1d32162e65175ddda4ab3dbb28c1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>~IntAlphabetSingleton</definition>
+        <argsstring>()=default</argsstring>
+        <name>~IntAlphabetSingleton</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::~IntAlphabetSingleton</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="151" column="9"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0ae91b03564d5b6da3f3a70d56a745dc" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>IntAlphabetSingleton</definition>
+        <argsstring>()=default</argsstring>
+        <name>IntAlphabetSingleton</name>
+        <qualifiedname>mata::IntAlphabet::IntAlphabetSingleton::IntAlphabetSingleton</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="154" column="9"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Singleton class implementing integer alphabet_instance for class <ref refid="classmata_1_1IntAlphabet" kindref="compound">IntAlphabet</ref>. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>Users have to use <ref refid="classmata_1_1IntAlphabet" kindref="compound">IntAlphabet</ref> instead which provides interface identical to other alphabets and can be used in places where an instance of the abstract class <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> is required. </para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="139" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="139" bodyend="155"/>
+    <listofallmembers>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aff2d2aa24b78e6c19e0a87af2629c2eb" prot="public" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>get</name></member>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0a7fb1b7c97e861246d41f2556d70a36" prot="public" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>IntAlphabetSingleton</name></member>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1aba1c0059a71cab0a807bdb8c0b37877e" prot="public" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>IntAlphabetSingleton</name></member>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a0ae91b03564d5b6da3f3a70d56a745dc" prot="protected" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>IntAlphabetSingleton</name></member>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a12ad75118ad7b2cd4b0da3ddce3c2e19" prot="public" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>operator=</name></member>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1ac950d77643d5966ec16a94a9da8ec516" prot="public" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>operator=</name></member>
+      <member refid="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton_1a344f1d32162e65175ddda4ab3dbb28c1" prot="public" virt="non-virtual"><scope>mata::IntAlphabet::IntAlphabetSingleton</scope><name>~IntAlphabetSingleton</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

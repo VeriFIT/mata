@@ -1,0 +1,569 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1applications_1_1strings_1_1seg__nfa" kind="namespace" language="C++">
+    <compoundname>mata::applications::strings::seg_nfa</compoundname>
+    <innerclass refid="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation" prot="private">mata::applications::strings::seg_nfa::Segmentation</innerclass>
+    <innerclass refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement" prot="private">mata::applications::strings::seg_nfa::TransducerNoodleElement</innerclass>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a6ab24ef42999494f3864006e4962607c" prot="private" static="no">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref></type>
+        <definition>using SegNfa =  Nfa</definition>
+        <argsstring></argsstring>
+        <name>SegNfa</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::SegNfa</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="149" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="149" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1ab25ae112f11a117252bc837ebe87d7b0" prot="private" static="no">
+        <type>std::map&lt; <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref>, std::map&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref>, unsigned &gt; &gt;</type>
+        <definition>using VisitedEpsMap =  std::map&lt;State, std::map&lt;Symbol, unsigned&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>VisitedEpsMap</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::VisitedEpsMap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="150" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="150" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1aa47d2a4ae0b3c240e9aea6dd8de61c82" prot="private" static="no">
+        <type>std::map&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref>, unsigned &gt;</type>
+        <definition>using VisitedEpsilonsCounterMap =  std::map&lt;Symbol, unsigned&gt;</definition>
+        <argsstring></argsstring>
+        <name>VisitedEpsilonsCounterMap</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::VisitedEpsilonsCounterMap</qualifiedname>
+        <briefdescription>
+<para>Number of visited epsilons. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="153" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="153" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a4d54c4713beda3a0706a81dc0b7b495d" prot="private" static="no">
+        <type>std::vector&lt; unsigned &gt;</type>
+        <definition>using VisitedEpsilonsCounterVector =  std::vector&lt;unsigned&gt;</definition>
+        <argsstring></argsstring>
+        <name>VisitedEpsilonsCounterVector</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::VisitedEpsilonsCounterVector</qualifiedname>
+        <briefdescription>
+<para>Projection of VisitedEpsilonsNumberMap to sorted keys (in descending order). </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="155" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="155" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1afcdefb7cf53ef7651865600b5e084d22" prot="private" static="no">
+        <type>std::vector&lt; std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a6ab24ef42999494f3864006e4962607c" kindref="member">SegNfa</ref> &gt; &gt;</type>
+        <definition>using Noodle =  std::vector&lt;std::shared_ptr&lt;SegNfa&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>Noodle</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::Noodle</qualifiedname>
+        <briefdescription>
+<para>A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly one ε-transition between each two consecutive segments. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="297" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="297" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a166df2299f350ad4a17585364f7025a2" prot="private" static="no">
+        <type>std::pair&lt; std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt;, <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a4d54c4713beda3a0706a81dc0b7b495d" kindref="member">VisitedEpsilonsCounterVector</ref> &gt;</type>
+        <definition>using SegmentWithEpsilonsCounter =  std::pair&lt;std::shared_ptr&lt;Nfa&gt;, VisitedEpsilonsCounterVector&gt;</definition>
+        <argsstring></argsstring>
+        <name>SegmentWithEpsilonsCounter</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::SegmentWithEpsilonsCounter</qualifiedname>
+        <briefdescription>
+<para>Segment with a counter of visited epsilons. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="299" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="299" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a62c74653753a9cd0ab63a797e88293aa" prot="private" static="no">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a166df2299f350ad4a17585364f7025a2" kindref="member">SegmentWithEpsilonsCounter</ref> &gt;</type>
+        <definition>using NoodleWithEpsilonsCounter =  std::vector&lt;SegmentWithEpsilonsCounter&gt;</definition>
+        <argsstring></argsstring>
+        <name>NoodleWithEpsilonsCounter</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::NoodleWithEpsilonsCounter</qualifiedname>
+        <briefdescription>
+<para>Noodles as segments enriched with EpsCntMap. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="301" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="301" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a11783839c9ff931f3c06fc1c63df32c0" prot="private" static="no">
+        <type>std::vector&lt; <ref refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement" kindref="compound">TransducerNoodleElement</ref> &gt;</type>
+        <definition>using TransducerNoodle =  std::vector&lt;TransducerNoodleElement&gt;</definition>
+        <argsstring></argsstring>
+        <name>TransducerNoodle</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodle</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="421" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="421" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1acc9283ab0ec207669bdf9a30fd518532" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void segs_one_initial_final</definition>
+        <argsstring>(const std::vector&lt; Nfa &gt; &amp;segments, bool include_empty, const State &amp;unused_state, std::map&lt; std::pair&lt; State, State &gt;, std::shared_ptr&lt; Nfa &gt; &gt; &amp;out)</argsstring>
+        <name>segs_one_initial_final</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::segs_one_initial_final</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &amp;</type>
+          <declname>segments</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>include_empty</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref> &amp;</type>
+          <declname>unused_state</declname>
+        </param>
+        <param>
+          <type>std::map&lt; std::pair&lt; <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref>, <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref> &gt;, std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>segs_one_initial_final </para>
+        </briefdescription>
+        <detaileddescription>
+<para>segments_one_initial_final[init, final] is the pointer to automaton created from one of the segments such that init and final are one of the initial and final states of the segment and the created automaton takes this segment, sets initial={init}, final={final} and trims it; also segments_one_initial_final[unused_state, final] is used for the first segment (where we always want all initial states, only final state changes) and segments_one_initial_final[init, unused_state] is similarly for the last segment TODO: should we use unordered_map? then we need hash </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="314" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="314" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1acfff4e3bd5a08c2836f3908be0c5c2b4" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1afcdefb7cf53ef7651865600b5e084d22" kindref="member">Noodle</ref> &gt;</type>
+        <definition>std::vector&lt; Noodle &gt; noodlify</definition>
+        <argsstring>(const SegNfa &amp;aut, Symbol epsilon, bool include_empty=false)</argsstring>
+        <name>noodlify</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::noodlify</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a6ab24ef42999494f3864006e4962607c" kindref="member">SegNfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>epsilon</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>include_empty</declname>
+          <defval>false</defval>
+        </param>
+        <briefdescription>
+<para>Create noodles from segment automaton <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Segment automaton is a chain of finite automata (segments) connected via ε-transitions. A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition between each two consecutive segments.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">automaton</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Segment automaton to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Epsilon symbol to noodlify for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">include_empty</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to also include empty noodles. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A list of all (non-empty) noodles. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="330" column="13" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="330" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1abd5467bf7deb40ad36fc45b20d87226b" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a62c74653753a9cd0ab63a797e88293aa" kindref="member">NoodleWithEpsilonsCounter</ref> &gt;</type>
+        <definition>std::vector&lt; NoodleWithEpsilonsCounter &gt; noodlify_mult_eps</definition>
+        <argsstring>(const SegNfa &amp;aut, const std::set&lt; Symbol &gt; &amp;epsilons, bool include_empty=false)</argsstring>
+        <name>noodlify_mult_eps</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::noodlify_mult_eps</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a6ab24ef42999494f3864006e4962607c" kindref="member">SegNfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const std::set&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt; &amp;</type>
+          <declname>epsilons</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>include_empty</declname>
+          <defval>false</defval>
+        </param>
+        <briefdescription>
+<para>Create noodles from segment automaton <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Segment automaton is a chain of finite automata (segments) connected via ε-transitions. A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition between each two consecutive segments.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">automaton</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Segment automaton to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">epsilons</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Epsilon symbols to noodlify for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">include_empty</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to also include empty noodles. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A list of all (non-empty) noodles. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="344" column="13" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="344" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1abc5feb8866da47b55a8308c4ce62a78f" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1afcdefb7cf53ef7651865600b5e084d22" kindref="member">Noodle</ref> &gt;</type>
+        <definition>std::vector&lt; Noodle &gt; noodlify_for_equation</definition>
+        <argsstring>(const std::vector&lt; std::reference_wrapper&lt; Nfa &gt; &gt; &amp;lhs_automata, const Nfa &amp;rhs_automaton, bool include_empty=false, const ParameterMap &amp;params={{ &quot;reduce&quot;, &quot;false&quot;}})</argsstring>
+        <name>noodlify_for_equation</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::noodlify_for_equation</qualifiedname>
+        <param>
+          <type>const std::vector&lt; std::reference_wrapper&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>lhs_automata</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>rhs_automaton</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>include_empty</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a82dcfa0149be0c3657d9d84df77f25b6" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;reduce&quot;, &quot;false&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Create noodles for left and right side of equation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Segment automaton is a chain of finite automata (segments) connected via ε-transitions. A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.</para>
+<para>Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent the equation in a way that libMata understands. The left side automata represent the left side of the equation and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton representing the intersection. That can be achieved by computing a product of both sides. First, the left side has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_automata</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Sequence of segment automata for left side of an equation to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_automaton</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Segment automaton for right side of an equation to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">include_empty</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to also include empty noodles. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Additional parameters for the noodlification:<itemizedlist>
+<listitem><para>&quot;reduce&quot;: &quot;false&quot;, &quot;forward&quot;, &quot;backward&quot;, &quot;bidirectional&quot;; Execute forward, backward or bidirectional simulation minimization before noodlification. </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A list of all (non-empty) noodles. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="366" column="13" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="366" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a844e8b7b728ea595f4fe81a10734c9df" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1afcdefb7cf53ef7651865600b5e084d22" kindref="member">Noodle</ref> &gt;</type>
+        <definition>std::vector&lt; Noodle &gt; noodlify_for_equation</definition>
+        <argsstring>(const std::vector&lt; Nfa * &gt; &amp;lhs_automata, const Nfa &amp;rhs_automaton, bool include_empty=false, const ParameterMap &amp;params={{ &quot;reduce&quot;, &quot;false&quot;}})</argsstring>
+        <name>noodlify_for_equation</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::noodlify_for_equation</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> * &gt; &amp;</type>
+          <declname>lhs_automata</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>rhs_automaton</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>include_empty</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a82dcfa0149be0c3657d9d84df77f25b6" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;reduce&quot;, &quot;false&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Create noodles for left and right side of equation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Segment automaton is a chain of finite automata (segments) connected via ε-transitions. A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.</para>
+<para>Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent the equation in a way that libMata understands. The left side automata represent the left side of the equation and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton representing the intersection. That can be achieved by computing a product of both sides. First, the left side has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_automata</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Sequence of pointers to segment automata for left side of an equation to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_automaton</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Segment automaton for right side of an equation to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">include_empty</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to also include empty noodles. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Additional parameters for the noodlification:<itemizedlist>
+<listitem><para>&quot;reduce&quot;: &quot;false&quot;, &quot;forward&quot;, &quot;backward&quot;, &quot;bidirectional&quot;; Execute forward, backward or bidirectional simulation minimization before noodlification. </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A list of all (non-empty) noodles. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="390" column="13" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="390" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1aa989cffb76d2f3942200e4b3c20b242c" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a62c74653753a9cd0ab63a797e88293aa" kindref="member">NoodleWithEpsilonsCounter</ref> &gt;</type>
+        <definition>std::vector&lt; NoodleWithEpsilonsCounter &gt; noodlify_for_equation</definition>
+        <argsstring>(const std::vector&lt; std::shared_ptr&lt; Nfa &gt; &gt; &amp;lhs_automata, const std::vector&lt; std::shared_ptr&lt; Nfa &gt; &gt; &amp;rhs_automata, bool include_empty=false, const ParameterMap &amp;params={{ &quot;reduce&quot;, &quot;false&quot;}})</argsstring>
+        <name>noodlify_for_equation</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::noodlify_for_equation</qualifiedname>
+        <param>
+          <type>const std::vector&lt; std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>lhs_automata</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>rhs_automata</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>include_empty</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a82dcfa0149be0c3657d9d84df77f25b6" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;reduce&quot;, &quot;false&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Create noodles for left and right side of equation (both sides are given as a sequence of automata). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_automata</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Sequence of pointers to segment automata for left side of an equation to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_automaton</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Sequence of pointers to segment automata for right side of an equation to noodlify. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">include_empty</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to also include empty noodles. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Additional parameters for the noodlification:<itemizedlist>
+<listitem><para>&quot;reduce&quot;: &quot;false&quot;, &quot;forward&quot;, &quot;backward&quot;, &quot;bidirectional&quot;; Execute forward, backward or bidirectional simulation minimization before noodlification. </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="405" column="13" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="405" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a9ea9c5f52d5140d4d67853156ad167e9" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a11783839c9ff931f3c06fc1c63df32c0" kindref="member">TransducerNoodle</ref> &gt;</type>
+        <definition>std::vector&lt; TransducerNoodle &gt; noodlify_for_transducer</definition>
+        <argsstring>(std::shared_ptr&lt; Nft &gt; nft, const std::vector&lt; std::shared_ptr&lt; Nfa &gt; &gt; &amp;input_automata, const std::vector&lt; std::shared_ptr&lt; Nfa &gt; &gt; &amp;output_automata, bool reduce_intersection=true, bool use_homomorphic_heuristic=true)</argsstring>
+        <name>noodlify_for_transducer</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::noodlify_for_transducer</qualifiedname>
+        <param>
+          <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref> &gt;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>input_automata</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>output_automata</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>reduce_intersection</declname>
+          <defval>true</defval>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>use_homomorphic_heuristic</declname>
+          <defval>true</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="423" column="13" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="423" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1aff7505a18ab635bf1861a49388ed9fe6" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1a4d54c4713beda3a0706a81dc0b7b495d" kindref="member">VisitedEpsilonsCounterVector</ref></type>
+        <definition>VisitedEpsilonsCounterVector process_eps_map</definition>
+        <argsstring>(const VisitedEpsilonsCounterMap &amp;eps_cnt)</argsstring>
+        <name>process_eps_map</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::process_eps_map</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1aa47d2a4ae0b3c240e9aea6dd8de61c82" kindref="member">VisitedEpsilonsCounterMap</ref> &amp;</type>
+          <declname>eps_cnt</declname>
+        </param>
+        <briefdescription>
+<para>Process epsilon map to a sequence of values (sorted according to key desc) </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>eps_cnt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Epsilon count </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Vector of keys (count of epsilons) </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="437" column="30" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="437" declcolumn="30"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Segment Automata including structs and algorithms. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>These are automata whose state space can be split into several segments connected by ε-transitions in a chain. No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle. Segment automaton can have initial states only in the first segment and final states only in the last segment. </para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="147" column="1"/>
+  </compounddef>
+</doxygen>

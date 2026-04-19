@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple" kind="struct" language="C++" prot="private">
+    <compoundname>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple_1a876b486d3a5241a126bd5751c5f70f79" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref></type>
+        <definition>State state</definition>
+        <argsstring></argsstring>
+        <name>state</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::state</qualifiedname>
+        <briefdescription>
+<para>State with a depth. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="220" column="15" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="220" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple_1a547a0224e84924283393082b9317cc02" prot="public" static="no" mutable="no">
+        <type><ref refid="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1adcbe08a210127b0100a75ee94e919255" kindref="member">EpsilonDepth</ref></type>
+        <definition>EpsilonDepth depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::depth</qualifiedname>
+        <briefdescription>
+<para>Depth of a state. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="221" column="22" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="221" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple_1a96f28b9e44272f3f04f3f9f1dbb0a516" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa_1aa47d2a4ae0b3c240e9aea6dd8de61c82" kindref="member">VisitedEpsilonsCounterMap</ref></type>
+        <definition>VisitedEpsilonsCounterMap eps</definition>
+        <argsstring></argsstring>
+        <name>eps</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::eps</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="222" column="35" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="222" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>number of visited eps for each state </para>
+    </briefdescription>
+    <detaileddescription>
+<para>Pair of state and its depth. </para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="219" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="219" bodyend="223"/>
+    <listofallmembers>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple_1a547a0224e84924283393082b9317cc02" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</scope><name>depth</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple_1a96f28b9e44272f3f04f3f9f1dbb0a516" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</scope><name>eps</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple_1a876b486d3a5241a126bd5751c5f70f79" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</scope><name>state</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

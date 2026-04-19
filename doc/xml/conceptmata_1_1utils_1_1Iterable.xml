@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="conceptmata_1_1utils_1_1Iterable" kind="concept">
+    <compoundname>mata::utils::Iterable</compoundname>
+    <includes refid="sparse-set_8hh" local="no">sparse-set.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>typename T</type>
+      </param>
+    </templateparamlist>
+    <initializer>template&lt;typename T&gt;
+concept <ref refid="conceptmata_1_1utils_1_1Iterable" kindref="compound">mata::utils::Iterable</ref> =  requires(T t) {
+    typename std::iterator_traits&lt;decltype(begin(t))&gt;::value_type;
+    { begin(t) } -&gt; std::same_as&lt;decltype(end(t))&gt;;
+}    </initializer>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/sparse-set.hh" line="30" column="1"/>
+  </compounddef>
+</doxygen>

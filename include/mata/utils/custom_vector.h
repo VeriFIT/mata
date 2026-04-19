@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
+#include <compare>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -180,6 +181,14 @@ private:
 
             if (size_ > 0) {
                 std::memcpy(raw, ptr, size_ * sizeof(T));
+            }
+            return static_cast<pointer>(raw);
+        }
+
+        if (ptr == nullptr) {
+            void* raw = std::malloc(new_capacity * sizeof(T));
+            if (raw == nullptr) {
+                throw std::bad_alloc();
             }
             return static_cast<pointer>(raw);
         }
@@ -693,7 +702,7 @@ private:
     }
 
 public:
-    custom_vector() {
+    custom_vector() : alloc_() {
         reset_to_sbo_empty();
     }
 
@@ -1399,7 +1408,6 @@ public:
                 std::memmove(data_ + from, data_ + to, tail * sizeof(T));
             }
             size_ -= count;
-            destroy_range(size_, size_ + count);
             return begin() + static_cast<difference_type>(from);
         }
 
@@ -1411,6 +1419,46 @@ public:
         size_ -= count;
         destroy_range(size_, old_size);
         return begin() + static_cast<difference_type>(from);
+    }
+
+    template <typename Pred>
+    size_type erase_if(Pred&& pred) {
+        pointer first = data_;
+        pointer last = data_ + size_;
+
+        while (first != last && !pred(*first)) {
+            ++first;
+        }
+
+        if (first == last) {
+            return 0;
+        }
+
+        pointer write = first;
+
+        if constexpr (is_trivial_move_block_v) {
+            for (pointer read = first + 1; read != last; ++read) {
+                if (!pred(*read)) {
+                    *write++ = *read;
+                }
+            }
+        }
+        else {
+            for (pointer read = first + 1; read != last; ++read) {
+                if (!pred(*read)) {
+                    *write++ = std::move(*read);
+                }
+            }
+        }
+
+        const size_type removed = static_cast<size_type>(last - write);
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            for (pointer p = write; p != last; ++p) {
+                alloc_traits::destroy(alloc_, p);
+            }
+        }
+        size_ -= removed;
+        return removed;
     }
 
     void swap(custom_vector& other) {
@@ -1448,11 +1496,60 @@ public:
     bool operator!=(const custom_vector& other) const {
         return !(*this == other);
     }
+
+    std::weak_ordering operator<=>(const custom_vector& other) const {
+        const size_type common_size = std::min(size_, other.size_);
+
+        for (size_type i = 0; i < common_size; ++i) {
+            if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T> || std::is_pointer_v<T>) {
+                const auto cmp = data_[i] <=> other.data_[i];
+                if (cmp < 0) {
+                    return std::weak_ordering::less;
+                }
+                if (cmp > 0) {
+                    return std::weak_ordering::greater;
+                }
+            }
+            else {
+                if (data_[i] < other.data_[i]) {
+                    return std::weak_ordering::less;
+                }
+                if (other.data_[i] < data_[i]) {
+                    return std::weak_ordering::greater;
+                }
+            }
+        }
+
+        if (size_ < other.size_) {
+            return std::weak_ordering::less;
+        }
+        if (other.size_ < size_) {
+            return std::weak_ordering::greater;
+        }
+
+        return std::weak_ordering::equivalent;
+    }
 };
 
 template <typename T, typename Allocator>
 void swap(custom_vector<T, Allocator>& lhs, custom_vector<T, Allocator>& rhs) noexcept(noexcept(lhs.swap(rhs))) {
     lhs.swap(rhs);
+}
+
+template <typename T, typename Allocator, bool EnableSBO, typename U>
+typename custom_vector<T, Allocator, EnableSBO>::size_type erase(
+    custom_vector<T, Allocator, EnableSBO>& c,
+    const U& value
+) {
+    return c.erase_if([&value](const T& element) { return element == value; });
+}
+
+template <typename T, typename Allocator, bool EnableSBO, typename Pred>
+typename custom_vector<T, Allocator, EnableSBO>::size_type erase_if(
+    custom_vector<T, Allocator, EnableSBO>& c,
+    Pred&& pred
+) {
+    return c.erase_if(std::forward<Pred>(pred));
 }
 
 template <typename T, typename Allocator = std::allocator<T>, bool EnableSBO = true>

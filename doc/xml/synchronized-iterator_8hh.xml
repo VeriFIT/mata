@@ -1,0 +1,494 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="synchronized-iterator_8hh" kind="file" language="C++">
+    <compoundname>synchronized-iterator.hh</compoundname>
+    <includes refid="ord-vector_8hh" local="yes">ord-vector.hh</includes>
+    <includedby refid="nfa_2delta_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</includedby>
+    <includedby refid="nfa_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</includedby>
+    <includedby refid="nft_2delta_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</includedby>
+    <includedby refid="nft_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</includedby>
+    <incdepgraph>
+      <node id="2">
+        <label>ord-vector.hh</label>
+        <link refid="ord-vector_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh</label>
+        <link refid="synchronized-iterator_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>utils.hh</label>
+        <link refid="utils_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>algorithm</label>
+      </node>
+      <node id="5">
+        <label>cassert</label>
+      </node>
+      <node id="15">
+        <label>cstdint</label>
+      </node>
+      <node id="7">
+        <label>functional</label>
+      </node>
+      <node id="8">
+        <label>iostream</label>
+      </node>
+      <node id="9">
+        <label>list</label>
+      </node>
+      <node id="10">
+        <label>map</label>
+      </node>
+      <node id="11">
+        <label>set</label>
+      </node>
+      <node id="12">
+        <label>sstream</label>
+      </node>
+      <node id="13">
+        <label>stack</label>
+      </node>
+      <node id="14">
+        <label>unordered_map</label>
+      </node>
+      <node id="3">
+        <label>vector</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="4">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh</label>
+        <link refid="strings_8hh"/>
+      </node>
+      <node id="5">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/algorithms.hh</label>
+        <link refid="nfa_2algorithms_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh</label>
+        <link refid="nfa_2builder_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh</label>
+        <link refid="nfa_2delta_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh</label>
+        <link refid="nfa_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh</label>
+        <link refid="nfa_2plumbing_8hh"/>
+      </node>
+      <node id="11">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh</label>
+        <link refid="nft_2algorithms_8hh"/>
+      </node>
+      <node id="8">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh</label>
+        <link refid="nft_2builder_8hh"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</label>
+        <link refid="nft_2delta_8hh"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</label>
+        <link refid="nft_8hh"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh</label>
+        <link refid="nft_2plumbing_8hh"/>
+      </node>
+      <node id="12">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/parser/re2parser.hh</label>
+        <link refid="re2parser_8hh"/>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh</label>
+        <link refid="synchronized-iterator_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classmata_1_1utils_1_1SynchronizedIterator" prot="public">mata::utils::SynchronizedIterator</innerclass>
+    <innerclass refid="classmata_1_1utils_1_1SynchronizedUniversalIterator" prot="public">mata::utils::SynchronizedUniversalIterator</innerclass>
+    <innerclass refid="classmata_1_1utils_1_1SynchronizedExistentialIterator" prot="public">mata::utils::SynchronizedExistentialIterator</innerclass>
+    <innernamespace refid="namespacemata">mata</innernamespace>
+    <innernamespace refid="namespacemata_1_1utils">mata::utils</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/*<sp/>parser.hh<sp/>--<sp/>Classes<sp/>for<sp/>synchronized<sp/>iteration.</highlight></codeline>
+<codeline lineno="2"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>MATA_SYNCHRONIZED_ITERATOR_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>MATA_SYNCHRONIZED_ITERATOR_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="ord-vector_8hh" kindref="compound">ord-vector.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1utils" kindref="compound">mata::utils</ref><sp/>{</highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="11"><highlight class="comment">/**<sp/>@page<sp/>synchronized_iterator<sp/>Synchronized<sp/>Iterator</highlight></codeline>
+<codeline lineno="12"><highlight class="comment"><sp/>*<sp/>Two<sp/>classes<sp/>that<sp/>provide<sp/>&quot;synchronized&quot;<sp/>iterators<sp/>through<sp/>a<sp/>vector<sp/>of<sp/>ordered<sp/>vectors,</highlight></codeline>
+<codeline lineno="13"><highlight class="comment"><sp/>*<sp/>(or<sp/>of<sp/>some<sp/>ordered<sp/>OrdContainer<sp/>that<sp/>have<sp/>a<sp/>similar<sp/>iterator),</highlight></codeline>
+<codeline lineno="14"><highlight class="comment"><sp/>*<sp/>needed<sp/>in<sp/>computation<sp/>of<sp/>post</highlight></codeline>
+<codeline lineno="15"><highlight class="comment"><sp/>*<sp/>in<sp/>subset<sp/>construction,<sp/>product,<sp/>and<sp/>non-determinization.</highlight></codeline>
+<codeline lineno="16"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="17"><highlight class="comment"><sp/>*<sp/>The<sp/>Type<sp/>stored<sp/>in<sp/>OrdContainers<sp/>must<sp/>be<sp/>comparable<sp/>with<sp/>`&lt;`,`&gt;`,`==`,`!=`,`&lt;=`,`&gt;=`,</highlight></codeline>
+<codeline lineno="18"><highlight class="comment"><sp/>*<sp/>and<sp/>it<sp/>must<sp/>be<sp/>a<sp/>total<sp/>(linear)<sp/>ordering.</highlight></codeline>
+<codeline lineno="19"><highlight class="comment"><sp/>*<sp/>The<sp/>intended<sp/>usage<sp/>in,<sp/>for<sp/>instance,<sp/>determinisation<sp/>is<sp/>for<sp/>Type<sp/>to<sp/>be<sp/>TransSymbolStates.</highlight></codeline>
+<codeline lineno="20"><highlight class="comment"><sp/>*<sp/>TransSymbolStates<sp/>is<sp/>ordered<sp/>by<sp/>the<sp/>symbol.</highlight></codeline>
+<codeline lineno="21"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="22"><highlight class="comment"><sp/>*<sp/>SynchronisedIterator<sp/>is<sp/>the<sp/>parent<sp/>virtual<sp/>class.</highlight></codeline>
+<codeline lineno="23"><highlight class="comment"><sp/>*<sp/>It<sp/>stores<sp/>a<sp/>vector<sp/>of<sp/>end-iterators<sp/>for<sp/>the<sp/>OrdContainer<sp/>v<sp/>and<sp/>a<sp/>vector<sp/>of<sp/>current<sp/>positions.</highlight></codeline>
+<codeline lineno="24"><highlight class="comment"><sp/>*<sp/>They<sp/>are<sp/>filled<sp/>in<sp/>using<sp/>the<sp/>function<sp/>push_back(begin,end),<sp/>that<sp/>adds<sp/>begin<sp/>and<sp/>end<sp/>iterators<sp/>of<sp/>v<sp/>to<sp/>positions<sp/>and</highlight></codeline>
+<codeline lineno="25"><highlight class="comment"><sp/>*<sp/><sp/>ends,<sp/>respectively</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"><sp/>*<sp/>Method<sp/>advance<sp/>advances<sp/>all<sp/>positions<sp/>forward<sp/>so<sp/>that<sp/>they<sp/>are<sp/>synchronized<sp/>on<sp/>the<sp/>next<sp/>smallest<sp/>equiv<sp/>class</highlight></codeline>
+<codeline lineno="27"><highlight class="comment"><sp/>*<sp/>(next<sp/>smallest<sp/>symbol<sp/>in<sp/>the<sp/>case<sp/>of<sp/>TransSymbolStates).</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="29"><highlight class="comment"><sp/>*<sp/>There<sp/>are<sp/>two<sp/>versions<sp/>of<sp/>the<sp/>class.</highlight></codeline>
+<codeline lineno="30"><highlight class="comment"><sp/>*<sp/>i)<sp/>In<sp/>product,<sp/>ALL<sp/>positions<sp/>must<sp/>point<sp/>to<sp/>currently<sp/>the<sp/>smallest<sp/>equiv.<sp/>class<sp/>(Moves<sp/>with<sp/>the<sp/>same<sp/>symbol).</highlight></codeline>
+<codeline lineno="31"><highlight class="comment"><sp/>*<sp/>Method<sp/>get_current<sp/>then<sp/>returns<sp/>the<sp/>vector<sp/>of<sp/>all<sp/>position<sp/>iterators,<sp/>synchronized.</highlight></codeline>
+<codeline lineno="32"><highlight class="comment"><sp/>*<sp/>ii)<sp/>In<sp/>determinization,<sp/>it<sp/>is<sp/>enough<sp/>that<sp/>there<sp/>EXISTS<sp/>a<sp/>position<sp/>that<sp/>points<sp/>to<sp/>the<sp/>smallest<sp/>class.</highlight></codeline>
+<codeline lineno="33"><highlight class="comment"><sp/>*<sp/>Method<sp/>get_current<sp/>then<sp/>returns<sp/>the<sp/>vector<sp/>of<sp/>only<sp/>those<sp/>positions<sp/>that<sp/>point<sp/>to<sp/>the<sp/>smallest<sp/>equiv.<sp/>class.</highlight></codeline>
+<codeline lineno="34"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="35"><highlight class="comment"><sp/>*<sp/>Usage:<sp/>0)<sp/>construct,<sp/>1)<sp/>fill<sp/>in<sp/>using<sp/>@c<sp/>SynchronizedIterator::push_back(),<sp/>iterate<sp/>using<sp/>@c<sp/>SynchronizedIterator::advance()<sp/>and<sp/>@c<sp/>SynchronizedIterator::get_current(),<sp/>2)<sp/>@c<sp/>SynchronizedIterator::reset()</highlight></codeline>
+<codeline lineno="36"><highlight class="comment"><sp/>*<sp/><sp/>and<sp/>go<sp/>back<sp/>to<sp/>1).</highlight></codeline>
+<codeline lineno="37"><highlight class="comment"><sp/>*</highlight></codeline>
+<codeline lineno="38"><highlight class="comment"><sp/>*<sp/>@note<sp/>The<sp/>memory<sp/>allocated<sp/>internally<sp/>for<sp/>positions<sp/>and<sp/>ends<sp/>is<sp/>kept<sp/>after<sp/>@c<sp/>SynchronizedIterator::reset(),<sp/>so<sp/>it<sp/>is<sp/>advisable<sp/>to<sp/>use<sp/>the</highlight></codeline>
+<codeline lineno="39"><highlight class="comment"><sp/>*<sp/><sp/>same<sp/>iterator<sp/>for<sp/>many<sp/>iterations,<sp/>as<sp/>opposed<sp/>to<sp/>creating<sp/>a<sp/>new<sp/>one<sp/>for<sp/>each<sp/>iteration.</highlight></codeline>
+<codeline lineno="40"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="42"><highlight class="comment">///<sp/>Synchronized<sp/>iteration.</highlight></codeline>
+<codeline lineno="43" refid="classmata_1_1utils_1_1SynchronizedIterator" refkind="compound"><highlight class="comment"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>Iterator&gt;<sp/></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1utils_1_1SynchronizedIterator" kindref="compound">SynchronizedIterator</ref><sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46" refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;Iterator&gt;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>{};</highlight></codeline>
+<codeline lineno="47" refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;Iterator&gt;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>{};</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="49"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>@param<sp/>size<sp/>Number<sp/>of<sp/>elements<sp/>to<sp/>reserve<sp/>up-front<sp/>for<sp/>positions<sp/>and<sp/>ends.</highlight></codeline>
+<codeline lineno="50" refid="classmata_1_1utils_1_1SynchronizedIterator_1a35e553ac58b9e32429772619add1006b" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a35e553ac58b9e32429772619add1006b" kindref="member">SynchronizedIterator</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size<sp/>=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/>};</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="55"><highlight class="comment"><sp/><sp/><sp/><sp/>/**<sp/>This<sp/>is<sp/>supposed<sp/>to<sp/>be<sp/>called<sp/>only<sp/>before<sp/>an<sp/>iteration,</highlight></codeline>
+<codeline lineno="56"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>after<sp/>constructor<sp/>of<sp/>reset.</highlight></codeline>
+<codeline lineno="57"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Calling<sp/>after<sp/>advance<sp/>breaks<sp/>the<sp/>iterator.</highlight></codeline>
+<codeline lineno="58"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Specifies<sp/>begin<sp/>and<sp/>end<sp/>of<sp/>one<sp/>vector,<sp/>to<sp/>initialise<sp/>before<sp/>the<sp/>iteration<sp/>starts.</highlight></codeline>
+<codeline lineno="59"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="60" refid="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208" kindref="member">push_back</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Iterator&amp;<sp/>begin,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Iterator&amp;<sp/>end)<sp/>{</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Btw,<sp/>I<sp/>don&apos;t<sp/>know<sp/>what<sp/>I<sp/>am<sp/>doing<sp/>with<sp/>the<sp/>const<sp/>&amp;<sp/>parameter<sp/>passing,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>begin<sp/>is<sp/>actually<sp/>incremented<sp/>in<sp/>advance<sp/>...?<sp/>But<sp/>tests<sp/>do<sp/>pass<sp/>...</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.emplace_back(begin);</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.emplace_back(end);</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/><sp/><sp/>};</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="67"><highlight class="comment"><sp/><sp/><sp/><sp/>/**<sp/>Empties<sp/>positions<sp/>and<sp/>ends.</highlight></codeline>
+<codeline lineno="68"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Though<sp/>they<sp/>should<sp/>keep<sp/>the<sp/>allocated<sp/>space.</highlight></codeline>
+<codeline lineno="69"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@param<sp/>size<sp/>Number<sp/>of<sp/>elements<sp/>to<sp/>reserve<sp/>up-front<sp/>for<sp/>positions<sp/>and<sp/>ends.</highlight></codeline>
+<codeline lineno="70"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="71" refid="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">reset</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size<sp/>=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.clear();</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.clear();</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(size<sp/>&gt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/>};</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="classmata_1_1utils_1_1SynchronizedIterator_1a09a692a3aedb29add6f9812fbb46e1d0" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a09a692a3aedb29add6f9812fbb46e1d0" kindref="member">reserve</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size)<sp/>{</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85" refid="classmata_1_1utils_1_1SynchronizedIterator_1a40811668fc4f7ab15f033949859b9f59" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a40811668fc4f7ab15f033949859b9f59" kindref="member">advance</ref>()<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="86" refid="classmata_1_1utils_1_1SynchronizedIterator_1a10e80079891227c8cacd4b2fb3c93699" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;Iterator&gt;&amp;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a10e80079891227c8cacd4b2fb3c93699" kindref="member">get_current</ref>()<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight></codeline>
+<codeline lineno="88" refid="classmata_1_1utils_1_1SynchronizedIterator_1a67bb40af614296f50f05375957447018" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a67bb40af614296f50f05375957447018" kindref="member">~SynchronizedIterator</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="89"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>SynchronizedIterator.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="90"><highlight class="normal"></highlight></codeline>
+<codeline lineno="91"><highlight class="normal"></highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight></codeline>
+<codeline lineno="93"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>Iterator&gt;</highlight></codeline>
+<codeline lineno="94" refid="classmata_1_1utils_1_1SynchronizedUniversalIterator" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator" kindref="compound">SynchronizedUniversalIterator</ref>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator" kindref="compound">SynchronizedIterator</ref>&lt;Iterator&gt;<sp/>{</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="97"><highlight class="comment"><sp/><sp/><sp/><sp/>/**<sp/>&quot;minimum&quot;<sp/>would<sp/>be<sp/>the<sp/>smallest<sp/>class<sp/>bounded<sp/>from<sp/>below<sp/>by<sp/>all<sp/>positions<sp/>that<sp/>appears<sp/>in<sp/>all<sp/>OrdContainers.</highlight></codeline>
+<codeline lineno="98"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Are<sp/>we<sp/>sure<sp/>that<sp/>all<sp/>positions<sp/>at<sp/>this<sp/>class?</highlight></codeline>
+<codeline lineno="99"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Invariant:<sp/>it<sp/>can<sp/>be<sp/>true<sp/>only<sp/>if<sp/>all<sp/>positions<sp/>are<sp/>indeed<sp/>synchronized.</highlight></codeline>
+<codeline lineno="100"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="101" refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a81cf8630f18c3694b2d11857bc4f817b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a81cf8630f18c3694b2d11857bc4f817b" kindref="member">synchronized_at_current_minimum</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="103"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="104"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Advances<sp/>all<sp/>positions<sp/>to<sp/>the<sp/>NEXT<sp/>minimum<sp/>and<sp/>returns<sp/>true<sp/>(though<sp/>the<sp/>next<sp/>minimum<sp/>might<sp/>be<sp/>the<sp/>current<sp/>state</highlight></codeline>
+<codeline lineno="105"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/><sp/>if<sp/>synchronized_at_current_minimum<sp/>is<sp/>false),<sp/>or<sp/>returns<sp/>false<sp/>if<sp/>positions<sp/>cannot<sp/>be<sp/>synchronized.</highlight></codeline>
+<codeline lineno="106"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="107"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>If<sp/>positions<sp/>are<sp/>synchronized<sp/>to<sp/>start<sp/>with,<sp/>then<sp/>synchronized_at_current_minimum<sp/>decides<sp/>whether<sp/>to<sp/>stay<sp/>or</highlight></codeline>
+<codeline lineno="108"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/><sp/>advance<sp/>further.</highlight></codeline>
+<codeline lineno="109"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>The<sp/>general<sp/>of<sp/>the<sp/>algorithm<sp/>is<sp/>to<sp/>synchronize<sp/>everybody<sp/>with<sp/>position[0].</highlight></codeline>
+<codeline lineno="110"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="111" refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a26e94ac149e5205057d93cf14dfa3325" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a26e94ac149e5205057d93cf14dfa3325" kindref="member">advance</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//Nothing<sp/>to<sp/>synchronize.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.empty())<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/><sp/>}<sp/></highlight><highlight class="comment">//<sp/>TODO:<sp/>??<sp/>or<sp/>not?</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="114"><highlight class="normal"></highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>already<sp/>synchronized,<sp/>start<sp/>moving<sp/>forward<sp/>by<sp/>advancing<sp/>position[0]<sp/>(and<sp/>so<sp/>break<sp/>synchronization).</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;synchronized_at_current_minimum)<sp/>{</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>++this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0];</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>synchronized_at_current_minimum<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"></highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>positions[0]<sp/>has<sp/>nowhere<sp/>to<sp/>go,<sp/>then<sp/>sync<sp/>is<sp/>not<sp/>possible.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0]<sp/>==<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>[0])<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"></highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Synchronise<sp/>all<sp/>positions<sp/>with<sp/>position[0].</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>1,<sp/>positions_size<sp/>=<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.size();<sp/>i<sp/>&lt;<sp/>positions_size;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>some<sp/>positions<sp/>has<sp/>nowhere<sp/>to<sp/>go,<sp/>then<sp/>sync<sp/>is<sp/>not<sp/>possible.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i]<sp/>==<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>[i])<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"></highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/><sp/>Advance<sp/>position[i]<sp/>and<sp/>position[0]<sp/>to<sp/>the<sp/>closest<sp/>equal<sp/>values.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i]<sp/>!=<sp/>*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0])<sp/>{</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"></highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Advance<sp/>position[i]<sp/>to<sp/>or<sp/>beyond<sp/>position[0].</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i]<sp/>&lt;<sp/>*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0])<sp/>{</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>++this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i];</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i]<sp/>==<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>[i])<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"></highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Advance<sp/>position[0]<sp/>to<sp/>or<sp/>beyond<sp/>position[i].</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i]<sp/>&gt;<sp/>*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0])<sp/>{</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>++this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0];</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0]<sp/>==<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>[0])<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="143"><highlight class="normal"></highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>position[0]<sp/>changed,<sp/>start<sp/>from<sp/>position<sp/>1<sp/>again.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>(note<sp/>that</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>i<sp/>gets<sp/>incremented<sp/>at<sp/>the<sp/>end<sp/>of<sp/>the<sp/>for-loop<sp/>body,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>and<sp/>that,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>since<sp/>we<sp/>are<sp/>inside<sp/>the<sp/>for,<sp/>there<sp/>are<sp/>at<sp/>least<sp/>two<sp/>positions</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="149"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>as<sp/>the<sp/>for<sp/>starts<sp/>with<sp/>i=1.)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[0]<sp/>&gt;<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[1])<sp/>{<sp/>i=0;<sp/>}</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="152"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;synchronized_at_current_minimum<sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="154"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="156"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="157"><highlight class="comment"><sp/><sp/><sp/><sp/>///<sp/>Returns<sp/>the<sp/>vector<sp/>of<sp/>current<sp/>positions.</highlight></codeline>
+<codeline lineno="158" refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a42f8288c41866cce64d5bcb4619c400b" refkind="member"><highlight class="comment"></highlight><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;Iterator&gt;&amp;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a42f8288c41866cce64d5bcb4619c400b" kindref="member">get_current</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="159"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>;</highlight></codeline>
+<codeline lineno="160"><highlight class="normal"><sp/><sp/><sp/><sp/>};</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"></highlight></codeline>
+<codeline lineno="162" refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1adb6c8179ec8661432f7cf5582a2a445c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1adb6c8179ec8661432f7cf5582a2a445c" kindref="member">SynchronizedUniversalIterator</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size=0)<sp/>:<sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator" kindref="compound">SynchronizedIterator</ref>&lt;Iterator&gt;(size)<sp/>{};</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"></highlight></codeline>
+<codeline lineno="164" refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1ad0186d81f543b2208a435db927ae7a70" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">reset</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size<sp/>=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>SynchronizedIterator<sp/>&lt;<sp/>Iterator<sp/>&gt;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">::reset</ref>(size);</highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;synchronized_at_current_minimum<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><sp/><sp/>};</highlight></codeline>
+<codeline lineno="168"><highlight class="normal">};<sp/></highlight><highlight class="comment">//<sp/>class<sp/>SynchronizedUniversalIterator.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="169"><highlight class="normal"></highlight></codeline>
+<codeline lineno="170"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>Iterator&gt;</highlight></codeline>
+<codeline lineno="171" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator" kindref="compound">SynchronizedExistentialIterator</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator" kindref="compound">SynchronizedIterator</ref>&lt;Iterator&gt;<sp/>{</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="173" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1aa8f91e54d7509570ef261714a5d87b27" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>Iterator<sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1aa8f91e54d7509570ef261714a5d87b27" kindref="member">get_current_minimum</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.empty())<sp/>{</highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/>std::runtime_error(</highlight><highlight class="stringliteral">&quot;Trying<sp/>to<sp/>get<sp/>minimum<sp/>from<sp/>sync.<sp/>ex.<sp/>iterator<sp/>which<sp/>has<sp/>no<sp/>minimum.<sp/>Don&apos;t<sp/>do<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="176"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;that<sp/>ever<sp/>again<sp/>or<sp/>your<sp/>nose<sp/>falls<sp/>off!&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>[0];</highlight></codeline>
+<codeline lineno="179"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="180"><highlight class="normal"></highlight></codeline>
+<codeline lineno="181" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;Iterator&gt;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>{};<sp/></highlight><highlight class="comment">//<sp/>Positions<sp/>that<sp/>are<sp/>currently<sp/>synchronized.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="182" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/>Iterator<sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref>{};<sp/></highlight><highlight class="comment">//<sp/>The<sp/>value<sp/>we<sp/>should<sp/>synchronise<sp/>on<sp/>after<sp/>the<sp/>first<sp/>next<sp/>call<sp/>of<sp/>advance().</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="183"><highlight class="normal"></highlight></codeline>
+<codeline lineno="184" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a8d8480136729506e340f0003745ab34c" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a8d8480136729506e340f0003745ab34c" kindref="member">is_synchronized</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>!<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.empty();<sp/>}</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="186"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="187"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Advances<sp/>all<sp/>positions<sp/>just<sp/>above<sp/>current_minimum,</highlight></codeline>
+<codeline lineno="188"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>that<sp/>is,<sp/>to<sp/>or<sp/>above<sp/>next_minimum.</highlight></codeline>
+<codeline lineno="189"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Those<sp/>at<sp/>next_minimum<sp/>are<sp/>added<sp/>to<sp/>currently_synchronized.</highlight></codeline>
+<codeline lineno="190"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Since<sp/>next_minimum<sp/>becomes<sp/>the<sp/>current<sp/>minimum,</highlight></codeline>
+<codeline lineno="191"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>new<sp/>next_minimum<sp/>must<sp/>be<sp/>updated<sp/>too.</highlight></codeline>
+<codeline lineno="192"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="193" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ae594056547eaed65a6e0a2358d7ddc5b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ae594056547eaed65a6e0a2358d7ddc5b" kindref="member">advance</ref>()</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>The<sp/>next_minimum<sp/>becomes<sp/>the<sp/>current<sp/>current_minimum.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="195"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>current_minimum<sp/>=<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref>;</highlight></codeline>
+<codeline lineno="196"><highlight class="normal"></highlight></codeline>
+<codeline lineno="197"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Here<sp/>we<sp/>collect<sp/>the<sp/>result.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="198"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.clear();</highlight></codeline>
+<codeline lineno="199"><highlight class="normal"></highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>0,<sp/>positions_size<sp/>=<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.size();<sp/>i<sp/>&lt;<sp/>positions_size;)<sp/>{</highlight></codeline>
+<codeline lineno="201"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>Iterator&amp;<sp/>position_i_it{<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[i]<sp/>};</highlight></codeline>
+<codeline lineno="202"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>Iterator&amp;<sp/>end_i_it{<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>[i]<sp/>};</highlight></codeline>
+<codeline lineno="203"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(position_i_it<sp/>==<sp/>end_i_it)<sp/>{</highlight></codeline>
+<codeline lineno="204"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>there<sp/>is<sp/>nothing<sp/>left<sp/>at<sp/>the<sp/>position,<sp/>it<sp/>is<sp/>removed,<sp/>that<sp/>is,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="205"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>swapped<sp/>with<sp/>a<sp/>position<sp/>from<sp/>the<sp/>end<sp/>of<sp/>the<sp/>vector,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="206"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>and<sp/>the<sp/>vector<sp/>is<sp/>shortened.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="207"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>The<sp/>same<sp/>is<sp/>done<sp/>with<sp/>ends.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="208"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(position_i_it<sp/>==<sp/>end_i_it<sp/>&amp;&amp;<sp/>i<sp/>&lt;<sp/>positions_size)<sp/>{</highlight></codeline>
+<codeline lineno="209"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>position_i_it<sp/>=<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>[positions_size<sp/>-<sp/>1];</highlight></codeline>
+<codeline lineno="210"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>end_i_it<sp/>=<sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>[positions_size<sp/>-<sp/>1];</highlight></codeline>
+<codeline lineno="211"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>This<sp/>must<sp/>be<sp/>here,<sp/>because<sp/>in<sp/>the<sp/>next<sp/>call,<sp/>position_size<sp/>is<sp/>set<sp/>again<sp/>with<sp/>positions.size().</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="212"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.pop_back();</highlight></codeline>
+<codeline lineno="213"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.pop_back();</highlight></codeline>
+<codeline lineno="214"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>--positions_size;</highlight></codeline>
+<codeline lineno="215"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="216"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="217"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>the<sp/>i-th<sp/>position,<sp/>i.e.,<sp/>where<sp/>we<sp/>are<sp/>now,<sp/>was<sp/>erased,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="218"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>then<sp/>we<sp/>reached<sp/>the<sp/>end<sp/>of<sp/>active<sp/>positions.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="219"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(i<sp/>==<sp/>positions_size)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>!<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.empty();<sp/>}</highlight></codeline>
+<codeline lineno="220"><highlight class="normal"></highlight></codeline>
+<codeline lineno="221"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>we<sp/>are<sp/>at<sp/>the<sp/>current_minimum,<sp/>then<sp/>save<sp/>it<sp/>and<sp/>advance<sp/>the<sp/>position.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="222"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(*position_i_it<sp/>==<sp/>*current_minimum)<sp/>{</highlight></codeline>
+<codeline lineno="223"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.emplace_back(position_i_it);</highlight></codeline>
+<codeline lineno="224"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>++position_i_it;</highlight></codeline>
+<codeline lineno="225"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">continue</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="227"><highlight class="normal"></highlight></codeline>
+<codeline lineno="228"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>the<sp/>position<sp/>(now<sp/>larger<sp/>than<sp/>current_minimum)<sp/>is<sp/>smaller<sp/>than<sp/>next_minimum,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="229"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>or<sp/>next_minimum<sp/>has<sp/>not<sp/>yet<sp/>been<sp/>updated,<sp/>then<sp/>update<sp/>the<sp/>next_minimum.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="230"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref><sp/>&gt;<sp/>*position_i_it<sp/>||<sp/>*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref><sp/>==<sp/>*current_minimum)<sp/>{</highlight></codeline>
+<codeline lineno="231"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref><sp/>=<sp/>position_i_it;</highlight></codeline>
+<codeline lineno="232"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="233"><highlight class="normal"></highlight></codeline>
+<codeline lineno="234"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>++i;<sp/></highlight><highlight class="comment">//<sp/>This<sp/>cannot<sp/>be<sp/>in<sp/>the<sp/>for<sp/>statement<sp/>line,<sp/>because<sp/>of<sp/>the<sp/>continue<sp/>in<sp/>the<sp/>if<sp/>body<sp/>above.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="235"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="236"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>!<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.empty();</highlight></codeline>
+<codeline lineno="237"><highlight class="normal"><sp/><sp/><sp/><sp/>};<sp/></highlight><highlight class="comment">//<sp/>advance().</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="238"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="239"><highlight class="comment"><sp/><sp/><sp/><sp/>/**</highlight></codeline>
+<codeline lineno="240"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>@brief<sp/>Returns<sp/>the<sp/>vector<sp/>of<sp/>current<sp/>still<sp/>active<sp/>positions.</highlight></codeline>
+<codeline lineno="241"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*</highlight></codeline>
+<codeline lineno="242"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>Beware,<sp/>they<sp/>will<sp/>be<sp/>ordered<sp/>differently<sp/>from<sp/>how<sp/>there<sp/>were<sp/>input<sp/>into<sp/>the<sp/>iterator.</highlight></codeline>
+<codeline lineno="243"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*<sp/>This<sp/>is<sp/>due<sp/>to<sp/>swapping<sp/>of<sp/>the<sp/>emptied<sp/>positions<sp/>with<sp/>positions<sp/>at<sp/>the<sp/>end.</highlight></codeline>
+<codeline lineno="244"><highlight class="comment"><sp/><sp/><sp/><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="245" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad4caf0e477393cb1ce67c9f9c7f63ac7" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;Iterator&gt;&amp;<sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad4caf0e477393cb1ce67c9f9c7f63ac7" kindref="member">get_current</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>;<sp/>};</highlight></codeline>
+<codeline lineno="246"><highlight class="normal"></highlight></codeline>
+<codeline lineno="247" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1aea8f0bac6a86224b0e1b3617635fa55a" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1aea8f0bac6a86224b0e1b3617635fa55a" kindref="member">push_back</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Iterator<sp/>&amp;begin,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Iterator<sp/>&amp;end)</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="248"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Empty<sp/>vector<sp/>would<sp/>not<sp/>have<sp/>any<sp/>effect<sp/>(unlike<sp/>in<sp/>the<sp/>case<sp/>of<sp/>the<sp/>universal<sp/>iterator).</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="249"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(begin<sp/>==<sp/>end)<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="250"><highlight class="normal"></highlight></codeline>
+<codeline lineno="251"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Initialise<sp/>next_minimum<sp/>as<sp/>the<sp/>first<sp/>position<sp/>at<sp/>the<sp/>first<sp/>vector.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="252"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.empty())<sp/>{</highlight></codeline>
+<codeline lineno="253"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref><sp/>=<sp/>begin;</highlight></codeline>
+<codeline lineno="254"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(*this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref><sp/>&gt;<sp/>*begin)<sp/>{</highlight></codeline>
+<codeline lineno="255"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>the<sp/>first<sp/>position<sp/>is<sp/>of<sp/>the<sp/>new<sp/>vector<sp/>is<sp/>smaller<sp/>than<sp/>minimum,<sp/>update<sp/>minimum.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="256"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1acd765c73cca51276ededc23b1ba10111" kindref="member">next_minimum</ref><sp/>=<sp/>begin;</highlight></codeline>
+<codeline lineno="257"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="258"><highlight class="normal"></highlight></codeline>
+<codeline lineno="259"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Let<sp/>position<sp/>point<sp/>to<sp/>the<sp/>beginning<sp/>the<sp/>vector,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="260"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>save<sp/>the<sp/>end<sp/>of<sp/>the<sp/>vector.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="261"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" kindref="member">positions</ref>.emplace_back(begin);</highlight></codeline>
+<codeline lineno="262"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" kindref="member">ends</ref>.emplace_back(end);</highlight></codeline>
+<codeline lineno="263"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="264"><highlight class="normal"></highlight></codeline>
+<codeline lineno="265" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a469cb6bd76cd23db3204f461a79b5fc8" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">explicit</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a469cb6bd76cd23db3204f461a79b5fc8" kindref="member">SynchronizedExistentialIterator</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size=0)<sp/>:<sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator" kindref="compound">SynchronizedIterator</ref>&lt;Iterator&gt;(size)<sp/>{</highlight></codeline>
+<codeline lineno="266"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a09a692a3aedb29add6f9812fbb46e1d0" kindref="member">reserve</ref>(size);</highlight></codeline>
+<codeline lineno="267"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="268"><highlight class="normal"></highlight></codeline>
+<codeline lineno="269" refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad0186d81f543b2208a435db927ae7a70" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">reset</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>size<sp/>=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="270"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">SynchronizedIterator&lt;Iterator&gt;::reset</ref>(size);</highlight></codeline>
+<codeline lineno="271"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(size<sp/>&gt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="272"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.reserve(size);</highlight></codeline>
+<codeline lineno="273"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="274"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>this-&gt;<ref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1a79a0afcd1829ce29118115795f9b77f2" kindref="member">currently_synchronized</ref>.clear();</highlight></codeline>
+<codeline lineno="275"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="276"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="277"><highlight class="normal"></highlight><highlight class="comment"></highlight></codeline>
+<codeline lineno="278"><highlight class="comment">/**</highlight></codeline>
+<codeline lineno="279"><highlight class="comment"><sp/>*<sp/>In<sp/>order<sp/>to<sp/>make<sp/>initialisation<sp/>of<sp/>the<sp/>sync.<sp/>iterator<sp/>nicer<sp/>than<sp/>inputting<sp/>v.begin()<sp/>and<sp/>v.end()</highlight></codeline>
+<codeline lineno="280"><highlight class="comment"><sp/>*<sp/>as<sp/>the<sp/>two<sp/>parameters<sp/>of<sp/>the<sp/>method<sp/>push_back,</highlight></codeline>
+<codeline lineno="281"><highlight class="comment"><sp/>*<sp/>this<sp/>function<sp/>wraps<sp/>the<sp/>method<sp/>push_back,</highlight></codeline>
+<codeline lineno="282"><highlight class="comment"><sp/>*<sp/>takes<sp/>the<sp/>iterator<sp/>and<sp/>v<sp/>and<sp/>extracts<sp/>the<sp/>v.begin()<sp/>and<sp/>v.end()<sp/>from<sp/>v.</highlight></codeline>
+<codeline lineno="283"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="284"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">class</highlight><highlight class="normal"><sp/>Container&gt;</highlight></codeline>
+<codeline lineno="285" refid="namespacemata_1_1utils_1ac7dda4e0480c4f299da58d1b4ca05b85" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespacemata_1_1utils_1ac7dda4e0480c4f299da58d1b4ca05b85" kindref="member">push_back</ref><sp/>(<ref refid="classmata_1_1utils_1_1SynchronizedIterator" kindref="compound">SynchronizedIterator&lt;typename Container::const_iterator&gt;</ref><sp/>&amp;i,</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Container<sp/>&amp;container)<sp/>{</highlight></codeline>
+<codeline lineno="286"><highlight class="normal"><sp/><sp/><sp/><sp/>i.<ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208" kindref="member">push_back</ref>(container.begin(),container.end());</highlight></codeline>
+<codeline lineno="287"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="288"><highlight class="normal"></highlight></codeline>
+<codeline lineno="289"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>mata::utils.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="290"><highlight class="normal"></highlight></codeline>
+<codeline lineno="291"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/></highlight><highlight class="comment">//<sp/>MATA_SYNCHRONIZED_ITERATOR_HH.</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,535 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nft_1_1builder" kind="namespace" language="C++">
+    <compoundname>mata::nft::builder</compoundname>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1_1nft_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" prot="public" static="no">
+        <type>std::unordered_map&lt; std::string, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt;</type>
+        <definition>using NameStateMap =  std::unordered_map&lt;std::string, State&gt;</definition>
+        <argsstring></argsstring>
+        <name>NameStateMap</name>
+        <qualifiedname>mata::nft::builder::NameStateMap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="22" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" bodystart="22" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a2514c847eed96825a9936b511b5c6bab" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft create_single_word_nft</definition>
+        <argsstring>(const Word &amp;word)</argsstring>
+        <name>create_single_word_nft</name>
+        <qualifiedname>mata::nft::builder::create_single_word_nft</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>word</declname>
+        </param>
+        <briefdescription>
+<para>Create an automaton accepting only a single <computeroutput>word</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="27" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="27" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1aa6fec8d093c2729ccb4ca6ada264f7f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft create_single_word_nft</definition>
+        <argsstring>(const WordName &amp;word, Alphabet *alphabet=nullptr)</argsstring>
+        <name>create_single_word_nft</name>
+        <qualifiedname>mata::nft::builder::create_single_word_nft</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" kindref="member">WordName</ref> &amp;</type>
+          <declname>word</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Create an automaton accepting only a single <computeroutput>word</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>word</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Word to accept. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> to use in NFA for translating word into symbols. If specified, the alphabet has to contain translations for all the word symbols. If left empty, a new alphabet with only the symbols of the word will be created. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="37" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="37" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a9f5a3a224b49acd17715f77775d4fda1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft create_empty_string_nft</definition>
+        <argsstring>(size_t num_of_levels=DEFAULT_NUM_OF_LEVELS)</argsstring>
+        <name>create_empty_string_nft</name>
+        <qualifiedname>mata::nft::builder::create_empty_string_nft</qualifiedname>
+        <param>
+          <type>size_t</type>
+          <declname>num_of_levels</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a7a6543e24742ec94a8261a55b5ead0ff" kindref="member">DEFAULT_NUM_OF_LEVELS</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create automaton accepting only epsilon string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="42" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="42" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1af6b480ac870727841ff3a90279fb324b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft create_sigma_star_nft</definition>
+        <argsstring>(size_t num_of_levels=DEFAULT_NUM_OF_LEVELS)</argsstring>
+        <name>create_sigma_star_nft</name>
+        <qualifiedname>mata::nft::builder::create_sigma_star_nft</qualifiedname>
+        <param>
+          <type>size_t</type>
+          <declname>num_of_levels</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a7a6543e24742ec94a8261a55b5ead0ff" kindref="member">DEFAULT_NUM_OF_LEVELS</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create automaton accepting sigma star over the passed alphabet using DONT_CARE symbol. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">num_of_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of levels in the created NFT. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="49" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="49" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a332e8a225a8a05dc4db1d09b8bc0805d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft create_sigma_star_nft</definition>
+        <argsstring>(const Alphabet *alphabet=new OnTheFlyAlphabet{}, size_t num_of_levels=DEFAULT_NUM_OF_LEVELS)</argsstring>
+        <name>create_sigma_star_nft</name>
+        <qualifiedname>mata::nft::builder::create_sigma_star_nft</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>new <ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>{}</defval>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>num_of_levels</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a7a6543e24742ec94a8261a55b5ead0ff" kindref="member">DEFAULT_NUM_OF_LEVELS</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create automaton accepting sigma star over the passed alphabet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> to construct sigma star automaton with. When alphabet is left empty, the default empty alphabet is used, creating an automaton accepting only the empty string. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">num_of_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of levels in the created NFT. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="58" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="58" declcolumn="5"/>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a8f034ac67584d2002b4c18b464d51ff3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft construct</definition>
+        <argsstring>(const parser::ParsedSection &amp;parsec, Alphabet *alphabet, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nft::builder::construct</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">parser::ParsedSection</ref> &amp;</type>
+          <declname>parsec</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="62" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="62" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a6b564f6f5fd42242334250ccf694586a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft construct</definition>
+        <argsstring>(const IntermediateAut &amp;inter_aut, Alphabet *alphabet, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nft::builder::construct</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref> &amp;</type>
+          <declname>inter_aut</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="65" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="65" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a6c64995702033a9e3413348a0e897f7e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void construct</definition>
+        <argsstring>(Nft *result, const IntermediateAut &amp;inter_aut, Alphabet *alphabet, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nft::builder::construct</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">IntermediateAut</ref> &amp;</type>
+          <declname>inter_aut</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object; version for python binding. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="67" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="67" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1aec0b6cccd5558bdc7d930e155806a3b4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class ParsedObject</type>
+          </param>
+        </templateparamlist>
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft construct</definition>
+        <argsstring>(const ParsedObject &amp;parsed, Alphabet *alphabet=nullptr, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nft::builder::construct</qualifiedname>
+        <param>
+          <type>const ParsedObject &amp;</type>
+          <declname>parsed</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="72" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" bodystart="72" bodyend="79"/>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1aa8fdf0937a537080234f34458454c80a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft parse_from_mata</definition>
+        <argsstring>(std::istream &amp;nft_stream)</argsstring>
+        <name>parse_from_mata</name>
+        <qualifiedname>mata::nft::builder::parse_from_mata</qualifiedname>
+        <param>
+          <type>std::istream &amp;</type>
+          <declname>nft_stream</declname>
+        </param>
+        <briefdescription>
+<para>Parse NFA from the mata format in an input stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nft_stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Input stream containing NFA in mata format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsing of NFA fails. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="87" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="87" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a8662bd981b3384976716654e7039626b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft parse_from_mata</definition>
+        <argsstring>(const std::string &amp;nft_in_mata)</argsstring>
+        <name>parse_from_mata</name>
+        <qualifiedname>mata::nft::builder::parse_from_mata</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>nft_in_mata</declname>
+        </param>
+        <briefdescription>
+<para>Parse NFA from the mata format in a string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nft_in_mata</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>String containing NFA in mata format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsing of NFA fails. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="95" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="95" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a4cfa930b91eaef2f227a7c8561a1e524" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft parse_from_mata</definition>
+        <argsstring>(const std::filesystem::path &amp;nft_file)</argsstring>
+        <name>parse_from_mata</name>
+        <qualifiedname>mata::nft::builder::parse_from_mata</qualifiedname>
+        <param>
+          <type>const std::filesystem::path &amp;</type>
+          <declname>nft_file</declname>
+        </param>
+        <briefdescription>
+<para>Parse NFA from the mata format in a file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nft_file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Path to the file containing NFA in mata format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><computeroutput>nft_file</computeroutput> does not exist. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsing of NFA fails. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="104" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="104" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1a6994053e7c229b2c52cc1836b6bf566d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft from_nfa_with_levels_zero</definition>
+        <argsstring>(const nfa::Nfa &amp;nfa, size_t num_of_levels=DEFAULT_NUM_OF_LEVELS, bool explicit_transitions=true, std::optional&lt; Symbol &gt; next_levels_symbol={})</argsstring>
+        <name>from_nfa_with_levels_zero</name>
+        <qualifiedname>mata::nft::builder::from_nfa_with_levels_zero</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>num_of_levels</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a7a6543e24742ec94a8261a55b5ead0ff" kindref="member">DEFAULT_NUM_OF_LEVELS</ref></defval>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>explicit_transitions</declname>
+          <defval>true</defval>
+        </param>
+        <param>
+          <type>std::optional&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt;</type>
+          <declname>next_levels_symbol</declname>
+          <defval>{}</defval>
+        </param>
+        <briefdescription>
+<para>Create <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> from <computeroutput>nfa</computeroutput> with specified <computeroutput>num_of_levels</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function takes transition from <computeroutput>nfa</computeroutput> as transitions between zero level and the first level of NFT. All transition between the remaining levels are created based on the function parameters: <computeroutput>explicit_transitions</computeroutput> and <computeroutput>next_levels_symbol</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nfa</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFA to create NFT from. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>num_of_levels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of levels of NFT. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>explicit_transitions</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>If true, the transitions between levels are explicit (i.e., no jump transitions, except for the epsilon transitions over all levels).) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>next_levels_symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>If specified, it is used as a symbol on transitions after the first level. If not specified, the symbol of the transition is reused. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFT representing <computeroutput>nfa</computeroutput> with <computeroutput>num_of_levels</computeroutput> number of levels. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="121" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="121" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1builder_1ad3105f27ca2814cf7497f7c8f10a07c2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft from_nfa_with_levels_advancing</definition>
+        <argsstring>(mata::nfa::Nfa nfa, size_t num_of_levels)</argsstring>
+        <name>from_nfa_with_levels_advancing</name>
+        <qualifiedname>mata::nft::builder::from_nfa_with_levels_advancing</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">mata::nfa::Nfa</ref></type>
+          <declname>nfa</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>num_of_levels</declname>
+        </param>
+        <briefdescription>
+<para>Creates <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> from <computeroutput>nfa</computeroutput> with specified <computeroutput>num_of_levels</computeroutput> automatically. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It assumes that <computeroutput>nfa</computeroutput> is a representation of an nft without jump transitions. It assign to each state the level based on the distance from the initial state. For example, if there are 2 levels, the initial states are level 0, the successor states are level 1, the states after that level 0, etc.</para>
+<para>If you only have one level, then it is more efficient to call the constructor that takes Nfa as input.</para>
+<para><parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>if some state should be assigned two different levels or if the final state is not at level 0. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="137" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" declline="137" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Namespace providing options to build NFAs. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh" line="18" column="1"/>
+  </compounddef>
+</doxygen>

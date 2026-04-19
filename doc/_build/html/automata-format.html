@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Automata Format &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Benchmarking" href="benchmarking.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="automata-format">
+<h1>Automata Format<a class="headerlink" href="#automata-format" title="Link to this heading">¶</a></h1>
+<section id="the-mata-file-format-for-automata-mata-format">
+<h2>The Mata file format for automata (.mata format)<a class="headerlink" href="#the-mata-file-format-for-automata-mata-format" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>[!WARNING]
+The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs, but not AFAs nor transducers. The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.</p>
+</div></blockquote>
+<section id="top-level-file-structure">
+<h3>Top-level file structure<a class="headerlink" href="#top-level-file-structure" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>The format is <strong>line</strong>-based. Lines can be connected by <code class="docutils literal notranslate"><span class="pre">\</span></code>.</p></li>
+<li><p>Lines are parsed into tokens. Tokens are delimited by white spaces, the format is <strong>white space sensitive</strong> with exception of formulas in transitions where expressions could be written without white spaces separating tokens.</p></li>
+<li><p>A file contains <strong>sections</strong> starting with a line of the form <code class="docutils literal notranslate"><span class="pre">&#64;&lt;SECTION-TYPE&gt;</span></code>, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.</p></li>
+<li><p>In automata sections, non-empty lines are <strong>key-value lines</strong> of the form <code class="docutils literal notranslate"><span class="pre">%&lt;KEY&gt;</span> <span class="pre">[VALUE]</span></code>, <strong>transition lines</strong>,
+or <strong>comment lines</strong> starting with <code class="docutils literal notranslate"><span class="pre">#</span></code>. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurrence without a value marks that the <code class="docutils literal notranslate"><span class="pre">KEY</span></code> is defined.</p></li>
+<li><p>Besides white spaces and the end of line, the following are <strong>characters with special meaning</strong>: <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>,<code class="docutils literal notranslate"><span class="pre">|</span></code>,<code class="docutils literal notranslate"><span class="pre">!</span></code>,<code class="docutils literal notranslate"><span class="pre">&#64;</span></code>,<code class="docutils literal notranslate"><span class="pre">(</span></code>,<code class="docutils literal notranslate"><span class="pre">)</span></code>,<code class="docutils literal notranslate"><span class="pre">%</span></code>,<code class="docutils literal notranslate"><span class="pre">&quot;</span></code>,<code class="docutils literal notranslate"><span class="pre">\</span></code>,<code class="docutils literal notranslate"><span class="pre">#</span></code> <code class="docutils literal notranslate"><span class="pre">[</span></code>,<code class="docutils literal notranslate"><span class="pre">]</span></code>,<code class="docutils literal notranslate"><span class="pre">a</span></code>,<code class="docutils literal notranslate"><span class="pre">q</span></code>,<code class="docutils literal notranslate"><span class="pre">n</span></code>,<code class="docutils literal notranslate"><span class="pre">t</span></code>,<code class="docutils literal notranslate"><span class="pre">f</span></code>.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&amp;</span></code>,<code class="docutils literal notranslate"><span class="pre">|</span></code>,<code class="docutils literal notranslate"><span class="pre">!</span></code>,<code class="docutils literal notranslate"><span class="pre">(</span></code>,<code class="docutils literal notranslate"><span class="pre">)</span></code> are logical operators used in Boolean formulas.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[</span></code>,<code class="docutils literal notranslate"><span class="pre">]</span></code>,<code class="docutils literal notranslate"><span class="pre">-</span></code>,<code class="docutils literal notranslate"><span class="pre">^</span></code> enclose character classes, such as <code class="docutils literal notranslate"><span class="pre">[abcd-h]</span></code>, <code class="docutils literal notranslate"><span class="pre">[^abcd-h]</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&#64;</span></code> opens the line with a section name and is used in transducer alphabet tokens of the form <code class="docutils literal notranslate"><span class="pre">x&#64;a1</span></code>, <code class="docutils literal notranslate"><span class="pre">y&#64;[10-55]</span></code>,…</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">%</span></code> opens a key-value line.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;</span></code> strings containing white spaces and special characters can be written in between <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>. The special characters lose their special meaning. The characters <code class="docutils literal notranslate"><span class="pre">&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">\</span></code> inside a string must be escaped, i.e. <code class="docutils literal notranslate"><span class="pre">\&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">\\</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">\</span></code> for escaping characters. <code class="docutils literal notranslate"><span class="pre">\</span></code> is also used to concatenate lines.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a</span></code>,<code class="docutils literal notranslate"><span class="pre">q</span></code>,<code class="docutils literal notranslate"><span class="pre">n</span></code>,<code class="docutils literal notranslate"><span class="pre">t</span></code>,<code class="docutils literal notranslate"><span class="pre">f</span></code> are token type specifiers (alphabet, state, node, attribute, formula).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">#</span></code> starts a comment line.</p></li>
+</ul>
+</li>
+<li><p>There are <strong>words with a special meaning</strong>: <code class="docutils literal notranslate"><span class="pre">\true</span></code>,<code class="docutils literal notranslate"><span class="pre">\false</span></code>, <code class="docutils literal notranslate"><span class="pre">\min</span></code>, <code class="docutils literal notranslate"><span class="pre">\max</span></code>. The first two represent true/false in Boolean formulas.</p></li>
+<li><p>The parser may recognise the special symbols as standalone tokens (does not apply to <code class="docutils literal notranslate"><span class="pre">q</span></code>,<code class="docutils literal notranslate"><span class="pre">a</span></code>,<code class="docutils literal notranslate"><span class="pre">n</span></code>,<code class="docutils literal notranslate"><span class="pre">t</span></code>,<code class="docutils literal notranslate"><span class="pre">f</span></code>,<code class="docutils literal notranslate"><span class="pre">#</span></code>) only if they appear in the special context where their special meaning applies, otherwise they should be treated as normal symbols.</p></li>
+</ul>
+<p>We categorise automata according to their <strong>transition type</strong>, that is, the structure of their transitions, and by their <strong>alphabet type</strong>, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.</p>
+</section>
+<section id="alphabet-type">
+<h3>Alphabet type<a class="headerlink" href="#alphabet-type" title="Link to this heading">¶</a></h3>
+<p>We categorise automata by the <strong>alphabet type</strong>, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet.</p>
+<ul class="simple">
+<li><p><strong>Explicit</strong>: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, ascii, utf.</p></li>
+<li><p><strong>Bitvector</strong>: Propositional variables, the syntax is the same as for explicit symbols.</p></li>
+<li><p><strong>Character class</strong>: Character classes, i.e. sets of symbols as used in normal regular expressions, are of the form <code class="docutils literal notranslate"><span class="pre">[bla]</span></code> or <code class="docutils literal notranslate"><span class="pre">[^bla]</span></code> where <code class="docutils literal notranslate"><span class="pre">bla</span></code> is a sequence of symbols and intervals of symbols such as <code class="docutils literal notranslate"><span class="pre">a-z</span></code>, for instance <code class="docutils literal notranslate"><span class="pre">abcd-hij-z</span></code> denotes all lower case alphabet symbols. The <code class="docutils literal notranslate"><span class="pre">^</span></code> in front complements the entire class. The character <code class="docutils literal notranslate"><span class="pre">-</span></code> in sincluded as <code class="docutils literal notranslate"><span class="pre">\-</span></code>, analogously <code class="docutils literal notranslate"><span class="pre">\</span></code> and <code class="docutils literal notranslate"><span class="pre">^</span></code>. The special keywords <code class="docutils literal notranslate"><span class="pre">\min</span></code> and <code class="docutils literal notranslate"><span class="pre">\max</span></code> denote the first repsective the last letter the alphabet.</p></li>
+</ul>
+</section>
+<section id="automata-by-their-transition-type">
+<h3>Automata by their transition type<a class="headerlink" href="#automata-by-their-transition-type" title="Link to this heading">¶</a></h3>
+<section id="nfa-nondeterministic-finite-automata">
+<h4>NFA (Nondeterministic finite automata)<a class="headerlink" href="#nfa-nondeterministic-finite-automata" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol or a single interval is also a transition formula.</p></li>
+<li><p>Both symbol literals and states are determined positionally. Markers or enumeration can also be used.</p></li>
+<li><p>Initial (final) states are defined by key-value line <code class="docutils literal notranslate"><span class="pre">%Initial&quot;</span></code> (<code class="docutils literal notranslate"><span class="pre">%Final</span></code>) followed by an enumeration of states.</p></li>
+</ul>
+</section>
+<section id="afa-alternating-finite-automata">
+<h4>AFA (Alternating finite automata)<a class="headerlink" href="#afa-alternating-finite-automata" title="Link to this heading">¶</a></h4>
+<blockquote>
+<div><p>[!WARNING]
+The Mata library currently does not support AFAs.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Transition lines are of the form <code class="docutils literal notranslate"><span class="pre">&quot;&lt;State&gt;</span> <span class="pre">&lt;Formula&gt;&quot;</span></code> representing the source state and the transition formula - a Boolean formula over symbol literals, states, and nodes.</p></li>
+<li><p>Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false.</p></li>
+<li><p>Initial (final) states are defined by key-value line <code class="docutils literal notranslate"><span class="pre">%Initial</span> <span class="pre">&lt;Formula&gt;&quot;</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;%Final</span> <span class="pre">&lt;Formula&gt;&quot;</span></code>) where the Boolean formula is given over states.</p></li>
+</ul>
+<p>The transition and alphabet type is encoded in the name of a section, e.g., <code class="docutils literal notranslate"><span class="pre">&#64;NFA-explicit</span></code> denotes that a nondeterministic finite automaton over an explicit alphabet is given.</p>
+</section>
+</section>
+<section id="distinguishing-between-states-symbols-and-nodes">
+<h3>Distinguishing between states, symbols, and nodes<a class="headerlink" href="#distinguishing-between-states-symbols-and-nodes" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>When the general formulas are used in transition (as in case of AFA), the type of a token cannot be determined by its position. We therefore require one of the three schemes for distinguishing token types:</p>
+<ul>
+<li><p>By <strong>enumeration</strong>.</p></li>
+<li><p>By <strong>type-markers</strong> (default). The literal is preceeded by a single character that specifies the type, we use <code class="docutils literal notranslate"><span class="pre">q</span></code> for states, <code class="docutils literal notranslate"><span class="pre">a</span></code> for symbols, and <code class="docutils literal notranslate"><span class="pre">n</span></code> for shared nodes. The marker <em>is</em> a part of the thing’s name.</p></li>
+<li><p><strong>Automatic</strong>. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types.</p></li>
+</ul>
+</li>
+<li><p>The typing scheme is specified as a key value line with the key  <code class="docutils literal notranslate"><span class="pre">&lt;Thing&gt;-&lt;Scheme&gt;</span></code> where  <code class="docutils literal notranslate"><span class="pre">&lt;Thing&gt;</span></code> may be <code class="docutils literal notranslate"><span class="pre">Alphabet</span></code>, <code class="docutils literal notranslate"><span class="pre">States</span></code>, or <code class="docutils literal notranslate"><span class="pre">Nodes</span></code>. <code class="docutils literal notranslate"><span class="pre">&lt;Scheme&gt;</span></code> may be <code class="docutils literal notranslate"><span class="pre">marked</span></code>, <code class="docutils literal notranslate"><span class="pre">enum</span></code>, or <code class="docutils literal notranslate"><span class="pre">auto</span></code>.  The scheme <code class="docutils literal notranslate"><span class="pre">enum</span></code> is followed by an enumeration. For instance, we can have <code class="docutils literal notranslate"><span class="pre">%Alphabet-enum</span> <span class="pre">a</span> <span class="pre">b</span> <span class="pre">c</span> <span class="pre">karel</span></code>, <code class="docutils literal notranslate"><span class="pre">%Alphabet-auto</span></code>, <code class="docutils literal notranslate"><span class="pre">%Alphabet-marked</span></code>.</p></li>
+<li><p>Moreverover, in case of alphabet one can also use <code class="docutils literal notranslate"><span class="pre">utf-8</span></code>, <code class="docutils literal notranslate"><span class="pre">chars</span></code>, or <code class="docutils literal notranslate"><span class="pre">numbers</span></code> as typing scheme to denote that an alphabet is all utf-8 symbols, all characters, or all numbers respectively.</p></li>
+<li><p>Shared nodes are used to share same formula or part of formula among more transitions.</p></li>
+</ul>
+<p>We support specifying <strong>epsilons</strong>, by a key-value line <code class="docutils literal notranslate"><span class="pre">%Epsilon</span> <span class="pre">&lt;formula&gt;</span></code> where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme). The formula may be just a single letter which is supposed to mean epsilon, it may be a disjunciton of letters, when we need several different epsilons, or a more complex formula describing boolean vectors that are supposed to mean epsilons.  Use cases for multiple epsilons appear for instance in string solving.</p>
+</section>
+<section id="afa-and-nfa-examples">
+<h3>AFA and NFA Examples<a class="headerlink" href="#afa-and-nfa-examples" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@AFA-bits
+%Initial q1
+%Final !q1 &amp; !q2
+q1 q2 &amp; (a1 | q1 | n1)
+n1 q3 | q4
+q1 a2 &amp; q5
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@AFA-explicit
+%States-enum q r s t &quot;(r,s)&quot;
+%Alphabet-auto
+%Initial (q &amp; r) | (s &amp; t)
+%Final !q &amp; !r &amp; !s &amp; !t
+q symbol | other_symbol &amp; (&quot;(r,s)&quot; | r | s)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@AFA-intervals
+%States-auto
+%Alphabet-utf
+%Initial (q &amp; r) | (&quot;(r,s)&quot; &amp; t)
+%Final !q &amp; !r
+q [a-z] | [2-7] | [\u{1c}-\u{5c}] &amp; (&quot;(r,s)&quot; | r | s)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@NFA-bits
+%Alphabet-auto
+%Initial q1 q2
+%Final q3 q4
+q1 (x &amp;  y) | z q4
+q2 x &amp; !y q3
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@NFA</span><span class="o">-</span><span class="n">intervals</span>
+<span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">utf</span>
+<span class="o">%</span><span class="n">States</span><span class="o">-</span><span class="n">auto</span>
+<span class="o">%</span><span class="n">Initial</span> <span class="n">q</span>
+<span class="o">%</span><span class="n">Final</span> <span class="n">s</span>
+<span class="n">q</span> <span class="p">[</span><span class="n">a</span><span class="o">-</span><span class="n">z</span><span class="p">]</span> <span class="n">s</span>
+</pre></div>
+</div>
+</section>
+<section id="transducer">
+<h3>Transducer<a class="headerlink" href="#transducer" title="Link to this heading">¶</a></h3>
+<blockquote>
+<div><p>[!WARNING]
+The Mata library currently does not support transducers.</p>
+</div></blockquote>
+<p>A transducer has named tracks, and it has a key-value line starting with <code class="docutils literal notranslate"><span class="pre">%Tracks</span></code>. We use <code class="docutils literal notranslate"><span class="pre">&lt;lit&gt;&#64;x</span></code> to say that the <code class="docutils literal notranslate"><span class="pre">&lt;lit&gt;</span></code> belongs to the track <code class="docutils literal notranslate"><span class="pre">x</span></code>. We may also specify their names by a type-identifier or enumeration. An example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@AFA</span><span class="o">-</span><span class="n">intervals</span>
+<span class="o">%</span><span class="n">States</span><span class="o">-</span><span class="n">auto</span>
+<span class="o">%</span><span class="n">Tracks</span><span class="o">-</span><span class="n">auto</span>
+<span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">utf</span>
+<span class="n">q</span> <span class="p">[</span><span class="n">a</span><span class="o">-</span><span class="n">z</span><span class="p">]</span><span class="nd">@x</span> <span class="o">|</span> <span class="p">[</span><span class="mi">2</span><span class="o">-</span><span class="mi">7</span><span class="p">]</span><span class="nd">@y</span> <span class="o">|</span> <span class="p">[</span>\<span class="n">u</span><span class="p">{</span><span class="mi">1</span><span class="n">c</span><span class="p">}</span><span class="o">-</span>\<span class="n">u</span><span class="p">{</span><span class="mi">5</span><span class="n">c</span><span class="p">}]</span><span class="nd">@z</span> <span class="o">&amp;</span> <span class="p">(</span><span class="s2">&quot;(r,s)&quot;</span> <span class="o">|</span> <span class="p">(</span><span class="n">r</span> <span class="o">&amp;</span> <span class="n">s</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@AFA</span><span class="o">-</span><span class="n">intervals</span>
+<span class="o">%</span><span class="n">Tracks</span><span class="o">-</span><span class="n">auto</span>
+<span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">bits</span>
+<span class="n">q</span> <span class="n">a1</span><span class="nd">@x</span> <span class="o">|</span> <span class="n">a2</span><span class="nd">@z</span> <span class="o">&amp;</span> <span class="p">(</span><span class="s2">&quot;(r,s)&quot;</span> <span class="o">|</span> <span class="n">r</span> <span class="o">|</span> <span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="special-formulas-and-relations-over-symbols-and-transducer-track-names">
+<h3>Special formulas and relations over symbols and transducer track names.<a class="headerlink" href="#special-formulas-and-relations-over-symbols-and-transducer-track-names" title="Link to this heading">¶</a></h3>
+<p>It may be useful to specify relation between symbol variables or transducer tracks. These may be SMT formulas or something special, such as <code class="docutils literal notranslate"><span class="pre">a&quot;x=y&quot;</span></code> specifying that the two transducer tracks read the same symbol. We reserve the type letter <code class="docutils literal notranslate"><span class="pre">f</span></code> for this. We this fuzzy for now, to be concretized when it is actually needed.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@AFA</span><span class="o">-</span><span class="n">intervals</span>
+<span class="o">%</span><span class="n">Tracks</span><span class="o">-</span><span class="n">enum</span> <span class="n">x</span> <span class="n">y</span> <span class="n">z</span>
+<span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">enum</span> <span class="n">a</span> <span class="n">b</span> <span class="n">c</span> <span class="n">d</span> <span class="n">e</span> <span class="n">f</span> <span class="n">h</span>
+<span class="n">q</span> <span class="p">(</span><span class="n">a</span><span class="nd">@x</span> <span class="o">|</span> <span class="n">b</span><span class="nd">@z</span><span class="p">)</span> <span class="o">&amp;</span> <span class="sa">f</span><span class="s2">&quot;z=x&quot;</span> <span class="p">(</span><span class="s2">&quot;(r,s)&quot;</span> <span class="o">|</span> <span class="p">(</span><span class="n">r</span> <span class="o">&amp;</span> <span class="n">s</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The example above does not work in the current version where the special formulae and symbols are the same thing.</p>
+</section>
+<section id="aliases">
+<h3>Aliases<a class="headerlink" href="#aliases" title="Link to this heading">¶</a></h3>
+<p>It could be good to allow a key-value line <code class="docutils literal notranslate"><span class="pre">%Alias</span> <span class="pre">bla</span> <span class="pre">bli</span></code>, which specifies an alias. The parser will replace occurrences of the token <code class="docutils literal notranslate"><span class="pre">bla</span></code> with the string <code class="docutils literal notranslate"><span class="pre">bli</span></code>.</p>
+</section>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h3>
+<p>We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. The attributes are meant as something not relevant for the semantics of the automaton, for instance some attributes used when siplaying the automaton, such as colors.</p>
+<ol class="arabic simple">
+<li><p>An attribute inside a transition is a token such as a state, node, symbol. Its identifier is <code class="docutils literal notranslate"><span class="pre">t</span></code>. We can also give attributes to states, symbols, nodes by writing key-value lines of the form <code class="docutils literal notranslate"><span class="pre">%Attribute</span> <span class="pre">&lt;state&gt;</span> <span class="pre">&lt;attribute&gt;</span></code>.</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Automata Format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-mata-file-format-for-automata-mata-format">The Mata file format for automata (.mata format)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="benchmarking.html" title="previous chapter">Benchmarking</a></li>
+      <li>Next: <a href="contributing.html" title="next chapter">Contributing</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/automata-format.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

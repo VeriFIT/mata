@@ -1,0 +1,345 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1Alphabet" kind="class" language="C++" prot="public" abstract="yes">
+    <compoundname>mata::Alphabet</compoundname>
+    <derivedcompoundref refid="classmata_1_1EnumAlphabet" prot="public" virt="non-virtual">EnumAlphabet</derivedcompoundref>
+    <derivedcompoundref refid="classmata_1_1IntAlphabet" prot="public" virt="non-virtual">IntAlphabet</derivedcompoundref>
+    <derivedcompoundref refid="classmata_1_1OnTheFlyAlphabet" prot="public" virt="non-virtual">OnTheFlyAlphabet</derivedcompoundref>
+    <includes refid="alphabet_8hh" local="no">alphabet.hh</includes>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>virtual Symbol translate_symb</definition>
+        <argsstring>(const std::string &amp;symb)=0</argsstring>
+        <name>translate_symb</name>
+        <qualifiedname>mata::Alphabet::translate_symb</qualifiedname>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5">translate_symb</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1a3432911bcc5b6ed82451cde98b0fcab5">translate_symb</reimplementedby>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1a5956fe34c120b11bb74e2ecb3f9f7df6">translate_symb</reimplementedby>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>symb</declname>
+        </param>
+        <briefdescription>
+<para>translates a string into a symbol </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="26" column="20"/>
+        <referencedby refid="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b" compoundref="alphabet_8hh" startline="46" endline="46">Alphabet::operator[]</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a839198a10c8040bfb498117fa299aa3b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref></type>
+        <definition>virtual Word translate_word</definition>
+        <argsstring>(const WordName &amp;word_name) const</argsstring>
+        <name>translate_word</name>
+        <qualifiedname>mata::Alphabet::translate_word</qualifiedname>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1a9affe447067c5e36080fe61f90a8e207">translate_word</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1a4a1802522d33536e48a5cc8b8b3c88cb">translate_word</reimplementedby>
+        <param>
+          <type>const <ref refid="namespacemata_1a8303ec143c29a00d6c75060ade2c6843" kindref="member">WordName</ref> &amp;</type>
+          <declname>word_name</declname>
+        </param>
+        <briefdescription>
+<para>Translate sequence of symbol names to sequence of their respective values. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="31" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="31" bodyend="34"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a9043bb698e3a1ac5a702a2de113d8e1a" prot="public" static="no" const="yes" explicit="no" inline="no" virt="pure-virtual">
+        <type>std::string</type>
+        <definition>virtual std::string reverse_translate_symbol</definition>
+        <argsstring>(Symbol symbol) const =0</argsstring>
+        <name>reverse_translate_symbol</name>
+        <qualifiedname>mata::Alphabet::reverse_translate_symbol</qualifiedname>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1a04dc585772dae7a5187640961e9f3726">reverse_translate_symbol</reimplementedby>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1a04dc585772dae7a5187640961e9f3726">reverse_translate_symbol</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1a04dc585772dae7a5187640961e9f3726">reverse_translate_symbol</reimplementedby>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>symbol</declname>
+        </param>
+        <briefdescription>
+<para>Translate internal <computeroutput>symbol</computeroutput> representation back to its original string name. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Throws an exception when the <computeroutput>symbol</computeroutput> is missing in the alphabet. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to translate. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para><computeroutput>symbol</computeroutput> original name. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="43" column="25"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>Symbol operator[]</definition>
+        <argsstring>(const std::string &amp;symb)</argsstring>
+        <name>operator[]</name>
+        <qualifiedname>mata::Alphabet::operator[]</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>symb</declname>
+        </param>
+        <briefdescription>
+<para>also translates strings to symbols </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="46" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="46" bodyend="46"/>
+        <references refid="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9">Alphabet::translate_symb</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1ae1edf8c949d5c0523b05eb58192b2884" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt;</type>
+        <definition>virtual utils::OrdVector&lt; Symbol &gt; get_alphabet_symbols</definition>
+        <argsstring>() const</argsstring>
+        <name>get_alphabet_symbols</name>
+        <qualifiedname>mata::Alphabet::get_alphabet_symbols</qualifiedname>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec">get_alphabet_symbols</reimplementedby>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec">get_alphabet_symbols</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec">get_alphabet_symbols</reimplementedby>
+        <briefdescription>
+<para>Get a set of all symbols in the alphabet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The result does not have to equal the list of symbols in the automaton using this alphabet. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="53" column="30" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="53" bodyend="53"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a657cec0fd4934edfe40e7d70a5219774" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt;</type>
+        <definition>virtual utils::OrdVector&lt; Symbol &gt; get_complement</definition>
+        <argsstring>(const utils::OrdVector&lt; Symbol &gt; &amp;symbols) const</argsstring>
+        <name>get_complement</name>
+        <qualifiedname>mata::Alphabet::get_complement</qualifiedname>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1ac49a8b966d82d52bec89a62be2e913b5">get_complement</reimplementedby>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1ac49a8b966d82d52bec89a62be2e913b5">get_complement</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1ac49a8b966d82d52bec89a62be2e913b5">get_complement</reimplementedby>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt; &amp;</type>
+          <declname>symbols</declname>
+        </param>
+        <briefdescription>
+<para>complement of a set of symbols wrt the alphabet </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="56" column="30" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="56" bodyend="59"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a9dbe39c3ff6adeeea62bb9751077b4d0" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type></type>
+        <definition>virtual ~Alphabet</definition>
+        <argsstring>()=default</argsstring>
+        <name>~Alphabet</name>
+        <qualifiedname>mata::Alphabet::~Alphabet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="61" column="13"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>virtual bool is_equal</definition>
+        <argsstring>(const Alphabet &amp;other_alphabet) const</argsstring>
+        <name>is_equal</name>
+        <qualifiedname>mata::Alphabet::is_equal</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>other_alphabet</declname>
+        </param>
+        <briefdescription>
+<para>Check whether two alphabets are equal. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>In general, two alphabets are equal if and only if they are of the same class instance. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>other_alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The other alphabet to compare with for equality. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if equal, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="70" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="70" bodyend="70"/>
+        <references refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" compoundref="alphabet_8hh" startline="93" endline="93">Alphabet::address</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>virtual bool is_equal</definition>
+        <argsstring>(const Alphabet *const other_alphabet) const</argsstring>
+        <name>is_equal</name>
+        <qualifiedname>mata::Alphabet::is_equal</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *const</type>
+          <declname>other_alphabet</declname>
+        </param>
+        <briefdescription>
+<para>Check whether two alphabets are equal. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>In general, two alphabets are equal if and only if they are of the same class instance. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>other_alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The other alphabet to compare with for equality. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if equal, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="79" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="79" bodyend="81"/>
+        <references refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" compoundref="alphabet_8hh" startline="93" endline="93">Alphabet::address</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator==</definition>
+        <argsstring>(const Alphabet &amp;) const =delete</argsstring>
+        <name>operator==</name>
+        <qualifiedname>mata::Alphabet::operator==</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="83" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1ae22f66718bb2160cb671c4355ceeb1a2" prot="public" static="no" const="yes" explicit="no" inline="no" virt="pure-virtual">
+        <type>bool</type>
+        <definition>virtual bool empty</definition>
+        <argsstring>() const =0</argsstring>
+        <name>empty</name>
+        <qualifiedname>mata::Alphabet::empty</qualifiedname>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1a108bb972911adff5dd227f4f645a7967">empty</reimplementedby>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1a108bb972911adff5dd227f4f645a7967">empty</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1a108bb972911adff5dd227f4f645a7967">empty</reimplementedby>
+        <briefdescription>
+<para>Checks whether the alphabet has any symbols. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="88" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1Alphabet_1aae048282c7011eedc2e0492f6421ea73" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>virtual void clear</definition>
+        <argsstring>()</argsstring>
+        <name>clear</name>
+        <qualifiedname>mata::Alphabet::clear</qualifiedname>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82">clear</reimplementedby>
+        <reimplementedby refid="classmata_1_1EnumAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82">clear</reimplementedby>
+        <reimplementedby refid="classmata_1_1OnTheFlyAlphabet_1aee7cb2065b88d21ac4ad05bc997ecf82">clear</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="90" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="90" bodyend="90"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" prot="protected" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const void *</type>
+        <definition>virtual const void * address</definition>
+        <argsstring>() const</argsstring>
+        <name>address</name>
+        <qualifiedname>mata::Alphabet::address</qualifiedname>
+        <reimplementedby refid="classmata_1_1IntAlphabet_1ae3fc574f2bd60d3a15cda26b4a24565f">address</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="93" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="93" bodyend="93"/>
+        <referencedby refid="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b" compoundref="alphabet_8hh" startline="70" endline="70">Alphabet::is_equal</referencedby>
+        <referencedby refid="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043" compoundref="alphabet_8hh" startline="79" endline="81">Alphabet::is_equal</referencedby>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>The abstract interface for NFA alphabets. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1">
+        <label>Alphabet</label>
+        <link refid="classmata_1_1Alphabet"/>
+      </node>
+      <node id="2">
+        <label>EnumAlphabet</label>
+        <link refid="classmata_1_1EnumAlphabet"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>IntAlphabet</label>
+        <link refid="classmata_1_1IntAlphabet"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>OnTheFlyAlphabet</label>
+        <link refid="classmata_1_1OnTheFlyAlphabet"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" line="23" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/alphabet.hh" bodystart="23" bodyend="94"/>
+    <listofallmembers>
+      <member refid="classmata_1_1Alphabet_1a46c02216a92d858f4c8438b9df2096f6" prot="protected" virt="virtual"><scope>mata::Alphabet</scope><name>address</name></member>
+      <member refid="classmata_1_1Alphabet_1aae048282c7011eedc2e0492f6421ea73" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>clear</name></member>
+      <member refid="classmata_1_1Alphabet_1ae22f66718bb2160cb671c4355ceeb1a2" prot="public" virt="pure-virtual"><scope>mata::Alphabet</scope><name>empty</name></member>
+      <member refid="classmata_1_1Alphabet_1ae1edf8c949d5c0523b05eb58192b2884" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>get_alphabet_symbols</name></member>
+      <member refid="classmata_1_1Alphabet_1a657cec0fd4934edfe40e7d70a5219774" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>get_complement</name></member>
+      <member refid="classmata_1_1Alphabet_1afad2deddf9a0f20ac0f201e00f4a364b" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>is_equal</name></member>
+      <member refid="classmata_1_1Alphabet_1a7600f5b877491b3dea2249a552907043" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>is_equal</name></member>
+      <member refid="classmata_1_1Alphabet_1a94f935384f8277b595efccc7574a3421" prot="public" virt="non-virtual"><scope>mata::Alphabet</scope><name>operator==</name></member>
+      <member refid="classmata_1_1Alphabet_1a52851c7f904989cc8b719f8fc9d4096b" prot="public" virt="non-virtual"><scope>mata::Alphabet</scope><name>operator[]</name></member>
+      <member refid="classmata_1_1Alphabet_1a9043bb698e3a1ac5a702a2de113d8e1a" prot="public" virt="pure-virtual"><scope>mata::Alphabet</scope><name>reverse_translate_symbol</name></member>
+      <member refid="classmata_1_1Alphabet_1aeacb009bf1c2f3dba600859ccfc5ffb9" prot="public" virt="pure-virtual"><scope>mata::Alphabet</scope><name>translate_symb</name></member>
+      <member refid="classmata_1_1Alphabet_1a839198a10c8040bfb498117fa299aa3b" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>translate_word</name></member>
+      <member refid="classmata_1_1Alphabet_1a9dbe39c3ff6adeeea62bb9751077b4d0" prot="public" virt="virtual"><scope>mata::Alphabet</scope><name>~Alphabet</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

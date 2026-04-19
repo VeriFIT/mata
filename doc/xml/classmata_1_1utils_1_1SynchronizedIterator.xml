@@ -1,0 +1,256 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1utils_1_1SynchronizedIterator" kind="class" language="C++" prot="public" abstract="yes">
+    <compoundname>mata::utils::SynchronizedIterator</compoundname>
+    <derivedcompoundref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator" prot="public" virt="non-virtual">SynchronizedExistentialIterator&lt; utils::OrdVector&lt; SymbolPost &gt;::const_iterator &gt;</derivedcompoundref>
+    <derivedcompoundref refid="classmata_1_1utils_1_1SynchronizedExistentialIterator" prot="public" virt="non-virtual">SynchronizedExistentialIterator&lt; Iterator &gt;</derivedcompoundref>
+    <derivedcompoundref refid="classmata_1_1utils_1_1SynchronizedUniversalIterator" prot="public" virt="non-virtual">SynchronizedUniversalIterator&lt; Iterator &gt;</derivedcompoundref>
+    <includes refid="synchronized-iterator_8hh" local="no">synchronized-iterator.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>typename Iterator</type>
+      </param>
+    </templateparamlist>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; Iterator &gt;</type>
+        <definition>std::vector&lt;Iterator&gt; positions</definition>
+        <argsstring></argsstring>
+        <name>positions</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::positions</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="46" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="46" bodyend="46"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; Iterator &gt;</type>
+        <definition>std::vector&lt;Iterator&gt; ends</definition>
+        <argsstring></argsstring>
+        <name>ends</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::ends</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="47" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="47" bodyend="47"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1a35e553ac58b9e32429772619add1006b" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SynchronizedIterator</definition>
+        <argsstring>(const size_t size=0)</argsstring>
+        <name>SynchronizedIterator</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::SynchronizedIterator</qualifiedname>
+        <param>
+          <type>const size_t</type>
+          <declname>size</declname>
+          <defval>0</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of elements to reserve up-front for positions and ends. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="50" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="50" bodyend="53"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>virtual void push_back</definition>
+        <argsstring>(const Iterator &amp;begin, const Iterator &amp;end)</argsstring>
+        <name>push_back</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::push_back</qualifiedname>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1aea8f0bac6a86224b0e1b3617635fa55a">push_back</reimplementedby>
+        <param>
+          <type>const Iterator &amp;</type>
+          <declname>begin</declname>
+        </param>
+        <param>
+          <type>const Iterator &amp;</type>
+          <declname>end</declname>
+        </param>
+        <briefdescription>
+<para>This is supposed to be called only before an iteration, after constructor of reset. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Calling after advance breaks the iterator. Specifies begin and end of one vector, to initialise before the iteration starts. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="60" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="60" bodyend="65"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void reset</definition>
+        <argsstring>(const size_t size=0)</argsstring>
+        <name>reset</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::reset</qualifiedname>
+        <param>
+          <type>const size_t</type>
+          <declname>size</declname>
+          <defval>0</defval>
+        </param>
+        <briefdescription>
+<para>Empties positions and ends. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Though they should keep the allocated space. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of elements to reserve up-front for positions and ends. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="71" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="71" bodyend="78"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1a09a692a3aedb29add6f9812fbb46e1d0" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void reserve</definition>
+        <argsstring>(const size_t size)</argsstring>
+        <name>reserve</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::reserve</qualifiedname>
+        <param>
+          <type>const size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="80" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="80" bodyend="83"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1a40811668fc4f7ab15f033949859b9f59" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>bool</type>
+        <definition>virtual bool advance</definition>
+        <argsstring>()=0</argsstring>
+        <name>advance</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::advance</qualifiedname>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a26e94ac149e5205057d93cf14dfa3325">advance</reimplementedby>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ae594056547eaed65a6e0a2358d7ddc5b">advance</reimplementedby>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ae594056547eaed65a6e0a2358d7ddc5b">advance</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="85" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1a10e80079891227c8cacd4b2fb3c93699" prot="public" static="no" const="yes" explicit="no" inline="no" virt="pure-virtual">
+        <type>const std::vector&lt; Iterator &gt; &amp;</type>
+        <definition>virtual const std::vector&lt; Iterator &gt; &amp; get_current</definition>
+        <argsstring>() const =0</argsstring>
+        <name>get_current</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::get_current</qualifiedname>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedUniversalIterator_1a42f8288c41866cce64d5bcb4619c400b">get_current</reimplementedby>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad4caf0e477393cb1ce67c9f9c7f63ac7">get_current</reimplementedby>
+        <reimplementedby refid="classmata_1_1utils_1_1SynchronizedExistentialIterator_1ad4caf0e477393cb1ce67c9f9c7f63ac7">get_current</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="86" column="31"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1utils_1_1SynchronizedIterator_1a67bb40af614296f50f05375957447018" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type></type>
+        <definition>virtual ~SynchronizedIterator</definition>
+        <argsstring>()=default</argsstring>
+        <name>~SynchronizedIterator</name>
+        <qualifiedname>mata::utils::SynchronizedIterator::~SynchronizedIterator</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="88" column="13"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Synchronized iteration. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="2">
+        <label>SynchronizedExistentialIterator&lt; utils::OrdVector&lt; SymbolPost &gt;::const_iterator &gt;</label>
+        <link refid="classmata_1_1utils_1_1SynchronizedExistentialIterator"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+        <childnode refid="4" relation="template-instance">
+          <edgelabel>&lt; utils::OrdVector&lt; SymbolPost &gt;::const_iterator &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>SynchronizedIterator&lt; Iterator &gt;</label>
+        <link refid="classmata_1_1utils_1_1SynchronizedIterator"/>
+      </node>
+      <node id="6">
+        <label>SynchronizedIterator&lt; utils::OrdVector&lt; SymbolPost &gt;::const_iterator &gt;</label>
+        <link refid="classmata_1_1utils_1_1SynchronizedIterator"/>
+        <childnode refid="1" relation="template-instance">
+          <edgelabel>&lt; utils::OrdVector&lt; SymbolPost &gt;::const_iterator &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>SynchronizedExistentialSymbolPostIterator</label>
+        <link refid="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>SynchronizedExistentialIterator&lt; Iterator &gt;</label>
+        <link refid="classmata_1_1utils_1_1SynchronizedExistentialIterator"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>SynchronizedUniversalIterator&lt; Iterator &gt;</label>
+        <link refid="classmata_1_1utils_1_1SynchronizedUniversalIterator"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" line="43" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh" bodystart="43" bodyend="89"/>
+    <listofallmembers>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a40811668fc4f7ab15f033949859b9f59" prot="public" virt="pure-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>advance</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a5a21348c55abdbda633a27996da45aa9" prot="public" virt="non-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>ends</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a10e80079891227c8cacd4b2fb3c93699" prot="public" virt="pure-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>get_current</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a23949497780e1e56674f94047c248fa5" prot="public" virt="non-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>positions</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208" prot="public" virt="virtual"><scope>mata::utils::SynchronizedIterator</scope><name>push_back</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a09a692a3aedb29add6f9812fbb46e1d0" prot="public" virt="non-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>reserve</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" prot="public" virt="non-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>reset</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a35e553ac58b9e32429772619add1006b" prot="public" virt="non-virtual"><scope>mata::utils::SynchronizedIterator</scope><name>SynchronizedIterator</name></member>
+      <member refid="classmata_1_1utils_1_1SynchronizedIterator_1a67bb40af614296f50f05375957447018" prot="public" virt="virtual"><scope>mata::utils::SynchronizedIterator</scope><name>~SynchronizedIterator</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

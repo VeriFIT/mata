@@ -1,0 +1,19 @@
+<map id="Segmentation" name="Segmentation">
+<area shape="rect" id="Node000001" title="Class executing segmentation operations for a given segment automaton." alt="" coords="191,447,304,472"/>
+<area shape="rect" id="Node000002" href="$classmata_1_1nfa_1_1Nfa.html" title="A class representing an NFA." alt="" coords="225,359,270,384"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="250,398,250,446,245,446,245,398"/>
+<area shape="rect" id="Node000003" href="$classmata_1_1nfa_1_1Delta.html" title="Delta is a data structure for representing transition relation." alt="" coords="85,256,143,281"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="142,287,234,357,231,361,138,292"/>
+<area shape="rect" id="Node000004" href="$classmata_1_1nfa_1_1StatePost.html" title="A data structure representing possible transitions over different symbols from a source state." alt="" coords="60,168,144,193"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="108,206,115,255,110,256,103,207"/>
+<area shape="rect" id="Node000005" href="$classmata_1_1utils_1_1OrdVector.html" title=" " alt="" coords="5,93,199,119"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="105,133,105,168,99,168,99,133"/>
+<area shape="rect" id="Node000006" href="$classmata_1_1utils_1_1OrdVector.html" title="Implementation of a set using ordered vector." alt="" coords="32,5,172,31"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="105,45,105,93,99,93,99,45"/>
+<area shape="rect" id="Node000007" href="$classmata_1_1utils_1_1SparseSet.html" title=" " alt="" coords="172,256,323,281"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="250,295,250,359,245,359,245,295"/>
+<area shape="rect" id="Node000008" href="$classmata_1_1utils_1_1SparseSet.html" title="Implementation of a set of non&#45;negative numbers using sparse&#45;set." alt="" coords="169,168,339,193"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="255,207,251,256,246,255,249,207"/>
+<area shape="rect" id="Node000009" href="$classmata_1_1Alphabet.html" title="The abstract interface for NFA alphabets." alt="" coords="347,256,427,281"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="362,291,265,361,262,356,359,287"/>
+</map>

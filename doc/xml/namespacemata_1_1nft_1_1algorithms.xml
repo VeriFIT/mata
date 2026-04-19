@@ -1,0 +1,592 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nft_1_1algorithms" kind="namespace" language="C++">
+    <compoundname>mata::nft::algorithms</compoundname>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a34943c219e78c992d959bce4ed9dd778" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft minimize_brzozowski</definition>
+        <argsstring>(const Nft &amp;aut)</argsstring>
+        <name>minimize_brzozowski</name>
+        <qualifiedname>mata::nft::algorithms::minimize_brzozowski</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+<para>Brzozowski minimization of automata (revert -&gt; determinize -&gt; revert -&gt; determinize). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to be minimized. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Minimized automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="34" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="34" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a9760601b6501359b97409b9ae8e1f9bf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft complement_classical</definition>
+        <argsstring>(const Nft &amp;aut, const mata::utils::OrdVector&lt; Symbol &gt; &amp;symbols, bool minimize_during_determinization=false)</argsstring>
+        <name>complement_classical</name>
+        <qualifiedname>mata::nft::algorithms::complement_classical</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt; &amp;</type>
+          <declname>symbols</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>minimize_during_determinization</declname>
+          <defval>false</defval>
+        </param>
+        <briefdescription>
+<para>Complement implemented by determization, adding sink state and making automaton complete. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Then it adds final states which were non final in the original automaton. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to be complemented. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">symbols</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbols needed to make the automaton complete. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">minimize_during_determinization</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether the determinized automaton is computed by (brzozowski) minimization. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Complemented automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="45" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="45" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1abdbc499a4878f718a2ff89fc27e3e114" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_included_naive</definition>
+        <argsstring>(const Nft &amp;smaller, const Nft &amp;bigger, const Alphabet *alphabet=nullptr, Run *cex=nullptr, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>is_included_naive</name>
+        <qualifiedname>mata::nft::algorithms::is_included_naive</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>smaller</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>bigger</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" kindref="member">Run</ref> *</type>
+          <declname>cex</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then it checks emptiness of intersection. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">smaller</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton which language should be included in the bigger one. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">bigger</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton which language should include the smaller one. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both automata (it is computed automatically, but it is more efficient to set it if you have it). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">cex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A potential counterexample word which breaks inclusion </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="59" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="59" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a3e2ac599e61d5f746ef7ac9e8de8d88d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_included_antichains</definition>
+        <argsstring>(const Nft &amp;smaller, const Nft &amp;bigger, const Alphabet *alphabet=nullptr, Run *cex=nullptr, JumpMode jump_mode=JumpMode::RepeatSymbol)</argsstring>
+        <name>is_included_antichains</name>
+        <qualifiedname>mata::nft::algorithms::is_included_antichains</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>smaller</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>bigger</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" kindref="member">Run</ref> *</type>
+          <declname>cex</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <briefdescription>
+<para>Inclusion implemented by antichain algorithms. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">smaller</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton which language should be included in the bigger one </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">bigger</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton which language should include the smaller one </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both automata (not needed for antichain algorithm) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">cex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A potential counterexample word which breaks inclusion </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="70" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="70" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a32d064886e377a191b4b1b7845fba52e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_universal_naive</definition>
+        <argsstring>(const Nft &amp;aut, const Alphabet &amp;alphabet, Run *cex)</argsstring>
+        <name>is_universal_naive</name>
+        <qualifiedname>mata::nft::algorithms::is_universal_naive</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" kindref="member">Run</ref> *</type>
+          <declname>cex</declname>
+        </param>
+        <briefdescription>
+<para>Universality check implemented by checking emptiness of complemented automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton which universality is checked </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of the automaton </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">cex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Counterexample word which eventually breaks the universality </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if the complemented automaton has non empty language, i.e., the original one is not universal </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="79" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="79" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a20027d158eed79752ce1108587694fef" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_universal_antichains</definition>
+        <argsstring>(const Nft &amp;aut, const Alphabet &amp;alphabet, Run *cex)</argsstring>
+        <name>is_universal_antichains</name>
+        <qualifiedname>mata::nft::algorithms::is_universal_antichains</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1af5557e40ee425f72e854e0b40bab1cb3" kindref="member">Run</ref> *</type>
+          <declname>cex</declname>
+        </param>
+        <briefdescription>
+<para>Universality checking based on subset construction with antichain. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton which universality is checked </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of the automaton </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">cex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Counterexample word which eventually breaks the universality </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if the automaton is universal, otherwise false. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="88" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="88" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1ac21abf93f5a0ddb85ea42d1039331442" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>Simlib::Util::BinaryRelation</type>
+        <definition>Simlib::Util::BinaryRelation compute_relation</definition>
+        <argsstring>(const Nft &amp;aut, const ParameterMap &amp;params={{ &quot;relation&quot;, &quot;simulation&quot;}, { &quot;direction&quot;, &quot;forward&quot;}})</argsstring>
+        <name>compute_relation</name>
+        <qualifiedname>mata::nft::algorithms::compute_relation</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;relation&quot;, &quot;simulation&quot;}, { &quot;direction&quot;, &quot;forward&quot;}}</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="90" column="30" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="90" declcolumn="30"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a3223ffde269a9e2cff960ed458504862" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft product</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, const std::function&lt; bool(State, State)&gt; &amp;&amp;final_condition, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map=nullptr, JumpMode jump_mode=JumpMode::RepeatSymbol, const State lhs_first_aux_state=Limits::max_state, const State rhs_first_aux_state=Limits::max_state)</argsstring>
+        <name>product</name>
+        <qualifiedname>mata::nft::algorithms::product</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const std::function&lt; bool(<ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref>)&gt; &amp;&amp;</type>
+          <declname>final_condition</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>lhs_first_aux_state</declname>
+          <defval><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">Limits::max_state</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>rhs_first_aux_state</declname>
+          <defval><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">Limits::max_state</ref></defval>
+        </param>
+        <briefdescription>
+<para>Compute product of two NFTs, final condition is to be specified. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First NFT to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second NFT to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">final_condition</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The predicate that tells whether a pair of states is final (conjunction for intersection). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">prod_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Can be used to get the mapping of the pairs of the original states to product states. Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures, because this one is too slow. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_first_aux_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The first auxiliary state in <computeroutput>lhs</computeroutput>. Two auxiliary states can not form a product state. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_first_aux_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The first auxiliary state in <computeroutput>rhs</computeroutput>. Two auxiliary states con not form a product state. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFT as a product of NFTs <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> with ε handled as regular symbols. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="109" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="109" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1algorithms_1a66c4f8dc2ef63d77a52b5571baf0e1e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref></type>
+        <definition>Nft concatenate_eps</definition>
+        <argsstring>(const Nft &amp;lhs, const Nft &amp;rhs, const Symbol &amp;epsilon, bool use_epsilon=false, StateRenaming *lhs_state_renaming=nullptr, StateRenaming *rhs_state_renaming=nullptr)</argsstring>
+        <name>concatenate_eps</name>
+        <qualifiedname>mata::nft::algorithms::concatenate_eps</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &amp;</type>
+          <declname>epsilon</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>use_epsilon</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>lhs_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>rhs_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Concatenate two NFTs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Supports epsilon symbols when <computeroutput>use_epsilon</computeroutput> is set to true. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Epsilon to be used for concatenation (provided <computeroutput>use_epsilon</computeroutput> is true) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">use_epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to concatenate over epsilon symbol. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">lhs_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping lhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">rhs_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping rhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Concatenated automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="125" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" declline="125" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Concrete NFT implementations of algorithms, such as complement, inclusion, or universality checking. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This is a separation of the implementation from the interface defined in <ref refid="namespacemata_1_1nft" kindref="compound">mata::nft</ref>. Note, that in <ref refid="namespacemata_1_1nft" kindref="compound">mata::nft</ref> interface, there are particular dispatch functions calling these function according to parameters provided by a user. E.g. we can call the following function: <lsquo/>is_universal(aut, alph, {{&apos;algorithm<rsquo/>, &apos;antichains&apos;}})` to check for universality based on antichain-based algorithm.</para>
+<para>In particular, this includes algorithms for:<orderedlist>
+<listitem><para>Complementation,</para>
+</listitem><listitem><para>Inclusion,</para>
+</listitem><listitem><para>Universality checking,</para>
+</listitem><listitem><para>Intersection/concatenation with epsilon transitions, or,</para>
+</listitem><listitem><para>Computing relation. </para>
+</listitem></orderedlist>
+</para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh" line="27" column="1"/>
+  </compounddef>
+</doxygen>

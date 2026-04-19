@@ -1,0 +1,255 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1FormulaGraph" kind="class" language="C++" prot="public">
+    <compoundname>mata::FormulaGraph</compoundname>
+    <includes refid="inter-aut_8hh" local="no">inter-aut.hh</includes>
+    <sectiondef kind="private-static-attrib">
+      <memberdef kind="variable" id="classmata_1_1FormulaGraph_1a96235d38125bd5c0d07492bf90af94fc" prot="private" static="yes" constexpr="yes" mutable="no">
+        <type>constexpr size_t</type>
+        <definition>constexpr size_t MAX_NUM_OF_CHILDREN</definition>
+        <argsstring></argsstring>
+        <name>MAX_NUM_OF_CHILDREN</name>
+        <qualifiedname>mata::FormulaGraph::MAX_NUM_OF_CHILDREN</qualifiedname>
+        <initializer>{ 2 }</initializer>
+        <briefdescription>
+<para>Maximal number of <computeroutput><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref></computeroutput> children in any <computeroutput><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref></computeroutput> node (for AND, OR nodes). Only one (NOT node) or zero (<computeroutput><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref></computeroutput> node) children may be used. Used as an optimalization by preallocating <computeroutput>children</computeroutput> at node initialization. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="118" column="29" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="118" bodyend="118"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37" prot="public" static="no" mutable="no">
+        <type><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref></type>
+        <definition>FormulaNode node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>mata::FormulaGraph::node</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="120" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="120" bodyend="120"/>
+        <referencedby refid="classmata_1_1FormulaGraph_1a7ccd5ac1047ea7996971ee0e6ff08028" compoundref="inter-aut_8hh" startline="126" endline="126">FormulaGraph::FormulaGraph</referencedby>
+        <referencedby refid="classmata_1_1FormulaGraph_1a204e364da9d95810c827a88b11d3fd6e" compoundref="inter-aut_8hh" startline="124" endline="124">FormulaGraph::FormulaGraph</referencedby>
+        <referencedby refid="classmata_1_1FormulaGraph_1a0af055b4b777637b96988137228cd144" compoundref="inter-aut_8hh" startline="127" endline="127">FormulaGraph::FormulaGraph</referencedby>
+        <referencedby refid="classmata_1_1FormulaGraph_1ac6374cbd0c0554f712ba1d6402f5924e" compoundref="inter-aut_8hh" startline="125" endline="125">FormulaGraph::FormulaGraph</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1FormulaGraph_1ab82357d5a1628f761bb4f0744610f96d" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &gt;</type>
+        <definition>std::vector&lt;FormulaGraph&gt; children</definition>
+        <argsstring></argsstring>
+        <name>children</name>
+        <qualifiedname>mata::FormulaGraph::children</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="121" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="121" bodyend="121"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1a8380d0306841d2cdf9ef8b5f14ea5e4a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>FormulaGraph</definition>
+        <argsstring>()=default</argsstring>
+        <name>FormulaGraph</name>
+        <qualifiedname>mata::FormulaGraph::FormulaGraph</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="123" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1a204e364da9d95810c827a88b11d3fd6e" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaGraph</definition>
+        <argsstring>(const FormulaNode &amp;n)</argsstring>
+        <name>FormulaGraph</name>
+        <qualifiedname>mata::FormulaGraph::FormulaGraph</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>n</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="124" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="124" bodyend="124"/>
+        <references refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</references>
+        <references refid="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37" compoundref="inter-aut_8hh" startline="120" endline="120">FormulaGraph::node</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1ac6374cbd0c0554f712ba1d6402f5924e" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaGraph</definition>
+        <argsstring>(FormulaNode &amp;&amp;n)</argsstring>
+        <name>FormulaGraph</name>
+        <qualifiedname>mata::FormulaGraph::FormulaGraph</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;&amp;</type>
+          <declname>n</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="125" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="125" bodyend="125"/>
+        <references refid="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37" compoundref="inter-aut_8hh" startline="120" endline="120">FormulaGraph::node</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1a7ccd5ac1047ea7996971ee0e6ff08028" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaGraph</definition>
+        <argsstring>(const FormulaGraph &amp;g)</argsstring>
+        <name>FormulaGraph</name>
+        <qualifiedname>mata::FormulaGraph::FormulaGraph</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+          <declname>g</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="126" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="126" bodyend="126"/>
+        <references refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</references>
+        <references refid="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37" compoundref="inter-aut_8hh" startline="120" endline="120">FormulaGraph::node</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1a0af055b4b777637b96988137228cd144" prot="public" static="no" const="no" explicit="no" inline="yes" noexcept="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaGraph</definition>
+        <argsstring>(FormulaGraph &amp;&amp;g) noexcept</argsstring>
+        <name>FormulaGraph</name>
+        <qualifiedname>mata::FormulaGraph::FormulaGraph</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;&amp;</type>
+          <declname>g</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="127" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="127" bodyend="127"/>
+        <references refid="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37" compoundref="inter-aut_8hh" startline="120" endline="120">FormulaGraph::node</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1af85a15a09d7c0edb54ff09369323759a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+        <definition>FormulaGraph &amp; operator=</definition>
+        <argsstring>(const mata::FormulaGraph &amp;)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::FormulaGraph::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1FormulaGraph" kindref="compound">mata::FormulaGraph</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="129" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1a42bb2ffa309f5f61e0ffea22e87c906e" prot="public" static="no" const="no" explicit="no" inline="no" noexcept="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1FormulaGraph" kindref="compound">FormulaGraph</ref> &amp;</type>
+        <definition>FormulaGraph &amp; operator=</definition>
+        <argsstring>(mata::FormulaGraph &amp;&amp;) noexcept=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::FormulaGraph::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1FormulaGraph" kindref="compound">mata::FormulaGraph</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="130" column="18"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1a14e2f30d106edf94daacf571071c8eac" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::unordered_set&lt; std::string &gt;</type>
+        <definition>std::unordered_set&lt; std::string &gt; collect_node_names</definition>
+        <argsstring>() const</argsstring>
+        <name>collect_node_names</name>
+        <qualifiedname>mata::FormulaGraph::collect_node_names</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="132" column="24"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1FormulaGraph_1adcde51b2076924fde7ee4b99240d7160" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void print_tree</definition>
+        <argsstring>(std::ostream &amp;os) const</argsstring>
+        <name>print_tree</name>
+        <qualifiedname>mata::FormulaGraph::print_tree</qualifiedname>
+        <param>
+          <type>std::ostream &amp;</type>
+          <declname>os</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="133" column="10"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Structure representing a transition formula using a graph. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>A node of graph consists of node itself and set of children nodes. Nodes are operators and operands of the formula. E.g., a formula q1 &amp; s1 will be transformed to a tree with &amp; as a root node and q1 and s2 being children nodes of the root. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>FormulaGraph</label>
+        <link refid="classmata_1_1FormulaGraph"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>FormulaNode</label>
+        <link refid="structmata_1_1FormulaNode"/>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="113" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="113" bodyend="134"/>
+    <listofallmembers>
+      <member refid="classmata_1_1FormulaGraph_1ab82357d5a1628f761bb4f0744610f96d" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>children</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a14e2f30d106edf94daacf571071c8eac" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>collect_node_names</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a8380d0306841d2cdf9ef8b5f14ea5e4a" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>FormulaGraph</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a204e364da9d95810c827a88b11d3fd6e" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>FormulaGraph</name></member>
+      <member refid="classmata_1_1FormulaGraph_1ac6374cbd0c0554f712ba1d6402f5924e" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>FormulaGraph</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a7ccd5ac1047ea7996971ee0e6ff08028" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>FormulaGraph</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a0af055b4b777637b96988137228cd144" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>FormulaGraph</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a96235d38125bd5c0d07492bf90af94fc" prot="private" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>MAX_NUM_OF_CHILDREN</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a33da4fdd19e82c714a38a32bd2deca37" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>node</name></member>
+      <member refid="classmata_1_1FormulaGraph_1af85a15a09d7c0edb54ff09369323759a" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>operator=</name></member>
+      <member refid="classmata_1_1FormulaGraph_1a42bb2ffa309f5f61e0ffea22e87c906e" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>operator=</name></member>
+      <member refid="classmata_1_1FormulaGraph_1adcde51b2076924fde7ee4b99240d7160" prot="public" virt="non-virtual"><scope>mata::FormulaGraph</scope><name>print_tree</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

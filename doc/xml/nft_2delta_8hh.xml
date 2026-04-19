@@ -1,0 +1,299 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="nft_2delta_8hh" kind="file" language="C++">
+    <compoundname>delta.hh</compoundname>
+    <includes refid="sparse-set_8hh" local="yes">mata/utils/sparse-set.hh</includes>
+    <includes refid="synchronized-iterator_8hh" local="yes">mata/utils/synchronized-iterator.hh</includes>
+    <includes refid="alphabet_8hh" local="yes">mata/alphabet.hh</includes>
+    <includes refid="nft_2types_8hh" local="yes">mata/nft/types.hh</includes>
+    <includes refid="nfa_2delta_8hh" local="yes">mata/nfa/delta.hh</includes>
+    <includes local="no">iterator</includes>
+    <includedby refid="nft_8hh" local="yes">/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</includedby>
+    <incdepgraph>
+      <node id="21">
+        <label>mata/alphabet.hh</label>
+        <link refid="alphabet_8hh"/>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>mata/nfa/delta.hh</label>
+        <link refid="nfa_2delta_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>mata/nfa/types.hh</label>
+        <link refid="nfa_2types_8hh"/>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</label>
+        <link refid="nft_2delta_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>mata/nft/types.hh</label>
+        <link refid="nft_2types_8hh"/>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>mata/parser/parser.hh</label>
+        <link refid="parser_8hh"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>ord-vector.hh</label>
+        <link refid="ord-vector_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>mata/utils/sparse-set.hh</label>
+        <link refid="sparse-set_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>mata/utils/synchronized-iterator.hh</label>
+        <link refid="synchronized-iterator_8hh"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>utils.hh</label>
+        <link refid="utils_8hh"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>algorithm</label>
+      </node>
+      <node id="5">
+        <label>cassert</label>
+      </node>
+      <node id="3">
+        <label>concepts</label>
+      </node>
+      <node id="19">
+        <label>cstdint</label>
+      </node>
+      <node id="22">
+        <label>forward_list</label>
+      </node>
+      <node id="11">
+        <label>functional</label>
+      </node>
+      <node id="12">
+        <label>iostream</label>
+      </node>
+      <node id="4">
+        <label>iterator</label>
+      </node>
+      <node id="29">
+        <label>limits</label>
+      </node>
+      <node id="13">
+        <label>list</label>
+      </node>
+      <node id="14">
+        <label>map</label>
+      </node>
+      <node id="28">
+        <label>ostream</label>
+      </node>
+      <node id="15">
+        <label>set</label>
+      </node>
+      <node id="16">
+        <label>sstream</label>
+      </node>
+      <node id="17">
+        <label>stack</label>
+      </node>
+      <node id="23">
+        <label>string</label>
+      </node>
+      <node id="7">
+        <label>type_traits</label>
+      </node>
+      <node id="18">
+        <label>unordered_map</label>
+      </node>
+      <node id="24">
+        <label>utility</label>
+      </node>
+      <node id="6">
+        <label>vector</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="3">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh</label>
+        <link refid="strings_8hh"/>
+      </node>
+      <node id="4">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/algorithms.hh</label>
+        <link refid="nft_2algorithms_8hh"/>
+      </node>
+      <node id="5">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/builder.hh</label>
+        <link refid="nft_2builder_8hh"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh</label>
+        <link refid="nft_2delta_8hh"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh</label>
+        <link refid="nft_8hh"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh</label>
+        <link refid="nft_2plumbing_8hh"/>
+      </node>
+    </invincdepgraph>
+    <innernamespace refid="namespacemata">mata</innernamespace>
+    <innernamespace refid="namespacemata_1_1nft">mata::nft</innernamespace>
+    <briefdescription>
+<para>Data structures representing the delta (transition function) of an NFT, mapping states and input symbols to sets of states where a single NFT transition comprises a sequence of (NFA) transitions in <computeroutput><ref refid="namespacemata_1_1nft_1a7d4198ab11320a2e080b1fe3006a1179" kindref="member">mata::nft::Delta</ref></computeroutput>. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">/**<sp/>@file</highlight></codeline>
+<codeline lineno="2"><highlight class="comment"><sp/>*<sp/>@brief<sp/>Data<sp/>structures<sp/>representing<sp/>the<sp/>delta<sp/>(transition<sp/>function)<sp/>of<sp/>an<sp/>NFT,<sp/>mapping<sp/>states<sp/>and<sp/>input<sp/>symbols<sp/>to</highlight></codeline>
+<codeline lineno="3"><highlight class="comment"><sp/>*<sp/><sp/>sets<sp/>of<sp/>states<sp/>where<sp/>a<sp/>single<sp/>NFT<sp/>transition<sp/>comprises<sp/>a<sp/>sequence<sp/>of<sp/>(NFA)<sp/>transitions<sp/>in<sp/>@c<sp/>mata::nft::Delta.</highlight></codeline>
+<codeline lineno="4"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>MATA_NFT_DELTA_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>MATA_NFT_DELTA_HH</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="sparse-set_8hh" kindref="compound">mata/utils/sparse-set.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="synchronized-iterator_8hh" kindref="compound">mata/utils/synchronized-iterator.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="alphabet_8hh" kindref="compound">mata/alphabet.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="nft_2types_8hh" kindref="compound">mata/nft/types.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="nfa_2delta_8hh" kindref="compound">mata/nfa/delta.hh</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;iterator&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacemata_1_1nft" kindref="compound">mata::nft</ref><sp/>{</highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20" refid="namespacemata_1_1nft_1a9bead4c2acf85d4757cadd81eb9600de" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">Transition</ref><sp/>=<sp/><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">mata::nfa::Transition</ref>;</highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="22" refid="namespacemata_1_1nft_1a90f1e3a9c7bf925f28d40e1932bad730" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1nfa_1_1Move" kindref="compound">Move</ref><sp/>=<sp/><ref refid="classmata_1_1nfa_1_1Move" kindref="compound">mata::nfa::Move</ref>;</highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight></codeline>
+<codeline lineno="24" refid="namespacemata_1_1nft_1a4008bd015048f38a6223963f30d65c2c" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref><sp/>=<sp/><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">mata::nfa::SymbolPost</ref>;</highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight></codeline>
+<codeline lineno="26" refid="namespacemata_1_1nft_1a77b7eae9ec734132800451cc559dd7f2" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1nfa_1_1StatePost" kindref="compound">StatePost</ref><sp/>=<sp/><ref refid="classmata_1_1nfa_1_1StatePost" kindref="compound">mata::nfa::StatePost</ref>;</highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="namespacemata_1_1nft_1a99204ac025ce35e7b2d6ddfe92825e2e" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator" kindref="compound">SynchronizedExistentialSymbolPostIterator</ref><sp/>=<sp/><ref refid="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator" kindref="compound">mata::nfa::SynchronizedExistentialSymbolPostIterator</ref>;</highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30" refid="namespacemata_1_1nft_1a7d4198ab11320a2e080b1fe3006a1179" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">using<sp/></highlight><highlight class="normal"><ref refid="classmata_1_1nfa_1_1Delta" kindref="compound">Delta</ref><sp/>=<sp/><ref refid="classmata_1_1nfa_1_1Delta" kindref="compound">mata::nfa::Delta</ref>;</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>mata::nft.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/></highlight><highlight class="comment">//MATA_DELTA_HH</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/delta.hh"/>
+  </compounddef>
+</doxygen>

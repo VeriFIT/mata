@@ -15,7 +15,7 @@ using Symbol = mata::Symbol;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
-using Word = std::vector<Symbol>;
+using Word = mata::Word;
 
 TEST_CASE("parse_from_mata()") {
     Delta delta;

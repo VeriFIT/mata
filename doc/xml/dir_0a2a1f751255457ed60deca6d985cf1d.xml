@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_0a2a1f751255457ed60deca6d985cf1d" kind="dir">
+    <compoundname>/home/misa/Dokumenty/Nfa/mata/include/mata</compoundname>
+    <innerdir refid="dir_175efc0fe12d1541d4d775c4b885c4ec">/home/misa/Dokumenty/Nfa/mata/include/mata/applications</innerdir>
+    <innerdir refid="dir_1110ee07d3313c9db4fb351116d594be">/home/misa/Dokumenty/Nfa/mata/include/mata/nfa</innerdir>
+    <innerdir refid="dir_e99c6a26443b8f2f7611cfc4932749ca">/home/misa/Dokumenty/Nfa/mata/include/mata/nft</innerdir>
+    <innerdir refid="dir_fcf66c3def24b16b597d3e301e816f7a">/home/misa/Dokumenty/Nfa/mata/include/mata/parser</innerdir>
+    <innerdir refid="dir_040d966aabe0e2806331dd800437e339">/home/misa/Dokumenty/Nfa/mata/include/mata/utils</innerdir>
+    <innerfile refid="alphabet_8hh">alphabet.hh</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/"/>
+  </compounddef>
+</doxygen>

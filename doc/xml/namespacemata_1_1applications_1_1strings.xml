@@ -1,0 +1,265 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1applications_1_1strings" kind="namespace" language="C++">
+    <compoundname>mata::applications::strings</compoundname>
+    <innerclass refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap" prot="public">mata::applications::strings::ShortestWordsMap</innerclass>
+    <innernamespace refid="namespacemata_1_1applications_1_1strings_1_1replace">mata::applications::strings::replace</innernamespace>
+    <innernamespace refid="namespacemata_1_1applications_1_1strings_1_1seg__nfa">mata::applications::strings::seg_nfa</innernamespace>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>using Nfa =  nfa::Nfa</definition>
+        <argsstring></argsstring>
+        <name>Nfa</name>
+        <qualifiedname>mata::applications::strings::Nfa</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="16" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="16" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">nfa::State</ref></type>
+        <definition>using State =  nfa::State</definition>
+        <argsstring></argsstring>
+        <name>State</name>
+        <qualifiedname>mata::applications::strings::State</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="17" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="17" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1ae220f765dbf6b25f180c93a70e2254ab" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">nfa::StateSet</ref></type>
+        <definition>using StateSet =  nfa::StateSet</definition>
+        <argsstring></argsstring>
+        <name>StateSet</name>
+        <qualifiedname>mata::applications::strings::StateSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="18" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="18" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1a2565e0656e286a0995e445d3139bcb84" prot="public" static="no">
+        <type><ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">nfa::Transition</ref></type>
+        <definition>using Transition =  nfa::Transition</definition>
+        <argsstring></argsstring>
+        <name>Transition</name>
+        <qualifiedname>mata::applications::strings::Transition</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="19" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="19" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1a82dcfa0149be0c3657d9d84df77f25b6" prot="public" static="no">
+        <type><ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">nfa::ParameterMap</ref></type>
+        <definition>using ParameterMap =  nfa::ParameterMap</definition>
+        <argsstring></argsstring>
+        <name>ParameterMap</name>
+        <qualifiedname>mata::applications::strings::ParameterMap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="20" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="20" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1a83dd6a20375ea187f1c3a481655dbb71" prot="public" static="no">
+        <type><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">nfa::SymbolPost</ref></type>
+        <definition>using SymbolPost =  nfa::SymbolPost</definition>
+        <argsstring></argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::applications::strings::SymbolPost</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="21" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="21" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" prot="public" static="no">
+        <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">nft::Nft</ref></type>
+        <definition>using Nft =  nft::Nft</definition>
+        <argsstring></argsstring>
+        <name>Nft</name>
+        <qualifiedname>mata::applications::strings::Nft</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="23" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="23" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1add73834b80041ef11f449d8773c56706" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::set&lt; <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &gt;</type>
+        <definition>std::set&lt; Word &gt; get_shortest_words</definition>
+        <argsstring>(const Nfa &amp;nfa)</argsstring>
+        <name>get_shortest_words</name>
+        <qualifiedname>mata::applications::strings::get_shortest_words</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <briefdescription>
+<para>Get shortest words (regarding their length) of the automaton using BFS. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>Set of shortest words. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="103" column="10" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="103" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1a0c90500cfdd8978e5e6152e4f2ef4ee7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::optional&lt; std::vector&lt; <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &gt; &gt;</type>
+        <definition>std::optional&lt; std::vector&lt; Word &gt; &gt; get_words_of_lengths</definition>
+        <argsstring>(const Nft &amp;nft, std::vector&lt; unsigned &gt; lengths)</argsstring>
+        <name>get_words_of_lengths</name>
+        <qualifiedname>mata::applications::strings::get_words_of_lengths</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref> &amp;</type>
+          <declname>nft</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; unsigned &gt;</type>
+          <declname>lengths</declname>
+        </param>
+        <briefdescription>
+<para>Get the accepting words for each tape of <computeroutput>nft</computeroutput> with specific lengths. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This function finds such an accepting word of <computeroutput>nft</computeroutput> that for each tape i, the word on this tape (on the ith index of resulting vector) has the length lengths[i].</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nft</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Transducer whose accepting words we are looking for </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>lengths</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The lengths of the words of each tape (size of lengths == the levels of <computeroutput>nft</computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>std::optional&lt;std::vector&lt;Word&gt;&gt; Either the resulting words of tapes, or std::nullopt if such words of specific lengths do not exist </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="115" column="15" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="115" declcolumn="15"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1aeb0ca0d834b83d49a9c760b54393670a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::set&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt;</type>
+        <definition>std::set&lt; Symbol &gt; get_accepted_symbols</definition>
+        <argsstring>(const Nfa &amp;nfa)</argsstring>
+        <name>get_accepted_symbols</name>
+        <qualifiedname>mata::applications::strings::get_accepted_symbols</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <briefdescription>
+<para>Get all the one symbol words accepted by <computeroutput>nfa</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="120" column="10" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="120" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1aa4c8b64197df357c9c50287abdf8c95e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::set&lt; std::pair&lt; int, int &gt; &gt;</type>
+        <definition>std::set&lt; std::pair&lt; int, int &gt; &gt; get_word_lengths</definition>
+        <argsstring>(const Nfa &amp;aut)</argsstring>
+        <name>get_word_lengths</name>
+        <qualifiedname>mata::applications::strings::get_word_lengths</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+<para>Get the lengths of all words in the automaton <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The function returns a set of pairs &lt;u,v&gt; where for each such a pair there is a word with length u+k*v for all ks. The disjunction of such formulae of all pairs hence precisely describe lengths of all words in the automaton.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Input automaton </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Set of pairs describing lengths </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="130" column="10" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="130" declcolumn="10"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1applications_1_1strings_1aa407884a08dab64170b80f74954c2588" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_lang_eps</definition>
+        <argsstring>(const Nfa &amp;nfa)</argsstring>
+        <name>is_lang_eps</name>
+        <qualifiedname>mata::applications::strings::is_lang_eps</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <briefdescription>
+<para>Checks if the automaton <computeroutput>nfa</computeroutput> accepts only a single word \eps. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nfa</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Input automaton </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true iff L(nfa) = {\eps} </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="138" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" declline="138" declcolumn="6"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Operations on NFAs/NFTs used for string constraint solving. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="14" column="1"/>
+  </compounddef>
+</doxygen>

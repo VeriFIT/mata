@@ -1,0 +1,432 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap" kind="class" language="C++" prot="public">
+    <compoundname>mata::applications::strings::ShortestWordsMap</compoundname>
+    <includes refid="strings_8hh" local="no">strings.hh</includes>
+    <sectiondef kind="private-type">
+      <memberdef kind="typedef" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a7418267500e7eb393f0501c5dd0b0a6b" prot="private" static="no">
+        <type>int</type>
+        <definition>using WordLength =  int</definition>
+        <argsstring></argsstring>
+        <name>WordLength</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::WordLength</qualifiedname>
+        <briefdescription>
+<para>A length of a word. Pair binding the length of all words in the word set and word set with words of the given length. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="54" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="55" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a664a18add2ec71fb551f32b0b3e35474" prot="private" static="no">
+        <type>std::pair&lt; <ref refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a7418267500e7eb393f0501c5dd0b0a6b" kindref="member">WordLength</ref>, std::set&lt; <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &gt; &gt;</type>
+        <definition>using LengthWordsPair =  std::pair&lt;WordLength, std::set&lt;Word&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>LengthWordsPair</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::LengthWordsPair</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="56" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="56" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a2efcc19032547620b0aa28abe02990a9" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref>, <ref refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a664a18add2ec71fb551f32b0b3e35474" kindref="member">LengthWordsPair</ref> &gt;</type>
+        <definition>std::unordered_map&lt;State, LengthWordsPair&gt; shortest_words_map</definition>
+        <argsstring></argsstring>
+        <name>shortest_words_map</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::shortest_words_map</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+<para>Map mapping states to the shortest words accepted by the automaton from the mapped state. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="58" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="58" bodyend="58"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a14f8f2e9931e2cddaf6d7b306fa985c7" prot="private" static="no" mutable="no">
+        <type>std::set&lt; <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref> &gt;</type>
+        <definition>std::set&lt;State&gt; processed</definition>
+        <argsstring></argsstring>
+        <name>processed</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::processed</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+<para>Set of already processed states. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="59" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="59" bodyend="59"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a7b7c7ec706ff57ceb02174906ed16e38" prot="private" static="no" mutable="no">
+        <type>std::deque&lt; <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref> &gt;</type>
+        <definition>std::deque&lt;State&gt; fifo_queue</definition>
+        <argsstring></argsstring>
+        <name>fifo_queue</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::fifo_queue</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+<para>FIFO queue for states to process. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="60" column="16" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="60" bodyend="60"/>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a9ad4d0d74c778cb7c8e64248b965f266" prot="private" static="no" mutable="no">
+        <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref></type>
+        <definition>const Nfa reversed_automaton</definition>
+        <argsstring></argsstring>
+        <name>reversed_automaton</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::reversed_automaton</qualifiedname>
+        <briefdescription>
+<para>Reversed input automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="61" column="15" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="61" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1ab31499aeb664bc60f387a1fcd92663b1" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>ShortestWordsMap</definition>
+        <argsstring>(const Nfa &amp;aut)</argsstring>
+        <name>ShortestWordsMap</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::ShortestWordsMap</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+<para>Maps states in the automaton <computeroutput>aut</computeroutput> to shortest words accepted by languages of the states. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to compute shortest words for. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="34" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="34" bodyend="37"/>
+        <references refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a4993c97a669fa259c6574a18d547c117">ShortestWordsMap::compute</references>
+        <references refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1afe61faf341759b22e21f1cf63bc1c01b">ShortestWordsMap::insert_initial_lengths</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a20b63519b6ac406e02dbe60578052af1" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::set&lt; <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &gt;</type>
+        <definition>std::set&lt; Word &gt; get_shortest_words_from</definition>
+        <argsstring>(const StateSet &amp;states) const</argsstring>
+        <name>get_shortest_words_from</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::get_shortest_words_from</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1ae220f765dbf6b25f180c93a70e2254ab" kindref="member">StateSet</ref> &amp;</type>
+          <declname>states</declname>
+        </param>
+        <briefdescription>
+<para>Gets shortest words for the given <computeroutput>states</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">states</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>States to map shortest words for. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Set of shortest words. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="44" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a3aeb62bb61dbcf4f11a2319738c139ee" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::set&lt; <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &gt;</type>
+        <definition>std::set&lt; Word &gt; get_shortest_words_from</definition>
+        <argsstring>(State state) const</argsstring>
+        <name>get_shortest_words_from</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::get_shortest_words_from</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref></type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+<para>Gets shortest words for the given <computeroutput>state</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>State to map shortest words for. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Set of shortest words. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="51" column="14"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-func">
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1afe61faf341759b22e21f1cf63bc1c01b" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert_initial_lengths</definition>
+        <argsstring>()</argsstring>
+        <name>insert_initial_lengths</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::insert_initial_lengths</qualifiedname>
+        <briefdescription>
+<para>Inserts initial lengths into the shortest words map. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Inserts initial length of length 0 for final state in the automaton (initial states in the reversed automaton). </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="68" column="10"/>
+        <referencedby refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1ab31499aeb664bc60f387a1fcd92663b1" compoundref="strings_8hh" startline="34" endline="37">ShortestWordsMap::ShortestWordsMap</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a4993c97a669fa259c6574a18d547c117" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void compute</definition>
+        <argsstring>()</argsstring>
+        <name>compute</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::compute</qualifiedname>
+        <briefdescription>
+<para>Computes shortest words for all states in the automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="73" column="10"/>
+        <referencedby refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1ab31499aeb664bc60f387a1fcd92663b1" compoundref="strings_8hh" startline="34" endline="37">ShortestWordsMap::ShortestWordsMap</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a265f0bc58281c608a294a7be79951ccd" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void compute_for_state</definition>
+        <argsstring>(State state)</argsstring>
+        <name>compute_for_state</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::compute_for_state</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref></type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+<para>Computes shortest words for the given <computeroutput>state</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>State to compute shortest words for. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="79" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1aab452983232e8472a941d144d263db93" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a664a18add2ec71fb551f32b0b3e35474" kindref="member">LengthWordsPair</ref></type>
+        <definition>LengthWordsPair map_default_shortest_words</definition>
+        <argsstring>(const State state)</argsstring>
+        <name>map_default_shortest_words</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::map_default_shortest_words</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1applications_1_1strings_1abc4ffeac9a73ea9a3d839946d331f452" kindref="member">State</ref></type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+<para>Creates default shortest words mapping for yet unprocessed <computeroutput>state</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>State to map default shortest words. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Created default shortest words map element for the given <computeroutput>state</computeroutput>. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="86" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="86" bodyend="88"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="private-static-func">
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a9bce43e694164c23b03dc838ce8f849f" prot="private" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void update_current_words</definition>
+        <argsstring>(LengthWordsPair &amp;act, const LengthWordsPair &amp;dst, Symbol symbol)</argsstring>
+        <name>update_current_words</name>
+        <qualifiedname>mata::applications::strings::ShortestWordsMap::update_current_words</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a664a18add2ec71fb551f32b0b3e35474" kindref="member">LengthWordsPair</ref> &amp;</type>
+          <declname>act</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a664a18add2ec71fb551f32b0b3e35474" kindref="member">LengthWordsPair</ref> &amp;</type>
+          <declname>dst</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>symbol</declname>
+        </param>
+        <briefdescription>
+<para>Update words for the current state. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="out">act</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Current state shortest words and length. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">dst</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Transition target state shortest words and length. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to update with. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="96" column="17"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Class mapping states to the shortest words accepted by languages of the states. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="5">
+        <label>OrdVector&lt; SymbolPost &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+        <childnode refid="6" relation="template-instance">
+          <edgelabel>&lt; SymbolPost &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>ShortestWordsMap</label>
+        <link refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>reversed_automaton</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>SparseSet&lt; State &gt;</label>
+        <link refid="classmata_1_1utils_1_1SparseSet"/>
+        <childnode refid="8" relation="template-instance">
+          <edgelabel>&lt; State &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>Alphabet</label>
+        <link refid="classmata_1_1Alphabet"/>
+      </node>
+      <node id="3">
+        <label>Delta</label>
+        <link refid="classmata_1_1nfa_1_1Delta"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>empty_state_post</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>Nfa</label>
+        <link refid="classmata_1_1nfa_1_1Nfa"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>delta</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>final</edgelabel>
+          <edgelabel>initial</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>alphabet</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>StatePost</label>
+        <link refid="classmata_1_1nfa_1_1StatePost"/>
+        <childnode refid="5" relation="private-inheritance">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>OrdVector&lt; Key &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+      </node>
+      <node id="8">
+        <label>SparseSet&lt; Number &gt;</label>
+        <link refid="classmata_1_1utils_1_1SparseSet"/>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="28" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="28" bodyend="97"/>
+    <listofallmembers>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a4993c97a669fa259c6574a18d547c117" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>compute</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a265f0bc58281c608a294a7be79951ccd" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>compute_for_state</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a7b7c7ec706ff57ceb02174906ed16e38" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>fifo_queue</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a20b63519b6ac406e02dbe60578052af1" prot="public" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>get_shortest_words_from</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a3aeb62bb61dbcf4f11a2319738c139ee" prot="public" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>get_shortest_words_from</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1afe61faf341759b22e21f1cf63bc1c01b" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>insert_initial_lengths</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a664a18add2ec71fb551f32b0b3e35474" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>LengthWordsPair</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1aab452983232e8472a941d144d263db93" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>map_default_shortest_words</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a14f8f2e9931e2cddaf6d7b306fa985c7" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>processed</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a9ad4d0d74c778cb7c8e64248b965f266" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>reversed_automaton</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a2efcc19032547620b0aa28abe02990a9" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>shortest_words_map</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1ab31499aeb664bc60f387a1fcd92663b1" prot="public" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>ShortestWordsMap</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a9bce43e694164c23b03dc838ce8f849f" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>update_current_words</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1ShortestWordsMap_1a7418267500e7eb393f0501c5dd0b0a6b" prot="private" virt="non-virtual"><scope>mata::applications::strings::ShortestWordsMap</scope><name>WordLength</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

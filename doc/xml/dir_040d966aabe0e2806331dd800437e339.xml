@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_040d966aabe0e2806331dd800437e339" kind="dir">
+    <compoundname>/home/misa/Dokumenty/Nfa/mata/include/mata/utils</compoundname>
+    <innerfile refid="closed-set_8hh">closed-set.hh</innerfile>
+    <innerfile refid="ord-vector_8hh">ord-vector.hh</innerfile>
+    <innerfile refid="sparse-set_8hh">sparse-set.hh</innerfile>
+    <innerfile refid="synchronized-iterator_8hh">synchronized-iterator.hh</innerfile>
+    <innerfile refid="two-dimensional-map_8hh">two-dimensional-map.hh</innerfile>
+    <innerfile refid="utils_8hh">utils.hh</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/"/>
+  </compounddef>
+</doxygen>

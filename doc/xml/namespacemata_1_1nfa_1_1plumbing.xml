@@ -1,0 +1,470 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nfa_1_1plumbing" kind="namespace" language="C++">
+    <compoundname>mata::nfa::plumbing</compoundname>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1aef50003ae1db2b344e28a7b625b70ab2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void get_elements</definition>
+        <argsstring>(StateSet *element_set, const BoolVector &amp;bool_vec)</argsstring>
+        <name>get_elements</name>
+        <qualifiedname>mata::nfa::plumbing::get_elements</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref> *</type>
+          <declname>element_set</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+          <declname>bool_vec</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="25" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="25" bodyend="33"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a54692b0aa93378ffd7d63d1674376e2c" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void complement</definition>
+        <argsstring>(Nfa *result, const Nfa &amp;aut, const Alphabet &amp;alphabet, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;classical&quot;}, { &quot;minimize&quot;, &quot;false&quot;}})</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::nfa::plumbing::complement</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;classical&quot;}, { &quot;minimize&quot;, &quot;false&quot;}}</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="35" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="35" bodyend="41"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1ae3121067ad4aede884f7747bc5265f64" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void minimize</definition>
+        <argsstring>(Nfa *res, const Nfa &amp;aut, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;brzozowski&quot;}})</argsstring>
+        <name>minimize</name>
+        <qualifiedname>mata::nfa::plumbing::minimize</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;brzozowski&quot;}}</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="43" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="43" bodyend="43"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1ad887889a71c7c1ac8b828df62a710b26" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void determinize</definition>
+        <argsstring>(Nfa *result, const Nfa &amp;aut, std::unordered_map&lt; StateSet, State &gt; *subset_map=nullptr)</argsstring>
+        <name>determinize</name>
+        <qualifiedname>mata::nfa::plumbing::determinize</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; <ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; *</type>
+          <declname>subset_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="45" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="45" bodyend="47"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1aa4936d7ad8f71743d142c86e94780c22" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void reduce</definition>
+        <argsstring>(Nfa *result, const Nfa &amp;aut, StateRenaming *state_renaming=nullptr, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;simulation&quot;}})</argsstring>
+        <name>reduce</name>
+        <qualifiedname>mata::nfa::plumbing::reduce</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref> *</type>
+          <declname>state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;simulation&quot;}}</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="49" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="49" bodyend="52"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a280a12bfb2515a65712562261c730607" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void revert</definition>
+        <argsstring>(Nfa *result, const Nfa &amp;aut)</argsstring>
+        <name>revert</name>
+        <qualifiedname>mata::nfa::plumbing::revert</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="54" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="54" bodyend="54"/>
+        <references refid="classmata_1_1nfa_1_1Nfa_1a30c9e4c7f261d2b8afa1650d84329633">Nfa::operator=</references>
+        <references refid="namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6">mata::nfa::revert</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1aeaf14733bfecdc779252aa57d9b41c7e" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void remove_epsilon</definition>
+        <argsstring>(Nfa *result, const Nfa &amp;aut, Symbol epsilon=EPSILON)</argsstring>
+        <name>remove_epsilon</name>
+        <qualifiedname>mata::nfa::plumbing::remove_epsilon</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="56" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="56" bodyend="56"/>
+        <references refid="classmata_1_1nfa_1_1Nfa_1a30c9e4c7f261d2b8afa1650d84329633">Nfa::operator=</references>
+        <references refid="namespacemata_1_1nfa_1a425b35ef4ca53224ecb4c2839b9a8ecf">mata::nfa::remove_epsilon</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a1d4879183af775a2217ff38ccf83ba83" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class ParsedObject</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void construct</definition>
+        <argsstring>(Nfa *result, const ParsedObject &amp;parsed, Alphabet *alphabet=nullptr, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nfa::plumbing::construct</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const ParsedObject &amp;</type>
+          <declname>parsed</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="60" column="6" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="60" bodyend="65"/>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a098f2dd92d713a00695e868fb734db83" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void union_nondet</definition>
+        <argsstring>(Nfa *unionAutomaton, const Nfa &amp;lhs, const Nfa &amp;rhs)</argsstring>
+        <name>union_nondet</name>
+        <qualifiedname>mata::nfa::plumbing::union_nondet</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>unionAutomaton</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="67" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="67" bodyend="67"/>
+        <references refid="classmata_1_1nfa_1_1Nfa_1a30c9e4c7f261d2b8afa1650d84329633">Nfa::operator=</references>
+        <references refid="namespacemata_1_1nfa_1a869c4c062db9173a28bb7278290f29e5">mata::nfa::union_nondet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a11b5d4ff71f2bd8ef232ba7cb8993504" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void intersection</definition>
+        <argsstring>(Nfa *res, const Nfa &amp;lhs, const Nfa &amp;rhs, Symbol first_epsilon=EPSILON, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map=nullptr)</argsstring>
+        <name>intersection</name>
+        <qualifiedname>mata::nfa::plumbing::intersection</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>first_epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Compute intersection of two NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e., for each each product state <computeroutput>(s, t)</computeroutput> with<computeroutput>s -ε-&gt; p</computeroutput>, <computeroutput>(s, t) -ε-&gt; (p, t)</computeroutput> is created, and vice versa.</para>
+<para>Automata must share alphabets.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="out">res</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The resulting intersection NFA. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Input NFA. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Input NFA. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">first_epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>smallest epsilon. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">prod_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFA as a product of NFAs <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> with ε-transitions preserved. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="84" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="84" bodyend="87"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a7b01cae379c51416a338f04cb1936965" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void concatenate</definition>
+        <argsstring>(Nfa *res, const Nfa &amp;lhs, const Nfa &amp;rhs, bool use_epsilon=false, StateRenaming *lhs_result_state_renaming=nullptr, StateRenaming *rhs_result_state_renaming=nullptr)</argsstring>
+        <name>concatenate</name>
+        <qualifiedname>mata::nfa::plumbing::concatenate</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>use_epsilon</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref> *</type>
+          <declname>lhs_result_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref> *</type>
+          <declname>rhs_result_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Concatenate two NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="out">lhs_result_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping lhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">rhs_result_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping rhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="94" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="94" bodyend="97"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1abc1bc560caf40da85de1afe8b3d035e0" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void reduce_residual_with</definition>
+        <argsstring>(Nfa *res, const Nfa &amp;nfa)</argsstring>
+        <name>reduce_residual_with</name>
+        <qualifiedname>mata::nfa::plumbing::reduce_residual_with</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <briefdescription>
+<para>Reduce NFA using residual construction. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The residual construction of the residual automaton and the removal of the covering states is done during the last determinization.</para>
+<para>Similar performance to <computeroutput><ref refid="namespacemata_1_1nfa_1_1plumbing_1a4f2b43073c6729786d9ad5e7b0c92adf" kindref="member">reduce_residual_after()</ref></computeroutput>. The output is almost the same except the transitions: transitions may slightly differ, but the number of states is the same for both algorithm types. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="110" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="110" bodyend="112"/>
+        <references refid="classmata_1_1nfa_1_1Nfa_1a30c9e4c7f261d2b8afa1650d84329633">Nfa::operator=</references>
+        <references refid="namespacemata_1_1nfa_1_1algorithms_1a3c35109d318e1e2194102a746faa4d5b">mata::nfa::algorithms::reduce_residual_with</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1plumbing_1a4f2b43073c6729786d9ad5e7b0c92adf" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void reduce_residual_after</definition>
+        <argsstring>(Nfa *res, const Nfa &amp;nfa)</argsstring>
+        <name>reduce_residual_after</name>
+        <qualifiedname>mata::nfa::plumbing::reduce_residual_after</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <briefdescription>
+<para>Reduce NFA using residual construction. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The residual construction of the residual automaton and the removal of the covering states is done after the final determinization.</para>
+<para>Similar performance to <computeroutput><ref refid="namespacemata_1_1nfa_1_1plumbing_1abc1bc560caf40da85de1afe8b3d035e0" kindref="member">reduce_residual_with()</ref></computeroutput>. The output is almost the same except the transitions: transitions may slightly differ, but the number of states is the same for both algorithm types. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="125" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" bodystart="125" bodyend="127"/>
+        <references refid="classmata_1_1nfa_1_1Nfa_1a30c9e4c7f261d2b8afa1650d84329633">Nfa::operator=</references>
+        <references refid="namespacemata_1_1nfa_1_1algorithms_1a1e399dd04a892660bc4a0c528bbb62d8">mata::nfa::algorithms::reduce_residual_after</references>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Wrappers around various support functions. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/plumbing.hh" line="23" column="1"/>
+  </compounddef>
+</doxygen>

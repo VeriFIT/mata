@@ -1,0 +1,531 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1nfa_1_1SymbolPost" kind="class" language="C++" prot="public">
+    <compoundname>mata::nfa::SymbolPost</compoundname>
+    <includes refid="nfa_2delta_8hh" local="no">delta.hh</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>Symbol symbol</definition>
+        <argsstring></argsstring>
+        <name>symbol</name>
+        <qualifiedname>mata::nfa::SymbolPost::symbol</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="53" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="53" bodyend="53"/>
+        <referencedby refid="classmata_1_1nfa_1_1StatePost_1a52534cd9717baa359cc79d8fa24a7fca" compoundref="nfa_2delta_8hh" startline="135" endline="139">StatePost::find</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1StatePost_1a951cf1a46b77a9fe99a0ae43d2616ea0" compoundref="nfa_2delta_8hh" startline="140" endline="144">StatePost::find</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1SymbolPost_1a10e039b2255796fec956738e70874f38" compoundref="nfa_2delta_8hh" startline="66" endline="66">SymbolPost::operator&lt;=&gt;</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1SymbolPost_1ab64d728ab12df43f0ebf073b350e61cd" compoundref="nfa_2delta_8hh" startline="67" endline="67">SymbolPost::operator==</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1SymbolPost_1a8c564aba5a77b2673476311fe5ae6819" compoundref="nfa_2delta_8hh" startline="57" endline="57">SymbolPost::SymbolPost</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1SymbolPost_1a101c147bb29fc06d16bff87e9730f270" compoundref="nfa_2delta_8hh" startline="58" endline="58">SymbolPost::SymbolPost</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1SymbolPost_1a80839e00bdd8abb3fb5b76743c45cca0" compoundref="nfa_2delta_8hh" startline="59" endline="59">SymbolPost::SymbolPost</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1SymbolPost_1a865a8f9b8d1a57c6698a8683c80168bf" compoundref="nfa_2delta_8hh" startline="61" endline="61">SymbolPost::SymbolPost</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classmata_1_1nfa_1_1SymbolPost_1a0db08ce529d71cf88e8c321148ae6a03" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref></type>
+        <definition>StateSet targets</definition>
+        <argsstring></argsstring>
+        <name>targets</name>
+        <qualifiedname>mata::nfa::SymbolPost::targets</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="54" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="54" bodyend="54"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a26cf8d53f36a7e90d0d79aa2ac37972a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>SymbolPost</definition>
+        <argsstring>()=default</argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nfa::SymbolPost::SymbolPost</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="56" column="5"/>
+        <referencedby refid="classmata_1_1nfa_1_1StatePost_1a52534cd9717baa359cc79d8fa24a7fca" compoundref="nfa_2delta_8hh" startline="135" endline="139">StatePost::find</referencedby>
+        <referencedby refid="classmata_1_1nfa_1_1StatePost_1a951cf1a46b77a9fe99a0ae43d2616ea0" compoundref="nfa_2delta_8hh" startline="140" endline="144">StatePost::find</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a8c564aba5a77b2673476311fe5ae6819" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SymbolPost</definition>
+        <argsstring>(Symbol symbol)</argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nfa::SymbolPost::SymbolPost</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>symbol</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="57" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="57" bodyend="57"/>
+        <references refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="53" endline="53">SymbolPost::symbol</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a101c147bb29fc06d16bff87e9730f270" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SymbolPost</definition>
+        <argsstring>(Symbol symbol, State state_to)</argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nfa::SymbolPost::SymbolPost</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>symbol</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>state_to</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="58" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="58" bodyend="58"/>
+        <references refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="53" endline="53">SymbolPost::symbol</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a80839e00bdd8abb3fb5b76743c45cca0" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SymbolPost</definition>
+        <argsstring>(Symbol symbol, StateSet states_to)</argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nfa::SymbolPost::SymbolPost</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>symbol</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref></type>
+          <declname>states_to</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="59" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="59" bodyend="59"/>
+        <references refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="53" endline="53">SymbolPost::symbol</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a865a8f9b8d1a57c6698a8683c80168bf" prot="public" static="no" const="no" explicit="no" inline="yes" noexcept="yes" virt="non-virtual">
+        <type></type>
+        <definition>SymbolPost</definition>
+        <argsstring>(SymbolPost &amp;&amp;rhs) noexcept</argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nfa::SymbolPost::SymbolPost</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;&amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="61" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="61" bodyend="61"/>
+        <references refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="53" endline="53">SymbolPost::symbol</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a529fc7878c739a78bd646da8a2d10e96" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>SymbolPost</definition>
+        <argsstring>(const SymbolPost &amp;rhs)=default</argsstring>
+        <name>SymbolPost</name>
+        <qualifiedname>mata::nfa::SymbolPost::SymbolPost</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="62" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1aabff5e01f016950bd377f2414d161684" prot="public" static="no" const="no" explicit="no" inline="no" noexcept="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;</type>
+        <definition>SymbolPost &amp; operator=</definition>
+        <argsstring>(SymbolPost &amp;&amp;rhs) noexcept</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nfa::SymbolPost::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;&amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="63" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a2265dbe1d2ebe28c0a267f0036ddde7a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;</type>
+        <definition>SymbolPost &amp; operator=</definition>
+        <argsstring>(const SymbolPost &amp;rhs)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nfa::SymbolPost::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="64" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a10e039b2255796fec956738e70874f38" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::weak_ordering</type>
+        <definition>std::weak_ordering operator&lt;=&gt;</definition>
+        <argsstring>(const SymbolPost &amp;other) const</argsstring>
+        <name>operator&lt;=&gt;</name>
+        <qualifiedname>mata::nfa::SymbolPost::operator&lt;=&gt;</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="66" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="66" bodyend="66"/>
+        <references refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="53" endline="53">SymbolPost::symbol</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1ab64d728ab12df43f0ebf073b350e61cd" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator==</definition>
+        <argsstring>(const SymbolPost &amp;other) const</argsstring>
+        <name>operator==</name>
+        <qualifiedname>mata::nfa::SymbolPost::operator==</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="67" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="67" bodyend="67"/>
+        <references refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="53" endline="53">SymbolPost::symbol</references>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1aa6ca13a8ea0e3ceb083b18e3a649e531" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector_1a2b8f0ba308c4037e39ec503b9a1e4d0b" kindref="member">StateSet::iterator</ref></type>
+        <definition>StateSet::iterator begin</definition>
+        <argsstring>()</argsstring>
+        <name>begin</name>
+        <qualifiedname>mata::nfa::SymbolPost::begin</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="69" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="69" bodyend="69"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1abf8e36c0e17e6867febba2981a8ab731" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector_1a2b8f0ba308c4037e39ec503b9a1e4d0b" kindref="member">StateSet::iterator</ref></type>
+        <definition>StateSet::iterator end</definition>
+        <argsstring>()</argsstring>
+        <name>end</name>
+        <qualifiedname>mata::nfa::SymbolPost::end</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="70" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="70" bodyend="70"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a1d7bb2141960819b854730b98936db57" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector_1a0b878024ac2eb388b20acaf63eb29780" kindref="member">StateSet::const_iterator</ref></type>
+        <definition>StateSet::const_iterator cbegin</definition>
+        <argsstring>() const</argsstring>
+        <name>cbegin</name>
+        <qualifiedname>mata::nfa::SymbolPost::cbegin</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="72" column="30" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="72" bodyend="72"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a4d2cfc104948c3e6b466e8f69921c961" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector_1a0b878024ac2eb388b20acaf63eb29780" kindref="member">StateSet::const_iterator</ref></type>
+        <definition>StateSet::const_iterator cend</definition>
+        <argsstring>() const</argsstring>
+        <name>cend</name>
+        <qualifiedname>mata::nfa::SymbolPost::cend</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="73" column="30" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="73" bodyend="73"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1ae89d8fdb13b84a39c585ef700f1ef12b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t count</definition>
+        <argsstring>(State s) const</argsstring>
+        <name>count</name>
+        <qualifiedname>mata::nfa::SymbolPost::count</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="75" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="75" bodyend="75"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a644718bb2fb240de962dc3c9a1fdf0dc" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool empty</definition>
+        <argsstring>() const</argsstring>
+        <name>empty</name>
+        <qualifiedname>mata::nfa::SymbolPost::empty</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="76" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="76" bodyend="76"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a97dc47c9e1096935ed455181efb49d82" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t num_of_targets</definition>
+        <argsstring>() const</argsstring>
+        <name>num_of_targets</name>
+        <qualifiedname>mata::nfa::SymbolPost::num_of_targets</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="77" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="77" bodyend="77"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1ac35c07c1bc8dae9cb299a43d25fec60d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert</definition>
+        <argsstring>(State s)</argsstring>
+        <name>insert</name>
+        <qualifiedname>mata::nfa::SymbolPost::insert</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="79" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a64b383947e1d7491d66f1f1c9a488b5d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void insert</definition>
+        <argsstring>(const StateSet &amp;states)</argsstring>
+        <name>insert</name>
+        <qualifiedname>mata::nfa::SymbolPost::insert</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref> &amp;</type>
+          <declname>states</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="80" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1af0dbec3cd847b80b89a8508a8fe38590" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void push_back</definition>
+        <argsstring>(const State s)</argsstring>
+        <name>push_back</name>
+        <qualifiedname>mata::nfa::SymbolPost::push_back</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="85" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="85" bodyend="85"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a14e53c045822799da31ef92c4c215062" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename...</type>
+            <declname>Args</declname>
+            <defname>Args</defname>
+          </param>
+        </templateparamlist>
+        <type><ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref> &amp;</type>
+        <definition>StateSet &amp; emplace_back</definition>
+        <argsstring>(Args &amp;&amp;... args)</argsstring>
+        <name>emplace_back</name>
+        <qualifiedname>mata::nfa::SymbolPost::emplace_back</qualifiedname>
+        <param>
+          <type>Args &amp;&amp;...</type>
+          <declname>args</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="88" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="88" bodyend="91"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1aee9e377023fb85dd97fa88bb871e681a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void erase</definition>
+        <argsstring>(State s)</argsstring>
+        <name>erase</name>
+        <qualifiedname>mata::nfa::SymbolPost::erase</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="93" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="93" bodyend="93"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a9fbfe5e9ecf0b8c7f4cfbc784e521476" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;::const_iterator</type>
+        <definition>std::vector&lt; State &gt;::const_iterator find</definition>
+        <argsstring>(State s) const</argsstring>
+        <name>find</name>
+        <qualifiedname>mata::nfa::SymbolPost::find</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="95" column="34" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="95" bodyend="95"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nfa_1_1SymbolPost_1a857c7c78f81ed9064012118df23b9ade" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;::iterator</type>
+        <definition>std::vector&lt; State &gt;::iterator find</definition>
+        <argsstring>(State s)</argsstring>
+        <name>find</name>
+        <qualifiedname>mata::nfa::SymbolPost::find</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="96" column="28" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="96" bodyend="96"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Structure represents a post of a single <computeroutput>symbol:</computeroutput> a set of target states in transitions. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>A set of <computeroutput><ref refid="classmata_1_1nfa_1_1SymbolPost" kindref="compound">SymbolPost</ref></computeroutput>, called <computeroutput><ref refid="classmata_1_1nfa_1_1StatePost" kindref="compound">StatePost</ref></computeroutput>, is describing the automata transitions from a single source state. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>OrdVector&lt; State &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+        <childnode refid="3" relation="template-instance">
+          <edgelabel>&lt; State &gt;</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>SymbolPost</label>
+        <link refid="classmata_1_1nfa_1_1SymbolPost"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>targets</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>OrdVector&lt; Key &gt;</label>
+        <link refid="classmata_1_1utils_1_1OrdVector"/>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" line="51" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/delta.hh" bodystart="51" bodyend="97"/>
+    <listofallmembers>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1aa6ca13a8ea0e3ceb083b18e3a649e531" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>begin</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a1d7bb2141960819b854730b98936db57" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>cbegin</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a4d2cfc104948c3e6b466e8f69921c961" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>cend</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1ae89d8fdb13b84a39c585ef700f1ef12b" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>count</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a14e53c045822799da31ef92c4c215062" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>emplace_back</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a644718bb2fb240de962dc3c9a1fdf0dc" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>empty</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1abf8e36c0e17e6867febba2981a8ab731" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>end</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1aee9e377023fb85dd97fa88bb871e681a" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>erase</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a9fbfe5e9ecf0b8c7f4cfbc784e521476" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>find</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a857c7c78f81ed9064012118df23b9ade" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>find</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1ac35c07c1bc8dae9cb299a43d25fec60d" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>insert</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a64b383947e1d7491d66f1f1c9a488b5d" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>insert</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a97dc47c9e1096935ed455181efb49d82" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>num_of_targets</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a10e039b2255796fec956738e70874f38" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>operator&lt;=&gt;</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1aabff5e01f016950bd377f2414d161684" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>operator=</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a2265dbe1d2ebe28c0a267f0036ddde7a" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>operator=</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1ab64d728ab12df43f0ebf073b350e61cd" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>operator==</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1af0dbec3cd847b80b89a8508a8fe38590" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>push_back</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a86b1fd052877425f029f5528edab94d1" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>symbol</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a26cf8d53f36a7e90d0d79aa2ac37972a" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>SymbolPost</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a8c564aba5a77b2673476311fe5ae6819" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>SymbolPost</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a101c147bb29fc06d16bff87e9730f270" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>SymbolPost</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a80839e00bdd8abb3fb5b76743c45cca0" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>SymbolPost</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a865a8f9b8d1a57c6698a8683c80168bf" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>SymbolPost</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a529fc7878c739a78bd646da8a2d10e96" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>SymbolPost</name></member>
+      <member refid="classmata_1_1nfa_1_1SymbolPost_1a0db08ce529d71cf88e8c321148ae6a03" prot="public" virt="non-virtual"><scope>mata::nfa::SymbolPost</scope><name>targets</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

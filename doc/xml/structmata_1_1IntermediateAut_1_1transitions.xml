@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1IntermediateAut_1_1transitions" kind="struct" language="C++" prot="public">
+    <compoundname>mata::IntermediateAut::transitions</compoundname>
+    <includes refid="inter-aut_8hh" local="no">inter-aut.hh</includes>
+    <briefdescription>
+<para>Transitions are pairs where the first member is left-hand side of transition (i.e., a state) and the second item is a graph representing transition formula (which can contain symbols, nodes, and states). </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="203" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="203" bodyend="203"/>
+    <listofallmembers>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

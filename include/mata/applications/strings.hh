@@ -7,7 +7,7 @@
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/nft.hh"
-#include "utils/ord-vector.hh"
+#include "mata/utils/ord-vector.hh"
 
 /**
  * Operations on NFAs/NFTs used for string constraint solving.

@@ -1,0 +1,480 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nfa_1_1builder" kind="namespace" language="C++">
+    <compoundname>mata::nfa::builder</compoundname>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" prot="public" static="no">
+        <type>std::unordered_map&lt; std::string, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;</type>
+        <definition>using NameStateMap =  std::unordered_map&lt;std::string, State&gt;</definition>
+        <argsstring></argsstring>
+        <name>NameStateMap</name>
+        <qualifiedname>mata::nfa::builder::NameStateMap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="18" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" bodystart="18" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a0f9e5c4281477c27cfc04124e1cff2f2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa create_single_word_nfa</definition>
+        <argsstring>(const std::vector&lt; Symbol &gt; &amp;word)</argsstring>
+        <name>create_single_word_nfa</name>
+        <qualifiedname>mata::nfa::builder::create_single_word_nfa</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt; &amp;</type>
+          <declname>word</declname>
+        </param>
+        <briefdescription>
+<para>Create an automaton accepting only a single <computeroutput>word</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="23" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="23" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a534ef658b77c71ff35d51b9a6f6fb90f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa create_single_word_nfa</definition>
+        <argsstring>(const std::vector&lt; std::string &gt; &amp;word, Alphabet *alphabet=nullptr)</argsstring>
+        <name>create_single_word_nfa</name>
+        <qualifiedname>mata::nfa::builder::create_single_word_nfa</qualifiedname>
+        <param>
+          <type>const std::vector&lt; std::string &gt; &amp;</type>
+          <declname>word</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Create an automaton accepting only a single <computeroutput>word</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>word</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Word to accept. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> to use in NFA for translating word into symbols. If specified, the alphabet has to contain translations for all of the word symbols. If left empty, a new alphabet with only the symbols of the word will be created. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="33" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="33" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a7c5dd8240fb96e74a4f576b0665f6afa" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa create_empty_string_nfa</definition>
+        <argsstring>()</argsstring>
+        <name>create_empty_string_nfa</name>
+        <qualifiedname>mata::nfa::builder::create_empty_string_nfa</qualifiedname>
+        <briefdescription>
+<para>Create automaton accepting only epsilon string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="38" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="38" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1ae15bc9f92eb730900cc161504f88bd10" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa create_sigma_star_nfa</definition>
+        <argsstring>(Alphabet *alphabet=new OnTheFlyAlphabet{})</argsstring>
+        <name>create_sigma_star_nfa</name>
+        <qualifiedname>mata::nfa::builder::create_sigma_star_nfa</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>new <ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref>{}</defval>
+        </param>
+        <briefdescription>
+<para>Create automaton accepting sigma star over the passed alphabet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> to construct sigma star automaton with. When alphabet is left empty, the default empty alphabet is used, creating an automaton accepting only the empty string. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="46" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="46" declcolumn="5"/>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1ac12e30725a216a33930c87ffd1b6a4c4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa create_random_nfa_tabakov_vardi</definition>
+        <argsstring>(const size_t num_of_states, const size_t alphabet_size, const double states_trans_ratio_per_symbol, const double final_state_density)</argsstring>
+        <name>create_random_nfa_tabakov_vardi</name>
+        <qualifiedname>mata::nfa::builder::create_random_nfa_tabakov_vardi</qualifiedname>
+        <param>
+          <type>const size_t</type>
+          <declname>num_of_states</declname>
+        </param>
+        <param>
+          <type>const size_t</type>
+          <declname>alphabet_size</declname>
+        </param>
+        <param>
+          <type>const double</type>
+          <declname>states_trans_ratio_per_symbol</declname>
+        </param>
+        <param>
+          <type>const double</type>
+          <declname>final_state_density</declname>
+        </param>
+        <briefdescription>
+<para>Creates Tabakov-Vardi random NFA. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The implementation is based on the paper &quot;Experimental Evaluation of Classical Automata Constructions&quot; by Tabakov and Vardi.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>num_of_states</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Number of states in the automaton. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet_size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Size of the alphabet. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>states_transitions_ratio_per_symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Ratio between number of transitions and number of states for each symbol. The value must be in range [0, num_of_states]. A value of 1 means that there will be num_of_states transitions for each symbol. A value of num_of_states means that there will be a transition between every pair of states for each symbol. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>final_state_density</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Density of final states in the automaton. The value must be in range [0, 1]. The state 0 is always final. If the density is 1, every state will be final. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="60" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="60" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a19e8cf278dd913cca512dcc5d990a64d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa construct</definition>
+        <argsstring>(const mata::parser::ParsedSection &amp;parsec, Alphabet *alphabet, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nfa::builder::construct</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">mata::parser::ParsedSection</ref> &amp;</type>
+          <declname>parsec</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="64" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="64" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a438a1e603b2f14c4150e9e6ecbda8d09" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa construct</definition>
+        <argsstring>(const mata::IntermediateAut &amp;inter_aut, Alphabet *alphabet, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nfa::builder::construct</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>inter_aut</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="67" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="67" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a6f05d8d053e77b96b4eea480ae5735b3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void construct</definition>
+        <argsstring>(Nfa *result, const mata::IntermediateAut &amp;inter_aut, Alphabet *alphabet, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nfa::builder::construct</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1IntermediateAut" kindref="compound">mata::IntermediateAut</ref> &amp;</type>
+          <declname>inter_aut</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object; version for python binding. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="69" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="69" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a798a77240309d58f3f51f970f0d18d11" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class ParsedObject</type>
+          </param>
+        </templateparamlist>
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa construct</definition>
+        <argsstring>(const ParsedObject &amp;parsed, Alphabet *alphabet=nullptr, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nfa::builder::construct</qualifiedname>
+        <param>
+          <type>const ParsedObject &amp;</type>
+          <declname>parsed</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="74" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" bodystart="74" bodyend="81"/>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a0bd5e992447d16134bc4c3976b911409" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa parse_from_mata</definition>
+        <argsstring>(std::istream &amp;nfa_stream)</argsstring>
+        <name>parse_from_mata</name>
+        <qualifiedname>mata::nfa::builder::parse_from_mata</qualifiedname>
+        <param>
+          <type>std::istream &amp;</type>
+          <declname>nfa_stream</declname>
+        </param>
+        <briefdescription>
+<para>Parse NFA from the mata format in an input stream. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nfa_stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Input stream containing NFA in mata format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsing of NFA fails. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="89" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="89" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1af0507268b026ce14a3ae758430bd7e2a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa parse_from_mata</definition>
+        <argsstring>(const std::string &amp;nfa_in_mata)</argsstring>
+        <name>parse_from_mata</name>
+        <qualifiedname>mata::nfa::builder::parse_from_mata</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>nfa_in_mata</declname>
+        </param>
+        <briefdescription>
+<para>Parse NFA from the mata format in a string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nfa_stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>String containing NFA in mata format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsing of NFA fails. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="97" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="97" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a8ff78fc41e1a6c53042b288a1e741b4b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa parse_from_mata</definition>
+        <argsstring>(const std::filesystem::path &amp;nfa_file)</argsstring>
+        <name>parse_from_mata</name>
+        <qualifiedname>mata::nfa::builder::parse_from_mata</qualifiedname>
+        <param>
+          <type>const std::filesystem::path &amp;</type>
+          <declname>nfa_file</declname>
+        </param>
+        <briefdescription>
+<para>Parse NFA from the mata format in a file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>nfa_stream</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Path to the file containing NFA in mata format. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="exception"><parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><computeroutput>nfa_file</computeroutput> does not exist. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>std::runtime_error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Parsing of NFA fails. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="106" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="106" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1_1builder_1a8766a01d9e3e056debe2ff1ef2468d4d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa create_from_regex</definition>
+        <argsstring>(const std::string &amp;regex)</argsstring>
+        <name>create_from_regex</name>
+        <qualifiedname>mata::nfa::builder::create_from_regex</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>regex</declname>
+        </param>
+        <briefdescription>
+<para>Create NFA from <computeroutput>regex</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The created NFA does not contain epsilons, is trimmed and reduced. It uses the parser from RE2, see mata/parser/re2praser.hh for more details and options.</para>
+<para>At <ulink url="https://github.com/google/re2/wiki/Syntax">https://github.com/google/re2/wiki/Syntax</ulink>, you can find the syntax of <computeroutput>regex</computeroutput> with following futher limitations: 1) The allowed characters are the first 256 characters of Unicode, i.e., Latin1 encoding (ASCII + 128 more characters). For the full Unicode, check mata/parser/re2praser.hh. 2) The created automaton represents the language of the regex and is not expected to be used in regex matching. Therefore, stuff like ^, $, <bold></bold>, etc. are ignored in the regex. For example, the regular expressions a*b and ^a*b will both result in the same NFA accepting the language of multiple &apos;a&apos;s followed by one &apos;b&apos;. See also issue #494.</para>
+<para><simplesect kind="see"><para><ref refid="namespacemata_1_1parser_1a4421f89b1c81108fff484870031e9371" kindref="member">mata::parser::create_nfa()</ref></para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>regex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>regular expression </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="131" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" declline="131" declcolumn="5"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Namespace providing options to build NFAs. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/builder.hh" line="14" column="1"/>
+  </compounddef>
+</doxygen>

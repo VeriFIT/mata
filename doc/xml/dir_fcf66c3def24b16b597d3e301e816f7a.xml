@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_fcf66c3def24b16b597d3e301e816f7a" kind="dir">
+    <compoundname>/home/misa/Dokumenty/Nfa/mata/include/mata/parser</compoundname>
+    <innerfile refid="inter-aut_8hh">inter-aut.hh</innerfile>
+    <innerfile refid="mintermization_8hh">mintermization.hh</innerfile>
+    <innerfile refid="parser_8hh">parser.hh</innerfile>
+    <innerfile refid="re2parser_8hh">re2parser.hh</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/"/>
+  </compounddef>
+</doxygen>

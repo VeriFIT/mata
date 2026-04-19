@@ -151,7 +151,7 @@ public:
 
     virtual iterator erase(const_iterator pos) { return vec_.erase(pos); }
     virtual iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
-    virtual size_type erase_if(std::function<bool(const value_type&)> should_erase) { return std::erase_if(vec_, should_erase); }
+    virtual size_type erase_if(std::function<bool(const value_type&)> should_erase) { return vec_.erase_if(should_erase); }
 
     virtual std::pair<iterator, bool> insert(const Key& x) {
         assert(is_sorted());

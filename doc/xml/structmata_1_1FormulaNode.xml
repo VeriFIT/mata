@@ -1,0 +1,689 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1FormulaNode" kind="struct" language="C++" prot="public">
+    <compoundname>mata::FormulaNode</compoundname>
+    <includes refid="inter-aut_8hh" local="no">inter-aut.hh</includes>
+    <sectiondef kind="public-type">
+      <memberdef kind="enum" id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>OperandType</name>
+        <qualifiedname>mata::FormulaNode::OperandType</qualifiedname>
+        <enumvalue id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a8fc5a0642a90632e8418ca52c3ec761d" prot="public">
+          <name>SYMBOL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a2b848a8cc886d253d21a77c43cd50aae" prot="public">
+          <name>STATE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a0cc25b606fe928a0c9a58f7f209c4495" prot="public">
+          <name>NODE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4ac0d83f0b82a6b30de8811e69e6d95c61" prot="public">
+          <name>TRUE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a946003f97ccc52d5d3b54ac0ec31bbfc" prot="public">
+          <name>FALSE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4acafb1cbebb608028e8474fc41ba6003f" prot="public">
+          <name>NOT_OPERAND</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="28" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="28" bodyend="35"/>
+      </memberdef>
+      <memberdef kind="enum" id="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>OperatorType</name>
+        <qualifiedname>mata::FormulaNode::OperatorType</qualifiedname>
+        <enumvalue id="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a5dd68b1a7db42a1cce4dce09dbaa179e" prot="public">
+          <name>NEG</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a558ffc8f5770d8e4f95f51d822685532" prot="public">
+          <name>AND</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a1d00e7dce692e8dc3f6877f035e3a616" prot="public">
+          <name>OR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a122015cd3891cfb210ed7547280a6abb" prot="public">
+          <name>NOT_OPERATOR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="37" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="37" bodyend="42"/>
+      </memberdef>
+      <memberdef kind="enum" id="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>Type</name>
+        <qualifiedname>mata::FormulaNode::Type</qualifiedname>
+        <enumvalue id="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a11f3de9b2b548c31805cf34d512ee177" prot="public">
+          <name>OPERAND</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a986496ca5b23669b8661171566a167c3" prot="public">
+          <name>OPERATOR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7ae0a616c2eaef696c2ee124284d22587d" prot="public">
+          <name>LEFT_PARENTHESIS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7ad51e71c1ca614f33be209ccf5c82f8f7" prot="public">
+          <name>RIGHT_PARENTHESIS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a696b031073e74bf2cb98e5ef201d4aa3" prot="public">
+          <name>UNKNOWN</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="44" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="44" bodyend="50"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" prot="public" static="no" mutable="no">
+        <type><ref refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7" kindref="member">Type</ref></type>
+        <definition>Type type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>mata::FormulaNode::type</qualifiedname>
+        <briefdescription>
+<para>Define whether a node is operand or operator. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="53" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="53" bodyend="-1"/>
+        <referencedby refid="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" compoundref="inter-aut_8hh" startline="84" endline="86">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" compoundref="inter-aut_8hh" startline="94" endline="95">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" compoundref="inter-aut_8hh" startline="91" endline="92">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" compoundref="inter-aut_8hh" startline="88" endline="89">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54c2e930372210beda6bd87b8211aee4" compoundref="inter-aut_8hh" startline="75" endline="75">FormulaNode::is_and</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a9f99dc83fbae3af42e8c1aebc520ea27" compoundref="inter-aut_8hh" startline="69" endline="69">FormulaNode::is_leftpar</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a90459af6b4759d455002a4bc75f3aafb" compoundref="inter-aut_8hh" startline="77" endline="77">FormulaNode::is_neg</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a344ef88a3ed7c4255ed316ae3600047e" compoundref="inter-aut_8hh" startline="63" endline="63">FormulaNode::is_operand</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a07a1cc4301d368dad4dcdf6fc4a134e1" compoundref="inter-aut_8hh" startline="65" endline="65">FormulaNode::is_operator</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1af7e01d13b85fee3aa93b4949fdf9eeb9" compoundref="inter-aut_8hh" startline="67" endline="67">FormulaNode::is_rightpar</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" prot="public" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string raw</definition>
+        <argsstring></argsstring>
+        <name>raw</name>
+        <qualifiedname>mata::FormulaNode::raw</qualifiedname>
+        <briefdescription>
+<para>Raw name of node as it was specified in input text, i.e., including type marker. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="55" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="55" bodyend="-1"/>
+        <referencedby refid="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" compoundref="inter-aut_8hh" startline="84" endline="86">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" compoundref="inter-aut_8hh" startline="94" endline="95">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" compoundref="inter-aut_8hh" startline="91" endline="92">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" compoundref="inter-aut_8hh" startline="88" endline="89">FormulaNode::FormulaNode</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" prot="public" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>mata::FormulaNode::name</qualifiedname>
+        <briefdescription>
+<para>Parsed name, i.e., a potential type marker (first character) is removed. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="57" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="57" bodyend="-1"/>
+        <referencedby refid="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" compoundref="inter-aut_8hh" startline="84" endline="86">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" compoundref="inter-aut_8hh" startline="94" endline="95">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" compoundref="inter-aut_8hh" startline="91" endline="92">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" compoundref="inter-aut_8hh" startline="88" endline="89">FormulaNode::FormulaNode</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" prot="public" static="no" mutable="no">
+        <type><ref refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117" kindref="member">OperatorType</ref></type>
+        <definition>OperatorType operator_type</definition>
+        <argsstring></argsstring>
+        <name>operator_type</name>
+        <qualifiedname>mata::FormulaNode::operator_type</qualifiedname>
+        <briefdescription>
+<para>if a node is operator, it defines which one </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="59" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="59" bodyend="-1"/>
+        <referencedby refid="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" compoundref="inter-aut_8hh" startline="84" endline="86">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" compoundref="inter-aut_8hh" startline="94" endline="95">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" compoundref="inter-aut_8hh" startline="91" endline="92">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" compoundref="inter-aut_8hh" startline="88" endline="89">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54c2e930372210beda6bd87b8211aee4" compoundref="inter-aut_8hh" startline="75" endline="75">FormulaNode::is_and</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a90459af6b4759d455002a4bc75f3aafb" compoundref="inter-aut_8hh" startline="77" endline="77">FormulaNode::is_neg</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" prot="public" static="no" mutable="no">
+        <type><ref refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4" kindref="member">OperandType</ref></type>
+        <definition>OperandType operand_type</definition>
+        <argsstring></argsstring>
+        <name>operand_type</name>
+        <qualifiedname>mata::FormulaNode::operand_type</qualifiedname>
+        <briefdescription>
+<para>if a node is operand, it defines which one </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="61" column="17" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="61" bodyend="-1"/>
+        <referencedby refid="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" compoundref="inter-aut_8hh" startline="84" endline="86">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" compoundref="inter-aut_8hh" startline="97" endline="98">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" compoundref="inter-aut_8hh" startline="94" endline="95">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" compoundref="inter-aut_8hh" startline="91" endline="92">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" compoundref="inter-aut_8hh" startline="88" endline="89">FormulaNode::FormulaNode</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1ac5683341b82c078fc776615503e61c76" compoundref="inter-aut_8hh" startline="82" endline="82">FormulaNode::is_false</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a2669d1f91b798f16b2d82c7d6726c277" compoundref="inter-aut_8hh" startline="71" endline="71">FormulaNode::is_state</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a69ce39fbb85049efdf6bf5af09a7eca5" compoundref="inter-aut_8hh" startline="73" endline="73">FormulaNode::is_symbol</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a4b211e164e200f349d743673311dd315" compoundref="inter-aut_8hh" startline="81" endline="81">FormulaNode::is_true</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a344ef88a3ed7c4255ed316ae3600047e" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_operand</definition>
+        <argsstring>() const</argsstring>
+        <name>is_operand</name>
+        <qualifiedname>mata::FormulaNode::is_operand</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="63" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="63" bodyend="63"/>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a11f3de9b2b548c31805cf34d512ee177">FormulaNode::OPERAND</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+        <referencedby refid="structmata_1_1FormulaNode_1ac5683341b82c078fc776615503e61c76" compoundref="inter-aut_8hh" startline="82" endline="82">FormulaNode::is_false</referencedby>
+        <referencedby refid="structmata_1_1FormulaNode_1a4b211e164e200f349d743673311dd315" compoundref="inter-aut_8hh" startline="81" endline="81">FormulaNode::is_true</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a07a1cc4301d368dad4dcdf6fc4a134e1" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_operator</definition>
+        <argsstring>() const</argsstring>
+        <name>is_operator</name>
+        <qualifiedname>mata::FormulaNode::is_operator</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="65" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="65" bodyend="65"/>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a986496ca5b23669b8661171566a167c3">FormulaNode::OPERATOR</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1af7e01d13b85fee3aa93b4949fdf9eeb9" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_rightpar</definition>
+        <argsstring>() const</argsstring>
+        <name>is_rightpar</name>
+        <qualifiedname>mata::FormulaNode::is_rightpar</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="67" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="67" bodyend="67"/>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7ad51e71c1ca614f33be209ccf5c82f8f7">FormulaNode::RIGHT_PARENTHESIS</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a9f99dc83fbae3af42e8c1aebc520ea27" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_leftpar</definition>
+        <argsstring>() const</argsstring>
+        <name>is_leftpar</name>
+        <qualifiedname>mata::FormulaNode::is_leftpar</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="69" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="69" bodyend="69"/>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7ae0a616c2eaef696c2ee124284d22587d">FormulaNode::LEFT_PARENTHESIS</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a2669d1f91b798f16b2d82c7d6726c277" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_state</definition>
+        <argsstring>() const</argsstring>
+        <name>is_state</name>
+        <qualifiedname>mata::FormulaNode::is_state</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="71" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="71" bodyend="71"/>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a2b848a8cc886d253d21a77c43cd50aae">FormulaNode::STATE</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a69ce39fbb85049efdf6bf5af09a7eca5" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_symbol</definition>
+        <argsstring>() const</argsstring>
+        <name>is_symbol</name>
+        <qualifiedname>mata::FormulaNode::is_symbol</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="73" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="73" bodyend="73"/>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a8fc5a0642a90632e8418ca52c3ec761d">FormulaNode::SYMBOL</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a54c2e930372210beda6bd87b8211aee4" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_and</definition>
+        <argsstring>() const</argsstring>
+        <name>is_and</name>
+        <qualifiedname>mata::FormulaNode::is_and</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="75" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="75" bodyend="75"/>
+        <references refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a558ffc8f5770d8e4f95f51d822685532">FormulaNode::AND</references>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a986496ca5b23669b8661171566a167c3">FormulaNode::OPERATOR</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a90459af6b4759d455002a4bc75f3aafb" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_neg</definition>
+        <argsstring>() const</argsstring>
+        <name>is_neg</name>
+        <qualifiedname>mata::FormulaNode::is_neg</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="77" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="77" bodyend="77"/>
+        <references refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a5dd68b1a7db42a1cce4dce09dbaa179e">FormulaNode::NEG</references>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a986496ca5b23669b8661171566a167c3">FormulaNode::OPERATOR</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a4060a925d8b84b0ed34e110ef34436cb" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_constant</definition>
+        <argsstring>() const</argsstring>
+        <name>is_constant</name>
+        <qualifiedname>mata::FormulaNode::is_constant</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="80" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="80" bodyend="80"/>
+        <references refid="structmata_1_1FormulaNode_1ac5683341b82c078fc776615503e61c76" compoundref="inter-aut_8hh" startline="82" endline="82">FormulaNode::is_false</references>
+        <references refid="structmata_1_1FormulaNode_1a4b211e164e200f349d743673311dd315" compoundref="inter-aut_8hh" startline="81" endline="81">FormulaNode::is_true</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a4b211e164e200f349d743673311dd315" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_true</definition>
+        <argsstring>() const</argsstring>
+        <name>is_true</name>
+        <qualifiedname>mata::FormulaNode::is_true</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="81" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="81" bodyend="81"/>
+        <references refid="structmata_1_1FormulaNode_1a344ef88a3ed7c4255ed316ae3600047e" compoundref="inter-aut_8hh" startline="63" endline="63">FormulaNode::is_operand</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4ac0d83f0b82a6b30de8811e69e6d95c61">FormulaNode::TRUE</references>
+        <referencedby refid="structmata_1_1FormulaNode_1a4060a925d8b84b0ed34e110ef34436cb" compoundref="inter-aut_8hh" startline="80" endline="80">FormulaNode::is_constant</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1ac5683341b82c078fc776615503e61c76" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_false</definition>
+        <argsstring>() const</argsstring>
+        <name>is_false</name>
+        <qualifiedname>mata::FormulaNode::is_false</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="82" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="82" bodyend="82"/>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4a946003f97ccc52d5d3b54ac0ec31bbfc">FormulaNode::FALSE</references>
+        <references refid="structmata_1_1FormulaNode_1a344ef88a3ed7c4255ed316ae3600047e" compoundref="inter-aut_8hh" startline="63" endline="63">FormulaNode::is_operand</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <referencedby refid="structmata_1_1FormulaNode_1a4060a925d8b84b0ed34e110ef34436cb" compoundref="inter-aut_8hh" startline="80" endline="80">FormulaNode::is_constant</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaNode</definition>
+        <argsstring>()</argsstring>
+        <name>FormulaNode</name>
+        <qualifiedname>mata::FormulaNode::FormulaNode</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="84" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="84" bodyend="86"/>
+        <references refid="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" compoundref="inter-aut_8hh" startline="57">FormulaNode::name</references>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4acafb1cbebb608028e8474fc41ba6003f">FormulaNode::NOT_OPERAND</references>
+        <references refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a122015cd3891cfb210ed7547280a6abb">FormulaNode::NOT_OPERATOR</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" compoundref="inter-aut_8hh" startline="55">FormulaNode::raw</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+        <references refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7a696b031073e74bf2cb98e5ef201d4aa3">FormulaNode::UNKNOWN</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaNode</definition>
+        <argsstring>(Type t, std::string raw, std::string name, OperatorType operator_t)</argsstring>
+        <name>FormulaNode</name>
+        <qualifiedname>mata::FormulaNode::FormulaNode</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7" kindref="member">Type</ref></type>
+          <declname>t</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>raw</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117" kindref="member">OperatorType</ref></type>
+          <declname>operator_t</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="88" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="88" bodyend="89"/>
+        <references refid="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" compoundref="inter-aut_8hh" startline="57">FormulaNode::name</references>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4acafb1cbebb608028e8474fc41ba6003f">FormulaNode::NOT_OPERAND</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" compoundref="inter-aut_8hh" startline="55">FormulaNode::raw</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaNode</definition>
+        <argsstring>(Type t, std::string raw, std::string name, OperandType operand)</argsstring>
+        <name>FormulaNode</name>
+        <qualifiedname>mata::FormulaNode::FormulaNode</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7" kindref="member">Type</ref></type>
+          <declname>t</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>raw</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4" kindref="member">OperandType</ref></type>
+          <declname>operand</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="91" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="91" bodyend="92"/>
+        <references refid="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" compoundref="inter-aut_8hh" startline="57">FormulaNode::name</references>
+        <references refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a122015cd3891cfb210ed7547280a6abb">FormulaNode::NOT_OPERATOR</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" compoundref="inter-aut_8hh" startline="55">FormulaNode::raw</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaNode</definition>
+        <argsstring>(Type t, const std::string &amp;raw)</argsstring>
+        <name>FormulaNode</name>
+        <qualifiedname>mata::FormulaNode::FormulaNode</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7" kindref="member">Type</ref></type>
+          <declname>t</declname>
+        </param>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>raw</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="94" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="94" bodyend="95"/>
+        <references refid="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" compoundref="inter-aut_8hh" startline="57">FormulaNode::name</references>
+        <references refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4acafb1cbebb608028e8474fc41ba6003f">FormulaNode::NOT_OPERAND</references>
+        <references refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117a122015cd3891cfb210ed7547280a6abb">FormulaNode::NOT_OPERATOR</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" compoundref="inter-aut_8hh" startline="55">FormulaNode::raw</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaNode</definition>
+        <argsstring>(const FormulaNode &amp;n)</argsstring>
+        <name>FormulaNode</name>
+        <qualifiedname>mata::FormulaNode::FormulaNode</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>n</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="97" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="97" bodyend="98"/>
+        <references refid="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" compoundref="inter-aut_8hh" startline="57">FormulaNode::name</references>
+        <references refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" compoundref="inter-aut_8hh" startline="61">FormulaNode::operand_type</references>
+        <references refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" compoundref="inter-aut_8hh" startline="59">FormulaNode::operator_type</references>
+        <references refid="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" compoundref="inter-aut_8hh" startline="55">FormulaNode::raw</references>
+        <references refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" compoundref="inter-aut_8hh" startline="53">FormulaNode::type</references>
+        <referencedby refid="classmata_1_1FormulaGraph_1a7ccd5ac1047ea7996971ee0e6ff08028" compoundref="inter-aut_8hh" startline="126" endline="126">FormulaGraph::FormulaGraph</referencedby>
+        <referencedby refid="classmata_1_1FormulaGraph_1a204e364da9d95810c827a88b11d3fd6e" compoundref="inter-aut_8hh" startline="124" endline="124">FormulaGraph::FormulaGraph</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a483ee6cd93d7af19eee84f3c3bd93bf8" prot="public" static="no" const="no" explicit="no" inline="no" noexcept="yes" virt="non-virtual">
+        <type></type>
+        <definition>FormulaNode</definition>
+        <argsstring>(FormulaNode &amp;&amp;) noexcept=default</argsstring>
+        <name>FormulaNode</name>
+        <qualifiedname>mata::FormulaNode::FormulaNode</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="100" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a4099eb3f017f5d35b5f4db14c5ccf38c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+        <definition>FormulaNode &amp; operator=</definition>
+        <argsstring>(const FormulaNode &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::FormulaNode::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="102" column="17"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1FormulaNode_1a0d72686b188e88ea20f49e4190c77fa4" prot="public" static="no" const="no" explicit="no" inline="no" noexcept="yes" virt="non-virtual">
+        <type><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;</type>
+        <definition>FormulaNode &amp; operator=</definition>
+        <argsstring>(FormulaNode &amp;&amp;other) noexcept=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::FormulaNode::operator=</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1FormulaNode" kindref="compound">FormulaNode</ref> &amp;&amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="103" column="17"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A node of graph representing transition formula. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>A node could be operator (!,&amp;,|) or operand (symbol, state, node). Each node has a name (in case of marking naming, an initial character defining type of node is removed and stored in name), raw (name including potential type marker), and information about its type. </para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" line="26" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/inter-aut.hh" bodystart="26" bodyend="104"/>
+    <listofallmembers>
+      <member refid="structmata_1_1FormulaNode_1a5a6cc66a3c4eb72e3d771f0175110ac8" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>FormulaNode</name></member>
+      <member refid="structmata_1_1FormulaNode_1a617c9bfbdb1015a1f1c49dc4da0c9cff" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>FormulaNode</name></member>
+      <member refid="structmata_1_1FormulaNode_1a54772aa841ebdbeea9ad9f8aba5219b1" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>FormulaNode</name></member>
+      <member refid="structmata_1_1FormulaNode_1abe7dfd3bf3d30dafc36515041fe130ab" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>FormulaNode</name></member>
+      <member refid="structmata_1_1FormulaNode_1a6523a3f8784fcee1cf9bb627ffa3b4e7" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>FormulaNode</name></member>
+      <member refid="structmata_1_1FormulaNode_1a483ee6cd93d7af19eee84f3c3bd93bf8" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>FormulaNode</name></member>
+      <member refid="structmata_1_1FormulaNode_1a54c2e930372210beda6bd87b8211aee4" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_and</name></member>
+      <member refid="structmata_1_1FormulaNode_1a4060a925d8b84b0ed34e110ef34436cb" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_constant</name></member>
+      <member refid="structmata_1_1FormulaNode_1ac5683341b82c078fc776615503e61c76" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_false</name></member>
+      <member refid="structmata_1_1FormulaNode_1a9f99dc83fbae3af42e8c1aebc520ea27" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_leftpar</name></member>
+      <member refid="structmata_1_1FormulaNode_1a90459af6b4759d455002a4bc75f3aafb" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_neg</name></member>
+      <member refid="structmata_1_1FormulaNode_1a344ef88a3ed7c4255ed316ae3600047e" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_operand</name></member>
+      <member refid="structmata_1_1FormulaNode_1a07a1cc4301d368dad4dcdf6fc4a134e1" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_operator</name></member>
+      <member refid="structmata_1_1FormulaNode_1af7e01d13b85fee3aa93b4949fdf9eeb9" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_rightpar</name></member>
+      <member refid="structmata_1_1FormulaNode_1a2669d1f91b798f16b2d82c7d6726c277" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_state</name></member>
+      <member refid="structmata_1_1FormulaNode_1a69ce39fbb85049efdf6bf5af09a7eca5" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_symbol</name></member>
+      <member refid="structmata_1_1FormulaNode_1a4b211e164e200f349d743673311dd315" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>is_true</name></member>
+      <member refid="structmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>name</name></member>
+      <member refid="structmata_1_1FormulaNode_1a10d0d891a09cdd2aea612d3f5935720f" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>operand_type</name></member>
+      <member refid="structmata_1_1FormulaNode_1aa4b9b8291a90b1a586c468110fb346a4" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>OperandType</name></member>
+      <member refid="structmata_1_1FormulaNode_1a4099eb3f017f5d35b5f4db14c5ccf38c" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>operator=</name></member>
+      <member refid="structmata_1_1FormulaNode_1a0d72686b188e88ea20f49e4190c77fa4" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>operator=</name></member>
+      <member refid="structmata_1_1FormulaNode_1a684eb7e8b1c1541a38bcf66879d305cb" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>operator_type</name></member>
+      <member refid="structmata_1_1FormulaNode_1a6a02b2d1d62293b20242e3dcfbdd0117" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>OperatorType</name></member>
+      <member refid="structmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>raw</name></member>
+      <member refid="structmata_1_1FormulaNode_1ab6f4e6d3fde00ce906e46494f60dfe7a" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>type</name></member>
+      <member refid="structmata_1_1FormulaNode_1a1d1cfd8ffb84e947f82999c682b666a7" prot="public" virt="non-virtual"><scope>mata::FormulaNode</scope><name>Type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

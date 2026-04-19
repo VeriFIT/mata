@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="todo" kind="page">
+    <compoundname>todo</compoundname>
+    <title>Todo List</title>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para><variablelist>
+<varlistentry><term>Member <ref refid="namespacemata_1_1nfa_1ad12cbf32dd50a6addec3a58e05d223cf" kindref="member">mata::nfa::determinize</ref>  (const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;aut, std::unordered_map&lt; StateSet, State &gt; *subset_map=nullptr, std::optional&lt; std::function&lt; bool(const Nfa &amp;, const State, const StateSet &amp;)&gt; &gt; macrostate_discover=std::nullopt)</term></varlistentry>
+<listitem><para><anchor id="todo_1_todo000002"/>: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.  </para>
+</listitem>
+<varlistentry><term>Member <ref refid="namespacemata_1_1nfa_1a15ed3e770473696b83bcac973d945785" kindref="member">mata::nfa::lang_difference</ref>  (const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;nfa_included, const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;nfa_excluded, std::optional&lt; std::function&lt; bool(const Nfa &amp;, const Nfa &amp;, const StateSet &amp;, const StateSet &amp;, const State, const Nfa &amp;)&gt; &gt; macrostate_discover=std::nullopt)</term></varlistentry>
+<listitem><para><anchor id="todo_1_todo000001"/>: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization. </para>
+</listitem>
+</variablelist>
+</para>
+    </detaileddescription>
+    <location file="todo"/>
+  </compounddef>
+</doxygen>

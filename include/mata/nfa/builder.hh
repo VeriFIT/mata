@@ -4,7 +4,7 @@
 #define LIBMATA_BUILDER_HH
 
 #include "nfa.hh"
-#include "utils/custom_vector.h"
+#include "mata/utils/custom_vector.h"
 
 #include <filesystem>
 

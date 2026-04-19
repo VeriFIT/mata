@@ -189,7 +189,7 @@ bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
     return true;
 }
 
-std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
+std::optional<std::vector<mata::Word>> mata::applications::strings::get_words_of_lengths(const Nft& nft, CustomVector<unsigned> lengths) {
     assert(nft.levels.num_of_levels == lengths.size());
     assert(!nft.contains_jump_transitions());
     if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }

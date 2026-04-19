@@ -1,0 +1,432 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nft_1_1plumbing" kind="namespace" language="C++">
+    <compoundname>mata::nft::plumbing</compoundname>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1aef50003ae1db2b344e28a7b625b70ab2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void get_elements</definition>
+        <argsstring>(StateSet *element_set, const BoolVector &amp;bool_vec)</argsstring>
+        <name>get_elements</name>
+        <qualifiedname>mata::nft::plumbing::get_elements</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1ab52391ee57e45ffeaff4785f74a98a03" kindref="member">StateSet</ref> *</type>
+          <declname>element_set</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+          <declname>bool_vec</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="23" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="23" bodyend="31"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1adb1bf92ac6044a25aec8b9d3f676eba5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void complement</definition>
+        <argsstring>(Nft *result, const Nft &amp;aut, const Alphabet &amp;alphabet, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;classical&quot;}, { &quot;minimize&quot;, &quot;false&quot;}})</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::nft::plumbing::complement</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;classical&quot;}, { &quot;minimize&quot;, &quot;false&quot;}}</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="33" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="33" bodyend="39"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a4e2e9af6ad07d073651c9736c6d5d9a9" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void minimize</definition>
+        <argsstring>(Nft *res, const Nft &amp;aut)</argsstring>
+        <name>minimize</name>
+        <qualifiedname>mata::nft::plumbing::minimize</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="41" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="41" bodyend="41"/>
+        <references refid="namespacemata_1_1nft_1aa9a835272e7986da9552b1f7fe542793">mata::nft::minimize</references>
+        <references refid="classmata_1_1nft_1_1Nft_1a145620f01a932df73d609bd421db4c59">Nft::operator=</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a238320f80e1fdbd8453d1df46bd7a49e" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void determinize</definition>
+        <argsstring>(Nft *result, const Nft &amp;aut, std::unordered_map&lt; StateSet, State &gt; *subset_map=nullptr)</argsstring>
+        <name>determinize</name>
+        <qualifiedname>mata::nft::plumbing::determinize</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; <ref refid="namespacemata_1_1nft_1ab52391ee57e45ffeaff4785f74a98a03" kindref="member">StateSet</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt; *</type>
+          <declname>subset_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="43" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="43" bodyend="45"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a1e3243b846481359dce39c804555296d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void reduce</definition>
+        <argsstring>(Nft *result, const Nft &amp;aut, StateRenaming *state_renaming=nullptr, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;simulation&quot;}})</argsstring>
+        <name>reduce</name>
+        <qualifiedname>mata::nft::plumbing::reduce</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a963f0896e4233f14eb1c4f815a23e64d" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;simulation&quot;}}</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="47" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="47" bodyend="50"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a37853ae62402f3c7e2868241cee56d93" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void revert</definition>
+        <argsstring>(Nft *result, const Nft &amp;aut)</argsstring>
+        <name>revert</name>
+        <qualifiedname>mata::nft::plumbing::revert</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="52" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="52" bodyend="52"/>
+        <references refid="classmata_1_1nft_1_1Nft_1a145620f01a932df73d609bd421db4c59">Nft::operator=</references>
+        <references refid="namespacemata_1_1nft_1a81349c56768b55a257111bf57985d4f1">mata::nft::revert</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a883d502471f199296ebed527af7aa206" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void remove_epsilon</definition>
+        <argsstring>(Nft *result, const Nft &amp;aut, Symbol epsilon=EPSILON)</argsstring>
+        <name>remove_epsilon</name>
+        <qualifiedname>mata::nft::plumbing::remove_epsilon</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="54" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="54" bodyend="54"/>
+        <references refid="classmata_1_1nft_1_1Nft_1a145620f01a932df73d609bd421db4c59">Nft::operator=</references>
+        <references refid="namespacemata_1_1nft_1a78c6446331a7ba2ade97480ac089ff30">mata::nft::remove_epsilon</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1ad1608bdc9cbf5a5db4093cdca0252762" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class ParsedObject</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void construct</definition>
+        <argsstring>(Nft *result, const ParsedObject &amp;parsed, Alphabet *alphabet=nullptr, NameStateMap *state_map=nullptr)</argsstring>
+        <name>construct</name>
+        <qualifiedname>mata::nft::plumbing::construct</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>result</declname>
+        </param>
+        <param>
+          <type>const ParsedObject &amp;</type>
+          <declname>parsed</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1_1builder_1ae62d3f2a37674713c28e0c9145a5c6e8" kindref="member">NameStateMap</ref> *</type>
+          <declname>state_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Loads an automaton from Parsed object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="58" column="6" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="58" bodyend="63"/>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a438d6a7a05e1884a5fcea0990ae22e92" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void union_nondet</definition>
+        <argsstring>(Nft *unionAutomaton, const Nft &amp;lhs, const Nft &amp;rhs)</argsstring>
+        <name>union_nondet</name>
+        <qualifiedname>mata::nft::plumbing::union_nondet</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>unionAutomaton</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="65" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="65" bodyend="65"/>
+        <references refid="classmata_1_1nft_1_1Nft_1a145620f01a932df73d609bd421db4c59">Nft::operator=</references>
+        <references refid="namespacemata_1_1nft_1aea1a46dad5bffc1ce72e174a798774b1">mata::nft::union_nondet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a1c2cc0db53c15b0b9148411d3a3eb594" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void intersection</definition>
+        <argsstring>(Nft *res, const Nft &amp;lhs, const Nft &amp;rhs, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map=nullptr, const JumpMode jump_mode=JumpMode::RepeatSymbol, const State lhs_first_aux_state=Limits::max_state, const State rhs_first_aux_state=Limits::max_state)</argsstring>
+        <name>intersection</name>
+        <qualifiedname>mata::nft::plumbing::intersection</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref>, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48" kindref="member">JumpMode</ref></type>
+          <declname>jump_mode</declname>
+          <defval><ref refid="namespacemata_1_1nft_1ab6b5507498c9730eb34c742ffefa5d48a18cfbf1298b4f112b6637ea6a9d3ff1a" kindref="member">JumpMode::RepeatSymbol</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>lhs_first_aux_state</declname>
+          <defval><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">Limits::max_state</ref></defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>rhs_first_aux_state</declname>
+          <defval><ref refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" kindref="member">Limits::max_state</ref></defval>
+        </param>
+        <briefdescription>
+<para>Compute intersection of two NFTs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Both automata can contain ε-transitions. Epsilons will be handled as alphabet symbols.</para>
+<para>Transducers must share alphabets. //TODO: this is not implemented yet. Transducers must have equal values of <computeroutput>num_of_levels</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First NFT to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second NFT to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">prod_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive). </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">jump_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of <computeroutput>DONT_CARE</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs_first_aux_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The first auxiliary state in <computeroutput>lhs</computeroutput>. Two auxiliary states does not form a product state. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs_first_aux_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The first auxiliary state in <computeroutput>rhs</computeroutput>. Two auxiliary states does not form a product state. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFT as a product of NFTs <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="84" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="84" bodyend="88"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nft_1_1plumbing_1a99b5834be4bd42511a5acc069bc07016" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void concatenate</definition>
+        <argsstring>(Nft *res, const Nft &amp;lhs, const Nft &amp;rhs, bool use_epsilon=false, StateRenaming *lhs_result_state_renaming=nullptr, StateRenaming *rhs_result_state_renaming=nullptr)</argsstring>
+        <name>concatenate</name>
+        <qualifiedname>mata::nft::plumbing::concatenate</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> *</type>
+          <declname>res</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>use_epsilon</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>lhs_result_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a34443c4908b179c51c89609b34ff1429" kindref="member">StateRenaming</ref> *</type>
+          <declname>rhs_result_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Concatenate two NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="out">lhs_result_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping lhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">rhs_result_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping rhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="95" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" bodystart="95" bodyend="98"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Simplified NFA API, used in binding to call NFA algorithms. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>In particular, this mostly includes operations and checks, that do not return Automaton, but instead take resulting automaton as pointer (e.g. <computeroutput>void f(Nft* result, const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref>&amp; lhs, const <ref refid="classmata_1_1nft_1_1Nft" kindref="compound">Nft</ref>&amp; rhs)</computeroutput>). </para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/plumbing.hh" line="20" column="1"/>
+  </compounddef>
+</doxygen>

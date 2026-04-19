@@ -1,0 +1,216 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1nft_1_1Levels" kind="class" language="C++" prot="public">
+    <compoundname>mata::nft::Levels</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">std::vector&lt; Level &gt;</basecompoundref>
+    <includes refid="nft_8hh" local="no">nft.hh</includes>
+    <sectiondef kind="private-type">
+      <memberdef kind="typedef" id="classmata_1_1nft_1_1Levels_1ae8e4b030ddbe789c348ec99e145894f3" prot="private" static="no">
+        <type>std::vector&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt;</type>
+        <definition>using super =  std::vector&lt;Level&gt;</definition>
+        <argsstring></argsstring>
+        <name>super</name>
+        <qualifiedname>mata::nft::Levels::super</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="106" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="106" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1ace8f1a99f46cfcc2338cb9211de26d07" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Levels" kindref="compound">Levels</ref> &amp;</type>
+        <definition>Levels &amp; set</definition>
+        <argsstring>(State state, Level level=DEFAULT_LEVEL)</argsstring>
+        <name>set</name>
+        <qualifiedname>mata::nft::Levels::set</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a3bccfbf567dc0b9ae886ecb72165343a" kindref="member">State</ref></type>
+          <declname>state</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>level</declname>
+          <defval><ref refid="namespacemata_1_1nft_1a5ba6c1349fd21bdd8d8d3f086f01fec6" kindref="member">DEFAULT_LEVEL</ref></defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="108" column="12"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1ae8b10d865c7144a969b5fd0ec2732c80" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>Levels</definition>
+        <argsstring>(const std::vector&lt; Level &gt; &amp;levels)</argsstring>
+        <name>Levels</name>
+        <qualifiedname>mata::nft::Levels::Levels</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;</type>
+          <declname>levels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="111" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="111" bodyend="111"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1afb486334d191d51f164c556e15d59b49" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>Levels</definition>
+        <argsstring>(std::vector&lt; Level &gt; &amp;&amp;levels)</argsstring>
+        <name>Levels</name>
+        <qualifiedname>mata::nft::Levels::Levels</qualifiedname>
+        <param>
+          <type>std::vector&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;&amp;</type>
+          <declname>levels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="112" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="112" bodyend="112"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1adf2b595a670c9b2f8125b4f61c4ac069" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Levels" kindref="compound">Levels</ref> &amp;</type>
+        <definition>Levels &amp; operator=</definition>
+        <argsstring>(const std::vector&lt; Level &gt; &amp;levels)</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nft::Levels::operator=</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;</type>
+          <declname>levels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="113" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="113" bodyend="116"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1ac4939a2af3fc6580589bad590204310a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1nft_1_1Levels" kindref="compound">Levels</ref> &amp;</type>
+        <definition>Levels &amp; operator=</definition>
+        <argsstring>(std::vector&lt; Level &gt; &amp;&amp;levels)</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::nft::Levels::operator=</qualifiedname>
+        <param>
+          <type>std::vector&lt; <ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref> &gt; &amp;&amp;</type>
+          <declname>levels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="117" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="117" bodyend="120"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1abc0455adb049ecda7bab7cf39176c940" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void append</definition>
+        <argsstring>(const Levels &amp;levels_vector)</argsstring>
+        <name>append</name>
+        <qualifiedname>mata::nft::Levels::append</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nft_1_1Levels" kindref="compound">Levels</ref> &amp;</type>
+          <declname>levels_vector</declname>
+        </param>
+        <briefdescription>
+<para>Append <computeroutput>levels_vector</computeroutput> to the end of <computeroutput>this</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">levels_vector</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vector of levels to be appended. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="127" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="127" bodyend="127"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1nft_1_1Levels_1af6522c06e0639e4974dba9e1a10c3b78" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t count</definition>
+        <argsstring>(Level level) const</argsstring>
+        <name>count</name>
+        <qualifiedname>mata::nft::Levels::count</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1_1nft_1a7bc29ef86c92eec2d3d6cc26dd6b19f5" kindref="member">Level</ref></type>
+          <declname>level</declname>
+        </param>
+        <briefdescription>
+<para>Count the number of occurrences of a level in <computeroutput>this</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Level to be counted. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="134" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="134" bodyend="134"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1">
+        <label>Levels</label>
+        <link refid="classmata_1_1nft_1_1Levels"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>vector&lt; Level &gt;</label>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1">
+        <label>Levels</label>
+        <link refid="classmata_1_1nft_1_1Levels"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>vector&lt; Level &gt;</label>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="105" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="105" bodyend="135"/>
+    <listofallmembers>
+      <member refid="classmata_1_1nft_1_1Levels_1abc0455adb049ecda7bab7cf39176c940" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>append</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1af6522c06e0639e4974dba9e1a10c3b78" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>count</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1ae8b10d865c7144a969b5fd0ec2732c80" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>Levels</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1afb486334d191d51f164c556e15d59b49" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>Levels</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1adf2b595a670c9b2f8125b4f61c4ac069" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>operator=</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1ac4939a2af3fc6580589bad590204310a" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>operator=</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1ace8f1a99f46cfcc2338cb9211de26d07" prot="public" virt="non-virtual"><scope>mata::nft::Levels</scope><name>set</name></member>
+      <member refid="classmata_1_1nft_1_1Levels_1ae8e4b030ddbe789c348ec99e145894f3" prot="private" virt="non-virtual"><scope>mata::nft::Levels</scope><name>super</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

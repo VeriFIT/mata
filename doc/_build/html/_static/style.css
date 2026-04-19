@@ -1,0 +1,10 @@
+@import url("alabaster.css");
+
+div.note {
+    font-size: 75%;
+}
+
+/* Fixing the overflow in the udiff tables */
+div.highlight-udiff table.highlighttable td pre {
+    font-size: 0.65em;
+}

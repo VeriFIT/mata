@@ -1,0 +1,258 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1BoolVector" kind="class" language="C++" prot="public">
+    <compoundname>mata::BoolVector</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">std::vector&lt; uint8_t &gt;</basecompoundref>
+    <includes refid="utils_8hh" local="no">utils.hh</includes>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a39d837ddb38e24c0f14725f767854b44" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>BoolVector</definition>
+        <argsstring>(size_t size, bool value)</argsstring>
+        <name>BoolVector</name>
+        <qualifiedname>mata::BoolVector::BoolVector</qualifiedname>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="54" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="54" bodyend="54"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1abd8a705715a87ab313a568730f29c18c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>BoolVector</definition>
+        <argsstring>(const BoolVector &amp;)=default</argsstring>
+        <name>BoolVector</name>
+        <qualifiedname>mata::BoolVector::BoolVector</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="55" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a7dbe8ca5da8f975d6f667fcbd42d68bf" prot="public" static="no" const="no" explicit="no" inline="no" noexcept="yes" virt="non-virtual">
+        <type></type>
+        <definition>BoolVector</definition>
+        <argsstring>(BoolVector &amp;&amp;) noexcept=default</argsstring>
+        <name>BoolVector</name>
+        <qualifiedname>mata::BoolVector::BoolVector</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="56" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a5f83f736cd66802adc4b3b523a31eaa6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>BoolVector</definition>
+        <argsstring>()=default</argsstring>
+        <name>BoolVector</name>
+        <qualifiedname>mata::BoolVector::BoolVector</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="57" column="5"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a0c36a81a354d2393db968ae6b7710c6a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>BoolVector</definition>
+        <argsstring>(std::initializer_list&lt; uint8_t &gt; uint8_ts)</argsstring>
+        <name>BoolVector</name>
+        <qualifiedname>mata::BoolVector::BoolVector</qualifiedname>
+        <param>
+          <type>std::initializer_list&lt; uint8_t &gt;</type>
+          <declname>uint8_ts</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="58" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="58" bodyend="58"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1adc154b43179bed2988c97e8c2ede8e31" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>BoolVector</definition>
+        <argsstring>(const std::vector&lt; uint8_t &gt; &amp;uint8_ts)</argsstring>
+        <name>BoolVector</name>
+        <qualifiedname>mata::BoolVector::BoolVector</qualifiedname>
+        <param>
+          <type>const std::vector&lt; uint8_t &gt; &amp;</type>
+          <declname>uint8_ts</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="59" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="59" bodyend="59"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a5454f079f2c883d22e4f7567147c3d9e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+        <definition>BoolVector &amp; operator=</definition>
+        <argsstring>(const BoolVector &amp;)=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::BoolVector::operator=</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="61" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a530ac48ae4d9bacd99c23f8ae9ae7c27" prot="public" static="no" const="no" explicit="no" inline="no" noexcept="yes" virt="non-virtual">
+        <type><ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+        <definition>BoolVector &amp; operator=</definition>
+        <argsstring>(BoolVector &amp;&amp;) noexcept=default</argsstring>
+        <name>operator=</name>
+        <qualifiedname>mata::BoolVector::operator=</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;&amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="62" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a63a27d5d9ad6ab74fc8ed14c76f9cd08" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t count</definition>
+        <argsstring>() const</argsstring>
+        <name>count</name>
+        <qualifiedname>mata::BoolVector::count</qualifiedname>
+        <briefdescription>
+<para>Count the number of set elements. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="65" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="65" bodyend="73"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1BoolVector_1ac3f2f6e5350f3eab29e07a2767f51a6e" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename T</type>
+          </param>
+        </templateparamlist>
+        <type>T &amp;</type>
+        <definition>T &amp; get_elements</definition>
+        <argsstring>(T &amp;element_set)</argsstring>
+        <name>get_elements</name>
+        <qualifiedname>mata::BoolVector::get_elements</qualifiedname>
+        <param>
+          <type>T &amp;</type>
+          <declname>element_set</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="76" column="7" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="76" bodyend="83"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classmata_1_1BoolVector_1a1aa441d1f64f9af85121ad3b2e5c8523" prot="public" static="yes" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename T</type>
+          </param>
+        </templateparamlist>
+        <type>T *</type>
+        <definition>static T * get_elements</definition>
+        <argsstring>(T *element_set, const BoolVector &amp;bool_vec)</argsstring>
+        <name>get_elements</name>
+        <qualifiedname>mata::BoolVector::get_elements</qualifiedname>
+        <param>
+          <type>T *</type>
+          <declname>element_set</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1BoolVector" kindref="compound">BoolVector</ref> &amp;</type>
+          <declname>bool_vec</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="86" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="86" bodyend="93"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Representation of bool vector by a vector of uint8_t. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1">
+        <label>BoolVector</label>
+        <link refid="classmata_1_1BoolVector"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>vector&lt; uint8_t &gt;</label>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1">
+        <label>BoolVector</label>
+        <link refid="classmata_1_1BoolVector"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>vector&lt; uint8_t &gt;</label>
+      </node>
+    </collaborationgraph>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="52" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="52" bodyend="95"/>
+    <listofallmembers>
+      <member refid="classmata_1_1BoolVector_1a39d837ddb38e24c0f14725f767854b44" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>BoolVector</name></member>
+      <member refid="classmata_1_1BoolVector_1abd8a705715a87ab313a568730f29c18c" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>BoolVector</name></member>
+      <member refid="classmata_1_1BoolVector_1a7dbe8ca5da8f975d6f667fcbd42d68bf" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>BoolVector</name></member>
+      <member refid="classmata_1_1BoolVector_1a5f83f736cd66802adc4b3b523a31eaa6" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>BoolVector</name></member>
+      <member refid="classmata_1_1BoolVector_1a0c36a81a354d2393db968ae6b7710c6a" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>BoolVector</name></member>
+      <member refid="classmata_1_1BoolVector_1adc154b43179bed2988c97e8c2ede8e31" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>BoolVector</name></member>
+      <member refid="classmata_1_1BoolVector_1a63a27d5d9ad6ab74fc8ed14c76f9cd08" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>count</name></member>
+      <member refid="classmata_1_1BoolVector_1ac3f2f6e5350f3eab29e07a2767f51a6e" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>get_elements</name></member>
+      <member refid="classmata_1_1BoolVector_1a1aa441d1f64f9af85121ad3b2e5c8523" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>get_elements</name></member>
+      <member refid="classmata_1_1BoolVector_1a5454f079f2c883d22e4f7567147c3d9e" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>operator=</name></member>
+      <member refid="classmata_1_1BoolVector_1a530ac48ae4d9bacd99c23f8ae9ae7c27" prot="public" virt="non-virtual"><scope>mata::BoolVector</scope><name>operator=</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

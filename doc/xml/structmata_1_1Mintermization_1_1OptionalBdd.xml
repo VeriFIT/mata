@@ -1,0 +1,218 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1Mintermization_1_1OptionalBdd" kind="struct" language="C++" prot="private">
+    <compoundname>mata::Mintermization::OptionalBdd</compoundname>
+    <sectiondef kind="public-type">
+      <memberdef kind="enum" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>TYPE</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::TYPE</qualifiedname>
+        <enumvalue id="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a70acc97a4853e98b4cd0656dd8f5f5e6" prot="public">
+          <name>NOTHING_E</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a4bf9bd393de504fb734e5250a082071b" prot="public">
+          <name>BDD_E</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="18" column="9" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="18" bodyend="18"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" prot="public" static="no" mutable="no">
+        <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref></type>
+        <definition>TYPE type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::type</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="20" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="20" bodyend="20"/>
+        <referencedby refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9" compoundref="mintermization_8hh" startline="25" endline="25">Mintermization::OptionalBdd::OptionalBdd</referencedby>
+        <referencedby refid="structmata_1_1Mintermization_1_1OptionalBdd_1a43a1fb159c6a95ed77b3987e022ccfbc" compoundref="mintermization_8hh" startline="24" endline="24">Mintermization::OptionalBdd::OptionalBdd</referencedby>
+        <referencedby refid="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af" compoundref="mintermization_8hh" startline="26" endline="26">Mintermization::OptionalBdd::OptionalBdd</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" prot="public" static="no" mutable="no">
+        <type>BDD</type>
+        <definition>BDD val</definition>
+        <argsstring></argsstring>
+        <name>val</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::val</qualifiedname>
+        <initializer>{}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="21" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="21" bodyend="21"/>
+        <referencedby refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9" compoundref="mintermization_8hh" startline="25" endline="25">Mintermization::OptionalBdd::OptionalBdd</referencedby>
+        <referencedby refid="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af" compoundref="mintermization_8hh" startline="26" endline="26">Mintermization::OptionalBdd::OptionalBdd</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1a6cb8582a22bb1db806fda34f3dfd1965" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>OptionalBdd</definition>
+        <argsstring>()=default</argsstring>
+        <name>OptionalBdd</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::OptionalBdd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="23" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1a43a1fb159c6a95ed77b3987e022ccfbc" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>OptionalBdd</definition>
+        <argsstring>(TYPE t)</argsstring>
+        <name>OptionalBdd</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::OptionalBdd</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref></type>
+          <declname>t</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="24" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="24" bodyend="24"/>
+        <references refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" compoundref="mintermization_8hh" startline="20" endline="20">Mintermization::OptionalBdd::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9" prot="public" static="no" const="no" explicit="yes" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>OptionalBdd</definition>
+        <argsstring>(const BDD &amp;bdd)</argsstring>
+        <name>OptionalBdd</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::OptionalBdd</qualifiedname>
+        <param>
+          <type>const BDD &amp;</type>
+          <declname>bdd</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="25" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="25" bodyend="25"/>
+        <references refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7a4bf9bd393de504fb734e5250a082071b">Mintermization::OptionalBdd::BDD_E</references>
+        <references refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" compoundref="mintermization_8hh" startline="20" endline="20">Mintermization::OptionalBdd::type</references>
+        <references refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" compoundref="mintermization_8hh" startline="21" endline="21">Mintermization::OptionalBdd::val</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>OptionalBdd</definition>
+        <argsstring>(TYPE t, const BDD &amp;bdd)</argsstring>
+        <name>OptionalBdd</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::OptionalBdd</qualifiedname>
+        <param>
+          <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" kindref="member">TYPE</ref></type>
+          <declname>t</declname>
+        </param>
+        <param>
+          <type>const BDD &amp;</type>
+          <declname>bdd</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="26" column="9" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="26" bodyend="26"/>
+        <references refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" compoundref="mintermization_8hh" startline="20" endline="20">Mintermization::OptionalBdd::type</references>
+        <references refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" compoundref="mintermization_8hh" startline="21" endline="21">Mintermization::OptionalBdd::val</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1afe01caa5028bedb1201624921e939b51" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref></type>
+        <definition>OptionalBdd operator*</definition>
+        <argsstring>(const OptionalBdd &amp;b) const</argsstring>
+        <name>operator*</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::operator*</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref> &amp;</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="28" column="21"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1a0ecd32513a4c89a638adc930b904ee16" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref></type>
+        <definition>OptionalBdd operator+</definition>
+        <argsstring>(const OptionalBdd &amp;b) const</argsstring>
+        <name>operator+</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::operator+</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref> &amp;</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="29" column="21"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1Mintermization_1_1OptionalBdd_1a37336d79949a81598b396ee63f7626f3" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1Mintermization_1_1OptionalBdd" kindref="compound">OptionalBdd</ref></type>
+        <definition>OptionalBdd operator!</definition>
+        <argsstring>() const</argsstring>
+        <name>operator!</name>
+        <qualifiedname>mata::Mintermization::OptionalBdd::operator!</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="30" column="21"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" line="17" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/mintermization.hh" bodystart="17" bodyend="31"/>
+    <listofallmembers>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a37336d79949a81598b396ee63f7626f3" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>operator!</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1afe01caa5028bedb1201624921e939b51" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>operator*</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0ecd32513a4c89a638adc930b904ee16" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>operator+</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a6cb8582a22bb1db806fda34f3dfd1965" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>OptionalBdd</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a43a1fb159c6a95ed77b3987e022ccfbc" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>OptionalBdd</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0efa0c25e6fde5a8be06f8aa5bff21b9" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>OptionalBdd</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1ac1ec8623993a307bba3e3f44f94085af" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>OptionalBdd</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a0bc6723d5d4776ab7cdc646728b775f7" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>TYPE</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a38573ffff5f6ddd53e8c3d235c1f022c" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>type</name></member>
+      <member refid="structmata_1_1Mintermization_1_1OptionalBdd_1a4e6bc1cec6cfdaf450d455f143824f83" prot="public" virt="non-virtual"><scope>mata::Mintermization::OptionalBdd</scope><name>val</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

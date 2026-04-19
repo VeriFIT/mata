@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1parser_1_1ParsedSection" kind="struct" language="C++" prot="public">
+    <compoundname>mata::parser::ParsedSection</compoundname>
+    <includes refid="parser_8hh" local="no">parser.hh</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" prot="public" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>mata::parser::ParsedSection::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="29" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="29" bodyend="-1"/>
+        <referencedby refid="structmata_1_1parser_1_1ParsedSection_1a89f31ee46d83202d2c00560e6aa8918c" compoundref="parser_8hh" startline="33" endline="33">ParsedSection::ParsedSection</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1parser_1_1ParsedSection_1a7fa9fb432f804051ae128219b819973d" prot="public" static="no" mutable="no">
+        <type><ref refid="namespacemata_1_1parser_1a32b31392a3c303c20427c367fb3a733a" kindref="member">KeyListStore</ref></type>
+        <definition>KeyListStore dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>mata::parser::ParsedSection::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="30" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1parser_1_1ParsedSection_1a5efb3614da4ae6aa0e3cf4308d7ce3f7" prot="public" static="no" mutable="no">
+        <type>std::list&lt; <ref refid="namespacemata_1_1parser_1aa0fe9a04182601237d66241a75595bd3" kindref="member">BodyLine</ref> &gt;</type>
+        <definition>std::list&lt;BodyLine&gt; body</definition>
+        <argsstring></argsstring>
+        <name>body</name>
+        <qualifiedname>mata::parser::ParsedSection::body</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="31" column="11" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="31" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structmata_1_1parser_1_1ParsedSection_1a89f31ee46d83202d2c00560e6aa8918c" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>ParsedSection</definition>
+        <argsstring>()</argsstring>
+        <name>ParsedSection</name>
+        <qualifiedname>mata::parser::ParsedSection::ParsedSection</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="33" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="33" bodyend="33"/>
+        <references refid="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" compoundref="parser_8hh" startline="29">ParsedSection::type</references>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1parser_1_1ParsedSection_1a644718bb2fb240de962dc3c9a1fdf0dc" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool empty</definition>
+        <argsstring>() const</argsstring>
+        <name>empty</name>
+        <qualifiedname>mata::parser::ParsedSection::empty</qualifiedname>
+        <briefdescription>
+<para>Is the section empty? </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="36" column="6" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="36" bodyend="36"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1parser_1_1ParsedSection_1a3bd292f9893120980d41415dd4115e68" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool operator==</definition>
+        <argsstring>(const ParsedSection &amp;rhs) const</argsstring>
+        <name>operator==</name>
+        <qualifiedname>mata::parser::ParsedSection::operator==</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1parser_1_1ParsedSection" kindref="compound">ParsedSection</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Equality operator. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="39" column="6"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1parser_1_1ParsedSection_1a18447eb8c675d0eb6c16b37242960d89" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>const std::vector&lt; std::string &gt; &amp;</type>
+        <definition>const std::vector&lt; std::string &gt; &amp; operator[]</definition>
+        <argsstring>(const std::string &amp;key) const</argsstring>
+        <name>operator[]</name>
+        <qualifiedname>mata::parser::ParsedSection::operator[]</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>key</declname>
+        </param>
+        <briefdescription>
+<para>subscript operator for the key-value store </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="42" column="19"/>
+      </memberdef>
+      <memberdef kind="function" id="structmata_1_1parser_1_1ParsedSection_1a55c37b06be38e3f9772cefe487c4464e" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool haskey</definition>
+        <argsstring>(const std::string &amp;key) const</argsstring>
+        <name>haskey</name>
+        <qualifiedname>mata::parser::ParsedSection::haskey</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>key</declname>
+        </param>
+        <briefdescription>
+<para>check whether the key-value store contains a key </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="45" column="6" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="45" bodyend="45"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Parsed data (single section) </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" line="28" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/parser/parser.hh" bodystart="28" bodyend="46"/>
+    <listofallmembers>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a5efb3614da4ae6aa0e3cf4308d7ce3f7" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>body</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a7fa9fb432f804051ae128219b819973d" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>dict</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a644718bb2fb240de962dc3c9a1fdf0dc" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>empty</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a55c37b06be38e3f9772cefe487c4464e" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>haskey</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a3bd292f9893120980d41415dd4115e68" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>operator==</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a18447eb8c675d0eb6c16b37242960d89" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>operator[]</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a89f31ee46d83202d2c00560e6aa8918c" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>ParsedSection</name></member>
+      <member refid="structmata_1_1parser_1_1ParsedSection_1a75b160f574a0be26114bae2c7686a5e1" prot="public" virt="non-virtual"><scope>mata::parser::ParsedSection</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

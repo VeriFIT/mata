@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="synchronized_iterator" kind="page">
+    <compoundname>synchronized_iterator</compoundname>
+    <title>Synchronized Iterator</title>
+    <briefdescription>
+<para>Two classes that provide &quot;synchronized&quot; iterators through a vector of ordered vectors, (or of some ordered OrdContainer that have a similar iterator), needed in computation of post in subset construction, product, and non-determinization. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>The Type stored in OrdContainers must be comparable with <computeroutput>&lt;</computeroutput>,<computeroutput>&gt;</computeroutput>,<computeroutput>==</computeroutput>,<computeroutput>!=</computeroutput>,<computeroutput>&lt;=</computeroutput>,<computeroutput>&gt;=</computeroutput>, and it must be a total (linear) ordering. The intended usage in, for instance, determinisation is for Type to be TransSymbolStates. TransSymbolStates is ordered by the symbol.</para>
+<para>SynchronisedIterator is the parent virtual class. It stores a vector of end-iterators for the OrdContainer v and a vector of current positions. They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and ends, respectively Method advance advances all positions forward so that they are synchronized on the next smallest equiv class (next smallest symbol in the case of TransSymbolStates).</para>
+<para>There are two versions of the class. i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol). Method get_current then returns the vector of all position iterators, synchronized. ii) In determinization, it is enough that there EXISTS a position that points to the smallest class. Method get_current then returns the vector of only those positions that point to the smallest equiv. class.</para>
+<para>Usage: 0) construct, 1) fill in using <computeroutput><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ac1dbbfd7b4be6f66d7596d5926819208" kindref="member">SynchronizedIterator::push_back()</ref></computeroutput>, iterate using <computeroutput><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a40811668fc4f7ab15f033949859b9f59" kindref="member">SynchronizedIterator::advance()</ref></computeroutput> and <computeroutput><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1a10e80079891227c8cacd4b2fb3c93699" kindref="member">SynchronizedIterator::get_current()</ref></computeroutput>, 2) <computeroutput><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">SynchronizedIterator::reset()</ref></computeroutput> and go back to 1).</para>
+<para><simplesect kind="note"><para>The memory allocated internally for positions and ends is kept after <computeroutput><ref refid="classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70" kindref="member">SynchronizedIterator::reset()</ref></computeroutput>, so it is advisable to use the same iterator for many iterations, as opposed to creating a new one for each iteration. </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/synchronized-iterator.hh"/>
+  </compounddef>
+</doxygen>

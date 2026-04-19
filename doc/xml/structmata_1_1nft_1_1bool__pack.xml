@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1nft_1_1bool__pack" kind="struct" language="C++" prot="public">
+    <compoundname>mata::nft::bool_pack</compoundname>
+    <includes refid="nft_8hh" local="no">nft.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>bool...</type>
+      </param>
+    </templateparamlist>
+    <briefdescription>
+<para>Pack of bools for reasoning about a sequence of parameters. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" line="755" column="10" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/nft.hh" bodystart="755" bodyend="755"/>
+    <listofallmembers>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

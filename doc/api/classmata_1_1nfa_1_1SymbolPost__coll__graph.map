@@ -1,0 +1,7 @@
+<map id="SymbolPost" name="SymbolPost">
+<area shape="rect" id="Node000001" title="Structure represents a post of a single symbol: a set of target states in transitions." alt="" coords="31,181,130,207"/>
+<area shape="rect" id="Node000002" href="$classmata_1_1utils_1_1OrdVector.html" title=" " alt="" coords="5,93,156,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="83,133,83,181,78,181,78,133"/>
+<area shape="rect" id="Node000003" href="$classmata_1_1utils_1_1OrdVector.html" title="Implementation of a set using ordered vector." alt="" coords="11,5,151,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="83,45,83,93,78,93,78,45"/>
+</map>

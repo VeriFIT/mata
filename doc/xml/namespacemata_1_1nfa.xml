@@ -1,0 +1,1568 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="namespacemata_1_1nfa" kind="namespace" language="C++">
+    <compoundname>mata::nfa</compoundname>
+    <innerclass refid="structmata_1_1nfa_1_1bool__pack" prot="public">mata::nfa::bool_pack</innerclass>
+    <innerclass refid="classmata_1_1nfa_1_1Delta" prot="public">mata::nfa::Delta</innerclass>
+    <innerclass refid="structmata_1_1nfa_1_1Limits" prot="public">mata::nfa::Limits</innerclass>
+    <innerclass refid="classmata_1_1nfa_1_1Move" prot="public">mata::nfa::Move</innerclass>
+    <innerclass refid="classmata_1_1nfa_1_1Nfa" prot="public">mata::nfa::Nfa</innerclass>
+    <innerclass refid="structmata_1_1nfa_1_1Run" prot="public">mata::nfa::Run</innerclass>
+    <innerclass refid="classmata_1_1nfa_1_1StatePost" prot="public">mata::nfa::StatePost</innerclass>
+    <innerclass refid="classmata_1_1nfa_1_1SymbolPost" prot="public">mata::nfa::SymbolPost</innerclass>
+    <innerclass refid="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator" prot="public">mata::nfa::SynchronizedExistentialSymbolPostIterator</innerclass>
+    <innerclass refid="structmata_1_1nfa_1_1Transition" prot="public">mata::nfa::Transition</innerclass>
+    <innernamespace refid="namespacemata_1_1nfa_1_1algorithms">mata::nfa::algorithms</innernamespace>
+    <innernamespace refid="namespacemata_1_1nfa_1_1builder">mata::nfa::builder</innernamespace>
+    <innernamespace refid="namespacemata_1_1nfa_1_1plumbing">mata::nfa::plumbing</innernamespace>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0" prot="public" static="no" strong="yes">
+        <type>unsigned</type>
+        <name>EpsilonClosureOpt</name>
+        <qualifiedname>mata::nfa::EpsilonClosureOpt</qualifiedname>
+        <enumvalue id="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0ab50339a10e1de285ac99d4c3990b8693" prot="public">
+          <name>NONE</name>
+          <initializer>= 1 &lt;&lt; 0</initializer>
+          <briefdescription>
+<para>No epsilon closure. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0a3525317285c6126ce3b62a8df8c00b07" prot="public">
+          <name>BEFORE</name>
+          <initializer>= 1 &lt;&lt; 1</initializer>
+          <briefdescription>
+<para>Epsilon closure before the transition. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0ac130fda0cb93540bf1574912e78964fb" prot="public">
+          <name>AFTER</name>
+          <initializer>= 1 &lt;&lt; 2</initializer>
+          <briefdescription>
+<para>Epsilon closure after the transition. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="namespacemata_1_1nfa_1a4344def5c2a8c466acfe6d2fb3eb06a0a1259d5beade8955b50dec08a1f8e6304" prot="public">
+          <name>BEFORE_AND_AFTER</name>
+          <initializer>= BEFORE | AFTER</initializer>
+          <briefdescription>
+<para>Epsilon closure before and after the transition. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="25" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="25" bodyend="30"/>
+      </memberdef>
+      <memberdef kind="enum" id="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912" prot="public" static="no" strong="yes">
+        <type></type>
+        <name>ProductFinalStateCondition</name>
+        <qualifiedname>mata::nfa::ProductFinalStateCondition</qualifiedname>
+        <enumvalue id="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912a558ffc8f5770d8e4f95f51d822685532" prot="public">
+          <name>AND</name>
+          <briefdescription>
+<para>Both original states have to be final. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912a1d00e7dce692e8dc3f6877f035e3a616" prot="public">
+          <name>OR</name>
+          <briefdescription>
+<para>At least one of the original states has to be final. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="32" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="32" bodyend="35"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1a301e2ce3a037dd5e05a055a81b8aef58" prot="public" static="no">
+        <templateparamlist>
+          <param>
+            <type>typename...</type>
+            <declname>Ts</declname>
+            <defname>Ts</defname>
+          </param>
+        </templateparamlist>
+        <type>std::is_same&lt; <ref refid="structmata_1_1nfa_1_1bool__pack" kindref="compound">bool_pack</ref>&lt; true, Ts::value... &gt;, <ref refid="structmata_1_1nfa_1_1bool__pack" kindref="compound">bool_pack</ref>&lt; Ts::value..., true &gt; &gt;</type>
+        <definition>using conjunction =  std::is_same&lt;bool_pack&lt;true,Ts::value...&gt;, bool_pack&lt;Ts::value..., true&gt; &gt;</definition>
+        <argsstring></argsstring>
+        <name>conjunction</name>
+        <qualifiedname>mata::nfa::conjunction</qualifiedname>
+        <briefdescription>
+<para>Check that for all values in a pack <computeroutput>Ts</computeroutput> are &apos;true&apos;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="661" column="12" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="661" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1aa4585c777221005d6c2020145f49a74a" prot="public" static="no">
+        <templateparamlist>
+          <param>
+            <type>typename T</type>
+          </param>
+          <param>
+            <type>typename...</type>
+            <declname>Ts</declname>
+            <defname>Ts</defname>
+          </param>
+        </templateparamlist>
+        <type>typename <ref refid="namespacemata_1_1nfa_1a301e2ce3a037dd5e05a055a81b8aef58" kindref="member">conjunction</ref>&lt; std::is_same&lt; Ts, T &gt;... &gt;::type</type>
+        <definition>using AreAllOfType =  typename conjunction&lt;std::is_same&lt;Ts, T&gt;...&gt;::type</definition>
+        <argsstring></argsstring>
+        <name>AreAllOfType</name>
+        <qualifiedname>mata::nfa::AreAllOfType</qualifiedname>
+        <briefdescription>
+<para>Check that all types in a sequence of parameters <computeroutput>Ts</computeroutput> are of type <computeroutput>T</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="663" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="663" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" prot="public" static="no">
+        <type>unsigned long</type>
+        <definition>using State =  unsigned long</definition>
+        <argsstring></argsstring>
+        <name>State</name>
+        <qualifiedname>mata::nfa::State</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="17" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="17" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" prot="public" static="no">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector</ref>&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;</type>
+        <definition>using StateSet =  mata::utils::OrdVector&lt;State&gt;</definition>
+        <argsstring></argsstring>
+        <name>StateSet</name>
+        <qualifiedname>mata::nfa::StateSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="18" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="18" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" prot="public" static="no">
+        <type>std::unordered_map&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;</type>
+        <definition>using StateRenaming =  std::unordered_map&lt;State, State&gt;</definition>
+        <argsstring></argsstring>
+        <name>StateRenaming</name>
+        <qualifiedname>mata::nfa::StateRenaming</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="37" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" prot="public" static="no">
+        <type>std::unordered_map&lt; std::string, std::string &gt;</type>
+        <definition>using ParameterMap =  std::unordered_map&lt;std::string, std::string&gt;</definition>
+        <argsstring></argsstring>
+        <name>ParameterMap</name>
+        <qualifiedname>mata::nfa::ParameterMap</qualifiedname>
+        <briefdescription>
+<para>Map of additional parameter name and value pairs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Used by certain functions for specifying some additional parameters in the following format: <programlisting filename=".cpp"><codeline><highlight class="normal"><ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref><sp/>{</highlight></codeline>
+<codeline><highlight class="normal"><sp/><sp/><sp/><sp/>{<sp/></highlight><highlight class="stringliteral">&quot;algorithm&quot;</highlight><highlight class="normal">,<sp/></highlight><highlight class="stringliteral">&quot;classical&quot;</highlight><highlight class="normal"><sp/>},</highlight></codeline>
+<codeline><highlight class="normal"><sp/><sp/><sp/><sp/>{<sp/></highlight><highlight class="stringliteral">&quot;minimize&quot;</highlight><highlight class="normal">,<sp/></highlight><highlight class="stringliteral">&quot;true&quot;</highlight><highlight class="normal"><sp/>}</highlight></codeline>
+<codeline><highlight class="normal">}</highlight></codeline>
+</programlisting> </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="50" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="50" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="namespacemata_1_1nfa_1a0bb30514becdf091b7c18f69a307b774" prot="public" static="no" extern="yes" mutable="no">
+        <type>const std::string</type>
+        <definition>const std::string TYPE_NFA</definition>
+        <argsstring></argsstring>
+        <name>TYPE_NFA</name>
+        <qualifiedname>mata::nfa::TYPE_NFA</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="15" column="26" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" declline="15" declcolumn="26"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" prot="public" static="no" constexpr="yes" mutable="no">
+        <type>constexpr <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>constexpr Symbol EPSILON</definition>
+        <argsstring></argsstring>
+        <name>EPSILON</name>
+        <qualifiedname>mata::nfa::EPSILON</qualifiedname>
+        <initializer>= <ref refid="structmata_1_1nfa_1_1Limits_1a6e4a56f89c6edead35e706291e23eda3" kindref="member">Limits::max_symbol</ref></initializer>
+        <briefdescription>
+<para>A non-deterministic finite automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>An epsilon symbol which is now defined as the maximal value of data type used for symbols. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="63" column="18" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="63" bodyend="-1"/>
+        <referencedby refid="classmata_1_1nfa_1_1Nfa_1a6b41c786c85d933fb97334fb9392bd17" compoundref="nfa_8hh" startline="291" endline="297">Nfa::is_epsilon</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a5f0e00375f584d1fe59b846d463af490" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename...</type>
+            <declname>Nfas</declname>
+            <defname>Nfas</defname>
+          </param>
+          <param>
+            <type>typename</type>
+            <defval>AreAllOfType&lt;const Nfa&amp;, Nfas...&gt;</defval>
+          </param>
+        </templateparamlist>
+        <type><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref></type>
+        <definition>OnTheFlyAlphabet create_alphabet</definition>
+        <argsstring>(const Nfas &amp;... nfas)</argsstring>
+        <name>create_alphabet</name>
+        <qualifiedname>mata::nfa::create_alphabet</qualifiedname>
+        <param>
+          <type>const Nfas &amp;...</type>
+          <declname>nfas</declname>
+        </param>
+        <briefdescription>
+<para>Create alphabet from variadic number of NFAs given as arguments. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+</parameternamelist>
+<parameterdescription>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+in] Nfas Type <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref>. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfas</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFAs to create alphabet from. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Created alphabet. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="672" column="25" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="672" bodyend="679"/>
+        <references refid="classmata_1_1nfa_1_1Nfa_1a44e5c48675465b17e48a15e8b2e5af21">Nfa::fill_alphabet</references>
+        <references refid="classmata_1_1OnTheFlyAlphabet_1a3f417f39f445dde45683e11fafea1857" compoundref="alphabet_8hh" startline="298" endline="298">OnTheFlyAlphabet::OnTheFlyAlphabet</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1ac68f84f5e510aa4b244481cf4e2be707" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref></type>
+        <definition>OnTheFlyAlphabet create_alphabet</definition>
+        <argsstring>(const std::vector&lt; std::reference_wrapper&lt; const Nfa &gt; &gt; &amp;nfas)</argsstring>
+        <name>create_alphabet</name>
+        <qualifiedname>mata::nfa::create_alphabet</qualifiedname>
+        <param>
+          <type>const std::vector&lt; std::reference_wrapper&lt; const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>nfas</declname>
+        </param>
+        <briefdescription>
+<para>Create alphabet from a vector of NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfas</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vector of NFAs to create alphabet from. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Created alphabet. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="686" column="18" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="686" declcolumn="18"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1aaffcef94a7fbd0298bdc853db99bac89" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref></type>
+        <definition>OnTheFlyAlphabet create_alphabet</definition>
+        <argsstring>(const std::vector&lt; std::reference_wrapper&lt; Nfa &gt; &gt; &amp;nfas)</argsstring>
+        <name>create_alphabet</name>
+        <qualifiedname>mata::nfa::create_alphabet</qualifiedname>
+        <param>
+          <type>const std::vector&lt; std::reference_wrapper&lt; <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &gt; &gt; &amp;</type>
+          <declname>nfas</declname>
+        </param>
+        <briefdescription>
+<para>Create alphabet from a vector of NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfas</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vector of NFAs to create alphabet from. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Created alphabet. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="693" column="18" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="693" declcolumn="18"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1aa91b826aef0aa554a2bc60ca6e3843b4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref></type>
+        <definition>OnTheFlyAlphabet create_alphabet</definition>
+        <argsstring>(const std::vector&lt; Nfa * &gt; &amp;nfas)</argsstring>
+        <name>create_alphabet</name>
+        <qualifiedname>mata::nfa::create_alphabet</qualifiedname>
+        <param>
+          <type>const std::vector&lt; <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> * &gt; &amp;</type>
+          <declname>nfas</declname>
+        </param>
+        <briefdescription>
+<para>Create alphabet from a vector of NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfas</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vector of pointers to NFAs to create alphabet from. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Created alphabet. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="700" column="18" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="700" declcolumn="18"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1aa4ee3a9289d60907f56bf1c6da5f88ef" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1OnTheFlyAlphabet" kindref="compound">OnTheFlyAlphabet</ref></type>
+        <definition>OnTheFlyAlphabet create_alphabet</definition>
+        <argsstring>(const std::vector&lt; const Nfa * &gt; &amp;nfas)</argsstring>
+        <name>create_alphabet</name>
+        <qualifiedname>mata::nfa::create_alphabet</qualifiedname>
+        <param>
+          <type>const std::vector&lt; const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> * &gt; &amp;</type>
+          <declname>nfas</declname>
+        </param>
+        <briefdescription>
+<para>Create alphabet from a vector of NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfas</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Vector of pointers to NFAs to create alphabet from. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Created alphabet. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="707" column="18" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="707" declcolumn="18"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a869c4c062db9173a28bb7278290f29e5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa union_nondet</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs)</argsstring>
+        <name>union_nondet</name>
+        <qualifiedname>mata::nfa::union_nondet</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Compute non-deterministic union. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Does not add epsilon transitions, just unites initial and final states. <simplesect kind="return"><para>Non-deterministic union of <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="715" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="715" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nfa_1_1plumbing_1a098f2dd92d713a00695e868fb734db83" compoundref="nfa_2plumbing_8hh" startline="67" endline="67">mata::nfa::plumbing::union_nondet</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1aedc87282477b93dc648d9b3f0536c36b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa union_det_complete</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs)</argsstring>
+        <name>union_det_complete</name>
+        <qualifiedname>mata::nfa::union_det_complete</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <briefdescription>
+<para>Compute union of two complete deterministic NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Perserves determinism.</para>
+<para>The union is computed by product construction with OR condition on the final states. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First complete deterministic automaton. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second complete deterministic automaton. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="724" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="724" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1aca609bea95199431ba0311e32522fc18" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa product</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs, ProductFinalStateCondition final_condition=ProductFinalStateCondition::AND, Symbol first_epsilon=EPSILON, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map=nullptr)</argsstring>
+        <name>product</name>
+        <qualifiedname>mata::nfa::product</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912" kindref="member">ProductFinalStateCondition</ref></type>
+          <declname>final_condition</declname>
+          <defval><ref refid="namespacemata_1_1nfa_1a7bd96fcd8a3d8ee633edeafdc0a55912a558ffc8f5770d8e4f95f51d822685532" kindref="member">ProductFinalStateCondition::AND</ref></defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>first_epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Compute product of two NFAs with OR condition on the final states. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Automata must share alphabets. //TODO: this is not implemented yet. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First NFA. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second NFA. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>final_condition</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Condition for a product state to be final.<itemizedlist>
+<listitem><para>AND: both original states have to be final.</para>
+</listitem><listitem><para>OR: at least one of the original states has to be final. </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>first_epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol? </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prod_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="738" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="738" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a15ed3e770473696b83bcac973d945785" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa lang_difference</definition>
+        <argsstring>(const Nfa &amp;nfa_included, const Nfa &amp;nfa_excluded, std::optional&lt; std::function&lt; bool(const Nfa &amp;, const Nfa &amp;, const StateSet &amp;, const StateSet &amp;, const State, const Nfa &amp;)&gt; &gt; macrostate_discover=std::nullopt)</argsstring>
+        <name>lang_difference</name>
+        <qualifiedname>mata::nfa::lang_difference</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>nfa_included</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>nfa_excluded</declname>
+        </param>
+        <param>
+          <type>std::optional&lt; std::function&lt; bool(const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;, const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;, const <ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref> &amp;, const <ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref> &amp;, const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;)&gt; &gt;</type>
+          <declname>macrostate_discover</declname>
+          <defval>std::nullopt</defval>
+        </param>
+        <briefdescription>
+<para>Compute a language difference as <computeroutput>nfa_included</computeroutput> \ <computeroutput>nfa_excluded</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Computed as a lazy intersection of <computeroutput>nfa_included</computeroutput> and a complement of <computeroutput>nfa_excluded</computeroutput>. The NFAs are lazily determinized and the complement is constructed lazily as well, guided by <computeroutput>nfa_included</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfa_included</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFA to include in the difference. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">nfa_excluded</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFA to exclude from the difference. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">macrostate_discover</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Callback event handler for discovering a new macrostate in the language difference automaton for the first time. Return <computeroutput>true</computeroutput> if the computation should continue, and <computeroutput>false</computeroutput> if the computation should stop and return only the NFA for the language difference constructed so far. The parameters are: const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref>&amp; nfa_included, const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref>&amp; nfa_excluded, const StateSet&amp; macrostate_included_state_set, const StateSet&amp; macrostate_excluded_state_set, const State macrostate, const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref>&amp; nfa_lang_difference. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<xrefsect id="todo_1_todo000001"><xreftitle>Todo</xreftitle><xrefdescription><para>: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="761" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="761" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1ad9ae55bbe4f7d34ca8a8cd17712e5b0e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa intersection</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs, const Symbol first_epsilon=EPSILON, std::unordered_map&lt; std::pair&lt; State, State &gt;, State &gt; *prod_map=nullptr)</argsstring>
+        <name>intersection</name>
+        <qualifiedname>mata::nfa::intersection</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>first_epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::pair&lt; <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt;, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; *</type>
+          <declname>prod_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Compute intersection of two NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e., for each each product state <computeroutput>(s, t)</computeroutput> with<computeroutput>s -ε-&gt; p</computeroutput>, <computeroutput>(s, t) -ε-&gt; (p, t)</computeroutput> is created, and vice versa.</para>
+<para>Automata must share alphabets. //TODO: this is not implemented yet.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First NFA to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second NFA to compute intersection for. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">first_epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>smallest epsilon. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol? </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">prod_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NFA as a product of NFAs <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> with ε-transitions preserved. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="782" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="782" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a499eda3e0f024bb3e99790e88fa7d85b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa concatenate</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs, bool use_epsilon=false, StateRenaming *lhs_state_renaming=nullptr, StateRenaming *rhs_state_renaming=nullptr)</argsstring>
+        <name>concatenate</name>
+        <qualifiedname>mata::nfa::concatenate</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>use_epsilon</declname>
+          <defval>false</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref> *</type>
+          <declname>lhs_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref> *</type>
+          <declname>rhs_state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Concatenate two NFAs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Supports epsilon symbols when <computeroutput>use_epsilon</computeroutput> is set to true. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">use_epsilon</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to concatenate over epsilon symbol. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">lhs_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping lhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">rhs_state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map mapping rhs states to result states. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Concatenated automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="797" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="797" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a3cc9e29bbcbc2c52e0bcdd5fd450fa83" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa complement</definition>
+        <argsstring>(const Nfa &amp;aut, const Alphabet &amp;alphabet, const ParameterMap &amp;params={ { &quot;algorithm&quot;, &quot;classical&quot; } })</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::nfa::complement</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> &amp;</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{ { &quot;algorithm&quot;, &quot;classical&quot; } }</defval>
+        </param>
+        <briefdescription>
+<para>Compute automaton accepting complement of <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton whose complement to compute. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> used for complementation. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the complementation algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;:<itemizedlist>
+<listitem><para>&quot;classical&quot;: The classical algorithm determinizes the automaton, makes it complete, and swaps final and non-final states.</para>
+</listitem><listitem><para>&quot;brzozowski&quot;: The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it complete, and swaps final and non-final states. </para>
+</listitem></itemizedlist>
+</para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Complemented automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="813" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="813" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a0503cda4ea4e5a7b590f9fbe241d2382" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa complement</definition>
+        <argsstring>(const Nfa &amp;aut, const utils::OrdVector&lt; Symbol &gt; &amp;symbols, const ParameterMap &amp;params={ { &quot;algorithm&quot;, &quot;classical&quot; } })</argsstring>
+        <name>complement</name>
+        <qualifiedname>mata::nfa::complement</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt; &amp;</type>
+          <declname>symbols</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{ { &quot;algorithm&quot;, &quot;classical&quot; } }</defval>
+        </param>
+        <briefdescription>
+<para>Compute automaton accepting complement of <computeroutput>aut</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This overloaded version complements over an already created ordered set of <computeroutput>symbols</computeroutput> instead of an alphabet. This is a more efficient solution in case you already have <computeroutput>symbols</computeroutput> precomputed or want to complement multiple automata over the same set of <computeroutput>symbols:</computeroutput> the function does not need to compute the ordered set of symbols from the alphabet again (and for each automaton).</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton whose complement to compute. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">symbols</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbols to complement over. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the complementation algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;:<itemizedlist>
+<listitem><para>&quot;classical&quot;: The classical algorithm determinizes the automaton, makes it complete, and swaps final and non-final states.</para>
+</listitem><listitem><para>&quot;brzozowski&quot;: The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it complete, and swaps final and non-final states. </para>
+</listitem></itemizedlist>
+</para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Complemented automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="833" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="833" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a1cc469a532a74f730997887b7c1da01e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa minimize</definition>
+        <argsstring>(const Nfa &amp;aut, const ParameterMap &amp;params={ { &quot;algorithm&quot;, &quot;brzozowski&quot; } })</argsstring>
+        <name>minimize</name>
+        <qualifiedname>mata::nfa::minimize</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{ { &quot;algorithm&quot;, &quot;brzozowski&quot; } }</defval>
+        </param>
+        <briefdescription>
+<para>Compute minimal deterministic automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton whose minimal version to compute. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the minimization algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;brzozowski&quot; </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Minimal deterministic automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="844" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="844" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1ad12cbf32dd50a6addec3a58e05d223cf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa determinize</definition>
+        <argsstring>(const Nfa &amp;aut, std::unordered_map&lt; StateSet, State &gt; *subset_map=nullptr, std::optional&lt; std::function&lt; bool(const Nfa &amp;, const State, const StateSet &amp;)&gt; &gt; macrostate_discover=std::nullopt)</argsstring>
+        <name>determinize</name>
+        <qualifiedname>mata::nfa::determinize</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; <ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref>, <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref> &gt; *</type>
+          <declname>subset_map</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>std::optional&lt; std::function&lt; bool(const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;, const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>, const <ref refid="namespacemata_1_1nfa_1acacdec625284351ed9081ed01659617b" kindref="member">StateSet</ref> &amp;)&gt; &gt;</type>
+          <declname>macrostate_discover</declname>
+          <defval>std::nullopt</defval>
+        </param>
+        <briefdescription>
+<para>Determinize automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to determinize. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">subset_map</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Map that maps sets of states of input automaton to states of determinized automaton. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">macrostate_discover</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Callback event handler for discovering a new macrostate for the first time. The parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states corresponding to the macrostate. Return <computeroutput>true</computeroutput> if the determinization should continue, and <computeroutput>false</computeroutput> if the determinization should stop and return only the determinized NFA constructed so far. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Determinized automaton. </para>
+</simplesect>
+<xrefsect id="todo_1_todo000002"><xreftitle>Todo</xreftitle><xrefdescription><para>: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="858" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="858" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a2862709eab0022359c3f92cff7406a02" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa reduce</definition>
+        <argsstring>(const Nfa &amp;aut, StateRenaming *state_renaming=nullptr, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;simulation&quot; }, { &quot;type&quot;, &quot;after&quot; }, { &quot;direction&quot;, &quot;forward&quot; } })</argsstring>
+        <name>reduce</name>
+        <qualifiedname>mata::nfa::reduce</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1nfa_1a7fe48f2f7fb05de852190003ac808e80" kindref="member">StateRenaming</ref> *</type>
+          <declname>state_renaming</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;simulation&quot; }, { &quot;type&quot;, &quot;after&quot; }, { &quot;direction&quot;, &quot;forward&quot; } }</defval>
+        </param>
+        <briefdescription>
+<para>Reduce the size of the automaton. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Automaton to reduce. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">state_renaming</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Mapping of original states to reduced states. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the reduction algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;simulation&quot;, &quot;residual&quot;, and options to parametrize residual reduction, not utilized in simulation</para>
+</listitem><listitem><para>&quot;type&quot;: &quot;after&quot;, &quot;with&quot;,</para>
+</listitem><listitem><para>&quot;direction&quot;: &quot;forward&quot;, &quot;backward&quot;. </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Reduced automaton. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="874" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="874" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a595cd0920cd0d7c752e9b5644b77d40c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_included</definition>
+        <argsstring>(const Nfa &amp;smaller, const Nfa &amp;bigger, Run *cex, const Alphabet *alphabet=nullptr, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot; }})</argsstring>
+        <name>is_included</name>
+        <qualifiedname>mata::nfa::is_included</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>smaller</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>bigger</declname>
+        </param>
+        <param>
+          <type><ref refid="structmata_1_1nfa_1_1Run" kindref="compound">Run</ref> *</type>
+          <declname>cex</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Checks inclusion of languages of two NFAs: <computeroutput>smaller</computeroutput> and <computeroutput>bigger</computeroutput> (smaller &lt;= bigger). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">smaller</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">bigger</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">cex</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Counterexample for the inclusion. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both NFAs to compute with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>smaller</computeroutput> is included in <computeroutput>bigger</computeroutput>, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="888" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="888" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a6dbe8eee9ad2138753800ae63832ea8f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool is_included</definition>
+        <argsstring>(const Nfa &amp;smaller, const Nfa &amp;bigger, const Alphabet *const alphabet=nullptr, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot; }})</argsstring>
+        <name>is_included</name>
+        <qualifiedname>mata::nfa::is_included</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>smaller</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>bigger</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *const</type>
+          <declname>alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot; }}</defval>
+        </param>
+        <briefdescription>
+<para>Checks inclusion of languages of two NFAs: <computeroutput>smaller</computeroutput> and <computeroutput>bigger</computeroutput> (smaller &lt;= bigger). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">smaller</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">bigger</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both NFAs to compute with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>smaller</computeroutput> is included in <computeroutput>bigger</computeroutput>, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="901" column="13" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="901" bodyend="904"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1af6b26a1486f58a6326434e9cf7198586" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_equivalent</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs, const Alphabet *alphabet, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot;}})</argsstring>
+        <name>are_equivalent</name>
+        <qualifiedname>mata::nfa::are_equivalent</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Perform equivalence check of two NFAs: <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> of both NFAs to compute with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params[</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> are equivalent, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="916" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="916" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1aedf3a29b6190009695d05677f64e3c38" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool are_equivalent</definition>
+        <argsstring>(const Nfa &amp;lhs, const Nfa &amp;rhs, const ParameterMap &amp;params={{ &quot;algorithm&quot;, &quot;antichains&quot;}})</argsstring>
+        <name>are_equivalent</name>
+        <qualifiedname>mata::nfa::are_equivalent</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>lhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>rhs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1_1nfa_1a2dc6b883a0650f7159821d20202ee559" kindref="member">ParameterMap</ref> &amp;</type>
+          <declname>params</declname>
+          <defval>{{ &quot;algorithm&quot;, &quot;antichains&quot;}}</defval>
+        </param>
+        <briefdescription>
+<para>Perform equivalence check of two NFAs: <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The current implementation of <computeroutput><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></computeroutput> does not accept input alphabet. For this reason, an alphabet has to be created from all transitions each time an operation on alphabet is called. When calling this function, the alphabet has to be computed first.</para>
+<para>Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter. That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet. The use of the alternative with defined alphabet should be preferred.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">lhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>First automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">rhs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Second automaton to concatenate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">params</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional parameters to control the equivalence check algorithm:<itemizedlist>
+<listitem><para>&quot;algorithm&quot;: &quot;naive&quot;, &quot;antichains&quot; (Default: &quot;antichains&quot;) </para>
+</listitem></itemizedlist>
+</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>True if <computeroutput>lhs</computeroutput> and <computeroutput>rhs</computeroutput> are equivalent, false otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="936" column="6" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="936" declcolumn="6"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa revert</definition>
+        <argsstring>(const Nfa &amp;aut)</argsstring>
+        <name>revert</name>
+        <qualifiedname>mata::nfa::revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="940" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="940" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nfa_1_1plumbing_1a280a12bfb2515a65712562261c730607" compoundref="nfa_2plumbing_8hh" startline="54" endline="54">mata::nfa::plumbing::revert</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a68f6a4eb09ae17989ee1a10fe6f0a68e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa fragile_revert</definition>
+        <argsstring>(const Nfa &amp;aut)</argsstring>
+        <name>fragile_revert</name>
+        <qualifiedname>mata::nfa::fragile_revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="947" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="947" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1ac1477f7199e1de1d2461ca42627b6a78" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa simple_revert</definition>
+        <argsstring>(const Nfa &amp;aut)</argsstring>
+        <name>simple_revert</name>
+        <qualifiedname>mata::nfa::simple_revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="951" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="951" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a3076ab0b149b8cb2c7377a5deab838bb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa somewhat_simple_revert</definition>
+        <argsstring>(const Nfa &amp;aut)</argsstring>
+        <name>somewhat_simple_revert</name>
+        <qualifiedname>mata::nfa::somewhat_simple_revert</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="956" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="956" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a425b35ef4ca53224ecb4c2839b9a8ecf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref></type>
+        <definition>Nfa remove_epsilon</definition>
+        <argsstring>(const Nfa &amp;aut, Symbol epsilon=EPSILON)</argsstring>
+        <name>remove_epsilon</name>
+        <qualifiedname>mata::nfa::remove_epsilon</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>epsilon</declname>
+          <defval><ref refid="namespacemata_1_1nfa_1a7ab819e148ca173289b95c321befc27e" kindref="member">EPSILON</ref></defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="959" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="959" declcolumn="5"/>
+        <referencedby refid="namespacemata_1_1nfa_1_1plumbing_1aeaf14733bfecdc779252aa57d9b41c7e" compoundref="nfa_2plumbing_8hh" startline="56" endline="56">mata::nfa::plumbing::remove_epsilon</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1abc96a1fa1b3cba4949016107d35d50d0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structmata_1_1nfa_1_1Run" kindref="compound">Run</ref></type>
+        <definition>Run encode_word</definition>
+        <argsstring>(const Alphabet *alphabet, const std::vector&lt; std::string &gt; &amp;input)</argsstring>
+        <name>encode_word</name>
+        <qualifiedname>mata::nfa::encode_word</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; std::string &gt; &amp;</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Encodes a vector of strings (each corresponding to one symbol) into a <computeroutput>Word</computeroutput> instance. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="967" column="5" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="967" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1a1a0a8063da1652cb231b695e9ad223cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">utils::OrdVector</ref>&lt; <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref> &gt;</type>
+        <definition>utils::OrdVector&lt; Symbol &gt; get_symbols_to_work_with</definition>
+        <argsstring>(const nfa::Nfa &amp;nfa, const Alphabet *const shared_alphabet=nullptr)</argsstring>
+        <name>get_symbols_to_work_with</name>
+        <qualifiedname>mata::nfa::get_symbols_to_work_with</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref> &amp;</type>
+          <declname>nfa</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *const</type>
+          <declname>shared_alphabet</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+<para>Get the set of symbols to work with during operations. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">shared_alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Optional alphabet shared between NFAs passed as an argument to a function. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="973" column="18" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="973" declcolumn="18"/>
+      </memberdef>
+      <memberdef kind="function" id="namespacemata_1_1nfa_1af87d77b6ac8cb88141741165be3aa825" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::optional&lt; <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &gt;</type>
+        <definition>std::optional&lt; Word &gt; get_word_from_lang_difference</definition>
+        <argsstring>(const Nfa &amp;nfa_included, const Nfa &amp;nfa_excluded)</argsstring>
+        <name>get_word_from_lang_difference</name>
+        <qualifiedname>mata::nfa::get_word_from_lang_difference</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>nfa_included</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">Nfa</ref> &amp;</type>
+          <declname>nfa_excluded</declname>
+        </param>
+        <briefdescription>
+<para>Get any arbitrary accepted word in the language difference of <computeroutput>nfa_included</computeroutput> without <computeroutput>nfa_excluded</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The language difference automaton is lazily constructed without computing the whole determinized automata and the complememt of <computeroutput>nfa_excluded</computeroutput>. The algorithm returns an arbitrary word from the language difference constructed until the first macrostate with a final state in the original states in <computeroutput>nfa_included</computeroutput> and without any corresponding final states in <computeroutput>nfa_excluded</computeroutput> is encountered.</para>
+<para><simplesect kind="pre"><para>The automaton does not contain any epsilon transitions. </para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">nfa_included</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFA to include in the language difference. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">nfa_excluded</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>NFA to exclude in the language difference. TODO: Support lazy epsilon closure? </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>An arbitrary word from the language difference, or <computeroutput>std::nullopt</computeroutput> if the language difference automaton is universal on the set of symbols from transitions of <computeroutput>nfa_included</computeroutput>. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="990" column="15" declfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" declline="990" declcolumn="15"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/algorithms.hh" line="19" column="1"/>
+  </compounddef>
+</doxygen>

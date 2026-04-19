@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_e99c6a26443b8f2f7611cfc4932749ca" kind="dir">
+    <compoundname>/home/misa/Dokumenty/Nfa/mata/include/mata/nft</compoundname>
+    <innerfile refid="nft_2algorithms_8hh">algorithms.hh</innerfile>
+    <innerfile refid="nft_2builder_8hh">builder.hh</innerfile>
+    <innerfile refid="nft_2delta_8hh">delta.hh</innerfile>
+    <innerfile refid="nft_8hh">nft.hh</innerfile>
+    <innerfile refid="nft_2plumbing_8hh">plumbing.hh</innerfile>
+    <innerfile refid="nft_2types_8hh">types.hh</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nft/"/>
+  </compounddef>
+</doxygen>

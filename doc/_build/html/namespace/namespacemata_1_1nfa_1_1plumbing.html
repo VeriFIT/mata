@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Namespace mata::nfa::plumbing &#8212; Mata  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Namespace mata::nft" href="namespacemata_1_1nft.html" />
+    <link rel="prev" title="Namespace mata::nfa::builder" href="namespacemata_1_1nfa_1_1builder.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="namespace-mata-nfa-plumbing">
+<h1>Namespace mata::nfa::plumbing<a class="headerlink" href="#namespace-mata-nfa-plumbing" title="Link to this heading">¶</a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbingE">
+<span id="_CPPv3N4mata3nfa8plumbingE"></span><span id="_CPPv2N4mata3nfa8plumbingE"></span><span id="mata::nfa::plumbing"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">plumbing</span></span></span><br /></dt>
+<dd><p>Wrappers around various support functions. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing12get_elementsEP8StateSetRK10BoolVector">
+<span id="_CPPv3N4mata3nfa8plumbing12get_elementsEP8StateSetRK10BoolVector"></span><span id="_CPPv2N4mata3nfa8plumbing12get_elementsEP8StateSetRK10BoolVector"></span><span id="mata::nfa::plumbing::get_elements__StateSetP.BoolVectorCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1aef50003ae1db2b344e28a7b625b70ab2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_elements</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">element_set</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1BoolVector.html#_CPPv4N4mata10BoolVectorE" title="mata::BoolVector"><span class="n"><span class="pre">BoolVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bool_vec</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing10complementEP3NfaRK3NfaRK8AlphabetRK12ParameterMap">
+<span id="_CPPv3N4mata3nfa8plumbing10complementEP3NfaRK3NfaRK8AlphabetRK12ParameterMap"></span><span id="_CPPv2N4mata3nfa8plumbing10complementEP3NfaRK3NfaRK8AlphabetRK12ParameterMap"></span><span id="mata::nfa::plumbing::complement__NfaP.NfaCR.AlphabetCR.ParameterMapCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a54692b0aa93378ffd7d63d1674376e2c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">complement</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">result</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa12ParameterMapE" title="mata::nfa::ParameterMap"><span class="n"><span class="pre">ParameterMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;algorithm&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;classical&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;minimize&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;false&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing8minimizeEP3NfaRK3NfaRK12ParameterMap">
+<span id="_CPPv3N4mata3nfa8plumbing8minimizeEP3NfaRK3NfaRK12ParameterMap"></span><span id="_CPPv2N4mata3nfa8plumbing8minimizeEP3NfaRK3NfaRK12ParameterMap"></span><span id="mata::nfa::plumbing::minimize__NfaP.NfaCR.ParameterMapCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1ae3121067ad4aede884f7747bc5265f64"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minimize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa12ParameterMapE" title="mata::nfa::ParameterMap"><span class="n"><span class="pre">ParameterMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;algorithm&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;brzozowski&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing11determinizeEP3NfaRK3NfaPNSt13unordered_mapI8StateSet5StateEE">
+<span id="_CPPv3N4mata3nfa8plumbing11determinizeEP3NfaRK3NfaPNSt13unordered_mapI8StateSet5StateEE"></span><span id="_CPPv2N4mata3nfa8plumbing11determinizeEP3NfaRK3NfaPNSt13unordered_mapI8StateSet5StateEE"></span><span id="mata::nfa::plumbing::determinize__NfaP.NfaCR.std::unordered_map:StateSet.State:P"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1ad887889a71c7c1ac8b828df62a710b26"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">determinize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">result</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">subset_map</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing6reduceEP3NfaRK3NfaP13StateRenamingRK12ParameterMap">
+<span id="_CPPv3N4mata3nfa8plumbing6reduceEP3NfaRK3NfaP13StateRenamingRK12ParameterMap"></span><span id="_CPPv2N4mata3nfa8plumbing6reduceEP3NfaRK3NfaP13StateRenamingRK12ParameterMap"></span><span id="mata::nfa::plumbing::reduce__NfaP.NfaCR.StateRenamingP.ParameterMapCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1aa4936d7ad8f71743d142c86e94780c22"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reduce</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">result</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa13StateRenamingE" title="mata::nfa::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa12ParameterMapE" title="mata::nfa::ParameterMap"><span class="n"><span class="pre">ParameterMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;algorithm&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;simulation&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing6revertEP3NfaRK3Nfa">
+<span id="_CPPv3N4mata3nfa8plumbing6revertEP3NfaRK3Nfa"></span><span id="_CPPv2N4mata3nfa8plumbing6revertEP3NfaRK3Nfa"></span><span id="mata::nfa::plumbing::revert__NfaP.NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a280a12bfb2515a65712562261c730607"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">revert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">result</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing14remove_epsilonEP3NfaRK3Nfa6Symbol">
+<span id="_CPPv3N4mata3nfa8plumbing14remove_epsilonEP3NfaRK3Nfa6Symbol"></span><span id="_CPPv2N4mata3nfa8plumbing14remove_epsilonEP3NfaRK3Nfa6Symbol"></span><span id="mata::nfa::plumbing::remove_epsilon__NfaP.NfaCR.Symbol"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1aeaf14733bfecdc779252aa57d9b41c7e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remove_epsilon</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">result</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa7EPSILONE" title="mata::nfa::EPSILON"><span class="n"><span class="pre">EPSILON</span></span></a><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata3nfa8plumbing9constructEvP3NfaRK12ParsedObjectP8AlphabetP12NameStateMap">
+<span id="_CPPv3I0EN4mata3nfa8plumbing9constructEP3NfaRK12ParsedObjectP8AlphabetP12NameStateMap"></span><span id="_CPPv2I0EN4mata3nfa8plumbing9constructEP3NfaRK12ParsedObjectP8AlphabetP12NameStateMap"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ParsedObject</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a1d4879183af775a2217ff38ccf83ba83"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">construct</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">result</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4I0EN4mata3nfa8plumbing9constructEvP3NfaRK12ParsedObjectP8AlphabetP12NameStateMap" title="mata::nfa::plumbing::construct::ParsedObject"><span class="n"><span class="pre">ParsedObject</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">parsed</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <span class="n"><span class="pre">NameStateMap</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">state_map</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Loads an automaton from Parsed object. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing12union_nondetEP3NfaRK3NfaRK3Nfa">
+<span id="_CPPv3N4mata3nfa8plumbing12union_nondetEP3NfaRK3NfaRK3Nfa"></span><span id="_CPPv2N4mata3nfa8plumbing12union_nondetEP3NfaRK3NfaRK3Nfa"></span><span id="mata::nfa::plumbing::union_nondet__NfaP.NfaCR.NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a098f2dd92d713a00695e868fb734db83"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">union_nondet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">unionAutomaton</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing12intersectionEP3NfaRK3NfaRK3Nfa6SymbolPNSt13unordered_mapINSt4pairI5State5StateEE5StateEE">
+<span id="_CPPv3N4mata3nfa8plumbing12intersectionEP3NfaRK3NfaRK3Nfa6SymbolPNSt13unordered_mapINSt4pairI5State5StateEE5StateEE"></span><span id="_CPPv2N4mata3nfa8plumbing12intersectionEP3NfaRK3NfaRK3Nfa6SymbolPNSt13unordered_mapINSt4pairI5State5StateEE5StateEE"></span><span id="mata::nfa::plumbing::intersection__NfaP.NfaCR.NfaCR.Symbol.std::unordered_map:std::pair:State.State:.State:P"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a11b5d4ff71f2bd8ef232ba7cb8993504"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">intersection</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first_epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa7EPSILONE" title="mata::nfa::EPSILON"><span class="n"><span class="pre">EPSILON</span></span></a>, <a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">prod_map</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Compute intersection of two NFAs. </p>
+<p>Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e., for each each product state <code class="docutils literal notranslate"><span class="pre">(s,</span> <span class="pre">t)</span></code> with<code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">-ε-&gt;</span> <span class="pre">p</span></code>, <code class="docutils literal notranslate"><span class="pre">(s,</span> <span class="pre">t)</span> <span class="pre">-ε-&gt;</span> <span class="pre">(p,</span> <span class="pre">t)</span></code> is created, and vice versa.</p>
+<p>Automata must share alphabets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>res</strong> – <strong>[out]</strong> The resulting intersection NFA. </p></li>
+<li><p><strong>lhs</strong> – <strong>[in]</strong> Input NFA. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Input NFA. </p></li>
+<li><p><strong>first_epsilon</strong> – <strong>[in]</strong> smallest epsilon. </p></li>
+<li><p><strong>prod_map</strong> – <strong>[out]</strong> Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive). </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NFA as a product of NFAs <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and <code class="docutils literal notranslate"><span class="pre">rhs</span></code> with ε-transitions preserved. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing11concatenateEP3NfaRK3NfaRK3NfabP13StateRenamingP13StateRenaming">
+<span id="_CPPv3N4mata3nfa8plumbing11concatenateEP3NfaRK3NfaRK3NfabP13StateRenamingP13StateRenaming"></span><span id="_CPPv2N4mata3nfa8plumbing11concatenateEP3NfaRK3NfaRK3NfabP13StateRenamingP13StateRenaming"></span><span id="mata::nfa::plumbing::concatenate__NfaP.NfaCR.NfaCR.b.StateRenamingP.StateRenamingP"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a7b01cae379c51416a338f04cb1936965"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">use_epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa13StateRenamingE" title="mata::nfa::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">lhs_result_state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span>, <a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nfa13StateRenamingE" title="mata::nfa::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rhs_result_state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Concatenate two NFAs. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lhs_result_state_renaming</strong> – <strong>[out]</strong> Map mapping lhs states to result states. </p></li>
+<li><p><strong>rhs_result_state_renaming</strong> – <strong>[out]</strong> Map mapping rhs states to result states. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing20reduce_residual_withEP3NfaRK3Nfa">
+<span id="_CPPv3N4mata3nfa8plumbing20reduce_residual_withEP3NfaRK3Nfa"></span><span id="_CPPv2N4mata3nfa8plumbing20reduce_residual_withEP3NfaRK3Nfa"></span><span id="mata::nfa::plumbing::reduce_residual_with__NfaP.NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1abc1bc560caf40da85de1afe8b3d035e0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reduce_residual_with</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nfa</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Reduce NFA using residual construction. </p>
+<p>The residual construction of the residual automaton and the removal of the covering states is done during the last determinization.</p>
+<p>Similar performance to <code class="docutils literal notranslate"><a class="reference internal" href="../nft.html#namespacemata_1_1nfa_1_1plumbing_1a4f2b43073c6729786d9ad5e7b0c92adf"><span class="std std-ref"><span class="pre">reduce_residual_after()</span></span></a></code>. The output is almost the same except the transitions: transitions may slightly differ, but the number of states is the same for both algorithm types. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8plumbing21reduce_residual_afterEP3NfaRK3Nfa">
+<span id="_CPPv3N4mata3nfa8plumbing21reduce_residual_afterEP3NfaRK3Nfa"></span><span id="_CPPv2N4mata3nfa8plumbing21reduce_residual_afterEP3NfaRK3Nfa"></span><span id="mata::nfa::plumbing::reduce_residual_after__NfaP.NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1_1plumbing_1a4f2b43073c6729786d9ad5e7b0c92adf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reduce_residual_after</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">res</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nfa</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Reduce NFA using residual construction. </p>
+<p>The residual construction of the residual automaton and the removal of the covering states is done after the final determinization.</p>
+<p>Similar performance to <code class="docutils literal notranslate"><a class="reference internal" href="../nft.html#namespacemata_1_1nfa_1_1plumbing_1abc1bc560caf40da85de1afe8b3d035e0"><span class="std std-ref"><span class="pre">reduce_residual_with()</span></span></a></code>. The output is almost the same except the transitions: transitions may slightly differ, but the number of states is the same for both algorithm types. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../namespacelist.html">Namespace list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="namespacemata.html">Namespace mata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications.html">Namespace mata::applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings.html">Namespace mata::applications::strings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings_1_1replace.html">Namespace mata::applications::strings::replace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1applications_1_1strings_1_1seg__nfa.html">Namespace mata::applications::strings::seg_nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa.html">Namespace mata::nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1algorithms.html">Namespace mata::nfa::algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nfa_1_1builder.html">Namespace mata::nfa::builder</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Namespace mata::nfa::plumbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft.html">Namespace mata::nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1algorithms.html">Namespace mata::nft::algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1builder.html">Namespace mata::nft::builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1nft_1_1plumbing.html">Namespace mata::nft::plumbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1parser.html">Namespace mata::parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacemata_1_1utils.html">Namespace mata::utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespacestd.html">Namespace std</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../namespacelist.html">Namespace list</a><ul>
+      <li>Previous: <a href="namespacemata_1_1nfa_1_1builder.html" title="previous chapter">Namespace mata::nfa::builder</a></li>
+      <li>Next: <a href="namespacemata_1_1nft.html" title="next chapter">Namespace mata::nft</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/namespace/namespacemata_1_1nfa_1_1plumbing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

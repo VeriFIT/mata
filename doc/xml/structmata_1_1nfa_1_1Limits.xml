@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1nfa_1_1Limits" kind="struct" language="C++" prot="public">
+    <compoundname>mata::nfa::Limits</compoundname>
+    <includes refid="nfa_2types_8hh" local="no">types.hh</includes>
+    <sectiondef kind="public-static-attrib">
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Limits_1a5a719bbc0112d26622e1f0a11e4fb073" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+        <definition>const State min_state</definition>
+        <argsstring></argsstring>
+        <name>min_state</name>
+        <qualifiedname>mata::nfa::Limits::min_state</qualifiedname>
+        <initializer>= std::numeric_limits&lt;<ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>&gt;::min()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="54" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="54" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref></type>
+        <definition>const State max_state</definition>
+        <argsstring></argsstring>
+        <name>max_state</name>
+        <qualifiedname>mata::nfa::Limits::max_state</qualifiedname>
+        <initializer>= std::numeric_limits&lt;<ref refid="namespacemata_1_1nfa_1a814d9c7759527d6c137a9df7f1a2ee87" kindref="member">State</ref>&gt;::max()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="55" column="24" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="55" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Limits_1a708e31ee8969e648d3b39dfeffe58617" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>const Symbol min_symbol</definition>
+        <argsstring></argsstring>
+        <name>min_symbol</name>
+        <qualifiedname>mata::nfa::Limits::min_symbol</qualifiedname>
+        <initializer>= std::numeric_limits&lt;<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref>&gt;::min()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="56" column="25" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="56" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1nfa_1_1Limits_1a6e4a56f89c6edead35e706291e23eda3" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+        <definition>const Symbol max_symbol</definition>
+        <argsstring></argsstring>
+        <name>max_symbol</name>
+        <qualifiedname>mata::nfa::Limits::max_symbol</qualifiedname>
+        <initializer>= std::numeric_limits&lt;<ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref>&gt;::max()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="57" column="25" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="57" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" line="52" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/types.hh" bodystart="52" bodyend="58"/>
+    <listofallmembers>
+      <member refid="structmata_1_1nfa_1_1Limits_1a32de577d2c9b39a99e266a8b7db271df" prot="public" virt="non-virtual"><scope>mata::nfa::Limits</scope><name>max_state</name></member>
+      <member refid="structmata_1_1nfa_1_1Limits_1a6e4a56f89c6edead35e706291e23eda3" prot="public" virt="non-virtual"><scope>mata::nfa::Limits</scope><name>max_symbol</name></member>
+      <member refid="structmata_1_1nfa_1_1Limits_1a5a719bbc0112d26622e1f0a11e4fb073" prot="public" virt="non-virtual"><scope>mata::nfa::Limits</scope><name>min_state</name></member>
+      <member refid="structmata_1_1nfa_1_1Limits_1a708e31ee8969e648d3b39dfeffe58617" prot="public" virt="non-virtual"><scope>mata::nfa::Limits</scope><name>min_symbol</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

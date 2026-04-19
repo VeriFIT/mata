@@ -6,6 +6,7 @@
 
 #include "mata/nft/nft.hh"
 #include "mata/utils/ord-vector.hh"
+#include "mata/utils/custom_vector.h"
 
 
 using namespace mata::nft;
@@ -644,7 +645,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
         lhs.delta.add(2, 'c', 3);
         lhs.delta.add(3, 'd', 4);
 
-        Nft rhs(3, { 0 }, { 2 }, Levels(std::vector<Level>({ 0, 0, 0 })));
+        Nft rhs(3, { 0 }, { 2 }, Levels(CustomVector<Level>({ 0, 0, 0 })));
         rhs.delta.add(0, 'b', 1);
         rhs.delta.add(1, 'd', 2);
 
@@ -2493,7 +2494,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
         lhs.delta.add(1, EPSILON, 2);
         lhs.delta.add(2, 'b', 3);
 
-        Nft rhs(2, { 0 }, { 1 }, Levels(std::vector<Level>({ 0, 0 })));
+        Nft rhs(2, { 0 }, { 1 }, Levels(CustomVector<Level>({ 0, 0 })));
         rhs.delta.add(0, EPSILON, 1);
 
         Nft expected_full(14, { 0 }, { 3 }, Levels({ 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2 }));
@@ -2571,7 +2572,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
         lhs.delta.add(4, EPSILON, 5);
         lhs.delta.add(5, 'd', 6);
 
-        Nft rhs(2, { 0 }, { 1 }, Levels(std::vector<Level>({ 0, 0 })));
+        Nft rhs(2, { 0 }, { 1 }, Levels(CustomVector<Level>({ 0, 0 })));
         rhs.delta.add(0, EPSILON, 1);
 
         Nft expected_full(24, { 0 }, { 3, 6 }, Levels({ 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2, 1, 2, 1, 2, 0, 1, 2 }));

@@ -16,6 +16,7 @@
 #include "mata/nft/nft.hh"
 #include "mata/nft/delta.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/utils/custom_vector.h"
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/algorithms.hh"
@@ -44,7 +45,7 @@ TEST_CASE("mata::nft::Nft()") {
     nft.levels[1] = 3;
     nft.levels[2] = 1;
     CHECK(nft.levels[2] == 1);
-    CHECK(nft.levels == std::vector<Level>{ 0, 3, 1 });
+    CHECK(nft.levels == CustomVector<Level>{ 0, 3, 1 });
 }
 
 TEST_CASE("mata::nft::size()") {
@@ -427,7 +428,7 @@ TEST_CASE("mata::nft::determinize()") {
     SECTION("simple automaton 1") {
         nft.initial = { 0 };
         nft.final = { 0 };
-        nft.levels.set(std::vector<Level>{ 0 });
+        nft.levels.set(CustomVector<Level>{ 0 });
         result = determinize(nft, &subset_map);
         CHECK_SHARED();
     }
@@ -919,7 +920,7 @@ TEST_CASE("mata::nft::make_complete()") {
     auto alphabet_symbols = [&] { return alphabet.get_alphabet_symbols(); };
     OrdVector<Symbol> symbols{ alphabet_symbols() };
 
-    std::optional<std::vector<State>> sinks{ std::nullopt };
+    std::optional<CustomVector<State>> sinks{ std::nullopt };
 
     const auto CHECK_SHARED = [&] {
         CHECK(are_equivalent(nft, result));
@@ -938,8 +939,8 @@ TEST_CASE("mata::nft::make_complete()") {
 
 
         // Check sinks if any were provided.
-        // CHECK(not result.make_complete(&alphabet, std::vector<State>{ sinks }));
-        for (auto sinks_val{ sinks.value_or(std::vector<State>{}) }; const State sink : sinks_val) {
+        // CHECK(not result.make_complete(&alphabet, CustomVector<State>{ sinks }));
+        for (auto sinks_val{ sinks.value_or(CustomVector<State>{}) }; const State sink : sinks_val) {
             for (const auto symbol : alphabet_symbols()) {
                 CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
             }
@@ -1742,7 +1743,7 @@ TEST_CASE("mata::nft::Levels") {
         levels = Levels{ 3, { 2 } };
         CHECK(levels.num_of_levels == 3);
         CHECK(levels.size() == 1);
-        CHECK(levels == std::vector<Level>{ 2 });
+        CHECK(levels == CustomVector<Level>{ 2 });
         CHECK(levels != Levels{ 2 });
     }
 
@@ -1750,7 +1751,7 @@ TEST_CASE("mata::nft::Levels") {
         levels = { 3, 2 };
         CHECK(levels.num_of_levels == 4);
         CHECK(levels.size() == 2);
-        CHECK(levels == std::vector<Level>{ 3, 2 });
+        CHECK(levels == CustomVector<Level>{ 3, 2 });
         CHECK(levels != Levels{ 3, { 2 } });
     }
 
@@ -1771,7 +1772,7 @@ TEST_CASE("mata::nft::Levels") {
     SECTION("mata::nft::Levels::get_levels_of()") {
         levels = { 1, 0, 1, 0, 4, 2, 0 };
         StateSet states = { 0, 2, 4, 5 };
-        std::vector<Level> expected_levels = { 1, 1, 4, 2 };
+        CustomVector<Level> expected_levels = { 1, 1, 4, 2 };
         CHECK(levels.get_levels_of(states) == expected_levels);
     }
 
@@ -1779,7 +1780,7 @@ TEST_CASE("mata::nft::Levels") {
         levels = { 1, 0, 1, 0, 4, 2, 0 };
         StateSet states = { 0, 1, 4, 5 };
         CHECK(levels.get_minimal_next_level_of(states) == 1);
-        states.erase(0);
+        states.erase(State{ 0 });
         CHECK(levels.get_minimal_next_level_of(states) == 2);
         states.erase(5);
         CHECK(levels.get_minimal_next_level_of(states) == 4);
@@ -1787,14 +1788,14 @@ TEST_CASE("mata::nft::Levels") {
         CHECK(levels.get_minimal_next_level_of(states) == 0);
     }
 
-    SECTION("operator=(std::vector<Level>) and set(std::vector<Level>) behaviour") {
+    SECTION("operator=(CustomVector<Level>) and set(CustomVector<Level>) behaviour") {
         levels = { 1, 0, 1 };
         levels.num_of_levels = 12;
-        levels.set(std::vector<Level>{ 5, 6, 7 });
+        levels.set(CustomVector<Level>{ 5, 6, 7 });
         CHECK(levels.num_of_levels == 12);
-        levels = std::vector<Level>{ 2, 2, 1 };
+        levels = CustomVector<Level>{ 2, 2, 1 };
         CHECK(levels.num_of_levels == 3);
-        CHECK(levels == std::vector<Level>{ 2, 2, 1 });
+        CHECK(levels == CustomVector<Level>{ 2, 2, 1 });
     }
 }
 

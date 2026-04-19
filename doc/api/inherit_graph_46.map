@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,31,68,56"/>
+<area shape="rect" id="Node000001" href="$classmata_1_1BoolVector.html" title="Representation of bool vector by a vector of uint8_t." alt="" coords="116,5,208,31"/>
+<area shape="poly" id="edge10_Node000000_Node000001" title=" " alt="" coords="81,32,115,25,116,30,82,37"/>
+<area shape="rect" id="Node000002" href="$classmata_1_1nft_1_1Levels.html" title=" " alt="" coords="130,55,194,80"/>
+<area shape="poly" id="edge11_Node000000_Node000002" title=" " alt="" coords="82,49,130,59,129,64,81,55"/>
+</map>

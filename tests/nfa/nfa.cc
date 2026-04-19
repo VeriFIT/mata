@@ -2366,14 +2366,14 @@ TEST_CASE("mata::nfa::is_included()")
                 REQUIRE((
                     cex.word == Word{alph["a"], alph["b"]} ||
                     cex.word == Word{alph["b"], alph["a"]}));
-                REQUIRE(cex.path == std::vector<State>{1,1,1});
+                REQUIRE(cex.path == CustomVector<State>{1,1,1});
 
                 is_incl = is_included(bigger, smaller, &cex, &alph, params);
                 REQUIRE(is_incl);
                 REQUIRE((
                     cex.word == Word{alph["a"], alph["b"]} ||
                     cex.word == Word{alph["b"], alph["a"]}));
-                REQUIRE(cex.path == std::vector<State>{1,1,1});
+                REQUIRE(cex.path == CustomVector<State>{1,1,1});
             }
         }
     }
@@ -2413,7 +2413,7 @@ TEST_CASE("mata::nfa::is_included()")
                 REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
                 REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
                 REQUIRE(cex.word[2] != cex.word[3]);
-                REQUIRE(cex.path == std::vector<State>{1,1,1,1,1});
+                REQUIRE(cex.path == CustomVector<State>{1,1,1,1,1});
 
                 is_incl = is_included(bigger, smaller, &cex, &alph, params);
                 REQUIRE(is_incl);
@@ -2424,7 +2424,7 @@ TEST_CASE("mata::nfa::is_included()")
                 REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
                 REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
                 REQUIRE(cex.word[2] != cex.word[3]);
-                REQUIRE(cex.path == std::vector<State>{1,1,1,1,1});
+                REQUIRE(cex.path == CustomVector<State>{1,1,1,1,1});
             }
         }
     }

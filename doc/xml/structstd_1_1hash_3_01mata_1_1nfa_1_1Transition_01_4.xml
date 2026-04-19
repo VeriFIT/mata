@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4" kind="struct" language="C++" prot="public">
+    <compoundname>std::hash&lt; mata::nfa::Transition &gt;</compoundname>
+    <includes refid="nfa_8hh" local="no">nfa.hh</includes>
+    <templateparamlist>
+    </templateparamlist>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4_1ac97dd2523ff2b65906f89ffd58fb2bf5" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t operator()</definition>
+        <argsstring>(const mata::nfa::Transition &amp;trans) const</argsstring>
+        <name>operator()</name>
+        <qualifiedname>std::hash&lt; mata::nfa::Transition &gt;::operator()</qualifiedname>
+        <param>
+          <type>const <ref refid="structmata_1_1nfa_1_1Transition" kindref="compound">mata::nfa::Transition</ref> &amp;</type>
+          <declname>trans</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="997" column="15" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="997" bodyend="1002"/>
+        <references refid="structmata_1_1nfa_1_1Transition_1a8e76c5f9192d5bd73b0cc4b371f8f72e" compoundref="nfa_2delta_8hh" startline="20">Transition::source</references>
+        <references refid="structmata_1_1nfa_1_1Transition_1a86b1fd052877425f029f5528edab94d1" compoundref="nfa_2delta_8hh" startline="21">Transition::symbol</references>
+        <references refid="structmata_1_1nfa_1_1Transition_1ad29d51e23c4870e586c79c7e47197d08" compoundref="nfa_2delta_8hh" startline="22">Transition::target</references>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" line="996" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/nfa/nfa.hh" bodystart="996" bodyend="1003"/>
+    <listofallmembers>
+      <member refid="structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4_1ac97dd2523ff2b65906f89ffd58fb2bf5" prot="public" virt="non-virtual"><scope>std::hash&lt; mata::nfa::Transition &gt;</scope><name>operator()</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

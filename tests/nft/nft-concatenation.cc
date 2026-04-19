@@ -17,6 +17,7 @@ using namespace mata::utils;
 using namespace mata::parser;
 
 using Symbol = mata::Symbol;
+using Word = mata::Word;
 
 // Some common automata {{{
 
@@ -248,7 +249,7 @@ TEST_CASE("mata::nft::concatenate()") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Simple two state automata with higher state num for non-final state") {
@@ -266,7 +267,7 @@ TEST_CASE("mata::nft::concatenate()") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Simple two state lhs automaton") {
@@ -287,7 +288,7 @@ TEST_CASE("mata::nft::concatenate()") {
         CHECK(!result.is_in_lang(Run{ { 'a', 'b' }, {} }));
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b' }) != shortest_words.end());
     }
 
     SECTION("Automaton A concatenate automaton B") {
@@ -300,10 +301,10 @@ TEST_CASE("mata::nft::concatenate()") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Automaton B concatenate automaton A") {
@@ -316,10 +317,10 @@ TEST_CASE("mata::nft::concatenate()") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Sample automata") {
@@ -475,7 +476,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON, 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', EPSILON, 'a' }) != shortest_words.end());
     }
 
     SECTION("Simple two state automata with higher state num for non-final state")
@@ -503,7 +504,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON, 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', EPSILON, 'a' }) != shortest_words.end());
     }
 
     SECTION("Simple two state lhs automaton")
@@ -552,10 +553,10 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Automaton B concatenate automaton A")
@@ -574,10 +575,10 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
     }
 }
 
@@ -662,10 +663,10 @@ TEST_CASE("mata::nft::concatenate() inplace") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(Word{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Sample automata") {

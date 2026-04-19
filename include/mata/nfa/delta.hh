@@ -10,7 +10,7 @@
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
-#include "utils/custom_vector.h"
+#include "mata/utils/custom_vector.h"
 
 #include <iterator>
 

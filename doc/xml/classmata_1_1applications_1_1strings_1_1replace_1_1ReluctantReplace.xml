@@ -1,0 +1,634 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace" kind="class" language="C++" prot="public">
+    <compoundname>mata::applications::strings::replace::ReluctantReplace</compoundname>
+    <includes refid="strings_8hh" local="no">strings.hh</includes>
+    <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a71ae6399906f8800f5fff8784f5e9503" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>static Nft replace_regex</definition>
+        <argsstring>(nfa::Nfa aut, const Word &amp;replacement, Alphabet *alphabet, ReplaceMode replace_mode=ReplaceMode::All, Symbol begin_marker=BEGIN_MARKER)</argsstring>
+        <name>replace_regex</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::replace_regex</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+          <declname>aut</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0bab1c94ca2fbc3e78fc30069c8d0f01680" kindref="member">ReplaceMode::All</ref></defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>begin_marker</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca4abc4fb3ea7e410a8ac6559f3481a9" kindref="member">BEGIN_MARKER</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create NFT modelling a reluctant leftmost replace of regex represented by deterministic automaton <computeroutput>aut</computeroutput> to <computeroutput>replacement</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The most general replace operation, handling any regex as the part to be replaced. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>aut</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Deterministic automaton representing regex to be replaced. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replacement</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Literal to replace with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> over which to create the NFT. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replace_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to replace all or just the single (the leftmost) occurrence of <computeroutput>regex</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>begin_marker</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to be used internally as a begin marker of replaced <computeroutput>regex</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The reluctant leftmost replace NFT. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="561" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a08a4e36f843f9bb95caf160e0a0c618d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>static Nft replace_literal</definition>
+        <argsstring>(const Word &amp;literal, const Word &amp;replacement, Alphabet *alphabet, ReplaceMode replace_mode=ReplaceMode::All, Symbol end_marker=END_MARKER)</argsstring>
+        <name>replace_literal</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::replace_literal</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>literal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0bab1c94ca2fbc3e78fc30069c8d0f01680" kindref="member">ReplaceMode::All</ref></defval>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>end_marker</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1ab868286e853313f300cbc4acfea55249" kindref="member">END_MARKER</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create NFT modelling a reluctant leftmost replace of literal <computeroutput>literal</computeroutput> to <computeroutput>replacement</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>literal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Literal to replace. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replacement</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Literal to replace with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> over which to create the NFT. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replace_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to replace all or just the single (the leftmost) occurrence of <computeroutput>literal</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>end_marker</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to be used internally as an end marker marking the end of the replaced literal. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The reluctant leftmost replace NFT. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="572" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a4011a7462df9f1c38e24140c56e990b3" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>static Nft replace_symbol</definition>
+        <argsstring>(Symbol from_symbol, Symbol replacement, mata::Alphabet *alphabet, ReplaceMode replace_mode=ReplaceMode::All)</argsstring>
+        <name>replace_symbol</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::replace_symbol</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>from_symbol</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">mata::Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0bab1c94ca2fbc3e78fc30069c8d0f01680" kindref="member">ReplaceMode::All</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create NFT modelling a reluctant leftmost replace of symbol <computeroutput>from_symbol</computeroutput> to <computeroutput>replacement</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>from_symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to replace. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replacement</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to replace with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> over which to create the NFT. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replace_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to replace all or just the single (the leftmost) occurrence of <computeroutput>from_symbol</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The reluctant leftmost replace NFT. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="582" column="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1ab1c0680edfce1a6b551bb8bd692c95aa" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>static Nft replace_symbol</definition>
+        <argsstring>(Symbol from_symbol, const Word &amp;replacement, mata::Alphabet *alphabet, ReplaceMode replace_mode=ReplaceMode::All)</argsstring>
+        <name>replace_symbol</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::replace_symbol</qualifiedname>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>from_symbol</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">mata::Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0bab1c94ca2fbc3e78fc30069c8d0f01680" kindref="member">ReplaceMode::All</ref></defval>
+        </param>
+        <briefdescription>
+<para>Create NFT modelling a reluctant leftmost replace of symbol <computeroutput>from_symbol</computeroutput> to <computeroutput>replacement</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>from_symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Symbol to replace. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replacement</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Literal to replace with. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>alphabet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> over which to create the NFT. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replace_mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether to replace all or just the single (the leftmost) occurrence of <computeroutput>from_symbol</computeroutput>. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The reluctant leftmost replace NFT. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="592" column="16"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1aba1047735842bd2e5c1d9740b215dcb1" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>nfa::Nfa end_marker_dfa</definition>
+        <argsstring>(nfa::Nfa regex)</argsstring>
+        <name>end_marker_dfa</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::end_marker_dfa</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+          <declname>regex</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="595" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a0e73d0efbbe54837b705086ab30958a3" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>Nft marker_nft</definition>
+        <argsstring>(const nfa::Nfa &amp;marker_dfa, Symbol marker)</argsstring>
+        <name>marker_nft</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::marker_nft</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref> &amp;</type>
+          <declname>marker_dfa</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>marker</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="596" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a26f004a480afd07546688121f4cc272d" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>nfa::Nfa generic_marker_dfa</definition>
+        <argsstring>(const std::string &amp;regex, Alphabet *alphabet)</argsstring>
+        <name>generic_marker_dfa</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::generic_marker_dfa</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>regex</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="598" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a3f31590c8147e9c6f06e64dc998116ce" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>nfa::Nfa generic_marker_dfa</definition>
+        <argsstring>(nfa::Nfa regex, Alphabet *alphabet)</argsstring>
+        <name>generic_marker_dfa</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::generic_marker_dfa</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+          <declname>regex</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="599" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1aae2f28dbf903a459ba2aa2972bc740f1" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>nfa::Nfa begin_marker_nfa</definition>
+        <argsstring>(const std::string &amp;regex, Alphabet *alphabet)</argsstring>
+        <name>begin_marker_nfa</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::begin_marker_nfa</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>regex</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="601" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a3a4e359ea3977ad3de43fccc2f914857" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>nfa::Nfa begin_marker_nfa</definition>
+        <argsstring>(nfa::Nfa regex, Alphabet *alphabet)</argsstring>
+        <name>begin_marker_nfa</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::begin_marker_nfa</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+          <declname>regex</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="602" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1ab5116e88d12dc8ea72fefb3c5c4dc9e5" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>Nft begin_marker_nft</definition>
+        <argsstring>(const nfa::Nfa &amp;marker_nfa, Symbol begin_marker)</argsstring>
+        <name>begin_marker_nft</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::begin_marker_nft</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref> &amp;</type>
+          <declname>marker_nfa</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>begin_marker</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="604" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a6205db87ea7b41dab2315aad99357ae1" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>Nft end_marker_dft</definition>
+        <argsstring>(const nfa::Nfa &amp;end_marker_dfa, Symbol end_marker)</argsstring>
+        <name>end_marker_dft</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::end_marker_dft</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref> &amp;</type>
+          <declname>end_marker_dfa</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>end_marker</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="605" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a04c456386e38e6fe6efd5745dca63ade" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+        <definition>nfa::Nfa reluctant_nfa_with_marker</definition>
+        <argsstring>(nfa::Nfa nfa, Symbol marker, Alphabet *alphabet)</argsstring>
+        <name>reluctant_nfa_with_marker</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::reluctant_nfa_with_marker</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+          <declname>nfa</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>marker</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="606" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1ab23072e4440c5f62d4d1cbca762984ae" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>Nft reluctant_leftmost_nft</definition>
+        <argsstring>(const std::string &amp;regex, Alphabet *alphabet, Symbol begin_marker, const Word &amp;replacement, ReplaceMode replace_mode)</argsstring>
+        <name>reluctant_leftmost_nft</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::reluctant_leftmost_nft</qualifiedname>
+        <param>
+          <type>const std::string &amp;</type>
+          <declname>regex</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>begin_marker</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="608" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a9069be78275c915f17af8b1be3662a6e" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>Nft reluctant_leftmost_nft</definition>
+        <argsstring>(nfa::Nfa nfa, Alphabet *alphabet, Symbol begin_marker, const Word &amp;replacement, ReplaceMode replace_mode)</argsstring>
+        <name>reluctant_leftmost_nft</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::reluctant_leftmost_nft</qualifiedname>
+        <param>
+          <type><ref refid="classmata_1_1nfa_1_1Nfa" kindref="compound">nfa::Nfa</ref></type>
+          <declname>nfa</declname>
+        </param>
+        <param>
+          <type><ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>begin_marker</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="609" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1aadfeff2779e4c028a16b578f3a64f1b7" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref></type>
+        <definition>Nft replace_literal_nft</definition>
+        <argsstring>(const Word &amp;literal, const Word &amp;replacement, const Alphabet *alphabet, Symbol end_marker, ReplaceMode replace_mode=ReplaceMode::All)</argsstring>
+        <name>replace_literal_nft</name>
+        <qualifiedname>mata::applications::strings::replace::ReluctantReplace::replace_literal_nft</qualifiedname>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>literal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="namespacemata_1a1bf7558ef13ecef51d92b42cb264cc14" kindref="member">Word</ref> &amp;</type>
+          <declname>replacement</declname>
+        </param>
+        <param>
+          <type>const <ref refid="classmata_1_1Alphabet" kindref="compound">Alphabet</ref> *</type>
+          <declname>alphabet</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4" kindref="member">Symbol</ref></type>
+          <declname>end_marker</declname>
+        </param>
+        <param>
+          <type><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0b" kindref="member">ReplaceMode</ref></type>
+          <declname>replace_mode</declname>
+          <defval><ref refid="namespacemata_1_1applications_1_1strings_1_1replace_1aca1c3b96ff467669df4c4d14b2a29b0bab1c94ca2fbc3e78fc30069c8d0f01680" kindref="member">ReplaceMode::All</ref></defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="611" column="9"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Implementation of all reluctant replace versions. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="548" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="548" bodyend="613"/>
+    <listofallmembers>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1aae2f28dbf903a459ba2aa2972bc740f1" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>begin_marker_nfa</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a3a4e359ea3977ad3de43fccc2f914857" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>begin_marker_nfa</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1ab5116e88d12dc8ea72fefb3c5c4dc9e5" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>begin_marker_nft</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1aba1047735842bd2e5c1d9740b215dcb1" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>end_marker_dfa</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a6205db87ea7b41dab2315aad99357ae1" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>end_marker_dft</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a26f004a480afd07546688121f4cc272d" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>generic_marker_dfa</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a3f31590c8147e9c6f06e64dc998116ce" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>generic_marker_dfa</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a0e73d0efbbe54837b705086ab30958a3" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>marker_nft</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1ab23072e4440c5f62d4d1cbca762984ae" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>reluctant_leftmost_nft</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a9069be78275c915f17af8b1be3662a6e" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>reluctant_leftmost_nft</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a04c456386e38e6fe6efd5745dca63ade" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>reluctant_nfa_with_marker</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a08a4e36f843f9bb95caf160e0a0c618d" prot="public" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>replace_literal</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1aadfeff2779e4c028a16b578f3a64f1b7" prot="protected" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>replace_literal_nft</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a71ae6399906f8800f5fff8784f5e9503" prot="public" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>replace_regex</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1a4011a7462df9f1c38e24140c56e990b3" prot="public" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>replace_symbol</name></member>
+      <member refid="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace_1ab1c0680edfce1a6b551bb8bd692c95aa" prot="public" virt="non-virtual"><scope>mata::applications::strings::replace::ReluctantReplace</scope><name>replace_symbol</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

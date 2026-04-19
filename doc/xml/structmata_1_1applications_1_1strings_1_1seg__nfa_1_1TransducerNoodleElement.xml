@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement" kind="struct" language="C++" prot="private">
+    <compoundname>mata::applications::strings::seg_nfa::TransducerNoodleElement</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a54de6de94fd4cc7da9963b3d96eb87bb" prot="public" static="no" mutable="no">
+        <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref> &gt;</type>
+        <definition>std::shared_ptr&lt;Nft&gt; transducer</definition>
+        <argsstring></argsstring>
+        <name>transducer</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodleElement::transducer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="411" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="411" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1aa0204e8f063bb5ff4877787569b4a26e" prot="public" static="no" mutable="no">
+        <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt;</type>
+        <definition>std::shared_ptr&lt;Nfa&gt; input_aut</definition>
+        <argsstring></argsstring>
+        <name>input_aut</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodleElement::input_aut</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="412" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="412" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a43c052099a8242b35d4b81b7b4a525f0" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned input_index</definition>
+        <argsstring></argsstring>
+        <name>input_index</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodleElement::input_index</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="413" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="413" bodyend="-1"/>
+        <referencedby refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a24665239a73d0a7cdc643baf83914a21" compoundref="strings_8hh" startline="417" endline="418">TransducerNoodleElement::TransducerNoodleElement</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a010a0d268d9ae6750bb7aaf433473469" prot="public" static="no" mutable="no">
+        <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt;</type>
+        <definition>std::shared_ptr&lt;Nfa&gt; output_aut</definition>
+        <argsstring></argsstring>
+        <name>output_aut</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodleElement::output_aut</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="414" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="414" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a59c9034c44b696e3b9c46cedd2403ab7" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned output_index</definition>
+        <argsstring></argsstring>
+        <name>output_index</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodleElement::output_index</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="415" column="14" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="415" bodyend="-1"/>
+        <referencedby refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a24665239a73d0a7cdc643baf83914a21" compoundref="strings_8hh" startline="417" endline="418">TransducerNoodleElement::TransducerNoodleElement</referencedby>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a24665239a73d0a7cdc643baf83914a21" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>TransducerNoodleElement</definition>
+        <argsstring>(std::shared_ptr&lt; Nft &gt; transducer, std::shared_ptr&lt; Nfa &gt; input_aut, unsigned input_index, std::shared_ptr&lt; Nfa &gt; output_aut, unsigned output_index)</argsstring>
+        <name>TransducerNoodleElement</name>
+        <qualifiedname>mata::applications::strings::seg_nfa::TransducerNoodleElement::TransducerNoodleElement</qualifiedname>
+        <param>
+          <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a1bc4d50cca92fbb307faecdf4cc11225" kindref="member">Nft</ref> &gt;</type>
+          <declname>transducer</declname>
+        </param>
+        <param>
+          <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt;</type>
+          <declname>input_aut</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>input_index</declname>
+        </param>
+        <param>
+          <type>std::shared_ptr&lt; <ref refid="namespacemata_1_1applications_1_1strings_1a3147796d43948c57776028596d066fd7" kindref="member">Nfa</ref> &gt;</type>
+          <declname>output_aut</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>output_index</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="417" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="417" bodyend="418"/>
+        <references refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a43c052099a8242b35d4b81b7b4a525f0" compoundref="strings_8hh" startline="413">TransducerNoodleElement::input_index</references>
+        <references refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a59c9034c44b696e3b9c46cedd2403ab7" compoundref="strings_8hh" startline="415">TransducerNoodleElement::output_index</references>
+        <references refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a24665239a73d0a7cdc643baf83914a21" compoundref="strings_8hh" startline="417" endline="418">TransducerNoodleElement::TransducerNoodleElement</references>
+        <referencedby refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a24665239a73d0a7cdc643baf83914a21" compoundref="strings_8hh" startline="417" endline="418">TransducerNoodleElement::TransducerNoodleElement</referencedby>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" line="410" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/applications/strings.hh" bodystart="410" bodyend="419"/>
+    <listofallmembers>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1aa0204e8f063bb5ff4877787569b4a26e" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::TransducerNoodleElement</scope><name>input_aut</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a43c052099a8242b35d4b81b7b4a525f0" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::TransducerNoodleElement</scope><name>input_index</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a010a0d268d9ae6750bb7aaf433473469" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::TransducerNoodleElement</scope><name>output_aut</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a59c9034c44b696e3b9c46cedd2403ab7" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::TransducerNoodleElement</scope><name>output_index</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a54de6de94fd4cc7da9963b3d96eb87bb" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::TransducerNoodleElement</scope><name>transducer</name></member>
+      <member refid="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement_1a24665239a73d0a7cdc643baf83914a21" prot="public" virt="non-virtual"><scope>mata::applications::strings::seg_nfa::TransducerNoodleElement</scope><name>TransducerNoodleElement</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

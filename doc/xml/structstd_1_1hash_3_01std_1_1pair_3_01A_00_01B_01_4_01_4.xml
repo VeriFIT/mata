@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structstd_1_1hash_3_01std_1_1pair_3_01A_00_01B_01_4_01_4" kind="struct" language="C++" prot="public">
+    <compoundname>std::hash&lt; std::pair&lt; A, B &gt; &gt;</compoundname>
+    <includes refid="utils_8hh" local="no">utils.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>class A</type>
+      </param>
+      <param>
+        <type>class B</type>
+      </param>
+    </templateparamlist>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structstd_1_1hash_3_01std_1_1pair_3_01A_00_01B_01_4_01_4_1a0fd4000642254ad0957561029245c80e" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t operator()</definition>
+        <argsstring>(const std::pair&lt; A, B &gt; &amp;k) const</argsstring>
+        <name>operator()</name>
+        <qualifiedname>std::hash&lt; std::pair&lt; A, B &gt; &gt;::operator()</qualifiedname>
+        <param>
+          <type>const std::pair&lt; A, B &gt; &amp;</type>
+          <declname>k</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="349" column="15" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="349" bodyend="353"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A hasher for pairs. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" line="347" column="1" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/utils.hh" bodystart="348" bodyend="354"/>
+    <listofallmembers>
+      <member refid="structstd_1_1hash_3_01std_1_1pair_3_01A_00_01B_01_4_01_4_1a0fd4000642254ad0957561029245c80e" prot="public" virt="non-virtual"><scope>std::hash&lt; std::pair&lt; A, B &gt; &gt;</scope><name>operator()</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

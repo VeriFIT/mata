@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_01_4_01_4" kind="struct" language="C++" prot="public">
+    <compoundname>std::hash&lt; mata::utils::OrdVector&lt; Key &gt; &gt;</compoundname>
+    <includes refid="ord-vector_8hh" local="no">ord-vector.hh</includes>
+    <templateparamlist>
+      <param>
+        <type>class Key</type>
+      </param>
+    </templateparamlist>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_01_4_01_4_1a8cd78bf6fd9df017097d26d01479d6ef" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::size_t</type>
+        <definition>std::size_t operator()</definition>
+        <argsstring>(const mata::utils::OrdVector&lt; Key &gt; &amp;vec) const</argsstring>
+        <name>operator()</name>
+        <qualifiedname>std::hash&lt; mata::utils::OrdVector&lt; Key &gt; &gt;::operator()</qualifiedname>
+        <param>
+          <type>const <ref refid="classmata_1_1utils_1_1OrdVector" kindref="compound">mata::utils::OrdVector</ref>&lt; Key &gt; &amp;</type>
+          <declname>vec</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/ord-vector.hh" line="527" column="21" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/ord-vector.hh" bodystart="527" bodyend="529"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/ord-vector.hh" line="526" column="5" bodyfile="/home/misa/Dokumenty/Nfa/mata/include/mata/utils/ord-vector.hh" bodystart="526" bodyend="530"/>
+    <listofallmembers>
+      <member refid="structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_01_4_01_4_1a8cd78bf6fd9df017097d26d01479d6ef" prot="public" virt="non-virtual"><scope>std::hash&lt; mata::utils::OrdVector&lt; Key &gt; &gt;</scope><name>operator()</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

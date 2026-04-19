@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/nfa.hh"
+#include "mata/utils/custom_vector.h"
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -10,9 +11,9 @@ TEST_CASE("mata::utils::SparseSet") {
     SparseSet<State> p;
 
     SECTION("basic functionality: insert, erase, access, constructor, size, get_elements ") {
-        std::vector<State> v = {1, 2, 3, 4, 5};
+        CustomVector<State> v = {1, 2, 3, 4, 5};
         p.insert(v);
-        CHECK(std::vector<State>(p.begin(),p.end()) == v);
+        CHECK(CustomVector<State>(p.begin(),p.end()) == v);
         CHECK(p.size() == 5);
         p.erase({ 2, 4 });
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
@@ -84,12 +85,12 @@ TEST_CASE("mata::utils::SparseSet") {
     SECTION("sort") {
         p = {1, 0, 2, 4, 6, 3, 5};
         p.sort();
-        CHECK(std::vector<State>(p.begin(),p.end()) == std::vector<State>{0,1,2,3,4,5,6});
+        CHECK(CustomVector<State>(p.begin(),p.end()) == CustomVector<State>{0,1,2,3,4,5,6});
     }
 
     SECTION("rename") {
         p = {1, 0, 4, 2};
-        std::vector<State> r = {3, 4, 5, 6, 1};
+        CustomVector<State> r = {3, 4, 5, 6, 1};
         auto f = [&r](State x) { return r[x]; };
         p.rename(f);
         CHECK(OrdVector<State>(p.begin(), p.end()) == OrdVector<State>({4,3,1,5}));
