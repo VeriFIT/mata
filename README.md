@@ -194,30 +194,32 @@ You can verify the state of your automaton by generating the automaton in `.dot`
 }
 ```
 
-We recommend `cmake` for building projects using Mata. Provided the Mata is installed in the system directories,
-the `CMakeLists.txt` file for the example may look like:
+We recommend `cmake` for building projects using Mata.
+Provided the Mata is installed in the system directories, the `CMakeLists.txt` file for the example may look like:
 
 ```cmake
 cmake_minimum_required (VERSION 3.15.0)
-project (mata-example)
+project (my-project)
 set (CMAKE_CXX_STANDARD 20)
 
-# find either installed mata, or if it not installed fetch the latest version and build it
-include (FetchContent)
+# Find an installed Mata, or, if Mata is not installed, fetch the latest version, build it, and make it available in
+#  your project.
+include(FetchContent)
 find_package(mata QUIET)
 if(NOT mata_FOUND)
-	FetchContent_Declare(
-        mata
-        GIT_REPOSITORY https://github.com/VeriFIT/mata
-        GIT_TAG        devel # can be also commit hash or tag
-    )
-
-    FetchContent_MakeAvailable(mata)
+  FetchContent_Declare(
+    mata
+    GIT_REPOSITORY https://github.com/VeriFIT/mata
+    GIT_TAG devel # Branch name, commit hash or a tag.
+    GIT_SUBMODULES "" # Explicitly disables submodule initialization/update.
+    GIT_SUBMODULES_RECURSE OFF # Ensures submodules are not downloaded recursively.
+  )
+  FetchContent_MakeAvailable(mata)
 endif()
 
-add_executable(mata-example
-    mata-example.cc)
-target_link_libraries(mata-example PUBLIC libmata)
+add_executable(my-project
+    my-project-source.cc)
+target_link_libraries(my-project PUBLIC libmata)
 ```
 
 ### Using the Python binding
