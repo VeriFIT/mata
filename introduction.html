@@ -196,28 +196,30 @@ the standard include.</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>We recommend <code class="docutils literal notranslate"><span class="pre">cmake</span></code> for building projects using Mata. Provided the Mata is installed in the system directories,
-the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file for the example may look like:</p>
+<p>We recommend <code class="docutils literal notranslate"><span class="pre">cmake</span></code> for building projects using Mata.
+Provided the Mata is installed in the system directories, the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file for the example may look like:</p>
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="w"> </span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.15.0</span><span class="p">)</span>
-<span class="nb">project</span><span class="w"> </span><span class="p">(</span><span class="s">mata-example</span><span class="p">)</span>
+<span class="nb">project</span><span class="w"> </span><span class="p">(</span><span class="s">my-project</span><span class="p">)</span>
 <span class="nb">set</span><span class="w"> </span><span class="p">(</span><span class="s">CMAKE_CXX_STANDARD</span><span class="w"> </span><span class="s">20</span><span class="p">)</span>
 
-<span class="c"># find either installed mata, or if it not installed fetch the latest version and build it</span>
-<span class="nb">include</span><span class="w"> </span><span class="p">(</span><span class="s">FetchContent</span><span class="p">)</span>
+<span class="c"># Find an installed Mata, or, if Mata is not installed, fetch the latest version, build it, and make it available in</span>
+<span class="c">#  your project.</span>
+<span class="nb">include</span><span class="p">(</span><span class="s">FetchContent</span><span class="p">)</span>
 <span class="nb">find_package</span><span class="p">(</span><span class="s">mata</span><span class="w"> </span><span class="s">QUIET</span><span class="p">)</span>
 <span class="nb">if</span><span class="p">(</span><span class="s">NOT</span><span class="w"> </span><span class="s">mata_FOUND</span><span class="p">)</span>
-<span class="w">	</span><span class="nb">FetchContent_Declare</span><span class="p">(</span>
-<span class="w">        </span><span class="s">mata</span>
-<span class="w">        </span><span class="s">GIT_REPOSITORY</span><span class="w"> </span><span class="s">https://github.com/VeriFIT/mata</span>
-<span class="w">        </span><span class="s">GIT_TAG</span><span class="w">        </span><span class="s">devel</span><span class="w"> </span><span class="c"># can be also commit hash or tag</span>
-<span class="w">    </span><span class="p">)</span>
-
-<span class="w">    </span><span class="nb">FetchContent_MakeAvailable</span><span class="p">(</span><span class="s">mata</span><span class="p">)</span>
+<span class="w">  </span><span class="nb">FetchContent_Declare</span><span class="p">(</span>
+<span class="w">    </span><span class="s">mata</span>
+<span class="w">    </span><span class="s">GIT_REPOSITORY</span><span class="w"> </span><span class="s">https://github.com/VeriFIT/mata</span>
+<span class="w">    </span><span class="s">GIT_TAG</span><span class="w"> </span><span class="s">devel</span><span class="w"> </span><span class="c"># Branch name, commit hash or a tag.</span>
+<span class="w">    </span><span class="s">GIT_SUBMODULES</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="c"># Explicitly disables submodule initialization/update.</span>
+<span class="w">    </span><span class="s">GIT_SUBMODULES_RECURSE</span><span class="w"> </span><span class="s">OFF</span><span class="w"> </span><span class="c"># Ensures submodules are not downloaded recursively.</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="w">  </span><span class="nb">FetchContent_MakeAvailable</span><span class="p">(</span><span class="s">mata</span><span class="p">)</span>
 <span class="nb">endif</span><span class="p">()</span>
 
-<span class="nb">add_executable</span><span class="p">(</span><span class="s">mata-example</span>
-<span class="w">    </span><span class="s">mata-example.cc</span><span class="p">)</span>
-<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">mata-example</span><span class="w"> </span><span class="s">PUBLIC</span><span class="w"> </span><span class="s">libmata</span><span class="p">)</span>
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">my-project</span>
+<span class="w">    </span><span class="s">my-project-source.cc</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">my-project</span><span class="w"> </span><span class="s">PUBLIC</span><span class="w"> </span><span class="s">libmata</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
