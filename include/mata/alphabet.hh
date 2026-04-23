@@ -586,13 +586,25 @@ public:
 
 private:
     /**
-     * @brief Resolve the alphabet to use for the given level.
+     * @brief Get the alphabet to use for the given level.
      *
      * @param[in] level Level selecting the underlying alphabet.
-     * @return Resolved alphabet reference.
-     * @throws std::runtime_error If the level is @c std::nullopt or out of range.
+     * @return Alphabet reference for @p level.
+     * @throws std::runtime_error If the level is out of range.
      */
-    const Alphabet& resolve_alphabet(std::optional<Level> level) const;
+    const Alphabet& get_alphabet_for_level(Level level) const;
+
+    /**
+     * @brief Unwrap an optional level, throwing if it is @c std::nullopt.
+     *
+     * @param[in] level Optional level supplied through the @c Alphabet interface.
+     * @return Unwrapped level value.
+     * @throws std::runtime_error If @p level is @c std::nullopt.
+     */
+    static Level require_level(std::optional<Level> level) {
+        if (!level) { throw std::runtime_error("LevelAlphabet operation requires an explicit level."); }
+        return *level;
+    }
 
     std::vector<Alphabet*> alphabets_{};
 };
