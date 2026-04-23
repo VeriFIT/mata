@@ -9,9 +9,13 @@ assignees: ""
 
 ## Description
 
-<!-- Thanks for your report! Please describe your problem or request here.
-For questions, use https://github.com/idursun/jjui/discussions/new instead.
-Feel free to remove any of the sections below if they don't seem useful. -->
+<!--
+Thank you for your report.
+Each bug report helps the project immensely.
+Please describe your report here.
+For questions or general discussions, use https://github.com/VeriFIT/mata/discussions/new instead.
+Feel free to remove any of the sections below if they don't seem useful.
+-->
 
 ## Steps to Reproduce the Problem
 
@@ -26,4 +30,5 @@ Feel free to remove any of the sections below if they don't seem useful. -->
 ## Specifications
 
 - Platform:
-- Version:
+- Mata version:
+- Compiler:
