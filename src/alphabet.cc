@@ -7,7 +7,8 @@ using mata::Symbol;
 using mata::LevelAlphabet;
 using mata::OnTheFlyAlphabet;
 
-mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
+mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols(std::optional<mata::Level> level) const {
+    (void)level;
     utils::OrdVector<Symbol> result;
     for (const auto& symbol : symbol_map_ | std::views::values) {
         result.insert(symbol);
@@ -15,7 +16,9 @@ mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
     return result;
 } // OnTheFlyAlphabet::get_alphabet_symbols.
 
-mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::utils::OrdVector<Symbol>& symbols) const {
+mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(
+    const mata::utils::OrdVector<Symbol>& symbols, std::optional<mata::Level> level) const {
+    (void)level;
     mata::utils::OrdVector<Symbol> symbols_alphabet{};
     symbols_alphabet.reserve(symbol_map_.size());
     for (const auto& symbol : symbol_map_ | std::views::values) {
@@ -31,7 +34,9 @@ void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map)
     }
 }
 
-std::string mata::OnTheFlyAlphabet::reverse_translate_symbol(const Symbol symbol) const {
+std::string mata::OnTheFlyAlphabet::reverse_translate_symbol(
+    const Symbol symbol, std::optional<mata::Level> level) const {
+    (void)level;
     for (const auto& [symbol_name, symbol_val]: symbol_map_) {
         if (symbol_val == symbol) {
             return symbol_name;
@@ -46,7 +51,8 @@ void mata::OnTheFlyAlphabet::add_symbols_from(const std::vector<std::string>& sy
     }
 }
 
-Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
+Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str, std::optional<mata::Level> level) {
+    (void)level;
     const auto [it, inserted] = symbol_map_.insert({str, next_symbol_value_});
     if (inserted) {
         return next_symbol_value_++;
@@ -106,7 +112,8 @@ std::ostream &std::operator<<(std::ostream &os, const mata::Alphabet& alphabet) 
     return os << std::to_string(alphabet);
 }
 
-Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
+Symbol mata::IntAlphabet::translate_symb(const std::string& symb, std::optional<mata::Level> level) {
+    (void)level;
     Symbol symbol;
     std::istringstream stream{ symb };
     stream >> symbol;
@@ -116,14 +123,17 @@ Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
     return symbol;
 }
 
-std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) const {
+std::string mata::EnumAlphabet::reverse_translate_symbol(
+    const Symbol symbol, std::optional<mata::Level> level) const {
+    (void)level;
     if (symbols_.find(symbol) == symbols_.end()) {
         throw std::runtime_error("Symbol '" + std::to_string(symbol) + "' is out of range of enumeration.");
     }
     return std::to_string(symbol);
 }
 
-Symbol mata::EnumAlphabet::translate_symb(const std::string& str) {
+Symbol mata::EnumAlphabet::translate_symb(const std::string& str, std::optional<mata::Level> level) {
+    (void)level;
     Symbol symbol;
     std::istringstream stream{ str };
     stream >> symbol;
@@ -203,46 +213,50 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
     return 0;
 }
 
-const mata::Alphabet& LevelAlphabet::resolve_alphabet(const size_t level) const {
+const mata::Alphabet& LevelAlphabet::resolve_alphabet(const std::optional<mata::Level> level) const {
+    if (!level.has_value()) {
+        throw std::runtime_error("LevelAlphabet operation requires an explicit level.");
+    }
     if (alphabets_.empty()) {
         throw std::runtime_error("LevelAlphabet has no underlying alphabets.");
     }
 
-    if (level >= alphabets_.size()) {
-        throw std::runtime_error("Requested level " + std::to_string(level) + " is out of range.");
+    if (*level >= alphabets_.size()) {
+        throw std::runtime_error("Requested level " + std::to_string(*level) + " is out of range.");
     }
-    if (alphabets_[level] == nullptr) {
-        throw std::runtime_error("Requested level " + std::to_string(level) + " has no alphabet.");
+    if (alphabets_[*level] == nullptr) {
+        throw std::runtime_error("Requested level " + std::to_string(*level) + " has no alphabet.");
     }
-    return *alphabets_[level];
+    return *alphabets_[*level];
 }
 
-Symbol LevelAlphabet::translate_symb(const std::string& symb, const size_t level) {
+Symbol LevelAlphabet::translate_symb(const std::string& symb, const std::optional<mata::Level> level) {
     return const_cast<Alphabet&>(resolve_alphabet(level)).translate_symb(symb);
 }
 
-std::string LevelAlphabet::reverse_translate_symbol(const Symbol symbol, const size_t level) const {
+std::string LevelAlphabet::reverse_translate_symbol(
+    const Symbol symbol, const std::optional<mata::Level> level) const {
     return resolve_alphabet(level).reverse_translate_symbol(symbol);
 }
 
-mata::utils::OrdVector<Symbol> LevelAlphabet::get_alphabet_symbols(const size_t level) const {
+mata::utils::OrdVector<Symbol> LevelAlphabet::get_alphabet_symbols(const std::optional<mata::Level> level) const {
     return resolve_alphabet(level).get_alphabet_symbols();
 }
 
 mata::utils::OrdVector<Symbol> LevelAlphabet::get_complement(
-    const mata::utils::OrdVector<Symbol>& symbols, const size_t level) const {
+    const mata::utils::OrdVector<Symbol>& symbols, const std::optional<mata::Level> level) const {
     return resolve_alphabet(level).get_complement(symbols);
 }
 
-bool LevelAlphabet::empty(const size_t level) const {
+bool LevelAlphabet::empty(const std::optional<mata::Level> level) const {
     return resolve_alphabet(level).empty();
 }
 
-void LevelAlphabet::clear(const size_t level) {
+void LevelAlphabet::clear(const std::optional<mata::Level> level) {
     const_cast<Alphabet&>(resolve_alphabet(level)).clear();
 }
 
-const mata::Alphabet* LevelAlphabet::alphabet_of_level(const size_t level) const {
+const mata::Alphabet* LevelAlphabet::alphabet_of_level(const mata::Level level) const {
     return level < alphabets_.size() ? alphabets_[level] : nullptr;
 }
 
