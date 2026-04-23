@@ -1,6 +1,6 @@
 ---
 name: Implementation proposal
-description: Propose how do you plan to implement a feature or fix before starting work.
+about: Propose how you plan to implement a feature or a fix before starting work.
 title: "[IP]: "
 type: feature
 labels: ""
@@ -38,6 +38,7 @@ Does it help to have a checklist to track implementation progress?
 - [ ] Step 3: Description
 
 **Testing Strategy**
+
 How do you plan to test this implementation?
 
 - Unit tests needed
@@ -45,9 +46,11 @@ How do you plan to test this implementation?
 - Manual testing approach
 
 **Alternatives Considered**
+
 What other implementation approaches have you considered? Why did you choose this particular approach?
 
 **Breaking Changes**
+
 Would this implementation introduce any breaking changes? If so, describe them and any migration strategy.
 
 **Questions for Discussion**
@@ -58,6 +61,7 @@ Are there any areas where you're unsure about the approach?
 Do you need any kind of direction or help regarding how or where to find code related to this change?
 
 **Additional Context**
+
 Add any other context, mockups, or references that would help reviewers understand your proposal.
 
 Lastly, be sure to read CONTRIBUTING.md at least once.
