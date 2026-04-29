@@ -229,9 +229,9 @@ void AlphabetLevels::clear(const mata::Level level) {
 }
 
 const mata::Alphabet& AlphabetLevels::alphabet_of_level(const mata::Level level) const {
-    const Alphabet* alphabet{ alphabets_.size() == 1
-                                  ? alphabets_[0]
-                                  : (level < alphabets_.size() ? alphabets_[level] : nullptr) };
+    const Alphabet* alphabet{ alphabets.size() == 1
+                                  ? alphabets[0]
+                                  : (level < alphabets.size() ? alphabets[level] : nullptr) };
     if (alphabet == nullptr) {
         throw std::runtime_error(
             "AlphabetLevels has no alphabet for level " + std::to_string(level) + ".");

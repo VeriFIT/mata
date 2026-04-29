@@ -457,14 +457,23 @@ public:
  */
 class AlphabetLevels {
 public:
-    explicit AlphabetLevels(std::vector<Alphabet*> alphabets = {}) : alphabets_{ std::move(alphabets) } {}
+    /**
+     * @brief Per-level alphabets.
+     *
+     * One @c Alphabet* per level, or a single-element vector to share one alphabet across all levels. Public to allow
+     *  direct read/write access in line with the rest of the codebase (`Nft::levels`, `Nfa::delta`/`initial`/etc.).
+     *  Read-only access through @c alphabet_of_level when range/null validation is desired.
+     */
+    std::vector<Alphabet*> alphabets{};
+
+    explicit AlphabetLevels(std::vector<Alphabet*> alphabets = {}) : alphabets{ std::move(alphabets) } {}
 
     /**
      * @brief Convenience constructor: use the same @p alphabet for every level.
      *
-     * Stores a single-element vector. @c get_alphabet_for_level returns this alphabet for any requested level.
+     * Stores a single-element vector. @c alphabet_of_level returns this alphabet for any requested level.
      */
-    explicit AlphabetLevels(Alphabet* alphabet) : alphabets_{ alphabet } {}
+    explicit AlphabetLevels(Alphabet* alphabet) : alphabets{ alphabet } {}
 
     /**
      * @brief Translate a symbol name using the alphabet for the given level.
@@ -499,6 +508,8 @@ public:
     /**
      * @brief Get the alphabet assigned to a specific level.
      *
+     * This is like a validated accessor for the internal vector of @c Alphabet*.
+     *
      * If the internal vector has a single element, it is used regardless of @p level (shared-alphabet form).
      * Otherwise, @p level must be a valid index and the corresponding entry must be non-null.
      *
@@ -508,10 +519,6 @@ public:
      */
     const Alphabet& alphabet_of_level(Level level) const;
 
-    const std::vector<Alphabet*>& alphabets() const { return alphabets_; }
-
-private:
-    std::vector<Alphabet*> alphabets_{};
 };
 
 /**
