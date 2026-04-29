@@ -5,7 +5,6 @@
 #define MATA_ALPHABET_HH
 
 #include <limits>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,14 +24,8 @@ using WordName = std::vector<std::string>;
   */
 class Alphabet {
 public:
-    /**
-     * @brief Translate a string into a symbol, optionally on a specific level.
-     *
-     * @param[in] symb Symbol name to translate.
-     * @param[in] level Optional level on which the translation should happen.
-     * @return Translated symbol value.
-     */
-    virtual Symbol translate_symb(const std::string& symb, std::optional<Level> level = std::nullopt) = 0;
+    /// translates a string into a symbol
+    virtual Symbol translate_symb(const std::string &symb) = 0;
 
     /**
      * Translate sequence of symbol names to sequence of their respective values.
@@ -43,45 +36,29 @@ public:
     }
 
     /**
-     * @brief Translate internal @p symbol representation back to its original string name,
-     *  optionally on a specific level.
+     * @brief Translate internal @p symbol representation back to its original string name.
      *
      * Throws an exception when the @p symbol is missing in the alphabet.
      * @param[in] symbol Symbol to translate.
-     * @param[in] level Optional level on which the reverse translation should happen.
      * @return @p symbol original name.
      */
-    virtual std::string reverse_translate_symbol(
-        Symbol symbol, std::optional<Level> level = std::nullopt) const = 0;
+    virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
 
     /// also translates strings to symbols
     Symbol operator[](const std::string &symb) { return this->translate_symb(symb); }
 
     /**
-     * @brief Get a set of all symbols in the alphabet, optionally on a specific level.
+     * @brief Get a set of all symbols in the alphabet.
      *
      * The result does not have to equal the list of symbols in the automaton using this alphabet.
-     * @param[in] level Optional level on which the symbols should be retrieved.
      */
-    virtual utils::OrdVector<Symbol> get_alphabet_symbols(std::optional<Level> level = std::nullopt) const {
-        (void)level;
-        throw std::runtime_error("Unimplemented");
-    }
+    virtual utils::OrdVector<Symbol> get_alphabet_symbols() const { throw std::runtime_error("Unimplemented"); }
 
-    /**
-     * @brief Get complement of a set of symbols with respect to the alphabet,
-     *  optionally on a specific level.
-     *
-     * @param[in] symbols Symbols whose complement should be computed.
-     * @param[in] level Optional level on which the complement should be computed.
-     * @return Complement of @p symbols.
-     */
-    virtual utils::OrdVector<Symbol> get_complement(
-        const utils::OrdVector<Symbol>& symbols, std::optional<Level> level = std::nullopt) const {
-        (void)symbols;
-        (void)level;
+    /// complement of a set of symbols wrt the alphabet
+    virtual utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const { // {{{
+        (void) symbols;
         throw std::runtime_error("Unimplemented");
-    }
+    } // }}}
 
     virtual ~Alphabet() = default;
 
@@ -108,22 +85,11 @@ public:
     bool operator==(const Alphabet &) const = delete;
 
     /**
-     * @brief Check whether the alphabet has any symbols, optionally on a specific level.
-     *
-     * @param[in] level Optional level on which emptiness should be checked.
-     * @return True if the alphabet is empty, false otherwise.
+     * Checks whether the alphabet has any symbols.
      */
-    virtual bool empty(std::optional<Level> level = std::nullopt) const = 0;
+    virtual bool empty() const = 0;
 
-    /**
-     * @brief Clear symbols from the alphabet, optionally on a specific level.
-     *
-     * @param[in] level Optional level on which the alphabet should be cleared.
-     */
-    virtual void clear(std::optional<Level> level = std::nullopt) {
-        (void)level;
-        throw std::runtime_error("Unimplemented");
-    }
+    virtual void clear() { throw std::runtime_error("Unimplemented"); }
 
 protected:
     virtual const void* address() const { return this; }
@@ -140,23 +106,17 @@ protected:
 class IntAlphabet : public Alphabet {
 public:
     IntAlphabet() : alphabet_instance_(IntAlphabetSingleton::get()) {}
-    Symbol translate_symb(const std::string& symb, std::optional<Level> level = std::nullopt) override;
 
-    std::string reverse_translate_symbol(
-        const Symbol symbol, std::optional<Level> level = std::nullopt) const override {
-        (void)level;
-        return std::to_string(symbol);
-    }
+    Symbol translate_symb(const std::string &symb) override;
 
-    utils::OrdVector<Symbol> get_alphabet_symbols(std::optional<Level> level = std::nullopt) const override {
-        (void)level;
+    std::string reverse_translate_symbol(const Symbol symbol) const override { return std::to_string(symbol); }
+
+    utils::OrdVector<Symbol> get_alphabet_symbols() const override {
         throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
     }
 
-    utils::OrdVector<Symbol> get_complement(
-        const utils::OrdVector<Symbol>& symbols, std::optional<Level> level = std::nullopt) const override {
-        (void)symbols;
-        (void)level;
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
+        (void) symbols;
         throw std::runtime_error("Nonsensical use of get_complement() on IntAlphabet.");
     }
 
@@ -164,12 +124,9 @@ public:
 
     IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
 
-    bool empty(std::optional<Level> level = std::nullopt) const override { (void)level; return false; }
+    bool empty() const override { return false; }
 
-    void clear(std::optional<Level> level = std::nullopt) override {
-        (void)level;
-        throw std::runtime_error("Nonsensical use of clear() on IntAlphabet.");
-    }
+    void clear() override { throw std::runtime_error("Nonsensical use of clear() on IntAlphabet."); }
 
 protected:
     const void* address() const override { return &alphabet_instance_; }
@@ -227,18 +184,12 @@ public:
     explicit EnumAlphabet(const EnumAlphabet* const alphabet): EnumAlphabet(*alphabet) {}
     EnumAlphabet(EnumAlphabet&& rhs) = default;
 
-    utils::OrdVector<Symbol> get_alphabet_symbols(std::optional<Level> level = std::nullopt) const override {
-        (void)level;
-        return symbols_;
-    }
-    utils::OrdVector<Symbol> get_complement(
-        const utils::OrdVector<Symbol>& symbols, std::optional<Level> level = std::nullopt) const override {
-        (void)level;
+    utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
         return symbols_.difference(symbols);
     }
 
-    std::string reverse_translate_symbol(
-        Symbol symbol, std::optional<Level> level = std::nullopt) const override;
+    std::string reverse_translate_symbol(Symbol symbol) const override;
 
     EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
     EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
@@ -264,7 +215,7 @@ public:
     }
     EnumAlphabet(const std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
-    Symbol translate_symb(const std::string& str, std::optional<Level> level = std::nullopt) override;
+    Symbol translate_symb(const std::string& str) override;
     Word translate_word(const WordName& word_name) const override;
 
     /**
@@ -295,6 +246,8 @@ public:
      * @return The number of symbols.
      */
     size_t get_number_of_symbols() const { return symbols_.size(); }
+
+    bool empty() const override { return symbols_.empty(); }
 
 private:
     mata::utils::OrdVector<Symbol> symbols_{}; ///< Map of string transition symbols to symbol values.
@@ -331,16 +284,7 @@ public:
         symbols_.erase(first, last);
     }
 
-    bool empty(std::optional<Level> level = std::nullopt) const override {
-        (void)level;
-        return symbols_.empty();
-    }
-
-    void clear(std::optional<Level> level = std::nullopt) override {
-        (void)level;
-        symbols_.clear();
-        next_symbol_value_ = 0;
-    }
+    void clear() override { symbols_.clear(); next_symbol_value_ = 0; }
 }; // class EnumAlphabet.
 
 /**
@@ -379,12 +323,10 @@ public:
         }
     }
 
-    utils::OrdVector<Symbol> get_alphabet_symbols(std::optional<Level> level = std::nullopt) const override;
-    utils::OrdVector<Symbol> get_complement(
-        const utils::OrdVector<Symbol>& symbols, std::optional<Level> level = std::nullopt) const override;
+    utils::OrdVector<Symbol> get_alphabet_symbols() const override;
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override;
 
-    std::string reverse_translate_symbol(
-        Symbol symbol, std::optional<Level> level = std::nullopt) const override;
+    std::string reverse_translate_symbol(Symbol symbol) const override;
 
 public:
     OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
@@ -406,7 +348,7 @@ public:
      */
     void add_symbols_from(const StringToSymbolMap& new_symbol_map);
 
-    Symbol translate_symb(const std::string& str, std::optional<Level> level = std::nullopt) override;
+    Symbol translate_symb(const std::string& str) override;
 
     Word translate_word(const WordName& word_name) const override;
 
@@ -460,10 +402,7 @@ public:
      */
     const StringToSymbolMap& get_symbol_map() const { return symbol_map_; }
 
-    bool empty(std::optional<Level> level = std::nullopt) const override {
-        (void)level;
-        return symbol_map_.empty();
-    }
+    bool empty() const override { return symbol_map_.empty(); }
 
 private:
     StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
@@ -505,107 +444,73 @@ public:
         symbol_map_.erase(first, last);
     }
 
-    void clear(std::optional<Level> level = std::nullopt) override {
-        (void)level;
-        symbol_map_.clear();
-        next_symbol_value_ = 0;
-    }
+    void clear() override { symbol_map_.clear(); next_symbol_value_ = 0; }
 }; // class OnTheFlyAlphabet.
 
-class LevelAlphabet : public Alphabet {
+/**
+ * @brief Per-level alphabets for transducer-like automata.
+ *
+ * Standalone (does NOT inherit from @c Alphabet) wrapper holding a vector of @c Alphabet*, one per level.
+ * If the vector contains a single element, the same alphabet is used for every level (shared-alphabet form).
+ *
+ * Pointers to the underlying @c Alphabet objects are non-owning; the caller is responsible for their lifetime.
+ */
+class AlphabetLevels {
 public:
-    explicit LevelAlphabet(std::vector<Alphabet*> alphabets = {}) : alphabets_{ std::move(alphabets) } {}
+    explicit AlphabetLevels(std::vector<Alphabet*> alphabets = {}) : alphabets_{ std::move(alphabets) } {}
+
+    /**
+     * @brief Convenience constructor: use the same @p alphabet for every level.
+     *
+     * Stores a single-element vector. @c get_alphabet_for_level returns this alphabet for any requested level.
+     */
+    explicit AlphabetLevels(Alphabet* alphabet) : alphabets_{ alphabet } {}
 
     /**
      * @brief Translate a symbol name using the alphabet for the given level.
-     *
-     * @param[in] symb Symbol name to translate.
-     * @param[in] level Level selecting the underlying alphabet (required).
-     * @return Translated symbol value.
-     * @throws std::runtime_error If @p level is @c std::nullopt or out of range.
      */
-    Symbol translate_symb(const std::string& symb, std::optional<Level> level = std::nullopt) override;
+    Symbol translate_symb(const std::string& symb, Level level);
 
     /**
      * @brief Translate a symbol value back to its name using the alphabet for the given level.
-     *
-     * @param[in] symbol Symbol value to translate.
-     * @param[in] level Level selecting the underlying alphabet (required).
-     * @return Original symbol name.
-     * @throws std::runtime_error If @p level is @c std::nullopt or out of range.
      */
-    std::string reverse_translate_symbol(
-        Symbol symbol, std::optional<Level> level = std::nullopt) const override;
+    std::string reverse_translate_symbol(Symbol symbol, Level level) const;
 
     /**
      * @brief Get the symbols known to the alphabet on the given level.
-     *
-     * @param[in] level Level selecting the underlying alphabet (required).
-     * @return Set of symbols known to the selected alphabet.
-     * @throws std::runtime_error If @p level is @c std::nullopt or out of range.
      */
-    utils::OrdVector<Symbol> get_alphabet_symbols(std::optional<Level> level = std::nullopt) const override;
+    utils::OrdVector<Symbol> get_alphabet_symbols(Level level) const;
 
     /**
      * @brief Get the complement of @p symbols with respect to the alphabet for the given level.
-     *
-     * @param[in] symbols Symbols whose complement should be computed.
-     * @param[in] level Level selecting the underlying alphabet (required).
-     * @return Complement of @p symbols with respect to the selected alphabet.
-     * @throws std::runtime_error If @p level is @c std::nullopt or out of range.
      */
-    utils::OrdVector<Symbol> get_complement(
-        const utils::OrdVector<Symbol>& symbols, std::optional<Level> level = std::nullopt) const override;
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols, Level level) const;
 
     /**
      * @brief Check whether the alphabet for the given level is empty.
-     *
-     * @param[in] level Level selecting the underlying alphabet (required).
-     * @return True if the selected alphabet is empty, false otherwise.
-     * @throws std::runtime_error If @p level is @c std::nullopt or out of range.
      */
-    bool empty(std::optional<Level> level = std::nullopt) const override;
+    bool empty(Level level) const;
 
     /**
      * @brief Clear the alphabet for the given level.
-     *
-     * @param[in] level Level selecting the underlying alphabet (required).
-     * @throws std::runtime_error If @p level is @c std::nullopt or out of range.
      */
-    void clear(std::optional<Level> level = std::nullopt) override;
+    void clear(Level level);
 
     /**
      * @brief Get the alphabet assigned to a specific level.
      *
+     * If the internal vector has a single element, it is used regardless of @p level (shared-alphabet form).
+     * Otherwise, @p level must be a valid index and the corresponding entry must be non-null.
+     *
      * @param[in] level Level whose alphabet should be returned.
-     * @return Alphabet assigned to @p level, or @c nullptr if the level is out of range.
+     * @return Alphabet assigned to @p level.
+     * @throws std::runtime_error If @p level is out of range or the entry is null.
      */
-    const Alphabet* alphabet_of_level(Level level) const;
+    const Alphabet& alphabet_of_level(Level level) const;
 
     const std::vector<Alphabet*>& alphabets() const { return alphabets_; }
 
 private:
-    /**
-     * @brief Get the alphabet to use for the given level.
-     *
-     * @param[in] level Level selecting the underlying alphabet.
-     * @return Alphabet reference for @p level.
-     * @throws std::runtime_error If the level is out of range.
-     */
-    const Alphabet& get_alphabet_for_level(Level level) const;
-
-    /**
-     * @brief Unwrap an optional level, throwing if it is @c std::nullopt.
-     *
-     * @param[in] level Optional level supplied through the @c Alphabet interface.
-     * @return Unwrapped level value.
-     * @throws std::runtime_error If @p level is @c std::nullopt.
-     */
-    static Level require_level(std::optional<Level> level) {
-        if (!level) { throw std::runtime_error("LevelAlphabet operation requires an explicit level."); }
-        return *level;
-    }
-
     std::vector<Alphabet*> alphabets_{};
 };
 

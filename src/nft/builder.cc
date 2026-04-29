@@ -126,7 +126,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
         }
 
         const State source = get_state_name(body_line[0]);
-        const Symbol symbol = alphabet->translate_symb(body_line[1], aut.levels[source]);
+        const Symbol symbol = alphabet->translate_symb(body_line[1]);
         const State target = get_state_name(body_line[2]);
         aut.delta.add(source, symbol, target);
     }
@@ -178,7 +178,7 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         }
 
         const State source = get_state_name(formula_node.name);
-        const Symbol symbol = alphabet->translate_symb(formula_graph.children[0].node.name, aut.levels[source]);
+        const Symbol symbol = alphabet->translate_symb(formula_graph.children[0].node.name);
         const State target = get_state_name(formula_graph.children[1].node.name);
 
         aut.delta.add(source, symbol, target);
@@ -214,6 +214,78 @@ void builder::construct(
         mata::nft::builder::NameStateMap *state_map
 ) {
     *result = construct(inter_aut, alphabet, state_map);
+}
+
+Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::AlphabetLevels* alphabets, NameStateMap* state_map) {
+    assert(nullptr != alphabets);
+
+    if (!inter_aut.is_nft()) {
+        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFT + "\"");
+    }
+
+    Nft aut;
+    aut.alphabets = alphabets;
+    aut.alphabet = nullptr;
+
+    NameStateMap tmp_state_map;
+    if (nullptr == state_map) {
+        state_map = &tmp_state_map;
+    }
+
+    auto get_state_name = [&state_map, &aut](const std::string& str) {
+        if (!state_map->contains(str)) {
+            State state = aut.add_state();
+            state_map->insert({str, state});
+            return state;
+        }
+        return (*state_map)[str];
+    };
+
+    for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
+        const State state = get_state_name(str);
+        aut.initial.insert(state);
+    }
+
+    for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
+        if (formula_graph.children.size() != 2) {
+            if (formula_graph.children.size() == 1) {
+                throw std::runtime_error("Epsilon transitions not supported");
+            }
+            throw std::runtime_error("Invalid transition");
+        }
+
+        const State source = get_state_name(formula_node.name);
+        const Symbol symbol = alphabets->translate_symb(
+            formula_graph.children[0].node.name, aut.levels[source]);
+        const State target = get_state_name(formula_graph.children[1].node.name);
+        aut.delta.add(source, symbol, target);
+    }
+
+    std::unordered_set<std::string> final_formula_nodes;
+    if (!(inter_aut.final_formula.node.is_constant())) {
+        final_formula_nodes = inter_aut.final_formula.collect_node_names();
+    }
+
+    if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+        for (const auto& [state_name, state] : *state_map) {
+            if (!final_formula_nodes.contains(state_name)) {
+                aut.final.insert(state);
+            }
+        }
+    } else {
+        for (const auto& str : final_formula_nodes) { aut.final.insert(get_state_name(str)); }
+    }
+
+    return aut;
+}
+
+void builder::construct(
+        mata::nft::Nft *result,
+        const mata::IntermediateAut &inter_aut,
+        mata::AlphabetLevels *alphabets,
+        mata::nft::builder::NameStateMap *state_map
+) {
+    *result = construct(inter_aut, alphabets, state_map);
 }
 
 Nft builder::create_single_word_nft(const std::vector<Symbol>& word) {

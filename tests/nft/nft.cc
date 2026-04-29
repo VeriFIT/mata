@@ -47,53 +47,49 @@ TEST_CASE("mata::nft::Nft()") {
     CHECK(nft.levels == std::vector<Level>{ 0, 3, 1 });
 }
 
-TEST_CASE("mata::nft::Nft level alphabets are initialized and updated correctly") {
+TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
     IntAlphabet shared_alphabet{};
     IntAlphabet input_alphabet{};
     IntAlphabet output_alphabet{};
-    LevelAlphabet repeated_level_alphabet{ std::vector<Alphabet*>{ &shared_alphabet, &shared_alphabet } };
-    LevelAlphabet split_level_alphabet{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
+    AlphabetLevels split_alphabets{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
 
-    SECTION("shared alphabet stays a plain alphabet pointer") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &shared_alphabet };
+    SECTION("a shared alphabet is wrapped via AlphabetLevels(Alphabet*) by the caller") {
+        AlphabetLevels shared_alphabets{ &shared_alphabet };
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &shared_alphabets };
 
-        REQUIRE(nft.alphabet == &shared_alphabet);
-        CHECK(nft.alphabet->translate_symb("7", 0) == 7);
-        CHECK(nft.alphabet->translate_symb("7", 1) == 7);
+        CHECK(nft.alphabet == nullptr);
+        REQUIRE(nft.alphabets == &shared_alphabets);
+        CHECK(&nft.alphabets->alphabet_of_level(0) == &shared_alphabet);
+        CHECK(&nft.alphabets->alphabet_of_level(7) == &shared_alphabet);
     }
 
-    SECTION("per-level alphabets are represented by a LevelAlphabet") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_level_alphabet };
+    SECTION("per-level alphabets are stored in the alphabets member") {
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_alphabets };
 
-        auto* level_alphabet = dynamic_cast<LevelAlphabet*>(nft.alphabet);
-        REQUIRE(level_alphabet != nullptr);
-        CHECK(level_alphabet->alphabet_of_level(0) == &input_alphabet);
-        CHECK(level_alphabet->alphabet_of_level(1) == &output_alphabet);
+        REQUIRE(nft.alphabets == &split_alphabets);
+        CHECK(nft.alphabet == nullptr);
+        CHECK(&nft.alphabets->alphabet_of_level(0) == &input_alphabet);
+        CHECK(&nft.alphabets->alphabet_of_level(1) == &output_alphabet);
     }
 
-    SECTION("level-aware translation requires the correct level") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_level_alphabet };
+    SECTION("level-aware translation routes to the right underlying alphabet") {
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_alphabets };
 
-        CHECK_NOTHROW(nft.alphabet->translate_symb("1", 0));
-        CHECK_NOTHROW(nft.alphabet->translate_symb("1", 1));
-        CHECK_THROWS(nft.alphabet->translate_symb("1"));
-        CHECK_THROWS(nft.alphabet->reverse_translate_symbol(1));
-        CHECK(nft.alphabet->reverse_translate_symbol(1, 0) == "1");
-        CHECK(nft.alphabet->reverse_translate_symbol(1, 1) == "1");
-        CHECK_THROWS(repeated_level_alphabet.translate_symb("2"));
+        CHECK_NOTHROW(nft.alphabets->translate_symb("1", 0));
+        CHECK_NOTHROW(nft.alphabets->translate_symb("1", 1));
+        CHECK(nft.alphabets->reverse_translate_symbol(1, 0) == "1");
+        CHECK(nft.alphabets->reverse_translate_symbol(1, 1) == "1");
     }
 
     SECTION("level-aware complement uses the selected level") {
         EnumAlphabet input_symbols{ 1, 2, 3 };
         EnumAlphabet output_symbols{ 2, 4 };
-        LevelAlphabet complement_alphabet{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
+        AlphabetLevels complement_alphabets{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
 
-        CHECK(complement_alphabet.get_alphabet_symbols(0) == OrdVector<Symbol>{ 1, 2, 3 });
-        CHECK(complement_alphabet.get_alphabet_symbols(1) == OrdVector<Symbol>{ 2, 4 });
-        CHECK_THROWS(complement_alphabet.get_alphabet_symbols());
-        CHECK(complement_alphabet.get_complement({ 2 }, 0) == OrdVector<Symbol>{ 1, 3 });
-        CHECK(complement_alphabet.get_complement({ 2 }, 1) == OrdVector<Symbol>{ 4 });
-        CHECK_THROWS(complement_alphabet.get_complement({ 2 }));
+        CHECK(complement_alphabets.get_alphabet_symbols(0) == OrdVector<Symbol>{ 1, 2, 3 });
+        CHECK(complement_alphabets.get_alphabet_symbols(1) == OrdVector<Symbol>{ 2, 4 });
+        CHECK(complement_alphabets.get_complement({ 2 }, 0) == OrdVector<Symbol>{ 1, 3 });
+        CHECK(complement_alphabets.get_complement({ 2 }, 1) == OrdVector<Symbol>{ 4 });
     }
 
     SECTION("level-aware empty and clear use the selected level") {
@@ -101,38 +97,46 @@ TEST_CASE("mata::nft::Nft level alphabets are initialized and updated correctly"
         OnTheFlyAlphabet output_symbols{};
         input_symbols.add_new_symbol("a");
         output_symbols.add_new_symbol("b");
-        LevelAlphabet mutable_level_alphabet{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
+        AlphabetLevels mutable_alphabets{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
 
-        CHECK_FALSE(mutable_level_alphabet.empty(0));
-        CHECK_FALSE(mutable_level_alphabet.empty(1));
-        CHECK_THROWS(mutable_level_alphabet.empty());
+        CHECK_FALSE(mutable_alphabets.empty(0));
+        CHECK_FALSE(mutable_alphabets.empty(1));
 
-        mutable_level_alphabet.clear(0);
+        mutable_alphabets.clear(0);
         CHECK(input_symbols.empty());
         CHECK_FALSE(output_symbols.empty());
-        CHECK(mutable_level_alphabet.empty(0));
-        CHECK_FALSE(mutable_level_alphabet.empty(1));
-        CHECK_THROWS(mutable_level_alphabet.clear());
+        CHECK(mutable_alphabets.empty(0));
+        CHECK_FALSE(mutable_alphabets.empty(1));
     }
 }
 
-TEST_CASE("mata::nft::determinize preserves level alphabets") {
+TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly") {
+    IntAlphabet base{};
+    AlphabetLevels uniform{ &base };
+
+    CHECK(&uniform.alphabet_of_level(0) == &base);
+    CHECK(&uniform.alphabet_of_level(7) == &base);
+    CHECK(uniform.translate_symb("3", 0) == 3);
+    CHECK(uniform.translate_symb("3", 5) == 3);
+    CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
+}
+
+TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
     IntAlphabet input_alphabet{};
     IntAlphabet output_alphabet{};
 
-    LevelAlphabet level_alphabet{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
+    AlphabetLevels alphabets{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
 
-    Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &level_alphabet };
+    Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &alphabets };
     nft.delta.add(0, 1, 1);
     nft.delta.add(1, 2, 2);
 
     Nft determinized = determinize(nft);
 
-    REQUIRE(determinized.alphabet == &level_alphabet);
-    auto* determinized_level_alphabet = dynamic_cast<LevelAlphabet*>(determinized.alphabet);
-    REQUIRE(determinized_level_alphabet != nullptr);
-    CHECK(determinized_level_alphabet->alphabet_of_level(0) == &input_alphabet);
-    CHECK(determinized_level_alphabet->alphabet_of_level(1) == &output_alphabet);
+    REQUIRE(determinized.alphabets == &alphabets);
+    REQUIRE(determinized.alphabet == nullptr);
+    CHECK(&determinized.alphabets->alphabet_of_level(0) == &input_alphabet);
+    CHECK(&determinized.alphabets->alphabet_of_level(1) == &output_alphabet);
 }
 
 TEST_CASE("mata::nft::size()") {
