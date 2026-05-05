@@ -5,6 +5,7 @@
 #define MATA_ALPHABET_HH
 
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -497,13 +498,18 @@ public:
 
     /**
      * @brief Check whether the alphabet for the given level is empty.
+     *
+     * When @p level is @c std::nullopt, returns @c true iff every underlying alphabet is empty (or there are no
+     *  underlying alphabets at all).
      */
-    bool empty(Level level) const;
+    bool empty(std::optional<Level> level = std::nullopt) const;
 
     /**
      * @brief Clear the alphabet for the given level.
+     *
+     * When @p level is @c std::nullopt, clears every underlying alphabet.
      */
-    void clear(Level level);
+    void clear(std::optional<Level> level = std::nullopt);
 
     /**
      * @brief Get the alphabet assigned to a specific level.

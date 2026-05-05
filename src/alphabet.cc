@@ -220,12 +220,24 @@ mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
     return alphabet_of_level(level).get_complement(symbols);
 }
 
-bool AlphabetLevels::empty(const mata::Level level) const {
-    return alphabet_of_level(level).empty();
+bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
+    if (level.has_value()) {
+        return alphabet_of_level(*level).empty();
+    }
+    for (const Alphabet* alphabet : alphabets) {
+        if (alphabet != nullptr && !alphabet->empty()) { return false; }
+    }
+    return true;
 }
 
-void AlphabetLevels::clear(const mata::Level level) {
-    const_cast<Alphabet&>(alphabet_of_level(level)).clear();
+void AlphabetLevels::clear(const std::optional<mata::Level> level) {
+    if (level.has_value()) {
+        const_cast<Alphabet&>(alphabet_of_level(*level)).clear();
+        return;
+    }
+    for (Alphabet* alphabet : alphabets) {
+        if (alphabet != nullptr) { alphabet->clear(); }
+    }
 }
 
 const mata::Alphabet& AlphabetLevels::alphabet_of_level(const mata::Level level) const {
