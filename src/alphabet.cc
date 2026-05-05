@@ -204,25 +204,25 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 }
 
 Symbol AlphabetLevels::translate_symb(const std::string& symb, const mata::Level level) {
-    return const_cast<Alphabet&>(alphabet_of_level(level)).translate_symb(symb);
+    return const_cast<Alphabet&>(for_level(level)).translate_symb(symb);
 }
 
 std::string AlphabetLevels::reverse_translate_symbol(const Symbol symbol, const mata::Level level) const {
-    return alphabet_of_level(level).reverse_translate_symbol(symbol);
+    return for_level(level).reverse_translate_symbol(symbol);
 }
 
 mata::utils::OrdVector<Symbol> AlphabetLevels::get_alphabet_symbols(const mata::Level level) const {
-    return alphabet_of_level(level).get_alphabet_symbols();
+    return for_level(level).get_alphabet_symbols();
 }
 
 mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
     const mata::utils::OrdVector<Symbol>& symbols, const mata::Level level) const {
-    return alphabet_of_level(level).get_complement(symbols);
+    return for_level(level).get_complement(symbols);
 }
 
 bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
     if (level.has_value()) {
-        return alphabet_of_level(*level).empty();
+        return for_level(*level).empty();
     }
     for (const Alphabet* alphabet : alphabets) {
         if (alphabet != nullptr && !alphabet->empty()) { return false; }
@@ -232,7 +232,7 @@ bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
 
 void AlphabetLevels::clear(const std::optional<mata::Level> level) {
     if (level.has_value()) {
-        const_cast<Alphabet&>(alphabet_of_level(*level)).clear();
+        const_cast<Alphabet&>(for_level(*level)).clear();
         return;
     }
     for (Alphabet* alphabet : alphabets) {
@@ -240,7 +240,7 @@ void AlphabetLevels::clear(const std::optional<mata::Level> level) {
     }
 }
 
-const mata::Alphabet& AlphabetLevels::alphabet_of_level(const mata::Level level) const {
+const mata::Alphabet& AlphabetLevels::for_level(const mata::Level level) const {
     const Alphabet* alphabet{ alphabets.size() == 1
                                   ? alphabets[0]
                                   : (level < alphabets.size() ? alphabets[level] : nullptr) };

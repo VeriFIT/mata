@@ -523,8 +523,10 @@ public:
      * @return Alphabet assigned to @p level.
      * @throws std::runtime_error If @p level is out of range or the entry is null.
      */
-    const Alphabet& alphabet_of_level(Level level) const;
+    const Alphabet& for_level(Level level) const;
 
+    /// Alias for @c for_level.
+    const Alphabet& operator[](Level level) const { return for_level(level); }
 };
 
 /**

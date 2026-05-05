@@ -59,8 +59,8 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
 
         CHECK(nft.alphabet == nullptr);
         REQUIRE(nft.alphabets == &shared_alphabets);
-        CHECK(&nft.alphabets->alphabet_of_level(0) == &shared_alphabet);
-        CHECK(&nft.alphabets->alphabet_of_level(7) == &shared_alphabet);
+        CHECK(&nft.alphabets->for_level(0) == &shared_alphabet);
+        CHECK(&nft.alphabets->for_level(7) == &shared_alphabet);
     }
 
     SECTION("per-level alphabets are stored in the alphabets member") {
@@ -68,8 +68,8 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
 
         REQUIRE(nft.alphabets == &split_alphabets);
         CHECK(nft.alphabet == nullptr);
-        CHECK(&nft.alphabets->alphabet_of_level(0) == &input_alphabet);
-        CHECK(&nft.alphabets->alphabet_of_level(1) == &output_alphabet);
+        CHECK(&nft.alphabets->for_level(0) == &input_alphabet);
+        CHECK(&nft.alphabets->for_level(1) == &output_alphabet);
     }
 
     SECTION("level-aware translation routes to the right underlying alphabet") {
@@ -114,8 +114,8 @@ TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly
     IntAlphabet base{};
     AlphabetLevels uniform{ &base };
 
-    CHECK(&uniform.alphabet_of_level(0) == &base);
-    CHECK(&uniform.alphabet_of_level(7) == &base);
+    CHECK(&uniform.for_level(0) == &base);
+    CHECK(&uniform.for_level(7) == &base);
     CHECK(uniform.translate_symb("3", 0) == 3);
     CHECK(uniform.translate_symb("3", 5) == 3);
     CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
@@ -135,8 +135,8 @@ TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
 
     REQUIRE(determinized.alphabets == &alphabets);
     REQUIRE(determinized.alphabet == nullptr);
-    CHECK(&determinized.alphabets->alphabet_of_level(0) == &input_alphabet);
-    CHECK(&determinized.alphabets->alphabet_of_level(1) == &output_alphabet);
+    CHECK(&determinized.alphabets->for_level(0) == &input_alphabet);
+    CHECK(&determinized.alphabets->for_level(1) == &output_alphabet);
 }
 
 TEST_CASE("mata::nft::size()") {
