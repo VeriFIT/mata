@@ -208,6 +208,7 @@ void Nft::print_to_dot(
         if (decode_ascii_chars) { return to_ascii(symbol); }
         if (alphabet != nullptr) { return alphabet->reverse_translate_symbol(symbol); }
         if (this->alphabets != nullptr) { return this->alphabets->reverse_translate_symbol(symbol, level); }
+        if (this->alphabet != nullptr) { return this->alphabet->reverse_translate_symbol(symbol); }
         return std::to_string(symbol);
     };
 
@@ -369,6 +370,8 @@ void Nft::print_to_mata(std::ostream& output) const {
         std::string symbol_label;
         if (alphabets != nullptr) {
             symbol_label = alphabets->reverse_translate_symbol(trans.symbol, levels[trans.source]);
+        } else if (alphabet != nullptr) {
+            symbol_label = alphabet->reverse_translate_symbol(trans.symbol);
         } else {
             symbol_label = std::to_string(trans.symbol);
         }
