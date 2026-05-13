@@ -517,11 +517,20 @@ public:
 
     /**
      * @brief Check whether the alphabet for the given level is empty.
+     *
+     * In @c Global mode, always checks @c alphabets[0] (level argument is ignored).
+     * In @c MultiLevel mode, checks @c alphabets[level] when @p level has a value, or returns @c true iff every
+     *  underlying alphabet is empty when @p level is @c std::nullopt.
      */
     bool empty(std::optional<Level> level = std::nullopt) const;
 
     /**
      * @brief Clear the alphabet for the given level.
+     *
+     * In @c Global mode, always clears @c alphabets[0] (level argument is ignored, calling @c clear repeatedly is
+     *  idempotent on the same alphabet).
+     * In @c MultiLevel mode, clears @c alphabets[level] when @p level has a value, or clears every underlying
+     *  alphabet when @p level is @c std::nullopt.
      */
     void clear(std::optional<Level> level = std::nullopt);
 
