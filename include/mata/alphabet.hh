@@ -548,9 +548,11 @@ public:
      * @throws std::runtime_error If @p level is missing in @c MultiLevel mode, out of range, or the entry is null.
      */
     const Alphabet& for_level(std::optional<Level> level = std::nullopt) const;
+    Alphabet& for_level(std::optional<Level> level = std::nullopt);
 
     /// Alias for @c for_level.
     const Alphabet& operator[](std::optional<Level> level) const { return for_level(level); }
+    Alphabet& operator[](std::optional<Level> level) { return for_level(level); }
 };
 
 /**

@@ -204,7 +204,7 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 }
 
 Symbol AlphabetLevels::translate_symb(const std::string& symb, const std::optional<mata::Level> level) {
-    return const_cast<Alphabet&>(for_level(level)).translate_symb(symb);
+    return for_level(level).translate_symb(symb);
 }
 
 std::string AlphabetLevels::reverse_translate_symbol(
@@ -241,7 +241,7 @@ void AlphabetLevels::clear(const std::optional<mata::Level> level) {
         }
         return;
     }
-    const_cast<Alphabet&>(for_level(level)).clear();
+    for_level(level).clear();
 }
 
 const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) const {
@@ -268,6 +268,10 @@ const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level>
     }
 
     return *alphabets[*level];
+}
+
+mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
+    return const_cast<Alphabet&>(std::as_const(*this).for_level(level));
 }
 
 mata::Word mata::encode_word_utf8(const mata::Word& word) {
