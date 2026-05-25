@@ -875,7 +875,17 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-Nfa concatenate_exponent(Nfa nfa_to_concatenate, unsigned exp);
+/**
+ * @brief Compute NFA by concatenating @p nfa_to_concatenate with itself @p exponent times.
+ *
+ * Uses exponentiation by squaring for efficiency. The result accepts the language L^exponent,
+ * where L is the language of the input automaton.
+ *
+ * @param[in] nfa_to_concatenate NFA to concatenate with itself.
+ * @param[in] exponent The exponent (number of times to concatenate).
+ * @return NFA accepting the exponent-power of the input language.
+ */
+Nfa concatenate_exponent(Nfa nfa_to_concatenate, unsigned exponent);
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
