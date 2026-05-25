@@ -875,6 +875,8 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
+Nfa concatenate_exponent(Nfa nfa_to_concatenate, unsigned exp);
+
 /**
  * @brief Compute automaton accepting complement of @p aut.
  *
