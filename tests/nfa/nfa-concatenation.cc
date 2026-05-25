@@ -1079,7 +1079,7 @@ TEST_CASE("Concat_inplace performance", "[.profiling]") {
     }
 }
 
-TEST_CASE("mata::nfa::concatenate_exponent()") {
+TEST_CASE("mata::nfa::concatenate_nth_power()") {
     SECTION("Exponent 0 returns empty-string automaton") {
         Nfa aut{};
         aut.add_state(1);
@@ -1087,7 +1087,7 @@ TEST_CASE("mata::nfa::concatenate_exponent()") {
         aut.final.insert(1);
         aut.delta.add(0, 'a', 1);
 
-        CHECK(are_equivalent(concatenate_exponent(aut, 0), builder::create_empty_string_nfa()));
+        CHECK(are_equivalent(concatenate_nth_power(aut, 0), builder::create_empty_string_nfa()));
     }
 
     SECTION("Exponent 1 returns the same language") {
@@ -1097,7 +1097,7 @@ TEST_CASE("mata::nfa::concatenate_exponent()") {
         aut.final.insert(1);
         aut.delta.add(0, 'a', 1);
 
-        CHECK(are_equivalent(concatenate_exponent(aut, 1), aut));
+        CHECK(are_equivalent(concatenate_nth_power(aut, 1), aut));
     }
 
     SECTION("Exponent 2 matches normal concatenate") {
@@ -1111,7 +1111,7 @@ TEST_CASE("mata::nfa::concatenate_exponent()") {
         Nfa expected = aut;
         expected.concatenate(aut);
 
-        CHECK(are_equivalent(concatenate_exponent(aut, 2), expected));
+        CHECK(are_equivalent(concatenate_nth_power(aut, 2), expected));
     }
 
     SECTION("Exponent 4 matches repeated normal concatenate") {
@@ -1126,6 +1126,6 @@ TEST_CASE("mata::nfa::concatenate_exponent()") {
         expected.concatenate(aut);
         expected.concatenate(aut);
 
-        CHECK(are_equivalent(concatenate_exponent(aut, 4), expected));
+        CHECK(are_equivalent(concatenate_nth_power(aut, 4), expected));
     }
 }

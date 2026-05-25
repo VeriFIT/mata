@@ -133,9 +133,9 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     return result;
 } // concatenate_eps().
 
-Nfa concatenate_exponent(Nfa nfa_to_concatenate, unsigned exponent) {
-    // If exponent is 0, return the NFA that accepts only the empty string
-    if (exponent == 0) {
+Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power) {
+    // If power is 0, return the NFA that accepts only the empty string.
+    if (power == 0) {
         return builder::create_empty_string_nfa();
     }
 
@@ -145,20 +145,20 @@ Nfa concatenate_exponent(Nfa nfa_to_concatenate, unsigned exponent) {
     // `base` is the current power of the original NFA.
     Nfa base = std::move(nfa_to_concatenate);
 
-    // Exponentiation by squaring (binary exponentiation) using in-place concatenation.
+    // Exponentiation by squaring (binary exponentiation)
     // For each binary digit (LSB first): if the bit is 1, multiply `result` by `base`.
     // Then square `base` for the next bit.
-    while (exponent > 0) {
+    while (power > 0) {
         // If current least-significant bit is set, append `base` to `result`.
-        if (exponent & 1u) {
+        if (power & 1u) {
             result.concatenate(base);
         }
 
         // Shift to the next bit.
-        exponent >>= 1;
+        power >>= 1;
 
         // If there are still bits to process, square `base` (i.e. base = base * base).
-        if (exponent) {
+        if (power) {
             base.concatenate(base);
         }
     }
