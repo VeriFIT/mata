@@ -2311,6 +2311,24 @@ in] Nfas Type <a class="reference internal" href="../nfa.html#classmata_1_1nfa_1
 </dd></dl>
 
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa21concatenate_nth_powerE3Nfaj">
+<span id="_CPPv3N4mata3nfa21concatenate_nth_powerE3Nfaj"></span><span id="_CPPv2N4mata3nfa21concatenate_nth_powerE3Nfaj"></span><span id="mata::nfa::concatenate_nth_power__Nfa.unsigned"></span><span class="target" id="namespacemata_1_1nfa_1ab6fcbd8bd36022820106e8a6c2e241cd"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">concatenate_nth_power</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nfa_to_concatenate</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">power</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Compute NFA by concatenating <code class="docutils literal notranslate"><span class="pre">nfa_to_concatenate</span></code> with itself <code class="docutils literal notranslate"><span class="pre">power</span></code> times. </p>
+<p>Uses exponentiation by squaring for efficiency. The result accepts the language L^power, where L is the language of the input automaton.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nfa_to_concatenate</strong> – <strong>[in]</strong> NFA to concatenate with itself. </p></li>
+<li><p><strong>power</strong> – <strong>[in]</strong> The nth power (number of times to concatenate). </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NFA accepting the nth power of the input language. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa10complementERK3NfaRK8AlphabetRK12ParameterMap">
 <span id="_CPPv3N4mata3nfa10complementERK3NfaRK8AlphabetRK12ParameterMap"></span><span id="_CPPv2N4mata3nfa10complementERK3NfaRK8AlphabetRK12ParameterMap"></span><span id="mata::nfa::complement__NfaCR.AlphabetCR.ParameterMapCR"></span><span class="target" id="namespacemata_1_1nfa_1a3cc9e29bbcbc2c52e0bcdd5fd450fa83"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">complement</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata3nfa12ParameterMapE" title="mata::nfa::ParameterMap"><span class="n"><span class="pre">ParameterMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">{</span></span><span class="s"><span class="pre">&quot;algorithm&quot;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">&quot;classical&quot;</span></span><span class="p"><span class="pre">}</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Compute automaton accepting complement of <code class="docutils literal notranslate"><span class="pre">aut</span></code>. </p>
