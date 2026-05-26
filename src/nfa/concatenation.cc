@@ -2,10 +2,11 @@
  * @brief Concatenation of NFAs.
  */
 
+#include <ranges>
+
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
-
-using namespace mata::nfa;
+#include "mata/nfa/builder.hh"
 
 namespace mata::nfa {
 
@@ -131,4 +132,38 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
     return result;
 } // concatenate_eps().
+
+Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power) {
+    // If power is 0, return the NFA that accepts only the empty string.
+    if (power == 0) {
+        return builder::create_empty_string_nfa();
+    }
+
+    // `result` holds the accumulating product (starts as identity — empty-string NFA)
+    Nfa result = builder::create_empty_string_nfa();
+
+    // `base` is the current power of the original NFA.
+    Nfa base = std::move(nfa_to_concatenate);
+
+    // Exponentiation by squaring (binary exponentiation)
+    // For each binary digit (LSB first): if the bit is 1, multiply `result` by `base`.
+    // Then square `base` for the next bit.
+    while (power > 0) {
+        // If current least-significant bit is set, append `base` to `result`.
+        if (power & 1u) {
+            result.concatenate(base);
+        }
+
+        // Shift to the next bit.
+        power >>= 1;
+
+        // If there are still bits to process, square `base` (i.e. base = base * base).
+        if (power) {
+            base.concatenate(base);
+        }
+    }
+
+    return result;
+}
+
 } // Namespace mata::nfa.

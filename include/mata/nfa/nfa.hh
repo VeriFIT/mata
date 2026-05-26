@@ -876,6 +876,18 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 /**
+ * @brief Compute NFA by concatenating @p nfa_to_concatenate with itself @p power times.
+ *
+ * Uses exponentiation by squaring for efficiency. The result accepts the language L^power,
+ * where L is the language of the input automaton.
+ *
+ * @param[in] nfa_to_concatenate NFA to concatenate with itself.
+ * @param[in] power The nth power (number of times to concatenate).
+ * @return NFA accepting the nth power of the input language.
+ */
+Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power);
+
+/**
  * @brief Compute automaton accepting complement of @p aut.
  *
  * @param[in] aut Automaton whose complement to compute.
