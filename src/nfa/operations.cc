@@ -1368,7 +1368,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
     return word;
 }
 
-std::optional<mata::Word> Nfa::get_some_shortest_word(const mata::nfa::Nfa& aut){
+std::optional<mata::Word> Nfa::get_shortest_word(const mata::nfa::Nfa& aut){
     
         //Predecessor state and the symbol used to reach the current state.
         struct Predecessor {
