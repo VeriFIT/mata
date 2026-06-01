@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <list>
+#include <queue>
 #include <unordered_set>
 
 // MATA headers
@@ -1365,6 +1366,75 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
         if (!first_epsilon.has_value() || symbol_post_it->symbol < first_epsilon) { word.push_back(symbol_post_it->symbol); }
     }
     return word;
+}
+
+std::optional<mata::Word> Nfa::get_shortest_word(const mata::nfa::Nfa& aut){
+    
+        //Predecessor state and the symbol used to reach the current state.
+        struct Predecessor {
+            mata::nfa::State prev;
+            mata::Symbol sym;
+        };
+
+        //Resulting word
+        mata::Word res;
+        const size_t num_of_states = aut.num_of_states();
+
+        std::queue<mata::nfa::State> worklist;
+        std::vector<int> dist(num_of_states, -1);
+        std::vector<Predecessor> pred(num_of_states);
+
+        // Initialize BFS from all initial states
+        for (mata::nfa::State init_state : aut.initial) {
+            dist[init_state] = 0;
+            worklist.push(init_state);
+
+            if (aut.final.contains(init_state)) {
+                return res; // empty word accepted
+            }
+        }
+
+        // Standard BFS loop
+        while (!worklist.empty()) {
+            // Get the next state in the queue and remove it
+            mata::nfa::State curr_state = worklist.front();
+            worklist.pop();
+
+            // Calculate the distance for any newly discovered states from this node
+            int next_dist = dist[curr_state] + 1;
+
+            // Iterate outgoing transitions
+            for (const auto& sym_post : aut.delta[curr_state]) {
+                mata::Symbol transition_sym = sym_post.symbol;
+
+                // Iterate over all destination states for this specific symbol
+                for (mata::nfa::State target_state : sym_post.targets) {
+                    //Skip if the state has already been visited
+                    if (dist[target_state] != -1) continue;
+
+                    dist[target_state] = next_dist; //Mark state as visited
+                    pred[target_state] = { curr_state, transition_sym }; // Store made transition
+
+                    // Check if the newly reached state is an accepting state
+                    if (aut.final.contains(target_state)) {
+
+                        // reconstruct shortest word
+                        for (mata::nfa::State backtrack_state = target_state; dist[backtrack_state] > 0;
+                             backtrack_state = pred[backtrack_state].prev) {
+                            res.push_back(pred[backtrack_state].sym);
+                        }
+                        //Reverse the backtracked word
+                        std::reverse(res.begin(), res.end());
+                        return res;
+                    }
+
+                    // If 'target_state' is not a final state, push it to the queue to explore its transitions later
+                    worklist.push(target_state);
+                }
+            }
+        }
+
+        return res; // language empty
 }
 
 std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet) const {
