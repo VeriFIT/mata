@@ -669,8 +669,8 @@ public:
      */
     std::optional<Word> get_word(std::optional<Symbol> first_epsilon = EPSILON) const;
 
-    /// Returns one of the shortest words of @p aut 
-    std::optional<mata::Word> get_shortest_word(const mata::nfa::Nfa& aut);
+    /// Returns any accepted shortest word in the language of the automaton
+    std::optional<mata::Word> get_shortest_word();
 
     /**
      * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
