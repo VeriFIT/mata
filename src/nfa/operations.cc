@@ -1368,7 +1368,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
     return word;
 }
 
-std::optional<mata::Word> Nfa::get_shortest_word(const mata::nfa::Nfa& aut){
+std::optional<mata::Word> Nfa::get_shortest_word(){
     
         //Predecessor state and the symbol used to reach the current state.
         struct Predecessor {
@@ -1378,18 +1378,18 @@ std::optional<mata::Word> Nfa::get_shortest_word(const mata::nfa::Nfa& aut){
 
         //Resulting word
         mata::Word res;
-        const size_t num_of_states = aut.num_of_states();
+        const size_t num_of_states = this->num_of_states();
 
         std::queue<mata::nfa::State> worklist;
         std::vector<int> dist(num_of_states, -1);
         std::vector<Predecessor> pred(num_of_states);
 
         // Initialize BFS from all initial states
-        for (mata::nfa::State init_state : aut.initial) {
+        for (mata::nfa::State init_state : this->initial) {
             dist[init_state] = 0;
             worklist.push(init_state);
 
-            if (aut.final.contains(init_state)) {
+            if (this->final.contains(init_state)) {
                 return res; // empty word accepted
             }
         }
@@ -1404,7 +1404,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const mata::nfa::Nfa& aut){
             int next_dist = dist[curr_state] + 1;
 
             // Iterate outgoing transitions
-            for (const auto& sym_post : aut.delta[curr_state]) {
+            for (const auto& sym_post : this->delta[curr_state]) {
                 mata::Symbol transition_sym = sym_post.symbol;
 
                 // Iterate over all destination states for this specific symbol
@@ -1416,7 +1416,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const mata::nfa::Nfa& aut){
                     pred[target_state] = { curr_state, transition_sym }; // Store made transition
 
                     // Check if the newly reached state is an accepting state
-                    if (aut.final.contains(target_state)) {
+                    if (this->final.contains(target_state)) {
 
                         // reconstruct shortest word
                         for (mata::nfa::State backtrack_state = target_state; dist[backtrack_state] > 0;
