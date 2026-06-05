@@ -1390,7 +1390,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
         worklist.push(init_state);
 
         if (this->final.contains(init_state)) {
-            return std::nullopt; // empty word accepted
+            return mata::Word{}; // empty word accepted
         }
     }
 
