@@ -316,7 +316,7 @@ The folder [`3rdparty/`](3rdparty) contains 3rd party applications licensed unde
 
 ## Contacts
 
-See [AUTHORS.md](AUTHORS.md)
+See [AUTHORS.md](AUTHORS.md).
 
 ## Acknowledgements
 
@@ -327,3 +327,7 @@ We thank for the support received from the Brno University of Technology
 
 This tool as well as the information provided on this web page reflects only the author's view and no organization is
 responsible for any use that may be made of the information it contains.
+
+## Branches
+
+See [docs/src/branches.md](docs/src/branches.md).
