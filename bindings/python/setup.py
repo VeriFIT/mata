@@ -127,12 +127,31 @@ def get_version():
     # 2. the binding is installed from sdist
     version_file = os.path.join(src_dir, "VERSION")
     if os.path.exists(version_file):
-        with open(version_file, 'r') as version_handle:
-            return version_handle.read().split()[0]
+        with open(version_file, "r") as version_handle:
+            version = version_handle.read().split()[0]
     else:
         version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
-        assert re.match(r"\d+\.\d+\.\d+(.*)", version)
-        return version.strip()
+        if not re.match(r"v\d+\.\d+\.\d+(.*)", version):
+            raise AssertionError("The library version is invalid")
+
+    def normalize_version(version: str) -> str:
+        """Normalizes version string to PEP 440 format.
+
+        - Strips leading 'v' from git tags (e.g., v1.2.3 -> 1.2.3)
+        - Translates prerelease tags to PEP 440 format (e.g., -dev.N -> .devN)
+
+        :param str version: raw version string from git tag or VERSION file
+        :return: PEP 440 compliant version string
+        """
+        version = version.strip()
+
+        if version.startswith("v"):
+            version = version[1:]
+        version = re.sub(r"-dev\.", ".dev", version)
+
+        return version
+
+    return normalize_version(version)
 
 
 def _build_mata():

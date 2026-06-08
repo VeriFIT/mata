@@ -1,0 +1,33 @@
+name: Bump version with tagging
+description: Automatically bump version and create git tags for the used versioning scheme.
+inputs:
+  dry-run:
+    description: "If true, only infer the version without tagging."
+    required: false
+    default: "false"
+  prerelease:
+    description: "If true, create a prerelease tag (e.g., 1.0.0-dev.1) instead of a regular release tag (e.g., 1.0.0)."
+    required: false
+    default: "false"
+outputs:
+  new-tag:
+    description: "The inferred/created tag (as a git tag, e.g., v1.2.3 or v1.2.3-dev.1)."
+    value: ${{ steps.bump.outputs.new_tag }}
+runs:
+  using: "composite"
+  steps:
+    - name: Bump the version (with tagging)
+      id: bump
+      uses: anothrNick/github-tag-action@1.75.0
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        DEFAULT_BRANCH: "master"
+        RELEASE_BRANCHES: ${{ inputs.prerelease == 'true' && 'devel' || 'master' }}
+        DEFAULT_BUMP: "patch"
+        DRY_RUN: ${{ inputs.dry-run }}
+        TAG_PREFIX: "v"
+        PRERELEASE: ${{ inputs.prerelease }}
+        PRERELEASE_SUFFIX: "dev"
+        MAJOR_STRING_TOKEN: "#generation"
+        MINOR_STRING_TOKEN: "#major"
+        PATCH_STRING_TOKEN: "#minor"
