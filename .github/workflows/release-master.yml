@@ -70,7 +70,6 @@ jobs:
         if: matrix.install-type == 'tarball'
         uses: ./.github/workflows/actions/compile-python-tarball
       - name: Compile the Python bindings from the source
-        if: matrix.install-type == 'src'
         uses: ./.github/workflows/actions/compile-python-src
       - name: Test the Python bindings
         uses: ./.github/workflows/actions/test-python
