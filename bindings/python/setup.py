@@ -120,19 +120,12 @@ class build_ext(_build_ext):
 
 
 def get_version():
-    """Parses the version of the library from the VERSION file."""
-    # Note: The VERSION file should be present ONLY in the following cases:
-    # 1. the binding is installed from github action (one of the action automatically
-    # creates this file)
-    # 2. the binding is installed from sdist
-    version_file = os.path.join(src_dir, "VERSION")
-    if os.path.exists(version_file):
-        with open(version_file, "r") as version_handle:
-            version = version_handle.read().split()[0]
-    else:
-        version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
-        if not re.match(r"v\d+\.\d+\.\d+(.*)", version):
-            raise AssertionError("The library version is invalid")
+    """Parses the version of the library from the VERSION file.
+    Note: The VERSION file should be present ONLY in the following cases:
+    1. the binding is installed from github action (one of the action automatically
+    creates this file)
+    2. the binding is installed from sdist
+    """
 
     def normalize_version(version: str) -> str:
         """Normalizes version string to PEP 440 format.
@@ -150,6 +143,21 @@ def get_version():
         version = re.sub(r"-dev\.", ".dev", version)
 
         return version
+
+    for candidate in [
+        os.path.join(root_dir, "VERSION"),  # bindings/python/VERSION.
+        os.path.join(src_dir, "VERSION"),  # Repo root or sdist mata/.
+    ]:
+        if os.path.exists(candidate):
+            with open(candidate, "r") as f:
+                content = f.read().split()
+            if not content:
+                raise RuntimeError(f"VERSION file '{candidate}' is empty.")
+            return normalize_version(content[0])
+    else:
+        version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
+        if not re.match(r"v\d+\.\d+\.\d+(.*)", version):
+            raise AssertionError("The library version is invalid")
 
     return normalize_version(version)
 
