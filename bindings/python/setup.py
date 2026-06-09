@@ -1,24 +1,27 @@
-import os
 import errno
-import shutil
+import os
 import platform
-import shlex
-import subprocess
 import re
+import shlex
+import shutil
+import subprocess
 
-from setuptools import setup, Extension
 from Cython.Build import cythonize
-from distutils.command.sdist import sdist as _sdist
-from distutils.command.build_ext import build_ext as _build_ext
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.sdist import sdist as _sdist
 
-if 'microsoft' in platform.uname().release.lower():
-    #Patch for calling the python from WSL. The copystat fails on copied directories
+if "microsoft" in platform.uname().release.lower():
+    # Patch for calling the python from WSL. The copystat fails on copied directories
     orig_copyxattr = shutil._copyxattr
+
     def patched_copyxattr(src, dst, *, follow_symlinks=True):
         try:
             orig_copyxattr(src, dst, follow_symlinks=follow_symlinks)
         except OSError as ex:
-            if ex.errno != errno.EACCES: raise
+            if ex.errno != errno.EACCES:
+                raise
+
     shutil._copyxattr = patched_copyxattr
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
@@ -43,7 +46,7 @@ project_includes = [
     os.path.join(src_dir, "3rdparty"),
     os.path.join(src_dir, "3rdparty", "re2"),
     os.path.join(src_dir, "3rdparty", "simlib", "include"),
-    os.path.join(src_dir, "3rdparty", "cudd", "include")
+    os.path.join(src_dir, "3rdparty", "cudd", "include"),
 ]
 
 extra_compile_args = ["-std=c++20", "-DNO_THROW_DISPATCHER"]
@@ -55,18 +58,17 @@ extensions = [
         f"libmata.{pkg}",
         sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"],
         include_dirs=project_includes,
-        libraries=['mata'],
+        libraries=["mata"],
         library_dirs=project_library_dirs,
         language="c++",
         extra_compile_args=extra_compile_args,
-    ) for pkg in (
-        'nfa.nfa', 'alphabets', 'utils', 'parser', 'nfa.strings', 'plotting'
     )
+    for pkg in ("nfa.nfa", "alphabets", "utils", "parser", "nfa.strings", "plotting")
 ]
 
 
 def _clean_up():
-    """Removes old files"""
+    """Removes old files."""
     shutil.rmtree(sdist_dir, ignore_errors=True)
 
 
@@ -81,23 +83,21 @@ def _copy_sources():
     _clean_up()
     os.mkdir(sdist_dir)
 
-    version_file = os.path.join(project_dir, 'VERSION')
+    version_file = os.path.join(project_dir, "VERSION")
     version_file_was_created = False
     if not os.path.exists(version_file):
         version = get_version()
-        with open(version_file, 'w') as version_handle:
+        with open(version_file, "w") as version_handle:
             version_handle.write(version)
             version_file_was_created = True
     shutil.copy(version_file, sdist_dir)
-    shutil.copy(os.path.join(project_dir, 'LICENSE'), sdist_dir)
-    shutil.copy(os.path.join(project_dir, 'README.md'), sdist_dir)
-    shutil.copy(os.path.join(project_dir, 'Makefile'), sdist_dir)
-    shutil.copy(os.path.join(project_dir, 'CMakeLists.txt'), sdist_dir)
-    shutil.copy(os.path.join(project_dir, 'Doxyfile.in'), sdist_dir)
-    shutil.copy(os.path.join(project_dir, 'cmake_uninstall.cmake.in'), sdist_dir)
-    for mata_dir in (
-            'src', 'include', '3rdparty', 'cmake'
-    ):
+    shutil.copy(os.path.join(project_dir, "LICENSE"), sdist_dir)
+    shutil.copy(os.path.join(project_dir, "README.md"), sdist_dir)
+    shutil.copy(os.path.join(project_dir, "Makefile"), sdist_dir)
+    shutil.copy(os.path.join(project_dir, "CMakeLists.txt"), sdist_dir)
+    shutil.copy(os.path.join(project_dir, "Doxyfile.in"), sdist_dir)
+    shutil.copy(os.path.join(project_dir, "cmake_uninstall.cmake.in"), sdist_dir)
+    for mata_dir in ("src", "include", "3rdparty", "cmake"):
         shutil.copytree(
             os.path.join(project_dir, mata_dir),
             os.path.join(sdist_dir, mata_dir),
@@ -120,7 +120,7 @@ class build_ext(_build_ext):
 
 
 def get_version():
-    """Parses the version of the library from the VERSION file"""
+    """Parses the version of the library from the VERSION file."""
     # Note: The VERSION file should be present ONLY in the following cases:
     # 1. the binding is installed from github action (one of the action automatically
     # creates this file)
@@ -158,14 +158,25 @@ def _build_mata():
     """Builds mata library"""
     with subprocess.Popen(
         shlex.split(f"make release-lib BUILD_DIR={mata_build_dir}"),
-        cwd=src_dir, bufsize=1, universal_newlines=True, stdout=subprocess.PIPE, shell=False
-    ) as p:
-        for line in p.stdout:
-            print(line, end='')
+        cwd=src_dir,
+        bufsize=1,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        shell=False,
+    ) as process:
+        for line in process.stdout:
+            print(line, end="")
+        process.wait()
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"make release-lib failed with exit code {process.returncode}"
+            )
 
 
-def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeout=None, **kwargs):
-    """Safely runs the piped command, without executing of the shell
+def run_safely_external_command(
+    cmd: str, check_results=True, quiet=True, timeout=None, **kwargs
+):
+    """Safely runs the piped command, without executing of the shell.
 
     Courtesy of: https://blog.avinetworks.com/tech/python-best-practices
 
@@ -187,16 +198,20 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
         executed_command = shlex.split(unpiped_commands[i])
 
         # set streams
-        stdin = None if i == 0 else objects[i-1].stdout
+        stdin = None if i == 0 else objects[i - 1].stdout
         stderr = subprocess.STDOUT if i < (cmd_no - 1) else subprocess.PIPE
 
         # run the piped command and close the previous one
         piped_command = subprocess.Popen(
             executed_command,
-            shell=False, stdin=stdin, stdout=subprocess.PIPE, stderr=stderr, **kwargs
+            shell=False,
+            stdin=stdin,
+            stdout=subprocess.PIPE,
+            stderr=stderr,
+            **kwargs,
         )
         if i != 0:
-            objects[i-1].stdout.close()  # type: ignore
+            objects[i - 1].stdout.close()  # type: ignore
         objects.append(piped_command)
 
     try:
@@ -216,13 +231,13 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
         for i in range(cmd_no):
             if objects[i].returncode:
                 if not quiet and (cmdout or cmderr):
-                    print(f"captured stdout: {cmdout.decode('utf-8')}", 'red')
-                    print(f"captured stderr: {cmderr.decode('utf-8')}", 'red')
+                    print(f"captured stdout: {cmdout.decode('utf-8')}", "red")
+                    print(f"captured stderr: {cmderr.decode('utf-8')}", "red")
                 raise subprocess.CalledProcessError(
                     objects[i].returncode, unpiped_commands[i]
                 )
 
-    return cmdout.decode('utf-8'), cmderr.decode('utf-8')
+    return cmdout.decode("utf-8"), cmderr.decode("utf-8")
 
 
 setup(

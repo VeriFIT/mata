@@ -63,126 +63,158 @@ jobs:
           build-log-output-file: "warnings-new"
       - name: Test the library
         run: make test
-  run-test-performance-base:
+  run-tests-python:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        python-version: ["3.13"]
+        install-type: ["src", "tarball"]
     steps:
       - uses: actions/checkout@v6
         with:
-          # fetch-depth: 0
-          # If PR, checkout the PR's repo (needed for PRs coming from forks).
-          repository: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.base.sha || github.event.pull_request.base_ref || github.sha }}
-      - uses: ./.github/workflows/actions/setup
-        with:
-          os: ${{ matrix.os }}
-      - uses: ./.github/workflows/actions/compile
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-          cache: "pip"
-      - name: Install Python Dependencies
-        shell: sh
-        run: |
-          python -m pip install --upgrade pip
-          pip install ./tests-integration/
-      - name: Test the library
-        run: make test-performance
-      - name: Cache performance results
-        uses: actions/cache@v5
-        with:
-          path: |
-            ./tests-integration/results/corr-single-param-jobs.csv
-            ./tests-integration/results/corr-double-param-jobs.csv
-          key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
-  run-test-performance:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          # fetch-depth: 0
-          # If PR, checkout the PR's repo (needed for PRs coming from forks).
+          fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
-      - uses: ./.github/workflows/actions/compile
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python and its dependencies ${{ inputs.python-version }}
+        uses: ./.github/workflows/actions/setup-python
         with:
-          python-version: 3.13
-          cache: "pip"
-      - name: Install Python Dependencies
-        shell: sh
-        run: |
-          python -m pip install --upgrade pip
-          pip install ./tests-integration/
-      - name: Test the library
-        run: make test-performance
-      - name: Cache performance results
-        uses: actions/cache@v5
-        with:
-          path: |
-            ./tests-integration/results/corr-single-param-jobs.csv
-            ./tests-integration/results/corr-double-param-jobs.csv
-          key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
-  compare-performance:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    needs: [run-test-performance, run-test-performance-base]
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          # fetch-depth: 0
-          # If PR, checkout the PR's repo (needed for PRs coming from forks).
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-          cache: "pip"
-      - name: Install Python Dependencies
-        shell: sh
-        run: |
-          python -m pip install --upgrade pip
-          pip install tabulate pandas
-      - name: Restore target profiles
-        uses: actions/cache/restore@v5
-        with:
-          path: |
-            ./tests-integration/results/corr-single-param-jobs.csv
-            ./tests-integration/results/corr-double-param-jobs.csv
-          key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
-      - run: |
-          mv ./tests-integration/results/corr-single-param-jobs.csv single-param-target.csv
-          mv ./tests-integration/results/corr-double-param-jobs.csv double-param-target.csv
-      - name: Restore baseline profiles
-        uses: actions/cache/restore@v5
-        with:
-          path: |
-            ./tests-integration/results/corr-single-param-jobs.csv
-            ./tests-integration/results/corr-double-param-jobs.csv
-          key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
-      - run: |
-          mv ./tests-integration/results/corr-single-param-jobs.csv single-param-baseline.csv
-          mv ./tests-integration/results/corr-double-param-jobs.csv double-param-baseline.csv
-      - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
-        run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
-      - name: LOOK HERE for Comparison of operations accepting two automata as parameters
-        run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
+          os: ${{ matrix.os }}
+          python-version: ${{ matrix.python-version }}
+      - name: Write the released version to VERSION file
+        shell: bash
+        run: echo "v0.0.0-dev.1" > VERSION
+      - name: Compile the Python bindings from the source
+        uses: ./.github/workflows/actions/compile-python-src
+      - name: Compile the Python bindings from the tarball
+        if: matrix.install-type == 'tarball'
+        uses: ./.github/workflows/actions/compile-python-tarball
+      - name: Test the Python bindings
+        uses: ./.github/workflows/actions/test-python
+  # run-test-performance-base:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest]
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         # fetch-depth: 0
+  #         # If PR, checkout the PR's repo (needed for PRs coming from forks).
+  #         repository: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
+  #         ref: ${{ github.event.pull_request.base.sha || github.event.pull_request.base_ref || github.sha }}
+  #     - uses: ./.github/workflows/actions/setup
+  #       with:
+  #         os: ${{ matrix.os }}
+  #     - uses: ./.github/workflows/actions/compile
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: 3.13
+  #         cache: "pip"
+  #     - name: Install Python Dependencies
+  #       shell: sh
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install ./tests-integration/
+  #     - name: Test the library
+  #       run: make test-performance
+  #     - name: Cache performance results
+  #       uses: actions/cache@v5
+  #       with:
+  #         path: |
+  #           ./tests-integration/results/corr-single-param-jobs.csv
+  #           ./tests-integration/results/corr-double-param-jobs.csv
+  #         key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
+  # run-test-performance:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest]
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         # fetch-depth: 0
+  #         # If PR, checkout the PR's repo (needed for PRs coming from forks).
+  #         repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+  #         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+  #     - uses: ./.github/workflows/actions/setup
+  #       with:
+  #         os: ${{ matrix.os }}
+  #     - uses: ./.github/workflows/actions/compile
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.13
+  #         cache: "pip"
+  #     - name: Install Python Dependencies
+  #       shell: sh
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install ./tests-integration/
+  #     - name: Test the library
+  #       run: make test-performance
+  #     - name: Cache performance results
+  #       uses: actions/cache@v5
+  #       with:
+  #         path: |
+  #           ./tests-integration/results/corr-single-param-jobs.csv
+  #           ./tests-integration/results/corr-double-param-jobs.csv
+  #         key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
+  # compare-performance:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest]
+  #   needs: [run-test-performance, run-test-performance-base]
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         # fetch-depth: 0
+  #         # If PR, checkout the PR's repo (needed for PRs coming from forks).
+  #         repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+  #         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: 3.13
+  #         cache: "pip"
+  #     - name: Install Python Dependencies
+  #       shell: sh
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install tabulate pandas
+  #     - name: Restore target profiles
+  #       uses: actions/cache/restore@v5
+  #       with:
+  #         path: |
+  #           ./tests-integration/results/corr-single-param-jobs.csv
+  #           ./tests-integration/results/corr-double-param-jobs.csv
+  #         key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
+  #     - run: |
+  #         mv ./tests-integration/results/corr-single-param-jobs.csv single-param-target.csv
+  #         mv ./tests-integration/results/corr-double-param-jobs.csv double-param-target.csv
+  #     - name: Restore baseline profiles
+  #       uses: actions/cache/restore@v5
+  #       with:
+  #         path: |
+  #           ./tests-integration/results/corr-single-param-jobs.csv
+  #           ./tests-integration/results/corr-double-param-jobs.csv
+  #         key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
+  #     - run: |
+  #         mv ./tests-integration/results/corr-single-param-jobs.csv single-param-baseline.csv
+  #         mv ./tests-integration/results/corr-double-param-jobs.csv double-param-baseline.csv
+  #     - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
+  #       run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
+  #     - name: LOOK HERE for Comparison of operations accepting two automata as parameters
+  #       run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
   compare-versions:
     runs-on: ${{ matrix.os }}
     strategy:

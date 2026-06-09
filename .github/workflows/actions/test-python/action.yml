@@ -1,0 +1,20 @@
+name: Python binding (test)
+description: Run Python binding tests including Jupyter notebooks.
+runs:
+  using: "composite"
+  steps:
+    - name: Run tests
+      shell: bash
+      run: make -C bindings/python test
+    - name: Install runner for Jupyter notebooks
+      shell: bash
+      run: |
+        python3 -m pip install ipykernel
+        python3 -m ipykernel install --user
+        python3 -m pip install numpy seaborn papermill pandas
+    - name: Test the Jupyter notebooks
+      shell: bash
+      run: |
+        papermill ./examples/notebooks/example-01-ws1s-formulae.ipynb out.ipynb
+        papermill ./examples/notebooks/example-02-redos-attacks.ipynb out.ipynb
+        papermill ./examples/notebooks/example-03-exploring-maze.ipynb out.ipynb

@@ -1,0 +1,8 @@
+name: Python binding (build)
+description: Install the Python binding from source.
+runs:
+  using: "composite"
+  steps:
+    - name: Install the binding
+      shell: bash
+      run: make -C bindings/python install

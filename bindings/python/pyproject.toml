@@ -1,5 +1,5 @@
 [project]
-name = "mata-py"
+name = "libmata"
 version = "0.1.0"
 description = "Mata Python bindings"
 readme = "README.md"
