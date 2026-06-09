@@ -1,0 +1,11 @@
+name: Python binding (build from tarball)
+description: Build a PyPI tarball and verify it installs cleanly.
+runs:
+  using: "composite"
+  steps:
+    - name: Create tarball
+      shell: bash
+      run: make -C bindings/python pypi-release
+    - name: Install from tarball
+      shell: bash
+      run: pip3 install bindings/python/dist/*.tar.gz

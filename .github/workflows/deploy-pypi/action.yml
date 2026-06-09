@@ -1,0 +1,41 @@
+name: Python binding (deploy to PyPI)
+description: Build and upload the Python binding tarball to PyPI.
+inputs:
+  os:
+    description: "Operating system to run the workflow on."
+    required: false
+    default: "ubuntu-latest"
+  python-version:
+    description: "Python version to use."
+    required: false
+    default: "3.13"
+  version:
+    description: "Version tag to write to the VERSION file (e.g. v1.2.3)."
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Set up environment
+      uses: ./.github/workflows/actions/setup
+      with:
+        os: ${{ inputs.os }}
+    - name: Set up Python and its dependencies ${{ inputs.python-version }}
+      uses: ./.github/workflows/actions/setup-python
+      with:
+        os: ${{ inputs.os }}
+        python-version: ${{ inputs.python-version }}
+    - name: Write the released version to VERSION file
+      shell: bash
+      run: echo "${{ inputs.version }}" > VERSION
+    - name: Compile the Python bindings from the tarball (to verify the tarball works as well)
+      uses: ./.github/workflows/actions/compile-python-tarball
+    - name: Build Python release distribution package (tarball)
+      shell: bash
+      run: make -C bindings/python pypi-release
+    - name: Upload to PyPI
+      shell: bash
+      run: python3 -m twine upload bindings/python/dist/*.tar.gz
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
+        # TWINE_REPOSITORY: testpypi
