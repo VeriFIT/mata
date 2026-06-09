@@ -87,7 +87,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Write the released version to VERSION file
         shell: bash
-        run: echo "v0.0.0-dev.1" > VERSION
+        run: |
+          echo "v0.0.0-dev.1" > VERSION
+          echo "v0.0.0-dev.1" > bindings/python/VERSION
       - name: Compile the Python bindings from the source
         uses: ./.github/workflows/actions/compile-python-src
       - name: Compile the Python bindings from the tarball
