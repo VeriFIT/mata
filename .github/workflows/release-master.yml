@@ -129,3 +129,4 @@ jobs:
           os: ${{ runner.os }}
           python-version: ${{ matrix.python-version }}
           version: ${{ needs.release.outputs.new-tag }}
+          pypi-token: ${{ secrets.PYPI_SECRET_TOKEN }}
