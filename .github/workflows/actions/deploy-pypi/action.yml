@@ -27,9 +27,7 @@ runs:
       with:
         os: ${{ inputs.os }}
         python-version: ${{ inputs.python-version }}
-    - name: Write the released version to VERSION file
-      shell: bash
-      run: echo "${{ inputs.version }}" > VERSION
+        version: ${{ inputs.version }}
     - name: Compile the Python bindings from the source
       uses: ./.github/workflows/actions/compile-python-src
     - name: Compile the Python bindings from the tarball
