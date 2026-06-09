@@ -66,11 +66,11 @@ jobs:
       - name: Write the released version to VERSION file
         shell: bash
         run: echo "v0.0.0-dev.1" > VERSION
+      - name: Compile the Python bindings from the source
+        uses: ./.github/workflows/actions/compile-python-src
       - name: Compile the Python bindings from the tarball
         if: matrix.install-type == 'tarball'
         uses: ./.github/workflows/actions/compile-python-tarball
-      - name: Compile the Python bindings from the source
-        uses: ./.github/workflows/actions/compile-python-src
       - name: Test the Python bindings
         uses: ./.github/workflows/actions/test-python
   release:
