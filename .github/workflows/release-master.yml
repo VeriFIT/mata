@@ -113,7 +113,7 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: docs/_build/html
-  deploy-to-pypi:
+  deploy-pypi:
     needs: release
     runs-on: ubuntu-latest
     strategy:
