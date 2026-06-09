@@ -2,13 +2,13 @@
 
 [![GitHub tag](https://img.shields.io/github/tag/VeriFIT/mata.svg)](https://github.com/VeriFIT/mata)
 [![Quality](https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml/badge.svg)](https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml)
-[![Python-Binding (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml)
-[![codecov](https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
+[![Python-Binding (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=master)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml)
+[![codecov](https://codecov.io/gh/VeriFIT/mata/branch/master/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 
 Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:
 
-1. An efficient library implemented in C/C++
-2. A flexible wrapper implemented in Python that uses the efficient library
+1. An efficient library implemented in C/C++, and
+2. A flexible wrapper implemented in Python that uses the efficient library.
 
 ## Installation
 
@@ -279,6 +279,8 @@ The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https:
   Typically, we increment the `GENERATION` number when a substantial change to the library is introduced, such as adding support for new automata models, extensive rewrite of (a part of) the Mata library, or to denote a new scientific paper documenting the latest developments in the Mata library is published, etc.
 - Generally, the changes in the `MINOR` version should not break the existing interface, but exceptions might occur.
 - The changes in the `MAJOR` version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.
+
+Mata publishes releases from the `master` branch, and sometimes development releases from the `devel` branch.
 
 ## Publications
 

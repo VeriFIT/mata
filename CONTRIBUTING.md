@@ -22,6 +22,9 @@ For information on contributing to the Python bindings, refer to [bindings/pytho
    on how to build the project from sources.
 5. Commit the changes and push to your fork.
 6. Finally, [create a new pull request](https://github.com/VeriFIT/mata/compare).
+   Open the PR against **`master`** if the PR is a simple fix or new feature that **does not break the userland**.
+   Open the PR against **`devel`** if the PR contains **breaking changes** or is a part of a **multi-PR effort** that
+   needs longer to prepare before a new stable release.
    When opening a PR, either set its status to `Open` (the default behaviour) when you want the PR to be immediately
    up for review, or set its status to `Draft` when the PR is work-in-progress and you do not want the PR to be
    reviewed yet.
@@ -164,14 +167,15 @@ The information in this section concerns only maintainers of the project.
 
 ### Versioning during PR merge
 
-By default, each merge automatically increases the `minor` version of the library
-(i.e., `0.0.0 -> 0.1.0` ). This can be overruled using either tag `#patch` (increasing
-patch version, i.e., `0.0.0 -> 0.0.1`) or `#major` (increasing major version, i.e.,
-`0.0.0 -> 1.0.0`). This tag is specified in the merge message.
+By default (or using a tag `#minor`), each merge automatically increases the `minor` version of the library
+(i.e., `v0.0.0 -> v0.0.1` ).
+This can be overruled by using either tag `#major` (increasing the major version, i.e., `v0.1.0 -> v0.2.0`) or `#generation`
+(increasing the generation version, i.e., `v0.0.0 -> v1.0.0`).
+This tag is specified in the merge message.
 
-Generally, it is recommended to use `#major` for changes that introduces backward-incompatible
-changes for people that used previous versions, and `#patch` for minor changes, such as bug-fixes,
-performance fixes or refactoring.
+Generally, it is recommended to use `#major` for changes that introduces backward-incompatible changes for people that
+used previous versions, and `#generation` only when tagging a new generation of the library.
+For bug-fixes, performance fixes or refactoring, `#minor` version bump is recommended.
 
 ---
 
