@@ -93,7 +93,7 @@ jobs:
       - name: Test the library
         run: make test-performance
       - name: Cache performance results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -129,7 +129,7 @@ jobs:
       - name: Test the library
         run: make test-performance
       - name: Cache performance results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -160,7 +160,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install tabulate pandas
       - name: Restore target profiles
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -170,7 +170,7 @@ jobs:
           mv ./tests-integration/results/corr-single-param-jobs.csv single-param-target.csv
           mv ./tests-integration/results/corr-double-param-jobs.csv double-param-target.csv
       - name: Restore baseline profiles
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ./tests-integration/results/corr-single-param-jobs.csv
@@ -192,13 +192,13 @@ jobs:
     needs: [warnings-base, warnings-new]
     steps:
       - name: Restore new cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ./build_log
           key: build-log-warnings-new-${{ runner.os }}-${{ github.sha }}
       - run: mv build_log new_warnings
       - name: Restore base cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ./build_log
           key: build-log-warnings-base-${{ runner.os }}-${{ github.sha }}
