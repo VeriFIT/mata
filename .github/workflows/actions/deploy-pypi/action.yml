@@ -12,6 +12,9 @@ inputs:
   version:
     description: "Version tag to write to the VERSION file (e.g. v1.2.3)."
     required: true
+  pypi-token:
+    description: "PyPI API token for uploading."
+    required: true
 runs:
   using: "composite"
   steps:
@@ -37,5 +40,5 @@ runs:
       run: python3 -m twine upload bindings/python/dist/*.tar.gz
       env:
         TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
+        TWINE_PASSWORD: ${{ inputs.pypi-token }}
         # TWINE_REPOSITORY: testpypi
