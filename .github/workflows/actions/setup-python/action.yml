@@ -8,12 +8,16 @@ inputs:
   python-version:
     description: "Python version to run"
     required: true
+  version:
+    description: "Version tag to write to the VERSION file (e.g. v1.2.3)."
+    required: false
+    default: "v0.0.0-dev.1"
 runs:
   using: "composite"
   steps:
     - name: Add some version to VERSION file (since it cannot be inferred from git)
       shell: bash
-      run: echo "0.0.0" > VERSION
+      run: echo "${{ inputs.version }}" > VERSION
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6
       with:
