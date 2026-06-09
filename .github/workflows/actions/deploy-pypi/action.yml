@@ -30,11 +30,10 @@ runs:
     - name: Write the released version to VERSION file
       shell: bash
       run: echo "${{ inputs.version }}" > VERSION
-    - name: Compile the Python bindings from the tarball (to verify the tarball works as well)
+    - name: Compile the Python bindings from the source
+      uses: ./.github/workflows/actions/compile-python-src
+    - name: Compile the Python bindings from the tarball
       uses: ./.github/workflows/actions/compile-python-tarball
-    - name: Build Python release distribution package (tarball)
-      shell: bash
-      run: make -C bindings/python pypi-release
     - name: Upload to PyPI
       shell: bash
       run: python3 -m twine upload bindings/python/dist/*.tar.gz
