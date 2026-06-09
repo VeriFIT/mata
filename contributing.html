@@ -56,6 +56,9 @@ Refer to <a class="reference internal" href="#README#Building-and-installing-fro
 on how to build the project from sources.</p></li>
 <li><p>Commit the changes and push to your fork.</p></li>
 <li><p>Finally, <a class="reference external" href="https://github.com/VeriFIT/mata/compare">create a new pull request</a>.
+Open the PR against <strong><code class="docutils literal notranslate"><span class="pre">master</span></code></strong> if the PR is a simple fix or new feature that <strong>does not break the userland</strong>.
+Open the PR against <strong><code class="docutils literal notranslate"><span class="pre">devel</span></code></strong> if the PR contains <strong>breaking changes</strong> or is a part of a <strong>multi-PR effort</strong> that
+needs longer to prepare before a new stable release.
 When opening a PR, either set its status to <code class="docutils literal notranslate"><span class="pre">Open</span></code> (the default behaviour) when you want the PR to be immediately
 up for review, or set its status to <code class="docutils literal notranslate"><span class="pre">Draft</span></code> when the PR is work-in-progress and you do not want the PR to be
 reviewed yet.
@@ -202,13 +205,14 @@ condition variable explicitly <code class="docutils literal notranslate"><span c
 <p>The information in this section concerns only maintainers of the project.</p>
 <section id="versioning-during-pr-merge">
 <h4>Versioning during PR merge<a class="headerlink" href="#versioning-during-pr-merge" title="Link to this heading">¶</a></h4>
-<p>By default, each merge automatically increases the <code class="docutils literal notranslate"><span class="pre">minor</span></code> version of the library
-(i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.1.0</span></code> ). This can be overruled using either tag <code class="docutils literal notranslate"><span class="pre">#patch</span></code> (increasing
-patch version, i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.0.1</span></code>) or <code class="docutils literal notranslate"><span class="pre">#major</span></code> (increasing major version, i.e.,
-<code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">1.0.0</span></code>). This tag is specified in the merge message.</p>
-<p>Generally, it is recommended to use <code class="docutils literal notranslate"><span class="pre">#major</span></code> for changes that introduces backward-incompatible
-changes for people that used previous versions, and <code class="docutils literal notranslate"><span class="pre">#patch</span></code> for minor changes, such as bug-fixes,
-performance fixes or refactoring.</p>
+<p>By default (or using a tag <code class="docutils literal notranslate"><span class="pre">#minor</span></code>), each merge automatically increases the <code class="docutils literal notranslate"><span class="pre">minor</span></code> version of the library
+(i.e., <code class="docutils literal notranslate"><span class="pre">v0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">v0.0.1</span></code> ).
+This can be overruled by using either tag <code class="docutils literal notranslate"><span class="pre">#major</span></code> (increasing the major version, i.e., <code class="docutils literal notranslate"><span class="pre">v0.1.0</span> <span class="pre">-&gt;</span> <span class="pre">v0.2.0</span></code>) or <code class="docutils literal notranslate"><span class="pre">#generation</span></code>
+(increasing the generation version, i.e., <code class="docutils literal notranslate"><span class="pre">v0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">v1.0.0</span></code>).
+This tag is specified in the merge message.</p>
+<p>Generally, it is recommended to use <code class="docutils literal notranslate"><span class="pre">#major</span></code> for changes that introduces backward-incompatible changes for people that
+used previous versions, and <code class="docutils literal notranslate"><span class="pre">#generation</span></code> only when tagging a new generation of the library.
+For bug-fixes, performance fixes or refactoring, <code class="docutils literal notranslate"><span class="pre">#minor</span></code> version bump is recommended.</p>
 <hr class="docutils" />
 <p>Thank you for contributing to Mata!</p>
 </section>

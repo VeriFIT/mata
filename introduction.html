@@ -39,12 +39,12 @@
 <h2>Mata: The Automata Library<a class="headerlink" href="#mata-the-automata-library" title="Link to this heading">¶</a></h2>
 <p><a class="reference external" href="https://github.com/VeriFIT/mata"><img alt="GitHub tag" src="https://img.shields.io/github/tag/VeriFIT/mata.svg" /></a>
 <a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml"><img alt="Quality" src="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml/badge.svg" /></a>
-<a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml"><img alt="Python-Binding (build-&amp;-test)" src="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=devel" /></a>
-<a class="reference external" href="https://codecov.io/gh/VeriFIT/mata"><img alt="codecov" src="https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D" /></a></p>
+<a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml"><img alt="Python-Binding (build-&amp;-test)" src="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=master" /></a>
+<a class="reference external" href="https://codecov.io/gh/VeriFIT/mata"><img alt="codecov" src="https://codecov.io/gh/VeriFIT/mata/branch/master/graph/badge.svg?token=9VAVD19N4D" /></a></p>
 <p>Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:</p>
 <ol class="arabic simple">
-<li><p>An efficient library implemented in C/C++</p></li>
-<li><p>A flexible wrapper implemented in Python that uses the efficient library</p></li>
+<li><p>An efficient library implemented in C/C++, and</p></li>
+<li><p>A flexible wrapper implemented in Python that uses the efficient library.</p></li>
 </ol>
 <section id="installation">
 <h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h3>
@@ -275,6 +275,7 @@ Typically, we increment the <code class="docutils literal notranslate"><span cla
 <li><p>Generally, the changes in the <code class="docutils literal notranslate"><span class="pre">MINOR</span></code> version should not break the existing interface, but exceptions might occur.</p></li>
 <li><p>The changes in the <code class="docutils literal notranslate"><span class="pre">MAJOR</span></code> version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.</p></li>
 </ul>
+<p>Mata publishes releases from the <code class="docutils literal notranslate"><span class="pre">master</span></code> branch, and sometimes development releases from the <code class="docutils literal notranslate"><span class="pre">devel</span></code> branch.</p>
 </section>
 <section id="publications">
 <h3>Publications<a class="headerlink" href="#publications" title="Link to this heading">¶</a></h3>
