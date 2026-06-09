@@ -79,7 +79,7 @@ jobs:
       - name: Merge master into devel
         run: |
           git checkout devel
-          git merge master --no-edit
+          git merge origin/master --no-edit
           git push origin devel
   deploy-docs:
     needs: release
