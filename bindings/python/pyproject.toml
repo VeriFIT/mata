@@ -1,6 +1,6 @@
 [project]
 name = "libmata"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Mata Python bindings"
 readme = "README.md"
 requires-python = ">=3.13"
