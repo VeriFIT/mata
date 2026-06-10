@@ -322,7 +322,7 @@ formal methods, verification and many more:
 </section>
 <section id="contacts">
 <h3>Contacts<a class="headerlink" href="#contacts" title="Link to this heading">¶</a></h3>
-<p>See <a class="reference internal" href="#AUTHORS.md"><span class="xref myst">AUTHORS.md</span></a></p>
+<p>See <a class="reference internal" href="#AUTHORS.md"><span class="xref myst">AUTHORS.md</span></a>.</p>
 </section>
 <section id="acknowledgements">
 <h3>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h3>
@@ -331,6 +331,62 @@ formal methods, verification and many more:
 <!-- Development of this tool has been supported by the following projects: ???. -->
 <p>This tool as well as the information provided on this web page reflects only the author’s view and no organization is
 responsible for any use that may be made of the information it contains.</p>
+</section>
+<section id="branches">
+<h3>Branches<a class="headerlink" href="#branches" title="Link to this heading">¶</a></h3>
+<p>See <a class="reference internal" href="#docs/src/branches.md"><span class="xref myst">docs/src/branches.md</span></a>.</p>
+</section>
+</section>
+<section id="id1">
+<h2>Branches<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Notable branches in Mata.</p>
+<section id="main-branches">
+<h3>Main branches<a class="headerlink" href="#main-branches" title="Link to this heading">¶</a></h3>
+<section id="master">
+<h4><a class="reference external" href="https://github.com/VeriFIT/mata/tree/master"><code class="docutils literal notranslate"><span class="pre">master</span></code></a><a class="headerlink" href="#master" title="Link to this heading">¶</a></h4>
+<p>The production release branch of Mata.</p>
+</section>
+<section id="devel">
+<h4><a class="reference external" href="https://github.com/VeriFIT/mata/tree/devel"><code class="docutils literal notranslate"><span class="pre">devel</span></code></a><a class="headerlink" href="#devel" title="Link to this heading">¶</a></h4>
+<p>The developement branch of Mata, providing development releases, used to quickly iterate on new features in Mata without
+breaking the userland during development.
+<code class="docutils literal notranslate"><span class="pre">devel</span></code> is always kept in-sync with <code class="docutils literal notranslate"><span class="pre">master</span></code>.</p>
+</section>
+</section>
+<section id="backups">
+<h3>Backups<a class="headerlink" href="#backups" title="Link to this heading">¶</a></h3>
+<p>Backed-up branches with experiments.</p>
+<section id="simulation-samo538-bak">
+<h4><a class="reference external" href="https://github.com/VeriFIT/mata/tree/simulation-samo538.bak"><code class="docutils literal notranslate"><span class="pre">simulation-samo538.bak</span></code></a><a class="headerlink" href="#simulation-samo538-bak" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Author: <a class="reference external" href="https://github.com/samo538">Samuel Lupták (samo538)</a></p></li>
+<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></p></li>
+<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/434">https://github.com/VeriFIT/mata/pull/434</a></p></li>
+</ul>
+<p>Backup of a NFA reduction algorithm using maximum direct simulation.
+Pseudo-algorithm is taken from <a class="reference external" href="https://github.com/ondrik/iny-fix/blob/master/main.pdf">https://github.com/ondrik/iny-fix/blob/master/main.pdf</a>.
+The experimental results show the algorithm is not outperforming the already existing RT algorithm for simulations.</p>
+</section>
+<section id="simulation-reduction-rules-samo538-bak">
+<h4><a class="reference external" href="https://github.com/VeriFIT/mata/tree/simulation-reduction-rules-samo538.bak"><code class="docutils literal notranslate"><span class="pre">simulation-reduction-rules-samo538.bak</span></code></a><a class="headerlink" href="#simulation-reduction-rules-samo538-bak" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Author: <a class="reference external" href="https://github.com/samo538">Samuel Lupták (samo538)</a></p></li>
+<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP2/.en">Project Practice 2, BIT</a></p></li>
+<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/487">https://github.com/VeriFIT/mata/pull/487</a></p></li>
+</ul>
+<p>Backup of a NFA reduction algorithm enhancement using maximum direct simulation with support for reduction rules.</p>
+</section>
+<section id="boost-determinization-inclusion-lacko-bak">
+<h4><a class="reference external" href="https://github.com/VeriFIT/mata/tree/boost-determinization-inclusion-lacko.bak"><code class="docutils literal notranslate"><span class="pre">boost-determinization-inclusion-lacko.bak</span></code></a><a class="headerlink" href="#boost-determinization-inclusion-lacko-bak" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Author: <a class="reference external" href="https://github.com/Igor-Lacko">Igor Lacko (Igor-Lacko)</a></p></li>
+<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></p></li>
+<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/478">https://github.com/VeriFIT/mata/pull/478</a></p></li>
+</ul>
+<p>Backup of a variant of determinization and inclusion algorithms using the Boost data structures (bit vectors).
+Requires Boost as an external dependency.
+The Boost implmentation of bit vectors can be replaced with a manual implementation of</p>
+</section>
 </section>
 </section>
 </section>
@@ -365,6 +421,7 @@ responsible for any use that may be made of the information it contains.</p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#mata-the-automata-library">Mata: The Automata Library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Branches</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>

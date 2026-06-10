@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Branches &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=623e9adf"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="branches">
+<h1>Branches<a class="headerlink" href="#branches" title="Link to this heading">¶</a></h1>
+<p>Notable branches in Mata.</p>
+<section id="main-branches">
+<h2>Main branches<a class="headerlink" href="#main-branches" title="Link to this heading">¶</a></h2>
+<section id="master">
+<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/master"><code class="docutils literal notranslate"><span class="pre">master</span></code></a><a class="headerlink" href="#master" title="Link to this heading">¶</a></h3>
+<p>The production release branch of Mata.</p>
+</section>
+<section id="devel">
+<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/devel"><code class="docutils literal notranslate"><span class="pre">devel</span></code></a><a class="headerlink" href="#devel" title="Link to this heading">¶</a></h3>
+<p>The developement branch of Mata, providing development releases, used to quickly iterate on new features in Mata without
+breaking the userland during development.
+<code class="docutils literal notranslate"><span class="pre">devel</span></code> is always kept in-sync with <code class="docutils literal notranslate"><span class="pre">master</span></code>.</p>
+</section>
+</section>
+<section id="backups">
+<h2>Backups<a class="headerlink" href="#backups" title="Link to this heading">¶</a></h2>
+<p>Backed-up branches with experiments.</p>
+<section id="simulation-samo538-bak">
+<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/simulation-samo538.bak"><code class="docutils literal notranslate"><span class="pre">simulation-samo538.bak</span></code></a><a class="headerlink" href="#simulation-samo538-bak" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Author: <a class="reference external" href="https://github.com/samo538">Samuel Lupták (samo538)</a></p></li>
+<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></p></li>
+<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/434">https://github.com/VeriFIT/mata/pull/434</a></p></li>
+</ul>
+<p>Backup of a NFA reduction algorithm using maximum direct simulation.
+Pseudo-algorithm is taken from <a class="reference external" href="https://github.com/ondrik/iny-fix/blob/master/main.pdf">https://github.com/ondrik/iny-fix/blob/master/main.pdf</a>.
+The experimental results show the algorithm is not outperforming the already existing RT algorithm for simulations.</p>
+</section>
+<section id="simulation-reduction-rules-samo538-bak">
+<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/simulation-reduction-rules-samo538.bak"><code class="docutils literal notranslate"><span class="pre">simulation-reduction-rules-samo538.bak</span></code></a><a class="headerlink" href="#simulation-reduction-rules-samo538-bak" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Author: <a class="reference external" href="https://github.com/samo538">Samuel Lupták (samo538)</a></p></li>
+<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP2/.en">Project Practice 2, BIT</a></p></li>
+<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/487">https://github.com/VeriFIT/mata/pull/487</a></p></li>
+</ul>
+<p>Backup of a NFA reduction algorithm enhancement using maximum direct simulation with support for reduction rules.</p>
+</section>
+<section id="boost-determinization-inclusion-lacko-bak">
+<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/boost-determinization-inclusion-lacko.bak"><code class="docutils literal notranslate"><span class="pre">boost-determinization-inclusion-lacko.bak</span></code></a><a class="headerlink" href="#boost-determinization-inclusion-lacko-bak" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Author: <a class="reference external" href="https://github.com/Igor-Lacko">Igor Lacko (Igor-Lacko)</a></p></li>
+<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></p></li>
+<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/478">https://github.com/VeriFIT/mata/pull/478</a></p></li>
+</ul>
+<p>Backup of a variant of determinization and inclusion algorithms using the Boost data structures (bit vectors).
+Requires Boost as an external dependency.
+The Boost implmentation of bit vectors can be replaced with a manual implementation of</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/branches.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
