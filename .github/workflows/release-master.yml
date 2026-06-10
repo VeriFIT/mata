@@ -99,7 +99,7 @@ jobs:
       - uses: ./.github/workflows/actions/github-actions-git-config
       - name: Merge master into devel
         run: |
-          git checkout devel
+          git checkout origin/devel
           git merge origin/master --no-edit
           git push origin devel
   deploy-docs:
