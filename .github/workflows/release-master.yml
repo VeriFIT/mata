@@ -8,6 +8,7 @@ on:
       - master
 jobs:
   build-docs:
+    if: github.event.pull_request.merged == true
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -97,11 +98,46 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.merge_commit_sha }}
       - uses: ./.github/workflows/actions/github-actions-git-config
-      - name: Merge master into devel
+      - name: Create sync branch
         run: |
-          git checkout -B devel origin/devel
+          git checkout -B sync/master-into-devel origin/devel
           git merge origin/master --no-edit
-          git push origin devel
+          git push origin sync/master-into-devel --force
+      # - name: Merge master into devel
+      #     run: |
+      #       git checkout -B devel origin/devel
+      #       git merge origin/master --no-edit
+      #       git push origin devel
+      - name: Create or update sync PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head sync/master-into-devel \
+            --base devel \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --head sync/master-into-devel \
+              --base devel \
+              --title "chore: Sync `master` into `devel`" \
+              --body "Automated sync of `master` into `devel` after release. Auto-merged when all checks pass." \
+              --label automated/sync
+          else
+            echo "PR #$PR_NUMBER already exists, updated branch."
+          fi
+      - name: Enable auto-merge on sync PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head sync/master-into-devel \
+            --base devel \
+            --json number \
+            --jq '.[0].number')
+          gh pr merge "$PR_NUMBER" --auto --merge
   deploy-docs:
     needs: release
     runs-on: ubuntu-latest
