@@ -1,0 +1,35 @@
+name: Propose stable release (devel -> master)
+on:
+  workflow_dispatch:
+permissions: write-all
+jobs:
+  propose-stable-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/workflows/actions/github-actions-git-config
+      - name: Create or update proposal branch
+        run: |
+          git checkout -B release/devel-into-master origin/devel
+          git push origin release/devel-into-master --force
+      - name: Create or update release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head release/devel-into-master \
+            --base master \
+            --json number \
+            --jq '.[0].number')
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --head release/devel-into-master \
+              --base master \
+              --title "chore: Propose stable release from devel" \
+              --body "Manually triggered stable release proposal. Review and merge to cut a release." \
+              --label "automated/sync"
+          else
+            echo "PR #$PR_NUMBER already exists — branch updated."
+          fi
