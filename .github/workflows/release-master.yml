@@ -131,7 +131,7 @@ jobs:
           fi
       - name: Enable auto-merge on sync PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
           PR_NUMBER=$(gh pr list \
             --head sync/master-into-devel \
