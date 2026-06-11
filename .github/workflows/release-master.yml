@@ -122,8 +122,8 @@ jobs:
             gh pr create \
               --head sync/master-into-devel \
               --base devel \
-              --title "chore: Sync `master` into `devel`" \
-              --body "Automated sync of `master` into `devel` after release. Auto-merged when all checks pass." \
+              --title "chore: Sync 'master' into 'devel'" \
+              --body "Automated sync of 'master' into 'devel' after release. Auto-merged when all checks pass." \
               --label automated/sync
           else
             echo "PR #$PR_NUMBER already exists, updated branch."
