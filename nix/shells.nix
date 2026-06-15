@@ -28,14 +28,12 @@
                 inputsFrom = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
                   mata
                   mataPy
+                  mataDocs
                 ];
 
                 packages = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
-                  mata
-                  (pkgs.python3.withPackages (ps: [
-                    mataPy
-                    ps.papermill
-                  ]))
+                  # mata
+                  # mataPy
                 ];
 
                 buildInputs =
@@ -69,6 +67,18 @@
                     taplo
                     prettier
                     prettierd
+
+                    (pkgs.python3.withPackages (
+                      ps: with ps; [
+                        pytest
+                        pytest-cov
+                        papermill
+                        jupytext
+                      ]
+                      #  ++ [
+                      #   inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.mataPy
+                      # ]
+                    ))
                   ]
                   ++ (
                     if pkgs.stdenv.hostPlatform.system != inputs.flake-utils.lib.system.aarch64-darwin then

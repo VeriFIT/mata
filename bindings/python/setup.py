@@ -249,38 +249,7 @@ def run_safely_external_command(
 
 
 setup(
-    name="libmata",
-    packages=["libmata", "libmata.nfa"],
-    package_dir={'libmata': 'libmata', 'libmata.nfa': os.path.join('libmata', 'nfa')},
     version=get_version(),
-    ext_modules=cythonize(
-        extensions,
-        compiler_directives={'language_level': "3"}
-    ),
-    description="The automata library",
-    author="Lukáš Holík <holik@fit.vutbr.cz>, "
-                "Ondřej Lengál <lengal@fit.vutbr.cz>, "
-                "Martin Hruška <ihruskam@fit.vutbr.cz>, "
-                "Tomáš Fiedor <ifiedortom@fit.vutbr.cz>, "
-                "David Chocholatý <chocholaty.david@protonmail.com>, "
-                "Juraj Síč <sicjuraj@fit.vutbr.cz>, "
-                "Tomáš Vojnar <vojnar@fit.vutbr.cz>",
-    author_email="holik@fit.vutbr.cz",
-    long_description=README_MD,
-    long_description_content_type="text/markdown",
-    keywords="automata, finite automata, alternating automata",
-    url="https://github.com/verifit/mata",
-    cmdclass={
-        'sdist': sdist,
-        'build_ext': build_ext
-    },
-    # Requirements from install for pip
-    install_requires=[
-        'Cython>=0.29.32',
-        'tabulate>=0.8.10',
-        'ipython>=7.9.0',
-        'pandas>=1.3.5',
-        'networkx>=2.6.3',
-        'graphviz>=0.10.1',
-    ]
+    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    cmdclass={"sdist": sdist, "build_ext": build_ext},
 )
