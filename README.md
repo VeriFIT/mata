@@ -49,7 +49,7 @@ The Mata library further depends on the following libraries, included in the `./
 
 To build the library, run the following:
 
-```
+```shell
 git clone https://github.com/VeriFIT/mata
 cd mata
 make release
@@ -57,26 +57,26 @@ make release
 
 In order to install the library, you can run
 
-```
+```shell
 sudo make install
 ```
 
 In order to verify the functionality of the library, you can run the test suite:
 
-```
+```shell
 make test
 ```
 
 You might, need to install the dependencies to measure the coverage of the tests.
 Run the following to install the dependencies for MacOS:
 
-```
+```shell
 brew install lcov gcovr
 ```
 
 Run the following to install the dependencies for Ubuntu:
 
-```
+```shell
 sudo apt install -y build-essential lcov gcovr xdg-utils
 ```
 
@@ -87,9 +87,12 @@ package on your system as follows.
 
 ### Installation from PyPI
 
-To install a latest version from the PyPI repository, run
+To install a latest version from the PyPI repository, run:
 
-```
+```shell
+# Using uv:
+uv add libmata
+# Or using pip:
 pip3 install libmata
 ```
 
@@ -98,7 +101,15 @@ pip3 install libmata
 To build from sources first, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (`venv`) to install and use the library.
 
+Using `uv`:
+
+```shell
+uv sync --python 3.13
 ```
+
+Or using `pip`:
+
+```shell
 python -m pip install --upgrade pip
 make -C bindings/python init
 
@@ -108,13 +119,13 @@ sudo apt -qq install -y graphviz graphviz-dev
 
 Now, you can install the library.
 
-```
+```shell
 make -C bindings/python install
 ```
 
 Finally, you can verify the binding woks as expected by running the test suite:
 
-```
+```shell
 make -C bindings/python test
 ```
 
@@ -125,21 +136,21 @@ This directory contains examples of various usage in form of:
 
 1. C/C++ example programs. By default, they are built with the library. To run for example the first example:
 
-```
+```shell
 ./build/examples/example01-simple
 ```
 
 3. Python example scripts. To run the scripts run the following.
 
-```
-python examples/example01-python-binding.py
+```shell
+python3 examples/example01-python-binding.py
 ```
 
 4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
    a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
    Navigate to generated link to see the available jupyter notebooks:
 
-```
+```shell
 pip3 install jupyter
 jupyter notebook
 ```

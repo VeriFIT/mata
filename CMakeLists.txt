@@ -121,43 +121,48 @@ add_subdirectory (3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory (3rdparty/simlib EXCLUDE_FROM_ALL)
 add_subdirectory (3rdparty/cudd EXCLUDE_FROM_ALL)
 
-if (MATA_BUILD_EXAMPLES)
+if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) AND MATA_BUILD_EXAMPLES)
+	message ("-- Building examples")
 	add_subdirectory (examples)
 endif ()
 
 # Build tests only if Mata is the main project and we enabled testing
 if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) AND BUILD_TESTING)
+	message ("-- Building tests")
 	add_subdirectory (tests)
 	add_subdirectory (tests-integration)
 endif ()
 
 
 ##### INSTALLING AND UNINSTALLING #####
-install (TARGETS libmata cudd_headers simlib_headers
-    EXPORT mataTargets
+install (
+	TARGETS libmata cudd_headers simlib_headers
+	EXPORT mataTargets
 	ARCHIVE DESTINATION lib
 )
 # TODO: should headers be installed in some nicer way? there is something called FILE_SET in cmake, but I do not feel it will make it better
 install(
-    DIRECTORY
-        ${PROJECT_SOURCE_DIR}/include/
-        ${PROJECT_SOURCE_DIR}/3rdparty/cudd/include/ # TODO remove this after we remove PUBLIC dependency on CUDD
-        ${PROJECT_SOURCE_DIR}/3rdparty/simlib/include/ # TODO remove this after we remove PUBLIC dependency on simlib
-    DESTINATION include
+	DIRECTORY
+		${PROJECT_SOURCE_DIR}/include/
+		${PROJECT_SOURCE_DIR}/3rdparty/cudd/include/ # TODO remove this after we remove PUBLIC dependency on CUDD
+		${PROJECT_SOURCE_DIR}/3rdparty/simlib/include/ # TODO remove this after we remove PUBLIC dependency on simlib
+	DESTINATION include
 )
-install(EXPORT mataTargets
-    # NAMESPACE mata:: # for modern cmake, commented out because I am not sure what could break with it
-    DESTINATION lib/cmake/mata
+install(
+	EXPORT mataTargets
+	# NAMESPACE mata:: # for modern cmake, commented out because I am not sure what could break with it
+	DESTINATION lib/cmake/mata
 )
 
 include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    cmake/mataConfig.cmake.in       # your template
-    "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"  # output
-    INSTALL_DESTINATION lib/cmake/mata
+configure_package_config_file(cmake/mataConfig.cmake.in
+	"${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
+	INSTALL_DESTINATION lib/cmake/mata
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
-        DESTINATION lib/cmake/mata)
+install(
+	FILES "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
+	DESTINATION lib/cmake/mata
+)
 
 
 # Uninstall target from https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#can-i-do-make-uninstall-with-cmake
