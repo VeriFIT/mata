@@ -78,26 +78,26 @@ From optional requirements, <code class="docutils literal notranslate"><span cla
 <li><p><code class="docutils literal notranslate"><span class="pre">simlib</span></code> for a simulation computation.</p></li>
 </ul>
 <p>To build the library, run the following:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">VeriFIT</span><span class="o">/</span><span class="n">mata</span>
-<span class="n">cd</span> <span class="n">mata</span>
-<span class="n">make</span> <span class="n">release</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/VeriFIT/mata
+<span class="nb">cd</span><span class="w"> </span>mata
+make<span class="w"> </span>release
 </pre></div>
 </div>
 <p>In order to install the library, you can run</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">make</span> <span class="n">install</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>
 </div>
 <p>In order to verify the functionality of the library, you can run the test suite:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">test</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span><span class="nb">test</span>
 </pre></div>
 </div>
 <p>You might, need to install the dependencies to measure the coverage of the tests.
 Run the following to install the dependencies for MacOS:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">brew</span> <span class="n">install</span> <span class="n">lcov</span> <span class="n">gcovr</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>lcov<span class="w"> </span>gcovr
 </pre></div>
 </div>
 <p>Run the following to install the dependencies for Ubuntu:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">build</span><span class="o">-</span><span class="n">essential</span> <span class="n">lcov</span> <span class="n">gcovr</span> <span class="n">xdg</span><span class="o">-</span><span class="n">utils</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>lcov<span class="w"> </span>gcovr<span class="w"> </span>xdg-utils
 </pre></div>
 </div>
 </section>
@@ -108,8 +108,11 @@ Run the following to install the dependencies for MacOS:</p>
 package on your system as follows.</p>
 <section id="installation-from-pypi">
 <h4>Installation from PyPI<a class="headerlink" href="#installation-from-pypi" title="Link to this heading">¶</a></h4>
-<p>To install a latest version from the PyPI repository, run</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span> <span class="n">install</span> <span class="n">libmata</span>
+<p>To install a latest version from the PyPI repository, run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using uv:</span>
+uv<span class="w"> </span>add<span class="w"> </span>libmata
+<span class="c1"># Or using pip:</span>
+pip3<span class="w"> </span>install<span class="w"> </span>libmata
 </pre></div>
 </div>
 </section>
@@ -117,19 +120,24 @@ package on your system as follows.</p>
 <h4>Building from sources<a class="headerlink" href="#building-from-sources" title="Link to this heading">¶</a></h4>
 <p>To build from sources first, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (<code class="docutils literal notranslate"><span class="pre">venv</span></code>) to install and use the library.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">pip</span>
-<span class="n">make</span> <span class="o">-</span><span class="n">C</span> <span class="n">bindings</span><span class="o">/</span><span class="n">python</span> <span class="n">init</span>
+<p>Using <code class="docutils literal notranslate"><span class="pre">uv</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.13
+</pre></div>
+</div>
+<p>Or using <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+make<span class="w"> </span>-C<span class="w"> </span>bindings/python<span class="w"> </span>init
 
-<span class="n">sudo</span> <span class="n">apt</span> <span class="o">-</span><span class="n">qq</span> <span class="n">update</span>
-<span class="n">sudo</span> <span class="n">apt</span> <span class="o">-</span><span class="n">qq</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">graphviz</span> <span class="n">graphviz</span><span class="o">-</span><span class="n">dev</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>-qq<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>-qq<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>graphviz<span class="w"> </span>graphviz-dev
 </pre></div>
 </div>
 <p>Now, you can install the library.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="o">-</span><span class="n">C</span> <span class="n">bindings</span><span class="o">/</span><span class="n">python</span> <span class="n">install</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>-C<span class="w"> </span>bindings/python<span class="w"> </span>install
 </pre></div>
 </div>
 <p>Finally, you can verify the binding woks as expected by running the test suite:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="o">-</span><span class="n">C</span> <span class="n">bindings</span><span class="o">/</span><span class="n">python</span> <span class="n">test</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>-C<span class="w"> </span>bindings/python<span class="w"> </span><span class="nb">test</span>
 </pre></div>
 </div>
 </section>
@@ -141,13 +149,13 @@ This directory contains examples of various usage in form of:</p>
 <ol class="arabic simple">
 <li><p>C/C++ example programs. By default, they are built with the library. To run for example the first example:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">build</span><span class="o">/</span><span class="n">examples</span><span class="o">/</span><span class="n">example01</span><span class="o">-</span><span class="n">simple</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./build/examples/example01-simple
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
 <li><p>Python example scripts. To run the scripts run the following.</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">examples</span><span class="o">/</span><span class="n">example01</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="n">binding</span><span class="o">.</span><span class="n">py</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>examples/example01-python-binding.py
 </pre></div>
 </div>
 <ol class="arabic simple" start="4">
@@ -155,8 +163,8 @@ This directory contains examples of various usage in form of:</p>
 a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
 Navigate to generated link to see the available jupyter notebooks:</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span> <span class="n">install</span> <span class="n">jupyter</span>
-<span class="n">jupyter</span> <span class="n">notebook</span>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip3<span class="w"> </span>install<span class="w"> </span>jupyter
+jupyter<span class="w"> </span>notebook
 </pre></div>
 </div>
 <section id="using-the-library">
