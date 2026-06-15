@@ -326,17 +326,17 @@ cdef class Nfa:
         """
         self.thisptr.get().final.erase(state)
 
-    def clear_final(self) -> Self:
+    def clear_final(self) -> Nfa:
         """Clears final state set of the automaton."""
         self.thisptr.get().final.clear()
         return self
 
-    def unify_initial(self, bool force_new_state = False) -> Self:
+    def unify_initial(self, bool force_new_state = False) -> Nfa:
         """Unify initial states into a single new initial state."""
         self.thisptr.get().unify_initial(force_new_state)
         return self
 
-    def unify_final(self, bool force_new_state = False) -> Self:
+    def unify_final(self, bool force_new_state = False) -> Nfa:
         """Unify final states into a single new final state."""
         self.thisptr.get().unify_final(force_new_state)
 
@@ -518,7 +518,7 @@ cdef class Nfa:
         Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
-        :return: Self.
+        :return: Nfa.
         """
         self.thisptr.get().trim(NULL)
         return self
@@ -530,7 +530,7 @@ cdef class Nfa:
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
 
-        :return: Self, State map of original to new states.
+        :return: Nfa, State map of original to new states.
         """
         cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
@@ -539,7 +539,7 @@ cdef class Nfa:
     def concatenate(self, Nfa other) -> Nfa:
         """Concatenate 'self' with 'other' in-place.
 
-        :return: Self
+        :return: Nfa
         """
         self.thisptr.get().concatenate(dereference(other.thisptr.get()))
         return self
@@ -547,7 +547,7 @@ cdef class Nfa:
     def union(self, Nfa other) -> Nfa:
         """Make union of 'self' with 'other' in-place.
 
-        :return: Self
+        :return: Nfa
         """
         self.thisptr.get().unite_nondet_with(dereference(other.thisptr.get()))
         return self

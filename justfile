@@ -33,7 +33,7 @@ test-python:
   # source .venv/bin/activate.fish &&
   make -j {{JOBS}} BUILD_DIR=build/bindings/python
   make -j {{JOBS}} test
-  ../../run_papermill_examples.sh
+  ../../examples/notebooks/run_papermill_examples.sh
   # ; deactivate
 
 alias vc := valgrind-callgrind
@@ -66,3 +66,7 @@ help:
 alias f := fmt
 fmt:
   nix fmt
+
+[working-directory: "examples/notebooks/"]
+notebook-sync:
+  jupytext --sync examples/notebooks/*.ipynb
