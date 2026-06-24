@@ -477,29 +477,38 @@ bool Nfa::is_flat() const {
     return flat;
 }
 
-std::string Nfa::print_to_dot(const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
+std::string Nfa::print_to_dot(
+        const bool decode_ascii_chars, const bool use_intervals, const int max_label_length,
+        const Alphabet* alphabet) const {
     std::stringstream output;
     print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
     return output.str();
 }
 
-void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length, const Alphabet* alphabet) const {
+void Nfa::print_to_dot(
+        std::ostream& output, const bool decode_ascii_chars, const bool use_intervals, const int max_label_length,
+        const Alphabet* alphabet) const {
     auto to_ascii = [&](const Symbol symbol) -> std::string {
         // Translate only printable ASCII characters.
         if (symbol < 33 || symbol >= 127) {
             return "<" + std::to_string(symbol) + ">";
         }
         switch (symbol) {
-            case '"':     return "\\\"";
-            case '\\':    return "\\\\";
-            default:      return { 1, static_cast<char>(symbol) };
+            case '"':
+                return "\\\"";
+            case '\\':
+                return "\\\\";
+            default:
+                return std::string(1, static_cast<char>(symbol));
         }
     };
 
     auto translate_symbol = [&](const Symbol symbol) -> std::string {
         switch (symbol) {
-            case EPSILON: return "<eps>";
-            default: break;
+            case EPSILON:
+                return "<eps>";
+            default:
+                break;
         }
         if (decode_ascii_chars) {
             return to_ascii(symbol);
