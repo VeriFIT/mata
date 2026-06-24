@@ -47,6 +47,98 @@ TEST_CASE("mata::nft::Nft()") {
     CHECK(nft.levels == std::vector<Level>{ 0, 3, 1 });
 }
 
+TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
+    IntAlphabet shared_alphabet{};
+    IntAlphabet input_alphabet{};
+    IntAlphabet output_alphabet{};
+    AlphabetLevels split_alphabets{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
+
+    SECTION("a shared alphabet is wrapped via AlphabetLevels(Alphabet*) by the caller") {
+        AlphabetLevels shared_alphabets{ &shared_alphabet };
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &shared_alphabets };
+
+        CHECK(nft.alphabet == nullptr);
+        REQUIRE(nft.alphabets == &shared_alphabets);
+        CHECK(&nft.alphabets->for_level(0) == &shared_alphabet);
+        CHECK(&nft.alphabets->for_level(7) == &shared_alphabet);
+    }
+
+    SECTION("per-level alphabets are stored in the alphabets member") {
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_alphabets };
+
+        REQUIRE(nft.alphabets == &split_alphabets);
+        CHECK(nft.alphabet == nullptr);
+        CHECK(&nft.alphabets->for_level(0) == &input_alphabet);
+        CHECK(&nft.alphabets->for_level(1) == &output_alphabet);
+    }
+
+    SECTION("level-aware translation routes to the right underlying alphabet") {
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_alphabets };
+
+        CHECK_NOTHROW(nft.alphabets->translate_symb("1", 0));
+        CHECK_NOTHROW(nft.alphabets->translate_symb("1", 1));
+        CHECK(nft.alphabets->reverse_translate_symbol(1, 0) == "1");
+        CHECK(nft.alphabets->reverse_translate_symbol(1, 1) == "1");
+    }
+
+    SECTION("level-aware complement uses the selected level") {
+        EnumAlphabet input_symbols{ 1, 2, 3 };
+        EnumAlphabet output_symbols{ 2, 4 };
+        AlphabetLevels complement_alphabets{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
+
+        CHECK(complement_alphabets.get_alphabet_symbols(0) == OrdVector<Symbol>{ 1, 2, 3 });
+        CHECK(complement_alphabets.get_alphabet_symbols(1) == OrdVector<Symbol>{ 2, 4 });
+        CHECK(complement_alphabets.get_complement({ 2 }, 0) == OrdVector<Symbol>{ 1, 3 });
+        CHECK(complement_alphabets.get_complement({ 2 }, 1) == OrdVector<Symbol>{ 4 });
+    }
+
+    SECTION("level-aware empty and clear use the selected level") {
+        OnTheFlyAlphabet input_symbols{};
+        OnTheFlyAlphabet output_symbols{};
+        input_symbols.add_new_symbol("a");
+        output_symbols.add_new_symbol("b");
+        AlphabetLevels mutable_alphabets{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
+
+        CHECK_FALSE(mutable_alphabets.empty(0));
+        CHECK_FALSE(mutable_alphabets.empty(1));
+
+        mutable_alphabets.clear(0);
+        CHECK(input_symbols.empty());
+        CHECK_FALSE(output_symbols.empty());
+        CHECK(mutable_alphabets.empty(0));
+        CHECK_FALSE(mutable_alphabets.empty(1));
+    }
+}
+
+TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly") {
+    IntAlphabet base{};
+    AlphabetLevels uniform{ &base };
+
+    CHECK(&uniform.for_level(0) == &base);
+    CHECK(&uniform.for_level(7) == &base);
+    CHECK(uniform.translate_symb("3", 0) == 3);
+    CHECK(uniform.translate_symb("3", 5) == 3);
+    CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
+}
+
+TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
+    IntAlphabet input_alphabet{};
+    IntAlphabet output_alphabet{};
+
+    AlphabetLevels alphabets{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
+
+    Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &alphabets };
+    nft.delta.add(0, 1, 1);
+    nft.delta.add(1, 2, 2);
+
+    Nft determinized = determinize(nft);
+
+    REQUIRE(determinized.alphabets == &alphabets);
+    REQUIRE(determinized.alphabet == nullptr);
+    CHECK(&determinized.alphabets->for_level(0) == &input_alphabet);
+    CHECK(&determinized.alphabets->for_level(1) == &output_alphabet);
+}
+
 TEST_CASE("mata::nft::size()") {
     Nft nft{};
     CHECK(nft.num_of_states() == 0);

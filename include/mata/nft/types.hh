@@ -17,7 +17,7 @@ namespace mata::nft {
 
 extern const std::string TYPE_NFT;
 
-using Level = unsigned;
+using Level = mata::Level;
 
 using State = nfa::State;
 using StateSet = nfa::StateSet;

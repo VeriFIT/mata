@@ -68,6 +68,16 @@ void construct(
     Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
 );
 
+/** 
+ * @brief Loads an automaton from an IntermediateAut using per-level alphabets.
+ * 
+ * The constructed @c Nft has its @c alphabets member set to @p alphabets and its inherited @c alphabet member left as @c nullptr.
+ */
+Nft construct(const IntermediateAut& inter_aut, AlphabetLevels* alphabets, NameStateMap* state_map = nullptr);
+void construct(
+    Nft* result, const IntermediateAut& inter_aut, AlphabetLevels* alphabets, NameStateMap* state_map = nullptr
+);
+
 template<class ParsedObject>
 Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
               NameStateMap* state_map = nullptr) {

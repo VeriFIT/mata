@@ -5,8 +5,10 @@
 #define MATA_ALPHABET_HH
 
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "utils/ord-vector.hh"
 #include "utils/utils.hh"
@@ -14,6 +16,7 @@
 namespace mata {
 
 using Symbol = unsigned;
+using Level = unsigned;
 using Word = std::vector<Symbol>;
 using WordName = std::vector<std::string>;
 
@@ -444,6 +447,113 @@ public:
 
     void clear() override { symbol_map_.clear(); next_symbol_value_ = 0; }
 }; // class OnTheFlyAlphabet.
+
+/**
+ * @brief Per-level alphabets for transducer-like automata.
+ *
+ * Standalone (does NOT inherit from @c Alphabet) wrapper holding a vector of @c Alphabet*, one per level.
+ * Operates in one of two modes (see @c Mode):
+ *  - @c Global   — a single shared alphabet (typically stored in @c alphabets[0]) applies to every level. The level
+ *                  argument is ignored.
+ *  - @c MultiLevel — distinct per-level alphabets. The level argument is required and indexes @c alphabets.
+ *
+ * Pointers to the underlying @c Alphabet objects are non-owning; the caller is responsible for their lifetime.
+ */
+class AlphabetLevels {
+public:
+    /// Operating mode of the @c AlphabetLevels instance.
+    enum class Mode {
+        Global,      ///< @c alphabets[0] is used for every level; level argument is ignored.
+        MultiLevel,  ///< Each level uses its own alphabet from @c alphabets[level]; level argument is required.
+    };
+
+    /**
+     * @brief Per-level alphabets.
+     *
+     * In @c Global mode, only @c alphabets[0] is used. In @c MultiLevel mode, indexed by level. Public to allow
+     *  direct read/write access in line with the rest of the codebase (`Nft::levels`, `Nfa::delta`/`initial`/etc.).
+     *  Read-only access through @c for_level (or @c operator[]) when range/null validation is desired.
+     */
+    std::vector<Alphabet*> alphabets{};
+
+    /// Operating mode. Defaults to @c MultiLevel.
+    Mode mode{ Mode::MultiLevel };
+
+    explicit AlphabetLevels(std::vector<Alphabet*> alphabets = {}, Mode mode = Mode::MultiLevel)
+        : alphabets{ std::move(alphabets) }, mode{ mode } {}
+
+    /**
+     * @brief Convenience constructor: use the same @p alphabet for every level (Global mode).
+     *
+     * Stores a single-element vector and sets @c mode to @c Global.
+     */
+    explicit AlphabetLevels(Alphabet* alphabet) : alphabets{ alphabet }, mode{ Mode::Global } {}
+
+    /**
+     * @brief Translate a symbol name using the alphabet for the given level.
+     *
+     * When @p level is @c std::nullopt and the instance is in @c Global mode, the shared alphabet is used.
+     * In @c MultiLevel mode @p level must have a value.
+     */
+    Symbol translate_symb(const std::string& symb, std::optional<Level> level = std::nullopt);
+
+    /**
+     * @brief Translate a symbol value back to its name using the alphabet for the given level.
+     *
+     * Same level-resolution semantics as @c translate_symb.
+     */
+    std::string reverse_translate_symbol(Symbol symbol, std::optional<Level> level = std::nullopt) const;
+
+    /**
+     * @brief Get the symbols known to the alphabet on the given level.
+     */
+    utils::OrdVector<Symbol> get_alphabet_symbols(std::optional<Level> level = std::nullopt) const;
+
+    /**
+     * @brief Get the complement of @p symbols with respect to the alphabet for the given level.
+     */
+    utils::OrdVector<Symbol> get_complement(
+        const utils::OrdVector<Symbol>& symbols, std::optional<Level> level = std::nullopt) const;
+
+    /**
+     * @brief Check whether the alphabet for the given level is empty.
+     *
+     * In @c Global mode, always checks @c alphabets[0] (level argument is ignored).
+     * In @c MultiLevel mode, checks @c alphabets[level] when @p level has a value, or returns @c true iff every
+     *  underlying alphabet is empty when @p level is @c std::nullopt.
+     */
+    bool empty(std::optional<Level> level = std::nullopt) const;
+
+    /**
+     * @brief Clear the alphabet for the given level.
+     *
+     * In @c Global mode, always clears @c alphabets[0] (level argument is ignored, calling @c clear repeatedly is
+     *  idempotent on the same alphabet).
+     * In @c MultiLevel mode, clears @c alphabets[level] when @p level has a value, or clears every underlying
+     *  alphabet when @p level is @c std::nullopt.
+     */
+    void clear(std::optional<Level> level = std::nullopt);
+
+    /**
+     * @brief Get the alphabet assigned to a specific level.
+     *
+     * Validated accessor for the internal vector of @c Alphabet*.
+     *
+     * - In @c Global mode, @c alphabets[0] is returned regardless of @p level.
+     * - In @c MultiLevel mode, @p level must have a value and be a valid index; the corresponding entry must be
+     *   non-null.
+     *
+     * @param[in] level Level whose alphabet should be returned (required in @c MultiLevel mode).
+     * @return Alphabet assigned to @p level.
+     * @throws std::runtime_error If @p level is missing in @c MultiLevel mode, out of range, or the entry is null.
+     */
+    const Alphabet& for_level(std::optional<Level> level = std::nullopt) const;
+    Alphabet& for_level(std::optional<Level> level = std::nullopt);
+
+    /// Alias for @c for_level.
+    const Alphabet& operator[](std::optional<Level> level) const { return for_level(level); }
+    Alphabet& operator[](std::optional<Level> level) { return for_level(level); }
+};
 
 /**
  * @brief Encode a word using UTF-8 encoding.
