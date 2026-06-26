@@ -8,7 +8,11 @@ build-ext-force:
 	python setup.py build_ext -fi -j$(jobs)
 
 build-dist:
-	python setup.py sdist
+	pip install --quiet build
+	# `-P` prevents Python from putting cwd at the start of sys.path; the
+	# setuptools-created `build/` directory in this folder otherwise shadows
+	# the pip-installed `build` package.
+	python -P -m build --sdist
 
 install:
 	pip install --force-reinstall -e './[all,dev]'
@@ -21,8 +25,7 @@ init:
 
 build-install: build-ext install
 
-pypi-release:
-	python setup.py sdist
+pypi-release: build-dist
 
 clean:
 	find . -type d \( -name "__pycache__" -o -name "*.egg-info" \) -exec rm -rf {} +
