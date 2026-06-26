@@ -11,13 +11,13 @@ build-dist:
 	python setup.py sdist
 
 install:
-	pip install --force-reinstall './[all,dev]'
+	pip install --force-reinstall -e './[all,dev]'
 
 test:
 	python -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
 
 init:
-	pip install './[all,dev]'
+	pip install -e './[all,dev]'
 
 build-install: build-ext install
 
