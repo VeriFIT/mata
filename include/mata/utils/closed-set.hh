@@ -48,8 +48,7 @@
 #ifndef MATA_CLOSED_SET_HH_
 #define MATA_CLOSED_SET_HH_
 
-#include <cassert>
-
+#include "assert.hh"
 #include "ord-vector.hh"
 #include "utils.hh"
 
@@ -91,8 +90,8 @@ template <typename T> struct ClosedSet {
 		  min_val_(min_val),
 		  max_val_(max_val),
 		  antichain_(Nodes(value)) {
-		assert(min_val <= max_val);
-		assert(min_val <= value && value <= max_val);
+		MATA_ASSERT(min_val <= max_val);
+		MATA_ASSERT(min_val <= value && value <= max_val);
 	}
 
 	// inserting a single vector of the datatype T
@@ -101,8 +100,8 @@ template <typename T> struct ClosedSet {
 		  min_val_(min_val),
 		  max_val_(max_val),
 		  antichain_(Node(node)) {
-		assert(min_val <= max_val);
-		assert(in_interval(node));
+		MATA_ASSERT(min_val <= max_val);
+		MATA_ASSERT(in_interval(node));
 	}
 
 	// inserting a whole antichain
@@ -110,7 +109,7 @@ template <typename T> struct ClosedSet {
 		: type_(type),
 		  min_val_(min_val),
 		  max_val_(max_val) {
-		assert(min_val <= max_val);
+		MATA_ASSERT(min_val <= max_val);
 		insert(antichain);
 	}
 
@@ -123,8 +122,8 @@ template <typename T> struct ClosedSet {
 	// It is not possible to perform <=-comparisons accros upward- and downward-closed
 	// sets, each argument has to be upward- or downward-closed set
 	bool operator<=(const ClosedSet& rhs) const { // {{{
-		assert(
-			type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+		MATA_ASSERT(
+			type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_,
 			"Types and borders of given closed sets must be the same to perform their <=-comparison."
 		);
 		return rhs.contains(antichain_);
@@ -136,8 +135,8 @@ template <typename T> struct ClosedSet {
 	// and downward-closed sets, each argument
 	// has to be upward- or downward-closed set
 	bool operator>=(const ClosedSet& rhs) const { // {{{
-		assert(
-			type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+		MATA_ASSERT(
+			type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_,
 			"Types and borders of given closed sets must be the same to perform their >=-comparison."
 		);
 		return contains(rhs.antichain);
@@ -244,7 +243,7 @@ template <typename T> bool ClosedSet<T>::in_interval(const Node& node) const {
  * @param node a given node which will be added to the closed set
  */
 template <typename T> void ClosedSet<T>::insert(const Node& node) {
-	assert(in_interval(node) && "Each element of the given node has to respect " && "the carrier of the closed set.");
+	MATA_ASSERT(in_interval(node), "Each element of the given node has to respect the carrier of the closed set.");
 	// If the closed set is empty, the antichain could be simply changed
 	// by adding the given node as the only node to the antichain
 	if (antichain_.empty()) {
@@ -294,8 +293,8 @@ template <typename T> void ClosedSet<T>::insert(const Node& node) {
  * @return a union of the given closed sets
  */
 template <typename T> ClosedSet<T> ClosedSet<T>::set_union(const ClosedSet& rhs) const {
-	assert(
-		type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+	MATA_ASSERT(
+		type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_,
 		"Types and borders of given closed sets must be the same to compute their union."
 	);
 	ClosedSet result(type_, min_val_, max_val_, antichain_);
@@ -309,9 +308,9 @@ template <typename T> ClosedSet<T> ClosedSet<T>::set_union(const ClosedSet& rhs)
  * @return an intersection of the given closed sets
  */
 template <typename T> ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet& rhs) const {
-	assert(
-		type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
-		"Types and borders of given closed sets must be the same to compute their union."
+	MATA_ASSERT(
+		type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_,
+		"Types and borders of given closed sets must be the same to compute their intersection."
 	);
 	ClosedSet result(type_, min_val_, max_val_);
 

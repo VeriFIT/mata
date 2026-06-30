@@ -3,7 +3,6 @@
  */
 
 #include <algorithm>
-#include <cassert>
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -34,19 +33,19 @@ const std::string mata::nft::TYPE_NFT = "NFT";
 Levels::Levels(const size_t num_of_levels, const size_t count, const Level value)
 	: super(count, value),
 	  num_of_levels{num_of_levels} {
-	assert(value < num_of_levels && "Levels::Levels: level is out of range of the set number of levels.");
+	MATA_ASSERT(value < num_of_levels, "Levels::Levels: level is out of range of the set number of levels.");
 }
 
 Levels::Levels(const size_t num_of_levels, const std::initializer_list<Level> levels)
 	: super{levels},
 	  num_of_levels{num_of_levels} {
-	assert(check_levels_in_range_() && "Levels::Levels: level is out of range of the set number of levels.");
+	MATA_ASSERT(check_levels_in_range_(), "Levels::Levels: level is out of range of the set number of levels.");
 }
 
 Levels::Levels(const size_t num_of_levels, const iterator first, const iterator last)
 	: super{first, last},
 	  num_of_levels{num_of_levels} {
-	assert(check_levels_in_range_() && "Levels::Levels: level is out of range of the set number of levels.");
+	MATA_ASSERT(check_levels_in_range_(), "Levels::Levels: level is out of range of the set number of levels.");
 }
 
 Levels& Levels::operator=(const std::initializer_list<Level> other) {
@@ -72,7 +71,7 @@ Levels& Levels::operator=(std::vector<Level>&& levels) {
 }
 
 Levels& Levels::set(const State state, const Level level) {
-	assert(level < num_of_levels && "Levels::set: level is out of range of the set number of levels.");
+	MATA_ASSERT(level < num_of_levels, "Levels::set: level is out of range of the set number of levels.");
 	if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
 	(*this)[state] = level;
 	return *this;
@@ -80,7 +79,7 @@ Levels& Levels::set(const State state, const Level level) {
 
 Levels& Levels::set(const std::vector<Level>& levels) {
 	assign(levels.begin(), levels.end());
-	assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
+	MATA_ASSERT(check_levels_in_range_(), "Levels::set: level is out of range of the set number of levels.");
 	return *this;
 }
 
@@ -88,14 +87,14 @@ Levels& Levels::set(std::vector<Level>&& levels) {
 	const auto num_of_levels_orig{num_of_levels};
 	*this = std::move(levels);
 	num_of_levels = num_of_levels_orig;
-	assert(check_levels_in_range_() && "Levels::set: level is out of range of the set number of levels.");
+	MATA_ASSERT(check_levels_in_range_(), "Levels::set: level is out of range of the set number of levels.");
 	return *this;
 }
 
 void Levels::append(const Levels& levels_vector) {
 	reserve(size() + levels_vector.size());
 	std::ranges::copy(levels_vector, std::back_inserter(*this));
-	assert(check_levels_in_range_() && "Levels::append: level is out of range of the set number of levels.");
+	MATA_ASSERT(check_levels_in_range_(), "Levels::append: level is out of range of the set number of levels.");
 }
 
 std::vector<Level> Levels::get_levels_of(const SparseSet<State>& states) const {
@@ -667,7 +666,7 @@ StateSet Nft::post(
 	const JumpMode jump_mode,
 	const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config
 ) const {
-	assert(std::all_of(states.begin(), states.end(), [&](State state) { return levels[state] == 0; }));
+	MATA_ASSERT(std::all_of(states.begin(), states.end(), [&](State state) { return levels[state] == 0; }));
 	if (delta.empty()) {
 		// With no transitions the only reachable configurations are the initial states with their reading heads
 		// still at the start, so the input is fully consumed iff every word is empty.
@@ -710,7 +709,7 @@ StateSet Nft::post(
 	// `visited` deduplicates configurations (so the search terminates even on cyclic inputs), keyed on the packed
 	// (positions_id, state) pair. States comfortably fit in 32 bits (asserted), so the pair packs losslessly into
 	// one uint64 and membership is a scalar hash/compare -- no per-config vector work.
-	assert(num_of_states() <= std::numeric_limits<uint32_t>::max());
+	MATA_ASSERT(num_of_states() <= std::numeric_limits<uint32_t>::max());
 	const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
 		return (static_cast<uint64_t>(positions_id) << 32) | static_cast<uint32_t>(state);
 	};
@@ -870,7 +869,7 @@ StateSet Nft::post(
 	const bool epsilon_closure_after,
 	JumpMode jump_mode
 ) const {
-	assert(tape_symbols.size() == tape_levels.size());
+	MATA_ASSERT(tape_symbols.size() == tape_levels.size());
 	std::vector<Word> word_per_level(levels.num_of_levels);
 	BoolVector use_level(levels.num_of_levels, false);
 	for (size_t i = 0; i < tape_symbols.size(); ++i) {
@@ -946,7 +945,7 @@ State Nft::insert_word(const State source, const Word& word, const State target)
 		add_state_with_level(state, lvl);
 	}
 
-	assert(levels[word_target] == 0 || levels[num_of_states_after - 1] < levels[word_target]);
+	MATA_ASSERT(levels[word_target] == 0 || levels[num_of_states_after - 1] < levels[word_target]);
 
 	return word_target;
 }
@@ -959,12 +958,12 @@ State Nft::insert_word(const State source, const Word& word) {
 State Nft::insert_word_by_levels(
 	const State source, const std::vector<Word>& word_parts_on_levels, const State target
 ) {
-	assert(word_parts_on_levels.size() == levels.num_of_levels);
-	assert(source < num_of_states());
-	assert(target < num_of_states());
-	assert(source < levels.size());
-	assert(target < levels.size());
-	assert(levels[source] == levels[target]);
+	MATA_ASSERT(word_parts_on_levels.size() == levels.num_of_levels);
+	MATA_ASSERT(source < num_of_states());
+	MATA_ASSERT(target < num_of_states());
+	MATA_ASSERT(source < levels.size());
+	MATA_ASSERT(target < levels.size());
+	MATA_ASSERT(levels[source] == levels[target]);
 	const Level from_to_level{levels[source]};
 
 	if (levels.num_of_levels == 1) { return insert_word(source, word_parts_on_levels[0], target); }
@@ -1008,7 +1007,7 @@ State Nft::insert_word_by_levels(
 }
 
 State Nft::insert_word_by_levels(const State source, const std::vector<Word>& word_parts_on_levels) {
-	assert(source < levels.size());
+	MATA_ASSERT(source < levels.size());
 	return insert_word_by_levels(source, word_parts_on_levels, add_state_with_level(levels[source]));
 }
 
@@ -1023,11 +1022,11 @@ State Nft::add_transition_by_levels(const State source, const std::vector<Symbol
 State Nft::add_transition_with_length(
 	const State source, const Symbol symbol, const size_t length, const JumpMode jump_mode
 ) {
-	assert(source < num_of_states());
+	MATA_ASSERT(source < num_of_states());
 
 	if (length == 0) { return source; }
 
-	assert(levels[source] + length <= levels.num_of_levels);
+	MATA_ASSERT(levels[source] + length <= levels.num_of_levels);
 	const Level target_level = static_cast<Level>((levels[source] + length) % levels.num_of_levels);
 	const State target = add_state_with_level(target_level);
 
@@ -1039,12 +1038,12 @@ State Nft::add_transition_with_length(
 	State inner_src = source;
 	Level inner_level = levels[inner_src] + 1;
 	for (size_t i = 0; i < length - 1; ++i, ++inner_level) {
-		assert(inner_level < levels.num_of_levels);
+		MATA_ASSERT(inner_level < levels.num_of_levels);
 		const State inner_target = add_state_with_level(inner_level);
 		delta.add(inner_src, symbol, inner_target);
 		inner_src = inner_target;
 	}
-	assert(inner_level == levels[source] + length);
+	MATA_ASSERT(inner_level == levels[source] + length);
 	delta.add(inner_src, symbol, target);
 
 	return target;
@@ -1053,15 +1052,17 @@ State Nft::add_transition_with_length(
 void Nft::add_transition_with_same_level_targets(
 	State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode
 ) {
-	assert(targets.size() > 0);
-	assert(source < num_of_states());
-	assert(std::all_of(targets.begin(), targets.end(), [&](State target) { return target < num_of_states(); }));
+	MATA_ASSERT(targets.size() > 0);
+	MATA_ASSERT(source < num_of_states());
+	MATA_ASSERT(std::all_of(targets.begin(), targets.end(), [&](State target) { return target < num_of_states(); }));
 
 	const Level target_level = levels[targets.front()];
 	const size_t trans_len = (target_level == 0 ? levels.num_of_levels : target_level) - levels[source];
-	assert(std::all_of(targets.begin(), targets.end(), [&](State target) { return levels[target] == target_level; }));
-	assert(target_level == 0 || target_level > levels[source]);
-	assert(trans_len > 0);
+	MATA_ASSERT(std::all_of(targets.begin(), targets.end(), [&](State target) {
+		return levels[target] == target_level;
+	}));
+	MATA_ASSERT(target_level == 0 || target_level > levels[source]);
+	MATA_ASSERT(trans_len > 0);
 
 	if (trans_len == 1 || jump_mode == JumpMode::RepeatSymbol) {
 		StatePost& mutable_state_post = delta.mutable_state_post(source);
@@ -1083,28 +1084,28 @@ void Nft::add_transition_with_same_level_targets(
 	State inner_src = source;
 	Level inner_level = levels[inner_src] + 1;
 	for (size_t i = 0; i < trans_len - 1; ++i, ++inner_level) {
-		assert(inner_level < levels.num_of_levels);
+		MATA_ASSERT(inner_level < levels.num_of_levels);
 		const State inner_target = add_state_with_level(inner_level);
 		delta.add(inner_src, symbol, inner_target);
 		inner_src = inner_target;
 	}
-	assert(inner_level == levels[source] + trans_len);
+	MATA_ASSERT(inner_level == levels[source] + trans_len);
 	StatePost& mutable_inner_state_post = delta.mutable_state_post(inner_src);
-	assert(mutable_inner_state_post.find(symbol) == mutable_inner_state_post.end());
+	MATA_ASSERT(mutable_inner_state_post.find(symbol) == mutable_inner_state_post.end());
 	mutable_inner_state_post.insert(std::move(SymbolPost(symbol, targets)));
 }
 
 void Nft::add_transition(
 	const State source, const std::string& symbol_name, const State target, Alphabet* const alphabet
 ) {
-	assert(source < num_of_states());
-	assert(target < num_of_states());
+	MATA_ASSERT(source < num_of_states());
+	MATA_ASSERT(target < num_of_states());
 
 	const Level source_level{levels[source]};
 	const Level target_level{levels[target]};
 	const size_t trans_len{(target_level == 0 ? levels.num_of_levels : target_level) - source_level};
-	assert(target_level == 0 || target_level > source_level);
-	assert(trans_len > 0);
+	MATA_ASSERT(target_level == 0 || target_level > source_level);
+	MATA_ASSERT(trans_len > 0);
 
 	// Resolve the alphabet for each level the transition spans (source_level, next_level_after(source_level), ...)
 	//  and translate symbol_name separately for each of them, since per-level alphabets (this->alphabets in
@@ -1249,22 +1250,21 @@ bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<st
 				sinks_val.push_back(add_state_with_level(level));
 			}
 		}
-		assert(
-			sinks_val.size() == levels.num_of_levels &&
+		MATA_ASSERT(
+			sinks_val.size() == levels.num_of_levels,
 			"Nft::make_complete: sink_states size must be equal to num_of_levels."
 		);
 
-		assert( // NOLINT(*-assert-side-effect)
-                [&]{
-                    for (Level level{ 0 }; level < levels.num_of_levels; ++level) {
-                        const State sink_state{ sinks_val[level] };
-                        if (sink_state >= this->num_of_states() || levels[sink_state] != level) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }() && "Nft::make_complete: sink_states must have correct levels and exist in the NFT."
-            );
+		MATA_ASSERT( // NOLINT(*-assert-side-effect)
+			[&] {
+				for (Level level{0}; level < levels.num_of_levels; ++level) {
+					const State sink_state{sinks_val[level]};
+					if (sink_state >= this->num_of_states() || levels[sink_state] != level) { return false; }
+				}
+				return true;
+			}(),
+			"Nft::make_complete: sink_states must have correct levels and exist in the NFT."
+		);
 		return sinks_val;
 	}()};
 

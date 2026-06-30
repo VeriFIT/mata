@@ -3,6 +3,7 @@
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/utils/assert.hh"
 
 #include <optional>
 
@@ -128,7 +129,7 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 
 	std::set<std::pair<int, int>> ret;
 	std::vector<int> handles(one_letter.num_of_states(), 0); // initialized to 0
-	assert(one_letter.initial.size() == 1);
+	MATA_ASSERT(one_letter.initial.size() == 1);
 	std::optional<nfa::State> curr_state = *one_letter.initial.begin();
 	std::set<nfa::State> visited;
 	int cnt = 0; // handle counter
@@ -141,9 +142,9 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 		nfa::StatePost post = one_letter.delta[curr_state.value()];
 
 		curr_state.reset();
-		assert(post.size() <= 1);
+		MATA_ASSERT(post.size() <= 1);
 		for (const SymbolPost& move : post) {
-			assert(move.targets.size() == 1);
+			MATA_ASSERT(move.targets.size() == 1);
 			if (nfa::State target = *move.targets.begin(); !visited.contains(target)) {
 				curr_state = target;
 			} else {
@@ -176,8 +177,8 @@ bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
 
 std::optional<std::vector<mata::Word>>
 	mata::applications::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
-	assert(nft.levels.num_of_levels == lengths.size());
-	assert(!nft.contains_jump_transitions());
+	MATA_ASSERT(nft.levels.num_of_levels == lengths.size());
+	MATA_ASSERT(!nft.contains_jump_transitions());
 	if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
 	if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](const int x) { return x == 0; })) {
 		return std::vector<mata::Word>(nft.levels.num_of_levels, mata::Word());
@@ -232,11 +233,11 @@ std::optional<std::vector<mata::Word>>
 				worklist.pop_back();
 				if (!worklist.empty()) {
 					auto& [prev_state, prev_state_post_it, prev_state_post_end, prev_targets_it]{worklist.back()};
-					assert(prev_state_post_it != prev_state_post_end);
+					MATA_ASSERT(prev_state_post_it != prev_state_post_end);
 					const Symbol prev_symbol = prev_state_post_it->symbol;
 					const nft::Level prev_level = nft.levels[prev_state];
 					if (prev_symbol != EPSILON) {
-						assert(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
+						MATA_ASSERT(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
 						result[prev_level].pop_back();
 					}
 					++prev_targets_it;

@@ -2,6 +2,7 @@
  */
 
 #include "mata/applications/strings.hh"
+#include "mata/utils/assert.hh"
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -93,8 +94,8 @@ void seg_nfa::Segmentation::remove_inner_initial_and_final_states() {
 }
 
 void seg_nfa::Segmentation::update_current_segment(const size_t current_depth, const Transition& transition) {
-	assert(this->epsilons_.contains(transition.symbol));
-	assert(segments_raw_[current_depth].delta.contains(transition.source, transition.symbol, transition.target));
+	MATA_ASSERT(this->epsilons_.contains(transition.symbol));
+	MATA_ASSERT(segments_raw_[current_depth].delta.contains(transition.source, transition.symbol, transition.target));
 
 	segments_raw_[current_depth].final.insert(transition.source);
 	// we need to remove this transition so that the language of the current segment does not accept too much
@@ -104,8 +105,8 @@ void seg_nfa::Segmentation::update_current_segment(const size_t current_depth, c
 void seg_nfa::Segmentation::update_next_segment(const size_t current_depth, const Transition& transition) {
 	const size_t next_depth = current_depth + 1;
 
-	assert(epsilons_.contains(transition.symbol));
-	assert(segments_raw_[next_depth].delta.contains(transition.source, transition.symbol, transition.target));
+	MATA_ASSERT(epsilons_.contains(transition.symbol));
+	MATA_ASSERT(segments_raw_[next_depth].delta.contains(transition.source, transition.symbol, transition.target));
 
 	// we do not need to remove epsilon transitions in current_depth from the next segment (or the
 	// segments after) as the initial states are after these transitions

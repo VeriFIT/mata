@@ -4,6 +4,7 @@
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 
 using namespace mata::nft;
 
@@ -19,7 +20,7 @@ Nft concatenate(
 }
 
 Nft& Nft::concatenate(const Nft& aut) {
-	assert(levels.num_of_levels == aut.levels.num_of_levels);
+	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	const size_t n = this->num_of_states();
 	auto upd_fnc = [&](const State st) { return st + n; };
 
@@ -63,7 +64,7 @@ Nft algorithms::concatenate_eps(
 	StateRenaming* lhs_state_renaming,
 	StateRenaming* rhs_state_renaming
 ) {
-	assert(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
+	MATA_ASSERT(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 	// Compute concatenation of given automata.
 	// Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 

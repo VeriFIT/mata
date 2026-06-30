@@ -6,9 +6,9 @@
 #ifndef MATA_UTILS_TWO_DIMENSIONAL_MAP_HH
 #define MATA_UTILS_TWO_DIMENSIONAL_MAP_HH
 
-#include <cassert>
 #include <unordered_map>
 
+#include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
 namespace mata::utils {
@@ -45,8 +45,8 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixSize = 50'000'0
 		: is_large_(first_dim_size * second_dim_size > MaxMatrixSize),
 		  first_dim_size_(first_dim_size),
 		  second_dim_size_(second_dim_size) {
-		assert(first_dim_size < std::numeric_limits<T>::max());
-		assert(second_dim_size < std::numeric_limits<T>::max());
+		MATA_ASSERT(first_dim_size < std::numeric_limits<T>::max());
+		MATA_ASSERT(second_dim_size < std::numeric_limits<T>::max());
 		if (!is_large_) {
 			matrix_storage_ =
 				MatrixStorage(first_dim_size, InvertedStorage(second_dim_size, std::numeric_limits<T>::max()));

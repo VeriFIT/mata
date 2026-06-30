@@ -2,8 +2,6 @@
  * @brief Composition of two NFTs.
  */
 
-#include <cassert>
-#include <numeric>
 #include <queue>
 
 #include "mata/nft/algorithms.hh"
@@ -27,21 +25,21 @@ using namespace mata::nft;
  * because there is an EPSILON on the synchronization in the other that it
  * could not synchronize with.
  *
- * You can nottice that we do not want to synchronize on EPSILONs.
+ * You can notice that we do not want to synchronize on EPSILONs.
  * This is a part of the optimization to avoid creating redundant EPSILON transitions.
- * For more defails, see https://cs.nyu.edu/~mohri/pub/nway.pdf Figure 3.
+ * For more details, see https://cs.nyu.edu/~mohri/pub/nway.pdf Figure 3.
  *                       ||                   RHS sync type
  *    LHS sync type      || ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL
  * ======================||================|=================|======================
- *                       ||   synchornize  |                 |      synchornize
+ *                       ||   synchronize  |                 |      synchronize
  *    ONLY_ON_SYMBOL     ||                |   wait on LHS   |      wait on LHS
  *                       ||                |                 |
  * ----------------------||----------------|-----------------|----------------------
  *                       ||                |                 |
- *   ONLY_ON_EPSILON     ||                |   lait on LHS   |      lait on LHS
+ *   ONLY_ON_EPSILON     ||                |   wait on LHS   |      wait on LHS
  *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
  * ----------------------||----------------|-----------------|----------------------
- *                       ||   synchronize  |                 |      synchornize
+ *                       ||   synchronize  |                 |      synchronize
  * ON_EPSILON_AND_SYMBOL ||                |   wait on LHS   |      wait on LHS
  *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
  * =================================================================================
@@ -138,10 +136,10 @@ class SynchronizationProperties {
 							// Skip fast EPSILON transitions.
 							if (symbol_post.symbol == EPSILON && nft.levels.num_of_levels != 1 &&
 								nft.levels[target] == 0) {
-								assert(state_level == 0);
+								MATA_ASSERT(state_level == 0);
 								continue;
 							}
-							assert(nft.levels[target] > nft.levels[state]);
+							MATA_ASSERT(nft.levels[target] > nft.levels[state]);
 							current_sync_type |= sync_types_v[target];
 						}
 					}
@@ -151,15 +149,13 @@ class SynchronizationProperties {
 
 				// If we are on the sync level, we can determine the synchronization type.
 				if (state_level == sync_level) {
-					const auto epsilon_post_it = state_post.find(EPSILON);
-					if (epsilon_post_it != state_post.end()) {
+					if (const auto epsilon_post_it = state_post.find(EPSILON); epsilon_post_it != state_post.end()) {
 						// We don't want to count fast EPSILON transitions.
 						const bool has_not_only_fast_epsilon =
 							(state_level != 0 || nft.levels.num_of_levels == 1 ||
-							 std::any_of(
-								 epsilon_post_it->targets.cbegin(), epsilon_post_it->targets.cend(),
-								 [this](State target) { return nft.levels[target] != 0; }
-							 ));
+							 std::ranges::any_of(epsilon_post_it->targets, [this](const State target) {
+								 return nft.levels[target] != 0;
+							 }));
 						if (has_not_only_fast_epsilon) { current_sync_type = SynchronizationType::ONLY_ON_EPSILON; }
 						if (state_post.size() > 1) { current_sync_type |= SynchronizationType::ONLY_ON_SYMBOL; }
 					} else if (!state_post.empty()) {
@@ -176,11 +172,11 @@ class SynchronizationProperties {
 					for (const State target : symbol_post.targets) {
 						// Skip fast EPSILON transitions.
 						if (symbol_post.symbol == EPSILON && nft.levels.num_of_levels != 1 && nft.levels[target] == 0) {
-							assert(state_level == 0);
+							MATA_ASSERT(state_level == 0);
 							continue;
 						}
-						assert(nft.levels[target] > nft.levels[state]);
-						assert(sync_types_v[target] != SynchronizationType::UNDER_COMPUTATION);
+						MATA_ASSERT(nft.levels[target] > nft.levels[state]);
+						MATA_ASSERT(sync_types_v[target] != SynchronizationType::UNDER_COMPUTATION);
 						if (sync_types_v[target] != SynchronizationType::UNDEFINED) {
 							current_sync_type |= sync_types_v[target];
 						} else {
@@ -191,7 +187,7 @@ class SynchronizationProperties {
 			}
 		}
 
-		assert(std::all_of(sync_types_v.begin(), sync_types_v.end(), [](SynchronizationType type) {
+		MATA_ASSERT(std::all_of(sync_types_v.begin(), sync_types_v.end(), [](SynchronizationType type) {
 			return type != SynchronizationType::UNDER_COMPUTATION;
 		}));
 	}
@@ -232,8 +228,8 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 			composed_alphabets.push_back(slot_for_level(*rhs.alphabets, rhs_lvl));
 		}
 		if (!project_out_sync_levels) {
-			assert(
-				slot_for_level(*lhs.alphabets, *lhs_sync_it) == slot_for_level(*rhs.alphabets, *rhs_sync_it) &&
+			MATA_ASSERT(
+				slot_for_level(*lhs.alphabets, *lhs_sync_it) == slot_for_level(*rhs.alphabets, *rhs_sync_it),
 				"lhs and rhs must share the same alphabet instance on their synchronization levels"
 			);
 			composed_alphabets.push_back(slot_for_level(*lhs.alphabets, *lhs_sync_it));
@@ -298,36 +294,43 @@ Nft algorithms::compose_fast_no_jump(
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels
 ) {
-	assert(lhs_sync_level < lhs.levels.num_of_levels && rhs_sync_level < rhs.levels.num_of_levels);
-
-	// Check that there are only explicit synchronization transitions of length 1 with exception for fast EPSILON
-	// transitions.
-	assert(
-		std::all_of(lhs.delta.transitions().begin(), lhs.delta.transitions().end(), [&](const Transition& transition) {
-			return static_cast<Level>((lhs.levels[transition.source] + 1) % lhs.levels.num_of_levels) ==
-					   lhs.levels[transition.target] ||
-				   (lhs.levels[transition.source] == 0 && lhs.levels[transition.target] == 0 &&
-					transition.symbol == EPSILON);
-		})
+	MATA_ASSERT(
+		lhs_sync_level < lhs.levels.num_of_levels && rhs_sync_level < rhs.levels.num_of_levels,
+		"Synchronization levels must be valid."
+	);
+	MATA_ASSERT(
+		std::all_of(
+			lhs.delta.transitions().begin(), lhs.delta.transitions().end(),
+			[&](const Transition& transition) {
+				return static_cast<Level>((lhs.levels[transition.source] + 1) % lhs.levels.num_of_levels) ==
+						   lhs.levels[transition.target] ||
+					   (lhs.levels[transition.source] == 0 && lhs.levels[transition.target] == 0 &&
+						transition.symbol == EPSILON);
+			}
+		),
+		"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
+		"transitions"
+	);
+	MATA_ASSERT(
+		std::all_of(
+			rhs.delta.transitions().begin(), rhs.delta.transitions().end(),
+			[&](const Transition& transition) {
+				return static_cast<Level>((rhs.levels[transition.source] + 1) % rhs.levels.num_of_levels) ==
+						   rhs.levels[transition.target] ||
+					   (rhs.levels[transition.source] == 0 && rhs.levels[transition.target] == 0 &&
+						transition.symbol == EPSILON);
+			}
+		),
+		"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
+		"transitions"
 	);
 
-	// Check that there are only explicit synchronization transitions of length 1 with exception for fast EPSILON
-	// transitions.
-	assert(
-		std::all_of(rhs.delta.transitions().begin(), rhs.delta.transitions().end(), [&](const Transition& transition) {
-			return static_cast<Level>((rhs.levels[transition.source] + 1) % rhs.levels.num_of_levels) ==
-					   rhs.levels[transition.target] ||
-				   (rhs.levels[transition.source] == 0 && rhs.levels[transition.target] == 0 &&
-					transition.symbol == EPSILON);
-		})
-	);
-
-	// Number of Levels and States
+	// Number of Levels and States.
 	const size_t lhs_num_of_states = lhs.num_of_states();
 	const size_t rhs_num_of_states = rhs.num_of_states();
 	const size_t result_num_of_levels =
 		lhs.levels.num_of_levels + rhs.levels.num_of_levels - (project_out_sync_levels ? (2) : 1);
-	assert(result_num_of_levels > 0);
+	MATA_ASSERT(result_num_of_levels > 0);
 
 	// Initialize the synchronization properties for both NFTs.
 	const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level);
@@ -351,10 +354,10 @@ Nft algorithms::compose_fast_no_jump(
 	 * @param symbol_post The symbol post to insert.
 	 */
 	auto insert_symbol_post_to_delta = [&](const State source, const SymbolPost& symbol_post) {
-		assert(!symbol_post.targets.empty());
+		MATA_ASSERT(not symbol_post.targets.empty());
 		auto& mutable_state_post = result.delta.mutable_state_post(source);
-		auto symbol_post_it = mutable_state_post.find(symbol_post.symbol);
-		if (symbol_post_it != mutable_state_post.end()) {
+		if (const auto symbol_post_it = mutable_state_post.find(symbol_post.symbol);
+			symbol_post_it != mutable_state_post.end()) {
 			// The symbol post already exists, just add the targets.
 			symbol_post_it->targets.insert(symbol_post.targets);
 			return;
@@ -377,13 +380,13 @@ Nft algorithms::compose_fast_no_jump(
 	 * @return The last state in the created EPSILON transition chain.
 	 */
 	auto create_epsilon_transition_with_common_path = [&](const State source, const size_t common_path_length) {
-		assert(source < result.num_of_states());
+		MATA_ASSERT(source < result.num_of_states());
 		State current_source = source;
 		Level current_level = result.levels[current_source];
 		for (size_t i = 0; i < common_path_length; ++i) {
 			SymbolPost symbol_post{EPSILON};
 			const State new_composition_state = result.add_state_with_level(++current_level);
-			assert(current_level < result.levels.num_of_levels);
+			MATA_ASSERT(current_level < result.levels.num_of_levels);
 			symbol_post.push_back(new_composition_state);
 			insert_symbol_post_to_delta(current_source, symbol_post);
 			current_source = new_composition_state;
@@ -397,7 +400,7 @@ Nft algorithms::compose_fast_no_jump(
 	 * @param target The target state of the EPSILON transition.
 	 */
 	auto create_epsilon_transition_with_target = [&](const State source, const State target) {
-		assert(source < result.num_of_states() && target < result.num_of_states());
+		MATA_ASSERT(source < result.num_of_states() && target < result.num_of_states());
 		const Level source_level = result.levels[source];
 		const Level target_level = result.levels[target];
 		const size_t common_path_length =
@@ -428,10 +431,10 @@ Nft algorithms::compose_fast_no_jump(
 		// Try to find the entry in the state map.
 		const State found_state = composition_storage.get(key.first, key.second);
 		if (found_state != Limits::max_state) {
-			assert(result.levels[found_state] == level);
+			MATA_ASSERT(result.levels[found_state] == level);
 			return found_state;
 		}
-		assert(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
+		MATA_ASSERT(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
 
 		// If not found, add a new state to the result NFT.
 		// Since the key pair was not found in the map, we can be certain that the state is not yet in the worklist.
@@ -492,12 +495,12 @@ Nft algorithms::compose_fast_no_jump(
 			// The synchronization level will vanish.
 			// We know that there is at least one transition in LHS or RHS after the synchronization.
 			// We are going to use those transitions to connect composition_state to their targets.
-			const bool is_remainging_transition_in_lhs = lhs_sync_level + 1 < lhs.levels.num_of_levels;
-			assert(is_remainging_transition_in_lhs || rhs_sync_level + 1 < rhs.levels.num_of_levels);
+			const bool is_remaining_transition_in_lhs = lhs_sync_level + 1 < lhs.levels.num_of_levels;
+			MATA_ASSERT(is_remaining_transition_in_lhs || rhs_sync_level + 1 < rhs.levels.num_of_levels);
 
-			const StateSet& moving_sync_targets = is_remainging_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
-			const StateSet& static_sync_targets = is_remainging_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
-			const Nft& moving_nft = is_remainging_transition_in_lhs ? lhs : rhs;
+			const StateSet& moving_sync_targets = is_remaining_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
+			const StateSet& static_sync_targets = is_remaining_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
+			const Nft& moving_nft = is_remaining_transition_in_lhs ? lhs : rhs;
 
 			mata::utils::SynchronizedExistentialIterator<mata::utils::OrdVector<SymbolPost>::const_iterator>
 				moving_sync_iterator(moving_sync_targets.size());
@@ -506,7 +509,7 @@ Nft algorithms::compose_fast_no_jump(
 			}
 			while (moving_sync_iterator.advance()) {
 				const std::vector<StatePost::const_iterator>& same_symbol_posts{moving_sync_iterator.get_current()};
-				assert(!same_symbol_posts.empty());
+				MATA_ASSERT(!same_symbol_posts.empty());
 
 				const Symbol moving_symbol = same_symbol_posts[0]->symbol;
 				SymbolPost symbol_post{moving_symbol};
@@ -515,7 +518,7 @@ Nft algorithms::compose_fast_no_jump(
 						for (const State static_sync_target : static_sync_targets) {
 							symbol_post.insert(create_composition_state(
 								moving_next_target, static_sync_target, composition_target_level,
-								is_remainging_transition_in_lhs
+								is_remaining_transition_in_lhs
 							));
 						}
 					}
@@ -553,7 +556,7 @@ Nft algorithms::compose_fast_no_jump(
 		mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
 		while (sync_iterator.advance()) {
 			const std::vector<StatePost::const_iterator>& same_symbol_posts{sync_iterator.get_current()};
-			assert(same_symbol_posts.size() == 2); // One move per state in the pair.
+			MATA_ASSERT(same_symbol_posts.size() == 2); // One move per state in the pair.
 			const Symbol symbol = reconnect ? reconnection_symbol : same_symbol_posts[0]->symbol;
 
 			if (same_symbol_posts[0]->symbol == EPSILON) {
@@ -617,7 +620,7 @@ Nft algorithms::compose_fast_no_jump(
 				const SynchronizationType copy_target_sync_type = copy_sync_types[copy_target];
 				// It makes sense to continue only if we believe that we will not get stuck
 				// later due to an inability to synchronize. When this function is called
-				// from the waiting simulation, we are interested in onyl synchronizations on EPSILON.
+				// from the waiting simulation, we are interested in only synchronizations on EPSILON.
 				const bool can_synchronize_in_the_future =
 					(waiting_worklist != nullptr
 						 ? exist_epsilon(copy_target_sync_type) ||
@@ -635,8 +638,8 @@ Nft algorithms::compose_fast_no_jump(
 				const Level target_level = copy_nft.levels[copy_target];
 				const size_t trans_len =
 					(target_level == 0 ? copy_nft.levels.num_of_levels : target_level) - copy_state_level;
-				assert(target_level == 0 || target_level > copy_state_level);
-				assert(trans_len > 0);
+				MATA_ASSERT(target_level == 0 || target_level > copy_state_level);
+				MATA_ASSERT(trans_len > 0);
 
 				if (handle_synchronization_in_place && target_level == copy_sync_level) {
 					// The target is at the synchronization level that will be projected out.
@@ -648,9 +651,9 @@ Nft algorithms::compose_fast_no_jump(
 						// We are waiting in the stationary state.
 						// During this, only EPSILON synchronizations are allowed.
 						const auto& copy_eps_symbol_post = copy_nft.delta[copy_target].find(EPSILON);
-						assert(copy_eps_symbol_post != copy_nft.delta[copy_target].end());
+						MATA_ASSERT(copy_eps_symbol_post != copy_nft.delta[copy_target].end());
 						for (const State sync_target : copy_eps_symbol_post->targets) {
-							assert(copy_nft.levels[sync_target] == 0);
+							MATA_ASSERT(copy_nft.levels[sync_target] == 0);
 							symbol_post.insert(
 								create_composition_state(sync_target, stationar_state, 0, is_copy_state_lhs)
 							);
@@ -664,7 +667,7 @@ Nft algorithms::compose_fast_no_jump(
 						// This point can be reached only if there is not transition in the LHS and we are
 						// copying transitions from the RHS, or if the synchronization in the RHS occurs
 						// on the 0-level, and we are copying transitions from the LHS.
-						assert(!is_copy_state_lhs || rhs_sync_level == 0);
+						MATA_ASSERT(!is_copy_state_lhs || rhs_sync_level == 0);
 						if (!is_copy_state_lhs) {
 							synchronize(composition_state, stationar_state, copy_target, true, copy_symbol_post.symbol);
 						} else {
@@ -763,16 +766,16 @@ Nft algorithms::compose_fast_no_jump(
 		// we can and need to simply add EPSILON transitions to the targets
 		// of the EPSILON transitions from the running root state.
 		if (running_num_of_levels == 1) {
-			assert(num_of_epsilons_to_replace_sync > 0);
+			MATA_ASSERT(num_of_epsilons_to_replace_sync > 0);
 			const auto epsilon_target_it = running_delta[running_root_state].find(EPSILON);
 			// There has to be some EPSILON transition. Otherwise, there would be no reason to wait.
-			assert(epsilon_target_it != running_delta[running_root_state].end());
+			MATA_ASSERT(epsilon_target_it != running_delta[running_root_state].end());
 			StateSet new_composition_targets;
 			State new_composition_state =
 				create_epsilon_transition_with_common_path(composition_root_state, result.levels.num_of_levels - 1);
 			SymbolPost symbol_post{EPSILON};
 			for (const State epsilon_target : epsilon_target_it->targets) {
-				assert(running_levels[epsilon_target] == 0);
+				MATA_ASSERT(running_levels[epsilon_target] == 0);
 				symbol_post.insert(create_composition_state(waiting_root_state, epsilon_target, 0, is_lhs_waiting));
 			}
 			// This function ensures that the transitions are added in the most optimal way.
@@ -785,7 +788,7 @@ Nft algorithms::compose_fast_no_jump(
 		// Initialization of the local worklist.
 		// I chose to use a queue instead of a stack to help the branch predictor
 		// with conditions inside the loop. With the queue, the algorithm hits the
-		// same branch more ofthen, because all states being explored advance "together".
+		// same branch more often, because all states being explored advance "together".
 		std::queue<std::pair<State, State>> worklist;
 		State first_composition_state = composition_root_state;
 		if (is_lhs_waiting && waiting_trans_before_sync > 0) {
@@ -816,7 +819,7 @@ Nft algorithms::compose_fast_no_jump(
 				// It cannot happen that the synchronization level is projected out
 				// and there are no other transitions to add before reaching the next zero-level state.
 				// This is because such a scenario would already be handled by the copy_transition function.
-				assert(
+				MATA_ASSERT(
 					!project_out_sync_levels || !is_last_running_transition || waiting_trans_after_sync > 0 ||
 					(!is_lhs_waiting && waiting_sync_props.num_of_levels_before_sync > 0)
 				);
@@ -836,7 +839,7 @@ Nft algorithms::compose_fast_no_jump(
 				// focus only on the EPSILON transitions.
 				const auto& running_epsilon_post_it = running_delta[running_state].find(EPSILON);
 				// There should be an EPSILON transition. It has been told by the SynchronizationType.
-				assert(running_epsilon_post_it != running_delta[running_state].end());
+				MATA_ASSERT(running_epsilon_post_it != running_delta[running_state].end());
 				SymbolPost epsilon_symbol_post{EPSILON};
 				for (const State running_epsilon_target : running_epsilon_post_it->targets) {
 					if (running_state_level == 0 && running_num_of_levels != 1 &&
@@ -844,7 +847,7 @@ Nft algorithms::compose_fast_no_jump(
 						// Skip fast EPSILON transitions.
 						continue;
 					}
-					assert(
+					MATA_ASSERT(
 						running_levels[running_epsilon_target] == 0 ||
 						running_levels[running_epsilon_target] > running_state_level
 					);
@@ -857,8 +860,8 @@ Nft algorithms::compose_fast_no_jump(
 						// We are connecting to the zero-level state, therefore we have to
 						// create a new composition state that will be put into the main worklist
 						// (side effect of the create_composition_state).
-						assert(result.levels[composition_state] + 1 == result.levels.num_of_levels);
-						assert(
+						MATA_ASSERT(result.levels[composition_state] + 1 == result.levels.num_of_levels);
+						MATA_ASSERT(
 							result.levels[composition_state] + (num_of_epsilons_to_replace_sync >= 1 ? 1 : 0) ==
 							result.levels.num_of_levels
 						);
@@ -869,7 +872,7 @@ Nft algorithms::compose_fast_no_jump(
 						// We are connecting to the next state in the waiting loop,
 						// so we simply add a transition to the next state and
 						// continue the waiting.
-						assert(result.levels[composition_state] + 1 < result.levels.num_of_levels);
+						MATA_ASSERT(result.levels[composition_state] + 1 < result.levels.num_of_levels);
 						State new_composition_state;
 						if (waiting_state_storage.contains(running_epsilon_target)) {
 							new_composition_state = waiting_state_storage[running_epsilon_target];
@@ -895,10 +898,12 @@ Nft algorithms::compose_fast_no_jump(
 				// because RHS transitions follow LHS transitions. Moreover, the last
 				// transition in the running LHS NFT should not be at the synchronization
 				// level; otherwise, it would be handled by the condition above.
-				assert(!is_lhs_waiting);
-				assert(sync_level != running_sync_props.nft.levels.num_of_levels - 1);
-				assert(waiting_trans_after_sync > 0);
-				assert((result.levels[composition_state] + waiting_trans_after_sync) == result.levels.num_of_levels);
+				MATA_ASSERT(!is_lhs_waiting);
+				MATA_ASSERT(sync_level != running_sync_props.nft.levels.num_of_levels - 1);
+				MATA_ASSERT(waiting_trans_after_sync > 0);
+				MATA_ASSERT(
+					(result.levels[composition_state] + waiting_trans_after_sync) == result.levels.num_of_levels
+				);
 				create_epsilon_transition_with_target(
 					composition_state, create_composition_state(running_state, waiting_root_state, 0)
 				);
@@ -924,7 +929,7 @@ Nft algorithms::compose_fast_no_jump(
 	 */
 	auto process_fast_epsilon_transitions = [&](const State composition_state, const State lhs_src,
 												const State rhs_src) {
-		assert(lhs.levels[lhs_src] == 0 && rhs.levels[rhs_src] == 0);
+		MATA_ASSERT(lhs.levels[lhs_src] == 0 && rhs.levels[rhs_src] == 0);
 		const auto lhs_eps_post_it = lhs.delta[lhs_src].find(EPSILON);
 		const auto rhs_eps_post_it = rhs.delta[rhs_src].find(EPSILON);
 		const bool lhs_eps_exists = lhs_eps_post_it != lhs.delta[lhs_src].end();
@@ -952,8 +957,8 @@ Nft algorithms::compose_fast_no_jump(
 
 		// Create combinations of all non-zero-level targets of lhs_src with all non-zero-level targets of rhs_src.
 		// Create a common path of EPSILON transitions to connect to all those combinations.
-		// Branch onyl at the last level of that common path.
-		assert(result.levels.num_of_levels > 0);
+		// Branch only at the last level of that common path.
+		MATA_ASSERT(result.levels.num_of_levels > 0);
 		const size_t common_path_len = result_num_of_levels - 1;
 		State source = create_epsilon_transition_with_common_path(composition_state, common_path_len);
 
@@ -979,11 +984,11 @@ Nft algorithms::compose_fast_no_jump(
 	}
 
 	// The maing loop of the composition algorithm.
-	while (!worklist.empty()) {
+	while (not worklist.empty()) {
 		const auto [lhs_state, rhs_state] = worklist.front();
 		worklist.pop();
 		const State composition_state = composition_storage.get(lhs_state, rhs_state);
-		assert(composition_state != Limits::max_state);
+		MATA_ASSERT(composition_state != Limits::max_state);
 		const Level lhs_level = lhs.levels[lhs_state];
 		const Level rhs_level = rhs.levels[rhs_state];
 		const SynchronizationType lhs_sync_type = lhs_sync_props.sync_types_v[lhs_state];
@@ -1025,7 +1030,7 @@ Nft algorithms::compose_fast_no_jump(
 		// It makes sense to continue only if we believe that synchronization is possible,
 		// or if we have already passed the synchronization level (i.e., lhs_sync_type ==
 		// SynchronizationType::UNDEFINED or rhs_sync_type == SynchronizationType::UNDEFINED).
-		assert(
+		MATA_ASSERT(
 			exist_synchronization(lhs_sync_type, rhs_sync_type) ||
 			(lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::UNDEFINED) ||
 			(rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::UNDEFINED) ||
@@ -1065,8 +1070,8 @@ Nft algorithms::compose_fast_no_jump(
 			// 2) We are not projecting out the synchronization levels.
 			//    In this case, we use the synchronization transition to
 			//    connect to the zero-level successors that follow.
-			assert(lhs_level == lhs_sync_level && rhs_level == rhs_sync_level);
-			assert(
+			MATA_ASSERT(lhs_level == lhs_sync_level && rhs_level == rhs_sync_level);
+			MATA_ASSERT(
 				!project_out_sync_levels || lhs_sync_props.num_of_levels_after_sync > 0 ||
 				rhs_sync_props.num_of_levels_after_sync > 0
 			);
@@ -1092,8 +1097,8 @@ Nft algorithms::compose_general(
 	bool project_out_sync_levels,
 	const JumpMode jump_mode
 ) {
-	assert(!lhs_sync_levels.empty());
-	assert(lhs_sync_levels.size() == rhs_sync_levels.size());
+	MATA_ASSERT(not lhs_sync_levels.empty());
+	MATA_ASSERT(lhs_sync_levels.size() == rhs_sync_levels.size());
 
 	// Inserts loop into the given Nft for each state with level 0.
 	// The loop word is constructed using the EPSILON symbol for all levels, except for the levels

@@ -9,6 +9,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
 using namespace mata::applications::strings;
@@ -500,7 +501,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 	if (intersection.final.empty()) { return {}; }
 
 	// we assume that the operations did not add jump transitions
-	assert(!intersection.contains_jump_transitions());
+	MATA_ASSERT(!intersection.contains_jump_transitions());
 
 	if (reduce_intersection) {
 		intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim()).trim();
@@ -541,7 +542,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 			middle_state_to_delimiter_transition_as_source.at(middle_state);
 		for (const Transition& first_transition : first_transitions) {
 			for (const Transition& second_transition : second_transitions) {
-				assert(first_transition.symbol == second_transition.symbol);
+				MATA_ASSERT(first_transition.symbol == second_transition.symbol);
 				intersection_nfa.delta.add(first_transition.source, first_transition.symbol, second_transition.target);
 			}
 		}

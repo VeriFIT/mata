@@ -4,8 +4,9 @@
 #ifndef MATA_UTIL_HH_
 #define MATA_UTIL_HH_
 
+#include "assert.hh"
+
 #include <algorithm>
-#include <cassert>
 #include <cstdint>
 #include <functional>
 #include <iostream>
@@ -274,12 +275,12 @@ template <class Vector> void inline reserve_on_insert(Vector& vec, size_t needed
 //  remove .... It assumes that renaming[i] <= i. It assumes that vec is not longer than renaming. The function is very
 //  fragile.
 template <class Vector, typename Index> void defragment(Vector& vec, const std::vector<Index>& renaming) {
-	// assert(vec.size() <= renaming.size());
+	// MATA_ASSERT(vec.size() <= renaming.size());
 	size_t i = 0;
 	for (size_t rsize = renaming.size(), vsize = vec.size(); i < vsize && i < rsize; i++) {
 		if (renaming[i] != i) {
 			if (!(renaming[i] < vsize)) { break; }
-			assert(renaming[i] < i);
+			MATA_ASSERT(renaming[i] < i);
 			vec[i] = std::move(vec[renaming[i]]);
 		}
 	}

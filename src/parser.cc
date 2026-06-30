@@ -2,6 +2,7 @@
  */
 
 #include "mata/parser/parser.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
 #include <algorithm>
@@ -41,7 +42,7 @@ bool is_logical_operator(const char ch) { return haskey(std::set<char>{'&', '|',
  * The function assumes that the stream does not span lines
  */
 std::string get_token_from_line(std::istream& input, bool* quoted) {
-	assert(nullptr != quoted);
+	MATA_ASSERT(nullptr != quoted);
 
 	enum class TokenizerState { Init, Unquoted, Quoted, QuotedEscape };
 
@@ -50,7 +51,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
 	TokenizerState state = TokenizerState::Init;
 	int ch = input.get();
 	while (input.good()) {
-		assert(std::char_traits<char>::eof() != ch);
+		MATA_ASSERT(std::char_traits<char>::eof() != ch);
 
 		switch (state) {
 			case TokenizerState::Init: {
@@ -149,7 +150,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 		result.emplace_back(token, quoted);
 
 		if (!first && !quoted) {
-			assert(!token.empty());
+			MATA_ASSERT(!token.empty());
 			if ('@' == token[0]) {
 				throw std::runtime_error("invalid position of @TYPE: " + line);
 			} else if ('%' == token[0]) {
@@ -237,7 +238,7 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		PARSER_DEBUG_PRINT_LN(line);
 
 		if (reading_type) { // we're expecting a @TYPE declaration
-			assert(ch == line[0]);
+			MATA_ASSERT(ch == line[0]);
 			if ('#' == line[0] || '\n' == line[0]) {
 				continue; /* skip the rest of the line */
 			} else if ('@' != line[0]) {
@@ -294,7 +295,7 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 
 		const std::string& maybe_key = token_line[0].first;
 		const bool& quoted = token_line[0].second;
-		assert(quoted || '@' != maybe_key[0]);
+		MATA_ASSERT(quoted || '@' != maybe_key[0]);
 
 		if (!quoted && '%' == maybe_key[0]) {
 			std::string key = maybe_key.substr(1);
@@ -337,7 +338,7 @@ ParsedSection mata::parser::parse_mf_section(const std::string& input, const boo
 const std::vector<std::string>& mata::parser::ParsedSection::operator[](const std::string& key) const {
 	const auto it = this->dict.find(key);
 	if (this->dict.end() == it) {
-		assert(false);
+		MATA_ASSERT(false);
 		// return this->dict.at("");
 	}
 	return it->second;

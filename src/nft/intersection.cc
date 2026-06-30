@@ -4,6 +4,7 @@
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/two-dimensional-map.hh"
 
 #include <fstream>
@@ -44,7 +45,7 @@ Nft mata::nft::algorithms::product(
 	const State lhs_first_aux_state,
 	const State rhs_first_aux_state
 ) {
-	assert(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
+	MATA_ASSERT(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 
 	Nft product{}; // The product automaton.
 	product.levels.num_of_levels = lhs.levels.num_of_levels;
@@ -69,7 +70,7 @@ Nft mata::nft::algorithms::product(
 					? std::max(lhs.levels[lhs_target], rhs.levels[rhs_target])
 					: std::min(lhs.levels[lhs_target], rhs.levels[rhs_target])
 			);
-			assert(product_target < Limits::max_state);
+			MATA_ASSERT(product_target < Limits::max_state);
 
 			product_storage.insert(lhs_target, rhs_target, product_target);
 			if (product_map != nullptr) { (*product_map)[{lhs_target, rhs_target}] = product_target; }
@@ -193,7 +194,7 @@ Nft mata::nft::algorithms::product(
 			mata::utils::push_back(sync_iterator, rhs.delta[rhs_source]);
 			while (sync_iterator.advance()) {
 				const std::vector<StatePost::const_iterator>& same_symbol_posts{sync_iterator.get_current()};
-				assert(same_symbol_posts.size() == 2); // One move per state in the pair.
+				MATA_ASSERT(same_symbol_posts.size() == 2); // One move per state in the pair.
 
 				// Compute product for state transitions with same symbols.
 				// Find all transitions that have the same symbol for first and the second state in the pair_to_process.

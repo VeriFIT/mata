@@ -2,6 +2,7 @@
  */
 
 #include <mata/alphabet.hh>
+#include <mata/utils/assert.hh>
 
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
@@ -294,17 +295,17 @@ mata::Word mata::decode_word_utf8(const mata::Word& word) {
 			decoded_word.push_back(symbol);
 		} else if ((symbol & 0xE0) == 0xC0) {
 			// U+0080   to U+07FF  : 110xxxxx 10xxxxxx
-			assert(i + 1 < word.size());
+			MATA_ASSERT(i + 1 < word.size());
 			decoded_word.push_back(((symbol & 0x1F) << 6) | (word[i + 1] & 0x3F));
 			i += 1;
 		} else if ((symbol & 0xF0) == 0xE0) {
 			// U+0800   to U+FFFF  : 1110xxxx 10xxxxxx 10xxxxxx
-			assert(i + 2 < word.size());
+			MATA_ASSERT(i + 2 < word.size());
 			decoded_word.push_back(((symbol & 0x0F) << 12) | ((word[i + 1] & 0x3F) << 6) | (word[i + 2] & 0x3F));
 			i += 2;
 		} else if ((symbol & 0xF8) == 0xF0 && symbol < 0xF5) {
 			// U+010000 to U+10FFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-			assert(i + 3 < word.size());
+			MATA_ASSERT(i + 3 < word.size());
 			decoded_word.push_back(
 				((symbol & 0x07) << 18) | ((word[i + 1] & 0x3F) << 12) | ((word[i + 2] & 0x3F) << 6) |
 				(word[i + 3] & 0x3F)

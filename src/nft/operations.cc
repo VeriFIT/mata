@@ -69,7 +69,7 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 	for (State q = 0; q < num_of_states; ++q) {
 		if (const State q_repr_state = quot_proj[q]; !state_renaming.contains(q_repr_state)) {
 			// we need to map q's class to a new state in reducedAut
-			assert(aut.levels[q] == aut.levels[q_repr_state]);
+			MATA_ASSERT(aut.levels[q] == aut.levels[q_repr_state]);
 			const State q_class = result.add_state_with_level(aut.levels[q_repr_state]);
 			state_renaming[q_repr_state] = q_class;
 			state_renaming[q] = q_class;
@@ -342,7 +342,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 						for (State target : eps_move_it_s->targets) {
 							if (cur_level == aut.levels.num_of_levels - 1) {
 								// we are at the last level, next level will be 0
-								assert(aut.levels[target] == DEFAULT_LEVEL);
+								MATA_ASSERT(aut.levels[target] == DEFAULT_LEVEL);
 								std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
 								new_safe_epsilon_run.push_back(target);
 								// we finish with generating this safe epsilon run and push it to safe_epsilon_runs
@@ -353,7 +353,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 							} else if (reversed_nfa.delta[target].size() == 1) {
 								// we are not at the last level, next state must be level incremented by one (assuming
 								// no jumps)
-								assert(aut.levels[target] == cur_level + 1);
+								MATA_ASSERT(aut.levels[target] == cur_level + 1);
 								std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
 								new_safe_epsilon_run.push_back(target);
 								// this safe epsilon run is not finished yet, we save new_state_safe_epsilon_runs to
@@ -430,8 +430,8 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 }
 
 Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode) {
-	assert(!levels_to_project.empty());
-	assert(*std::ranges::max_element(levels_to_project) < nft.levels.num_of_levels);
+	MATA_ASSERT(!levels_to_project.empty());
+	MATA_ASSERT(*std::ranges::max_element(levels_to_project) < nft.levels.num_of_levels);
 
 	// Checks if a given state is being projected out based on the levels_to_project vector.
 	auto is_projected_out = [&](const State state) {
@@ -600,9 +600,9 @@ Nft mata::nft::insert_levels(
 	const std::vector<std::shared_ptr<Alphabet>>& new_level_alphabets,
 	const JumpMode jump_mode
 ) {
-	assert(0 < nft.levels.num_of_levels);
-	assert(nft.levels.num_of_levels <= new_levels_mask.size());
-	assert(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
+	MATA_ASSERT(0 < nft.levels.num_of_levels);
+	MATA_ASSERT(nft.levels.num_of_levels <= new_levels_mask.size());
+	MATA_ASSERT(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
 
 	const auto num_of_new_levels = static_cast<size_t>(std::ranges::count(new_levels_mask, true));
 	if (!new_level_alphabets.empty() && new_level_alphabets.size() != num_of_new_levels) {
@@ -739,7 +739,7 @@ Nft mata::nft::insert_levels(
 			if (!new_levels_mask[src_lvl]) { is_old_level_processed = true; }
 			src = inner;
 			src_lvl = result.levels[src];
-			assert(src_lvl == result.levels[inner]);
+			MATA_ASSERT(src_lvl == result.levels[inner]);
 		}
 		// Construct the n-th part of the transition.
 		create_transition(src, trans.symbol, trans.target, new_levels_mask[src_lvl], is_old_level_processed);
@@ -1105,7 +1105,7 @@ bool Nft::is_in_lang_by_levels(
 	// factor faster than the general post()-based path on this mode. What buys that speed is keeping no visited set.
 	// The caller is trusted on the absence of epsilon cycles, it would be too expensive to check for them every time.
 	if ((jump_mode == JumpMode::RepeatSymbol || jump_mode == JumpMode::NoJump) && !has_epsilon_cycles) {
-		assert(!has_epsilon_cycle(*this));
+		MATA_ASSERT(!has_epsilon_cycle(*this));
 		return is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix);
 	}
 

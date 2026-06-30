@@ -1,6 +1,7 @@
 // TODO: Insert header file.
 
 #include "mata/nft/builder.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
@@ -12,7 +13,7 @@ using mata::nft::Nft;
 
 Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
 	Nft aut;
-	assert(nullptr != alphabet);
+	MATA_ASSERT(nullptr != alphabet);
 
 	// HACK - it should be only "parsec.type != TYPE_NFA" without the conjunction
 	if (parsec.type != TYPE_NFT && parsec.type != TYPE_NFT + "-explicit") {
@@ -112,7 +113,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
 Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
 	Nft aut;
-	assert(nullptr != alphabet);
+	MATA_ASSERT(nullptr != alphabet);
 
 	if (!inter_aut.is_nft()) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFT + "\"");
@@ -186,7 +187,7 @@ void builder::construct(
 Nft builder::construct(
 	const mata::IntermediateAut& inter_aut, std::shared_ptr<mata::AlphabetLevels> alphabets, NameStateMap* state_map
 ) {
-	assert(nullptr != alphabets);
+	MATA_ASSERT(nullptr != alphabets);
 
 	if (!inter_aut.is_nft()) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFT + "\"");
