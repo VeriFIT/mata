@@ -2,11 +2,13 @@
  * @brief Composition of two NFTs.
  */
 
-#include <queue>
 #include <cassert>
 #include <numeric>
-#include "mata/nft/nft.hh"
+#include <queue>
+
 #include "mata/nft/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/two-dimensional-map.hh"
 
 
@@ -118,7 +120,18 @@ namespace {
                     const Level state_level = nft.levels[state];
                     const StatePost& state_post = nft.delta[state];
                     SynchronizationType current_sync_type = sync_types_v[state];
-                    assert(current_sync_type == SynchronizationType::UNDEFINED || current_sync_type == SynchronizationType::UNDER_COMPUTATION);
+                    if (current_sync_type != SynchronizationType::UNDEFINED
+                        && current_sync_type != SynchronizationType::UNDER_COMPUTATION) {
+                        // We already computed the synchronization type for this state, so we can skip it.
+                        // It can happen that when a transducer has a state that has multiple transitions to the same
+                        //  target, the target can be, in some cases, added to the stack multiple times before the first
+                        //  occurrence of the target can be processed.
+                        // See https://github.com/VeriFIT/mata/pull/673.
+                        continue;
+                    }
+                    MATA_ASSERT(
+                            current_sync_type == SynchronizationType::UNDEFINED ||
+                            current_sync_type == SynchronizationType::UNDER_COMPUTATION);
 
                     // If it has been visited, then we know that it has already been computed for its children.
                     if (current_sync_type == SynchronizationType::UNDER_COMPUTATION) {
