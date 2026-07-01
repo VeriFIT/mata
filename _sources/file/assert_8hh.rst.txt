@@ -1,0 +1,4 @@
+File assert.hh
+==============
+
+.. doxygenfile:: assert.hh
