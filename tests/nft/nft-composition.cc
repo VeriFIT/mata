@@ -4,6 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nft/algorithms.hh"
+#include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/utils/ord-vector.hh"
 
@@ -13,7 +15,6 @@ using namespace mata::utils;
 
 
 TEST_CASE("Mata::nft::compose()") {
-
     Nft lhs, rhs, expected, result;
     SECTION("levels_cnt == 2") {
 
@@ -2891,5 +2892,61 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
         expected_proj.trim();
         expected_proj.remove_epsilon();
         CHECK(are_equivalent(result_proj, expected_proj));
+    }
+}
+
+TEST_CASE("mata::nft::compose_fast_no_jump()") {
+    SECTION("Issue #670") {
+        const Nft lhs{ mata::nft::builder::parse_from_mata(
+            std::string{ "@NFT-explicit\n"
+                         "%Alphabet-auto\n"
+                         "%Initial q0\n"
+                         "%Final q1\n"
+                         "%Levels q0:0 q1:0\n"
+                         "%LevelsNum 1\n"
+                         "q0 35 q1\n" }
+        ) };
+        const Nft rhs{ mata::nft::builder::parse_from_mata(
+            std::string{ "@NFT-explicit\n"
+                         "%Alphabet-auto\n"
+                         "%Initial q0\n"
+                         "%Final q0 q1 q9\n"
+                         "%Levels q0:0 q1:0 q2:0 q3:1 q4:1 q5:1 q6:0 q7:0 q8:1 q9:0 q10:1 q11:0 q12:1 q13:1 q14:1 "
+                         "q15:1\n"
+                         "%LevelsNum 2\n"
+                         "q0 35 q3\n"
+                         "q0 48 q5\n"
+                         "q0 49 q5\n"
+                         "q0 196608 q4\n"
+                         "q1 35 q3\n"
+                         "q1 196608 q4\n"
+                         "q2 48 q5\n"
+                         "q2 49 q5\n"
+                         "q3 35 q1\n"
+                         "q3 35 q2\n"
+                         "q4 196608 q1\n"
+                         "q4 196608 q2\n"
+                         "q5 4294967295 q6\n"
+                         "q5 4294967295 q7\n"
+                         "q6 4294967295 q8\n"
+                         "q7 4294967295 q10\n"
+                         "q8 35 q9\n"
+                         "q9 35 q12\n"
+                         "q9 196608 q13\n"
+                         "q10 35 q11\n"
+                         "q11 48 q14\n"
+                         "q11 49 q15\n"
+                         "q12 35 q9\n"
+                         "q12 35 q11\n"
+                         "q13 196608 q9\n"
+                         "q13 196608 q11\n"
+                         "q14 48 q9\n"
+                         "q14 48 q11\n"
+                         "q15 49 q9\n"
+                         "q15 49 q11\n" }
+        ) };
+        const Nft composed_normal{ compose(lhs, rhs, 0, 1) };
+        const Nft composed_fast_no_jump{ algorithms::compose_fast_no_jump(lhs, rhs, 0, 1) };
+        CHECK(are_equivalent(composed_normal, composed_fast_no_jump));
     }
 }
