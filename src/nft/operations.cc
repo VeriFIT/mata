@@ -1271,7 +1271,7 @@ bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool 
                     if (level == 0 && level_target == 0) {
                         for (Level level_loop{ level }; level_loop < levels.num_of_levels; ++level_loop) {
                             if (next_words_its[level_loop] == track_words_ends[level_loop] ||
-                                not symbols_match(*word_symbol_it, *next_words_its[level_loop])) {
+                                not symbols_match(symbol_post_it->symbol, *next_words_its[level_loop])) {
                                 jump_failed = true;
                                 break;
                             }
@@ -1281,7 +1281,7 @@ bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool 
                         for (Level level_loop{ level }; level_loop != level_target;
                              level_loop = levels.next_level_after(level_loop)) {
                             if (next_words_its[level_loop] == track_words_ends[level_loop] ||
-                                not symbols_match(*word_symbol_it, *next_words_its[level_loop])) {
+                                not symbols_match(symbol_post_it->symbol, *next_words_its[level_loop])) {
                                 jump_failed = true;
                                 break;
                             }
