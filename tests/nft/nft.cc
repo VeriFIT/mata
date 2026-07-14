@@ -3326,6 +3326,30 @@ TEST_CASE("mata::nft:: create simple automata") {
     CHECK(!nft.is_in_lang({ 3 }));
 }
 
+TEST_CASE("ISSUE #613 - mata::nft::nft::is_in_lang()") {
+    SECTION("DONT_CARE jump") {
+        Nft nft{ builder::create_sigma_star_nft(2) };
+        CHECK(nft.is_in_lang({ 'a', 'b' }));
+        CHECK(nft.is_in_lang({ 'a', 'a' }));
+        CHECK(nft.is_in_lang({ 'b', 'a' }));
+
+        Nft nft3{ builder::create_sigma_star_nft(3) };
+        CHECK(nft3.is_in_lang({ 'a', 'b', 'c' }));
+    }
+
+    SECTION("DONT_CARE in the word") {
+        Nft nft{ Nft::with_levels({ 2, { 0 } }, 1, { 0 }, { 0 }) };
+        nft.delta.add(0, 'x', 0);
+
+        CHECK(nft.is_in_lang({ 'x', 'x' }));
+        CHECK(nft.is_in_lang({ DONT_CARE, 'x' }));
+        CHECK(nft.is_in_lang({ 'x', DONT_CARE }));
+        CHECK(!nft.is_in_lang({ DONT_CARE, 'b' }));
+        CHECK(!nft.is_in_lang({ 'b', DONT_CARE }));
+    }
+}
+
+
 TEST_CASE("mata::nft::print_to_mata()") {
     Nft aut_big{ Nft::with_levels(2, 9) };
     aut_big.initial = { 1, 2 };
