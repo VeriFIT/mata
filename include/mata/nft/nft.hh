@@ -643,6 +643,7 @@ public:
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
+     * Note: It treats the transitions as NFA transitions, i.e. it does not take into account levels and jump transitions.
      *
      * @warning If @p epsilon_closure_opt is set, computes epsilon closures over multiple levels.
      * That is, the result might contain states of different levels.
@@ -658,8 +659,9 @@ public:
 
     /**
      * @brief Returns a reference to targets (states) reachable from the given state over the given symbol.
+     * Note: It treats the transitions as NFA transitions, i.e. it does not take into account levels and jump transitions.
      *
-     * This is an optimized shortcut for post(state, symbol, EpsilonClosureOpt::NONE).
+     * This is an optimized shortcut for post(state, symbol, EpsilonClosureOpt::None).
      *
      * @param state A state to compute the post set from.
      * @param symbol Symbol to compute the post set for.
@@ -669,6 +671,153 @@ public:
         return delta.get_successors(state, symbol);
     }
 
+    /**
+     * @brief Get the set of zero-level states reachable from the given set of zero-level @p states,
+     * over the @p symbol on a given @p symbol_level. It does not care about symbols on other levels.
+     * 
+     * This is an optimized version of post methods for words.
+     *
+     * @param states Set of zero-level states to compute the post set from.
+     * @param symbol Symbol to match on the given level.
+     * @param symbol_level Level on which the symbol has to be matched.
+     * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Set of zero-level states reachable from the given set of states over the given symbol on the given level.
+     */
+    StateSet post(const StateSet& states, Symbol symbol, Level symbol_level, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::None, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+    /**
+     * @brief Get the set of zero-level states reachable from the given zero-level @p state,
+     * over the @p symbol on a given @p symbol_level. It does not care about symbols on other levels.
+     *
+     * This is an optimized version of post for words.
+     *
+     * @param state A zero-level state to compute the post set from.
+     * @param symbol Symbol to match on the given level.
+     * @param symbol_level Level on which the symbol has to be matched.
+     * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Set of zero-level states reachable from the given state over the given symbol on the given level.
+     */
+    StateSet post(const State state, const Symbol symbol, const Level symbol_level, const EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::None, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return post(StateSet{ state }, symbol, symbol_level, epsilon_closure_opt, jump_mode);
+    }
+
+    /**
+     * @brief Get the set of states reachable from the given set of @p states over the given vector of @p words 
+     * (index corresponds to the level). Levels with the corresponding @p use_level set to false will be ignored.
+     * 
+     * This post uses a bitmask @p use_level to determine which levels to use.
+     * Node: Use of @p use_level si similar to applying a projection of levels whose entries are set to true.
+     * It is a general post method that is used by all of its overloads.
+     * 
+     * @param states Set of states to compute the post set from.
+     * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+     * The index of the word in the vector corresponds to the level (tape) on which the word is used.
+     * The length of the vector must be equal to the number of levels in the NFT.
+     * @param use_level Bitmask indicating which levels and their corresponding words to use.
+     * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that were
+     * visited during the post operation. If nullptr, this set will not be filled.
+     * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted
+     * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
+     * @return Set of states reachable from the given set of states over the given words.
+     */
+    StateSet post(const StateSet& states, const std::vector<Word>& words, const BoolVector& use_level, StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+    /**
+     * @brief Get the set of zero-level states reachable from the given set of zero-level @p states over the given
+     * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
+     * 
+     * This post uses all words on all levels.
+     * 
+     * @param states Set of zero-level states to compute the post set from.
+     * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+     * The index of the word in the vector corresponds to the level (tape) on which the word is used.
+     * The length of the vector must be equal to the number of levels in the NFT.
+     * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that were
+     * visited during the post operation. If nullptr, this set will not be filled.
+     * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.ignored.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted
+     * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
+     * @return Set of states reachable from the given set of states over the given words.
+     */
+    StateSet post(const StateSet& states, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return post(states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode);
+    }
+
+    /**
+     * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
+     * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
+     * 
+     * This post uses all words on all levels.
+     * 
+     * @param state Zero-level state to compute the post set from.
+     * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+     * The index of the word in the vector corresponds to the level (tape) on which the word is used.
+     * The length of the vector must be equal to the number of levels in the NFT.
+     * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that were
+     * visited during the post operation. If nullptr, this set will not be filled.
+     * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted
+     * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
+     * @return Set of states reachable from the given set of states over the given words.
+     */
+    StateSet post(const State state, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return post(StateSet{ state }, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode);
+    }
+
+    /**
+     * @brief Get the set of zero-level states reachable from the given set of @p states over the given
+     * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only 
+     * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels 
+     * are ignored (projected-out)
+     * 
+     * This post uses a vector @p word_levels to specify levels of used words.
+     * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
+     * 
+     * @param states Set of zero-level states to compute the post set from.
+     * @param words Vector of words to compute the post set for.
+     * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
+     * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
+     * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that were
+     * visited during the post operation. If nullptr, this set will not be filled.
+     * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Set of states reachable from the given set of states over the given words.
+     */
+    StateSet post(const StateSet& states, const std::vector<Word>& words, const std::vector<Level>& word_levels, StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+    /**
+     * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
+     * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only 
+     * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels 
+     * are ignored (projected-out).
+     * 
+     * This post uses a vector @p word_levels to specify levels of used words.
+     * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
+     * 
+     * @param state Zero-level state to compute the post set from.
+     * @param words Vector of words to compute the post set for.
+     * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
+     * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
+     * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that were
+     * visited during the post operation. If nullptr, this set will not be filled.
+     * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Set of states reachable from the given set of states over the given words.
+     */
+    StateSet post(const State state, const std::vector<Word>& words, const std::vector<Level>& word_levels, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return post(StateSet{ state }, words, word_levels, visited_zero_level_states, epsilon_closure_after, jump_mode);
+    }
 
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
@@ -1350,6 +1499,16 @@ bool symbols_match(Symbol a, Symbol b);
 
 namespace std {
 std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);
+template<>
+struct hash<std::pair<std::vector<size_t>, mata::nfa::State>> {
+    size_t operator()(const std::pair<std::vector<size_t>, mata::nfa::State>& p) const {
+        size_t h = std::hash<mata::nfa::State>{}(p.second);
+        for (auto v : p.first) {
+            h ^= std::hash<size_t>{}(v) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        }
+        return h;
+    }
+};
 } // namespace std.
 
 #endif /* MATA_NFT_HH_ */
