@@ -830,9 +830,13 @@ public:
      *
      * @param run The run to check.
      * @param match_prefix Whether to also match the prefix of the word.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+     * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+     * sequence of @c DONT_CARE symbols. Dispatches to the dedicated fast algorithm for @c JumpMode::RepeatSymbol and
+     * to the general @c post()-based algorithm otherwise.
      * @return @c true if @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Run& run, bool match_prefix = false) const;
+    bool is_in_lang(const Run& run, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
     bool is_in_lang(const Run&, bool, bool) const = delete;
 
     /**
@@ -840,10 +844,13 @@ public:
      *
      * @param word The word to check.
      * @param match_prefix Whether to also match the prefix of the word.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+     * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+     * sequence of @c DONT_CARE symbols.
      * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Word& word, const bool match_prefix = false) const {
-        return is_in_lang(Run{ word, {} }, match_prefix);
+    bool is_in_lang(const Word& word, const bool match_prefix = false, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return is_in_lang(Run{ word, {} }, match_prefix, jump_mode);
     }
     bool is_in_lang(const Word& word, bool, bool) const = delete;
 
@@ -851,9 +858,14 @@ public:
      * @brief Check whether a prefix of a @p run is in the language of an automaton.
      *
      * @param run The run to check.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+     * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+     * sequence of @c DONT_CARE symbols.
      * @return @c true if the prefix of @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_prefix(const Run& run) const { return is_in_lang(run, true); }
+    bool is_in_lang_prefix(const Run& run, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return is_in_lang(run, true, jump_mode);
+    }
     bool is_in_lang_prefix(const Run&, bool) const = delete;
 
 
@@ -861,9 +873,14 @@ public:
      * @brief Check whether a prefix of a @p word is in the language of an automaton.
      *
      * @param word The word to check.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+     * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+     * sequence of @c DONT_CARE symbols.
      * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_prefix(const Word& word) const { return is_in_lang_prefix(Run{ word, {} }); }
+    bool is_in_lang_prefix(const Word& word, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return is_in_lang_prefix(Run{ word, {} }, jump_mode);
+    }
     bool is_in_lang_prefix(const Word&, bool) const = delete;
 
     /**
@@ -872,11 +889,18 @@ public:
      * That is, the function checks whether a tuple @p level_words (word1, word2, word3, ..., wordn) is in the regular
      *  relation accepted by the transducer with 'n' levels (tracks).
      *
+     * For @c JumpMode::RepeatSymbol (the default), a dedicated worklist algorithm is used which is considerably
+     * faster than the general algorithm. For @c JumpMode::AppendDontCares, the check is delegated to the general
+     * @c post()-based implementation, which is the only one able to correctly interpret @c DONT_CARE-padded jumps.
+     *
      * @param level_words The words to check.
      * @param match_prefix Whether to also match the prefix of the word.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+     * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+     * sequence of @c DONT_CARE symbols.
      * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false) const;
+    bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Checks whether the prefix of @p level_words is in the language of the transducer.
@@ -885,10 +909,13 @@ public:
      * regular relation accepted by the transducer with 'n' levels (tracks).
      *
      * @param level_words The words to check.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+     * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+     * sequence of @c DONT_CARE symbols.
      * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words) const {
-        return is_in_lang_by_levels(level_words, true);
+    bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+        return is_in_lang_by_levels(level_words, true, jump_mode);
     }
 
     /**
