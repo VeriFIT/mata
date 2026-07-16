@@ -967,6 +967,14 @@ bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool 
     // (JumpMode::AppendDontCares). Membership is a thin consumer of the reachability primitive post(): the level
     // words are in the language iff a final state is reachable after consuming all of them; for a prefix query it
     // suffices to reach a final zero-level state after consuming any prefix (tracked via the visited states).
+    //
+    // This is inherently slower than is_in_lang_by_levels_repeat_symbol() above, and not just by a constant
+    // factor. post() is a pure reachability primitive with no notion of final states, so it cannot short-circuit
+    // on acceptance: it always explores the whole reachable configuration space, and only afterwards is the result
+    // intersected with `final` below. The dedicated algorithm returns the moment it reaches an accepting
+    // configuration. post() also has to deduplicate full (head-positions, state) configurations in a hash set to
+    // stay terminating on cyclic inputs, whereas the dedicated algorithm carries cheap word iterators in a plain
+    // worklist and needs no such set.
     StateSet visited_zero_level_states{};
     StateSet* const visited_ptr = match_prefix ? &visited_zero_level_states : nullptr;
     const StateSet reached{ post(StateSet{ initial.begin(), initial.end() }, level_words, visited_ptr, true, jump_mode) };

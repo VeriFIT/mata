@@ -651,17 +651,14 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
     }
 
     StateSet result{};
-    // visited contains visited configuration pairs of (positions, state).
-    // positions is a vector of reading head positions for each of n words in the input vector,
-    // where n is the number of levels in the NFT.
-    std::unordered_set<std::pair<std::vector<size_t>, State>> visited;
-    std::stack<std::pair<std::vector<size_t>, State>> stack;
-    for (const State state : states) {
-        const std::pair<std::vector<size_t>, State> initial_config{ std::vector<size_t>(tape_symbols.size(), 0), state };
-        stack.push({ initial_config });
-        visited.insert(std::move(initial_config));
+    // A search node is a full configuration: the reading-head position on each of the n input words (n = number
+    // of levels) plus the current state. `visited` deduplicates configurations so the search terminates even on
+    // cyclic inputs. Because unordered_set is node-based, pointers to its elements stay valid across further
+    // insertions, so the worklist carries plain pointers into `visited` instead of a second copy of each config.
+    using Config = std::pair<std::vector<size_t>, State>;
+    std::unordered_set<Config> visited;
+    std::stack<const Config*> stack;
 
-    }
     // End positions of reading heads after processing all symbols on each word.
     std::vector<size_t> end_positions(tape_symbols.size(), 0);
     for (size_t i = 0; i < tape_symbols.size(); ++i) {
@@ -674,20 +671,26 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
         return (a == EPSILON || b == EPSILON) ? (a == EPSILON && b == EPSILON)
                                               : (a == b || a == DONT_CARE || b == DONT_CARE);
     };
-    // Enqueue a configuration (reading-head positions + state) unless already visited.
+    // Enqueue a configuration (reading-head positions + state) unless already visited. The positions are moved
+    // straight into `visited` with a single hash lookup (emplace), and the worklist gets a pointer to the stored
+    // element, so the position vector is neither hashed twice nor copied into a separate worklist entry.
     auto enqueue = [&](std::vector<size_t> next_positions, const State target) {
-        auto next_config = std::make_pair(std::move(next_positions), target);
-        if (!visited.contains(next_config)) {
-            visited.insert(next_config);
-            stack.push(std::move(next_config));
-        }
+        const auto [it, inserted] = visited.emplace(std::move(next_positions), target);
+        if (inserted) { stack.push(&*it); }
     };
 
-    // The main loop.
+    for (const State state : states) { enqueue(std::vector<size_t>(tape_symbols.size(), 0), state); }
+
+    // The main loop. post() is a pure reachability primitive with no notion of final states, so it cannot
+    // short-circuit on acceptance: it always explores the entire reachable configuration space and returns the
+    // full reached set, leaving any accept/prefix decision to the caller. This inability to stop early is the
+    // main reason the post()-based Nft::is_in_lang_by_levels is slower than is_in_lang_by_levels_repeat_symbol().
     while (!stack.empty()) {
-        const auto [current_positions, current_state] = stack.top();
-        const Level current_level = levels[current_state];
+        const Config& current = *stack.top();
         stack.pop();
+        const std::vector<size_t>& current_positions = current.first;
+        const State current_state = current.second;
+        const Level current_level = levels[current_state];
 
         if (current_level == 0) {
             if (visited_zero_level_states != nullptr) {
@@ -713,11 +716,13 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
                 // DONT_CARE for the trailing levels in JumpMode::AppendDontCares.
                 const size_t stop_level_idx = target_level == 0 ? levels.num_of_levels : target_level;
 
-                // Consuming step: read (and advance past) one input symbol on each used level of the span.
+                // Consuming step: check that one input symbol can be read on each used level of the span.
                 // A level with no input left cannot be read, so the step fails. Because exhaustion is
                 // detected by the reading-head position (not by an EPSILON sentinel), a literal EPSILON
-                // symbol in an input word is matched and consumed here by an EPSILON transition.
-                std::vector<size_t> next_positions{ current_positions };
+                // symbol in an input word is matched and consumed here by an EPSILON transition. The
+                // position vector is copied only once the whole span is known to be readable, so a
+                // mismatching transition (the common case when scanning a state's outgoing symbols) costs
+                // no allocation.
                 bool consumed = true;
                 for (size_t level = current_level; level < stop_level_idx; ++level) {
                     if (!use_tape[level]) { continue; } // Projected-out level: take the transition, read nothing.
@@ -728,9 +733,15 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
                         consumed = false;
                         break;
                     }
-                    ++next_positions[level];
                 }
-                if (consumed) { enqueue(std::move(next_positions), target); }
+                if (consumed) {
+                    // Advance one reading head on each used level of the span.
+                    std::vector<size_t> next_positions{ current_positions };
+                    for (size_t level = current_level; level < stop_level_idx; ++level) {
+                        if (use_tape[level]) { ++next_positions[level]; }
+                    }
+                    enqueue(std::move(next_positions), target);
+                }
 
                 // Non-consuming step: an EPSILON transition may change state without reading any input.
                 // This is what lets it be taken when a tape is exhausted; kept separate from the consuming
