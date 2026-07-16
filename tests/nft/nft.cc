@@ -3,6 +3,8 @@
  */
 
 #include <algorithm>
+#include <limits>
+#include <optional>
 #include <ranges>
 #include <unordered_set>
 
@@ -2828,33 +2830,80 @@ TEST_CASE("mata::nft::union_nondet() minimal") {
 }
 
 TEST_CASE("mata::nft::unite_nondet_with()") {
-    Run one{ { 1, 1 }, {} };
-    Run zero{ { 0, 0 }, {} };
 
-    Nft lhs(2);
-    lhs.initial.insert(0);
-    lhs.delta.add(0, 0, 1);
-    lhs.final.insert(1);
-    CHECK(!lhs.is_in_lang(one));
-    CHECK(lhs.is_in_lang(zero));
+    Nft lhs{};
+    Nft rhs{};
+    Nft result{};
 
-    Nft rhs(2);
-    rhs.initial.insert(0);
-    rhs.delta.add(0, 1, 1);
-    rhs.final.insert(1);
-    CHECK(rhs.is_in_lang(one));
-    CHECK(!rhs.is_in_lang(zero));
+    const auto CHECK_SHARED = [&](size_t max_word_length = std::numeric_limits<size_t>::max()) {
+        // The result preserves all originally accepted words from input automata.
+        for (const auto& word : lhs.get_words(max_word_length)) {
+            CHECK(result.is_in_lang(word));
+        }
+        for (const auto& word : rhs.get_words(max_word_length)) {
+            CHECK(result.is_in_lang(word));
+        }
 
-    SECTION("failing minimal scenario") {
-        Nft result = lhs.unite_nondet_with(rhs);
-        CHECK(result.is_in_lang(one));
-        CHECK(result.is_in_lang(zero));
+        // Result accepts no other words than those accepted by the input automata.
+        for (const auto& word : result.get_words(max_word_length)) {
+            CHECK((lhs.is_in_lang(word) || rhs.is_in_lang(word)));
+        }
+    };
+
+    SECTION("empty automata") {
+        lhs.unite_nondet_with(rhs);
+        CHECK_SHARED();
     }
 
-    SECTION("same automata") {
-        size_t lhs_states = lhs.num_of_states();
-        Nft result = lhs.unite_nondet_with(lhs);
-        CHECK(result.num_of_states() == lhs_states * 2);
+    SECTION("simple NFTs") {
+        lhs.initial.insert(0);
+        lhs.final.insert(1);
+        lhs.insert_word(0, {'a', 'b', 'c', 'd'}, 1);
+        rhs.insert_word(0, {'e', 'f', 'g', 'h'}, 1);
+
+        result = lhs;
+        result.unite_nondet_with(rhs);
+        CHECK_SHARED();
+    }
+
+    SECTION("NFTs with multiple initial/final states") {
+        lhs.levels.num_of_levels = 3;
+        lhs.initial.insert(0);
+        lhs.initial.insert(1);
+        lhs.final.insert(2);
+        lhs.final.insert(3);
+        lhs.insert_word(0, {'a', 'b', 'c'}, 2);
+        lhs.insert_word(1, {'d', 'e', 'f'}, 3);
+
+        rhs.levels.num_of_levels = 3;
+        rhs.initial.insert(0);
+        rhs.initial.insert(1);
+        rhs.final.insert(2);
+        rhs.final.insert(3);
+        rhs.insert_word(0, {'g', 'h', 'i'}, 2);
+        rhs.insert_word(1, {'j', 'k', 'l'}, 3);
+
+        result = lhs;
+        result.unite_nondet_with(rhs);
+        CHECK_SHARED();
+    }
+
+    SECTION("NFTs with loops") {
+        lhs.levels.num_of_levels = 3;
+        lhs.initial.insert(0);
+        lhs.final.insert(1);
+        lhs.insert_word(0, {'a', 'b', 'c'}, 1);
+        lhs.insert_word(1, {'d', 'e', 'f'}, 1);
+
+        rhs.levels.num_of_levels = 3;
+        rhs.initial.insert(0);
+        rhs.final.insert(1);
+        rhs.insert_word(0, {'g', 'h', 'i'}, 1);
+        rhs.insert_word(1, {'j', 'k', 'l'}, 1);
+
+        result = lhs;
+        result.unite_nondet_with(rhs);
+        CHECK_SHARED(15);
     }
 }
 

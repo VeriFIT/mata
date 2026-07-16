@@ -82,12 +82,12 @@
 #include <vector>
 
 #include "delta.hh"
-#include "types.hh"
 #include "mata/alphabet.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
+#include "types.hh"
 
 namespace mata::nfa {
 
@@ -338,11 +338,11 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
-     * @brief In-place nondeterministic union with @p aut.
+     * @brief In-place nondeterministic union of @c this with @p nfa.
      *
      * Does not add epsilon transitions, just unites initial and final states.
      */
-    Nfa& unite_nondet_with(const Nfa &aut);
+    Nfa& unite_nondet_with(const Nfa& nfa);
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -800,7 +800,7 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
  * Does not add epsilon transitions, just unites initial and final states.
  * @return Non-deterministic union of @p lhs and @p rhs.
  */
-Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
+Nfa union_nondet(const Nfa& lhs, const Nfa& rhs);
 
 /**
  * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
@@ -809,7 +809,7 @@ Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
  * @param lhs First complete deterministic automaton.
  * @param rhs Second complete deterministic automaton.
  */
-Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
+Nfa union_det_complete(const Nfa& lhs, const Nfa& rhs);
 
 /**
  * @brief Compute product of two NFAs with OR condition on the final states.

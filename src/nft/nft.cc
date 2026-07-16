@@ -4,24 +4,22 @@
 
 #include <algorithm>
 #include <cassert>
-#include <format>
 #include <fstream>
 #include <optional>
 #include <ranges>
 #include <string>
 #include <utility>
-#include <queue>
 
-#include "mata/nft/nft.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/nft/nft.hh"
 #include "mata/utils/sparse-set.hh"
 
 
 using namespace mata::utils;
 using namespace mata::nft;
+using mata::BoolVector;
 using mata::Symbol;
 using mata::Word;
-using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
