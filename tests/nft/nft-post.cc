@@ -314,3 +314,82 @@ TEST_CASE("mata::nft::Nft::post(words) — epsilon_closure_after flag") {
     // is_in_lang_by_levels always closes after, so it still reaches the final state.
     CHECK(n.is_in_lang_by_levels(std::vector<Word>{ Word{ a }, Word{ c } }));
 }
+
+// Exercises the post()-based, short-circuiting membership path taken by is_in_lang_by_levels() under
+// JumpMode::AppendDontCares (the RepeatSymbol default uses the dedicated worklist algorithm instead).
+TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — post-based JumpMode::AppendDontCares path") {
+    SECTION("a DONT_CARE-padded jump accepts where RepeatSymbol would not") {
+        // A single jump q0 --a--> qf: both endpoints are level 0, so it spans (reads) both levels.
+        Nft n{ Nft::with_levels(2) };
+        const State q0{ n.add_state_with_level(0) };
+        const State qf{ n.add_state_with_level(0) };
+        n.initial.insert(q0);
+        n.final.insert(qf);
+        n.delta.add(q0, a, qf);
+
+        const std::vector<Word> a_a{ Word{ a }, Word{ a } };
+        const std::vector<Word> a_b{ Word{ a }, Word{ b } };
+        // Level 0 reads 'a'; level 1 reads 'a' under RepeatSymbol but DONT_CARE (any symbol) under AppendDontCares.
+        CHECK(n.is_in_lang_by_levels(a_a, false, JumpMode::RepeatSymbol));
+        CHECK(n.is_in_lang_by_levels(a_a, false, JumpMode::AppendDontCares));
+        CHECK_FALSE(n.is_in_lang_by_levels(a_b, false, JumpMode::RepeatSymbol));
+        CHECK(n.is_in_lang_by_levels(a_b, false, JumpMode::AppendDontCares)); // DONT_CARE matches 'b'.
+        // The first (non-padded) level must still match exactly.
+        CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{ Word{ b }, Word{ a } }, false, JumpMode::AppendDontCares));
+    }
+
+    SECTION("short-circuit still follows a trailing epsilon to a final zero-level state") {
+        // ("a","c") lands on the non-final zero-level q2, which epsilon-moves to the final zero-level q3.
+        Nft n{ Nft::with_levels(2) };
+        const State q0{ n.add_state_with_level(0) };
+        const State q1{ n.add_state_with_level(1) };
+        const State q2{ n.add_state_with_level(0) };
+        const State q3{ n.add_state_with_level(0) };
+        n.initial.insert(q0);
+        n.final.insert(q3);
+        n.delta.add(q0, a, q1);
+        n.delta.add(q1, c, q2);
+        n.delta.add(q2, EPSILON, q3);
+
+        CHECK(n.is_in_lang_by_levels(std::vector<Word>{ Word{ a }, Word{ c } }, false, JumpMode::AppendDontCares));
+        CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{ Word{ a }, Word{ d } }, false, JumpMode::AppendDontCares));
+    }
+
+    SECTION("prefix membership short-circuits on a final state before all input is consumed") {
+        // ("a","c") reaches the final zero-level q2; consuming further ("ab","cd") ends in the non-final q4.
+        Nft n{ Nft::with_levels(2) };
+        const State q0{ n.add_state_with_level(0) };
+        const State q1{ n.add_state_with_level(1) };
+        const State q2{ n.add_state_with_level(0) };
+        const State q3{ n.add_state_with_level(1) };
+        const State q4{ n.add_state_with_level(0) };
+        n.initial.insert(q0);
+        n.final.insert(q2);
+        n.delta.add(q0, a, q1);
+        n.delta.add(q1, c, q2);
+        n.delta.add(q2, b, q3);
+        n.delta.add(q3, d, q4);
+
+        const std::vector<Word> ab_cd{ Word{ a, b }, Word{ c, d } };
+        // Full membership: ("ab","cd") ends in the non-final q4, only ("a","c") is accepted outright.
+        CHECK_FALSE(n.is_in_lang_by_levels(ab_cd, false, JumpMode::AppendDontCares));
+        CHECK(n.is_in_lang_by_levels(std::vector<Word>{ Word{ a }, Word{ c } }, false, JumpMode::AppendDontCares));
+        // Prefix membership accepts because ("a","c") is an accepted prefix of ("ab","cd").
+        CHECK(n.is_in_lang_prefix_by_levels(ab_cd, JumpMode::AppendDontCares));
+    }
+
+    SECTION("empty delta: an initial final state accepts the empty prefix (regression guard)") {
+        // No transitions => empty delta; q0 is both initial and final, so the language is { ("","") }.
+        Nft n{ Nft::with_levels(2) };
+        const State q0{ n.add_state_with_level(0) };
+        n.initial.insert(q0);
+        n.final.insert(q0);
+
+        const std::vector<Word> empty_tuple{ Word{}, Word{} };
+        const std::vector<Word> a_b{ Word{ a }, Word{ b } };
+        CHECK(n.is_in_lang_by_levels(empty_tuple, false, JumpMode::AppendDontCares));
+        CHECK_FALSE(n.is_in_lang_by_levels(a_b, false, JumpMode::AppendDontCares));
+        // The empty prefix is always accepted by an initial final state, even with input still unconsumed.
+        CHECK(n.is_in_lang_prefix_by_levels(a_b, JumpMode::AppendDontCares));
+    }
+}

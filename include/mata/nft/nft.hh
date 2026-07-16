@@ -93,6 +93,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <limits>
 #include <set>
 #include <unordered_map>
@@ -731,9 +732,14 @@ public:
      * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted
      * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
+     * @param should_stop Optional early-exit hook, called as @c should_stop(state, reading_head_positions) for each
+     * reached configuration (a state together with the per-level reading-head positions) just before it is expanded.
+     * Returning true halts the search immediately and post() returns the states reached so far. This is a general
+     * stop condition: the caller decides what it means and captures whatever it needs in the closure. Leave empty
+     * for a full post.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const StateSet& states, const std::vector<Word>& words, const BoolVector& use_level, StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    StateSet post(const StateSet& states, const std::vector<Word>& words, const BoolVector& use_level, StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const;
 
     /**
      * @brief Get the set of zero-level states reachable from the given set of zero-level @p states over the given
@@ -752,8 +758,8 @@ public:
      * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const StateSet& states, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
-        return post(states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode);
+    StateSet post(const StateSet& states, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const {
+        return post(states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode, should_stop);
     }
 
     /**

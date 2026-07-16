@@ -966,19 +966,26 @@ bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool 
     // General post()-based algorithm: the only one able to correctly interpret DONT_CARE-padded jumps
     // (JumpMode::AppendDontCares). Membership is a thin consumer of the reachability primitive post(): the level
     // words are in the language iff a final state is reachable after consuming all of them; for a prefix query it
-    // suffices to reach a final zero-level state after consuming any prefix (tracked via the visited states).
+    // suffices to reach a final zero-level state after consuming any prefix.
     //
-    // This is inherently slower than is_in_lang_by_levels_repeat_symbol() above, and not just by a constant
-    // factor. post() is a pure reachability primitive with no notion of final states, so it cannot short-circuit
-    // on acceptance: it always explores the whole reachable configuration space, and only afterwards is the result
-    // intersected with `final` below. The dedicated algorithm returns the moment it reaches an accepting
-    // configuration. post() also has to deduplicate full (head-positions, state) configurations in a hash set to
-    // stay terminating on cyclic inputs, whereas the dedicated algorithm carries cheap word iterators in a plain
-    // worklist and needs no such set.
-    StateSet visited_zero_level_states{};
-    StateSet* const visited_ptr = match_prefix ? &visited_zero_level_states : nullptr;
-    const StateSet reached{ post(StateSet{ initial.begin(), initial.end() }, level_words, visited_ptr, true, jump_mode) };
-    return final.intersects_with(reached) || (match_prefix && final.intersects_with(visited_zero_level_states));
+    // post() has no notion of final states, so on its own it would explore the whole reachable configuration space.
+    // We give it a stop condition that fires the moment a final zero-level state is reached (with all input
+    // consumed, unless this is a prefix query) and records the hit in `accepted`; post() then stops at the first
+    // accepting configuration, just like is_in_lang_by_levels_repeat_symbol() above. A non-accepting query still has
+    // to exhaust the space (and dedup full (head-positions, state) configurations to stay terminating on cycles),
+    // which is the residual reason this path is slower than the dedicated one.
+    std::vector<size_t> end_positions(level_words.size());
+    for (size_t i{ 0 }; i < level_words.size(); ++i) { end_positions[i] = level_words[i].size(); }
+    bool accepted{ false };
+    const auto stop_at_final = [&](const State state, const std::vector<size_t>& reading_head_positions) {
+        if (levels[state] == 0 && (match_prefix || reading_head_positions == end_positions) && final.contains(state)) {
+            accepted = true;
+            return true;
+        }
+        return false;
+    };
+    post(StateSet{ initial.begin(), initial.end() }, level_words, nullptr, true, jump_mode, stop_at_final);
+    return accepted;
 }
 
 std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {

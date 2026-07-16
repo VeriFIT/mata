@@ -635,19 +635,28 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const Level symb
     return result;
 }
 
-StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols, const BoolVector& use_tape, StateSet* const visited_zero_level_states, const bool epsilon_closure_after, const JumpMode jump_mode) const {
+StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols, const BoolVector& use_tape, StateSet* const visited_zero_level_states, const bool epsilon_closure_after, const JumpMode jump_mode, const std::function<bool(State, const std::vector<size_t>&)>& should_stop) const {
     assert(std::all_of(states.begin(), states.end(), [&](State state) {return levels[state] == 0;}));
     if (delta.empty()) {
+        // With no transitions the only reachable configurations are the initial states with their reading heads
+        // still at the start, so the input is fully consumed iff every word is empty.
+        const bool all_input_consumed =
+            std::all_of(tape_symbols.begin(), tape_symbols.end(), [](const Word& word) { return word.empty(); });
+        if (should_stop) {
+            // Honor the stop condition here too: with no transitions the only reachable configurations are the
+            // initial states with their reading heads still at the start.
+            const std::vector<size_t> start_positions(tape_symbols.size(), 0);
+            for (const State state : states) {
+                if (should_stop(state, start_positions)) { return StateSet{ state }; }
+            }
+        }
         if (visited_zero_level_states != nullptr) {
             // Keep track of visited zero level states.
             // This is usefull for is_prefix_in_lang function.
             visited_zero_level_states->insert(states);
         }
-        if (std::all_of(tape_symbols.begin(), tape_symbols.end(), [](const Word& word) { return word.empty(); })) {
-            // If all tape symbols are empty (all words are epsilon), we can return existing zero level states.
-            return states;
-        }
-        return {};
+        // If all tape symbols are empty (all words are epsilon), we can return existing zero level states.
+        return all_input_consumed ? states : StateSet{};
     }
 
     StateSet result{};
@@ -691,6 +700,11 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
         const std::vector<size_t>& current_positions = current.first;
         const State current_state = current.second;
         const Level current_level = levels[current_state];
+
+        // Optional early-exit hook: a caller-supplied stop condition, evaluated for every reached configuration
+        // (state + reading-head positions) before it is expanded. Returning true halts the search and returns the
+        // states reached so far; the caller captures whatever it needs. A plain post (empty hook) skips this.
+        if (should_stop && should_stop(current_state, current_positions)) { return result; }
 
         if (current_level == 0) {
             if (visited_zero_level_states != nullptr) {
