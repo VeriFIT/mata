@@ -3,18 +3,16 @@
  */
 
 #include <algorithm>
+#include <format>
 #include <iterator>
-#include <list>
 #include <ranges>
 
-#include <mata/simlib/explicit_lts.hh>
 #include "mata/nft/algorithms.hh"
-#include "mata/nft/builder.hh"
 #include "mata/nft/delta.hh"
 #include "mata/nft/nft.hh"
+#include "mata/simlib/explicit_lts.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
-
-using std::tie;
 
 using namespace mata::utils;
 using namespace mata::nft;
@@ -951,34 +949,26 @@ Nft mata::nft::minimize(
 #endif
 
 Nft mata::nft::union_nondet(const Nft& lhs, const Nft& rhs) {
-    Nft union_nft{ lhs };
+    Nft union_nft{lhs};
     return union_nft.unite_nondet_with(rhs);
 }
 
-Nft& Nft::unite_nondet_with(const Nft& aut) {
-    const size_t n = this->num_of_states();
-    auto upd_fnc = [&](const State st) { return st + n; };
+void Nft::assert_num_of_levels_match_(const Nft& nft) const {
+    MATA_ASSERT(
+            this->levels.num_of_levels == nft.levels.num_of_levels,
+            "Cannot perform this operation on two NFTs with different number of levels: this={} and nft={}.",
+            this->levels.num_of_levels, nft.levels.num_of_levels);
+    (void) nft; // Suppress unused parameter warning in release builds.
+}
 
-    // copy the information about aut to save the case when this is the same object as aut.
-    const size_t aut_states = aut.num_of_states();
-    SparseSet<mata::nft::State> aut_final_copy = aut.final;
-    SparseSet<mata::nft::State> aut_initial_copy = aut.initial;
+Nft& Nft::unite_nondet_with(const Nft& nft) {
+    assert_num_of_levels_match_(nft);
 
-    this->delta.allocate(n);
-    this->delta.append(aut.delta.renumber_targets(upd_fnc));
+    super::unite_nondet_with(nft);
 
-    // set accepting states
-    this->final.reserve(n + aut_states);
-    for (const State& aut_fin : aut_final_copy) { this->final.insert(upd_fnc(aut_fin)); }
-    // set initial states
-    this->initial.reserve(n + aut_states);
-    for (const State& aut_ini : aut_initial_copy) { this->initial.insert(upd_fnc(aut_ini)); }
-    // combine levels
-    this->levels.num_of_levels = std::max(this->levels.num_of_levels, aut.levels.num_of_levels);
-    this->levels.append(aut.levels);
-
-    // update levels
-    this->levels.append(aut.levels);
+    // Combine the levels of both NFTs.
+    this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft.levels.num_of_levels);
+    this->levels.append(nft.levels);
 
     return *this;
 }

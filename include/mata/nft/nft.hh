@@ -100,11 +100,11 @@
 #include <vector>
 
 #include "delta.hh"
-#include "types.hh"
 #include "mata/alphabet.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
+#include "types.hh"
 
 #include "mata/nfa/nfa.hh"
 
@@ -116,6 +116,7 @@ namespace mata::nft {
 class Nft: public nfa::Nfa {
 private:
     using super = nfa::Nfa;
+
 public:
     /**
      * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
@@ -496,9 +497,14 @@ public:
     Nft& concatenate(const Nft& aut);
 
     /**
-     * @brief In-place union
+     * @brief In-place nondeterministic union of @c this with @p nft.
+     *
+     * Does not add epsilon transitions, just unites initial and final states.
+     *
+     * @param[in] nft The NFT to unite with @c this.
+     * @return @c this after uniting with @p nft.
      */
-    Nft& unite_nondet_with(const Nft &aut);
+    Nft& unite_nondet_with(const Nft& nft);
 
      /**
       * @brief Get NFT where transitions of @c this are replaced with transitions over one symbol @p abstract_symbol
@@ -903,6 +909,12 @@ public:
 
     using super::is_complete;
     using super::is_deterministic;
+
+protected:
+    /**
+     * @brief Assert that the number of levels in @c this and @p nft match.
+     */
+    void assert_num_of_levels_match_(const Nft& nft) const;
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.
