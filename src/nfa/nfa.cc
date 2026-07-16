@@ -10,17 +10,17 @@
 #include <queue>
 #include <string>
 
-#include "mata/nfa/nfa.hh"
 #include <mata/simlib/explicit_lts.hh>
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/nfa/nfa.hh"
 #include "mata/utils/sparse-set.hh"
 
 using namespace mata::utils;
 using namespace mata::nfa;
+using mata::BoolVector;
 using mata::Symbol;
 using mata::Word;
-using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -846,35 +846,38 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::
     return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
-    const size_t num_of_states{ this->num_of_states() };
-    const size_t aut_num_of_states{ aut.num_of_states() };
-    const size_t new_num_of_states{ num_of_states + aut_num_of_states };
-
-    if (this == &aut) {
+Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
+    if (this == &nfa) {
+        return *this;
+    }
+    if (final.empty() || initial.empty()) {
+        *this = nfa;
+        return *this;
+    }
+    if (nfa.final.empty() || nfa.initial.empty()) {
         return *this;
     }
 
-    if (final.empty() || initial.empty()) { *this = aut; return *this; }
-    if (aut.final.empty() || aut.initial.empty()) { return *this; }
+    const size_t num_of_states_this{this->num_of_states()};
+    const size_t num_of_states_aut{nfa.num_of_states()};
+    const size_t num_of_states_result{num_of_states_this + num_of_states_aut};
 
-    this->delta.reserve(new_num_of_states);
+    this->delta.reserve(num_of_states_result);
     // Allocate space for initial and final states from 'this' which might be missing in Delta.
-    this->delta.allocate(num_of_states);
+    // This ensures that the next state appended to Delta will have the correct index for the first state of 'aut'.
+    this->delta.allocate(num_of_states_this);
 
-    auto renumber_states = [&](const State st) {
-        return st + num_of_states;
-    };
-    this->delta.append(aut.delta.renumber_targets(renumber_states));
+    auto renumber_states{[&](const State state) { return num_of_states_this + state; }};
+    this->delta.append(nfa.delta.renumber_targets(renumber_states));
 
     // Set accepting states.
-    this->final.reserve(new_num_of_states);
-    for(const State& aut_fin: aut.final) {
+    this->final.reserve(num_of_states_result);
+    for (const State& aut_fin : nfa.final) {
         this->final.insert(renumber_states(aut_fin));
     }
     // Set initial states.
-    this->initial.reserve(new_num_of_states);
-    for(const State& aut_ini: aut.initial) {
+    this->initial.reserve(num_of_states_result);
+    for (const State& aut_ini : nfa.initial) {
         this->initial.insert(renumber_states(aut_ini));
     }
 
