@@ -135,7 +135,7 @@ Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power) {
     // `result` holds the accumulating product (starts as identity — empty-string NFT)
     Nft result = builder::create_empty_string_nft();
 
-    // `base` is the current power of the original NFA.
+    // `base` is the current power of the original NFT.
     Nft base = std::move(nft_to_concatenate);
 
     // Exponentiation by squaring (binary exponentiation)
