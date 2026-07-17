@@ -119,12 +119,14 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 
     return result;
 }
+} // Anonymous namespace.
 
-/// Dedicated worklist algorithm for Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol (a jump transition
-/// reads the same symbol on every level it spans). Kept as a separate, hand-rolled implementation because it is
-/// considerably faster in this common case than the general post()-based algorithm, which additionally has to
-/// support JumpMode::AppendDontCares.
-bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
+/// Dedicated worklist algorithm equivalent to Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol (a jump
+/// transition reads the same symbol on every level it spans). This is the production path for that jump mode:
+/// Nft::is_in_lang_by_levels() delegates here for JumpMode::RepeatSymbol and uses the general post()-based algorithm
+/// for the other jump modes. See the header for the caveats (RepeatSymbol only; keeps no visited set, so it must not
+/// run on automata with epsilon cycles).
+bool mata::nft::is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
     std::vector<Word::const_iterator> track_words_begins(aut.levels.num_of_levels);
     for (size_t track{ 0 }; track < aut.levels.num_of_levels; ++track) {
         track_words_begins[track] = level_words[track].begin();
@@ -238,7 +240,6 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
         if (symbol_post_it != state_post_end && handle_symbol_it()) { return true; }
     }
     return false;
-}
 }
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
@@ -958,22 +959,24 @@ bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool 
         throw std::invalid_argument("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
     }
 
-    if (jump_mode != JumpMode::AppendDontCares) {
-        // Dedicated worklist algorithm, considerably faster than the general post()-based algorithm below.
+    // JumpMode::RepeatSymbol (the common mode) is handled by the dedicated hand-rolled worklist: it is a constant
+    // factor faster than the general post()-based path on this mode. See is_in_lang_by_levels_repeat_symbol() for its
+    // one caveat (it keeps no visited set, so it must not run on automata with epsilon cycles).
+    if (jump_mode == JumpMode::RepeatSymbol) {
         return is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix);
     }
 
-    // General post()-based algorithm: the only one able to correctly interpret DONT_CARE-padded jumps
-    // (JumpMode::AppendDontCares). Membership is a thin consumer of the reachability primitive post(): the level
-    // words are in the language iff a final state is reachable after consuming all of them; for a prefix query it
-    // suffices to reach a final zero-level state after consuming any prefix.
+    // Every other jump mode goes through the general post()-based algorithm (post() interprets jump_mode itself,
+    // including the DONT_CARE-padded jumps of JumpMode::AppendDontCares). Membership is a thin consumer of the
+    // reachability primitive post(): the level words are in the language iff a final state is reachable after
+    // consuming all of them; for a prefix query it suffices to reach a final zero-level state after consuming any
+    // prefix.
     //
     // post() has no notion of final states, so on its own it would explore the whole reachable configuration space.
     // We give it a stop condition that fires the moment a final zero-level state is reached (with all input
     // consumed, unless this is a prefix query) and records the hit in `accepted`; post() then stops at the first
-    // accepting configuration, just like is_in_lang_by_levels_repeat_symbol() above. A non-accepting query still has
-    // to exhaust the space (and dedup full (head-positions, state) configurations to stay terminating on cycles),
-    // which is the residual reason this path is slower than the dedicated one.
+    // accepting configuration. A non-accepting query still has to exhaust the space (and dedup full
+    // (head-positions, state) configurations to stay terminating on cycles).
     std::vector<size_t> end_positions(level_words.size());
     for (size_t i{ 0 }; i < level_words.size(); ++i) { end_positions[i] = level_words[i].size(); }
     bool accepted{ false };

@@ -901,9 +901,9 @@ public:
      * That is, the function checks whether a tuple @p level_words (word1, word2, word3, ..., wordn) is in the regular
      *  relation accepted by the transducer with 'n' levels (tracks).
      *
-     * For @c JumpMode::RepeatSymbol (the default), a dedicated worklist algorithm is used which is considerably
-     * faster than the general algorithm. For @c JumpMode::AppendDontCares, the check is delegated to the general
-     * @c post()-based implementation, which is the only one able to correctly interpret @c DONT_CARE-padded jumps.
+     * @c JumpMode::RepeatSymbol is handled by the dedicated hand-rolled worklist
+     * @c is_in_lang_by_levels_repeat_symbol() (a constant factor faster on that mode); the other jump modes go
+     * through the general @c post()-based algorithm, which short-circuits on the first accepting configuration.
      *
      * @param level_words The words to check.
      * @param match_prefix Whether to also match the prefix of the word.
@@ -1449,6 +1449,23 @@ Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 
 /**
+ * @brief Dedicated worklist check equivalent to Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol.
+ *
+ * This is the hand-rolled algorithm that predates the general post()-based membership check, and remains the
+ * production path for JumpMode::RepeatSymbol: Nft::is_in_lang_by_levels() delegates here for that jump mode (it is a
+ * constant factor faster there) and uses the post()-based algorithm for the other jump modes.
+ *
+ * @warning Correct only under JumpMode::RepeatSymbol. Unlike the post()-based check it keeps no visited set, so it
+ *  must not be called on automata containing epsilon cycles (it may not terminate).
+ *
+ * @param aut The transducer whose relation is queried. @p level_words.size() must equal @c aut.levels.num_of_levels.
+ * @param level_words The tuple of per-level words to check.
+ * @param match_prefix Whether to also accept a prefix of @p level_words.
+ * @return @c true iff @p level_words (or a prefix of it, if @p match_prefix) is in the relation of @p aut.
+ */
+bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, bool match_prefix = false);
+
+/**
  * @brief Projects out specified levels @p levels_to_project in the given transducer @p nft.
  *
  * @param[in] nft The transducer for projection.
@@ -1556,16 +1573,6 @@ bool symbols_match(Symbol a, Symbol b);
 
 namespace std {
 std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);
-template<>
-struct hash<std::pair<std::vector<size_t>, mata::nfa::State>> {
-    size_t operator()(const std::pair<std::vector<size_t>, mata::nfa::State>& p) const {
-        size_t h = std::hash<mata::nfa::State>{}(p.second);
-        for (auto v : p.first) {
-            h ^= std::hash<size_t>{}(v) + 0x9e3779b9 + (h << 6) + (h >> 2);
-        }
-        return h;
-    }
-};
 } // namespace std.
 
 #endif /* MATA_NFT_HH_ */

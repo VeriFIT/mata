@@ -393,3 +393,43 @@ TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — post-based JumpMode::AppendD
         CHECK(n.is_in_lang_prefix_by_levels(a_b, JumpMode::AppendDontCares));
     }
 }
+
+// The dedicated RepeatSymbol worklist (mata::nft::is_in_lang_by_levels_repeat_symbol) is no longer on the
+// production path, so nothing else exercises it. This checks its results directly and cross-checks them against the
+// post()-based Nft::is_in_lang_by_levels it is retained to be benchmarked against.
+TEST_CASE("mata::nft::is_in_lang_by_levels_repeat_symbol — agrees with the post()-based membership check") {
+    // Cross-check full and prefix membership of a tuple against the production (post()-based) path.
+    auto agree = [](const Nft& n, const std::vector<Word>& words) {
+        for (const bool prefix : { false, true }) {
+            if (is_in_lang_by_levels_repeat_symbol(n, words, prefix)
+                != n.is_in_lang_by_levels(words, prefix, JumpMode::RepeatSymbol)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    SECTION("level-by-level transitions") {
+        const Nft n{ make_ab_c() }; // Relation { ("ab", "c") }.
+        CHECK(is_in_lang_by_levels_repeat_symbol(n, std::vector<Word>{ Word{ a, b }, Word{ c } }));
+        CHECK_FALSE(is_in_lang_by_levels_repeat_symbol(n, std::vector<Word>{ Word{ a, b }, Word{ d } }));
+        CHECK(agree(n, std::vector<Word>{ Word{ a, b }, Word{ c } }));
+        CHECK(agree(n, std::vector<Word>{ Word{ a, b }, Word{ d } }));
+        CHECK(agree(n, std::vector<Word>{ Word{ a }, Word{ c } })); // Reaches a non-final zero-level state.
+        CHECK(agree(n, std::vector<Word>{ Word{}, Word{} }));
+    }
+
+    SECTION("a jump transition, where RepeatSymbol reads the same symbol on every spanned level") {
+        Nft n{ Nft::with_levels(2) };
+        const State q0{ n.add_state_with_level(0) };
+        const State qf{ n.add_state_with_level(0) };
+        n.initial.insert(q0);
+        n.final.insert(qf);
+        n.delta.add(q0, a, qf); // Jump q0 --a--> qf spanning both levels: both must read 'a'.
+
+        CHECK(is_in_lang_by_levels_repeat_symbol(n, std::vector<Word>{ Word{ a }, Word{ a } }));
+        CHECK_FALSE(is_in_lang_by_levels_repeat_symbol(n, std::vector<Word>{ Word{ a }, Word{ b } }));
+        CHECK(agree(n, std::vector<Word>{ Word{ a }, Word{ a } }));
+        CHECK(agree(n, std::vector<Word>{ Word{ a }, Word{ b } }));
+    }
+}
