@@ -127,7 +127,7 @@ Nft algorithms::concatenate_eps(
 } // concatenate_eps().
 
 Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power) {
-    // If power is 0, return the NFA that accepts only the empty string.
+    // If power is 0, return the NFT that accepts only the empty string.
     if (power == 0) {
         return builder::create_empty_string_nft();
     }
