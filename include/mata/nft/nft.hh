@@ -1054,6 +1054,18 @@ Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 /**
+ * @brief Compute NFT by concatenating @p nfa_to_concatenate with itself @p power times.
+ *
+ * Uses exponentiation by squaring for efficiency. The result accepts the language L^power,
+ * where L is the language of the input automaton.
+ *
+ * @param[in] nfa_to_concatenate NFT to concatenate with itself.
+ * @param[in] power The nth power (number of times to concatenate).
+ * @return NFT accepting the nth power of the input language.
+ */
+Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power);
+
+/**
  * @brief Compute automaton accepting a complement of @p nft.
  *
  * @warning This function only supports NFTs without epsilon transitions (length-preserving NFTs).
