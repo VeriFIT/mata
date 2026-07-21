@@ -3,6 +3,7 @@
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
+#include "mata/nft/builder.hh"
 
 using namespace mata::nft;
 
@@ -124,4 +125,33 @@ Nft algorithms::concatenate_eps(
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
     return result;
 } // concatenate_eps().
+
+Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power) {
+    // `result` holds the accumulating product (starts as identity — empty-string NFT)
+    Nft result = builder::create_empty_string_nft(nft_to_concatenate.levels.num_of_levels);
+
+    // `base` is the current power of the original NFT.
+    Nft base = std::move(nft_to_concatenate);
+
+    // Exponentiation by squaring (binary exponentiation)
+    // For each binary digit (LSB first): if the bit is 1, multiply `result` by `base`.
+    // Then square `base` for the next bit.
+    while (power > 0) {
+        // If current least-significant bit is set, append `base` to `result`.
+        if (power & 1u) {
+            result.concatenate(base);
+        }
+
+        // Shift to the next bit.
+        power >>= 1;
+
+        // If there are still bits to process, square `base` (i.e. base = base * base).
+        if (power) {
+            base.concatenate(base);
+        }
+    }
+
+    return result;
+}
+
 } // Namespace mata::nft.
