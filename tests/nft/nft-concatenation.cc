@@ -10,6 +10,7 @@
 #include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/applications/strings.hh"
+#include "mata/nft/builder.hh"
 
 using namespace mata::nft;
 using namespace mata::applications::strings;
@@ -1079,5 +1080,64 @@ TEST_CASE("mata::nft::Concat_inplace performance", "[.profiling]") {
 
     for (auto i=0;i<1000;i++) {
         base.concatenate(concat);
+    }
+}
+
+TEST_CASE("mata::nft::concatenate_nth_power()") {
+    SECTION("Exponent 0 returns empty-string automaton") {
+        Nfa aut{};
+        aut.add_state(1);
+        aut.initial.insert(0);
+        aut.final.insert(1);
+        aut.delta.add(0, 'a', 1);
+
+        Nft nft(aut);
+
+        CHECK(are_equivalent(concatenate_nth_power(nft, 0), mata::nft::builder::create_empty_string_nft(nft.levels.num_of_levels)));
+    }
+
+    SECTION("Exponent 1 returns the same language") {
+        Nfa aut{};
+        aut.add_state(1);
+        aut.initial.insert(0);
+        aut.final.insert(1);
+        aut.delta.add(0, 'a', 1);
+
+        Nft nft(aut);
+
+        CHECK(are_equivalent(concatenate_nth_power(nft, 1), nft));
+    }
+
+    SECTION("Exponent 2 matches normal concatenate") {
+        Nfa aut{};
+        aut.add_state(2);
+        aut.initial.insert(0);
+        aut.final.insert(2);
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(1, 'b', 2);
+
+        Nft nft(aut);
+
+        Nft expected = nft;
+        expected.concatenate(nft);
+
+        CHECK(are_equivalent(concatenate_nth_power(nft, 2), expected));
+    }
+
+    SECTION("Exponent 4 matches repeated normal concatenate") {
+        Nfa aut{};
+        aut.add_state(1);
+        aut.initial.insert(0);
+        aut.final.insert(1);
+        aut.delta.add(0, 'c', 1);
+
+        Nft nft(aut);
+
+        Nft expected = nft;
+        expected.concatenate(nft);
+        expected.concatenate(nft);
+        expected.concatenate(nft);
+
+        CHECK(are_equivalent(concatenate_nth_power(nft, 4), expected));
     }
 }
