@@ -127,13 +127,8 @@ Nft algorithms::concatenate_eps(
 } // concatenate_eps().
 
 Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power) {
-    // If power is 0, return the NFT that accepts only the empty string.
-    if (power == 0) {
-        return builder::create_empty_string_nft();
-    }
-
     // `result` holds the accumulating product (starts as identity — empty-string NFT)
-    Nft result = builder::create_empty_string_nft();
+    Nft result = builder::create_empty_string_nft(nft_to_concatenate.levels.num_of_levels);
 
     // `base` is the current power of the original NFT.
     Nft base = std::move(nft_to_concatenate);

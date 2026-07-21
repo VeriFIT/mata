@@ -1093,7 +1093,7 @@ TEST_CASE("mata::nft::concatenate_nth_power()") {
 
         Nft nft(aut);
 
-        CHECK(are_equivalent(concatenate_nth_power(nft, 0), mata::nft::builder::create_empty_string_nft()));
+        CHECK(are_equivalent(concatenate_nth_power(nft, 0), mata::nft::builder::create_empty_string_nft(nft.levels.num_of_levels)));
     }
 
     SECTION("Exponent 1 returns the same language") {
