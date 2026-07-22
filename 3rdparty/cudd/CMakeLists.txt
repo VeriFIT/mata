@@ -134,7 +134,7 @@ add_library(cudd OBJECT
         util/util.h
     )
 
-target_compile_features(cudd PUBLIC cxx_std_20)
+target_compile_features(cudd PUBLIC cxx_std_23)
 
 add_library(cudd_headers INTERFACE)
 target_include_directories(cudd_headers
