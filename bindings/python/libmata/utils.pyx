@@ -1,5 +1,3 @@
-import tabulate
-
 from cython.operator import dereference
 
 from libmata.utils cimport CBinaryRelation
@@ -154,4 +152,5 @@ cdef class BinaryRelation:
         return projection
 
     def __str__(self):
+        import tabulate
         return str(tabulate.tabulate(self.to_matrix()))

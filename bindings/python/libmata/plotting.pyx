@@ -1,9 +1,4 @@
-import networkx as nx
-import graphviz
-import IPython
 import sys
-
-from IPython.display import display, HTML
 
 cimport libmata.alphabets as alph
 cimport libmata.nfa.nfa as mata_nfa
@@ -83,6 +78,8 @@ def plot_using_graphviz(
     :param alph.Alphabet alphabet: alphabet for reverse translation of symbols
     :return: automaton in graphviz
     """
+    import graphviz
+    import networkx as nx
     # Configuration
     base_configuration = store()['node_style']
     edge_configuration = store()['edge_style']
@@ -175,6 +172,7 @@ def display_inline(*args, per_row=None, show=None):
     If the `per_row` argument is given, at most `per_row` arguments are
     displayed on each row, each one taking 1/per_row of the line width.
     """
+    from IPython.display import display, HTML
     width = res = ''
     if per_row:
         width = 'width:{}%;'.format(100//per_row)

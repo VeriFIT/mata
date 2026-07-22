@@ -1,7 +1,5 @@
 import shlex
 import subprocess
-import pandas
-import networkx as nx
 
 from libc.stdint cimport uint8_t
 from libcpp cimport bool
@@ -660,7 +658,7 @@ cdef class Nfa:
             del output_stream
         return result.decode(encoding)
 
-    def to_dataframe(self) -> pandas.DataFrame:
+    def to_dataframe(self) -> "pandas.DataFrame":
         """Transforms the automaton to DataFrame format.
 
         Transforms the automaton into pandas.DataFrame format,
@@ -670,13 +668,14 @@ cdef class Nfa:
 
         :return: automaton represented as a pandas dataframe
         """
+        import pandas
         columns = ['source', 'symbol', 'target']
         data = [
             [trans.source, trans.symbol, trans.target] for trans in self.iterate()
         ]
         return pandas.DataFrame(data, columns=columns)
 
-    def to_networkx_graph(self) -> nx.Graph:
+    def to_networkx_graph(self) -> "networkx.Graph":
         """Transforms the automaton into networkx.Graph
 
         Transforms the automaton into networkx.Graph format,
@@ -687,6 +686,7 @@ cdef class Nfa:
 
         :return:
         """
+        import networkx as nx
         G = nx.DiGraph()
         for trans in self.iterate():
             G.add_edge(trans.source, trans.target, symbol=trans.symbol)
