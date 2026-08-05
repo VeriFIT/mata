@@ -216,7 +216,7 @@ void builder::construct(
     *result = construct(inter_aut, alphabet, state_map);
 }
 
-Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::AlphabetLevels* alphabets, NameStateMap* state_map) {
+Nft builder::construct(const mata::IntermediateAut& inter_aut, std::shared_ptr<mata::AlphabetLevels> alphabets, NameStateMap* state_map) {
     assert(nullptr != alphabets);
 
     if (!inter_aut.is_nft()) {
@@ -282,7 +282,7 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::AlphabetLev
 void builder::construct(
         mata::nft::Nft *result,
         const mata::IntermediateAut &inter_aut,
-        mata::AlphabetLevels *alphabets,
+        std::shared_ptr<mata::AlphabetLevels> alphabets,
         mata::nft::builder::NameStateMap *state_map
 ) {
     *result = construct(inter_aut, alphabets, state_map);
@@ -292,7 +292,7 @@ Nft builder::create_single_word_nft(const std::vector<Symbol>& word) {
     return Nft(mata::nfa::builder::create_single_word_nfa(word));
 }
 
-Nft builder::create_single_word_nft(const std::vector<std::string>& word, mata::Alphabet *alphabet) {
+Nft builder::create_single_word_nft(const std::vector<std::string>& word, std::shared_ptr<mata::Alphabet> alphabet) {
     return Nft(mata::nfa::builder::create_single_word_nfa(word, alphabet));
 }
 
@@ -308,7 +308,7 @@ Nft builder::create_sigma_star_nft(const size_t num_of_levels) {
     return nft;
 }
 
-Nft builder::create_sigma_star_nft(const mata::Alphabet* alphabet, const size_t num_of_levels) {
+Nft builder::create_sigma_star_nft(std::shared_ptr<mata::Alphabet> alphabet, const size_t num_of_levels) {
     Nft nft{ Nft::with_levels({num_of_levels, { 0 } }, 1, { 0 }, { 0 }) };
     nft.insert_identity(0, alphabet->get_alphabet_symbols().to_vector());
     return nft;

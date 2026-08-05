@@ -34,7 +34,7 @@ Nft create_single_word_nft(const Word& word);
  *  translations for all the word symbols. If left empty, a new alphabet with only the symbols of the word will be
  *  created.
  */
-Nft create_single_word_nft(const WordName& word, Alphabet* alphabet = nullptr);
+Nft create_single_word_nft(const WordName& word, std::shared_ptr<Alphabet> alphabet = nullptr);
 
 /**
  * Create automaton accepting only epsilon string.
@@ -55,7 +55,7 @@ Nft create_sigma_star_nft(size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
  *  alphabet is used, creating an automaton accepting only the empty string.
  * @param[in] num_of_levels Number of levels in the created NFT.
  */
-Nft create_sigma_star_nft(const Alphabet* alphabet = new OnTheFlyAlphabet{}, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
+Nft create_sigma_star_nft(std::shared_ptr<Alphabet> alphabet = std::make_shared<OnTheFlyAlphabet>(), size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
@@ -73,9 +73,9 @@ void construct(
  * 
  * The constructed @c Nft has its @c alphabets member set to @p alphabets and its inherited @c alphabet member left as @c nullptr.
  */
-Nft construct(const IntermediateAut& inter_aut, AlphabetLevels* alphabets, NameStateMap* state_map = nullptr);
+Nft construct(const IntermediateAut& inter_aut, std::shared_ptr<AlphabetLevels> alphabets, NameStateMap* state_map = nullptr);
 void construct(
-    Nft* result, const IntermediateAut& inter_aut, AlphabetLevels* alphabets, NameStateMap* state_map = nullptr
+    Nft* result, const IntermediateAut& inter_aut, std::shared_ptr<AlphabetLevels> alphabets, NameStateMap* state_map = nullptr
 );
 
 template<class ParsedObject>

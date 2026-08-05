@@ -761,9 +761,8 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
         delta = std::move(other.delta);
         initial = std::move(other.initial);
         final = std::move(other.final);
-        alphabet = other.alphabet;
+        alphabet = std::move(other.alphabet);
         attributes = std::move(other.attributes);
-        other.alphabet = nullptr;
     }
     return *this;
 }

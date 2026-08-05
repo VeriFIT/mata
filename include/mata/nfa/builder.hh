@@ -30,7 +30,7 @@ Nfa create_single_word_nfa(const std::vector<Symbol>& word);
  *  translations for all of the word symbols. If left empty, a new alphabet with only the symbols of the word will be
  *  created.
  */
-Nfa create_single_word_nfa(const std::vector<std::string>& word, Alphabet* alphabet = nullptr);
+Nfa create_single_word_nfa(const std::vector<std::string>& word, std::shared_ptr<Alphabet> alphabet = nullptr);
 
 /**
  * Create automaton accepting only epsilon string.
@@ -43,7 +43,7 @@ Nfa create_empty_string_nfa();
  * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
  *  alphabet is used, creating an automaton accepting only the empty string.
  */
-Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
+Nfa create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet = std::make_shared<OnTheFlyAlphabet>());
 
 /**
  * Creates Tabakov-Vardi random NFA.

@@ -31,8 +31,8 @@ TEST_CASE("nft::create_identity()") {
     nft.initial = { 0 };
     nft.final = { 0 };
     SECTION("small identity nft") {
-        EnumAlphabet alphabet{ 0, 1, 2, 3 };
-        nft.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0, 1, 2, 3 });
+        nft.alphabet = alphabet;
         nft.delta.add(0, 0, 1);
         nft.delta.add(1, 0, 2);
         nft.delta.add(2, 0, 0);
@@ -46,7 +46,7 @@ TEST_CASE("nft::create_identity()") {
         nft.delta.add(7, 3, 8);
         nft.delta.add(8, 3, 0);
         nft.levels.num_of_levels = 3;
-        nft.levels.resize(nft.levels.num_of_levels * (alphabet.get_number_of_symbols() - 1));
+        nft.levels.resize(nft.levels.num_of_levels * (alphabet->get_number_of_symbols() - 1));
         nft.levels[0] = 0;
         nft.levels[1] = 1;
         nft.levels[2] = 2;
@@ -56,38 +56,38 @@ TEST_CASE("nft::create_identity()") {
         nft.levels[6] = 2;
         nft.levels[7] = 1;
         nft.levels[8] = 2;
-        Nft nft_identity{ create_identity(&alphabet, 3) };
+        Nft nft_identity{ create_identity(alphabet.get(), 3) };
         CHECK(nft::are_equivalent(nft_identity, nft));
     }
 
     SECTION("identity nft no symbols") {
-        EnumAlphabet alphabet{};
-        nft.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>();
+        nft.alphabet = alphabet;
         nft.levels.num_of_levels = 3;
         nft.levels.resize(1);
         nft.levels[0] = 0;
-        Nft nft_identity{ create_identity(&alphabet, 3) };
+        Nft nft_identity{ create_identity(alphabet.get(), 3) };
         CHECK(nft::are_equivalent(nft_identity, nft));
     }
 
     SECTION("identity nft one symbol") {
-        EnumAlphabet alphabet{ 0 };
-        nft.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0 });
+        nft.alphabet = alphabet;
         nft.levels.num_of_levels = 2;
         nft.levels.resize(2);
         nft.levels[0] = 0;
         nft.levels[1] = 1;
         nft.delta.add(0, 0, 1);
         nft.delta.add(1, 0, 0);
-        Nft nft_identity{ create_identity(&alphabet, 2) };
+        Nft nft_identity{ create_identity(alphabet.get(), 2) };
         CHECK(nft::are_equivalent(nft_identity, nft));
-        nft_identity = create_identity(&alphabet);
+        nft_identity = create_identity(alphabet.get());
         CHECK(nft::are_equivalent(nft_identity, nft));
     }
 
     SECTION("small identity nft one level") {
-        EnumAlphabet alphabet{ 0, 1, 2, 3 };
-        nft.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0, 1, 2, 3 });
+        nft.alphabet = alphabet;
         nft.delta.add(0, 0, 0);
         nft.delta.add(0, 1, 0);
         nft.delta.add(0, 2, 0);
@@ -95,7 +95,7 @@ TEST_CASE("nft::create_identity()") {
         nft.levels.num_of_levels = 1;
         nft.levels.resize(1);
         nft.levels[0] = 0;
-        Nft nft_identity{ create_identity(&alphabet, 1) };
+        Nft nft_identity{ create_identity(alphabet.get(), 1) };
         CHECK(nft::are_equivalent(nft_identity, nft));
     }
 }
@@ -105,8 +105,8 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
     expected.initial = { 0 };
     expected.final = { 0 };
     SECTION("small identity nft") {
-        EnumAlphabet alphabet{ 0, 1, 2, 3 };
-        expected.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0, 1, 2, 3 });
+        expected.alphabet = alphabet;
         expected.delta.add(0, 0, 1);
         expected.delta.add(1, 0, 0);
         expected.delta.add(0, 1, 2);
@@ -122,7 +122,7 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
         expected.levels[2] = 1;
         expected.levels[3] = 1;
         expected.levels[4] = 1;
-        Nft nft_identity_with_replace{ create_identity_with_single_symbol_replace(&alphabet, 1, 3) };
+        Nft nft_identity_with_replace{ create_identity_with_single_symbol_replace(alphabet.get(), 1, 3) };
         CHECK(nft::are_equivalent(nft_identity_with_replace, expected));
     }
 
@@ -132,21 +132,21 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
     }
 
     SECTION("identity nft one symbol") {
-        EnumAlphabet alphabet{ 0 };
-        expected.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0 });
+        expected.alphabet = alphabet;
         expected.levels.num_of_levels = 2;
         expected.levels.resize(2);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
         expected.delta.add(0, 0, 1);
         expected.delta.add(1, 1, 0);
-        Nft nft_identity{ create_identity_with_single_symbol_replace(&alphabet, 0, 1) };
+        Nft nft_identity{ create_identity_with_single_symbol_replace(alphabet.get(), 0, 1) };
         CHECK(nft::are_equivalent(nft_identity, expected));
     }
 
     SECTION("small identity expected longer replace") {
-        EnumAlphabet alphabet{ 0, 1, 2, 3 };
-        expected.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0, 1, 2, 3 });
+        expected.alphabet = alphabet;
         expected.delta.add(0, 0, 1);
         expected.delta.add(1, 0, 0);
         expected.delta.add(0, 1, 2);
@@ -170,13 +170,13 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
         expected.levels[6] = 1;
         expected.levels[7] = 0;
         expected.levels[8] = 1;
-        Nft nft_identity_with_replace{ create_identity_with_single_symbol_replace(&alphabet, 1, Word{ 5, 6, 7 }) };
+        Nft nft_identity_with_replace{ create_identity_with_single_symbol_replace(alphabet.get(), 1, Word{ 5, 6, 7 }) };
         CHECK(nft::are_equivalent(nft_identity_with_replace, expected));
     }
 
     SECTION("small identity expected replace symbol with empty string") {
-        EnumAlphabet alphabet{ 0, 1, 2, 3 };
-        expected.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0, 1, 2, 3 });
+        expected.alphabet = alphabet;
         expected.delta.add(0, 0, 1);
         expected.delta.add(1, 0, 0);
         expected.delta.add(0, 1, 2);
@@ -192,20 +192,20 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
         expected.levels[2] = 1;
         expected.levels[3] = 1;
         expected.levels[4] = 1;
-        Nft nft_identity_with_replace{ create_identity_with_single_symbol_replace(&alphabet, 1, Word{}) };
+        Nft nft_identity_with_replace{ create_identity_with_single_symbol_replace(alphabet.get(), 1, Word{}) };
         CHECK(nft::are_equivalent(nft_identity_with_replace, expected));
     }
 
     SECTION("identity expected one symbol with word replace") {
-        EnumAlphabet alphabet{ 0 };
-        expected.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 0 });
+        expected.alphabet = alphabet;
         expected.levels.num_of_levels = 2;
         expected.levels.resize(2);
         expected.levels[0] = 0;
         expected.levels[1] = 1;
         expected.delta.add(0, 0, 1);
         expected.delta.add(1, 0, 0);
-        Nft nft_identity{ create_identity_with_single_symbol_replace(&alphabet, 0, Word{ 0 }) };
+        Nft nft_identity{ create_identity_with_single_symbol_replace(alphabet.get(), 0, Word{ 0 }) };
         CHECK(nft::are_equivalent(nft_identity, expected));
     }
 

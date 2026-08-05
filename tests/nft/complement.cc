@@ -19,11 +19,11 @@ using namespace mata::utils;
 using namespace mata;
 
 TEST_CASE("mata::nft::complement()") {
-    EnumAlphabet alphabet{ 'a', 'b', 'c' };
+    auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c' });
     Nft nft{ Nft::with_levels(3, 10) };
-    nft.alphabet = &alphabet;
+    nft.alphabet = alphabet;
     Nft nft_complemented{ Nft::with_levels(3) };
-    nft_complemented.alphabet = &alphabet;
+    nft_complemented.alphabet = alphabet;
 
     const auto CHECK_SHARED = [&] {
         CHECK(intersection(nft, nft_complemented).is_lang_empty());
@@ -60,8 +60,8 @@ TEST_CASE("mata::nft::complement()") {
     };
 
     SECTION("empty automaton, empty alphabet") {
-        alphabet.clear();
-        nft_complemented = complement(nft, alphabet);
+        alphabet->clear();
+        nft_complemented = complement(nft, *alphabet);
         CHECK_SHARED();
     }
 
@@ -72,7 +72,7 @@ TEST_CASE("mata::nft::complement()") {
         nft.delta.add(0, 'a', 1);
         nft.delta.add(1, 'b', 2);
 
-        nft_complemented = complement(nft, alphabet);
+        nft_complemented = complement(nft, *alphabet);
         CHECK_SHARED();
     }
 
@@ -86,7 +86,7 @@ TEST_CASE("mata::nft::complement()") {
         nft.delta.add(2, 'a', 3);
         nft.delta.add(3, 'b', 4);
 
-        nft_complemented = complement(nft, alphabet);
+        nft_complemented = complement(nft, *alphabet);
         CHECK_SHARED();
     }
 
@@ -100,7 +100,7 @@ TEST_CASE("mata::nft::complement()") {
         nft.delta.add(3, 'b', 4);
         nft.delta.add(4, 'a', 5);
 
-        nft_complemented = complement(nft, alphabet);
+        nft_complemented = complement(nft, *alphabet);
         CHECK_SHARED();
     }
 
@@ -117,7 +117,7 @@ TEST_CASE("mata::nft::complement()") {
         nft.delta.add(3, 'b', 4);
         nft.delta.add(4, 'a', 5);
 
-        nft_complemented = complement(nft, alphabet);
+        nft_complemented = complement(nft, *alphabet);
         CHECK_SHARED();
     }
 
@@ -135,7 +135,7 @@ TEST_CASE("mata::nft::complement()") {
         nft.delta.add(3, 'b', 4);
         nft.delta.add(4, 'a', 5);
 
-        nft_complemented = complement(nft, alphabet);
+        nft_complemented = complement(nft, *alphabet);
         CHECK_SHARED();
     }
 }

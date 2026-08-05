@@ -132,12 +132,12 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CSparseSet[State] final
         CDelta delta
         umap[string, void*] attributes
-        CAlphabet* alphabet
+        shared_ptr[CAlphabet] alphabet
 
         # Constructor
         CNfa() except +
         CNfa(unsigned long) except +
-        CNfa(unsigned long, CSparseSet[State], CSparseSet[State], CAlphabet*)
+        CNfa(unsigned long, CSparseSet[State], CSparseSet[State], shared_ptr[CAlphabet])
         CNfa(const CNfa&)
 
         # Public Functions

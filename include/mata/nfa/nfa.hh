@@ -105,7 +105,7 @@ public:
     utils::SparseSet<State> initial{};
     utils::SparseSet<State> final{};
 
-    Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
+    std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
     /// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to their
@@ -117,8 +117,8 @@ public:
 
 public:
     explicit Nfa(Delta delta = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+                 utils::SparseSet<State> final_states = {}, std::shared_ptr<Alphabet> alphabet = nullptr)
+        : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(std::move(alphabet)) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
@@ -129,8 +129,8 @@ public:
      * @param[in] alphabet Pointer to the alphabet used by the NFA.
      */
     explicit Nfa(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+                 utils::SparseSet<State> final_states = {}, std::shared_ptr<Alphabet> alphabet = nullptr)
+        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(std::move(alphabet)) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -139,7 +139,7 @@ public:
 
     Nfa(Nfa&& other) noexcept
         : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
-          alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
+          alphabet{ std::move(other.alphabet) }, attributes{ std::move(other.attributes) } {}
 
     Nfa& operator=(const Nfa& other) = default;
     Nfa& operator=(Nfa&& other) noexcept;
