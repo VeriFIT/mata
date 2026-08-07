@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <queue>
 #include <fstream>
 #include <limits>
 #include <optional>
