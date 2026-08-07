@@ -670,14 +670,6 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
     std::vector<size_t> end_positions(tape_symbols.size());
     for (size_t i = 0; i < tape_symbols.size(); ++i) { end_positions[i] = tape_symbols[i].size(); }
 
-    // A search node is a full configuration: the reading-head position on each of the n input words (n = number of
-    // levels) plus the current state. The position part is a heavy vector<size_t> that is heavily shared -- every
-    // state along an epsilon chain carries the identical positions (epsilon reads nothing), and a branching step
-    // hands the same positions to every target -- so each distinct positions vector is interned to a small uint32
-    // id once. The search then works entirely on cheap (positions_id, state) pairs: the visited set keys on a
-    // single packed integer instead of re-hashing a vector on every step, and a non-consuming epsilon step reuses
-    // the source id with no vector work at all. Interned vectors live in position_ids; unordered_map nodes are
-    // stable across insertion, so id_to_positions can hold plain pointers to them.
     std::unordered_map<std::vector<size_t>, uint32_t> position_ids;
     std::vector<const std::vector<size_t>*> id_to_positions;
     auto intern = [&](const std::vector<size_t>& positions) -> uint32_t {
@@ -698,14 +690,6 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
     };
     std::unordered_set<uint64_t> visited;
 
-    // Worklist. Its ordering only matters when short-circuiting (should_stop set). Then the search runs best-first,
-    // always expanding the configuration that has consumed the most input so far: an accepting exact match must
-    // consume every symbol, so "most consumed" is the greedy estimate of "closest to accepting". This beelines down
-    // the real input-consuming path (like a depth-first dive on the easy cases) yet defers epsilon transitions, which
-    // consume nothing -- so it neither plunges blindly down long epsilon chains the way a plain stack (DFS) does, nor
-    // sweeps the whole breadth the way a queue (BFS) does; both of those lose badly on opposite corners of the input
-    // space. Without a stop condition the entire reachable space is explored regardless of order, so the plain
-    // reachability sweep keeps a cheap LIFO stack.
     const bool best_first{ static_cast<bool>(should_stop) };
     struct QueueItem {
         size_t consumed;        // total input symbols read so far; higher = closer to a full (accepting) match
@@ -820,11 +804,7 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
             }
         };
 
-        // Pick only the outgoing transitions that can possibly fire, instead of scanning them all. A non-consuming
-        // EPSILON move is always available; a consuming move must match the current level's input symbol, so only
-        // that exact symbol and DONT_CARE can fire -- both found by direct lookup (StatePost is symbol-sorted). The
-        // exceptions, where any symbol might match and so all must be scanned, are a projected-out current level or a
-        // literal DONT_CARE in the input word.
+        // Pick only the outgoing transitions that can possibly fire, instead of scanning them all.
         const bool current_used{ use_tape[current_level] != 0 };
         const bool current_has_symbol{
             current_used && current_positions[current_level] < end_positions[current_level] };
