@@ -681,7 +681,7 @@ public:
     /**
      * @brief Get the set of zero-level states reachable from the given set of zero-level @p states,
      * over the @p symbol on a given @p symbol_level. It does not care about symbols on other levels.
-     * 
+     *
      * This is an optimized version of post methods for words.
      *
      * @param states Set of zero-level states to compute the post set from.
@@ -715,13 +715,13 @@ public:
     }
 
     /**
-     * @brief Get the set of states reachable from the given set of @p states over the given vector of @p words 
+     * @brief Get the set of states reachable from the given set of @p states over the given vector of @p words
      * (index corresponds to the level). Levels with the corresponding @p use_level set to false will be ignored.
-     * 
+     *
      * This post uses a bitmask @p use_level to determine which levels to use.
      * Node: Use of @p use_level si similar to applying a projection of levels whose entries are set to true.
      * It is a general post method that is used by all of its overloads.
-     * 
+     *
      * @param states Set of states to compute the post set from.
      * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
      * The index of the word in the vector corresponds to the level (tape) on which the word is used.
@@ -739,14 +739,16 @@ public:
      * for a full post.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const StateSet& states, const std::vector<Word>& words, const BoolVector& use_level, StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const;
+    StateSet post(const StateSet& states, const std::vector<Word>& words, const BoolVector& use_level,
+                  StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true,
+                  JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const;
 
     /**
      * @brief Get the set of zero-level states reachable from the given set of zero-level @p states over the given
      * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
-     * 
+     *
      * This post uses all words on all levels.
-     * 
+     *
      * @param states Set of zero-level states to compute the post set from.
      * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
      * The index of the word in the vector corresponds to the level (tape) on which the word is used.
@@ -758,16 +760,19 @@ public:
      * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const StateSet& states, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const {
+    StateSet post(const StateSet& states, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr,
+                  const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol,
+                  const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const
+    {
         return post(states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode, should_stop);
     }
 
     /**
      * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
      * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
-     * 
+     *
      * This post uses all words on all levels.
-     * 
+     *
      * @param state Zero-level state to compute the post set from.
      * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
      * The index of the word in the vector corresponds to the level (tape) on which the word is used.
@@ -779,19 +784,21 @@ public:
      * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const State state, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+    StateSet post(const State state, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr,
+        const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol) const
+    {
         return post(StateSet{ state }, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode);
     }
 
     /**
      * @brief Get the set of zero-level states reachable from the given set of @p states over the given
-     * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only 
-     * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels 
+     * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only
+     * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels
      * are ignored (projected-out)
-     * 
+     *
      * This post uses a vector @p word_levels to specify levels of used words.
      * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
-     * 
+     *
      * @param states Set of zero-level states to compute the post set from.
      * @param words Vector of words to compute the post set for.
      * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
@@ -804,17 +811,18 @@ public:
      * of @c DONT_CARE symbols.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const StateSet& states, const std::vector<Word>& words, const std::vector<Level>& word_levels, StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    StateSet post(const StateSet& states, const std::vector<Word>& words, const std::vector<Level>& word_levels,
+                  StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
-     * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only 
-     * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels 
+     * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only
+     * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels
      * are ignored (projected-out).
-     * 
+     *
      * This post uses a vector @p word_levels to specify levels of used words.
      * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
-     * 
+     *
      * @param state Zero-level state to compute the post set from.
      * @param words Vector of words to compute the post set for.
      * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
@@ -827,7 +835,9 @@ public:
      * of @c DONT_CARE symbols.
      * @return Set of states reachable from the given set of states over the given words.
      */
-    StateSet post(const State state, const std::vector<Word>& words, const std::vector<Level>& word_levels, StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+    StateSet post(const State state, const std::vector<Word>& words, const std::vector<Level>& word_levels,
+                  StateSet* visited_zero_level_states = nullptr, const bool epsilon_closure_after = true, JumpMode jump_mode = JumpMode::RepeatSymbol) const
+    {
         return post(StateSet{ state }, words, word_levels, visited_zero_level_states, epsilon_closure_after, jump_mode);
     }
 
@@ -846,9 +856,14 @@ public:
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols. Dispatches to the dedicated fast algorithm for @c JumpMode::RepeatSymbol and
      * to the general @c post()-based algorithm otherwise.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     *
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
+     *
      * @return @c true if @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Run& run, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    bool is_in_lang(const Run& run, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol, bool has_epsilon_cycles = false) const;
     bool is_in_lang(const Run&, bool, bool) const = delete;
 
     /**
@@ -859,10 +874,16 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     *
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
+     *
      * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Word& word, const bool match_prefix = false, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
-        return is_in_lang(Run{ word, {} }, match_prefix, jump_mode);
+    bool is_in_lang(const Word& word, const bool match_prefix = false,
+                    const JumpMode jump_mode = JumpMode::RepeatSymbol, const bool has_epsilon_cycles = false) const {
+        return is_in_lang(Run{ word, {} }, match_prefix, jump_mode, has_epsilon_cycles);
     }
     bool is_in_lang(const Word& word, bool, bool) const = delete;
 
@@ -873,10 +894,16 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     *
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
+     *
      * @return @c true if the prefix of @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_prefix(const Run& run, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
-        return is_in_lang(run, true, jump_mode);
+    bool is_in_lang_prefix(const Run& run, JumpMode jump_mode = JumpMode::RepeatSymbol,
+                           const bool has_epsilon_cycles = false) const {
+        return is_in_lang(run, true, jump_mode, has_epsilon_cycles);
     }
     bool is_in_lang_prefix(const Run&, bool) const = delete;
 
@@ -888,10 +915,16 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     *
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
+     *
      * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_prefix(const Word& word, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
-        return is_in_lang_prefix(Run{ word, {} }, jump_mode);
+    bool is_in_lang_prefix(const Word& word, JumpMode jump_mode = JumpMode::RepeatSymbol,
+                           const bool has_epsilon_cycles = false) const {
+        return is_in_lang_prefix(Run{ word, {} }, jump_mode, has_epsilon_cycles);
     }
     bool is_in_lang_prefix(const Word&, bool) const = delete;
 
@@ -910,9 +943,15 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions
+     *
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
+     *
      * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false,
+                              JumpMode jump_mode = JumpMode::RepeatSymbol, bool has_epsilon_cycles = false) const;
 
     /**
      * @brief Checks whether the prefix of @p level_words is in the language of the transducer.
@@ -924,10 +963,17 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     *
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
+     *
      * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words, JumpMode jump_mode = JumpMode::RepeatSymbol) const {
-        return is_in_lang_by_levels(level_words, true, jump_mode);
+    bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words,
+                                     JumpMode jump_mode = JumpMode::RepeatSymbol,
+                                     const bool has_epsilon_cycles = false) const {
+        return is_in_lang_by_levels(level_words, true, jump_mode, has_epsilon_cycles);
     }
 
     /**
@@ -1190,7 +1236,7 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  *  - the synchronizing level (possibly missing if project_out_sync_levels is true)
  *  - levels of `lhs` after its synvhronization level
  *  - levels of `rhs` after its synvhronization level
- * 
+ *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.

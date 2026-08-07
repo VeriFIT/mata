@@ -2475,6 +2475,68 @@ TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 
         CHECK_THROWS_AS(nft.is_in_lang_prefix(Word{ 'a', 'b' }), std::invalid_argument);
     }
+
+    SECTION("epsilon cycle") {
+        // The epsilon cycle 0 -> 1 -> 2 -> 0 reads nothing, so the dedicated JumpMode::RepeatSymbol worklist, which
+        //  makes progress only by reading, cannot terminate on this automaton: every query has to declare the cycle
+        //  (the last argument) to be answered by the general post()-based algorithm instead.
+        constexpr bool HAS_EPSILON_CYCLES{ true };
+        nft.add_state_with_level(0, 0);
+        nft.add_state_with_level(1, 1);
+        nft.add_state_with_level(2, 2);
+        nft.add_state_with_level(3, 0);
+        nft.initial.insert(0);
+        nft.final.insert(3);
+        nft.delta.add(0, EPSILON, 1);
+        nft.delta.add(1, EPSILON, 2);
+        nft.delta.add(2, EPSILON, 0);
+        nft.delta.add(0, 'a', 1);
+        nft.delta.add(1, 'b', 2);
+        nft.delta.add(2, 'c', 3);
+
+        CHECK(nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'c' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(nft.is_in_lang(Word{ 'a', 'b', 'c' }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'b' }, { 'c' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        // The rejecting answers are the ones that have to exhaust the whole search space with the cycle in it.
+        CHECK(not nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'd' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(not nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, {} }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(not nft.is_in_lang_by_levels({ {}, {}, {} }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(not nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'b' }, { 'd' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        // Going around the cycle up to state 2 reads nothing, so 'c' alone is read on the last level.
+        CHECK(nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'd' }, { 'c' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+
+        // The automaton has no jump transitions, so every jump mode must give the same answers.
+        for (const std::vector<Word>& level_words :
+             std::vector<std::vector<Word>>{ { { 'a' }, { 'b' }, { 'c' } }, { { 'a' }, { 'b' }, { 'd' } },
+                                             { { 'a' }, { 'd' }, { 'c' } }, { { 'a' }, { 'b' }, {} },
+                                             { {}, {}, {} } }) {
+            for (const bool match_prefix : { false, true }) {
+                CHECK(
+                    nft.is_in_lang_by_levels(level_words, match_prefix, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES) ==
+                    nft.is_in_lang_by_levels(level_words, match_prefix, JumpMode::AppendDontCares, HAS_EPSILON_CYCLES)
+                );
+            }
+        }
+    }
+
+    SECTION("epsilon self-loop") {
+        constexpr bool HAS_EPSILON_CYCLES{ true };
+        nft.add_state_with_level(0, 0);
+        nft.add_state_with_level(1, 1);
+        nft.add_state_with_level(2, 2);
+        nft.add_state_with_level(3, 0);
+        nft.initial.insert(0);
+        nft.final.insert(3);
+        nft.delta.add(0, EPSILON, 0); // The shortest cycle there is, and it reads nothing.
+        nft.delta.add(0, 'a', 1);
+        nft.delta.add(1, 'b', 2);
+        nft.delta.add(2, 'c', 3);
+
+        CHECK(nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'c' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(not nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'd' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(not nft.is_in_lang_by_levels({ {}, {}, {} }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+        CHECK(not nft.is_in_lang_prefix_by_levels({ { 'd' }, { 'b' }, { 'c' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+    }
 }
 
 TEST_CASE("mata::nft::fw-direct-simulation()") { // {{{

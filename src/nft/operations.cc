@@ -120,6 +120,71 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
     return result;
 }
 
+/// Get targets of the epsilon transitions of @p state.
+[[maybe_unused]] const StateSet* epsilon_targets(const Nft& aut, const State state) {
+    static_assert(nft::EPSILON == Limits::max_symbol, "epsilon is expected to sort last in a state post");
+    const StatePost& state_post{ aut.delta[state] };
+    if (state_post.empty() || state_post.back().symbol != nft::EPSILON) {
+        return nullptr;
+    }
+    return &state_post.back().targets;
+}
+
+/// True whether the automaton has a cycle of epsilon transitions, false otherwise.
+[[maybe_unused]] bool has_epsilon_cycle(const Nft& aut) {
+    const size_t num_of_states{ aut.num_of_states() };
+    std::vector<State> epsilon_sources{};
+    std::vector<size_t> num_of_epsilon_predecessors{};
+    for (State source{ 0 }; source < num_of_states; ++source) {
+        const StateSet* const targets{ epsilon_targets(aut, source) };
+        if (targets == nullptr) {
+             continue;
+        }
+        if (num_of_epsilon_predecessors.empty()) {
+            num_of_epsilon_predecessors.assign(num_of_states, 0);
+        }
+        epsilon_sources.push_back(source);
+        for (const State target : *targets) {
+            ++num_of_epsilon_predecessors[target];
+        }
+    }
+    if (epsilon_sources.empty()) {
+        // No epsilon transitions, hence no epsilon cycle.
+        return false;
+    }
+
+    // A cycle lies entirely within the states an epsilon transition starts from or leads to.
+    // Peeling starts from those of them that have nothing to peel away first.
+    size_t num_of_states_on_epsilon_transitions{ 0 };
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (num_of_epsilon_predecessors[state] != 0) {
+            ++num_of_states_on_epsilon_transitions;
+        }
+    }
+    std::vector<State> peelable{};
+    for (const State source : epsilon_sources) {
+        if (num_of_epsilon_predecessors[source] == 0) {
+            ++num_of_states_on_epsilon_transitions;
+            peelable.push_back(source);
+        }
+    }
+
+    size_t num_of_peeled_states{ 0 };
+    while (!peelable.empty()) {
+        const State state{ peelable.back() };
+        peelable.pop_back();
+        ++num_of_peeled_states;
+        if (const StateSet* const targets{ epsilon_targets(aut, state) }; targets != nullptr) {
+            for (const State target : *targets) {
+                if (--num_of_epsilon_predecessors[target] == 0) {
+                    peelable.push_back(target);
+                }
+            }
+        }
+    }
+    return num_of_peeled_states != num_of_states_on_epsilon_transitions;
+}
+
 /// Dedicated worklist algorithm equivalent to Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol (a jump
 /// transition reads the same symbol on every level it spans). This is the production path for that jump mode:
 /// Nft::is_in_lang_by_levels() delegates here for JumpMode::RepeatSymbol and uses the general post()-based algorithm
@@ -127,8 +192,8 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 /// rather than a public API function: the dispatcher (Nft::is_in_lang_by_levels()) is what validates level_words
 /// against aut.levels.num_of_levels, and the general post()-based path's edge-case handling (e.g. an empty delta)
 /// likewise lives at that shared level rather than being duplicated here.
-/// @warning Correct only under JumpMode::RepeatSymbol or JumpMode::NoJump. Unlike the post()-based check it keeps no visited set, so it
-/// must not run on automata with epsilon cycles (it may not terminate).
+/// @warning Correct only under JumpMode::RepeatSymbol or JumpMode::NoJump, and only on an automaton without epsilon
+/// cycles. This search keeps no visited set. That is what makes it fast.
 bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
     std::vector<Word::const_iterator> track_words_begins(aut.levels.num_of_levels);
     for (size_t track{ 0 }; track < aut.levels.num_of_levels; ++track) {
@@ -954,19 +1019,20 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     return aut_inv;
 }
 
-bool Nft::is_in_lang(const Run& run, const bool match_prefix, const JumpMode jump_mode) const {
-    return is_in_lang_by_levels(mk_level_word_from_word(run.word), match_prefix, jump_mode);
+bool Nft::is_in_lang(const Run& run, const bool match_prefix, const JumpMode jump_mode, const bool has_epsilon_cycles) const {
+    return is_in_lang_by_levels(mk_level_word_from_word(run.word), match_prefix, jump_mode, has_epsilon_cycles);
 }
 
-bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool match_prefix, const JumpMode jump_mode) const {
+bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool match_prefix, const JumpMode jump_mode, const bool has_epsilon_cycles) const {
     if (level_words.size() != levels.num_of_levels) {
         throw std::invalid_argument("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
     }
 
     // JumpMode::RepeatSymbol (the common mode) is handled by the dedicated hand-rolled worklist: it is a constant
-    // factor faster than the general post()-based path on this mode.
-    // It has one problem, it keeps no visited set, so it must not run on automata with epsilon cycles.
-    if (jump_mode == JumpMode::RepeatSymbol || jump_mode == JumpMode::NoJump) {
+    // factor faster than the general post()-based path on this mode. What buys that speed is keeping no visited set.
+    // The caller is trusted on the absence of epsilon cycles, it would be too expensive to check for them every time.
+    if ((jump_mode == JumpMode::RepeatSymbol || jump_mode == JumpMode::NoJump) && !has_epsilon_cycles) {
+        assert(!has_epsilon_cycle(*this));
         return is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix);
     }
 
