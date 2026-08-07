@@ -14,6 +14,11 @@
 // old hand-rolled worklist around as the free function mata::nft::is_in_lang_by_levels_repeat_symbol
 // specifically for this kind of benchmarking), each query is additionally timed against that
 // implementation in the same process, so the two can be compared without cross-run noise.
+//
+// STALE: is_in_lang_by_levels_repeat_symbol() is no longer a public symbol (it moved into the anonymous
+// namespace in operations.cc, reachable only via the dispatcher), so the MATA_BENCH_HAS_REPEAT_SYMBOL path
+// below no longer compiles. Disconnected from examples/CMakeLists.txt rather than fixed up, since this
+// benchmark is headed for deletion; kept on disk so the scenario/query generation doesn't need reinventing.
 
 #include "mata/nft/nft.hh"
 

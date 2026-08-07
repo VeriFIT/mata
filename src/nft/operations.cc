@@ -119,14 +119,17 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 
     return result;
 }
-} // Anonymous namespace.
 
 /// Dedicated worklist algorithm equivalent to Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol (a jump
 /// transition reads the same symbol on every level it spans). This is the production path for that jump mode:
 /// Nft::is_in_lang_by_levels() delegates here for JumpMode::RepeatSymbol and uses the general post()-based algorithm
-/// for the other jump modes. See the header for the caveats (RepeatSymbol only; keeps no visited set, so it must not
-/// run on automata with epsilon cycles).
-bool mata::nft::is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
+/// for the other jump modes. It has no reason to be called any other way, so it lives here as an internal helper
+/// rather than a public API function: the dispatcher (Nft::is_in_lang_by_levels()) is what validates level_words
+/// against aut.levels.num_of_levels, and the general post()-based path's edge-case handling (e.g. an empty delta)
+/// likewise lives at that shared level rather than being duplicated here.
+/// @warning Correct only under JumpMode::RepeatSymbol or JumpMode::NoJump. Unlike the post()-based check it keeps no visited set, so it
+/// must not run on automata with epsilon cycles (it may not terminate).
+bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
     std::vector<Word::const_iterator> track_words_begins(aut.levels.num_of_levels);
     for (size_t track{ 0 }; track < aut.levels.num_of_levels; ++track) {
         track_words_begins[track] = level_words[track].begin();
@@ -241,6 +244,7 @@ bool mata::nft::is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::ve
     }
     return false;
 }
+} // Anonymous namespace.
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     const size_t num_of_states{ aut.num_of_states() };
@@ -960,9 +964,9 @@ bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool 
     }
 
     // JumpMode::RepeatSymbol (the common mode) is handled by the dedicated hand-rolled worklist: it is a constant
-    // factor faster than the general post()-based path on this mode. See is_in_lang_by_levels_repeat_symbol() for its
-    // one caveat (it keeps no visited set, so it must not run on automata with epsilon cycles).
-    if (jump_mode == JumpMode::RepeatSymbol) {
+    // factor faster than the general post()-based path on this mode.
+    // It has one problem, it keeps no visited set, so it must not run on automata with epsilon cycles.
+    if (jump_mode == JumpMode::RepeatSymbol || jump_mode == JumpMode::NoJump) {
         return is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix);
     }
 
