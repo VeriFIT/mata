@@ -17,6 +17,7 @@
 
 #include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 
 
@@ -530,7 +531,7 @@ void Nft::unwind_jumps(
 }
 
 StateSet Nft::post(const StateSet& states, const Symbol symbol, const Level symbol_level, const EpsilonClosureOpt epsilon_closure_opt, const JumpMode jump_mode) const {
-    assert(std::all_of(states.begin(), states.end(), [&](State state) {return levels[state] == 0;}));
+    MATA_ASSERT(std::all_of(states.begin(), states.end(), [&](State state) {return levels[state] == 0;}));
 
     // Computes the epsilon closure of a set of states.
     auto get_epsilon_closure = [&](const StateSet& states) {
