@@ -732,16 +732,16 @@ public:
      * @param epsilon_closure_after Whether to perform epsilon closure after the post operation.
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is interpreted
      * as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE symbols.
-     * @param should_stop Optional early-exit hook, called as @c should_stop(state, reading_head_positions) for each
-     * reached configuration (a state together with the per-level reading-head positions) just before it is expanded.
-     * Returning true halts the search immediately and post() returns the states reached so far. This is a general
-     * stop condition: the caller decides what it means and captures whatever it needs in the closure. Leave empty
-     * for a full post.
+     * @param is_early_exit_config Optional predicate, called as @c is_early_exit_config(state, reading_head_positions)
+     * for each reached configuration (a state together with the per-level reading-head positions) just before it is
+     * expanded. Returning true halts the search immediately and post() returns the states reached so far. This is a
+     * general condition: the caller decides what configuration warrants an early exit and captures whatever it
+     * needs in the closure. Leave empty for a full post.
      * @return Set of states reachable from the given set of states over the given words.
      */
     StateSet post(const StateSet& states, const std::vector<Word>& words, const BoolVector& use_level,
                   StateSet* visited_zero_level_states = nullptr, bool epsilon_closure_after = true,
-                  JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const;
+                  JumpMode jump_mode = JumpMode::RepeatSymbol, const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config = {}) const;
 
     /**
      * @brief Get the set of zero-level states reachable from the given set of zero-level @p states over the given
@@ -762,9 +762,9 @@ public:
      */
     StateSet post(const StateSet& states, const std::vector<Word>& words, StateSet* visited_zero_level_states = nullptr,
                   const bool epsilon_closure_after = true, const JumpMode jump_mode = JumpMode::RepeatSymbol,
-                  const std::function<bool(State, const std::vector<size_t>&)>& should_stop = {}) const
+                  const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config = {}) const
     {
-        return post(states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode, should_stop);
+        return post(states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode, is_early_exit_config);
     }
 
     /**
@@ -856,14 +856,16 @@ public:
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols. Dispatches to the dedicated fast algorithm for @c JumpMode::RepeatSymbol and
      * to the general @c post()-based algorithm otherwise.
-     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions. You can use
+     * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
+     * be aware that it is linear-time.
      *
-     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
      * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
      *
      * @return @c true if @p run is in the language of the automaton, @c false otherwise.
      */
-    bool is_in_lang(const Run& run, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol, bool has_epsilon_cycles = false) const;
+    bool is_in_lang(const Run& run, bool match_prefix = false, JumpMode jump_mode = JumpMode::RepeatSymbol, bool has_epsilon_cycles = true) const;
     bool is_in_lang(const Run&, bool, bool) const = delete;
 
     /**
@@ -874,15 +876,17 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
-     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions. You can use
+     * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
+     * be aware that it is linear-time.
      *
-     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
      * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
      *
      * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
     bool is_in_lang(const Word& word, const bool match_prefix = false,
-                    const JumpMode jump_mode = JumpMode::RepeatSymbol, const bool has_epsilon_cycles = false) const {
+                    const JumpMode jump_mode = JumpMode::RepeatSymbol, const bool has_epsilon_cycles = true) const {
         return is_in_lang(Run{ word, {} }, match_prefix, jump_mode, has_epsilon_cycles);
     }
     bool is_in_lang(const Word& word, bool, bool) const = delete;
@@ -894,15 +898,17 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
-     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions. You can use
+     * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
+     * be aware that it is linear-time.
      *
-     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
      * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
      *
      * @return @c true if the prefix of @p run is in the language of the automaton, @c false otherwise.
      */
     bool is_in_lang_prefix(const Run& run, JumpMode jump_mode = JumpMode::RepeatSymbol,
-                           const bool has_epsilon_cycles = false) const {
+                           const bool has_epsilon_cycles = true) const {
         return is_in_lang(run, true, jump_mode, has_epsilon_cycles);
     }
     bool is_in_lang_prefix(const Run&, bool) const = delete;
@@ -915,15 +921,17 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
-     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions. You can use
+     * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
+     * be aware that it is linear-time.
      *
-     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
      * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
      *
      * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
     bool is_in_lang_prefix(const Word& word, JumpMode jump_mode = JumpMode::RepeatSymbol,
-                           const bool has_epsilon_cycles = false) const {
+                           const bool has_epsilon_cycles = true) const {
         return is_in_lang_prefix(Run{ word, {} }, jump_mode, has_epsilon_cycles);
     }
     bool is_in_lang_prefix(const Word&, bool) const = delete;
@@ -943,15 +951,17 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
-     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions. You can use
+     * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
+     * be aware that it is linear-time.
      *
-     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
      * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
      *
      * @return @c true if @p word is in the language of the automaton, @c false otherwise.
      */
     bool is_in_lang_by_levels(const std::vector<Word>& level_words, bool match_prefix = false,
-                              JumpMode jump_mode = JumpMode::RepeatSymbol, bool has_epsilon_cycles = false) const;
+                              JumpMode jump_mode = JumpMode::RepeatSymbol, bool has_epsilon_cycles = true) const;
 
     /**
      * @brief Checks whether the prefix of @p level_words is in the language of the transducer.
@@ -963,16 +973,18 @@ public:
      * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
      * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
      * sequence of @c DONT_CARE symbols.
-     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions.
+     * @param has_epsilon_cycles Whether the automaton has a cycle of epsilon transitions. You can use
+     * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
+     * be aware that it is linear-time.
      *
-     * @warning If @p has_epsilon_cycles is unknown, it is recommended to set it to @c true.
+     * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
      * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
      *
      * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
      */
     bool is_in_lang_prefix_by_levels(const std::vector<Word>& level_words,
                                      JumpMode jump_mode = JumpMode::RepeatSymbol,
-                                     const bool has_epsilon_cycles = false) const {
+                                     const bool has_epsilon_cycles = true) const {
         return is_in_lang_by_levels(level_words, true, jump_mode, has_epsilon_cycles);
     }
 
@@ -1597,6 +1609,19 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
  * @return @c true if the symbols match, @c false otherwise.
  */
 bool symbols_match(Symbol a, Symbol b);
+
+/**
+ * @brief Check whether @p nft has a cycle of epsilon transitions.
+ *
+ * Intended to compute a value for the @c has_epsilon_cycles parameter
+ * of @c Nft::is_in_lang() when it is not already known.
+ *
+ * @warning Linear in the number of states and epsilon transitions of @p nft.
+ *
+ * @param nft The transducer to check.
+ * @return @c true if @p nft has a cycle of epsilon transitions, @c false otherwise.
+ */
+bool has_epsilon_cycle(const Nft& fnt);
 
 }
 

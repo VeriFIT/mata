@@ -130,61 +130,6 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
     return &state_post.back().targets;
 }
 
-/// True whether the automaton has a cycle of epsilon transitions, false otherwise.
-[[maybe_unused]] bool has_epsilon_cycle(const Nft& aut) {
-    const size_t num_of_states{ aut.num_of_states() };
-    std::vector<State> epsilon_sources{};
-    std::vector<size_t> num_of_epsilon_predecessors{};
-    for (State source{ 0 }; source < num_of_states; ++source) {
-        const StateSet* const targets{ epsilon_targets(aut, source) };
-        if (targets == nullptr) {
-             continue;
-        }
-        if (num_of_epsilon_predecessors.empty()) {
-            num_of_epsilon_predecessors.assign(num_of_states, 0);
-        }
-        epsilon_sources.push_back(source);
-        for (const State target : *targets) {
-            ++num_of_epsilon_predecessors[target];
-        }
-    }
-    if (epsilon_sources.empty()) {
-        // No epsilon transitions, hence no epsilon cycle.
-        return false;
-    }
-
-    // A cycle lies entirely within the states an epsilon transition starts from or leads to.
-    // Peeling starts from those of them that have nothing to peel away first.
-    size_t num_of_states_on_epsilon_transitions{ 0 };
-    for (State state{ 0 }; state < num_of_states; ++state) {
-        if (num_of_epsilon_predecessors[state] != 0) {
-            ++num_of_states_on_epsilon_transitions;
-        }
-    }
-    std::vector<State> peelable{};
-    for (const State source : epsilon_sources) {
-        if (num_of_epsilon_predecessors[source] == 0) {
-            ++num_of_states_on_epsilon_transitions;
-            peelable.push_back(source);
-        }
-    }
-
-    size_t num_of_peeled_states{ 0 };
-    while (!peelable.empty()) {
-        const State state{ peelable.back() };
-        peelable.pop_back();
-        ++num_of_peeled_states;
-        if (const StateSet* const targets{ epsilon_targets(aut, state) }; targets != nullptr) {
-            for (const State target : *targets) {
-                if (--num_of_epsilon_predecessors[target] == 0) {
-                    peelable.push_back(target);
-                }
-            }
-        }
-    }
-    return num_of_peeled_states != num_of_states_on_epsilon_transitions;
-}
-
 /// Dedicated worklist algorithm equivalent to Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol (a jump
 /// transition reads the same symbol on every level it spans). This is the production path for that jump mode:
 /// Nft::is_in_lang_by_levels() delegates here for JumpMode::RepeatSymbol and uses the general post()-based algorithm
@@ -310,6 +255,60 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
     return false;
 }
 } // Anonymous namespace.
+
+bool mata::nft::has_epsilon_cycle(const Nft& nft) {
+    const size_t num_of_states{ nft.num_of_states() };
+    std::vector<State> epsilon_sources{};
+    std::vector<size_t> num_of_epsilon_predecessors{};
+    for (State source{ 0 }; source < num_of_states; ++source) {
+        const StateSet* const targets{ epsilon_targets(nft, source) };
+        if (targets == nullptr) {
+             continue;
+        }
+        if (num_of_epsilon_predecessors.empty()) {
+            num_of_epsilon_predecessors.assign(num_of_states, 0);
+        }
+        epsilon_sources.push_back(source);
+        for (const State target : *targets) {
+            ++num_of_epsilon_predecessors[target];
+        }
+    }
+    if (epsilon_sources.empty()) {
+        // No epsilon transitions, hence no epsilon cycle.
+        return false;
+    }
+
+    // A cycle lies entirely within the states an epsilon transition starts from or leads to.
+    // Peeling starts from those of them that have nothing to peel away first.
+    size_t num_of_states_on_epsilon_transitions{ 0 };
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (num_of_epsilon_predecessors[state] != 0) {
+            ++num_of_states_on_epsilon_transitions;
+        }
+    }
+    std::vector<State> peelable{};
+    for (const State source : epsilon_sources) {
+        if (num_of_epsilon_predecessors[source] == 0) {
+            ++num_of_states_on_epsilon_transitions;
+            peelable.push_back(source);
+        }
+    }
+
+    size_t num_of_peeled_states{ 0 };
+    while (!peelable.empty()) {
+        const State state{ peelable.back() };
+        peelable.pop_back();
+        ++num_of_peeled_states;
+        if (const StateSet* const targets{ epsilon_targets(nft, state) }; targets != nullptr) {
+            for (const State target : *targets) {
+                if (--num_of_epsilon_predecessors[target] == 0) {
+                    peelable.push_back(target);
+                }
+            }
+        }
+    }
+    return num_of_peeled_states != num_of_states_on_epsilon_transitions;
+}
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     const size_t num_of_states{ aut.num_of_states() };

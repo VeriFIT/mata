@@ -640,19 +640,19 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const Level symb
     return result;
 }
 
-StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols, const BoolVector& use_tape, StateSet* const visited_zero_level_states, const bool epsilon_closure_after, const JumpMode jump_mode, const std::function<bool(State, const std::vector<size_t>&)>& should_stop) const {
+StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols, const BoolVector& use_tape, StateSet* const visited_zero_level_states, const bool epsilon_closure_after, const JumpMode jump_mode, const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config) const {
     assert(std::all_of(states.begin(), states.end(), [&](State state) {return levels[state] == 0;}));
     if (delta.empty()) {
         // With no transitions the only reachable configurations are the initial states with their reading heads
         // still at the start, so the input is fully consumed iff every word is empty.
         const bool all_input_consumed =
             std::all_of(tape_symbols.begin(), tape_symbols.end(), [](const Word& word) { return word.empty(); });
-        if (should_stop) {
+        if (is_early_exit_config) {
             // Honor the stop condition here too: with no transitions the only reachable configurations are the
             // initial states with their reading heads still at the start.
             const std::vector<size_t> start_positions(tape_symbols.size(), 0);
             for (const State state : states) {
-                if (should_stop(state, start_positions)) { return StateSet{ state }; }
+                if (is_early_exit_config(state, start_positions)) { return StateSet{ state }; }
             }
         }
         if (visited_zero_level_states != nullptr) {
@@ -690,7 +690,7 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
     };
     std::unordered_set<uint64_t> visited;
 
-    const bool best_first{ static_cast<bool>(should_stop) };
+    const bool best_first{ static_cast<bool>(is_early_exit_config) };
     struct QueueItem {
         size_t consumed;        // total input symbols read so far; higher = closer to a full (accepting) match
         uint32_t positions_id;
@@ -705,13 +705,13 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
         return sum;
     };
 
-    bool stopped{ false };
-    // Registers a freshly reached configuration: deduplicates it, fires the optional stop hook (which may halt the
-    // whole search, matching a final state as soon as it is generated rather than when it is later expanded), and
-    // otherwise queues it for expansion.
+    bool early_exit_reached{ false };
+    // Registers a freshly reached configuration: deduplicates it, fires the optional early-exit predicate (which may
+    // halt the whole search, matching a final state as soon as it is generated rather than when it is later
+    // expanded), and otherwise queues it for expansion.
     auto discover = [&](const uint32_t positions_id, const State target, const std::vector<size_t>& target_positions) {
-        if (stopped || !visited.insert(pack(positions_id, target)).second) { return; }
-        if (should_stop && should_stop(target, target_positions)) { stopped = true; return; }
+        if (early_exit_reached || !visited.insert(pack(positions_id, target)).second) { return; }
+        if (is_early_exit_config && is_early_exit_config(target, target_positions)) { early_exit_reached = true; return; }
         if (best_first) { best_first_queue.push({ total_consumed(target_positions), positions_id, target }); }
         else { stack.emplace_back(positions_id, target); }
     };
@@ -725,7 +725,7 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
                                               : (a == b || a == DONT_CARE || b == DONT_CARE);
     };
 
-    while (!stopped && (best_first ? !best_first_queue.empty() : !stack.empty())) {
+    while (!early_exit_reached && (best_first ? !best_first_queue.empty() : !stack.empty())) {
         // Best-first (most input consumed) when short-circuiting, depth-first otherwise (see the worklist comment).
         uint32_t current_positions_id;
         State current_state;
@@ -790,7 +790,7 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
                         if (use_tape[level]) { ++next_positions[level]; }
                     }
                     discover(intern(next_positions), target, next_positions);
-                    if (stopped) { return; }
+                    if (early_exit_reached) { return; }
                 }
 
                 // Non-consuming step: an EPSILON transition may change state without reading any input. This is what
@@ -799,7 +799,7 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
                 // id is reused directly -- no vector work.
                 if (transition_symbol == EPSILON) {
                     discover(current_positions_id, target, current_positions);
-                    if (stopped) { return; }
+                    if (early_exit_reached) { return; }
                 }
             }
         };
@@ -813,13 +813,13 @@ StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols
         if (!current_used || current_symbol == DONT_CARE) {
             for (const SymbolPost& symbol_post : state_post) {
                 expand(symbol_post);
-                if (stopped) { break; }
+                if (early_exit_reached) { break; }
             }
         } else {
             if (const auto it = state_post.find(EPSILON); it != state_post.end()) { expand(*it); }
-            if (!stopped && current_has_symbol && current_symbol != EPSILON) {
+            if (!early_exit_reached && current_has_symbol && current_symbol != EPSILON) {
                 if (const auto it = state_post.find(current_symbol); it != state_post.end()) { expand(*it); }
-                if (!stopped) {
+                if (!early_exit_reached) {
                     if (const auto it = state_post.find(DONT_CARE); it != state_post.end()) { expand(*it); }
                 }
             }
