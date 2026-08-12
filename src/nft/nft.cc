@@ -4,14 +4,20 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
+#include <queue>
 #include <fstream>
+#include <limits>
 #include <optional>
 #include <ranges>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 
 
@@ -522,6 +528,317 @@ Nft Nft::unwind_jumps(const OrdVector<Symbol>& dont_care_symbol_replacements, co
 void Nft::unwind_jumps(
     Nft& result, const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
     result = unwind_jumps(dont_care_symbol_replacements, jump_mode);
+}
+
+StateSet Nft::post(const StateSet& states, const Symbol symbol, const Level symbol_level, const EpsilonClosureOpt epsilon_closure_opt, const JumpMode jump_mode) const {
+    MATA_ASSERT(std::all_of(states.begin(), states.end(), [&](State state) {return levels[state] == 0;}));
+
+    // Computes the epsilon closure of a set of states.
+    auto get_epsilon_closure = [&](const StateSet& states) {
+        StateSet closure{ states };
+        std::queue<State> worklist;
+        for (const State state: states) {
+            worklist.push(state);
+        }
+        while (!worklist.empty()) {
+            const State state = worklist.front();
+            worklist.pop();
+            for (const State target: post(state, EPSILON, symbol_level, EpsilonClosureOpt::None, jump_mode)) {
+                if (!closure.contains(target)) {
+                    closure.insert(target);
+                    worklist.push(target);
+                }
+            }
+        }
+        return closure;
+    };
+
+    StateSet result{};
+    // If we want to compute the epsilon cosure and the symbol is EPSILON, we can stay in the same zero states.
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
+        result = states;
+    }
+    if (delta.empty()) {
+        return result;
+    }
+
+    StateSet from_states = states;
+    if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
+        // Before making the step using the symbol, we compute the epsilon closure.
+        from_states = get_epsilon_closure(states);
+    }
+
+    StateSet used_nonzero_states;   // To avoid cycling.
+    std::stack<State> stack;
+    for (const State state : from_states) {
+        stack.push(state);
+    }
+
+    // Adds states (with zero level) to the result or enqueues them for further processing.
+    auto add_to_result_or_enqueue = [&](const StateSet& targets) {
+        for (const State target : targets) {
+            if (levels[target] == 0) {
+                result.insert(target);
+            } else if (!used_nonzero_states.contains(target)) {
+                used_nonzero_states.insert(target);
+                stack.push(target);
+            }
+        }
+    };
+
+    // The main loop.
+    while (!stack.empty()) {
+        const State current_state = stack.top();
+        const Level current_level = levels[current_state];
+        stack.pop();
+
+        for (const SymbolPost &symbol_post : delta[current_state]) {
+            // DONT_CARE does not match EPSILON.
+            const Symbol transition_symbol = symbol_post.symbol;
+            const bool is_one_of_symbols_epsilon = (symbol == EPSILON || transition_symbol == EPSILON);
+            const bool is_one_of_symbols_dont_care = (symbol == DONT_CARE || transition_symbol == DONT_CARE);
+            const bool is_symbol_match = (transition_symbol == symbol || (is_one_of_symbols_dont_care && !is_one_of_symbols_epsilon));
+            if (current_level > symbol_level) {
+                // The transiton is behind us. Just go forward until next zero level state.
+                add_to_result_or_enqueue(symbol_post.targets);
+            } else if (current_level == symbol_level && is_symbol_match) {
+                // We are exactly at the symbol_level and the symbol matches. Proceed.
+                add_to_result_or_enqueue(symbol_post.targets);
+            } else if (current_level < symbol_level) {
+                // We are before the symbol_level. We need to check if we are jumping over the symbol_level or not.
+                for (const State target : symbol_post.targets) {
+                    const Level target_level = levels[target];
+                    const bool are_we_jumping_over_the_symbol_level = (target_level > symbol_level || target_level == 0);
+                    if (are_we_jumping_over_the_symbol_level) {
+                        // We need to match the symbol based on the jump_mode.
+                        // DONT_CARE does not match EPSILON.
+                        if ((jump_mode == JumpMode::AppendDontCares && symbol != EPSILON) ||
+                            (jump_mode == JumpMode::RepeatSymbol && is_symbol_match)) {
+                            if (target_level == 0) {
+                                result.insert(target);
+                            } else if (!used_nonzero_states.contains(target)) {
+                                used_nonzero_states.insert(target);
+                                stack.push(target);
+                            }
+                        }
+                    } else {
+                        // We are not jumping over the symbol_level, just go forward.
+                        if (!used_nonzero_states.contains(target)) {
+                            used_nonzero_states.insert(target);
+                            stack.push(target);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (epsilon_closure_opt == EpsilonClosureOpt::After) {
+        // We need to compute the epsilon closure of the resulting states.
+        return get_epsilon_closure(result);
+    }
+
+    return result;
+}
+
+StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols, const BoolVector& use_tape, StateSet* const visited_zero_level_states, const bool epsilon_closure_after, const JumpMode jump_mode, const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config) const {
+    assert(std::all_of(states.begin(), states.end(), [&](State state) {return levels[state] == 0;}));
+    if (delta.empty()) {
+        // With no transitions the only reachable configurations are the initial states with their reading heads
+        // still at the start, so the input is fully consumed iff every word is empty.
+        const bool all_input_consumed =
+            std::all_of(tape_symbols.begin(), tape_symbols.end(), [](const Word& word) { return word.empty(); });
+        if (is_early_exit_config) {
+            // Honor the stop condition here too: with no transitions the only reachable configurations are the
+            // initial states with their reading heads still at the start.
+            const std::vector<size_t> start_positions(tape_symbols.size(), 0);
+            for (const State state : states) {
+                if (is_early_exit_config(state, start_positions)) { return StateSet{ state }; }
+            }
+        }
+        if (visited_zero_level_states != nullptr) {
+            // Keep track of visited zero level states.
+            // This is usefull for is_prefix_in_lang function.
+            visited_zero_level_states->insert(states);
+        }
+        // If all tape symbols are empty (all words are epsilon), we can return existing zero level states.
+        return all_input_consumed ? states : StateSet{};
+    }
+
+    StateSet result{};
+
+    // End positions of the reading heads after all symbols on each word have been read.
+    std::vector<size_t> end_positions(tape_symbols.size());
+    for (size_t i = 0; i < tape_symbols.size(); ++i) { end_positions[i] = tape_symbols[i].size(); }
+
+    std::unordered_map<std::vector<size_t>, uint32_t> position_ids;
+    std::vector<const std::vector<size_t>*> id_to_positions;
+    auto intern = [&](const std::vector<size_t>& positions) -> uint32_t {
+        const auto [it, inserted]{ position_ids.try_emplace(positions, static_cast<uint32_t>(id_to_positions.size())) };
+        if (inserted) { id_to_positions.push_back(&it->first); }
+        return it->second;
+    };
+    const std::vector<size_t> start_positions(tape_symbols.size(), 0);
+    const uint32_t start_id{ intern(start_positions) };
+    const uint32_t end_id{ intern(end_positions) };
+
+    // `visited` deduplicates configurations (so the search terminates even on cyclic inputs), keyed on the packed
+    // (positions_id, state) pair. States comfortably fit in 32 bits (asserted), so the pair packs losslessly into
+    // one uint64 and membership is a scalar hash/compare -- no per-config vector work.
+    assert(num_of_states() <= std::numeric_limits<uint32_t>::max());
+    const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
+        return (static_cast<uint64_t>(positions_id) << 32) | static_cast<uint32_t>(state);
+    };
+    std::unordered_set<uint64_t> visited;
+
+    const bool best_first{ static_cast<bool>(is_early_exit_config) };
+    struct QueueItem {
+        size_t consumed;        // total input symbols read so far; higher = closer to a full (accepting) match
+        uint32_t positions_id;
+        State state;
+        bool operator<(const QueueItem& other) const { return consumed < other.consumed; } // max-heap on consumed
+    };
+    std::priority_queue<QueueItem> best_first_queue; // used when best_first
+    std::vector<std::pair<uint32_t, State>> stack;   // used otherwise
+    auto total_consumed = [](const std::vector<size_t>& positions) {
+        size_t sum{ 0 };
+        for (const size_t position : positions) { sum += position; }
+        return sum;
+    };
+
+    bool early_exit_reached{ false };
+    // Registers a freshly reached configuration: deduplicates it, fires the optional early-exit predicate (which may
+    // halt the whole search, matching a final state as soon as it is generated rather than when it is later
+    // expanded), and otherwise queues it for expansion.
+    auto discover = [&](const uint32_t positions_id, const State target, const std::vector<size_t>& target_positions) {
+        if (early_exit_reached || !visited.insert(pack(positions_id, target)).second) { return; }
+        if (is_early_exit_config && is_early_exit_config(target, target_positions)) { early_exit_reached = true; return; }
+        if (best_first) { best_first_queue.push({ total_consumed(target_positions), positions_id, target }); }
+        else { stack.emplace_back(positions_id, target); }
+    };
+
+    for (const State state : states) { discover(start_id, state, start_positions); }
+
+    // Two symbols match iff they are equal, or one is DONT_CARE and neither is EPSILON.
+    // EPSILON matches only EPSILON. (The same relation as nft::symbols_match.)
+    auto symbols_match = [](const Symbol a, const Symbol b) {
+        return (a == EPSILON || b == EPSILON) ? (a == EPSILON && b == EPSILON)
+                                              : (a == b || a == DONT_CARE || b == DONT_CARE);
+    };
+
+    while (!early_exit_reached && (best_first ? !best_first_queue.empty() : !stack.empty())) {
+        // Best-first (most input consumed) when short-circuiting, depth-first otherwise (see the worklist comment).
+        uint32_t current_positions_id;
+        State current_state;
+        if (best_first) {
+            const QueueItem top{ best_first_queue.top() };
+            best_first_queue.pop();
+            current_positions_id = top.positions_id;
+            current_state = top.state;
+        } else {
+            const std::pair<uint32_t, State> top{ stack.back() };
+            stack.pop_back();
+            current_positions_id = top.first;
+            current_state = top.second;
+        }
+        const std::vector<size_t>& current_positions{ *id_to_positions[current_positions_id] };
+        const Level current_level{ levels[current_state] };
+
+        if (current_level == 0) {
+            if (visited_zero_level_states != nullptr) {
+                // Keep track of visited zero level states. This is useful for the is_prefix_in_lang function.
+                visited_zero_level_states->insert(current_state);
+            }
+            if (current_positions_id == end_id) {
+                // A zero-level state reached with all tape symbols consumed.
+                result.insert(current_state);
+                if (!epsilon_closure_after) {
+                    continue; // No need to explore further unless we are computing the epsilon closure.
+                }
+            }
+        }
+
+        // Expand one outgoing transition (possibly a jump) of the current state.
+        const StatePost& state_post{ delta[current_state] };
+        auto expand = [&](const SymbolPost& symbol_post) {
+            const Symbol transition_symbol{ symbol_post.symbol };
+            for (const State target : symbol_post.targets) {
+                const Level target_level{ levels[target] };
+                // The (possibly jumping) transition reads one symbol on each level it spans: [current_level,
+                // stop_level_idx). On a jump the symbol is repeated, or replaced by DONT_CARE for the trailing
+                // levels in JumpMode::AppendDontCares.
+                const size_t stop_level_idx{ target_level == 0 ? levels.num_of_levels : target_level };
+
+                // Consuming step: check that one input symbol can be read on each used level of the span. A level
+                // with no input left cannot be read, so the step fails. Because exhaustion is detected by the
+                // reading-head position (not an EPSILON sentinel), a literal EPSILON symbol in an input word is
+                // matched and consumed here by an EPSILON transition. The position vector is built only once the
+                // whole span is known to be readable, so a mismatching transition costs no allocation.
+                bool consumed{ true };
+                for (size_t level = current_level; level < stop_level_idx; ++level) {
+                    if (!use_tape[level]) { continue; } // Projected-out level: take the transition, read nothing.
+                    const Symbol expected = (level == current_level || jump_mode != JumpMode::AppendDontCares)
+                                            ? transition_symbol : DONT_CARE;
+                    if (current_positions[level] >= end_positions[level] ||
+                        !symbols_match(expected, tape_symbols[level][current_positions[level]])) {
+                        consumed = false;
+                        break;
+                    }
+                }
+                if (consumed) {
+                    std::vector<size_t> next_positions{ current_positions };
+                    for (size_t level = current_level; level < stop_level_idx; ++level) {
+                        if (use_tape[level]) { ++next_positions[level]; }
+                    }
+                    discover(intern(next_positions), target, next_positions);
+                    if (early_exit_reached) { return; }
+                }
+
+                // Non-consuming step: an EPSILON transition may change state without reading any input. This is what
+                // lets it be taken when a tape is exhausted; kept separate from the consuming step above so that a
+                // literal EPSILON in an input word can still be read there. Positions are unchanged, so the source
+                // id is reused directly -- no vector work.
+                if (transition_symbol == EPSILON) {
+                    discover(current_positions_id, target, current_positions);
+                    if (early_exit_reached) { return; }
+                }
+            }
+        };
+
+        // Pick only the outgoing transitions that can possibly fire, instead of scanning them all.
+        const bool current_used{ use_tape[current_level] != 0 };
+        const bool current_has_symbol{
+            current_used && current_positions[current_level] < end_positions[current_level] };
+        const Symbol current_symbol{
+            current_has_symbol ? tape_symbols[current_level][current_positions[current_level]] : EPSILON };
+        if (!current_used || current_symbol == DONT_CARE) {
+            for (const SymbolPost& symbol_post : state_post) {
+                expand(symbol_post);
+                if (early_exit_reached) { break; }
+            }
+        } else {
+            if (const auto it = state_post.find(EPSILON); it != state_post.end()) { expand(*it); }
+            if (!early_exit_reached && current_has_symbol && current_symbol != EPSILON) {
+                if (const auto it = state_post.find(current_symbol); it != state_post.end()) { expand(*it); }
+                if (!early_exit_reached) {
+                    if (const auto it = state_post.find(DONT_CARE); it != state_post.end()) { expand(*it); }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+StateSet Nft::post(const StateSet& states, const std::vector<Word>& tape_symbols, const std::vector<Level>& tape_levels, StateSet* visited_zero_level_states, const bool epsilon_closure_after, JumpMode jump_mode) const {
+    assert(tape_symbols.size() == tape_levels.size());
+    std::vector<Word> word_per_level(levels.num_of_levels);
+    BoolVector use_level(levels.num_of_levels, false);
+    for (size_t i = 0; i < tape_symbols.size(); ++i) {
+        use_level[tape_levels[i]] = true;
+        word_per_level[tape_levels[i]] = tape_symbols[i];
+    }
+    return post(states, word_per_level, use_level, visited_zero_level_states, epsilon_closure_after, jump_mode);
 }
 
 Nft& Nft::operator=(Nft&& other) noexcept {
