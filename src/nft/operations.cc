@@ -3,6 +3,7 @@
  */
 
 #include <algorithm>
+#include <deque>
 #include <format>
 #include <iterator>
 #include <ranges>
@@ -118,6 +119,195 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 
     return result;
 }
+
+/// Get targets of the epsilon transitions of @p state.
+[[maybe_unused]] const StateSet* epsilon_targets(const Nft& aut, const State state) {
+    static_assert(nft::EPSILON == Limits::max_symbol, "epsilon is expected to sort last in a state post");
+    const StatePost& state_post{ aut.delta[state] };
+    if (state_post.empty() || state_post.back().symbol != nft::EPSILON) {
+        return nullptr;
+    }
+    return &state_post.back().targets;
+}
+
+/// Dedicated worklist algorithm equivalent to Nft::is_in_lang_by_levels() under JumpMode::RepeatSymbol (a jump
+/// transition reads the same symbol on every level it spans). This is the production path for that jump mode:
+/// Nft::is_in_lang_by_levels() delegates here for JumpMode::RepeatSymbol and uses the general post()-based algorithm
+/// for the other jump modes. It has no reason to be called any other way, so it lives here as an internal helper
+/// rather than a public API function: the dispatcher (Nft::is_in_lang_by_levels()) is what validates level_words
+/// against aut.levels.num_of_levels, and the general post()-based path's edge-case handling (e.g. an empty delta)
+/// likewise lives at that shared level rather than being duplicated here.
+/// @warning Correct only under JumpMode::RepeatSymbol or JumpMode::NoJump, and only on an automaton without epsilon
+/// cycles. This search keeps no visited set. That is what makes it fast.
+bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
+    std::vector<Word::const_iterator> track_words_begins(aut.levels.num_of_levels);
+    for (size_t track{ 0 }; track < aut.levels.num_of_levels; ++track) {
+        track_words_begins[track] = level_words[track].begin();
+    }
+
+    const std::vector track_words_ends{
+        [&]() {
+            std::vector<Word::const_iterator> val(aut.levels.num_of_levels);
+            for (size_t track{ 0 }; track < aut.levels.num_of_levels; ++track) { val[track] = level_words[track].end(); }
+            return val;
+        }()
+    };
+
+    auto are_all_track_words_read = [&](const std::vector<Word::const_iterator>& word_begins) {
+        for (Level i{ 0 }; i < aut.levels.num_of_levels; ++i) {
+            if (word_begins[i] != track_words_ends[i]) { return false; }
+        }
+        return true;
+    };
+
+    auto words_match = [&](const std::vector<Word::const_iterator>& word_its) {
+        return match_prefix || are_all_track_words_read(word_its);
+    };
+
+    if (aut.final.intersects_with(aut.initial) && words_match(track_words_begins)) { return true; }
+
+    using StateWordBeginsPair = std::pair<State, std::vector<Word::const_iterator>>;
+    std::deque<StateWordBeginsPair> worklist{};
+    for (const State state : aut.initial) { worklist.emplace_back(state, track_words_begins); }
+    while (!worklist.empty()) {
+        const auto [state, words_its]{ std::move(worklist.front()) };
+        worklist.pop_front();
+        const Level level = aut.levels[state];
+        const StatePost& state_post{ aut.delta[state] };
+        const auto state_post_end{ state_post.end() };
+        const auto word_symbol_it{ words_its[level] };
+
+        // Try epsilon transitions without reading input words.
+        // Allows moving between states even when no input symbols are left to read.
+        // This works for both jumps and single-level transitions.
+        // If all levels contain epsilon, we eventually achieve a simple change of state.
+        auto symbol_post_it{ state_post.find(nft::EPSILON) };
+        if (symbol_post_it != state_post_end) {
+            for (State target : symbol_post_it->targets) {
+                if (aut.levels[target] == 0 && aut.final.contains(target) && words_match(words_its)) { return true; }
+                worklist.emplace_back(target, words_its);
+            }
+        }
+
+        // No input words left to read at this level, and no epsilon transitions available.
+        // Thus, cannot proceed further from this state.
+        if (word_symbol_it == track_words_ends[level]) { continue; }
+
+        auto handle_symbol_it{
+            [&] {
+                for (State target : symbol_post_it->targets) {
+                    bool jump_failed{ false };
+                    const Level level_target{ aut.levels[target] };
+                    auto next_words_its{ words_its };
+                    if (level == 0 && level_target == 0) {
+                        for (Level level_loop{ level }; level_loop < aut.levels.num_of_levels; ++level_loop) {
+                            if (next_words_its[level_loop] == track_words_ends[level_loop] ||
+                                not symbols_match(symbol_post_it->symbol, *next_words_its[level_loop])) {
+                                jump_failed = true;
+                                break;
+                            }
+                            ++next_words_its[level_loop];
+                        }
+                    } else {
+                        for (Level level_loop{ level }; level_loop != level_target;
+                             level_loop = aut.levels.next_level_after(level_loop)) {
+                            if (next_words_its[level_loop] == track_words_ends[level_loop] ||
+                                not symbols_match(symbol_post_it->symbol, *next_words_its[level_loop])) {
+                                jump_failed = true;
+                                break;
+                            }
+                            ++next_words_its[level_loop];
+                        }
+                    }
+                    if (jump_failed) { continue; }
+                    if (aut.levels[target] == 0 && aut.final.contains(target) && words_match(next_words_its)) { return true; }
+                    worklist.emplace_back(target, next_words_its);
+                }
+                return false;
+            }
+        };
+
+        // Try all normal symbol transitions when the current input symbol is DONT_CARE.
+        // They allow proceeding without exactly matching the current input symbol, otherwise behaving like normal
+        //  non-epsilon transitions.
+        if (*word_symbol_it == DONT_CARE) {
+            symbol_post_it = state_post.begin();
+            for (; symbol_post_it != state_post_end; ++symbol_post_it) {
+                if (symbol_post_it->symbol == nft::EPSILON) { continue; }
+                if (handle_symbol_it()) { return true; }
+            }
+        }
+
+        // Try DONT_CARE transitions.
+        // They allow proceeding without matching the current input symbol, otherwise behaving like normal non-epsilon
+        //  transitions.
+        // Read the current input symbol on all levels involved in the transition (multiple if it is a jump).
+        symbol_post_it = state_post.find(DONT_CARE);
+        if (*word_symbol_it != nft::EPSILON && symbol_post_it != state_post_end && handle_symbol_it()) { return true; }
+
+        // Try normal transitions with the current input symbol.
+        // They allow proceeding only after matching the current input symbol.
+        // Read the current input symbol on all levels involved in the transition (multiple if it is a jump).
+        // Note: EPSILON symbols behave like normal symbols here, but do not match with DONT_CARE.
+        symbol_post_it = state_post.find(*word_symbol_it);
+        if (symbol_post_it != state_post_end && handle_symbol_it()) { return true; }
+    }
+    return false;
+}
+} // Anonymous namespace.
+
+bool mata::nft::has_epsilon_cycle(const Nft& nft) {
+    const size_t num_of_states{ nft.num_of_states() };
+    std::vector<State> epsilon_sources{};
+    std::vector<size_t> num_of_epsilon_predecessors{};
+    for (State source{ 0 }; source < num_of_states; ++source) {
+        const StateSet* const targets{ epsilon_targets(nft, source) };
+        if (targets == nullptr) {
+             continue;
+        }
+        if (num_of_epsilon_predecessors.empty()) {
+            num_of_epsilon_predecessors.assign(num_of_states, 0);
+        }
+        epsilon_sources.push_back(source);
+        for (const State target : *targets) {
+            ++num_of_epsilon_predecessors[target];
+        }
+    }
+    if (epsilon_sources.empty()) {
+        // No epsilon transitions, hence no epsilon cycle.
+        return false;
+    }
+
+    // A cycle lies entirely within the states an epsilon transition starts from or leads to.
+    // Peeling starts from those of them that have nothing to peel away first.
+    size_t num_of_states_on_epsilon_transitions{ 0 };
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (num_of_epsilon_predecessors[state] != 0) {
+            ++num_of_states_on_epsilon_transitions;
+        }
+    }
+    std::vector<State> peelable{};
+    for (const State source : epsilon_sources) {
+        if (num_of_epsilon_predecessors[source] == 0) {
+            ++num_of_states_on_epsilon_transitions;
+            peelable.push_back(source);
+        }
+    }
+
+    size_t num_of_peeled_states{ 0 };
+    while (!peelable.empty()) {
+        const State state{ peelable.back() };
+        peelable.pop_back();
+        ++num_of_peeled_states;
+        if (const StateSet* const targets{ epsilon_targets(nft, state) }; targets != nullptr) {
+            for (const State target : *targets) {
+                if (--num_of_epsilon_predecessors[target] == 0) {
+                    peelable.push_back(target);
+                }
+            }
+        }
+    }
+    return num_of_peeled_states != num_of_states_on_epsilon_transitions;
 }
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
@@ -825,8 +1015,46 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     return aut_inv;
 }
 
-bool Nft::is_in_lang(const Run& run, const bool match_prefix) const {
-    return is_in_lang_by_levels(mk_level_word_from_word(run.word), match_prefix);
+bool Nft::is_in_lang(const Run& run, const bool match_prefix, const JumpMode jump_mode, const bool has_epsilon_cycles) const {
+    return is_in_lang_by_levels(mk_level_word_from_word(run.word), match_prefix, jump_mode, has_epsilon_cycles);
+}
+
+bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool match_prefix, const JumpMode jump_mode, const bool has_epsilon_cycles) const {
+    if (level_words.size() != levels.num_of_levels) {
+        throw std::invalid_argument("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
+    }
+
+    // JumpMode::RepeatSymbol (the common mode) is handled by the dedicated hand-rolled worklist: it is a constant
+    // factor faster than the general post()-based path on this mode. What buys that speed is keeping no visited set.
+    // The caller is trusted on the absence of epsilon cycles, it would be too expensive to check for them every time.
+    if ((jump_mode == JumpMode::RepeatSymbol || jump_mode == JumpMode::NoJump) && !has_epsilon_cycles) {
+        assert(!has_epsilon_cycle(*this));
+        return is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix);
+    }
+
+    // Every other jump mode goes through the general post()-based algorithm (post() interprets jump_mode itself,
+    // including the DONT_CARE-padded jumps of JumpMode::AppendDontCares). Membership is a thin consumer of the
+    // reachability primitive post(): the level words are in the language iff a final state is reachable after
+    // consuming all of them; for a prefix query it suffices to reach a final zero-level state after consuming any
+    // prefix.
+    //
+    // post() has no notion of final states, so on its own it would explore the whole reachable configuration space.
+    // We give it a stop condition that fires the moment a final zero-level state is reached (with all input
+    // consumed, unless this is a prefix query) and records the hit in `accepted`; post() then stops at the first
+    // accepting configuration. A non-accepting query still has to exhaust the space (and dedup full
+    // (head-positions, state) configurations to stay terminating on cycles).
+    std::vector<size_t> end_positions(level_words.size());
+    for (size_t i{ 0 }; i < level_words.size(); ++i) { end_positions[i] = level_words[i].size(); }
+    bool accepted{ false };
+    const auto stop_at_final = [&](const State state, const std::vector<size_t>& reading_head_positions) {
+        if (levels[state] == 0 && (match_prefix || reading_head_positions == end_positions) && final.contains(state)) {
+            accepted = true;
+            return true;
+        }
+        return false;
+    };
+    post(StateSet{ initial.begin(), initial.end() }, level_words, nullptr, true, jump_mode, stop_at_final);
+    return accepted;
 }
 
 std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {
@@ -1193,123 +1421,4 @@ std::set<Word> Nft::get_words(const size_t max_length, const JumpMode jump_mode)
     }
 
     return result;
-}
-
-bool Nft::is_in_lang_by_levels(const std::vector<Word>& level_words, const bool match_prefix) const {
-    if (level_words.size() != levels.num_of_levels) {
-        throw std::invalid_argument("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
-    }
-    std::vector<Word::const_iterator> track_words_begins(levels.num_of_levels);
-    for (size_t track{ 0 }; track < levels.num_of_levels; ++track) {
-        track_words_begins[track] = level_words[track].begin();
-    }
-
-    const std::vector track_words_ends{
-        [&]() {
-            std::vector<Word::const_iterator> val(levels.num_of_levels);
-            for (size_t track{ 0 }; track < levels.num_of_levels; ++track) { val[track] = level_words[track].end(); }
-            return val;
-        }()
-    };
-
-    auto are_all_track_words_read = [&](const std::vector<Word::const_iterator>& word_begins) {
-        for (Level i{ 0 }; i < levels.num_of_levels; ++i) {
-            if (word_begins[i] != track_words_ends[i]) { return false; }
-        }
-        return true;
-    };
-
-    auto words_match = [&](const std::vector<Word::const_iterator>& word_its) {
-        return match_prefix || are_all_track_words_read(word_its);
-    };
-
-    if (final.intersects_with(initial) && words_match(track_words_begins)) { return true; }
-
-    using StateWordBeginsPair = std::pair<State, std::vector<Word::const_iterator>>;
-    std::deque<StateWordBeginsPair> worklist{};
-    for (const State state : initial) { worklist.emplace_back(state, track_words_begins); }
-    while (!worklist.empty()) {
-        const auto [state, words_its]{ std::move(worklist.front()) };
-        worklist.pop_front();
-        const Level level = levels[state];
-        const StatePost& state_post{ delta[state] };
-        const auto state_post_end{ state_post.end() };
-        const auto word_symbol_it{ words_its[level] };
-
-        // Try epsilon transitions without reading input words.
-        // Allows moving between states even when no input symbols are left to read.
-        // This works for both jumps and single-level transitions.
-        // If all levels contain epsilon, we eventually achieve a simple change of state.
-        auto symbol_post_it{ state_post.find(EPSILON) };
-        if (symbol_post_it != state_post_end) {
-            for (State target : symbol_post_it->targets) {
-                if (levels[target] == 0 && final.contains(target) && words_match(words_its)) { return true; }
-                worklist.emplace_back(target, words_its);
-            }
-        }
-
-        // No input words left to read at this level, and no epsilon transitions available.
-        // Thus, cannot proceed further from this state.
-        if (word_symbol_it == track_words_ends[level]) { continue; }
-
-        auto handle_symbol_it{
-            [&] {
-                for (State target : symbol_post_it->targets) {
-                    bool jump_failed{ false };
-                    const Level level_target{ levels[target] };
-                    auto next_words_its{ words_its };
-                    if (level == 0 && level_target == 0) {
-                        for (Level level_loop{ level }; level_loop < levels.num_of_levels; ++level_loop) {
-                            if (next_words_its[level_loop] == track_words_ends[level_loop] ||
-                                not symbols_match(symbol_post_it->symbol, *next_words_its[level_loop])) {
-                                jump_failed = true;
-                                break;
-                            }
-                            ++next_words_its[level_loop];
-                        }
-                    } else {
-                        for (Level level_loop{ level }; level_loop != level_target;
-                             level_loop = levels.next_level_after(level_loop)) {
-                            if (next_words_its[level_loop] == track_words_ends[level_loop] ||
-                                not symbols_match(symbol_post_it->symbol, *next_words_its[level_loop])) {
-                                jump_failed = true;
-                                break;
-                            }
-                            ++next_words_its[level_loop];
-                        }
-                    }
-                    if (jump_failed) { continue; }
-                    if (levels[target] == 0 && final.contains(target) && words_match(next_words_its)) { return true; }
-                    worklist.emplace_back(target, next_words_its);
-                }
-                return false;
-            }
-        };
-
-        // Try all normal symbol transitions when the current input symbol is DONT_CARE.
-        // They allow proceeding without exactly matching the current input symbol, otherwise behaving like normal
-        //  non-epsilon transitions.
-        if (*word_symbol_it == DONT_CARE) {
-            symbol_post_it = state_post.begin();
-            for (; symbol_post_it != state_post_end; ++symbol_post_it) {
-                if (symbol_post_it->symbol == EPSILON) { continue; }
-                if (handle_symbol_it()) { return true; }
-            }
-        }
-
-        // Try DONT_CARE transitions.
-        // They allow proceeding without matching the current input symbol, otherwise behaving like normal non-epsilon
-        //  transitions.
-        // Read the current input symbol on all levels involved in the transition (multiple if it is a jump).
-        symbol_post_it = state_post.find(DONT_CARE);
-        if (*word_symbol_it != EPSILON && symbol_post_it != state_post_end && handle_symbol_it()) { return true; }
-
-        // Try normal transitions with the current input symbol.
-        // They allow proceeding only after matching the current input symbol.
-        // Read the current input symbol on all levels involved in the transition (multiple if it is a jump).
-        // Note: EPSILON symbols behave like normal symbols here, but do not match with DONT_CARE.
-        symbol_post_it = state_post.find(*word_symbol_it);
-        if (symbol_post_it != state_post_end && handle_symbol_it()) { return true; }
-    }
-    return false;
 }
