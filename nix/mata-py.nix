@@ -58,6 +58,7 @@ python3Packages.buildPythonPackage (finalAttrs: {
     seaborn
     scipy
     networkx
+    numpy
   ]);
 
   postPatch = ''
