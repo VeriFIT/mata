@@ -181,9 +181,9 @@ Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
     return nfa;
 }
 
-Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, Alphabet *alphabet) {
+Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, std::shared_ptr<Alphabet> alphabet) {
     if (!alphabet) {
-        alphabet = new OnTheFlyAlphabet{ word };
+        alphabet = std::make_shared<OnTheFlyAlphabet>(word);
     }
     const size_t word_size{ word.size() };
     Nfa nfa{ word_size + 1, { 0 }, { word_size }, alphabet };
@@ -198,7 +198,7 @@ Nfa builder::create_empty_string_nfa() {
     return Nfa{ 1, { 0 }, { 0 } };
 }
 
-Nfa builder::create_sigma_star_nfa(Alphabet* alphabet) {
+Nfa builder::create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet) {
     Nfa nfa{ 1, { 0 }, { 0 }, alphabet };
     for (const Symbol& symbol : alphabet->get_alphabet_symbols()) {
         nfa.delta.add(0, symbol, 0);
@@ -219,7 +219,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(const size_t num_of_states, const s
         throw std::runtime_error("Final state density must be in range (0, 1]");
     }
 
-    Nfa nfa{ num_of_states, { 0 }, { 0 }, new OnTheFlyAlphabet{} };
+    Nfa nfa{ num_of_states, { 0 }, { 0 }, std::make_shared<OnTheFlyAlphabet>() };
 
     // Initialize the random number generator
     const unsigned int seed_value{ seed.value_or(std::random_device{}()) };  // Seed for the random number engine

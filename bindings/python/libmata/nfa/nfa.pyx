@@ -196,7 +196,7 @@ cdef class Nfa:
         :param int state_number: number of states in automaton
         :param alph.Alphabet alphabet: alphabet corresponding to the automaton
         """
-        cdef CAlphabet* c_alphabet = NULL
+        cdef shared_ptr[CAlphabet] c_alphabet
         cdef CSparseSet[State] empty_default_sparse_set
         if alphabet:
             c_alphabet = alphabet.as_base()
@@ -577,7 +577,7 @@ cdef class Nfa:
         :return: true if the automaton is complete.
         """
         if alphabet:
-            return self.thisptr.get().is_complete(alphabet.as_base())
+            return self.thisptr.get().is_complete(alphabet.as_base().get())
         else:
             return self.thisptr.get().is_complete()
 
@@ -608,8 +608,8 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in self.thisptr.get().final])
         result += "transitions:\n"
         for trans in self.iterate():
-            symbol = trans.symbol if self.thisptr.get().alphabet == NULL \
-                else self.thisptr.get().alphabet.reverse_translate_symbol(trans.symbol)
+            symbol = trans.symbol if self.thisptr.get().alphabet.get() == NULL \
+                else self.thisptr.get().alphabet.get().reverse_translate_symbol(trans.symbol)
             result += f"{trans.source}-[{symbol}]\u2192{trans.target}\n"
         return result
 
@@ -823,7 +823,7 @@ cdef class Nfa:
         """
         if not self.thisptr.get().is_state(sink_state):
             self.thisptr.get().add_state(self.thisptr.get().num_of_states())
-        self.thisptr.get().make_complete(alphabet.as_base(), make_optional[State](sink_state))
+        self.thisptr.get().make_complete(alphabet.as_base().get(), make_optional[State](sink_state))
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
@@ -1121,7 +1121,7 @@ def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params
     run = Run()
     cdef CAlphabet* c_alphabet = NULL
     if alphabet:
-        c_alphabet = alphabet.as_base()
+        c_alphabet = alphabet.as_base().get()
     params = params or {'algorithm': 'antichains'}
     result = mata_nfa.c_is_included(
         dereference(lhs.thisptr.get()),
@@ -1146,7 +1146,7 @@ def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     """
     cdef CAlphabet* c_alphabet = NULL
     if alphabet:
-        c_alphabet = alphabet.as_base()
+        c_alphabet = alphabet.as_base().get()
     params = params or {'algorithm': 'antichains'}
     result = mata_nfa.c_is_included(
         dereference(lhs.thisptr.get()),
@@ -1173,7 +1173,7 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
     params = params or {'algorithm': 'antichains'}
     cdef CAlphabet * c_alphabet = NULL
     if alphabet:
-        c_alphabet = alphabet.as_base()
+        c_alphabet = alphabet.as_base().get()
         return mata_nfa.c_are_equivalent(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
@@ -1215,7 +1215,7 @@ def encode_word(alph.Alphabet alphabet, word):
     :param word: list of strings representing an encoded word.
     :return: Encoded word.
     """
-    cdef CAlphabet* c_alphabet = alphabet.as_base()
+    cdef CAlphabet* c_alphabet = alphabet.as_base().get()
     result = mata_nfa.c_encode_word(
         c_alphabet,
         [s.encode('utf-8') for s in word]

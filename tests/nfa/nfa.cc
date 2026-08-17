@@ -541,7 +541,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
     Nfa aut{};
     std::optional<mata::Word> result;
     std::unordered_map<StateSet, State> subset_map;
-    EnumAlphabet alphabet{ 'a', 'b', 'c' };
+    auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c' });
 
     SECTION("empty automaton") {
         result = aut.get_word_from_complement();
@@ -567,7 +567,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
     SECTION("simple automaton 1") {
         aut.initial = { 0 };
         aut.final = { 0 };
-        result = aut.get_word_from_complement(&alphabet);
+        result = aut.get_word_from_complement(alphabet.get());
         REQUIRE(result.has_value());
         CHECK(*result == Word{ 'a' });
     }
@@ -582,7 +582,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
     }
 
     SECTION("simple automaton 2 with epsilon") {
-        aut.alphabet = &alphabet;
+        aut.alphabet = alphabet;
         aut.initial = { 0 };
         aut.final = { 0, 1 };
         aut.delta.add(0, 'a', 1);
@@ -592,7 +592,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
     }
 
     SECTION("nfa accepting \\eps+a+b+c") {
-        aut.alphabet = &alphabet;
+        aut.alphabet = alphabet;
         aut.initial = { 0 };
         aut.final = { 0, 1 };
         aut.delta.add(0, 'a', 1);
@@ -640,7 +640,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
         aut.initial = { 1 };
         aut.final = { 1 };
         aut.delta.add(1, 'b', 1);
-        result = aut.get_word_from_complement(&alphabet);
+        result = aut.get_word_from_complement(alphabet.get());
         REQUIRE(result.has_value());
         CHECK(*result == Word{ 'a' });
     }
@@ -650,7 +650,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
         aut.final = { 1 };
         aut.delta.add(1, 'a', 1);
         aut.delta.add(1, 0, 2);
-        result = aut.get_word_from_complement(&alphabet);
+        result = aut.get_word_from_complement(alphabet.get());
         REQUIRE(result.has_value());
         CHECK(*result == Word{ 0 });
     }
@@ -659,7 +659,7 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
         aut.initial = { 1 };
         aut.final = { 1 };
         aut.delta.add(1, 0, 2);
-        result = aut.get_word_from_complement(&alphabet);
+        result = aut.get_word_from_complement(alphabet.get());
         REQUIRE(result.has_value());
         CHECK(*result == Word{ 0 });
     }
@@ -1813,8 +1813,8 @@ TEST_CASE("mata::nfa::make_complete()")
         aut.delta.add(2, 'c', 3);
         aut.delta.add(3, 'b', 5);
         aut.delta.add(4, 'c', 8);
-        EnumAlphabet alphabet{ 'a', 'b', 'c' };
-        aut.alphabet = &alphabet;
+        auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c' });
+        aut.alphabet = alphabet;
 
         aut.make_complete();
         CHECK(aut.delta.contains(1, 'a', 2));
@@ -1885,26 +1885,26 @@ TEST_CASE("mata::nfa::complement()")
 
     SECTION("empty automaton, empty alphabet")
     {
-        OnTheFlyAlphabet alph{};
+        auto alph = std::make_shared<OnTheFlyAlphabet>();
 
-        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
-        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        cmpl = complement(aut, *alph, { {"algorithm", "classical"} });
+        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(alph) };
         CHECK(are_equivalent(cmpl, empty_string_nfa));
     }
 
     SECTION("empty automaton")
     {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
+        auto alph = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "a", "b" });
 
-        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
+        cmpl = complement(aut, *alph, { {"algorithm", "classical"} });
 
         REQUIRE(cmpl.is_in_lang(Run{}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["b"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["a"], (*alph)["a"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["a"], (*alph)["b"], (*alph)["b"], (*alph)["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(alph) };
         CHECK(are_equivalent(cmpl, sigma_star_nfa));
     }
 
@@ -1964,26 +1964,26 @@ TEST_CASE("mata::nfa::complement()")
 
     SECTION("empty automaton, empty alphabet, minimization")
     {
-        OnTheFlyAlphabet alph{};
+        auto alph = std::make_shared<OnTheFlyAlphabet>();
 
-        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
-        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        cmpl = complement(aut, *alph, { {"algorithm", "classical"} });
+        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(alph) };
         CHECK(are_equivalent(empty_string_nfa, cmpl));
     }
 
     SECTION("empty automaton, minimization")
     {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
+        auto alph = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "a", "b" });
 
-        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
+        cmpl = complement(aut, *alph, { {"algorithm", "classical"} });
 
         REQUIRE(cmpl.is_in_lang(Run{}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["b"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["a"], (*alph)["a"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ (*alph)["a"], (*alph)["b"], (*alph)["b"], (*alph)["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(alph) };
         CHECK(are_equivalent(sigma_star_nfa, cmpl));
     }
 
@@ -4268,8 +4268,8 @@ TEST_CASE("mata::nfa:: create simple automata") {
     CHECK(nfa.is_in_lang(Word{}));
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
-    OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
-    nfa = builder::create_sigma_star_nfa(&alphabet);
+    auto alphabet = std::make_shared<OnTheFlyAlphabet>(OnTheFlyAlphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } });
+    nfa = builder::create_sigma_star_nfa(alphabet);
     CHECK(nfa.is_in_lang(Word{}));
     CHECK(nfa.is_in_lang(Word{ 0 }));
     CHECK(nfa.is_in_lang(Word{ 1 }));

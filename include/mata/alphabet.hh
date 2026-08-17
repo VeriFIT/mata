@@ -5,6 +5,7 @@
 #define MATA_ALPHABET_HH
 
 #include <limits>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -457,7 +458,8 @@ public:
  *                  argument is ignored.
  *  - @c MultiLevel — distinct per-level alphabets. The level argument is required and indexes @c alphabets.
  *
- * Pointers to the underlying @c Alphabet objects are non-owning; the caller is responsible for their lifetime.
+ * The underlying @c Alphabet objects are held via @c std::shared_ptr and can be shared between multiple
+ *  @c AlphabetLevels instances (and other automata).
  */
 class AlphabetLevels {
 public:
@@ -474,12 +476,12 @@ public:
      *  direct read/write access in line with the rest of the codebase (`Nft::levels`, `Nfa::delta`/`initial`/etc.).
      *  Read-only access through @c for_level (or @c operator[]) when range/null validation is desired.
      */
-    std::vector<Alphabet*> alphabets{};
+    std::vector<std::shared_ptr<Alphabet>> alphabets{};
 
     /// Operating mode. Defaults to @c MultiLevel.
     Mode mode{ Mode::MultiLevel };
 
-    explicit AlphabetLevels(std::vector<Alphabet*> alphabets = {}, Mode mode = Mode::MultiLevel)
+    explicit AlphabetLevels(std::vector<std::shared_ptr<Alphabet>> alphabets = {}, Mode mode = Mode::MultiLevel)
         : alphabets{ std::move(alphabets) }, mode{ mode } {}
 
     /**
@@ -487,7 +489,7 @@ public:
      *
      * Stores a single-element vector and sets @c mode to @c Global.
      */
-    explicit AlphabetLevels(Alphabet* alphabet) : alphabets{ alphabet }, mode{ Mode::Global } {}
+    explicit AlphabetLevels(std::shared_ptr<Alphabet> alphabet) : alphabets{ std::move(alphabet) }, mode{ Mode::Global } {}
 
     /**
      * @brief Translate a symbol name using the alphabet for the given level.

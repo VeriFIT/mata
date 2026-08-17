@@ -40,7 +40,7 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
     cdef parser.CMintermization mintermization
 
     if alphabet:
-        c_alphabet = alphabet.as_base()
+        c_alphabet = alphabet.as_base().get()
 
     # either load single automata
     if isinstance(src, str):

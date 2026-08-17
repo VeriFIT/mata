@@ -2,6 +2,7 @@ from libc.stdint cimport uintptr_t
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map as umap
+from libcpp.memory cimport shared_ptr
 from libmata.utils cimport COrdVector
 
 
@@ -33,5 +34,5 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
 
 
 cdef class Alphabet:
-    cdef CAlphabet* as_base(self)
+    cdef shared_ptr[CAlphabet] as_base(self)
     cdef get_symbols(self)

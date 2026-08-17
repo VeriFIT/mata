@@ -50,32 +50,33 @@ TEST_CASE("mata::nft::Nft()") {
 }
 
 TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
-    IntAlphabet shared_alphabet{};
-    IntAlphabet input_alphabet{};
-    IntAlphabet output_alphabet{};
-    AlphabetLevels split_alphabets{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
+    auto shared_alphabet = std::make_shared<IntAlphabet>();
+    auto input_alphabet = std::make_shared<IntAlphabet>();
+    auto output_alphabet = std::make_shared<IntAlphabet>();
+    auto split_alphabets = std::make_shared<AlphabetLevels>(
+        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ input_alphabet, output_alphabet } });
 
     SECTION("a shared alphabet is wrapped via AlphabetLevels(Alphabet*) by the caller") {
-        AlphabetLevels shared_alphabets{ &shared_alphabet };
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &shared_alphabets };
+        auto shared_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, shared_alphabets };
 
         CHECK(nft.alphabet == nullptr);
-        REQUIRE(nft.alphabets == &shared_alphabets);
-        CHECK(&nft.alphabets->for_level(0) == &shared_alphabet);
-        CHECK(&nft.alphabets->for_level(7) == &shared_alphabet);
+        REQUIRE(nft.alphabets == shared_alphabets);
+        CHECK(&nft.alphabets->for_level(0) == shared_alphabet.get());
+        CHECK(&nft.alphabets->for_level(7) == shared_alphabet.get());
     }
 
     SECTION("per-level alphabets are stored in the alphabets member") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_alphabets };
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, split_alphabets };
 
-        REQUIRE(nft.alphabets == &split_alphabets);
+        REQUIRE(nft.alphabets == split_alphabets);
         CHECK(nft.alphabet == nullptr);
-        CHECK(&nft.alphabets->for_level(0) == &input_alphabet);
-        CHECK(&nft.alphabets->for_level(1) == &output_alphabet);
+        CHECK(&nft.alphabets->for_level(0) == input_alphabet.get());
+        CHECK(&nft.alphabets->for_level(1) == output_alphabet.get());
     }
 
     SECTION("level-aware translation routes to the right underlying alphabet") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &split_alphabets };
+        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, split_alphabets };
 
         CHECK_NOTHROW(nft.alphabets->translate_symb("1", 0));
         CHECK_NOTHROW(nft.alphabets->translate_symb("1", 1));
@@ -84,9 +85,9 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
     }
 
     SECTION("level-aware complement uses the selected level") {
-        EnumAlphabet input_symbols{ 1, 2, 3 };
-        EnumAlphabet output_symbols{ 2, 4 };
-        AlphabetLevels complement_alphabets{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
+        auto input_symbols = std::make_shared<EnumAlphabet>(EnumAlphabet{ 1, 2, 3 });
+        auto output_symbols = std::make_shared<EnumAlphabet>(EnumAlphabet{ 2, 4 });
+        AlphabetLevels complement_alphabets{ std::vector<std::shared_ptr<Alphabet>>{ input_symbols, output_symbols } };
 
         CHECK(complement_alphabets.get_alphabet_symbols(0) == OrdVector<Symbol>{ 1, 2, 3 });
         CHECK(complement_alphabets.get_alphabet_symbols(1) == OrdVector<Symbol>{ 2, 4 });
@@ -95,50 +96,51 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
     }
 
     SECTION("level-aware empty and clear use the selected level") {
-        OnTheFlyAlphabet input_symbols{};
-        OnTheFlyAlphabet output_symbols{};
-        input_symbols.add_new_symbol("a");
-        output_symbols.add_new_symbol("b");
-        AlphabetLevels mutable_alphabets{ std::vector<Alphabet*>{ &input_symbols, &output_symbols } };
+        auto input_symbols = std::make_shared<OnTheFlyAlphabet>();
+        auto output_symbols = std::make_shared<OnTheFlyAlphabet>();
+        input_symbols->add_new_symbol("a");
+        output_symbols->add_new_symbol("b");
+        AlphabetLevels mutable_alphabets{ std::vector<std::shared_ptr<Alphabet>>{ input_symbols, output_symbols } };
 
         CHECK_FALSE(mutable_alphabets.empty(0));
         CHECK_FALSE(mutable_alphabets.empty(1));
 
         mutable_alphabets.clear(0);
-        CHECK(input_symbols.empty());
-        CHECK_FALSE(output_symbols.empty());
+        CHECK(input_symbols->empty());
+        CHECK_FALSE(output_symbols->empty());
         CHECK(mutable_alphabets.empty(0));
         CHECK_FALSE(mutable_alphabets.empty(1));
     }
 }
 
 TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly") {
-    IntAlphabet base{};
-    AlphabetLevels uniform{ &base };
+    auto base = std::make_shared<IntAlphabet>();
+    AlphabetLevels uniform{ base };
 
-    CHECK(&uniform.for_level(0) == &base);
-    CHECK(&uniform.for_level(7) == &base);
+    CHECK(&uniform.for_level(0) == base.get());
+    CHECK(&uniform.for_level(7) == base.get());
     CHECK(uniform.translate_symb("3", 0) == 3);
     CHECK(uniform.translate_symb("3", 5) == 3);
     CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
 }
 
 TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
-    IntAlphabet input_alphabet{};
-    IntAlphabet output_alphabet{};
+    auto input_alphabet = std::make_shared<IntAlphabet>();
+    auto output_alphabet = std::make_shared<IntAlphabet>();
 
-    AlphabetLevels alphabets{ std::vector<Alphabet*>{ &input_alphabet, &output_alphabet } };
+    auto alphabets = std::make_shared<AlphabetLevels>(
+        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ input_alphabet, output_alphabet } });
 
-    Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, &alphabets };
+    Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, alphabets };
     nft.delta.add(0, 1, 1);
     nft.delta.add(1, 2, 2);
 
     Nft determinized = determinize(nft);
 
-    REQUIRE(determinized.alphabets == &alphabets);
+    REQUIRE(determinized.alphabets == alphabets);
     REQUIRE(determinized.alphabet == nullptr);
-    CHECK(&determinized.alphabets->for_level(0) == &input_alphabet);
-    CHECK(&determinized.alphabets->for_level(1) == &output_alphabet);
+    CHECK(&determinized.alphabets->for_level(0) == input_alphabet.get());
+    CHECK(&determinized.alphabets->for_level(1) == output_alphabet.get());
 }
 
 TEST_CASE("mata::nft::size()") {
@@ -1007,10 +1009,10 @@ TEST_CASE("mata::nft::construct() from IntermediateAut correct calls") { // {{{
 TEST_CASE("mata::nft::make_complete()") {
     Nft nft{ Nft::with_levels(3) };
     Nft result{ Nft::with_levels(3) };
-    EnumAlphabet alphabet{ 'a', 'b', 'c' };
-    nft.alphabet = &alphabet;
-    result.alphabet = &alphabet;
-    auto alphabet_symbols = [&] { return alphabet.get_alphabet_symbols(); };
+    auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c' });
+    nft.alphabet = alphabet;
+    result.alphabet = alphabet;
+    auto alphabet_symbols = [&] { return alphabet->get_alphabet_symbols(); };
     OrdVector<Symbol> symbols{ alphabet_symbols() };
 
     std::optional<std::vector<State>> sinks{ std::nullopt };
@@ -1032,7 +1034,7 @@ TEST_CASE("mata::nft::make_complete()") {
 
 
         // Check sinks if any were provided.
-        // CHECK(not result.make_complete(&alphabet, std::vector<State>{ sinks }));
+        // CHECK(not result.make_complete(alphabet.get(), std::vector<State>{ sinks }));
         for (auto sinks_val{ sinks.value_or(std::vector<State>{}) }; const State sink : sinks_val) {
             for (const auto symbol : alphabet_symbols()) {
                 CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
@@ -1041,9 +1043,9 @@ TEST_CASE("mata::nft::make_complete()") {
     };
 
     SECTION("empty automaton, empty alphabet") {
-        alphabet.clear();
+        alphabet->clear();
         result = nft;
-        result.make_complete(&alphabet, sinks);
+        result.make_complete(alphabet.get(), sinks);
         CHECK_SHARED();
     }
 
@@ -1055,7 +1057,7 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(1, 'b', 2);
 
         result = nft;
-        result.make_complete(&alphabet);
+        result.make_complete(alphabet.get());
         CHECK_SHARED();
     }
 
@@ -1070,7 +1072,7 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(3, 'b', 4);
 
         result = nft;
-        result.make_complete(&alphabet);
+        result.make_complete(alphabet.get());
         CHECK_SHARED();
     }
 
@@ -1085,7 +1087,7 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(4, 'a', 5);
 
         result = nft;
-        result.make_complete(&alphabet);
+        result.make_complete(alphabet.get());
         CHECK_SHARED();
     }
 
@@ -1103,7 +1105,7 @@ TEST_CASE("mata::nft::make_complete()") {
         nft.delta.add(4, 'a', 5);
 
         result = nft;
-        result.make_complete(&alphabet);
+        result.make_complete(alphabet.get());
         CHECK_SHARED();
     }
 
@@ -1124,7 +1126,7 @@ TEST_CASE("mata::nft::make_complete()") {
         sinks = { 6, 7, 8 };
 
         result = nft;
-        result.make_complete(&alphabet, sinks);
+        result.make_complete(alphabet.get(), sinks);
         CHECK_SHARED();
     }
 }
@@ -2514,8 +2516,8 @@ TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{
 
 TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
     Nft nft{ Nft::with_levels(3) };
-    EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e' };
-    nft.alphabet = &alphabet;
+    auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c', 'd', 'e' });
+    nft.alphabet = alphabet;
 
     SECTION("empty automaton") {
         CHECK(nft.is_lang_empty());
@@ -3516,8 +3518,8 @@ TEST_CASE("mata::nft:: create simple automata") {
     CHECK(nft.is_in_lang(Word{}));
     CHECK(get_word_lengths(nft) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
-    OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
-    nft = builder::create_sigma_star_nft(&alphabet, 1);
+    auto alphabet = std::make_shared<OnTheFlyAlphabet>(OnTheFlyAlphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } });
+    nft = builder::create_sigma_star_nft(alphabet, 1);
     CHECK(nft.is_in_lang(Word{}));
     CHECK(nft.is_in_lang({ 0 }));
     CHECK(nft.is_in_lang({ 1 }));

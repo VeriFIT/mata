@@ -134,7 +134,7 @@ public:
      * NFT operations always go through this member; the inherited @c Nfa::alphabet field is kept as @c nullptr and ignored,
      * anticipating the planned class split where NFT no longer derives from NFA.
      */
-    AlphabetLevels* alphabets{ nullptr };
+    std::shared_ptr<AlphabetLevels> alphabets{ nullptr };
 
     /// Key value store for additional attributes for the NFT. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -147,10 +147,10 @@ public:
     explicit Nft(
             Delta delta = {}, utils::SparseSet<State> initial_states = {},
             utils::SparseSet<State> final_states = {}, Levels levels = {},
-            AlphabetLevels* alphabets = nullptr)
+            std::shared_ptr<AlphabetLevels> alphabets = nullptr)
         : Nfa{ std::move(delta), std::move(initial_states), std::move(final_states), nullptr },
           levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states(), DEFAULT_LEVEL } : std::move(levels) },
-          alphabets{ alphabets } {}
+          alphabets{ std::move(alphabets) } {}
 
     /**
      * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
@@ -163,33 +163,33 @@ public:
      */
     explicit Nft(const size_t num_of_states, utils::SparseSet<State> initial_states = {},
                  utils::SparseSet<State> final_states = {}, Levels levels = {},
-                 AlphabetLevels* alphabets = nullptr)
+                 std::shared_ptr<AlphabetLevels> alphabets = nullptr)
         : Nfa{ num_of_states, std::move(initial_states), std::move(final_states), nullptr },
           levels{ levels.empty() ? Levels{ levels.num_of_levels, num_of_states, DEFAULT_LEVEL } : std::move(levels) },
-          alphabets{ alphabets } {}
+          alphabets{ std::move(alphabets) } {}
 
     static Nft with_levels(
             Levels levels, const size_t num_of_states = 0, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, AlphabetLevels* alphabets = nullptr) {
-        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), alphabets };
+            utils::SparseSet<State> final_states = {}, std::shared_ptr<AlphabetLevels> alphabets = nullptr) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), std::move(alphabets) };
     }
 
     static Nft with_levels(
             Levels levels, Delta delta, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, AlphabetLevels* alphabets = nullptr) {
-        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), alphabets };
+            utils::SparseSet<State> final_states = {}, std::shared_ptr<AlphabetLevels> alphabets = nullptr) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), std::move(alphabets) };
     }
 
     static Nft with_levels(
             const size_t num_of_levels, const size_t num_of_states = 0, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, AlphabetLevels* alphabets = nullptr) {
-        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabets };
+            utils::SparseSet<State> final_states = {}, std::shared_ptr<AlphabetLevels> alphabets = nullptr) {
+        return Nft{ num_of_states, std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, std::move(alphabets) };
     }
 
     static Nft with_levels(
             const size_t num_of_levels, Delta delta, utils::SparseSet<State> initial_states = {},
-            utils::SparseSet<State> final_states = {}, AlphabetLevels* alphabets = nullptr) {
-        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, alphabets };
+            utils::SparseSet<State> final_states = {}, std::shared_ptr<AlphabetLevels> alphabets = nullptr) {
+        return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), Levels{ num_of_levels }, std::move(alphabets) };
     }
 
     Nft(const Nft& other) = default;

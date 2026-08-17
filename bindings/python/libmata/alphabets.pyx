@@ -1,5 +1,6 @@
 cimport libmata.alphabets as alph
 
+from libcpp.memory cimport shared_ptr, make_shared, static_pointer_cast
 from libmata.alphabets cimport CAlphabet, CIntAlphabet, COnTheFlyAlphabet
 from libmata.nfa.nfa cimport State
 
@@ -10,7 +11,7 @@ cdef class Alphabet:
 
         pass
 
-    cdef CAlphabet* as_base(self):
+    cdef shared_ptr[CAlphabet] as_base(self):
         pass
 
     def translate_symbol(self, str symbol):
@@ -29,10 +30,10 @@ cdef class Alphabet:
 cdef class OnTheFlyAlphabet(Alphabet):
     """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
 
-    cdef COnTheFlyAlphabet *thisptr
+    cdef shared_ptr[COnTheFlyAlphabet] thisptr
 
     def __cinit__(self, State initial_symbol = 0):
-        self.thisptr = new COnTheFlyAlphabet(initial_symbol)
+        self.thisptr = make_shared[COnTheFlyAlphabet](initial_symbol)
 
     @classmethod
     def from_symbol_map(cls, symbol_map: dict[str, int]) -> OnTheFlyAlphabet:
@@ -59,7 +60,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
         cdef COnTheFlyAlphabet.StringToSymbolMap c_symbol_map
         for symbol, value in symbol_map.items():
             c_symbol_map[symbol.encode('utf-8')] = value
-        self.thisptr.add_symbols_from(<COnTheFlyAlphabet.StringToSymbolMap>c_symbol_map)
+        self.thisptr.get().add_symbols_from(<COnTheFlyAlphabet.StringToSymbolMap>c_symbol_map)
 
     def add_symbols_for_names(self, symbol_names: list[str]) -> None:
         """Add symbols for symbol names to the current alphabet.
@@ -69,17 +70,14 @@ cdef class OnTheFlyAlphabet(Alphabet):
         cdef vector[string] c_symbol_names
         for symbol_name in symbol_names:
             c_symbol_names.push_back(symbol_name.encode('utf-8'))
-        self.thisptr.add_symbols_from(c_symbol_names)
-
-    def __dealloc__(self):
-        del self.thisptr
+        self.thisptr.get().add_symbols_from(c_symbol_names)
 
     def get_symbol_map(self) -> dict[str, int]:
         """Get map mapping strings to symbols.
 
         :return: Map of strings to symbols.
         """
-        cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
+        cdef umap[string, Symbol] c_symbol_map = self.thisptr.get().get_symbol_map()
         symbol_map = {}
         for symbol, value in c_symbol_map:
             symbol_map[symbol.decode('utf-8')] = value
@@ -91,7 +89,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
         :param str symbol: translated symbol
         :return: order of the symbol as was seen during the construction
         """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+        return self.thisptr.get().translate_symb(symbol.encode('utf-8'))
 
     def reverse_translate_symbol(self, Symbol symbol) -> str:
         """Translate internal symbol value to the original symbol name.
@@ -100,34 +98,31 @@ cdef class OnTheFlyAlphabet(Alphabet):
         :param Symbol symbol: Internal symbol value to be translated.
         :return str: Original symbol string name.
         """
-        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
+        return self.thisptr.get().reverse_translate_symbol(symbol).decode('utf-8')
 
     cpdef get_alphabet_symbols(self):
         """Returns a set of supported symbols.
 
         :return: Set of supported symbols.
         """
-        cdef COrdVector[Symbol] symbols = self.thisptr.get_alphabet_symbols()
+        cdef COrdVector[Symbol] symbols = self.thisptr.get().get_alphabet_symbols()
         return {s for s in symbols}
 
-    cdef CAlphabet* as_base(self):
+    cdef shared_ptr[CAlphabet] as_base(self):
         """Retypes the alphabet to its base class
 
-        :return: alphabet as CAlphabet*
+        :return: alphabet as shared_ptr[CAlphabet]
         """
-        return <CAlphabet*> self.thisptr
+        return static_pointer_cast[CAlphabet, COnTheFlyAlphabet](self.thisptr)
 
 
 cdef class IntAlphabet(Alphabet):
     """IntAlphabet represents integer alphabet that directly maps integer string to their values."""
 
-    cdef CIntAlphabet *thisptr
+    cdef shared_ptr[CIntAlphabet] thisptr
 
     def __cinit__(self):
-        self.thisptr = new CIntAlphabet()
-
-    def __dealloc__(self):
-        del self.thisptr
+        self.thisptr = make_shared[CIntAlphabet]()
 
     def translate_symbol(self, str symbol):
         """Translates symbol to the position of the seen values
@@ -135,7 +130,7 @@ cdef class IntAlphabet(Alphabet):
         :param str symbol: translated symbol
         :return: order of the symbol as was seen during the construction
         """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+        return self.thisptr.get().translate_symb(symbol.encode('utf-8'))
 
     def reverse_translate_symbol(self, Symbol symbol) -> str:
         """Translate internal symbol value to the original symbol name.
@@ -143,11 +138,11 @@ cdef class IntAlphabet(Alphabet):
         :param Symbol symbol: Internal symbol value to be translated.
         :return str: Original symbol string name.
         """
-        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
+        return self.thisptr.get().reverse_translate_symbol(symbol).decode('utf-8')
 
-    cdef CAlphabet* as_base(self):
+    cdef shared_ptr[CAlphabet] as_base(self):
         """Retypes the alphabet to its base class
 
-        :return: alphabet as CAlphabet*
+        :return: alphabet as shared_ptr[CAlphabet]
         """
-        return <CAlphabet*> self.thisptr
+        return static_pointer_cast[CAlphabet, CIntAlphabet](self.thisptr)
