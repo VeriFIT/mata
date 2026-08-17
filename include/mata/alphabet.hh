@@ -170,12 +170,12 @@ class IntAlphabet : public Alphabet {
  *  of @c EnumAlphabet and the functions give the expected results.
  *
  *  Example:
- *  ```cpp
- *  Alphabet alph{ EnumAlphabet{ 0, 4, 6, 8, 9 } };
- *  CHECK(alph.translate_symb("6") == 6);
- *  CHECK_THROWS(alph.translate_symb("5")); // Throws an exception about an unknown symbol.
- *  CHECK(alph.get_complement({ utils::OrdVector<Symbol>{ 0, 6, 9 } }) == utils::OrdVector<Symbol>{ 4, 8 });
- *  ```
+ *  @code
+ *  Alphabet alphabet{ EnumAlphabet{ 0, 4, 6, 8, 9 } };
+ *  CHECK(alphabet.translate_symb("6") == 6);
+ *  CHECK_THROWS(alphabet.translate_symb("5")); // Throws an exception about an unknown symbol.
+ *  CHECK(alphabet.get_complement({ utils::OrdVector<Symbol>{ 0, 6, 9 } }) == utils::OrdVector<Symbol>{ 4, 8 });
+ *  @endcode
  */
 class EnumAlphabet : public Alphabet {
   public:
@@ -183,6 +183,7 @@ class EnumAlphabet : public Alphabet {
 	EnumAlphabet(const EnumAlphabet& alphabet) = default;
 	explicit EnumAlphabet(const EnumAlphabet* const alphabet) : EnumAlphabet(*alphabet) {}
 	EnumAlphabet(EnumAlphabet&& rhs) = default;
+	EnumAlphabet(utils::OrdVector<Symbol> symbols) : symbols_(std::move(symbols)) {}
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {

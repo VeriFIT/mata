@@ -577,6 +577,27 @@ class Nfa {
 	void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
 
 	/**
+	 * @brief Resolve which alphabet to use for the current operation.
+	 *
+	 * Priority order:
+	 *  -# @p alphabet, when non-null;
+	 *  -# @c this->alphabet, when non-null;
+	 *  -# an alphabet built on the fly from the symbols used on the NFA's transitions (see @c Delta::get_used_symbols).
+	 *
+	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabet when non-null.
+	 * @return The resolved alphabet.
+	 */
+	std::shared_ptr<const Alphabet> resolve_alphabet(const Alphabet* alphabet = nullptr) const;
+
+	/**
+	 * @brief Get the set of symbols to work with for the current operation.
+	 *
+	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabet when non-null.
+	 * @return Symbols of the alphabet resolved via @c resolve_alphabet(alphabet).
+	 */
+	utils::OrdVector<Symbol> get_symbols_to_work_with(const Alphabet* alphabet = nullptr) const;
+
+	/**
 	 * @brief Check whether the language of the automaton is universal.
 	 *
 	 * @param alphabet Alphabet to use for checking the universality.
@@ -1161,6 +1182,10 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
 
 /**
  * Get the set of symbols to work with during operations.
+ *
+ * Resolves the alphabet to use via @c Nfa::resolve_alphabet(shared_alphabet) and returns its symbols. Prefer calling
+ *  @c nfa.get_symbols_to_work_with(shared_alphabet) directly when a reference to @p nfa is already at hand.
+ *
  * @param nfa NFA to get symbols from.
  * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
  */

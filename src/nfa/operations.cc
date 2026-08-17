@@ -211,7 +211,7 @@ std::ostream& std::operator<<(std::ostream& os, const mata::nfa::Transition& tra
 }
 
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
-	return make_complete(get_symbols_to_work_with(*this, alphabet), sink_state);
+	return make_complete(get_symbols_to_work_with(alphabet), sink_state);
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
@@ -488,9 +488,7 @@ bool mata::nfa::Nfa::is_deterministic() const {
 	return true;
 }
 
-bool Nfa::is_complete(const Alphabet* const alphabet) const {
-	return is_complete(get_symbols_to_work_with(*this, alphabet));
-}
+bool Nfa::is_complete(const Alphabet* const alphabet) const { return is_complete(get_symbols_to_work_with(alphabet)); }
 
 bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 	// TODO: make a general function for traversal over reachable states that can be shared by other functions?
@@ -1251,6 +1249,16 @@ void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	}
 }
 
+std::shared_ptr<const mata::Alphabet> mata::nfa::Nfa::resolve_alphabet(const Alphabet* const alphabet) const {
+	if (alphabet != nullptr) { return std::shared_ptr<const Alphabet>(alphabet); }
+	if (this->alphabet != nullptr) { return this->alphabet; }
+	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
+}
+
+OrdVector<Symbol> mata::nfa::Nfa::get_symbols_to_work_with(const Alphabet* const alphabet) const {
+	return mata::nfa::get_symbols_to_work_with(*this, alphabet);
+}
+
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas) {
 	mata::OnTheFlyAlphabet alphabet{};
 	for (const auto& nfa : nfas) { nfa.get().fill_alphabet(alphabet); }
@@ -1314,13 +1322,7 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
 }
 
 OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet* const shared_alphabet) {
-	if (shared_alphabet != nullptr) {
-		return shared_alphabet->get_alphabet_symbols();
-	} else if (nfa.alphabet != nullptr) {
-		return nfa.alphabet->get_alphabet_symbols();
-	} else {
-		return nfa.delta.get_used_symbols();
-	}
+	return nfa.resolve_alphabet(shared_alphabet)->get_alphabet_symbols();
 }
 
 std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilon) const {
@@ -1489,7 +1491,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 
-	const utils::OrdVector<Symbol> symbols{get_symbols_to_work_with(*this, alphabet)};
+	const utils::OrdVector<Symbol> symbols{get_symbols_to_work_with(alphabet)};
 	const auto symbols_end{symbols.end()};
 	bool continue_complementation{true};
 	while (continue_complementation && !worklist.empty()) {

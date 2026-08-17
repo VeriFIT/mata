@@ -1196,6 +1196,12 @@ Nft mata::nft::minimize(const Nft& aut, const ParameterMap& params) {
 }
 #endif
 
+OrdVector<Symbol> mata::nft::get_symbols_to_work_with(
+	const Nft& nft, const Alphabet* const shared_alphabet, const std::optional<Level> level
+) {
+	return nft.resolve_alphabet(shared_alphabet, level)->get_alphabet_symbols();
+}
+
 Nft mata::nft::union_nondet(const Nft& lhs, const Nft& rhs) {
 	Nft union_nft{lhs};
 	return union_nft.unite_nondet_with(rhs);

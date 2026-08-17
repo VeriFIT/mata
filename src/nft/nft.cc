@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "mata/alphabet.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/utils/assert.hh"
@@ -1097,7 +1098,9 @@ Nft& Nft::insert_identity(const State state, const std::vector<Symbol>& symbols,
 }
 
 Nft& Nft::insert_identity(const State state, const Alphabet* alphabet, const JumpMode jump_mode) {
-	for (const Symbol symbol : alphabet->get_alphabet_symbols()) { insert_identity(state, symbol, jump_mode); }
+	for (const Symbol symbol : get_symbols_to_work_with(alphabet, levels[state])) {
+		insert_identity(state, symbol, jump_mode);
+	}
 	return *this;
 }
 
@@ -1113,6 +1116,23 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
 	insert_word(state, Word(levels.num_of_levels, symbol), state);
 	//    }
 	return *this;
+}
+
+std::shared_ptr<const mata::Alphabet>
+	Nft::resolve_alphabet(const Alphabet* const alphabet, const std::optional<Level> level) const {
+	if (alphabet != nullptr) {
+		return std::shared_ptr<const Alphabet>(alphabet, [](const Alphabet*) {});
+	}
+	if (this->alphabets != nullptr) {
+		return std::shared_ptr<const Alphabet>(this->alphabets, &this->alphabets->for_level(level));
+	}
+	if (this->alphabet != nullptr) { return this->alphabet; }
+	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
+}
+
+OrdVector<Symbol>
+	Nft::get_symbols_to_work_with(const Alphabet* const alphabet, const std::optional<Level> level) const {
+	return mata::nft::get_symbols_to_work_with(*this, alphabet, level);
 }
 
 bool Nft::contains_jump_transitions() const {
@@ -1163,7 +1183,7 @@ Nft Nft::apply(
 }
 
 bool Nft::make_complete(const Alphabet* const alphabet, const std::optional<std::vector<State>>& sink_states) {
-	return make_complete(get_symbols_to_work_with(*this, alphabet), sink_states);
+	return make_complete(get_symbols_to_work_with(alphabet), sink_states);
 }
 
 bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<std::vector<State>>& sink_states) {
