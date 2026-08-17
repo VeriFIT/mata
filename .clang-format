@@ -1,60 +1,38 @@
-# General configuration for all languages.
-TabWidth: 4
 ---
 Language: Cpp
 BasedOnStyle: LLVM
-AccessModifierOffset: -4
-AlignAfterOpenBracket: AlwaysBreak
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
-AlignOperands: true
-AlignTrailingComments: false
-AllowShortBlocksOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: false
-AlwaysBreakAfterDefinitionReturnType: false
-AlwaysBreakTemplateDeclarations: Yes
-BraceWrapping:
-  AfterCaseLabel: false
-  AfterClass: false
-  AfterControlStatement: false
-  AfterEnum: false
-  AfterFunction: false
-  AfterNamespace: false
-  AfterStruct: false
-  AfterUnion: false
-  AfterExternBlock: false
-  BeforeCatch: false
-  BeforeElse: false
-  BeforeLambdaBody: false
-  BeforeWhile: false
-  SplitEmptyFunction: false
-  SplitEmptyRecord: false
-  SplitEmptyNamespace: false
-BreakBeforeBraces: Custom
+AlignAfterOpenBracket: BlockIndent
+AlignTrailingComments:
+  Kind: Never
+AllowShortBlocksOnASingleLine: Always
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+BreakFunctionDefinitionParameters: true
 ColumnLimit: 120
-ContinuationIndentWidth: 8
-Cpp11BracedListStyle: true
-IncludeCategories:
-  - Regex: '^<.*'
-    Priority: 1
-  - Regex: '^".*'
-    Priority: 2
-  - Regex: '.*'
-    Priority: 3
-IncludeIsMainRegex: '([-_](test|unittest))?$'
+# Cpp11BracedListStyle: false
+IncludeIsMainRegex: (^((test_)|(test)))|(((_test)|(Test))?$)
 IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
 IndentWidth: 4
+IndentWrappedFunctionNames: true
+InsertBraces: true
 InsertNewlineAtEOF: true
-MacroBlockBegin: ''
-MacroBlockEnd: ''
-MaxEmptyLinesToKeep: 2
-NamespaceIndentation: Inner
+IntegerLiteralSeparator:
+  Binary: 4
+  Decimal: 3
+  Hex: 2
+KeepEmptyLines:
+  AtStartOfBlock: false
+  AtStartOfFile: false
+LineEnding: LF
 PointerAlignment: Left
+QualifierAlignment: Left
+RemoveParentheses: ReturnStatement
 SpaceAfterCStyleCast: true
 SpaceAfterTemplateKeyword: false
-SpaceInEmptyParentheses: false
-SpacesInAngles: false
-SpacesInConditionalStatement: false
-SpacesInCStyleCastParentheses: false
-SpacesInParentheses: false
+SpaceBeforeParensOptions:
+  AfterRequiresInClause: true
+  AfterRequiresInExpression: true
+TabWidth: 4
+Macros:
+  - TEST_CASE(x)

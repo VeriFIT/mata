@@ -70,3 +70,7 @@ fmt:
 [working-directory: "examples/notebooks/"]
 notebook-sync:
   jupytext --sync examples/notebooks/*.ipynb
+
+uv-update:
+  uv lock --upgrade
+  uv sync
