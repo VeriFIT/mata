@@ -196,9 +196,62 @@ class SynchronizationProperties {
 		}));
 	}
 };
+
 } // namespace
 
 namespace mata::nft {
+
+std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
+	const Nft& lhs,
+	const Nft& rhs,
+	const OrdVector<Level>& lhs_sync_levels,
+	const OrdVector<Level>& rhs_sync_levels,
+	const bool project_out_sync_levels
+) {
+	if (lhs.alphabets == nullptr || rhs.alphabets == nullptr) { return nullptr; }
+
+	// Raw slot for a level, honoring Global (single shared alphabet) vs MultiLevel (per-level) mode.
+	auto slot_for_level = [](const mata::AlphabetLevels& alphabets,
+							 const Level level) -> std::shared_ptr<mata::Alphabet> {
+		return alphabets.mode() == mata::AlphabetLevels::Mode::Global ? alphabets.at(0) : alphabets.at(level);
+	};
+
+	std::vector<std::shared_ptr<mata::Alphabet>> composed_alphabets;
+	composed_alphabets.reserve(lhs.levels.num_of_levels + rhs.levels.num_of_levels);
+
+	const size_t num_of_sync_levels = lhs_sync_levels.size();
+	auto lhs_sync_it = lhs_sync_levels.cbegin();
+	auto rhs_sync_it = rhs_sync_levels.cbegin();
+	Level lhs_lvl{0};
+	Level rhs_lvl{0};
+	for (size_t i{0}; i < num_of_sync_levels; ++i) {
+		for (; lhs_lvl < *lhs_sync_it; ++lhs_lvl) {
+			composed_alphabets.push_back(slot_for_level(*lhs.alphabets, lhs_lvl));
+		}
+		for (; rhs_lvl < *rhs_sync_it; ++rhs_lvl) {
+			composed_alphabets.push_back(slot_for_level(*rhs.alphabets, rhs_lvl));
+		}
+		if (!project_out_sync_levels) {
+			assert(
+				slot_for_level(*lhs.alphabets, *lhs_sync_it) == slot_for_level(*rhs.alphabets, *rhs_sync_it) &&
+				"lhs and rhs must share the same alphabet instance on their synchronization levels"
+			);
+			composed_alphabets.push_back(slot_for_level(*lhs.alphabets, *lhs_sync_it));
+		}
+		++lhs_lvl;
+		++rhs_lvl; // Skip over the synchronization level itself (already handled above).
+		++lhs_sync_it;
+		++rhs_sync_it;
+	}
+	for (; lhs_lvl < lhs.levels.num_of_levels; ++lhs_lvl) {
+		composed_alphabets.push_back(slot_for_level(*lhs.alphabets, lhs_lvl));
+	}
+	for (; rhs_lvl < rhs.levels.num_of_levels; ++rhs_lvl) {
+		composed_alphabets.push_back(slot_for_level(*rhs.alphabets, rhs_lvl));
+	}
+
+	return std::make_shared<mata::AlphabetLevels>(std::move(composed_alphabets));
+}
 
 // Dispatch function for composition modes.
 Nft compose(
@@ -1024,6 +1077,10 @@ Nft algorithms::compose_fast_no_jump(
 	// TODO: Make trim on demand.
 	if (project_out_sync_levels) { result.trim(); }
 
+	result.alphabets = compose_alphabets(
+		lhs, rhs, OrdVector<Level>{lhs_sync_level}, OrdVector<Level>{rhs_sync_level}, project_out_sync_levels
+	);
+
 	return result;
 }
 
@@ -1136,6 +1193,9 @@ Nft algorithms::compose_general(
 
 	Nft result{intersection(lhs_synced, rhs_synced, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state)};
 	if (project_out_sync_levels) { result = project_out(result, sync_levels_to_project_out, jump_mode); }
+
+	result.alphabets = compose_alphabets(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
+
 	return result;
 }
 

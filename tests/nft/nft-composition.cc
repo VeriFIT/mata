@@ -2948,3 +2948,86 @@ TEST_CASE("mata::nft::compose_fast_no_jump()") {
         CHECK(are_equivalent(composed_normal, composed_fast_no_jump));
     }
 }
+
+TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
+    auto lhs_alphabet = std::make_shared<mata::IntAlphabet>();
+    auto sync_alphabet = std::make_shared<mata::IntAlphabet>();
+    auto rhs_alphabet = std::make_shared<mata::IntAlphabet>();
+
+    // lhs: level 0 uses lhs_alphabet, level 1 (the synchronization level) uses sync_alphabet.
+    Nft lhs{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
+    lhs.delta.add(0, 'a', 1);
+    lhs.delta.add(1, 99, 2);
+    lhs.alphabets = std::make_shared<mata::AlphabetLevels>(
+        mata::AlphabetLevels{ std::vector<std::shared_ptr<mata::Alphabet>>{ lhs_alphabet, sync_alphabet } });
+
+    // rhs: level 0 (the synchronization level) uses the SAME sync_alphabet instance, level 1 uses rhs_alphabet.
+    Nft rhs{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
+    rhs.delta.add(0, 99, 1);
+    rhs.delta.add(1, 'b', 2);
+    rhs.alphabets = std::make_shared<mata::AlphabetLevels>(
+        mata::AlphabetLevels{ std::vector<std::shared_ptr<mata::Alphabet>>{ sync_alphabet, rhs_alphabet } });
+
+    SECTION("project_out_sync_levels == true drops the (shared) synchronization level's alphabet") {
+        for (const Nft& result : {
+                 algorithms::compose_fast_no_jump(lhs, rhs, 1, 0, true),
+                 algorithms::compose_general(lhs, rhs, { 1 }, { 0 }, true),
+                 compose(lhs, rhs, 1, 0, true) }) {
+            REQUIRE(result.alphabets != nullptr);
+            REQUIRE(result.alphabets->size() == 2);
+            CHECK(&result.alphabets->for_level(0) == lhs_alphabet.get());
+            CHECK(&result.alphabets->for_level(1) == rhs_alphabet.get());
+        }
+    }
+
+    SECTION("project_out_sync_levels == false keeps the synchronization level's alphabet") {
+        for (const Nft& result : {
+                 algorithms::compose_fast_no_jump(lhs, rhs, 1, 0, false),
+                 algorithms::compose_general(lhs, rhs, { 1 }, { 0 }, false),
+                 compose(lhs, rhs, 1, 0, false) }) {
+            REQUIRE(result.alphabets != nullptr);
+            REQUIRE(result.alphabets->size() == 3);
+            CHECK(&result.alphabets->for_level(0) == lhs_alphabet.get());
+            CHECK(&result.alphabets->for_level(1) == sync_alphabet.get());
+            CHECK(&result.alphabets->for_level(2) == rhs_alphabet.get());
+        }
+    }
+
+    SECTION("missing alphabets on either side yield a null result") {
+        Nft rhs_without_alphabets{ rhs };
+        rhs_without_alphabets.alphabets = nullptr;
+        const Nft result{ compose(lhs, rhs_without_alphabets, 1, 0, true) };
+        CHECK(result.alphabets == nullptr);
+    }
+
+    SECTION("kept levels share the exact Alphabet instance, not a copy of it") {
+        const Nft result{ compose(lhs, rhs, 1, 0, true) };
+        REQUIRE(result.alphabets != nullptr);
+        // Same shared_ptr as in lhs/rhs: the refcount is now shared across lhs, rhs, and result.
+        CHECK(lhs_alphabet.use_count() == 3); // local lhs_alphabet + lhs.alphabets' slot + result.alphabets' slot.
+        CHECK(rhs_alphabet.use_count() == 3); // local rhs_alphabet + rhs.alphabets' slot + result.alphabets' slot.
+        // local sync_alphabet + lhs.alphabets' slot + rhs.alphabets' slot; unaffected by being dropped from result.
+        CHECK(sync_alphabet.use_count() == 3);
+        // The AlphabetLevels *container* is legitimately a new object (a different level layout than either input),
+        //  but that's orthogonal to the underlying Alphabet instances being shared.
+        CHECK(result.alphabets != lhs.alphabets);
+        CHECK(result.alphabets != rhs.alphabets);
+    }
+
+    SECTION("mutating a shared alphabet through one automaton is visible through the other") {
+        auto mutable_alphabet = std::make_shared<mata::OnTheFlyAlphabet>();
+        Nft lhs_mut{ lhs };
+        lhs_mut.alphabets = std::make_shared<mata::AlphabetLevels>(
+            mata::AlphabetLevels{ std::vector<std::shared_ptr<mata::Alphabet>>{ mutable_alphabet, sync_alphabet } });
+
+        const Nft result{ compose(lhs_mut, rhs, 1, 0, true) };
+        REQUIRE(result.alphabets != nullptr);
+        CHECK(&result.alphabets->for_level(0) == mutable_alphabet.get());
+
+        REQUIRE(mutable_alphabet->empty());
+        mutable_alphabet->add_new_symbol("x");
+        // Same instance: a mutation via the original NFT's alphabet is visible through the composed result's too.
+        CHECK_FALSE(result.alphabets->empty(0));
+        CHECK_FALSE(mutable_alphabet->empty());
+    }
+}

@@ -1442,6 +1442,32 @@ Nft compose(
 );
 
 /**
+ * @brief Compose the per-level alphabets for NFTs to be composed.
+ *
+ * Carries through the alphabet for each output level from whichever side (@p lhs / @p rhs) that level came from,
+ *  in the same block order used to align levels for composition (non-synchronization levels from @p lhs, then
+ *  from @p rhs, then the synchronization level itself, repeated per synchronization block, with a trailing block
+ *  of remaining non-synchronization levels after the last synchronization level).
+ *
+ * The synchronization levels of @p lhs and @p rhs are expected to already share the same alphabet instance
+ *  (the caller's responsibility); when both are non-null this is checked with an assert.
+ *
+ * @param[in] lhs First transducer whose alphabets to compose.
+ * @param[in] rhs Second transducer whose alphabets to compose.
+ * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
+ * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
+ * @return @c nullptr if either @p lhs.alphabets or @p rhs.alphabets is @c nullptr.
+ */
+std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
+	const Nft& lhs,
+	const Nft& rhs,
+	const utils::OrdVector<Level>& lhs_sync_levels,
+	const utils::OrdVector<Level>& rhs_sync_levels,
+	bool project_out_sync_levels = true
+);
+
+/**
  * @brief Composes two NFTs with a single synchronization level.
  *
  * The levels of the resulting NFT are in the following order:
