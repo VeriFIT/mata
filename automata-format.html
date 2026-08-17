@@ -126,19 +126,19 @@ q1 a2 &amp; q5
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@AFA-explicit
-%States-enum q r s t &quot;(r,s)&quot;
+%States-enum q r s t "(r,s)"
 %Alphabet-auto
 %Initial (q &amp; r) | (s &amp; t)
 %Final !q &amp; !r &amp; !s &amp; !t
-q symbol | other_symbol &amp; (&quot;(r,s)&quot; | r | s)
+q symbol | other_symbol &amp; ("(r,s)" | r | s)
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@AFA-intervals
 %States-auto
 %Alphabet-utf
-%Initial (q &amp; r) | (&quot;(r,s)&quot; &amp; t)
+%Initial (q &amp; r) | ("(r,s)" &amp; t)
 %Final !q &amp; !r
-q [a-z] | [2-7] | [\u{1c}-\u{5c}] &amp; (&quot;(r,s)&quot; | r | s)
+q [a-z] | [2-7] | [\u{1c}-\u{5c}] &amp; ("(r,s)" | r | s)
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>@NFA-bits
@@ -169,13 +169,13 @@ The Mata library currently does not support transducers.</p>
 <span class="o">%</span><span class="n">States</span><span class="o">-</span><span class="n">auto</span>
 <span class="o">%</span><span class="n">Tracks</span><span class="o">-</span><span class="n">auto</span>
 <span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">utf</span>
-<span class="n">q</span> <span class="p">[</span><span class="n">a</span><span class="o">-</span><span class="n">z</span><span class="p">]</span><span class="nd">@x</span> <span class="o">|</span> <span class="p">[</span><span class="mi">2</span><span class="o">-</span><span class="mi">7</span><span class="p">]</span><span class="nd">@y</span> <span class="o">|</span> <span class="p">[</span>\<span class="n">u</span><span class="p">{</span><span class="mi">1</span><span class="n">c</span><span class="p">}</span><span class="o">-</span>\<span class="n">u</span><span class="p">{</span><span class="mi">5</span><span class="n">c</span><span class="p">}]</span><span class="nd">@z</span> <span class="o">&amp;</span> <span class="p">(</span><span class="s2">&quot;(r,s)&quot;</span> <span class="o">|</span> <span class="p">(</span><span class="n">r</span> <span class="o">&amp;</span> <span class="n">s</span><span class="p">))</span>
+<span class="n">q</span> <span class="p">[</span><span class="n">a</span><span class="o">-</span><span class="n">z</span><span class="p">]</span><span class="nd">@x</span> <span class="o">|</span> <span class="p">[</span><span class="mi">2</span><span class="o">-</span><span class="mi">7</span><span class="p">]</span><span class="nd">@y</span> <span class="o">|</span> <span class="p">[</span>\<span class="n">u</span><span class="p">{</span><span class="mi">1</span><span class="n">c</span><span class="p">}</span><span class="o">-</span>\<span class="n">u</span><span class="p">{</span><span class="mi">5</span><span class="n">c</span><span class="p">}]</span><span class="nd">@z</span> <span class="o">&amp;</span> <span class="p">(</span><span class="s2">"(r,s)"</span> <span class="o">|</span> <span class="p">(</span><span class="n">r</span> <span class="o">&amp;</span> <span class="n">s</span><span class="p">))</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@AFA</span><span class="o">-</span><span class="n">intervals</span>
 <span class="o">%</span><span class="n">Tracks</span><span class="o">-</span><span class="n">auto</span>
 <span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">bits</span>
-<span class="n">q</span> <span class="n">a1</span><span class="nd">@x</span> <span class="o">|</span> <span class="n">a2</span><span class="nd">@z</span> <span class="o">&amp;</span> <span class="p">(</span><span class="s2">&quot;(r,s)&quot;</span> <span class="o">|</span> <span class="n">r</span> <span class="o">|</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">q</span> <span class="n">a1</span><span class="nd">@x</span> <span class="o">|</span> <span class="n">a2</span><span class="nd">@z</span> <span class="o">&amp;</span> <span class="p">(</span><span class="s2">"(r,s)"</span> <span class="o">|</span> <span class="n">r</span> <span class="o">|</span> <span class="n">s</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -185,7 +185,7 @@ The Mata library currently does not support transducers.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@AFA</span><span class="o">-</span><span class="n">intervals</span>
 <span class="o">%</span><span class="n">Tracks</span><span class="o">-</span><span class="n">enum</span> <span class="n">x</span> <span class="n">y</span> <span class="n">z</span>
 <span class="o">%</span><span class="n">Alphabet</span><span class="o">-</span><span class="n">enum</span> <span class="n">a</span> <span class="n">b</span> <span class="n">c</span> <span class="n">d</span> <span class="n">e</span> <span class="n">f</span> <span class="n">h</span>
-<span class="n">q</span> <span class="p">(</span><span class="n">a</span><span class="nd">@x</span> <span class="o">|</span> <span class="n">b</span><span class="nd">@z</span><span class="p">)</span> <span class="o">&amp;</span> <span class="sa">f</span><span class="s2">&quot;z=x&quot;</span> <span class="p">(</span><span class="s2">&quot;(r,s)&quot;</span> <span class="o">|</span> <span class="p">(</span><span class="n">r</span> <span class="o">&amp;</span> <span class="n">s</span><span class="p">))</span>
+<span class="n">q</span> <span class="p">(</span><span class="n">a</span><span class="nd">@x</span> <span class="o">|</span> <span class="n">b</span><span class="nd">@z</span><span class="p">)</span> <span class="o">&amp;</span> <span class="sa">f</span><span class="s2">"z=x"</span> <span class="p">(</span><span class="s2">"(r,s)"</span> <span class="o">|</span> <span class="p">(</span><span class="n">r</span> <span class="o">&amp;</span> <span class="n">s</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>The example above does not work in the current version where the special formulae and symbols are the same thing.</p>

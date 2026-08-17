@@ -219,7 +219,7 @@ Provided the Mata is installed in the system directories, the <code class="docut
 <span class="w">    </span><span class="s">mata</span>
 <span class="w">    </span><span class="s">GIT_REPOSITORY</span><span class="w"> </span><span class="s">https://github.com/VeriFIT/mata</span>
 <span class="w">    </span><span class="s">GIT_TAG</span><span class="w"> </span><span class="s">devel</span><span class="w"> </span><span class="c"># Branch name, commit hash or a tag.</span>
-<span class="w">    </span><span class="s">GIT_SUBMODULES</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="c"># Explicitly disables submodule initialization/update.</span>
+<span class="w">    </span><span class="s">GIT_SUBMODULES</span><span class="w"> </span><span class="s2">""</span><span class="w"> </span><span class="c"># Explicitly disables submodule initialization/update.</span>
 <span class="w">    </span><span class="s">GIT_SUBMODULES_RECURSE</span><span class="w"> </span><span class="s">OFF</span><span class="w"> </span><span class="c"># Ensures submodules are not downloaded recursively.</span>
 <span class="w">  </span><span class="p">)</span>
 <span class="w">  </span><span class="nb">FetchContent_MakeAvailable</span><span class="p">(</span><span class="s">mata</span><span class="p">)</span>
@@ -240,7 +240,7 @@ either use the binding in your own scripts or in the python interpreter.</p>
 </pre></div>
 </div>
 <p>In your own scripts, we recommend to use the standard guard for running the scripts, as follows.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 </pre></div>
 </div>
 <p>The usage of the binding copies (to certain levels) the usage of the C++ library.</p>
