@@ -458,7 +458,8 @@ class OnTheFlyAlphabet : public Alphabet {
 /**
  * @brief Per-level alphabets for transducer-like automata.
  *
- * Standalone (does NOT inherit from @c Alphabet) wrapper holding a vector of @c Alphabet*, one per level.
+ * Standalone (does NOT inherit from @c Alphabet) wrapper holding a vector of @c std::shared_ptr<Alphabet>, one per
+ * level.
  * Operates in one of two modes (see @c Mode):
  *  - @c Global   — a single shared alphabet (typically stored in @c alphabets[0]) applies to every level. The level
  *                  argument is ignored.
@@ -475,28 +476,107 @@ class AlphabetLevels {
 		MultiLevel, ///< Each level uses its own alphabet from @c alphabets[level]; level argument is required.
 	};
 
-	/**
-	 * @brief Per-level alphabets.
-	 *
-	 * In @c Global mode, only @c alphabets[0] is used. In @c MultiLevel mode, indexed by level. Public to allow
-	 *  direct read/write access in line with the rest of the codebase (`Nft::levels`, `Nfa::delta`/`initial`/etc.).
-	 *  Read-only access through @c for_level (or @c operator[]) when range/null validation is desired.
-	 */
-	std::vector<std::shared_ptr<Alphabet>> alphabets{};
-
-	/// Operating mode. Defaults to @c MultiLevel.
-	Mode mode{Mode::MultiLevel};
-
 	explicit AlphabetLevels(std::vector<std::shared_ptr<Alphabet>> alphabets = {}, Mode mode = Mode::MultiLevel)
-		: alphabets{std::move(alphabets)},
-		  mode{mode} {}
+		: alphabets_{std::move(alphabets)},
+		  mode_{mode} {
+		check_can_grow_to_(alphabets_.size());
+	}
 
 	/**
-	 * @brief Convenience constructor: use the same @p alphabet for every level (Global mode).
+	 * @brief Use the same @p alphabet for every level (Global mode).
 	 *
 	 * Stores a single-element vector and sets @c mode to @c Global.
 	 */
-	explicit AlphabetLevels(std::shared_ptr<Alphabet> alphabet) : alphabets{std::move(alphabet)}, mode{Mode::Global} {}
+	explicit AlphabetLevels(std::shared_ptr<Alphabet> alphabet)
+		: alphabets_{std::move(alphabet)},
+		  mode_{Mode::Global} {}
+
+	/**
+	 * @brief Construct in @c Global mode, using @p alphabet as the single shared alphabet for every level.
+	 *
+	 * @see set_global_mode(std::shared_ptr<Alphabet>)
+	 */
+	static AlphabetLevels global_mode(std::shared_ptr<Alphabet> alphabet) {
+		return AlphabetLevels{std::move(alphabet)};
+	}
+
+	/**
+	 * @brief Construct in @c MultiLevel mode, using @p alphabets indexed by level.
+	 *
+	 * @see set_multi_level_mode()
+	 */
+	static AlphabetLevels multi_level_mode(std::vector<std::shared_ptr<Alphabet>> alphabets = {}) {
+		return AlphabetLevels{std::move(alphabets), Mode::MultiLevel};
+	}
+
+	AlphabetLevels(const AlphabetLevels& other) = default;
+	AlphabetLevels(AlphabetLevels&& other) noexcept = default;
+	AlphabetLevels& operator=(const AlphabetLevels& other) = default;
+	AlphabetLevels& operator=(AlphabetLevels&& other) noexcept = default;
+
+	/**
+	 * @brief Equality of two @c AlphabetLevels instances.
+	 *
+	 * Memberwise comparison of @c mode and the stored alphabet slots.
+	 * Slots are @c std::shared_ptr<Alphabet> and are compared by the pointee's identity (i.e., whether both slots point
+	 *  to the same underlying @c Alphabet object), not by the alphabets' contents, since @c Alphabet does not support
+	 *  value equality.
+	 */
+	bool operator==(const AlphabetLevels& other) const = default;
+
+	/// Current operating mode.
+	Mode mode() const noexcept { return mode_; }
+
+	/**
+	 * @brief Switch to @c Global mode, keeping only the alphabet at @p level_for_kept_alphabet as the single
+	 *  shared alphabet.
+	 *
+	 * Any other stored alphabets are dropped from @c AlphabetLevels (the @c Alphabet objects themselves survive
+	 *  if still referenced elsewhere, since they are held via @c shared_ptr). Unlike @c for_level, this never
+	 *  throws due to a missing alphabet: switching an empty instance to @c Global just leaves it empty.
+	 *
+	 * @param[in] level_for_kept_alphabet Level whose alphabet to keep. Ignored when no alphabet is currently
+	 *  stored.
+	 * @throws std::out_of_range If @p level_for_kept_alphabet is out of range and at least one alphabet is
+	 *  stored.
+	 */
+	void set_global_mode(Level level_for_kept_alphabet = 0) {
+		if (!alphabets_.empty()) { alphabets_ = {alphabets_.at(level_for_kept_alphabet)}; }
+		mode_ = Mode::Global;
+	}
+
+	/**
+	 * @brief Switch to @c Global mode, using @p alphabet as the new single shared alphabet.
+	 *
+	 * Replaces any previously stored alphabets regardless of how many there were. @c AlphabetLevels takes shared
+	 *  ownership of @p alphabet (via @c std::shared_ptr); it may still be shared with other owners.
+	 *
+	 * @param[in] alphabet The alphabet to use for every level.
+	 */
+	void set_global_mode(std::shared_ptr<Alphabet> alphabet) {
+		alphabets_ = {std::move(alphabet)};
+		mode_ = Mode::Global;
+	}
+
+	/**
+	 * @brief Switch to @c MultiLevel mode.
+	 *
+	 * Always safe: @c MultiLevel places no constraint on the number of stored alphabets. Existing alphabets are
+	 *  kept as-is, now indexed by level (e.g., a single alphabet from @c Global mode becomes level 0's alphabet).
+	 */
+	void set_multi_level_mode() noexcept { mode_ = Mode::MultiLevel; }
+
+	/**
+	 * @brief Switch to @c MultiLevel mode, using @p alphabets as the new per-level alphabets.
+	 *
+	 * Replaces any previously stored alphabets regardless of how many there were.
+	 *
+	 * @param[in] alphabets The alphabets to use, indexed by level.
+	 */
+	void set_multi_level_mode(std::vector<std::shared_ptr<Alphabet>> alphabets) noexcept {
+		alphabets_ = std::move(alphabets);
+		mode_ = Mode::MultiLevel;
+	}
 
 	/**
 	 * @brief Translate a symbol name using the alphabet for the given level.
@@ -559,9 +639,108 @@ class AlphabetLevels {
 	const Alphabet& for_level(std::optional<Level> level = std::nullopt) const;
 	Alphabet& for_level(std::optional<Level> level = std::nullopt);
 
-	/// Alias for @c for_level.
+	/**
+	 * @brief Alias for @c for_level.
+	 *
+	 * @see @c for_level.
+	 */
 	const Alphabet& operator[](std::optional<Level> level) const { return for_level(level); }
+	/**
+	 * @brief Alias for @c for_level.
+	 *
+	 * @see @c for_level.
+	 */
 	Alphabet& operator[](std::optional<Level> level) { return for_level(level); }
+
+	/**
+	 * @name Raw slot access (mode-agnostic).
+	 *
+	 * Bounds-checked access to a raw slot by its index in the underlying vector, ignoring @c mode. Unlike
+	 *  @c for_level, a null entry is returned as-is instead of throwing; only an out-of-range @p index throws.
+	 *  @see std::vector::at.
+	 */
+	///@{
+	const std::shared_ptr<Alphabet>& at(size_t index) const { return alphabets_.at(index); }
+	std::shared_ptr<Alphabet>& at(size_t index) { return alphabets_.at(index); }
+	///@}
+
+	/// Number of alphabet slots currently stored. @see std::vector::size.
+	size_t size() const noexcept { return alphabets_.size(); }
+
+	std::vector<std::shared_ptr<Alphabet>>::const_iterator begin() const noexcept { return alphabets_.begin(); }
+	std::vector<std::shared_ptr<Alphabet>>::const_iterator end() const noexcept { return alphabets_.end(); }
+	std::vector<std::shared_ptr<Alphabet>>::iterator begin() noexcept { return alphabets_.begin(); }
+	std::vector<std::shared_ptr<Alphabet>>::iterator end() noexcept { return alphabets_.end(); }
+
+	/// Append an alphabet as the new last level. @see std::vector::push_back.
+	void push_back(std::shared_ptr<Alphabet> alphabet) {
+		check_can_grow_to_(alphabets_.size() + 1);
+		alphabets_.push_back(std::move(alphabet));
+	}
+
+	/// Insert an alphabet before @p pos, shifting subsequent levels up. @see std::vector::insert.
+	std::vector<std::shared_ptr<Alphabet>>::iterator
+		insert(std::vector<std::shared_ptr<Alphabet>>::const_iterator pos, std::shared_ptr<Alphabet> alphabet) {
+		check_can_grow_to_(alphabets_.size() + 1);
+		return alphabets_.insert(pos, std::move(alphabet));
+	}
+
+	/// Remove the last level's alphabet. @see std::vector::pop_back.
+	void pop_back() { alphabets_.pop_back(); }
+
+	/// Reserve storage for at least @p new_cap levels. @see std::vector::reserve.
+	void reserve(size_t new_cap) { alphabets_.reserve(new_cap); }
+
+	/// Resize the number of levels, value-initializing (null) any newly added slots. @see std::vector::resize.
+	void resize(size_t count) {
+		check_can_grow_to_(count);
+		alphabets_.resize(count);
+	}
+
+	/// Remove the alphabet at @p pos. @see std::vector::erase.
+	std::vector<std::shared_ptr<Alphabet>>::iterator erase(std::vector<std::shared_ptr<Alphabet>>::const_iterator pos) {
+		return alphabets_.erase(pos);
+	}
+
+	/// Remove alphabets in the range [@p first, @p last). @see std::vector::erase.
+	std::vector<std::shared_ptr<Alphabet>>::iterator erase(
+		std::vector<std::shared_ptr<Alphabet>>::const_iterator first,
+		std::vector<std::shared_ptr<Alphabet>>::const_iterator last
+	) {
+		return alphabets_.erase(first, last);
+	}
+
+  public:
+	/**
+	 * @brief Per-level alphabets.
+	 *
+	 * In @c Global mode, only @c alphabets[0] is used. In @c MultiLevel mode, indexed by level. Private so that the
+	 *  @c Global invariant (exactly one alphabet) can be enforced by the build-up methods below; use @c for_level
+	 *  (or @c operator[]) for validated read/write access, @c at for raw slot access, or the vector-like methods to
+	 *  build up a @c MultiLevel instance.
+	 * @warning Modifying directly may break the class invariants.
+	 */
+	std::vector<std::shared_ptr<Alphabet>> alphabets_{};
+
+	/**
+	 * @brief Operating mode. Defaults to @c MultiLevel.
+	 *
+	 * Private so switching to @c Global can be rejected while more than one alphabet is stored (see @c
+	 * set_global_mode).
+	 * @warning Modifying directly may break the class invariants.
+	 */
+	Mode mode_{Mode::MultiLevel};
+
+  private:
+	/// Throw if growing to @p new_size would violate the @c Global invariant of holding a single alphabet.
+	void check_can_grow_to_(size_t new_size) const {
+		if (mode_ == Mode::Global && new_size > 1) {
+			throw std::runtime_error(
+				"AlphabetLevels (Global) can only hold a single alphabet; use set_global_mode()/for_level()/"
+				"operator[] to replace it."
+			);
+		}
+	}
 };
 
 /**
