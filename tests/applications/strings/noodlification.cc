@@ -5,9 +5,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/nfa/nfa.hh"
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -17,46 +17,45 @@ using namespace mata::nfa::builder;
 // Some common automata {{{
 
 // Automaton A
-#define FILL_WITH_AUT_A(x) \
-	(x).initialstates = {1, 3}; \
-	(x).finalstates = {5}; \
-	(x).delta.add(1, 'a', 3); \
-	(x).delta.add(1, 'a', 10); \
-	(x).delta.add(1, 'b', 7); \
-	(x).delta.add(3, 'a', 7); \
-	(x).delta.add(3, 'b', 9); \
-	(x).delta.add(9, 'a', 9); \
-	(x).delta.add(7, 'b', 1); \
-	(x).delta.add(7, 'a', 3); \
-	(x).delta.add(7, 'c', 3); \
-	(x).delta.add(10, 'a', 7); \
-	(x).delta.add(10, 'b', 7); \
-	(x).delta.add(10, 'c', 7); \
-	(x).delta.add(7, 'a', 5); \
-	(x).delta.add(5, 'a', 5); \
-	(x).delta.add(5, 'c', 9); \
-
+#define FILL_WITH_AUT_A(x)                                                                                             \
+	(x).initialstates = {1, 3};                                                                                        \
+	(x).finalstates = {5};                                                                                             \
+	(x).delta.add(1, 'a', 3);                                                                                          \
+	(x).delta.add(1, 'a', 10);                                                                                         \
+	(x).delta.add(1, 'b', 7);                                                                                          \
+	(x).delta.add(3, 'a', 7);                                                                                          \
+	(x).delta.add(3, 'b', 9);                                                                                          \
+	(x).delta.add(9, 'a', 9);                                                                                          \
+	(x).delta.add(7, 'b', 1);                                                                                          \
+	(x).delta.add(7, 'a', 3);                                                                                          \
+	(x).delta.add(7, 'c', 3);                                                                                          \
+	(x).delta.add(10, 'a', 7);                                                                                         \
+	(x).delta.add(10, 'b', 7);                                                                                         \
+	(x).delta.add(10, 'c', 7);                                                                                         \
+	(x).delta.add(7, 'a', 5);                                                                                          \
+	(x).delta.add(5, 'a', 5);                                                                                          \
+	(x).delta.add(5, 'c', 9);
 
 // Automaton B
-#define FILL_WITH_AUT_B(x) \
-	(x).initialstates = {4}; \
-	(x).finalstates = {2, 12}; \
-	(x).delta.add(4, 'c', 8); \
-	(x).delta.add(4, 'a', 8); \
-	(x).delta.add(8, 'b', 4); \
-	(x).delta.add(4, 'a', 6); \
-	(x).delta.add(4, 'b', 6); \
-	(x).delta.add(6, 'a', 2); \
-	(x).delta.add(2, 'b', 2); \
-	(x).delta.add(2, 'a', 0); \
-	(x).delta.add(0, 'a', 2); \
-	(x).delta.add(2, 'c', 12); \
-	(x).delta.add(12, 'a', 14); \
-	(x).delta.add(14, 'b', 12); \
+#define FILL_WITH_AUT_B(x)                                                                                             \
+	(x).initialstates = {4};                                                                                           \
+	(x).finalstates = {2, 12};                                                                                         \
+	(x).delta.add(4, 'c', 8);                                                                                          \
+	(x).delta.add(4, 'a', 8);                                                                                          \
+	(x).delta.add(8, 'b', 4);                                                                                          \
+	(x).delta.add(4, 'a', 6);                                                                                          \
+	(x).delta.add(4, 'b', 6);                                                                                          \
+	(x).delta.add(6, 'a', 2);                                                                                          \
+	(x).delta.add(2, 'b', 2);                                                                                          \
+	(x).delta.add(2, 'a', 0);                                                                                          \
+	(x).delta.add(0, 'a', 2);                                                                                          \
+	(x).delta.add(2, 'c', 12);                                                                                         \
+	(x).delta.add(12, 'a', 14);                                                                                        \
+	(x).delta.add(14, 'b', 12);
 
 // }}}
 
-template<class T> void unused(const T &) {}
+template <class T> void unused(const T&) {}
 
 TEST_CASE("mata::nfa::SegNfa::noodlify()")
 {
@@ -563,7 +562,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
     right_side.final.insert({3, 6});
 
     std::vector<Nfa*> left_side{ &left1, &left2, &left3 };
-    for (size_t i{}; i < 10000; ++i) {
+    for (size_t i{}; i < 10'000; ++i) {
         seg_nfa::noodlify_for_equation(left_side, right_side);
     }
 }

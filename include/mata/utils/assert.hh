@@ -14,13 +14,12 @@
 	#define MATA_ASSERT(cond, ...) ((void) 0)
 #else
 namespace mata::internal {
-[[noreturn]] inline void assert_fail(
-	const char* expr, const char* file, int line, const char* func, const std::string& msg
-) {
-	if (msg.empty()) {
-		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed.\n", file, line, func, expr);
+[[noreturn]] inline void
+	assert_fail(const char* expr, const char* file, int line, const char* function, const std::string& message) {
+	if (message.empty()) {
+		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed.\n", file, line, function, expr);
 	} else {
-		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed: %s\n", file, line, func, expr, msg.c_str());
+		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed: %s\n", file, line, function, expr, message.c_str());
 	}
 	std::abort();
 }
@@ -33,11 +32,12 @@ namespace mata::internal {
 	 * @param ... Optional format string and arguments for the error message.
 	 *
 	 * Usage:
-	 * ```cpp
+	 * @code
 	 * MATA_ASSERT(state < num_states, "state={}, num_states={}", state, num_states);
 	 * MATA_ASSERT(state < num_states);
-	 * ```
-	 * In release builds (when `NDEBUG` is defined), the assertions are disabled and have no effect.
+	 * @endcode
+	 *
+	 * @note In release builds (where @c NDEBUG is defined), the assertions are disabled and have no effect.
 	 */
 	#define MATA_ASSERT(cond, ...)                                                                                     \
 		{                                                                                                              \

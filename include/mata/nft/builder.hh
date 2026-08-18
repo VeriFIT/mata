@@ -6,8 +6,8 @@
 #ifndef LIBMATA_NFT_BUILDER_HH
 #define LIBMATA_NFT_BUILDER_HH
 
-#include "nft.hh"
 #include "mata/nfa/builder.hh"
+#include "nft.hh"
 
 #include <filesystem>
 #include <optional>
@@ -55,7 +55,9 @@ Nft create_sigma_star_nft(size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
  *  alphabet is used, creating an automaton accepting only the empty string.
  * @param[in] num_of_levels Number of levels in the created NFT.
  */
-Nft create_sigma_star_nft(const Alphabet* alphabet = new OnTheFlyAlphabet{}, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
+Nft create_sigma_star_nft(
+	const Alphabet* alphabet = new OnTheFlyAlphabet{}, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS
+);
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
@@ -64,18 +66,13 @@ Nft construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameState
 /** Loads an automaton from Parsed object */
 Nft construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
-void construct(
-    Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
-);
+void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
-template<class ParsedObject>
-Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
-              NameStateMap* state_map = nullptr) {
-    OnTheFlyAlphabet tmp_alphabet{};
-    if (!alphabet) {
-        alphabet = &tmp_alphabet;
-    }
-    return construct(parsed, alphabet, state_map);
+template <class ParsedObject>
+Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
+	OnTheFlyAlphabet tmp_alphabet{};
+	if (!alphabet) { alphabet = &tmp_alphabet; }
+	return construct(parsed, alphabet, state_map);
 } // construct().
 
 /**
@@ -118,7 +115,12 @@ Nft parse_from_mata(const std::filesystem::path& nft_file);
  *                           If not specified, the symbol of the transition is reused.
  * @return NFT representing @p nfa with @p num_of_levels number of levels.
  */
-Nft from_nfa_with_levels_zero(const nfa::Nfa& nfa, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS, bool explicit_transitions = true, std::optional<Symbol> next_levels_symbol = {});
+Nft from_nfa_with_levels_zero(
+	const nfa::Nfa& nfa,
+	size_t num_of_levels = DEFAULT_NUM_OF_LEVELS,
+	bool explicit_transitions = true,
+	std::optional<Symbol> next_levels_symbol = {}
+);
 
 /**
  * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.

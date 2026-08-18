@@ -3,9 +3,9 @@
 #include "utils.hh"
 
 #include "mata/alphabet.hh"
-#include "mata/nfa/types.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nfa/types.hh"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>

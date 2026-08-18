@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/parser/re2parser.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/parser/re2parser.hh"
 
 using namespace mata::nfa;
 
@@ -1442,7 +1442,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     SECTION("between 0x80 and 0x800")
     {
         Nfa x = mata::parser::create_nfa("\\x{80}\\x{90}\\x{a0}\\x{b0}\\x{c0}\\x{d0}\\x{600}\\x{700}\\x{7ff}", false, 306, true, Encoding::Utf8);
-        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0x600, 0x700, 0x7ff}), {}}));
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0x6'00, 0x7'00, 0x7'ff}), {}}));
         Nfa y;
         y.initial.insert(0);
         y.delta.add(0, 0xc2, 1);
@@ -1470,7 +1470,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     SECTION("between 0x800 and 0x7FFF")
     {
         Nfa x = mata::parser::create_nfa("\\x{800}\\x{900}\\x{a00}\\x{b00}\\x{c00}\\x{d00}\\x{6000}\\x{7000}\\x{7fff}", false, 306, true, Encoding::Utf8);
-        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x800, 0x900, 0xa00, 0xb00, 0xc00, 0xd00, 0x6000, 0x7000, 0x7fff}), {}}));
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x8'00, 0x9'00, 0xa'00, 0xb'00, 0xc'00, 0xd'00, 0x60'00, 0x70'00, 0x7f'ff}), {}}));
         Nfa y;
         y.initial.insert(0);
         y.delta.add(0, 0xe0, 1);
@@ -1506,7 +1506,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     SECTION("between 0x10000 and 0x10FFFF")
     {
         Nfa x = mata::parser::create_nfa("\\x{10000}\\x{20000}\\x{30000}\\x{40000}\\x{50000}\\x{60000}\\x{70000}\\x{80000}\\x{10ffff}", false, 306, true, Encoding::Utf8);
-        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x10000, 0x20000, 0x30000, 0x40000, 0x50000, 0x60000, 0x70000, 0x80000, 0x10FFFF}), {}}));
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x1'00'00, 0x2'00'00, 0x3'00'00, 0x4'00'00, 0x5'00'00, 0x6'00'00, 0x7'00'00, 0x8'00'00, 0x10'FF'FF}), {}}));
         Nfa y;
         y.initial.insert(0);
         y.delta.add(0, 0xf0, 1);
@@ -1552,7 +1552,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
     SECTION("mix")
     {
         Nfa x = mata::parser::create_nfa("\\x{01}\\x{90}\\x{8ac}\\x{100cc}", false, 306, true, Encoding::Utf8);
-        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x01, 0x90, 0x8ac, 0x100cc}), {}}));
+        CHECK(x.is_in_lang(Run{mata::encode_word_utf8(Word{0x01, 0x90, 0x8'ac, 0x1'00'cc}), {}}));
         Nfa y;
         y.initial.insert(0);
         y.delta.add(0, 0x01, 1);
@@ -1593,7 +1593,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         State final_s = 1;
         result.initial.insert(initial_s);
         result.final.insert(final_s);
-        for(Symbol c = 0x700; c <= 0x900; c++) {
+        for(Symbol c = 0x7'00; c <= 0x9'00; c++) {
             result.delta.add(initial_s, c, final_s);
         }
         CHECK(are_equivalent(aut, result));
@@ -1608,7 +1608,7 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         State final_s = 1;
         result.initial.insert(initial_s);
         result.final.insert(final_s);
-        for(Symbol c = 0xFF90; c <= 0x10090; c++) {
+        for(Symbol c = 0xFF'90; c <= 0x1'00'90; c++) {
             result.delta.add(initial_s, c, final_s);
         }
         CHECK(are_equivalent(aut, result));
@@ -1621,8 +1621,8 @@ TEST_CASE("mata::Parser UTF-8 encoding")
         Nfa result;
         result.delta.add(0, 0x60, 0);
         result.delta.add(0, 0x80, 1);
-        result.delta.add(2, 0x900, 2);
-        result.delta.add(2, 0x600, 3);
+        result.delta.add(2, 0x9'00, 2);
+        result.delta.add(2, 0x6'00, 3);
         result.initial.insert(0);
         result.initial.insert(2);
         result.final.insert(1);
@@ -1637,10 +1637,10 @@ TEST_CASE("mata::Parser UTF-8 encoding")
 
         // Random symbols
         std::vector<Symbol> symbols = { 0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x7f, 0x80,
-        0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0xff, 0x100, 0x110, 0x36f0, 0x57fc, 0x6177, 0x7498,
-        0x8f3f, 0x9fc8, 0x1101e, 0x14348, 0x14e34, 0x19581, 0x1c48e, 0x1f1cc, 0x1f91d, 0x222a6, 0x22e11,
-        0xe54f5, 0xe7934, 0xe93a4, 0xe998d, 0xebee8, 0xedb9e, 0xef98b, 0xf12af, 0xf51e2, 0xf557f, 0xf6b08,
-        0xfa7f0, 0xfacb2, 0xfd719, 0x106d12, 0x106d66, 0x109220, 0x10a608, 0x10c1f5, 0x10FFFF };
+        0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0xff, 0x1'00, 0x1'10, 0x36'f0, 0x57'fc, 0x61'77, 0x74'98,
+        0x8f'3f, 0x9f'c8, 0x1'10'1e, 0x1'43'48, 0x1'4e'34, 0x1'95'81, 0x1'c4'8e, 0x1'f1'cc, 0x1'f9'1d, 0x2'22'a6, 0x2'2e'11,
+        0xe'54'f5, 0xe'79'34, 0xe'93'a4, 0xe'99'8d, 0xe'be'e8, 0xe'db'9e, 0xe'f9'8b, 0xf'12'af, 0xf'51'e2, 0xf'55'7f, 0xf'6b'08,
+        0xf'a7'f0, 0xf'ac'b2, 0xf'd7'19, 0x10'6d'12, 0x10'6d'66, 0x10'92'20, 0x10'a6'08, 0x10'c1'f5, 0x10'FF'FF };
         for(const Symbol c : symbols) {
             CHECK(aut.is_in_lang(Run{Word{c}, {}}));
         }
