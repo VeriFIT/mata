@@ -22,7 +22,7 @@ jobs:
       - uses: ./.github/workflows/actions/docs
         with:
           os: ${{ matrix.os }}
-  run-tests:
+  run-tests-cpp:
     if: github.event.pull_request.merged == true
     runs-on: ${{ matrix.os }}
     strategy:
@@ -77,7 +77,7 @@ jobs:
       - name: Test the Python bindings
         uses: ./.github/workflows/actions/test-python
   release:
-    needs: [build-docs, run-tests, run-tests-python]
+    needs: [build-docs, run-tests-cpp, run-tests-python]
     runs-on: ubuntu-latest
     outputs:
       new-tag: ${{ steps.bump.outputs.new-tag }}
