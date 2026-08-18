@@ -42,7 +42,7 @@ jobs:
       - uses: ./.github/workflows/actions/compile
         with:
           build-log-output-file: "warnings-new"
-  run-tests:
+  run-tests-cpp:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -254,7 +254,7 @@ jobs:
           fi
   code-coverage:
     runs-on: ubuntu-latest
-    needs: run-tests
+    needs: run-tests-cpp
     steps:
       - uses: actions/checkout@v6
         with:
