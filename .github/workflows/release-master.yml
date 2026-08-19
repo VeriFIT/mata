@@ -99,9 +99,17 @@ jobs:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
       - uses: ./.github/workflows/actions/github-actions-git-config
       - name: Create sync branch
+        id: sync-branch
         run: |
           git checkout -B sync/master-into-devel origin/devel
-          git merge origin/master --no-edit
+          if git merge origin/master --no-edit; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Merge conflicts detected — committing with conflict markers for manual resolution in the PR."
+            git add -A
+            git commit -m "chore: Merge 'master' into 'devel' (CONFLICTS — needs manual resolution)"
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
           git push origin sync/master-into-devel --force
       # - name: Merge master into devel
       #     run: |
@@ -112,6 +120,7 @@ jobs:
         env:
           # GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+          CONFLICT: ${{ steps.sync-branch.outputs.conflict }}
         run: |
           PR_NUMBER=$(gh pr list \
             --head sync/master-into-devel \
@@ -119,17 +128,27 @@ jobs:
             --json number \
             --jq '.[0].number')
 
+          if [ "$CONFLICT" = "true" ]; then
+            TITLE="chore: Sync 'master' into 'devel' (CONFLICTS — manual resolution needed)"
+            BODY="Automated sync of 'master' into 'devel' after release. This branch has merge conflicts (committed with conflict markers) — resolve them manually in this PR before merging."
+          else
+            TITLE="chore: Sync 'master' into 'devel'"
+            BODY="Automated sync of 'master' into 'devel' after release. Auto-merged when all checks pass."
+          fi
+
           if [ -z "$PR_NUMBER" ]; then
             gh pr create \
               --head sync/master-into-devel \
               --base devel \
-              --title "chore: Sync 'master' into 'devel'" \
-              --body "Automated sync of 'master' into 'devel' after release. Auto-merged when all checks pass." \
+              --title "$TITLE" \
+              --body "$BODY" \
               --label automated/sync
           else
             echo "PR #$PR_NUMBER already exists, updated branch."
+            gh pr edit "$PR_NUMBER" --title "$TITLE" --body "$BODY"
           fi
       - name: Enable auto-merge on sync PR
+        if: steps.sync-branch.outputs.conflict != 'true'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
