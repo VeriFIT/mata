@@ -115,6 +115,8 @@ Please include:</p>
 </section>
 <section id="code-and-design-style">
 <h3>Code and design style<a class="headerlink" href="#code-and-design-style" title="Link to this heading">¶</a></h3>
+<p>Mata is built around the idea of providing a clean high-level API, but allowing users to access low-level details
+when needed, for example for performance optimizations.</p>
 <p>Follow standard C++ conventions and formatting.</p>
 <section id="code-formatting">
 <h4>Code Formatting<a class="headerlink" href="#code-formatting" title="Link to this heading">¶</a></h4>
@@ -133,8 +135,16 @@ This project uses <a class="reference external" href="https://github.com/numtide
 </pre></div>
 </div>
 <p>For required formatters, refer to <a class="reference internal" href="#.treefmt.toml"><span class="xref myst">.treefmt.toml</span></a>.</p>
+</section>
+</section>
+<section id="naming-conventions">
+<h4>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading">¶</a></h4>
 <ul class="simple">
 <li><p><strong>private</strong> attributes of classes/structs should use <code class="docutils literal notranslate"><span class="pre">snake_case_</span></code> (note the trailing <code class="docutils literal notranslate"><span class="pre">_</span></code>).</p></li>
+<li><p><strong>public but internal</strong> attributes of classes/structs should use <code class="docutils literal notranslate"><span class="pre">snake_case_</span></code> (note the trailing <code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Used for attributes that are public for expert users, but may break the userland if used incorrectly.
+Useful for low-level optimizations.</p></li>
+<li><p><strong>public</strong> attributes of classes/structs should use <code class="docutils literal notranslate"><span class="pre">snake_case</span></code> (no trailing <code class="docutils literal notranslate"><span class="pre">_</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">snake_case</span></code> is to be used in context of:</p>
 <ul>
 <li><p>variables, and</p></li>
@@ -150,7 +160,6 @@ This project uses <a class="reference external" href="https://github.com/numtide
 </ul>
 </li>
 </ul>
-</section>
 </section>
 <section id="todo-and-similar-message-format">
 <h4>TODO and similar message format<a class="headerlink" href="#todo-and-similar-message-format" title="Link to this heading">¶</a></h4>
