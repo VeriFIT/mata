@@ -45,7 +45,7 @@ If you plan to use the existing benchmarking infrastructure in `./tests-integrat
 
 ```sh
 python3 -m venv .venv
-pip install ./tests-integration/
+pip3 install ./tests-integration/
 source .venv/bin/activate
 ```
 
