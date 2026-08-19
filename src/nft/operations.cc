@@ -7,6 +7,7 @@
 #include <format>
 #include <iterator>
 #include <ranges>
+#include <stdexcept>
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/delta.hh"
@@ -593,10 +594,24 @@ Nft mata::nft::project_to(const Nft& nft, const Level level_to_project, const Ju
 	return project_to(nft, OrdVector<Level>{level_to_project}, jump_mode);
 }
 
-Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
+Nft mata::nft::insert_levels(
+	const Nft& nft,
+	const BoolVector& new_levels_mask,
+	const std::vector<std::shared_ptr<Alphabet>>& new_level_alphabets,
+	const JumpMode jump_mode
+) {
 	assert(0 < nft.levels.num_of_levels);
 	assert(nft.levels.num_of_levels <= new_levels_mask.size());
 	assert(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
+
+	const auto num_of_new_levels = static_cast<size_t>(std::ranges::count(new_levels_mask, true));
+	if (!new_level_alphabets.empty() && new_level_alphabets.size() != num_of_new_levels) {
+		throw std::invalid_argument(
+			"insert_levels(): new_level_alphabets must either be empty or have exactly one alphabet per "
+			"newly-inserted level (expected " +
+			std::to_string(num_of_new_levels) + ", got " + std::to_string(new_level_alphabets.size()) + ")"
+		);
+	}
 
 	if (nft.levels.num_of_levels == new_levels_mask.size()) { return {nft}; }
 
@@ -652,14 +667,20 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
 		)
 	);
 
-	// Repare per-level alphabets: insert a null slot for each newly-inserted level, keeping existing entries at
-	//  their shifted indices (matching updated_levels above). In Global mode result.alphabets (== nft.alphabets) is
-	//  already correct as-is.
+	// Repare per-level alphabets: insert a slot for each newly-inserted level (filled from new_level_alphabets, or
+	//  null if none were given), keeping existing entries at their shifted indices (matching updated_levels above).
+	//  In Global mode result.alphabets (== nft.alphabets) is already correct as-is.
 	if (nft.alphabets != nullptr && nft.alphabets->mode() == AlphabetLevels::Mode::MultiLevel) {
 		auto new_alphabets = std::make_shared<AlphabetLevels>(*nft.alphabets);
+		size_t next_new_level_alphabet{0};
 		for (size_t i{0}; i < new_levels_mask.size(); i++) {
 			if (new_levels_mask[i]) {
-				new_alphabets->insert(new_alphabets->begin() + static_cast<std::ptrdiff_t>(i), nullptr);
+				std::shared_ptr<Alphabet> alphabet_for_new_level{
+					new_level_alphabets.empty() ? nullptr : new_level_alphabets[next_new_level_alphabet++]
+				};
+				new_alphabets->insert(
+					new_alphabets->begin() + static_cast<std::ptrdiff_t>(i), std::move(alphabet_for_new_level)
+				);
 			}
 		}
 		result.alphabets = std::move(new_alphabets);
@@ -727,16 +748,24 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
 	return result;
 }
 
-Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const JumpMode jump_mode) {
+Nft mata::nft::insert_level(
+	const Nft& nft, const Level new_level, std::shared_ptr<Alphabet> new_level_alphabet, const JumpMode jump_mode
+) {
 	// TODO(nft): Optimize the insertion of just one level by using move.
 	BoolVector new_levels_mask(nft.levels.num_of_levels + 1, false);
 	if (new_level < new_levels_mask.size()) {
 		new_levels_mask[new_level] = true;
-	} else {
-		new_levels_mask[nft.levels.num_of_levels] = true;
-		new_levels_mask.resize(new_level + 1, true);
+		return insert_levels(nft, new_levels_mask, {std::move(new_level_alphabet)}, jump_mode);
 	}
-	return insert_levels(nft, new_levels_mask, jump_mode);
+	// new_level is beyond the current number of levels: pad with levels up to new_level, all of which are new.
+	// Only the last of them (new_level itself) gets new_level_alphabet; the padding levels are left without one.
+	new_levels_mask[nft.levels.num_of_levels] = true;
+	new_levels_mask.resize(new_level + 1, true);
+	std::vector<std::shared_ptr<Alphabet>> new_level_alphabets(
+		static_cast<size_t>(std::ranges::count(new_levels_mask, true))
+	);
+	new_level_alphabets.back() = std::move(new_level_alphabet);
+	return insert_levels(nft, new_levels_mask, new_level_alphabets, jump_mode);
 }
 
 Nft mata::nft::fragile_revert(const Nft& aut) {

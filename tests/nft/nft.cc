@@ -4592,7 +4592,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
     Nft nft(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }, alphabets));
 
     SECTION("insert_level inserts a null slot at the new level, shifting the rest") {
-        Nft output_nft = insert_level(nft, 1, JumpMode::AppendDontCares);
+        Nft output_nft = insert_level(nft, 1, nullptr, JumpMode::AppendDontCares);
         REQUIRE(output_nft.alphabets != nullptr);
         REQUIRE(output_nft.alphabets->size() == 4);
         CHECK(&output_nft.alphabets->for_level(0) == a0.get());
@@ -4608,7 +4608,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
     }
 
     SECTION("insert_levels inserts null slots at every new position") {
-        Nft output_nft = insert_levels(nft, { 0, 0, 1, 1, 0, 1 }, JumpMode::AppendDontCares);
+        Nft output_nft = insert_levels(nft, { 0, 0, 1, 1, 0, 1 }, {}, JumpMode::AppendDontCares);
         REQUIRE(output_nft.alphabets != nullptr);
         REQUIRE(output_nft.alphabets->size() == 6);
         CHECK(&output_nft.alphabets->for_level(0) == a0.get());
@@ -4624,7 +4624,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
         auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
         Nft global_nft(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }, global_alphabets));
 
-        Nft output_nft = insert_level(global_nft, 1, JumpMode::AppendDontCares);
+        Nft output_nft = insert_level(global_nft, 1, nullptr, JumpMode::AppendDontCares);
         REQUIRE(output_nft.alphabets != nullptr);
         CHECK(output_nft.alphabets->mode() == AlphabetLevels::Mode::Global);
         CHECK(&output_nft.alphabets->for_level(0) == shared_alphabet.get());
@@ -4632,6 +4632,74 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
         //  is shared with global_nft, not just its underlying alphabet.
         CHECK(output_nft.alphabets == global_nft.alphabets);
     }
+
+    SECTION("insert_level fills the new level's slot with the given alphabet instead of null") {
+        auto a3 = std::make_shared<IntAlphabet>();
+        Nft output_nft = insert_level(nft, 1, a3, JumpMode::AppendDontCares);
+        REQUIRE(output_nft.alphabets != nullptr);
+        REQUIRE(output_nft.alphabets->size() == 4);
+        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+        CHECK(&output_nft.alphabets->for_level(1) == a3.get());
+        CHECK(&output_nft.alphabets->for_level(2) == a1.get());
+        CHECK(&output_nft.alphabets->for_level(3) == a2.get());
+    }
+
+    SECTION("insert_levels fills every new slot with the given alphabets instead of null") {
+        auto a3 = std::make_shared<IntAlphabet>();
+        auto a4 = std::make_shared<IntAlphabet>();
+        auto a5 = std::make_shared<IntAlphabet>();
+        Nft output_nft = insert_levels(
+            nft, { 0, 0, 1, 1, 0, 1 }, { a3, a4, a5 }, JumpMode::AppendDontCares);
+        REQUIRE(output_nft.alphabets != nullptr);
+        REQUIRE(output_nft.alphabets->size() == 6);
+        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+        CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+        CHECK(&output_nft.alphabets->for_level(2) == a3.get());
+        CHECK(&output_nft.alphabets->for_level(3) == a4.get());
+        CHECK(&output_nft.alphabets->for_level(4) == a2.get());
+        CHECK(&output_nft.alphabets->for_level(5) == a5.get());
+    }
+
+    SECTION("insert_levels rejects a mismatched number of new_level_alphabets") {
+        auto a3 = std::make_shared<IntAlphabet>();
+        CHECK_THROWS_AS(
+            insert_levels(nft, { 0, 0, 1, 1, 0, 1 }, { a3 }, JumpMode::AppendDontCares),
+            std::invalid_argument
+        );
+    }
+
+    SECTION("insert_level beyond num_of_levels only assigns the alphabet to the requested level") {
+        auto a3 = std::make_shared<IntAlphabet>();
+        // nft has 3 levels (0, 1, 2); inserting level 4 pads with a new level 3 (no alphabet) before it.
+        Nft output_nft = insert_level(nft, 4, a3, JumpMode::AppendDontCares);
+        REQUIRE(output_nft.alphabets != nullptr);
+        REQUIRE(output_nft.alphabets->size() == 5);
+        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+        CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+        CHECK(&output_nft.alphabets->for_level(2) == a2.get());
+        CHECK(output_nft.alphabets->at(3) == nullptr);
+        CHECK(&output_nft.alphabets->for_level(4) == a3.get());
+    }
+}
+
+TEST_CASE("mata::nft::insert_level() regression test for #684") {
+    // Reproduces the scenario from https://github.com/VeriFIT/mata/issues/684: inserting a level used to leave its
+    //  alphabet slot null, which made any operation resolving a per-level alphabet (e.g. reverse_translate_symbol,
+    //  used internally by print_to_dot) throw.
+    OnTheFlyAlphabet alph1(std::vector<std::string>{ "aa", "b" });
+    OnTheFlyAlphabet alph2(std::vector<std::string>{ "c", "xy" });
+    auto alph1_ptr = std::shared_ptr<Alphabet>(&alph1, [](Alphabet*) {});
+    auto alph2_ptr = std::shared_ptr<Alphabet>(&alph2, [](Alphabet*) {});
+    auto alphabets = std::make_shared<AlphabetLevels>(
+        std::vector<std::shared_ptr<Alphabet>>{ alph1_ptr, alph2_ptr }, AlphabetLevels::Mode::MultiLevel);
+    Nft aut = Nft::with_levels(2, 1, { 0 }, { 0 }, alphabets);
+    aut.insert_word_by_levels(
+        0, { alph1.translate_word({ "aa", "aa", "b" }), alph2.translate_word({ "c", "xy", "xy" }) });
+
+    Nft inserted = insert_level(aut, 1, alph2_ptr, JumpMode::RepeatSymbol);
+    REQUIRE(inserted.alphabets != nullptr);
+    CHECK_NOTHROW(inserted.alphabets->for_level(1));
+    CHECK(&inserted.alphabets->for_level(1) == alph2_ptr.get());
 }
 
 TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
@@ -4646,7 +4714,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
 
         SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected_nft.delta.add(0, DONT_CARE, 1);
             expected_nft.delta.add(1, 0, 2);
@@ -4656,7 +4724,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, DONT_CARE, 2);
@@ -4666,7 +4734,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, 1, 2);
@@ -4676,7 +4744,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, 1, 2);
@@ -4686,7 +4754,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 4") {
-            output_nft = insert_level(input_nft, 4, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 4, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 5, { 0, 1, 2, 3, 4, 0 } }, 6, { 0 }, { 5 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, 1, 2);
@@ -4697,7 +4765,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add levels according to the mask 100011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 0, 0, 1, 1 }, JumpMode::AppendDontCares);
+            output_nft = insert_levels(input_nft, { 1, 0, 0, 0, 1, 1 }, {}, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 6, { 0, 1, 2, 3, 4, 5, 0 } }, 7, { 0 }, { 6 });
             expected_nft.delta.add(0, DONT_CARE, 1);
             expected_nft.delta.add(1, 0, 2);
@@ -4793,7 +4861,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
 
         SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 1, 1 } }, 7, { 0 }, { 4 });
             expected_nft.delta.add(0, DONT_CARE, 5);
             expected_nft.delta.add(5, 4, 0);
@@ -4807,7 +4875,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 1, 1, 2, 3, 2, 3 } }, 11, { 0 }, { 4 });
             expected_nft.delta.add(0, 4, 5);
             expected_nft.delta.add(5, DONT_CARE, 7);
@@ -4825,7 +4893,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 2, 3, 2, 3 } }, 9, { 0 }, { 4 });
             expected_nft.delta.add(0, 4, 7);
             expected_nft.delta.add(7, DONT_CARE, 8);
@@ -4841,7 +4909,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 3, 3 } }, 7, { 0 }, { 4 });
             expected_nft.delta.add(0, 4, 5);
             expected_nft.delta.add(5, DONT_CARE, 0);
@@ -4855,7 +4923,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add levels according to the mask 1010011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, JumpMode::AppendDontCares);
+            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, {}, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels(
                 { 7, { 0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6 } }, 20, { 0 }, { 7 }
             );
@@ -4896,7 +4964,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
 
         SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 2, 3, 0, 1, 1, 1 } }, 7, { 0 }, { 3 });
             expected_nft.delta.add(0, DONT_CARE, 4);
             expected_nft.delta.add(0, DONT_CARE, 5);
@@ -4911,7 +4979,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 3, 0, 2, 2, 2, 2 } }, 8, { 0 }, { 3 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(0, 4, 6);
@@ -4927,7 +4995,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 0, 2, 3, 2 } }, 7, { 0 }, { 3 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(0, 4, 2);
@@ -4942,7 +5010,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, JumpMode::AppendDontCares);
+            output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 0, 3, 3, 3 } }, 7, { 0 }, { 3 });
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(0, 4, 2);
@@ -4957,7 +5025,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add levels according to the mask 1010011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, JumpMode::AppendDontCares);
+            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, {}, JumpMode::AppendDontCares);
             expected_nft = Nft::with_levels(
                 { 7, { 0, 2, 4, 0, 1, 1, 3, 3, 3, 5, 5, 6, 6, 1, 5, 6, 3, 2, 4, 2, 4 } }, 21, { 0 }, { 3 }
             );
@@ -4998,7 +5066,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
 
         input_nft = Nft::with_levels({ 4, { 0, 1, 3, 0 } }, delta, { 0 }, { 3 });
 
-        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 }, JumpMode::RepeatSymbol);
+        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 }, {}, JumpMode::RepeatSymbol);
         CHECK(output_nft.num_of_states() == 13);
     }
 
@@ -5012,7 +5080,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
 
         input_nft = Nft::with_levels({ 4, { 0, 1, 3, 0 } }, delta, { 0 }, { 3 });
 
-        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 }, JumpMode::AppendDontCares);
+        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 }, {}, JumpMode::AppendDontCares);
         CHECK(output_nft.num_of_states() == 9);
     }
 }

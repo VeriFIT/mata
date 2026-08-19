@@ -1180,8 +1180,8 @@ Nft algorithms::compose_general(
 	}
 
 	// Insert new levels into lhs and rhs.
-	Nft lhs_synced = insert_levels(lhs, lhs_new_levels_mask, jump_mode);
-	Nft rhs_synced = insert_levels(rhs, rhs_new_levels_mask, jump_mode);
+	Nft lhs_synced = insert_levels(lhs, lhs_new_levels_mask, {}, jump_mode);
+	Nft rhs_synced = insert_levels(rhs, rhs_new_levels_mask, {}, jump_mode);
 
 	// Two auxiliary states (states from inserted loops) can not create a product state.
 	const State lhs_first_aux_state = lhs_synced.num_of_states();

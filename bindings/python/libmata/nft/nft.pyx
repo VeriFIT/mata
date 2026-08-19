@@ -1145,21 +1145,42 @@ def project_to(Nft nft, levels_to_project, jump_mode = JumpMode.RepeatSymbol) ->
     return result
 
 
-def insert_levels(Nft nft, new_levels_mask, jump_mode = JumpMode.RepeatSymbol) -> Nft:
-    """Insert new levels, as specified by the boolean mask `new_levels_mask`, into `nft`."""
+def insert_levels(
+    Nft nft, new_levels_mask, new_level_alphabets = None, jump_mode = JumpMode.RepeatSymbol
+) -> Nft:
+    """Insert new levels, as specified by the boolean mask `new_levels_mask`, into `nft`.
+
+    :param new_level_alphabets: Alphabets to assign to the newly-inserted levels, in the order the levels appear.
+        When `None` or empty, the newly-inserted levels are left without an alphabet.
+    """
     cdef CBoolVector c_mask = CBoolVector(<vector[uint8_t]>[1 if v else 0 for v in new_levels_mask])
+    cdef vector[shared_ptr[CAlphabet]] c_new_level_alphabets
+    cdef alph.Alphabet a
+    for a in (new_level_alphabets or []):
+        c_new_level_alphabets.push_back(a.as_base() if a is not None else shared_ptr[CAlphabet]())
     cdef Nft result = Nft.__new__(Nft)
     result.thisptr = make_shared[CNft](
-        mata_nft.c_insert_levels(dereference(nft.thisptr.get()), c_mask, _c_jump_mode(jump_mode))
+        mata_nft.c_insert_levels(
+            dereference(nft.thisptr.get()), c_mask, c_new_level_alphabets, _c_jump_mode(jump_mode)
+        )
     )
     return result
 
 
-def insert_level(Nft nft, Level new_level, jump_mode = JumpMode.RepeatSymbol) -> Nft:
-    """Insert a new level `new_level` into `nft`."""
+def insert_level(
+    Nft nft, Level new_level, new_level_alphabet: alph.Alphabet = None, jump_mode = JumpMode.RepeatSymbol
+) -> Nft:
+    """Insert a new level `new_level` into `nft`.
+
+    :param new_level_alphabet: Alphabet to assign to the newly-inserted level. When `None` (the default), the
+        newly-inserted level is left without an alphabet.
+    """
+    cdef shared_ptr[CAlphabet] c_new_level_alphabet = (
+        new_level_alphabet.as_base() if new_level_alphabet is not None else shared_ptr[CAlphabet]()
+    )
     cdef Nft result = Nft.__new__(Nft)
     result.thisptr = make_shared[CNft](
-        mata_nft.c_insert_level(dereference(nft.thisptr.get()), new_level, _c_jump_mode(jump_mode))
+        mata_nft.c_insert_level(dereference(nft.thisptr.get()), new_level, c_new_level_alphabet, _c_jump_mode(jump_mode))
     )
     return result
 
