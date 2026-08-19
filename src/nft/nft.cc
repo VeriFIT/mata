@@ -218,6 +218,8 @@ void Nft::print_to_dot(
 		switch (symbol) {
 			case EPSILON:
 				return "<eps>";
+			case DONT_CARE:
+				return "<dntcr>";
 			default:
 				break;
 		}
