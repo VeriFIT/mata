@@ -11,12 +11,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "utils.hh"
 #include "mata/alphabet.hh"
 #include "mata/nft/types.hh"
+#include "utils.hh"
 
-#include "mata/nft/nft.hh"
 #include "mata/nft/delta.hh"
+#include "mata/nft/nft.hh"
 #include "mata/utils/sparse-set.hh"
 
 #include "mata/applications/strings.hh"
@@ -3107,7 +3107,7 @@ TEST_CASE("mata::nft::remove_epsilon()") {
 }
 
 TEST_CASE("Profile mata::nft::remove_epsilon()", "[.profiling]") {
-    for (size_t n{}; n < 100000; ++n) {
+    for (size_t n{}; n < 100'000; ++n) {
         Nft aut{ 20 };
         FILL_WITH_AUT_A(aut);
         aut.remove_epsilon('c');
@@ -3207,7 +3207,7 @@ TEST_CASE("mata::nft::trim() for profiling", "[.profiling],[trim]") {
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
-    for (size_t i{ 0 }; i < 10000; ++i) {
+    for (size_t i{ 0 }; i < 10'000; ++i) {
         Nft new_aut{ aut };
         new_aut.trim();
     }
@@ -3219,7 +3219,7 @@ TEST_CASE("mata::nft::get_useful_states() for profiling", "[.profiling],[useful_
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
-    for (size_t i{ 0 }; i < 10000; ++i) { aut.get_useful_states(); }
+    for (size_t i{ 0 }; i < 10'000; ++i) { aut.get_useful_states(); }
 }
 
 TEST_CASE("mata::nft::trim() trivial") {

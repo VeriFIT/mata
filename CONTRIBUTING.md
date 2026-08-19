@@ -75,6 +75,9 @@ This process helps ensure that:
 
 ## Code and design style
 
+Mata is built around the idea of providing a clean high-level API, but allowing users to access low-level details
+when needed, for example for performance optimizations.
+
 Follow standard C++ conventions and formatting.
 
 ### Code Formatting
@@ -98,7 +101,13 @@ treefmt
 
 For required formatters, refer to [.treefmt.toml](.treefmt.toml).
 
+### Naming Conventions
+
 - **private** attributes of classes/structs should use `snake_case_` (note the trailing `_`).
+- **public but internal** attributes of classes/structs should use `snake_case_` (note the trailing `_`).
+  Used for attributes that are public for expert users, but may break the userland if used incorrectly.
+  Useful for low-level optimizations.
+- **public** attributes of classes/structs should use `snake_case` (no trailing `_`).
 - `snake_case` is to be used in context of:
   - variables, and
   - functions / class methods (which are neither constructors nor destructors).

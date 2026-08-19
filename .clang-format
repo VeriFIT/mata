@@ -1,4 +1,3 @@
----
 Language: Cpp
 BasedOnStyle: LLVM
 AlignAfterOpenBracket: BlockIndent
@@ -7,9 +6,9 @@ AlignTrailingComments:
 AllowShortBlocksOnASingleLine: Always
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 AllowShortLoopsOnASingleLine: true
-BreakFunctionDefinitionParameters: true
+BinPackParameters: OnePerLine
+PackConstructorInitializers: CurrentLine
 ColumnLimit: 120
-# Cpp11BracedListStyle: false
 IncludeIsMainRegex: (^((test_)|(test)))|(((_test)|(Test))?$)
 IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
@@ -29,10 +28,12 @@ PointerAlignment: Left
 QualifierAlignment: Left
 RemoveParentheses: ReturnStatement
 SpaceAfterCStyleCast: true
-SpaceAfterTemplateKeyword: false
 SpaceBeforeParensOptions:
   AfterRequiresInClause: true
   AfterRequiresInExpression: true
 TabWidth: 4
 Macros:
   - TEST_CASE(x)
+UseTab: Always
+# Cpp11BracedListStyle: false
+# AllowShortEnumsOnASingleLine: false

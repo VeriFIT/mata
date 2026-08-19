@@ -1,11 +1,11 @@
 /* tests-parser.cc -- tests of Parser
  */
 
-#include "mata/utils/utils.hh"
 #include "mata/parser/parser.hh"
-#include "mata/parser/inter-aut.hh"
-#include "mata/nfa/nfa.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/parser/inter-aut.hh"
+#include "mata/utils/utils.hh"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
