@@ -237,10 +237,12 @@ bool mata::nfa::algorithms::is_included_antichains(
 namespace {
 using AlgoType = decltype(algorithms::is_included_naive)*;
 
-bool compute_equivalence(const Nfa& lhs, const Nfa& rhs, const mata::Alphabet* const alphabet, const AlgoType& algo) {
+bool compute_equivalence(
+	const Nfa& lhs, const Nfa& rhs, const mata::Alphabet* const alphabet, const AlgoType& algo, Run* const cex
+) {
 	// alphabet should not be needed as input parameter
-	if (algo(lhs, rhs, alphabet, nullptr)) {
-		if (algo(rhs, lhs, alphabet, nullptr)) { return true; }
+	if (algo(lhs, rhs, alphabet, cex)) {
+		if (algo(rhs, lhs, alphabet, cex)) { return true; }
 	}
 
 	return false;
@@ -284,20 +286,22 @@ bool mata::nfa::is_included(
 	return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
-bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet, const ParameterMap& params) {
+bool mata::nfa::are_equivalent(
+	const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet, const ParameterMap& params, Run* const cex
+) {
 	// TODO: add comment on what this is doing, what is __func__ ...
 	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
 
 	if (params.at("algorithm") == "naive") {
 		if (alphabet == nullptr) {
 			const auto computed_alphabet{create_alphabet(lhs, rhs)};
-			return compute_equivalence(lhs, rhs, &computed_alphabet, algo);
+			return compute_equivalence(lhs, rhs, &computed_alphabet, algo, cex);
 		}
 	}
 
-	return compute_equivalence(lhs, rhs, alphabet, algo);
+	return compute_equivalence(lhs, rhs, alphabet, algo, cex);
 }
 
-bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
-	return are_equivalent(lhs, rhs, nullptr, params);
+bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params, Run* const cex) {
+	return are_equivalent(lhs, rhs, nullptr, params, cex);
 }
