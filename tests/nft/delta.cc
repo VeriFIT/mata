@@ -1,9 +1,9 @@
 // TODO: some header
 
-#include "mata/alphabet.hh"
-#include "mata/nft/types.hh"
 #include "mata/nft/delta.hh"
+#include "mata/alphabet.hh"
 #include "mata/nft/nft.hh"
+#include "mata/nft/types.hh"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>

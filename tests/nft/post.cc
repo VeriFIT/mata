@@ -21,24 +21,24 @@ using mata::Word;
 namespace {
 
 // Readable symbol names. Note: nft::EPSILON is the max symbol and nft::DONT_CARE == EPSILON - 1.
-constexpr Symbol a{ 0 };
-constexpr Symbol b{ 1 };
-constexpr Symbol c{ 2 };
-constexpr Symbol d{ 3 };
-constexpr Symbol x{ 10 };
-constexpr Symbol y{ 11 };
-constexpr Symbol z{ 12 };
+constexpr Symbol a{0};
+constexpr Symbol b{1};
+constexpr Symbol c{2};
+constexpr Symbol d{3};
+constexpr Symbol x{10};
+constexpr Symbol y{11};
+constexpr Symbol z{12};
 
 // A 2-level NFT accepting exactly the relation { ("ab", "c") }.
 // Path: 0 --a(lvl0)--> 2 --c(lvl1)--> 3 --b(lvl0)--> 4 --eps(lvl1)--> 1(final).
 Nft make_ab_c() {
-    Nft n{ Nft::with_levels(2) };
-    const State q0{ n.add_state_with_level(0) };
-    const State qf{ n.add_state_with_level(0) };
-    n.initial.insert(q0);
-    n.final.insert(qf);
-    n.insert_word_by_levels(q0, { Word{ a, b }, Word{ c } }, qf);
-    return n;
+	Nft n{Nft::with_levels(2)};
+	const State q0{n.add_state_with_level(0)};
+	const State qf{n.add_state_with_level(0)};
+	n.initial.insert(q0);
+	n.final.insert(qf);
+	n.insert_word_by_levels(q0, {Word{a, b}, Word{c}}, qf);
+	return n;
 }
 
 } // namespace

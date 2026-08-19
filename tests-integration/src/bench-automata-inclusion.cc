@@ -1,7 +1,8 @@
 /**
  * Benchmark: Automata Inclusion (b-armc-incl)
  *
- * The benchmark program reproduces the results of CADE'23 for benchmarks in directory /nfa-bench/benchmarks/automata_inclusion
+ * The benchmark program reproduces the results of CADE'23 for benchmarks in directory
+ * /nfa-bench/benchmarks/automata_inclusion
  *
  * Optimal Inputs: inputs/bench-double-automata-inclusion.in
  *
@@ -16,38 +17,36 @@
 
 #include "utils/utils.hh"
 
-constexpr bool MINTERMIZE_AUTOMATA{ true};
+constexpr bool MINTERMIZE_AUTOMATA{true};
 
-int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        std::cerr << "Input files missing\n";
-        return EXIT_FAILURE;
-    }
+int main(int argc, char* argv[]) {
+	if (argc != 3) {
+		std::cerr << "Input files missing\n";
+		return EXIT_FAILURE;
+	}
 
-    std::vector<std::string> filenames {argv[1], argv[2]};
-    std::vector<Nfa> automata;
-    mata::OnTheFlyAlphabet alphabet;
-    if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
-        return EXIT_FAILURE;
-    }
-    // This might be less-efficient, but more readable.
-    Nfa lhs = automata[0];
-    Nfa rhs = automata[1];
+	std::vector<std::string> filenames{argv[1], argv[2]};
+	std::vector<Nfa> automata;
+	mata::OnTheFlyAlphabet alphabet;
+	if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) { return EXIT_FAILURE; }
+	// This might be less-efficient, but more readable.
+	Nfa lhs = automata[0];
+	Nfa rhs = automata[1];
 
-    ParameterMap params;
+	ParameterMap params;
 
-    // Setting precision of the times to fixed points and 4 decimal places
-    std::cout << std::fixed << std::setprecision(4);
+	// Setting precision of the times to fixed points and 4 decimal places
+	std::cout << std::fixed << std::setprecision(4);
 
-    params["algorithm"] = "naive";
-    TIME_BEGIN(automata_inclusion_naive);
-    mata::nfa::is_included(lhs, rhs, &alphabet, params);
-    TIME_END(automata_inclusion_naive);
+	params["algorithm"] = "naive";
+	TIME_BEGIN(automata_inclusion_naive);
+	mata::nfa::is_included(lhs, rhs, &alphabet, params);
+	TIME_END(automata_inclusion_naive);
 
-    params["algorithm"] = "antichains";
-    TIME_BEGIN(automata_inclusion_antichain);
-    mata::nfa::is_included(lhs, rhs, &alphabet, params);
-    TIME_END(automata_inclusion_antichain);
+	params["algorithm"] = "antichains";
+	TIME_BEGIN(automata_inclusion_antichain);
+	mata::nfa::is_included(lhs, rhs, &alphabet, params);
+	TIME_END(automata_inclusion_antichain);
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

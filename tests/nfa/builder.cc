@@ -1,14 +1,14 @@
 // TODO: some header
 
-#include <unordered_set>
-#include <fstream>
 #include <cmath>
+#include <fstream>
+#include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/nfa/nfa.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 using Symbol = mata::Symbol;
@@ -243,7 +243,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.final.size() == num_of_states);
         CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
-        CHECK(nfa.delta.num_of_transitions() == 100000);
+        CHECK(nfa.delta.num_of_transitions() == 100'000);
 
     }
 
@@ -288,8 +288,8 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
         alphabet_size = 5;
         states_trans_ratio_per_symbol = 0.5;
         final_state_density = 0.5;
-        std::optional<unsigned int> seed1{ 3171643142 };
-        std::optional<unsigned int> seed2{ 4283451011 };
+        std::optional<unsigned int> seed1{ 3'171'643'142 };
+        std::optional<unsigned int> seed2{ 4'283'451'011 };
 
         Nfa nfa1_1 = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density, seed1);
         Nfa nfa1_2 = mata::nfa::builder::create_random_nfa_tabakov_vardi(num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density, seed1);

@@ -9,10 +9,8 @@
 #include "mata/nft/nft.hh"
 #include "mata/utils/ord-vector.hh"
 
-
 using namespace mata::nft;
 using namespace mata::utils;
-
 
 TEST_CASE("Mata::nft::compose()") {
     Nft lhs, rhs, expected, result;

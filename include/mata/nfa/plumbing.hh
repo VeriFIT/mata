@@ -10,10 +10,10 @@
 #ifndef MATA_NFA_PLUMBING_HH_
 #define MATA_NFA_PLUMBING_HH_
 
+#include "builder.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/types.hh"
 #include "nfa.hh"
-#include "builder.hh"
 
 using namespace mata::nfa::builder;
 
@@ -23,48 +23,58 @@ using namespace mata::nfa::builder;
 namespace mata::nfa::plumbing {
 
 inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
-    element_set->clear();
-    element_set->reserve(bool_vec.count());
-    for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
-        if (bool_vec[i] == 1) {
-            element_set->push_back(i);
-        }
-    }
+	element_set->clear();
+	element_set->reserve(bool_vec.count());
+	for (size_t i{0}; i < bool_vec.size(); ++i) {
+		if (bool_vec[i] == 1) { element_set->push_back(i); }
+	}
 }
 
 inline void complement(
-        Nfa*               result,
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const ParameterMap&  params = {{ "algorithm", "classical"},
-                                       { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
+	Nfa* result,
+	const Nfa& aut,
+	const Alphabet& alphabet,
+	const ParameterMap& params = {{"algorithm", "classical"}, {"minimize", "false"}}
+) {
+	*result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Nfa* res, const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski"}}) { *res = minimize(aut, params); }
-
-inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
-    *result = determinize(aut, subset_map);
+inline void minimize(Nfa* res, const Nfa& aut, const ParameterMap& params = {{"algorithm", "brzozowski"}}) {
+	*res = minimize(aut, params);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, StateRenaming *state_renaming = nullptr,
-                   const ParameterMap& params = {{ "algorithm", "simulation"}}) {
-    *result = reduce(aut, state_renaming, params);
+inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State>* subset_map = nullptr) {
+	*result = determinize(aut, subset_map);
+}
+
+inline void reduce(
+	Nfa* result,
+	const Nfa& aut,
+	StateRenaming* state_renaming = nullptr,
+	const ParameterMap& params = {{"algorithm", "simulation"}}
+) {
+	*result = reduce(aut, state_renaming, params);
 }
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
 
-inline void remove_epsilon(Nfa* result, const Nfa& aut, const Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
+inline void remove_epsilon(Nfa* result, const Nfa& aut, const Symbol epsilon = EPSILON) {
+	*result = remove_epsilon(aut, epsilon);
+}
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
-               NameStateMap* state_map = nullptr) {
-    OnTheFlyAlphabet tmp_alphabet{};
-    if (!alphabet) { alphabet = &tmp_alphabet; }
-    *result = builder::construct(parsed, alphabet, state_map);
+void construct(
+	Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr
+) {
+	OnTheFlyAlphabet tmp_alphabet{};
+	if (!alphabet) { alphabet = &tmp_alphabet; }
+	*result = builder::construct(parsed, alphabet, state_map);
 }
 
-inline void union_nondet(Nfa *union_automaton, const Nfa &lhs, const Nfa &rhs) { *union_automaton = union_nondet(lhs, rhs); }
+inline void union_nondet(Nfa* union_automaton, const Nfa& lhs, const Nfa& rhs) {
+	*union_automaton = union_nondet(lhs, rhs);
+}
 
 /**
  * @brief Compute intersection of two NFAs.
@@ -78,12 +88,18 @@ inline void union_nondet(Nfa *union_automaton, const Nfa &lhs, const Nfa &rhs) {
  * @param[in] lhs Input NFA.
  * @param[in] rhs Input NFA.
  * @param[in] first_epsilon smallest epsilon.
- * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used
+ * internally, allocated only when !=nullptr, expensive).
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon = EPSILON,
-                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
-    *res = intersection(lhs, rhs, first_epsilon, prod_map);
+inline void intersection(
+	Nfa* res,
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const Symbol first_epsilon = EPSILON,
+	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr
+) {
+	*res = intersection(lhs, rhs, first_epsilon, prod_map);
 }
 
 /**
@@ -91,9 +107,15 @@ inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, const Symbol 
  * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, const bool use_epsilon = false,
-                 StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
-    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+inline void concatenate(
+	Nfa* res,
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const bool use_epsilon = false,
+	StateRenaming* lhs_result_state_renaming = nullptr,
+	StateRenaming* rhs_result_state_renaming = nullptr
+) {
+	*res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
 /**
@@ -107,9 +129,7 @@ inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, const bool use
  *  slightly differ, but the number of states is the same for both algorithm
  *  types.
  */
-inline void reduce_residual_with(Nfa* res, const Nfa& nfa) {
-  *res = algorithms::reduce_residual_with(nfa);
-}
+inline void reduce_residual_with(Nfa* res, const Nfa& nfa) { *res = algorithms::reduce_residual_with(nfa); }
 
 /**
  * @brief Reduce NFA using residual construction.
@@ -122,9 +142,7 @@ inline void reduce_residual_with(Nfa* res, const Nfa& nfa) {
  *  slightly differ, but the number of states is the same for both algorithm
  *  types.
  */
-inline void reduce_residual_after(Nfa* res, const Nfa& nfa) {
-  *res = algorithms::reduce_residual_after(nfa);
-}
+inline void reduce_residual_after(Nfa* res, const Nfa& nfa) { *res = algorithms::reduce_residual_after(nfa); }
 
 } // namespace mata::nfa::plumbing.
 

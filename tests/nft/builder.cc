@@ -1,14 +1,14 @@
 // TODO: some header
 
+#include <fstream>
 #include <unordered_set>
 #include <vector>
-#include <fstream>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
+#include "mata/nft/nft.hh"
 
 using namespace mata::nft;
 using mata::nfa::Nfa;

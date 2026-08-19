@@ -5,8 +5,8 @@
 #ifndef MATA_NFT_INTERNALS_HH_
 #define MATA_NFT_INTERNALS_HH_
 
-#include "nft.hh"
 #include "mata/simlib/util/binary_relation.hh"
+#include "nft.hh"
 
 /**
  * Concrete NFT implementations of algorithms, such as complement, inclusion, or universality checking.
@@ -38,11 +38,13 @@ Nft minimize_brzozowski(const Nft& aut);
  *  which were non-final in the original automaton.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
- * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (Brzozowski) minimization.
+ * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (Brzozowski)
+ * minimization.
  * @return Complemented automaton.
  */
 Nft complement_classical(
-    const Nft& aut, const utils::OrdVector<Symbol>& symbols, bool minimize_during_determinization = false);
+	const Nft& aut, const utils::OrdVector<Symbol>& symbols, bool minimize_during_determinization = false
+);
 
 /**
  * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller, and then it checks
@@ -55,11 +57,16 @@ Nft complement_classical(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE.
- * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is
+ * empty.
  */
 bool is_included_naive(
-    const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr,
-    JumpMode jump_mode = JumpMode::RepeatSymbol);
+	const Nft& smaller,
+	const Nft& bigger,
+	const Alphabet* alphabet = nullptr,
+	Run* cex = nullptr,
+	JumpMode jump_mode = JumpMode::RepeatSymbol
+);
 
 /**
  * Inclusion implemented by antichain algorithms.
@@ -70,11 +77,16 @@ bool is_included_naive(
  * @param[out] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE.
- * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is
+ * empty.
  */
 bool is_included_antichains(
-    const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr,
-    JumpMode jump_mode = JumpMode::RepeatSymbol);
+	const Nft& smaller,
+	const Nft& bigger,
+	const Alphabet* alphabet = nullptr,
+	Run* cex = nullptr,
+	JumpMode jump_mode = JumpMode::RepeatSymbol
+);
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton
@@ -95,8 +107,8 @@ bool is_universal_naive(const Nft& aut, const Alphabet& alphabet, Run* cex);
 bool is_universal_antichains(const Nft& aut, const Alphabet& alphabet, Run* cex);
 
 Simlib::Util::BinaryRelation compute_relation(
-        const Nft& aut,
-        const ParameterMap&  params = {{ "relation", "simulation"}, { "direction", "forward"}});
+	const Nft& aut, const ParameterMap& params = {{"relation", "simulation"}, {"direction", "forward"}}
+);
 
 /**
  * @brief Compute product of two NFTs, final condition is to be specified.
@@ -105,17 +117,26 @@ Simlib::Util::BinaryRelation compute_relation(
  * @param[in] rhs Second NFT to compute intersection for.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
  * @param[out] product_map Can be used to get the mapping of the pairs of the original states to product states.
- *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
- *   because this one is too slow.
+ *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data
+ * structures, because this one is too slow.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
- *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
- * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states can not form a product state.
- * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states con not form a product state.
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ * of @c DONT_CARE.
+ * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states can not form a product
+ * state.
+ * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states con not form a product
+ * state.
  * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
-Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
-            std::unordered_map<std::pair<State,State>, State> *product_map = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
-            State lhs_first_aux_state = Limits::max_state, State rhs_first_aux_state = Limits::max_state);
+Nft product(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>&& final_condition,
+	std::unordered_map<std::pair<State, State>, State>* product_map = nullptr,
+	JumpMode jump_mode = JumpMode::RepeatSymbol,
+	State lhs_first_aux_state = Limits::max_state,
+	State rhs_first_aux_state = Limits::max_state
+);
 
 /**
  * @brief Concatenate two NFTs.
@@ -129,8 +150,14 @@ Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon = false,
-                    StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
+Nft concatenate_eps(
+	const Nft& lhs,
+	const Nft& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
 
 /**
  * @brief Composes two NFTs.
@@ -160,18 +187,23 @@ Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool 
  * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
  * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
- *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ * of @c DONT_CARE.
  *
  * @return A new NFT after the composition.
  */
-Nft compose_general(const Nft& lhs, const Nft& rhs,
-            const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
-            bool project_out_sync_levels = true,
-            JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft compose_general(
+	const Nft& lhs,
+	const Nft& rhs,
+	const utils::OrdVector<Level>& lhs_sync_levels,
+	const utils::OrdVector<Level>& rhs_sync_levels,
+	bool project_out_sync_levels = true,
+	JumpMode jump_mode = JumpMode::RepeatSymbol
+);
 
 /**
  * @brief Composes two NFTs with a single synchronization level and no jumps.
- * 
+ *
  * The levels of the resulting NFT are in the following order:
  *  - levels of `lhs` before its synvhronization level
  *  - levels of `rhs` before its synvhronization level
@@ -187,8 +219,14 @@ Nft compose_general(const Nft& lhs, const Nft& rhs,
  *
  * @return A new NFT after the composition.
  */
-Nft compose_fast_no_jump(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true);
+Nft compose_fast_no_jump(
+	const Nft& lhs,
+	const Nft& rhs,
+	Level lhs_sync_level = 1,
+	Level rhs_sync_level = 0,
+	bool project_out_sync_levels = true
+);
 
-}
+} // namespace mata::nft::algorithms
 
 #endif
