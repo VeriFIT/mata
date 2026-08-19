@@ -526,7 +526,7 @@ template <class Key> class OrdVector {
 
 template <class Key> struct std::hash<mata::utils::OrdVector<Key>> {
 	std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
-		return std::hash<std::vector<Key>>{}(vec.to_vector());
+		return mata::utils::hash_range(vec.begin(), vec.end());
 	}
 };
 

@@ -1,6 +1,9 @@
 /* tests-ord-vector.cc -- tests of OrdVector
  */
 
+#include <unordered_map>
+#include <unordered_set>
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
@@ -168,4 +171,35 @@ TEST_CASE("mata::utils::OrdVector::at()") {
         CHECK(vec.at(4) == 99);
         CHECK_THROWS_AS(vec.at(5), std::out_of_range);
     }
+}
+
+TEST_CASE("std::hash<mata::utils::OrdVector<Key>>") {
+    const OrdVector<int> vec1{ 1, 2, 3 };
+    const OrdVector<int> vec2{ 3, 2, 1 }; // Same elements, different insertion order.
+    const OrdVector<int> vec3{ 1, 2, 4 };
+    const std::hash<OrdVector<int>> hasher{};
+
+    CHECK(hasher(vec1) == hasher(vec2));
+    CHECK(hasher(vec1) != hasher(vec3));
+
+    // Usable as an unordered_set element without any extra Hash argument, since it is a legitimate
+    //  program-defined std::hash specialization (unlike hashing std::set/std::vector directly, see #628).
+    std::unordered_set<OrdVector<int>> set{ vec1, vec2, vec3 };
+    CHECK(set.size() == 2);
+}
+
+TEST_CASE("mata::utils::SetHash and mata::utils::VectorHash") {
+    // #628: mata must not specialize std::hash for std::set<A>/std::vector<A> for arbitrary A, since A may not be a
+    //  program-defined type. SetHash/VectorHash are the replacement, usable as the explicit Hash argument of
+    //  unordered containers.
+    const SetHash<int> set_hasher{};
+    CHECK(set_hasher(std::set<int>{ 1, 2, 3 }) == set_hasher(std::set<int>{ 3, 2, 1 }));
+    CHECK(set_hasher(std::set<int>{ 1, 2, 3 }) != set_hasher(std::set<int>{ 1, 2, 4 }));
+
+    const VectorHash<int> vector_hasher{};
+    CHECK(vector_hasher(std::vector<int>{ 1, 2, 3 }) == vector_hasher(std::vector<int>{ 1, 2, 3 }));
+    CHECK(vector_hasher(std::vector<int>{ 1, 2, 3 }) != vector_hasher(std::vector<int>{ 3, 2, 1 }));
+
+    const std::unordered_map<std::vector<int>, int, VectorHash<int>> map{ { { 1, 2, 3 }, 42 } };
+    CHECK(map.at({ 1, 2, 3 }) == 42);
 }

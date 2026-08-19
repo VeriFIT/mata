@@ -696,7 +696,7 @@ StateSet Nft::post(
 	std::vector<size_t> end_positions(tape_symbols.size());
 	for (size_t i = 0; i < tape_symbols.size(); ++i) { end_positions[i] = tape_symbols[i].size(); }
 
-	std::unordered_map<std::vector<size_t>, uint32_t> position_ids;
+	std::unordered_map<std::vector<size_t>, uint32_t, VectorHash<size_t>> position_ids;
 	std::vector<const std::vector<size_t>*> id_to_positions;
 	auto intern = [&](const std::vector<size_t>& positions) -> uint32_t {
 		const auto [it, inserted]{position_ids.try_emplace(positions, static_cast<uint32_t>(id_to_positions.size()))};
