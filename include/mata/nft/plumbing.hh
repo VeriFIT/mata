@@ -4,10 +4,8 @@
 #ifndef MATA_NFT_PLUMBING_HH_
 #define MATA_NFT_PLUMBING_HH_
 
-
-#include "nft.hh"
 #include "builder.hh"
-
+#include "nft.hh"
 
 using namespace mata::nft::builder;
 
@@ -19,53 +17,56 @@ using namespace mata::nft::builder;
  */
 namespace mata::nft::plumbing {
 
-
 inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
-    element_set->clear();
-    element_set->reserve(bool_vec.count());
-    for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
-        if (bool_vec[i] == 1) {
-            element_set->push_back(i);
-        }
-    }
+	element_set->clear();
+	element_set->reserve(bool_vec.count());
+	for (size_t i{0}; i < bool_vec.size(); ++i) {
+		if (bool_vec[i] == 1) { element_set->push_back(i); }
+	}
 }
 
 inline void complement(
-        Nft*               result,
-        const Nft&         aut,
-        const Alphabet&    alphabet,
-        const ParameterMap&  params = {{ "algorithm", "classical"},
-                                       { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
+	Nft* result,
+	const Nft& aut,
+	const Alphabet& alphabet,
+	const ParameterMap& params = {{"algorithm", "classical"}, {"minimize", "false"}}
+) {
+	*result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Nft* res, const Nft &aut) { *res = minimize(aut); }
+inline void minimize(Nft* res, const Nft& aut) { *res = minimize(aut); }
 
-inline void determinize(Nft* result, const Nft& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
-    *result = determinize(aut, subset_map);
+inline void determinize(Nft* result, const Nft& aut, std::unordered_map<StateSet, State>* subset_map = nullptr) {
+	*result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nft* result, const Nft &aut, StateRenaming *state_renaming = nullptr,
-                   const ParameterMap& params = {{ "algorithm", "simulation"}}) {
-    *result = reduce(aut, state_renaming, params);
+inline void reduce(
+	Nft* result,
+	const Nft& aut,
+	StateRenaming* state_renaming = nullptr,
+	const ParameterMap& params = {{"algorithm", "simulation"}}
+) {
+	*result = reduce(aut, state_renaming, params);
 }
 
 inline void revert(Nft* result, const Nft& aut) { *result = revert(aut); }
 
 inline void remove_epsilon(Nft* result, const Nft& aut, const Symbol epsilon = EPSILON) {
-    *result = remove_epsilon(aut, epsilon);
+	*result = remove_epsilon(aut, epsilon);
 }
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-void construct(Nft* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
-               NameStateMap* state_map = nullptr) {
-    OnTheFlyAlphabet tmp_alphabet{};
-    if (!alphabet) { alphabet = &tmp_alphabet; }
-    *result = builder::construct(parsed, alphabet, state_map);
+void construct(
+	Nft* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr
+) {
+	OnTheFlyAlphabet tmp_alphabet{};
+	if (!alphabet) { alphabet = &tmp_alphabet; }
+	*result = builder::construct(parsed, alphabet, state_map);
 }
 
 inline void union_nondet(Nft* union_automaton, const Nft& lhs, const Nft& rhs) {
-    *union_automaton = union_nondet(lhs, rhs);
+	*union_automaton = union_nondet(lhs, rhs);
 }
 
 /**
@@ -84,15 +85,21 @@ inline void union_nondet(Nft* union_automaton, const Nft& lhs, const Nft& rhs) {
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE.
- * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states does not form a product state.
- * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product state.
+ * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states does not form a product
+ * state.
+ * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product
+ * state.
  */
 inline void intersection(
-    Nft* res, const Nft& lhs, const Nft& rhs,
-    std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr,
-    const JumpMode jump_mode = JumpMode::RepeatSymbol,
-    const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state) {
-    *res = intersection(lhs, rhs, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
+	Nft* res,
+	const Nft& lhs,
+	const Nft& rhs,
+	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr,
+	const JumpMode jump_mode = JumpMode::RepeatSymbol,
+	const State lhs_first_aux_state = Limits::max_state,
+	const State rhs_first_aux_state = Limits::max_state
+) {
+	*res = intersection(lhs, rhs, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
 }
 
 /**
@@ -104,11 +111,17 @@ inline void intersection(
  * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-inline void concatenate(Nft* res, const Nft& lhs, const Nft& rhs, const bool use_epsilon = false,
-                 StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
-    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+inline void concatenate(
+	Nft* res,
+	const Nft& lhs,
+	const Nft& rhs,
+	const bool use_epsilon = false,
+	StateRenaming* lhs_result_state_renaming = nullptr,
+	StateRenaming* rhs_result_state_renaming = nullptr
+) {
+	*res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
-} // namespace mata::nfa::Plumbing.
+} // namespace mata::nft::plumbing
 
 #endif

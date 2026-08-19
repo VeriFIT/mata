@@ -9,13 +9,13 @@
 
 #include "utils.hh"
 
-#include "mata/utils/sparse-set.hh"
+#include "mata/applications/strings.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/nfa/builder.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/applications/strings.hh"
-#include "mata/nfa/builder.hh"
 #include "mata/nfa/plumbing.hh"
-#include "mata/nfa/algorithms.hh"
+#include "mata/utils/sparse-set.hh"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
@@ -3015,10 +3015,10 @@ TEST_CASE("mata::nfa::is_in_lang_prefix()")
         w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
         REQUIRE(aut.is_in_lang_prefix(w));
 
-        w.word = Word(100000, 'a');
+        w.word = Word(100'000, 'a');
         REQUIRE(aut.is_in_lang_prefix(w));
 
-        w.word = Word(100000, 'b');
+        w.word = Word(100'000, 'b');
         REQUIRE(!aut.is_in_lang_prefix(w));
     }
 } // }}}
@@ -3782,7 +3782,7 @@ TEST_CASE("mata::nfa::remove_epsilon()")
 
 TEST_CASE("Profile mata::nfa::remove_epsilon()", "[.profiling]")
 {
-    for (size_t n{}; n < 100000; ++n) {
+    for (size_t n{}; n < 100'000; ++n) {
         Nfa aut{20};
         FILL_WITH_AUT_A(aut);
         aut.remove_epsilon('c');
@@ -3886,7 +3886,7 @@ TEST_CASE("mata::nfa::trim() for profiling", "[.profiling],[trim]")
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
-    for (size_t i{ 0 }; i < 10000; ++i) {
+    for (size_t i{ 0 }; i < 10'000; ++i) {
         Nfa new_aut{ aut };
         new_aut.trim();
     }
@@ -3899,7 +3899,7 @@ TEST_CASE("mata::nfa::get_useful_states() for profiling", "[.profiling],[useful_
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
-    for (size_t i{ 0 }; i < 10000; ++i) {
+    for (size_t i{ 0 }; i < 10'000; ++i) {
         aut.get_useful_states();
     }
 }
@@ -5016,9 +5016,9 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
         result.delta.add(3, 0xb0, 4);
         result.delta.add(4, 0xc0, 5);
         result.delta.add(5, 0xd0, 6);
-        result.delta.add(6, 0x600, 7);
-        result.delta.add(7, 0x700, 8);
-        result.delta.add(8, 0x7ff, 9);
+        result.delta.add(6, 0x6'00, 7);
+        result.delta.add(7, 0x7'00, 8);
+        result.delta.add(8, 0x7'ff, 9);
         result.final.insert(9);
         CHECK(are_equivalent(result, aut.decode_utf8()));
     }
@@ -5057,15 +5057,15 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 
         Nfa result;
         result.initial.insert(0);
-        result.delta.add(0, 0x800, 1);
-        result.delta.add(1, 0x900, 2);
-        result.delta.add(2, 0xa00, 3);
-        result.delta.add(3, 0xb00, 4);
-        result.delta.add(4, 0xc00, 5);
-        result.delta.add(5, 0xd00, 6);
-        result.delta.add(6, 0x6000, 7);
-        result.delta.add(7, 0x7000, 8);
-        result.delta.add(8, 0x7fff, 9);
+        result.delta.add(0, 0x8'00, 1);
+        result.delta.add(1, 0x9'00, 2);
+        result.delta.add(2, 0xa'00, 3);
+        result.delta.add(3, 0xb'00, 4);
+        result.delta.add(4, 0xc'00, 5);
+        result.delta.add(5, 0xd'00, 6);
+        result.delta.add(6, 0x60'00, 7);
+        result.delta.add(7, 0x70'00, 8);
+        result.delta.add(8, 0x7f'ff, 9);
         result.final.insert(9);
         CHECK(are_equivalent(result, aut.decode_utf8()));
     }
@@ -5113,15 +5113,15 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 
         Nfa result;
         result.initial.insert(0);
-        result.delta.add(0, 0x10000, 1);
-        result.delta.add(1, 0x20000, 2);
-        result.delta.add(2, 0x30000, 3);
-        result.delta.add(3, 0x40000, 4);
-        result.delta.add(4, 0x50000, 5);
-        result.delta.add(5, 0x60000, 6);
-        result.delta.add(6, 0x70000, 7);
-        result.delta.add(7, 0x80000, 8);
-        result.delta.add(8, 0x10ffff, 9);
+        result.delta.add(0, 0x1'00'00, 1);
+        result.delta.add(1, 0x2'00'00, 2);
+        result.delta.add(2, 0x3'00'00, 3);
+        result.delta.add(3, 0x4'00'00, 4);
+        result.delta.add(4, 0x5'00'00, 5);
+        result.delta.add(5, 0x6'00'00, 6);
+        result.delta.add(6, 0x7'00'00, 7);
+        result.delta.add(7, 0x8'00'00, 8);
+        result.delta.add(8, 0x10'ff'ff, 9);
         result.final.insert(9);
         CHECK(are_equivalent(result, aut.decode_utf8()));
     }
@@ -5145,8 +5145,8 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
         result.initial.insert(0);
         result.delta.add(0, 0x01, 1);
         result.delta.add(1, 0x90, 2);
-        result.delta.add(2, 0x8ac, 3);
-        result.delta.add(3, 0x100cc, 4);
+        result.delta.add(2, 0x8'ac, 3);
+        result.delta.add(3, 0x1'00'cc, 4);
         result.final.insert(4);
         CHECK(are_equivalent(result, aut.decode_utf8()));
     }

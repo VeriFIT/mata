@@ -7,7 +7,6 @@
 
 #include <filesystem>
 
-
 /**
  * Namespace providing options to build NFAs.
  */
@@ -47,20 +46,26 @@ Nfa create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet = std::make_shared<
 
 /**
  * Creates Tabakov-Vardi random NFA.
- * The implementation is based on the paper "Experimental Evaluation of Classical Automata Constructions" by Tabakov and Vardi.
+ * The implementation is based on the paper "Experimental Evaluation of Classical Automata Constructions" by Tabakov and
+ * Vardi.
  *
  * @param num_of_states Number of states in the automaton.
  * @param alphabet_size Size of the alphabet.
  * @param states_transitions_ratio_per_symbol Ratio between number of transitions and number of states for each symbol.
- *  The value must be in range [0, num_of_states]. A value of 1 means that there will be num_of_states transitions for each symbol.
- *  A value of num_of_states means that there will be a transition between every pair of states for each symbol.
- * @param final_state_density Density of final states in the automaton. The value must be in range [0, 1]. The state 0 is always final.
- *  If the density is 1, every state will be final.
+ *  The value must be in range [0, num_of_states]. A value of 1 means that there will be num_of_states transitions for
+ * each symbol. A value of num_of_states means that there will be a transition between every pair of states for each
+ * symbol.
+ * @param final_state_density Density of final states in the automaton. The value must be in range [0, 1]. The state 0
+ * is always final. If the density is 1, every state will be final.
  * @param seed Seed for the PRNG used. If no seed is given, the algorithm chooses one uniformly at random.
  */
 Nfa create_random_nfa_tabakov_vardi(
-    size_t num_of_states, size_t alphabet_size, double states_transitions_ratio_per_symbol, double final_state_density,
-    const std::optional<unsigned int>& seed = std::nullopt);
+	size_t num_of_states,
+	size_t alphabet_size,
+	double states_transitions_ratio_per_symbol,
+	double final_state_density,
+	const std::optional<unsigned int>& seed = std::nullopt
+);
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
@@ -70,17 +75,14 @@ Nfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, Nam
 Nfa construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
 void construct(
-    Nfa* result, const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
+	Nfa* result, const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
 );
 
-template<class ParsedObject>
-Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
-              NameStateMap* state_map = nullptr) {
-    OnTheFlyAlphabet tmp_alphabet{};
-    if (!alphabet) {
-        alphabet = &tmp_alphabet;
-    }
-    return construct(parsed, alphabet, state_map);
+template <class ParsedObject>
+Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
+	OnTheFlyAlphabet tmp_alphabet{};
+	if (!alphabet) { alphabet = &tmp_alphabet; }
+	return construct(parsed, alphabet, state_map);
 } // construct().
 
 /**
@@ -135,4 +137,4 @@ Nfa create_from_regex(const std::string& regex);
 
 } // namespace mata::nfa::builder.
 
-#endif //LIBMATA_BUILDER_HH
+#endif // LIBMATA_BUILDER_HH

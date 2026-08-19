@@ -3,18 +3,18 @@
 #ifndef MATA_TESTS_PERFORMANCE_UTILS_HH
 #define MATA_TESTS_PERFORMANCE_UTILS_HH
 
-#include "mata/parser/inter-aut.hh"
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/plumbing.hh"
-#include "mata/nfa/algorithms.hh"
+#include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <chrono>
-#include <string>
 #include <cstring>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
 using namespace mata::nfa;
 
@@ -30,10 +30,7 @@ using namespace mata::nfa;
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */
 int load_automaton(
-        const std::string& filename,
-        Nfa& aut,
-        mata::OnTheFlyAlphabet& alphabet,
-        const bool mintermize_automata = true
+	const std::string& filename, Nfa& aut, mata::OnTheFlyAlphabet& alphabet, const bool mintermize_automata = true
 );
 
 /**
@@ -47,10 +44,10 @@ int load_automaton(
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */
 int load_automata(
-        std::vector<std::string>& filenames,
-        std::vector<Nfa>& auts,
-        mata::OnTheFlyAlphabet& alphabet,
-        const bool mintermize_automata = true
+	std::vector<std::string>& filenames,
+	std::vector<Nfa>& auts,
+	mata::OnTheFlyAlphabet& alphabet,
+	const bool mintermize_automata = true
 );
 
 /**
@@ -60,10 +57,7 @@ int load_automata(
  * @param[out] inter_aut Intermediate automaton instance to load into.
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */
-int load_intermediate_automaton(
-        const std::string& filename,
-        std::vector<mata::IntermediateAut>& out_inter_auts
-);
+int load_intermediate_automaton(const std::string& filename, std::vector<mata::IntermediateAut>& out_inter_auts);
 
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`
@@ -81,11 +75,12 @@ int load_intermediate_automaton(
 
  * and print time elapsed between initial and final timers.
  */
-#define TIME_END(timer) do { \
-        auto timer##_end = std::chrono::system_clock::now(); \
-        std::chrono::duration<double> timer##_elapsed = timer##_end - timer##_start; \
-        TIME_PRINT(timer); \
-    } while(0)
+#define TIME_END(timer)                                                                                                \
+	do {                                                                                                               \
+		auto timer##_end = std::chrono::system_clock::now();                                                           \
+		std::chrono::duration<double> timer##_elapsed = timer##_end - timer##_start;                                   \
+		TIME_PRINT(timer);                                                                                             \
+	} while (0)
 
 /*
  * Use to profile single statement.
@@ -99,11 +94,12 @@ int load_intermediate_automaton(
  *    TIME_STATEMENT(size, lhs.size() == rhs.size());
  * ```
  */
-#define TIME_STATEMENT(timer, stmt) do { \
-        TIME_BEGIN(timer); \
-        stmt; \
-        TIME_END(timer); \
-    } while(0)
+#define TIME_STATEMENT(timer, stmt)                                                                                    \
+	do {                                                                                                               \
+		TIME_BEGIN(timer);                                                                                             \
+		stmt;                                                                                                          \
+		TIME_END(timer);                                                                                               \
+	} while (0)
 
 /*
  * Use to profile multiple statements in block.
@@ -117,10 +113,11 @@ int load_intermediate_automaton(
  *    );
  * ```
  */
-#define TIME_BLOCK(timer, ...) do { \
-        TIME_BEGIN(timer); \
-        __VA_ARGS__ \
-        TIME_END(timer); \
-    } while(0)
+#define TIME_BLOCK(timer, ...)                                                                                         \
+	do {                                                                                                               \
+		TIME_BEGIN(timer);                                                                                             \
+		__VA_ARGS__                                                                                                    \
+		TIME_END(timer);                                                                                               \
+	} while (0)
 
 #endif // MATA_TESTS_PERFORMANCE_UTILS_HH.

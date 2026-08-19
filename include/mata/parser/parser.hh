@@ -23,23 +23,23 @@ using BodyLine = std::vector<std::string>;
 
 /** Parsed data (single section) */
 struct ParsedSection {
-    std::string type{};
-    KeyListStore dict{};
-    std::list<BodyLine> body{};
+	std::string type{};
+	KeyListStore dict{};
+	std::list<BodyLine> body{};
 
-    ParsedSection() = default;
+	ParsedSection() = default;
 
-    /// Is the section empty?
-    bool empty() const { return type.empty() && dict.empty() && body.empty(); }
+	/// Is the section empty?
+	bool empty() const { return type.empty() && dict.empty() && body.empty(); }
 
-    /// Equality operator
-    bool operator==(const ParsedSection& rhs) const;
+	/// Equality operator
+	bool operator==(const ParsedSection& rhs) const;
 
-    /// subscript operator for the key-value store
-    const std::vector<std::string>& operator[](const std::string& key) const;
+	/// subscript operator for the key-value store
+	const std::vector<std::string>& operator[](const std::string& key) const;
 
-    /// check whether the key-value store contains a key
-    bool haskey(const std::string& key) const { return dict.contains(key); }
+	/// check whether the key-value store contains a key
+	bool haskey(const std::string& key) const { return dict.contains(key); }
 };
 
 /** Parsed data */
@@ -60,11 +60,11 @@ ParsedSection parse_mf_section(const std::string& input, bool keep_quotes = fals
 /// registers dispatcher
 void init();
 
-} // namespace mata::Parser.
+} // namespace mata::parser
 
 namespace std {
-    /// Output stream operator
-    std::ostream& operator<<(std::ostream& os, const mata::parser::ParsedSection& parsec);
-}
+/// Output stream operator
+std::ostream& operator<<(std::ostream& os, const mata::parser::ParsedSection& parsec);
+} // namespace std
 
 #endif /* MATA_PARSER_HH_ */

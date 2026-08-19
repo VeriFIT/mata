@@ -4,14 +4,15 @@
  * This is a separation of the implementation from the interface defined in @c mata::nfa.
  * @note In @c mata::nfa interface, there are particular dispatch functions calling these function according to
  *  parameters provided by a user. E.g., we can call the following function:
- * `is_universal(aut, alph, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based algorithm.
+ * `is_universal(aut, alph, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based
+ * algorithm.
  */
 
 #ifndef MATA_NFA_INTERNALS_HH_
 #define MATA_NFA_INTERNALS_HH_
 
-#include "nfa.hh"
 #include "mata/simlib/util/binary_relation.hh"
+#include "nfa.hh"
 
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
@@ -61,7 +62,8 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
  * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if
  *  you have it).
  * @param[out] cex A potential counterexample word which breaks inclusion
- * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is
+ * empty.
  */
 bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
 
@@ -72,9 +74,12 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
  * @param[in] bigger Automaton which language should include the smaller one
  * @param[in] alphabet Alphabet of both automata (not needed for antichain algorithm)
  * @param[out] cex A potential counterexample word which breaks inclusion
- * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is empty.
+ * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is
+ * empty.
  */
-bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
+bool is_included_antichains(
+	const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr
+);
 
 /**
  * @brief Check universality by checking the emptiness of a complement of @p aut.
@@ -97,23 +102,29 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
 Simlib::Util::BinaryRelation compute_relation(
-        const Nfa& aut,
-        const ParameterMap&  params = {{ "relation", "simulation"}, { "direction", "forward"}});
+	const Nfa& aut, const ParameterMap& params = {{"relation", "simulation"}, {"direction", "forward"}}
+);
 
 /**
- * @brief Compute product of two NFAs, final condition is to be specified, with a possibility of using multiple epsilons.
+ * @brief Compute product of two NFAs, final condition is to be specified, with a possibility of using multiple
+ * epsilons.
  *
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
  * @param[in] first_epsilon The smallest epsilon.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
  * @param[out] product_map Can be used to get the mapping of the pairs of the original states to product states.
- *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
- *   because this one is too slow.
+ *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data
+ * structures, because this one is too slow.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
-            Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *product_map = nullptr);
+Nfa product(
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const std::function<bool(State, State)>&& final_condition,
+	Symbol first_epsilon = EPSILON,
+	std::unordered_map<std::pair<State, State>, State>* product_map = nullptr
+);
 
 /**
  * @brief Concatenate two NFAs.
@@ -127,8 +138,14 @@ Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
-                    StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
+Nfa concatenate_eps(
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
 
 /**
  * @brief Reduce NFA using (forward) simulation.
@@ -136,7 +153,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
  * @param[in] nfa NFA to reduce
  * @param[out] state_renaming Map mapping original states to the reduced states.
  */
-Nfa reduce_simulation(const Nfa& nfa, StateRenaming &state_renaming);
+Nfa reduce_simulation(const Nfa& nfa, StateRenaming& state_renaming);
 
 /**
  * @brief Reduce NFA using residual construction.
@@ -146,8 +163,9 @@ Nfa reduce_simulation(const Nfa& nfa, StateRenaming &state_renaming);
  * @param[in] type Type of the residual construction (values: "after", "with").
  * @param[in] direction Direction of the residual construction (values: "forward", "backward").
  */
-Nfa reduce_residual(const Nfa& nfa, StateRenaming &state_renaming,
-                    const std::string& type, const std::string& direction);
+Nfa reduce_residual(
+	const Nfa& nfa, StateRenaming& state_renaming, const std::string& type, const std::string& direction
+);
 
 /**
  * @brief Reduce NFA using residual construction.

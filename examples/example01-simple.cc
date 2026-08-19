@@ -7,12 +7,12 @@
 using namespace mata::nfa;
 
 int main() {
-    Nfa aut(4);
+	Nfa aut(4);
 
-    aut.initial = { 0,1 };
-    aut.final = { 2,3 };
-    aut.delta.add(0, 0, 2);
-    aut.delta.add(1, 1, 3);
+	aut.initial = {0, 1};
+	aut.final = {2, 3};
+	aut.delta.add(0, 0, 2);
+	aut.delta.add(1, 1, 3);
 
-    aut.print_to_dot(std::cout);
+	aut.print_to_dot(std::cout);
 }

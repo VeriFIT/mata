@@ -14,9 +14,8 @@
 	#define MATA_ASSERT(cond, ...) ((void) 0)
 #else
 namespace mata::internal {
-[[noreturn]] inline void assert_fail(
-	const char* expr, const char* file, int line, const char* func, const std::string& msg
-) {
+[[noreturn]] inline void
+	assert_fail(const char* expr, const char* file, int line, const char* func, const std::string& msg) {
 	if (msg.empty()) {
 		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed.\n", file, line, func, expr);
 	} else {

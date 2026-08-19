@@ -4,8 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "mata/utils/utils.hh"
 #include "mata/utils/two-dimensional-map.hh"
+#include "mata/utils/utils.hh"
 
 using namespace mata::utils;
 
@@ -52,15 +52,15 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == false") {
     }
 
     SECTION("big") {
-        TwoDimensionalMap<unsigned> map(1000, 1000);
-        for (unsigned i = 0; i < 1000; ++i) {
-            for (unsigned j = 0; j < 1000; ++j) {
+        TwoDimensionalMap<unsigned> map(1'000, 1'000);
+        for (unsigned i = 0; i < 1'000; ++i) {
+            for (unsigned j = 0; j < 1'000; ++j) {
                 map.insert(i, j, i + j);
             }
         }
 
-        for (unsigned i = 0; i < 1000; ++i) {
-            for (unsigned j = 0; j < 1000; ++j) {
+        for (unsigned i = 0; i < 1'000; ++i) {
+            for (unsigned j = 0; j < 1'000; ++j) {
                 CHECK(map.get(i, j) == i + j);
             }
         }
@@ -110,15 +110,15 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == true") {
     }
 
     SECTION("big") {
-        TwoDimensionalMap<unsigned, true, 1000> map(1000, 1000);
-        for (unsigned i = 0; i < 1000; ++i) {
-            for (unsigned j = 0; j < 1000; ++j) {
+        TwoDimensionalMap<unsigned, true, 1'000> map(1'000, 1'000);
+        for (unsigned i = 0; i < 1'000; ++i) {
+            for (unsigned j = 0; j < 1'000; ++j) {
                 map.insert(i, j, i + j);
             }
         }
 
-        for (unsigned i = 0; i < 1000; ++i) {
-            for (unsigned j = 0; j < 1000; ++j) {
+        for (unsigned i = 0; i < 1'000; ++i) {
+            for (unsigned j = 0; j < 1'000; ++j) {
                 CHECK(map.get(i, j) == i + j);
             }
         }
