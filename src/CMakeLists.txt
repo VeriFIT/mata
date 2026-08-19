@@ -3,15 +3,24 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINA
 
 # create glob all source files with .cc and .hh extensions
 file (GLOB_RECURSE MATA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+file (GLOB_RECURSE MATA_HEADERS "${PROJECT_SOURCE_DIR}/include/*.hh")
 
 # add_library(libmata SHARED
 add_library (libmata STATIC
 	${MATA_SOURCES}
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
-	# we add files from the libraries here, so we create one static library libmata.a with everything and so that we can export only libmata
+	# we add files from the libraries here, so we create one static library libmata.a with everything and so that we can
+	# export only libmata
 	$<TARGET_OBJECTS:cudd>
 	$<TARGET_OBJECTS:simlib>
 	$<TARGET_OBJECTS:re2>
+)
+
+target_sources (libmata
+	PUBLIC
+		FILE_SET HEADERS
+		BASE_DIRS ${PROJECT_SOURCE_DIR}/include
+		FILES ${MATA_HEADERS}
 )
 
 # libmata needs at least c++20
@@ -25,9 +34,11 @@ set_target_properties (libmata PROPERTIES
 find_package(Threads REQUIRED)
 target_link_libraries(libmata PRIVATE Threads::Threads)
 
+# TODO remove cudd_headers after we remove PUBLIC dependency on CUDD
+# TODO remove this simlib_headers we remove PUBLIC dependency on simlib
 target_link_libraries(libmata PUBLIC cudd_headers simlib_headers)
 
-target_include_directories (libmata 
+target_include_directories (libmata
 	PUBLIC
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>

@@ -8,4 +8,11 @@ target_include_directories(simlib_headers
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
+file(GLOB_RECURSE SIMLIB_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh")
+target_sources(simlib_headers
+    INTERFACE
+        FILE_SET HEADERS
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+        FILES ${SIMLIB_HEADERS}
+)
 target_link_libraries(simlib PUBLIC simlib_headers)

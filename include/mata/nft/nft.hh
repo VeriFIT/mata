@@ -126,6 +126,7 @@ class Nft : public nfa::Nfa {
 	 */
 	Levels levels{};
 
+<<<<<<< HEAD
 	/**
 	 * @brief Per-level alphabets
 	 *
@@ -134,6 +135,8 @@ class Nft : public nfa::Nfa {
 	 */
 	std::shared_ptr<AlphabetLevels> alphabets{nullptr};
 
+=======
+>>>>>>> origin/master
 	/// Key value store for additional attributes for the NFT. Keys are attribute names as strings and the value types
 	///  are up to the user.
 	/// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to
@@ -143,16 +146,27 @@ class Nft : public nfa::Nfa {
 	// TODO: When there is a need for state dictionary, consider creating default library implementation of state
 	//  dictionary in the attributes.
 
+<<<<<<< HEAD
+=======
+  public:
+>>>>>>> origin/master
 	explicit Nft(
 		Delta delta = {},
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {},
 		Levels levels = {},
+<<<<<<< HEAD
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	)
 		: Nfa{std::move(delta), std::move(initial_states), std::move(final_states), nullptr},
 		  levels{levels.empty() ? Levels{levels.num_of_levels, num_of_states(), DEFAULT_LEVEL} : std::move(levels)},
 		  alphabets{std::move(alphabets)} {}
+=======
+		Alphabet* alphabet = nullptr
+	)
+		: Nfa{std::move(delta), std::move(initial_states), std::move(final_states), alphabet},
+		  levels{levels.empty() ? Levels{levels.num_of_levels, num_of_states(), DEFAULT_LEVEL} : std::move(levels)} {}
+>>>>>>> origin/master
 
 	/**
 	 * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
@@ -161,29 +175,46 @@ class Nft : public nfa::Nfa {
 	 * @param initial_states Initial states of the NFT.
 	 * @param final_states Final states of the NFT.
 	 * @param levels Levels of the states.
+<<<<<<< HEAD
 	 * @param alphabets Per-level alphabets of the NFT (non-owning).
+=======
+	 * @param alphabet Alphabet of the NFT.
+>>>>>>> origin/master
 	 */
 	explicit Nft(
 		const size_t num_of_states,
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {},
 		Levels levels = {},
+<<<<<<< HEAD
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	)
 		: Nfa{num_of_states, std::move(initial_states), std::move(final_states), nullptr},
 		  levels{levels.empty() ? Levels{levels.num_of_levels, num_of_states, DEFAULT_LEVEL} : std::move(levels)},
 		  alphabets{std::move(alphabets)} {}
+=======
+		Alphabet* alphabet = nullptr
+	)
+		: Nfa{num_of_states, std::move(initial_states), std::move(final_states), alphabet},
+		  levels{levels.empty() ? Levels{levels.num_of_levels, num_of_states, DEFAULT_LEVEL} : std::move(levels)} {}
+>>>>>>> origin/master
 
 	static Nft with_levels(
 		Levels levels,
 		const size_t num_of_states = 0,
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {},
+<<<<<<< HEAD
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	) {
 		return Nft{
 			num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), std::move(alphabets)
 		};
+=======
+		Alphabet* alphabet = nullptr
+	) {
+		return Nft{num_of_states, std::move(initial_states), std::move(final_states), std::move(levels), alphabet};
+>>>>>>> origin/master
 	}
 
 	static Nft with_levels(
@@ -191,12 +222,18 @@ class Nft : public nfa::Nfa {
 		Delta delta,
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {},
+<<<<<<< HEAD
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	) {
 		return Nft{
 			std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels),
 			std::move(alphabets)
 		};
+=======
+		Alphabet* alphabet = nullptr
+	) {
+		return Nft{std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), alphabet};
+>>>>>>> origin/master
 	}
 
 	static Nft with_levels(
@@ -204,12 +241,18 @@ class Nft : public nfa::Nfa {
 		const size_t num_of_states = 0,
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {},
+<<<<<<< HEAD
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	) {
 		return Nft{
 			num_of_states, std::move(initial_states), std::move(final_states), Levels{num_of_levels},
 			std::move(alphabets)
 		};
+=======
+		Alphabet* alphabet = nullptr
+	) {
+		return Nft{num_of_states, std::move(initial_states), std::move(final_states), Levels{num_of_levels}, alphabet};
+>>>>>>> origin/master
 	}
 
 	static Nft with_levels(
@@ -217,6 +260,7 @@ class Nft : public nfa::Nfa {
 		Delta delta,
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {},
+<<<<<<< HEAD
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	) {
 		return Nft{
@@ -227,6 +271,28 @@ class Nft : public nfa::Nfa {
 
 	Nft(const Nft& other) = default;
 	Nft(Nft&& other) noexcept = default;
+=======
+		Alphabet* alphabet = nullptr
+	) {
+		return Nft{
+			std::move(delta), std::move(initial_states), std::move(final_states), Levels{num_of_levels}, alphabet
+		};
+	}
+
+	/**
+	 * @brief Construct a new explicit NFT from other NFT.
+	 */
+	Nft(const Nft& other) = default;
+
+	Nft(Nft&& other) noexcept : levels{std::move(other.levels)} {
+		delta = std::move(other.delta);
+		initial = std::move(other.initial);
+		final = std::move(other.final);
+		attributes = std::move(other.attributes);
+		alphabet = other.alphabet;
+		other.alphabet = nullptr;
+	}
+>>>>>>> origin/master
 
 	Nft& operator=(const Nft& other) = default;
 	Nft& operator=(Nft&& other) noexcept;

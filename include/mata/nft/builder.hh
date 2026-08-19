@@ -56,8 +56,12 @@ Nft create_sigma_star_nft(size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
  * @param[in] num_of_levels Number of levels in the created NFT.
  */
 Nft create_sigma_star_nft(
+<<<<<<< HEAD
 	std::shared_ptr<Alphabet> alphabet = std::make_shared<OnTheFlyAlphabet>(),
 	size_t num_of_levels = DEFAULT_NUM_OF_LEVELS
+=======
+	const Alphabet* alphabet = new OnTheFlyAlphabet{}, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS
+>>>>>>> origin/master
 );
 
 /** Loads an automaton from Parsed object */
@@ -68,6 +72,7 @@ Nft construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameState
 Nft construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
 void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+<<<<<<< HEAD
 
 /**
  * @brief Loads an automaton from an IntermediateAut using per-level alphabets.
@@ -84,6 +89,8 @@ void construct(
 	std::shared_ptr<AlphabetLevels> alphabets,
 	NameStateMap* state_map = nullptr
 );
+=======
+>>>>>>> origin/master
 
 template <class ParsedObject>
 Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {

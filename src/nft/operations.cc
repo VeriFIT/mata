@@ -524,7 +524,11 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	}
 
 	// Construct the automaton with projected levels.
+<<<<<<< HEAD
 	Nft result{Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabets)};
+=======
+	Nft result{Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabet)};
+>>>>>>> origin/master
 	for (State src_state{0}; src_state < num_of_states_in_delta; src_state++) { // For every state.
 		for (const State cls_state : closure[src_state]) { // For every state in its epsilon closure.
 			if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
@@ -638,7 +642,11 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
 	// Construct an empty automaton with updated levels.
 	Nft result(
 		Nft::with_levels(
+<<<<<<< HEAD
 			Levels{new_levels_mask.size(), new_state_levels}, nft.num_of_states(), nft.initial, nft.final, nft.alphabets
+=======
+			Levels{new_levels_mask.size(), new_state_levels}, nft.num_of_states(), nft.initial, nft.final, nft.alphabet
+>>>>>>> origin/master
 		)
 	);
 
@@ -916,7 +924,11 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 	// Create new automaton
 	Nft aut_inv = Nft::with_levels(
 		{aut.levels.num_of_levels, num_of_zero_states, DEFAULT_LEVEL}, num_of_zero_states, std::move(new_initial),
+<<<<<<< HEAD
 		std::move(new_final), aut.alphabets
+=======
+		std::move(new_final), aut.alphabet
+>>>>>>> origin/master
 	);
 
 	// Creates new states with inverted levels for each inner state in the path.
@@ -1279,7 +1291,11 @@ Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const Param
 
 Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map) {
 	Nft result{Nft::with_levels(nft.levels.num_of_levels)};
+<<<<<<< HEAD
 	result.alphabets = nft.alphabets;
+=======
+	result.alphabet = nft.alphabet;
+>>>>>>> origin/master
 	if (nft.initial.empty()) { return result; }
 
 	// Assuming all sets targets are non-empty.

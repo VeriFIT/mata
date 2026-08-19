@@ -3,7 +3,10 @@
 
 #include <mata/alphabet.hh>
 
+<<<<<<< HEAD
 using mata::AlphabetLevels;
+=======
+>>>>>>> origin/master
 using mata::OnTheFlyAlphabet;
 using mata::Symbol;
 
@@ -183,6 +186,7 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 		return 1;
 	}
 	return 0;
+<<<<<<< HEAD
 }
 
 Symbol AlphabetLevels::translate_symb(const std::string& symb, const std::optional<mata::Level> level) {
@@ -254,6 +258,8 @@ const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level>
 
 mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
 	return const_cast<Alphabet&>(std::as_const(*this).for_level(level));
+=======
+>>>>>>> origin/master
 }
 
 mata::Word mata::encode_word_utf8(const mata::Word& word) {

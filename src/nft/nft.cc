@@ -213,13 +213,18 @@ void Nft::print_to_dot(
 		}
 	};
 
+<<<<<<< HEAD
 	auto translate_symbol = [&](const Symbol symbol, const Level level) -> std::string {
+=======
+	auto translate_symbol = [&](const Symbol symbol) -> std::string {
+>>>>>>> origin/master
 		switch (symbol) {
 			case EPSILON:
 				return "<eps>";
 			default:
 				break;
 		}
+<<<<<<< HEAD
 		if (decode_ascii_chars) { return to_ascii(symbol); }
 		if (alphabet != nullptr) { return alphabet->reverse_translate_symbol(symbol); }
 		if (this->alphabets != nullptr) { return this->alphabets->reverse_translate_symbol(symbol, level); }
@@ -230,11 +235,31 @@ void Nft::print_to_dot(
 	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols, const Level level) {
 		std::string result;
 		for (const Symbol& symbol : symbols) { result += translate_symbol(symbol, level) + ","; }
+=======
+		if (decode_ascii_chars) {
+			return to_ascii(symbol);
+		} else if (alphabet != nullptr) {
+			return alphabet->reverse_translate_symbol(symbol);
+		} else if (this->alphabet != nullptr) {
+			return this->alphabet->reverse_translate_symbol(symbol);
+		} else {
+			return std::to_string(symbol);
+		}
+	};
+
+	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+		std::string result;
+		for (const Symbol& symbol : symbols) { result += translate_symbol(symbol) + ","; }
+>>>>>>> origin/master
 		result.pop_back(); // Remove last comma
 		return result;
 	};
 
+<<<<<<< HEAD
 	auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols, const Level level) {
+=======
+	auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+>>>>>>> origin/master
 		std::string result;
 
 		const auto intervals{[&]() {
@@ -256,11 +281,19 @@ void Nft::print_to_dot(
 
 		for (const auto& [symbol_from, symbol_to] : intervals) {
 			if (const size_t interval_size{symbol_to - symbol_from + 1}; interval_size == 1) {
+<<<<<<< HEAD
 				result += translate_symbol(symbol_from, level) + ",";
 			} else if (interval_size == 2) {
 				result += translate_symbol(symbol_from, level) + "," + translate_symbol(symbol_to, level) + ",";
 			} else {
 				result += "[" + translate_symbol(symbol_from, level) + "-" + translate_symbol(symbol_to, level) + "],";
+=======
+				result += translate_symbol(symbol_from) + ",";
+			} else if (interval_size == 2) {
+				result += translate_symbol(symbol_from) + "," + translate_symbol(symbol_to) + ",";
+			} else {
+				result += "[" + translate_symbol(symbol_from) + "-" + translate_symbol(symbol_to) + "],";
+>>>>>>> origin/master
 			}
 		}
 
@@ -294,9 +327,14 @@ void Nft::print_to_dot(
 				continue;
 			}
 
+<<<<<<< HEAD
 			const Level source_level = source < levels.size() ? levels[source] : 0;
 			std::string label = use_intervals ? vec_of_symbols_to_string_with_intervals(symbols, source_level)
 											  : vec_of_symbols_to_string(symbols, source_level);
+=======
+			std::string label =
+				use_intervals ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
+>>>>>>> origin/master
 			std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
 			bool is_shortened = false;
 			if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
@@ -383,6 +421,7 @@ void Nft::print_to_mata(std::ostream& output) const {
 	output << "%LevelsNum " << levels.num_of_levels << std::endl;
 
 	for (const Transition& trans : delta.transitions()) {
+<<<<<<< HEAD
 		std::string symbol_label;
 		if (alphabets != nullptr) {
 			symbol_label = alphabets->reverse_translate_symbol(trans.symbol, levels[trans.source]);
@@ -392,6 +431,14 @@ void Nft::print_to_mata(std::ostream& output) const {
 			symbol_label = std::to_string(trans.symbol);
 		}
 		output << "q" << trans.source << " " << symbol_label << " q" << trans.target << std::endl;
+=======
+		output << "q" << trans.source << " "
+			   << ((alphabet != nullptr)
+					   ? alphabet->reverse_translate_symbol(trans.symbol)
+					   : ((this->alphabet != nullptr) ? this->alphabet->reverse_translate_symbol(trans.symbol)
+													  : std::to_string(trans.symbol)))
+			   << " q" << trans.target << std::endl;
+>>>>>>> origin/master
 	}
 }
 
@@ -879,10 +926,16 @@ StateSet Nft::post(
 
 Nft& Nft::operator=(Nft&& other) noexcept {
 	if (this != &other) {
+<<<<<<< HEAD
 		Nfa::operator=(std::move(other));
 		levels = std::move(other.levels);
 		levels.num_of_levels = other.levels.num_of_levels;
 		alphabets = std::exchange(other.alphabets, nullptr);
+=======
+		Nfa::operator=(other);
+		levels = std::move(other.levels);
+		levels.num_of_levels = other.levels.num_of_levels;
+>>>>>>> origin/master
 	}
 	return *this;
 }

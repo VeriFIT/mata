@@ -58,9 +58,14 @@ int main() {
 	next2 = nft2.insert_word(next2, {'B', '2', 'C', '3'});
 	nft2.insert_word_by_levels(next2, {{'D'}, {'4', '5', '6'}}, final2);
 	nft2.insert_identity(final2, &alphabet);
+<<<<<<< HEAD
 	Nft nft_composed{
 		mata::nft::compose(nft, nft2)
 	}; // Compose, by default on tape 1 of nft and tape 0 of nft2, giving the composition nft2 after nft.
+=======
+	// Compose, by default on tape 1 of nft and tape 0 of nft2, giving the composition nft2 after nft.
+	Nft nft_composed{mata::nft::compose(nft, nft2)};
+>>>>>>> origin/master
 	// Print the composed NFT in dot format, labeling the states as `state_number:level`.
 	std::cout << "Composed NFT:\n";
 	nft_composed.print_to_dot(std::cout, true);

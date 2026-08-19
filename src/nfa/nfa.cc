@@ -730,8 +730,14 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
 		delta = std::move(other.delta);
 		initial = std::move(other.initial);
 		final = std::move(other.final);
+<<<<<<< HEAD
 		alphabet = std::move(other.alphabet);
 		attributes = std::move(other.attributes);
+=======
+		alphabet = other.alphabet;
+		attributes = std::move(other.attributes);
+		other.alphabet = nullptr;
+>>>>>>> origin/master
 	}
 	return *this;
 }

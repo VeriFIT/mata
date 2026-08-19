@@ -156,8 +156,13 @@ Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
 	return nfa;
 }
 
+<<<<<<< HEAD
 Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, std::shared_ptr<Alphabet> alphabet) {
 	if (!alphabet) { alphabet = std::make_shared<OnTheFlyAlphabet>(word); }
+=======
+Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, Alphabet* alphabet) {
+	if (!alphabet) { alphabet = new OnTheFlyAlphabet{word}; }
+>>>>>>> origin/master
 	const size_t word_size{word.size()};
 	Nfa nfa{word_size + 1, {0}, {word_size}, alphabet};
 
@@ -168,6 +173,7 @@ Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, std::s
 }
 
 Nfa builder::create_empty_string_nfa() { return Nfa{1, {0}, {0}}; }
+<<<<<<< HEAD
 
 Nfa builder::create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet) {
 	Nfa nfa{1, {0}, {0}, alphabet};
@@ -214,6 +220,54 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 	std::vector<State> one_dimensional_transition_matrix(num_of_states * num_of_states);
 	std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
 
+=======
+
+Nfa builder::create_sigma_star_nfa(Alphabet* alphabet) {
+	Nfa nfa{1, {0}, {0}, alphabet};
+	for (const Symbol& symbol : alphabet->get_alphabet_symbols()) { nfa.delta.add(0, symbol, 0); }
+	return nfa;
+}
+
+Nfa builder::create_random_nfa_tabakov_vardi(
+	const size_t num_of_states,
+	const size_t alphabet_size,
+	const double states_transitions_ratio_per_symbol,
+	const double final_state_density,
+	const std::optional<unsigned int>& seed
+) {
+	if (num_of_states == 0) { return Nfa(); }
+	if (states_transitions_ratio_per_symbol < 0 ||
+		static_cast<size_t>(states_transitions_ratio_per_symbol) > num_of_states) {
+		// Maximum of num_of_states^2 unique transitions for one symbol can be created.
+		throw std::runtime_error("Transition density must be in range [0, num_of_states]");
+	}
+	if (final_state_density < 0 || final_state_density > 1) {
+		// Maximum of num_of_states final states can be created.
+		throw std::runtime_error("Final state density must be in range (0, 1]");
+	}
+
+	Nfa nfa{num_of_states, {0}, {0}, new OnTheFlyAlphabet{}};
+
+	// Initialize the random number generator
+	const unsigned int seed_value{seed.value_or(std::random_device{}())}; // Seed for the random number engine
+	std::mt19937 gen(seed_value); // Mersenne Twister engine
+
+	// Unique final state generator
+	std::vector<State> states(num_of_states);
+	std::iota(states.begin(), states.end(), 0);
+	std::shuffle(states.begin() + 1, states.end(), gen); // Starting from 1, because 0 is allways final state.
+
+	// Create final states
+	const size_t num_of_final_states{
+		static_cast<size_t>(std::round(static_cast<double>(num_of_states) * final_state_density))
+	};
+	for (size_t i = 0; i < num_of_final_states; ++i) { nfa.final.insert(states[i]); }
+
+	// Unique transition generator
+	std::vector<State> one_dimensional_transition_matrix(num_of_states * num_of_states);
+	std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
+
+>>>>>>> origin/master
 	// Create transitions
 	// Using std::min because, in some universe, casting and rounding might cause the number of transitions to exceed
 	// the number of possible transitions by 1 and then an access to the non-existing element of
