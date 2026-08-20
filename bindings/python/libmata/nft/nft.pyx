@@ -418,6 +418,15 @@ cdef class Nft:
     def clear_final(self):
         self.thisptr.get().final.clear()
 
+    @property
+    def delta(self) -> mata_nfa.Delta:
+        """The transition relation of the automaton.
+
+        Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
+        e.g. `nft.delta.add(source, symbol, target)`, `nft.delta.contains(...)`, or iterating `for t in nft.delta`.
+        """
+        return mata_nfa.wrap_delta(static_pointer_cast[CNfa, CNft](self.thisptr))
+
     def add_transition_object(self, Transition tr):
         self.thisptr.get().delta.add(dereference((<mata_nfa.Transition>tr).thisptr))
 

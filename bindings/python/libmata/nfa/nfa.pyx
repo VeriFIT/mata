@@ -184,6 +184,206 @@ cdef class SymbolPost:
         return str(self)
 
 
+cdef object wrap_delta(shared_ptr[CNfa] nfa_ptr):
+    """Wrap the `delta` member of the automaton behind `nfa_ptr` as a Python `Delta` object."""
+    result = Delta.__new__(Delta)
+    (<Delta>result).nfa_ptr = nfa_ptr
+    return result
+
+
+cdef class Delta:
+    """Wrapper over the transition relation (`Delta`) of an automaton, allowing operations on transitions similar
+    to the C++ interface, e.g. `nfa.delta.add(source, symbol, target)`.
+
+    Obtained through `Nfa.delta`/`Nft.delta`; not meant to be instantiated directly. It holds a shared pointer to
+    the owning automaton, so it stays valid even if the `Nfa`/`Nft` it was obtained from is garbage collected while
+    a reference to its `.delta` is still kept.
+    """
+
+    def __cinit__(self):
+        pass
+
+    def add(self, source, symbol=None, target=None, alph.Alphabet alphabet = None):
+        """Add a transition to Delta.
+
+        :param source: Either a `Transition` object to add (in which case `symbol` and `target` are ignored), or
+          the source state of the transition to add.
+        :param symbol: Symbol of the transition. Can be a string, in which case it is translated using `alphabet`.
+        :param target: Target state of the transition, or an iterable of target states to add multiple transitions
+          from `source` over `symbol` at once.
+        :param alph.Alphabet alphabet: Alphabet used to translate a string `symbol`.
+        """
+        cdef StateSet targets
+        if isinstance(source, Transition):
+            self.nfa_ptr.get().delta.add(dereference((<Transition>source).thisptr))
+            return
+        if isinstance(symbol, str):
+            alphabet = alphabet or store().get('alphabet')
+            if not alphabet:
+                raise Exception(f"Cannot translate symbol '{symbol}' without specified alphabet")
+            symbol = alphabet.translate_symbol(symbol)
+        if isinstance(target, (set, frozenset, list, tuple)):
+            targets = StateSet(target)
+            self.nfa_ptr.get().delta.add_targets(<State>source, <Symbol>symbol, targets)
+        else:
+            self.nfa_ptr.get().delta.add(<State>source, <Symbol>symbol, <State>target)
+
+    def remove(self, source, symbol=None, target=None):
+        """Remove a transition from Delta.
+
+        :param source: Either a `Transition` object to remove (in which case `symbol` and `target` are ignored), or
+          the source state of the transition to remove.
+        :param symbol: Symbol of the transition to remove.
+        :param target: Target state of the transition to remove.
+        """
+        if isinstance(source, Transition):
+            self.nfa_ptr.get().delta.remove(dereference((<Transition>source).thisptr))
+            return
+        self.nfa_ptr.get().delta.remove(<State>source, <Symbol>symbol, <State>target)
+
+    def contains(self, source, symbol=None, target=None) -> bool:
+        """Check whether Delta contains the given transition.
+
+        :param source: Either a `Transition` object (in which case `symbol` and `target` are ignored), or the
+          source state of the transition to check.
+        :param symbol: Symbol of the transition to check.
+        :param target: Target state of the transition to check.
+        :return: True if Delta contains the transition, False otherwise.
+        """
+        if isinstance(source, Transition):
+            return self.nfa_ptr.get().delta.contains(dereference((<Transition>source).thisptr))
+        return self.nfa_ptr.get().delta.contains(<State>source, <Symbol>symbol, <State>target)
+
+    def __contains__(self, item) -> bool:
+        if isinstance(item, Transition):
+            return self.contains(item)
+        source, symbol, target = item
+        return self.contains(source, symbol, target)
+
+    def clear(self) -> None:
+        """Remove all transitions from Delta."""
+        self.nfa_ptr.get().delta.clear()
+
+    def empty(self) -> bool:
+        """Check whether Delta contains no transitions.
+
+        :return: True if Delta contains no transitions, False otherwise.
+        """
+        return self.nfa_ptr.get().delta.empty()
+
+    def num_of_transitions(self) -> int:
+        """Get the number of transitions in Delta.
+
+        :return: Number of transitions in Delta.
+        """
+        return self.nfa_ptr.get().delta.num_of_transitions()
+
+    def __len__(self) -> int:
+        return self.num_of_transitions()
+
+    def num_of_states(self) -> int:
+        """Get the number of states for which Delta has allocated a state post.
+
+        :return: Number of states in Delta.
+        """
+        return self.nfa_ptr.get().delta.num_of_states()
+
+    def uses_state(self, State state) -> bool:
+        """Check whether `state` is used in Delta.
+
+        :param State state: State to check.
+        :return: True if `state` is used in Delta, False otherwise.
+        """
+        return self.nfa_ptr.get().delta.uses_state(state)
+
+    def state_post(self, State state) -> list[SymbolPost]:
+        """Get the outgoing transitions from `state`, grouped by symbol.
+
+        :param State state: Source state to get the outgoing transitions of.
+        :return: List of `SymbolPost` for `state`.
+        """
+        cdef CStatePost c_state_post = self.nfa_ptr.get().delta.state_post(state)
+        cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
+        return [SymbolPost(symbol_post.symbol, symbol_post.targets.to_vector()) for symbol_post in c_symbol_posts]
+
+    def __getitem__(self, State state) -> list[SymbolPost]:
+        return self.state_post(state)
+
+    def transitions(self):
+        """Iterate over all transitions in Delta.
+
+        :return: Generator of `Transition` instances.
+        """
+        cdef CTransitions c_transitions = self.nfa_ptr.get().delta.transitions()
+        cdef CTransitions.const_iterator iterator = c_transitions.begin()
+        while iterator != c_transitions.end():
+            trans = Transition()
+            (<Transition>trans).copy_from(dereference(iterator))
+            preinc(iterator)
+            yield trans
+
+    def __iter__(self):
+        return self.transitions()
+
+    def get_transitions_from(self, State source) -> list[Transition]:
+        """Get the transitions leading from `source`.
+
+        :param State source: Source state to get the transitions of.
+        :return: List of `Transition` instances leading from `source`.
+        """
+        transitions = []
+        cdef CStatePost c_state_post = self.nfa_ptr.get().delta[source]
+        cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
+        cdef vector[State] c_targets
+        for symbol_post in c_symbol_posts:
+            c_targets = symbol_post.targets.to_vector()
+            for target in c_targets:
+                transitions.append(Transition(source, symbol_post.symbol, target))
+        return transitions
+
+    def get_transitions_to(self, State target) -> list[Transition]:
+        """Get the transitions leading to `target`.
+
+        Operation is slow, traverses over all symbol posts.
+
+        :param State target: Target state to get the transitions of.
+        :return: List of `Transition` instances leading to `target`.
+        """
+        cdef vector[CTrans] c_transitions = self.nfa_ptr.get().delta.get_transitions_to(target)
+        return [Transition(t.source, t.symbol, t.target) for t in c_transitions]
+
+    def get_transitions_between(self, State source, State target) -> list[Transition]:
+        """Get the transitions leading from `source` to `target`.
+
+        Operation is slow, traverses over all symbol posts.
+
+        :param State source: Source state to get the transitions of.
+        :param State target: Target state to get the transitions of.
+        :return: List of `Transition` instances leading from `source` to `target`.
+        """
+        cdef vector[CTrans] c_transitions = self.nfa_ptr.get().delta.get_transitions_between(source, target)
+        return [Transition(t.source, t.symbol, t.target) for t in c_transitions]
+
+    def get_used_symbols(self) -> set[Symbol]:
+        """Get the set of symbols used on the transitions in Delta.
+
+        :return: Set of symbols used on the transitions.
+        """
+        cdef COrdVector[Symbol] symbols = self.nfa_ptr.get().delta.get_used_symbols()
+        return {s for s in symbols}
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Delta):
+            return NotImplemented
+        return self.nfa_ptr.get().delta == (<Delta>other).nfa_ptr.get().delta
+
+    def __str__(self):
+        return f"Delta({self.num_of_transitions()} transitions)"
+
+    def __repr__(self):
+        return str(self)
+
+
 cdef class Nfa:
     """Wrapper over NFA
 
@@ -239,6 +439,15 @@ cdef class Nfa:
         self.thisptr.get().final.clear()
         for state in value:
             self.thisptr.get().final.insert(state)
+
+    @property
+    def delta(self) -> Delta:
+        """The transition relation of the automaton.
+
+        Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
+        e.g. `nfa.delta.add(source, symbol, target)`, `nfa.delta.contains(...)`, or iterating `for t in nfa.delta`.
+        """
+        return wrap_delta(self.thisptr)
 
     def is_state(self, state):
         """Tests if state is in the automaton
