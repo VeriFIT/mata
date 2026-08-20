@@ -119,3 +119,66 @@ def test_transitions():
     # Test that transitions are not duplicated.
     lhs.add_transition_object(t3)
     assert [t for t in lhs.iterate()] == [t1, t2, t3, t4]
+
+
+def test_delta_add_remove_contains():
+    """Tests basic Delta operations mirroring the C++ interface, e.g. nfa.delta.add()."""
+    nfa = mata_nfa.Nfa(5)
+    assert isinstance(nfa.delta, mata_nfa.Delta)
+    assert nfa.delta.empty()
+    assert len(nfa.delta) == 0
+
+    nfa.delta.add(0, ord('a'), 1)
+    assert not nfa.delta.empty()
+    assert len(nfa.delta) == 1
+    assert nfa.delta.contains(0, ord('a'), 1)
+    assert (0, ord('a'), 1) in nfa.delta
+
+    tr = mata_nfa.Transition(1, ord('b'), 2)
+    nfa.delta.add(tr)
+    assert nfa.delta.contains(tr)
+    assert tr in nfa.delta
+
+    # Adding a transition to multiple targets at once.
+    nfa.delta.add(2, ord('c'), {3, 4})
+    assert nfa.delta.contains(2, ord('c'), 3)
+    assert nfa.delta.contains(2, ord('c'), 4)
+    assert len(nfa.delta) == 4
+
+    nfa.delta.remove(0, ord('a'), 1)
+    assert not nfa.delta.contains(0, ord('a'), 1)
+    nfa.delta.remove(tr)
+    assert not nfa.delta.contains(tr)
+
+
+def test_delta_views(prepare_automaton_a):
+    """Tests that Delta exposes the transitions similarly to the corresponding Nfa methods."""
+    nfa = prepare_automaton_a()
+
+    assert nfa.delta.num_of_transitions() == nfa.get_num_of_transitions()
+    assert list(nfa.delta) == nfa.get_trans_as_sequence()
+    assert nfa.delta.get_transitions_from(1) == nfa.get_trans_from_state_as_sequence(1)
+    assert nfa.delta.get_transitions_to(9) == nfa.get_transitions_to_state(9)
+    assert nfa.delta.get_used_symbols() == nfa.get_symbols()
+    assert nfa.delta[1] == nfa.get_transitions_from_state(1)
+
+
+def test_delta_survives_nfa_deletion():
+    """Tests that a kept Delta reference stays valid after the owning Nfa is garbage collected."""
+    nfa = mata_nfa.Nfa(2)
+    nfa.delta.add(0, 0, 1)
+    delta = nfa.delta
+    del nfa
+    assert len(delta) == 1
+    assert delta.contains(0, 0, 1)
+
+
+def test_delta_equality():
+    lhs = mata_nfa.Nfa(2)
+    lhs.add_transition(0, 0, 1)
+    rhs = mata_nfa.Nfa(2)
+    rhs.add_transition(0, 0, 1)
+
+    assert lhs.delta == rhs.delta
+    rhs.delta.add(1, 1, 1)
+    assert lhs.delta != rhs.delta

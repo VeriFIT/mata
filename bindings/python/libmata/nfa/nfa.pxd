@@ -65,24 +65,27 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     cdef cppclass CDelta "mata::nfa::Delta":
         vector[CStatePost] state_posts
 
+        bool operator==(CDelta&)
         void reserve(size_t)
         CStatePost& state_post(State)
         CStatePost& operator[](State)
         void clear()
         bool empty()
-        void resize(size_t)
+        bool uses_state(State)
         size_t num_of_states()
-        void defragment()
         void add(CTrans) except +
         void add(State, Symbol, State) except +
+        void add_targets "add" (State, Symbol, StateSet) except +
         void remove(CTrans) except +
         void remove(State, Symbol, State) except +
         bool contains(State, Symbol, State)
+        bool contains(CTrans)
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         size_t num_of_transitions()
         CTransitions transitions()
         vector[CTrans] get_transitions_to(State)
+        vector[CTrans] get_transitions_between(State, State)
         COrdVector[Symbol] get_used_symbols()
 
     cdef cppclass CRun "mata::nfa::Run":
@@ -230,3 +233,10 @@ cdef class Nfa:
 cdef class Transition:
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)
+
+cdef class Delta:
+    # Holds a shared pointer to the owning automaton (rather than a raw `CDelta*`) so that the `Delta` view stays
+    # valid even if all other Python references to the automaton are dropped.
+    cdef shared_ptr[CNfa] nfa_ptr
+
+cdef object wrap_delta(shared_ptr[CNfa] nfa_ptr)

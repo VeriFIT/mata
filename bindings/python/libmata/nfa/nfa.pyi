@@ -105,6 +105,83 @@ class SymbolPost:
     def __repr__(self) -> str:
         ...
 
+class Delta:
+    """Wrapper over the transition relation (`Delta`) of an automaton, allowing operations on transitions similar
+    to the C++ interface, e.g. `nfa.delta.add(source, symbol, target)`.
+
+    Obtained through `Nfa.delta`/`Nft.delta`; not meant to be instantiated directly. It holds a shared pointer to
+    the owning automaton, so it stays valid even if the `Nfa`/`Nft` it was obtained from is garbage collected while
+    a reference to its `.delta` is still kept.
+    """
+    @overload
+    def add(self, source: Transition) -> None:
+        ...
+    @overload
+    def add(self, source: State, symbol: Symbol | str, target: State, alphabet: alph.Alphabet = None) -> None:
+        ...
+    @overload
+    def add(self, source: State, symbol: Symbol | str, target: Iterable[State], alphabet: alph.Alphabet = None) -> None:
+        ...
+    @overload
+    def remove(self, source: Transition) -> None:
+        ...
+    @overload
+    def remove(self, source: State, symbol: Symbol, target: State) -> None:
+        ...
+    @overload
+    def contains(self, source: Transition) -> bool:
+        ...
+    @overload
+    def contains(self, source: State, symbol: Symbol, target: State) -> bool:
+        ...
+    def __contains__(self, item: Transition | tuple[State, Symbol, State]) -> bool:
+        ...
+    def clear(self) -> None:
+        """Remove all transitions from Delta."""
+        ...
+    def empty(self) -> bool:
+        """Check whether Delta contains no transitions."""
+        ...
+    def num_of_transitions(self) -> int:
+        """Get the number of transitions in Delta."""
+        ...
+    def __len__(self) -> int:
+        ...
+    def num_of_states(self) -> int:
+        """Get the number of states for which Delta has allocated a state post."""
+        ...
+    def uses_state(self, state: State) -> bool:
+        """Check whether `state` is used in Delta."""
+        ...
+    def state_post(self, state: State) -> list[SymbolPost]:
+        """Get the outgoing transitions from `state`, grouped by symbol."""
+        ...
+    def __getitem__(self, state: State) -> list[SymbolPost]:
+        ...
+    def transitions(self) -> Iterable[Transition]:
+        """Iterate over all transitions in Delta."""
+        ...
+    def __iter__(self) -> Iterable[Transition]:
+        ...
+    def get_transitions_from(self, source: State) -> list[Transition]:
+        """Get the transitions leading from `source`."""
+        ...
+    def get_transitions_to(self, target: State) -> list[Transition]:
+        """Get the transitions leading to `target`."""
+        ...
+    def get_transitions_between(self, source: State, target: State) -> list[Transition]:
+        """Get the transitions leading from `source` to `target`."""
+        ...
+    def get_used_symbols(self) -> set[Symbol]:
+        """Get the set of symbols used on the transitions in Delta."""
+        ...
+    def __eq__(self, other: Self) -> bool:
+        ...
+    def __str__(self) -> str:
+        ...
+    def __repr__(self) -> str:
+        ...
+
 class Nfa:
     """Wrapper over NFA
 
@@ -137,6 +214,14 @@ class Nfa:
         ...
     @final_states.setter
     def final_states(self, value: list[State]) -> None:
+        ...
+    @property
+    def delta(self) -> Delta:
+        """The transition relation of the automaton.
+
+        Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
+        e.g. `nfa.delta.add(source, symbol, target)`, `nfa.delta.contains(...)`, or iterating `for t in nfa.delta`.
+        """
         ...
     def is_state(self, state: State) -> bool:
         """Tests if state is in the automaton

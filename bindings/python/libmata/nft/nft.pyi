@@ -181,6 +181,14 @@ class Nft:
         ...
     def clear_final(self) -> None:
         ...
+    @property
+    def delta(self) -> mata_nfa.Delta:
+        """The transition relation of the automaton.
+
+        Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
+        e.g. `nft.delta.add(source, symbol, target)`, `nft.delta.contains(...)`, or iterating `for t in nft.delta`.
+        """
+        ...
     def add_transition_object(self, tr: Transition) -> None:
         ...
     def add_transition(self, source: State, symbols: Symbol | list[Symbol], target: State | None = None) -> State:

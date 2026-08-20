@@ -22,6 +22,17 @@ def test_nft_construction_and_states():
     assert nft.is_state(new_state)
 
 
+def test_nft_delta():
+    nft = mata_nft.Nft(3)
+    assert isinstance(nft.delta, mata_nfa.Delta)
+    assert nft.delta.empty()
+
+    nft.delta.add(0, 1, 1)
+    assert nft.delta.contains(0, 1, 1)
+    assert len(nft.delta) == 1
+    assert nft.get_num_of_transitions() == 1
+
+
 def test_nft_insert_word_and_is_in_lang():
     nft = mata_nft.Nft(1, num_of_levels=2)
     nft.make_initial_state(0)
