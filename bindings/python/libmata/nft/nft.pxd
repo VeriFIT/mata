@@ -8,7 +8,7 @@ from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libc.stdint cimport uintptr_t
 
-from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation
+from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, Symbol, Level
 
 from libmata.nfa.nfa cimport (
@@ -172,7 +172,7 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
     ) except +
     cdef CNft c_union_nondet "mata::nft::union_nondet" (CNft&, CNft&) except +
     cdef CNft c_intersection "mata::nft::intersection" (
-        CNft&, CNft&, umap[pair[State, State], State]*, CJumpMode, State, State
+        CNft&, CNft&, umap[pair[State, State], State, CPairHash[State, State]]*, CJumpMode, State, State
     ) except +
     cdef CNft c_compose "mata::nft::compose" (
         CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool, CJumpMode, CCompositionMode
@@ -218,7 +218,7 @@ cdef extern from "mata/nft/algorithms.hh" namespace "mata::nft::algorithms":
 cdef extern from "mata/nft/plumbing.hh" namespace "mata::nft::plumbing":
     cdef void c_nft_union_nondet "mata::nft::plumbing::union_nondet" (CNft*, CNft&, CNft&)
     cdef void c_nft_intersection "mata::nft::plumbing::intersection" (
-        CNft*, CNft&, CNft&, umap[pair[State, State], State]*, CJumpMode, State, State
+        CNft*, CNft&, CNft&, umap[pair[State, State], State, CPairHash[State, State]]*, CJumpMode, State, State
     )
     cdef void c_nft_concatenate "mata::nft::plumbing::concatenate" (
         CNft*, CNft&, CNft&, bool, StateRenaming*, StateRenaming*

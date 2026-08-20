@@ -24,7 +24,7 @@ from libmata.nfa.nfa cimport \
     CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
 
 from libmata.alphabets cimport CAlphabet, CConstAlphabet
-from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
+from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation, CPairHash
 
 
 cdef Symbol EPSILON = CEPSILON
@@ -1151,7 +1151,7 @@ def intersection_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSI
     :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
     """
     result = Nfa()
-    cdef umap[pair[State, State], State] c_product_map
+    cdef umap[pair[State, State], State, CPairHash[State, State]] c_product_map
     mata_nfa.c_intersection(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
     return result, {tuple(k): v for k, v in c_product_map}

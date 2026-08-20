@@ -10,7 +10,7 @@ from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
-from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation
+from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol
 
 cdef extern from "<iostream>" namespace "std":
@@ -207,7 +207,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void get_elements(StateSet*, CBoolVector)
     cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
     cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&)
-    cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State]*)
+    cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State, CPairHash[State, State]]*)
     cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
     cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
     cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&)

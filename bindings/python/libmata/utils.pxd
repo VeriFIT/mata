@@ -73,6 +73,11 @@ cdef extern from "mata/utils/utils.hh" namespace "mata":
         size_t count()
 
 
+cdef extern from "mata/utils/utils.hh" namespace "mata::utils":
+    cdef cppclass CPairHash "mata::utils::PairHash" [A, B]:
+        pass
+
+
 cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
     ctypedef vector[size_t] ivector
     ctypedef vector[bool] bvector
