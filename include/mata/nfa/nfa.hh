@@ -909,7 +909,7 @@ Nfa product(
 	const Nfa& rhs,
 	ProductFinalStateCondition final_condition = ProductFinalStateCondition::And,
 	Symbol first_epsilon = EPSILON,
-	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map = nullptr
 );
 
 /**
@@ -959,7 +959,7 @@ Nfa intersection(
 	const Nfa& lhs,
 	const Nfa& rhs,
 	Symbol first_epsilon = EPSILON,
-	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map = nullptr
 );
 
 /**

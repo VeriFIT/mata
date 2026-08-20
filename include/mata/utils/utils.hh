@@ -211,6 +211,17 @@ template <class A> struct VectorHash {
 	size_t operator()(const std::vector<A>& cont) const { return hash_range(cont.begin(), cont.end()); }
 };
 
+/**
+ * @brief A hasher for @c std::pair, usable as the @c Hash template argument of unordered containers.
+ *
+ * @note See @c SetHash for why we do not specialize @c std::hash<std::pair<A, B>> directly.
+ */
+template <class A, class B> struct PairHash {
+	size_t operator()(const std::pair<A, B>& pair) const {
+		return hash_combine(std::hash<A>{}(pair.first), pair.second);
+	}
+};
+
 /// checks whether a container with @p find contains a key
 template <class T, class K> inline bool haskey(const T& cont, const K& key) { return cont.find(key) != cont.cend(); }
 
@@ -325,21 +336,6 @@ template <class Vector> void inline sort_and_rmdupl(Vector& vec) {
 
 // Some things that need to go to std
 namespace std { // {{{
-
-/**
- * @brief  A hasher for pairs
- *
- * @note This is, strictly speaking, the same kind of library-namespace pollution as the @c std::set / @c std::vector
- *  hashers we moved to @c mata::utils::SetHash / @c mata::utils::VectorHash (see #628). It stays here for now
- *  because @c std::pair<State, State> is used as a key of several @c public API @c std::unordered_map parameters
- *  (e.g. product maps), so hiding it would require changing those public signatures; left as follow-up work.
- */
-template <class A, class B> struct hash<std::pair<A, B>> {
-	inline size_t operator()(const std::pair<A, B>& k) const { // {{{
-		size_t accum = std::hash<A>{}(k.first);
-		return mata::utils::hash_combine(accum, k.second);
-	} // operator() }}}
-};
 
 /*#######################################################
  #                  std::to_string(TYPE)

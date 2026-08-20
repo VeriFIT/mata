@@ -12,7 +12,7 @@
 using namespace mata::nft;
 
 namespace {
-using ProductMap = std::unordered_map<std::pair<State, State>, State>;
+using ProductMap = std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>;
 } // Anonymous namespace.
 
 namespace mata::nft {

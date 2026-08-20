@@ -19,7 +19,7 @@ Nfa mata::nfa::algorithms::product(
 	const Nfa& rhs,
 	const std::function<bool(State, State)>&& final_condition,
 	const Symbol first_epsilon,
-	std::unordered_map<std::pair<State, State>, State>* product_map
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* product_map
 ) {
 	Nfa product{}; // The product automaton.
 	utils::TwoDimensionalMap<State> product_storage{lhs.num_of_states(), rhs.num_of_states()};

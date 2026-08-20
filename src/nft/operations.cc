@@ -998,7 +998,7 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 		// Auxiliary state between two states can be reused for transitions over different symbols.
 		// The key is a pair of source and target states.
 		// auxiliary_states map will be used only if the jump_mode is JumpMode::AppendDontCares.
-		std::unordered_map<std::pair<State, State>, State> auxiliary_states;
+		std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> auxiliary_states;
 		auto get_aux_state = [&](const State src, const State tgt, const Level level) {
 			const std::pair<State, State> key{src, tgt};
 			if (!auxiliary_states.contains(key)) { auxiliary_states[key] = aut_inv.add_state_with_level(level); }

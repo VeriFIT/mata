@@ -56,7 +56,7 @@ using namespace mata::parser;
 TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares")
 { // {{{
     Nft a, b, res;
-    std::unordered_map<std::pair<State, State>, State> prod_map;
+    std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
 
     SECTION("Intersection of empty automata")
     {
@@ -264,7 +264,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
             b.delta.add(2, 'b', 3);
             b.delta.add(3, 'a', 4);
 
-            std::unordered_map<std::pair<State, State>, State> prod_map;
+            std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
             Nft res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
             REQUIRE(!res.initial.empty());
@@ -431,7 +431,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares
 
 TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") {
     Nft a, b, res;
-    std::unordered_map<std::pair<State, State>, State> prod_map;
+    std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
 
     SECTION("Intersection of empty automata")
     {

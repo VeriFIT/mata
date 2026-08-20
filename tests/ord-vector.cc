@@ -203,3 +203,15 @@ TEST_CASE("mata::utils::SetHash and mata::utils::VectorHash") {
     const std::unordered_map<std::vector<int>, int, VectorHash<int>> map{ { { 1, 2, 3 }, 42 } };
     CHECK(map.at({ 1, 2, 3 }) == 42);
 }
+
+TEST_CASE("mata::utils::PairHash") {
+    // #628: mata must not specialize std::hash for std::pair<A, B> for arbitrary A/B, since A/B may not be a
+    //  program-defined type. PairHash is the replacement, usable as the explicit Hash argument of unordered
+    //  containers.
+    const PairHash<int, int> pair_hasher{};
+    CHECK(pair_hasher({ 1, 2 }) == pair_hasher({ 1, 2 }));
+    CHECK(pair_hasher({ 1, 2 }) != pair_hasher({ 2, 1 }));
+
+    const std::unordered_map<std::pair<int, int>, int, PairHash<int, int>> map{ { { 1, 2 }, 42 } };
+    CHECK(map.at({ 1, 2 }) == 42);
+}

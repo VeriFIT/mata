@@ -123,7 +123,7 @@ Nfa product(
 	const Nfa& rhs,
 	const std::function<bool(State, State)>&& final_condition,
 	Symbol first_epsilon = EPSILON,
-	std::unordered_map<std::pair<State, State>, State>* product_map = nullptr
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* product_map = nullptr
 );
 
 /**
