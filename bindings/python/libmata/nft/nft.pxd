@@ -202,8 +202,12 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
     cdef CNft c_remove_epsilon "mata::nft::remove_epsilon" (CNft&, Symbol) except +
     cdef CNft c_project_out "mata::nft::project_out" (CNft&, COrdVector[Level]&, CJumpMode) except +
     cdef CNft c_project_to "mata::nft::project_to" (CNft&, COrdVector[Level]&, CJumpMode) except +
-    cdef CNft c_insert_levels "mata::nft::insert_levels" (CNft&, CBoolVector&, CJumpMode) except +
-    cdef CNft c_insert_level "mata::nft::insert_level" (CNft&, Level, CJumpMode) except +
+    cdef CNft c_insert_levels "mata::nft::insert_levels" (
+        CNft&, CBoolVector&, vector[shared_ptr[CAlphabet]]&, CJumpMode
+    ) except +
+    cdef CNft c_insert_level "mata::nft::insert_level" (
+        CNft&, Level, shared_ptr[CAlphabet], CJumpMode
+    ) except +
     cdef CRun c_encode_word "mata::nft::encode_word" (CAlphabet*, vector[string]) except +
     cdef bool c_symbols_match "mata::nft::symbols_match" (Symbol, Symbol)
     cdef bool c_has_epsilon_cycle "mata::nft::has_epsilon_cycle" (CNft&)
