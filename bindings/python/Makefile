@@ -2,28 +2,28 @@
 jobs=6
 
 build-ext:
-	python setup.py build_ext -i -j$(jobs)
+	python3 setup.py build_ext -i -j$(jobs)
 
 build-ext-force:
-	python setup.py build_ext -fi -j$(jobs)
+	python3 setup.py build_ext -fi -j$(jobs)
 
 build-dist:
-	python setup.py sdist
+	python3 setup.py sdist
 
 install:
-	python setup.py build_ext -fi
-	python setup.py install --force
+	python3 setup.py build_ext -fi
+	python3 setup.py install --force
 
 test:
-	python -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
+	python3 -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
 
 init:
-	pip install ./
+	pip3 install ./
 
 build-install: build-ext install
 
 pypi-release:
-	python setup.py sdist
+	python3 setup.py sdist
 
 clean:
 	find . -type d \( -name "__pycache__" -o -name "*.egg-info" \) -exec rm -rf {} +

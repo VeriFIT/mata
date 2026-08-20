@@ -110,7 +110,7 @@ uv sync --python 3.13
 Or using `pip`:
 
 ```shell
-python -m pip install --upgrade pip
+python3 -m pip install --upgrade pip
 make -C bindings/python init
 
 sudo apt -qq update
