@@ -19,11 +19,8 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFT + "\"");
 	}
 
-	bool remove_state_map = false;
-	if (nullptr == state_map) {
-		state_map = new NameStateMap();
-		remove_state_map = true;
-	}
+	NameStateMap tmp_state_map;
+	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers
 	auto get_state_name = [&](const std::string& str) {
@@ -34,11 +31,6 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		} else {
 			return (*state_map)[str];
 		}
-	};
-
-	// a lambda for cleanup
-	auto clean_up = [&]() {
-		if (remove_state_map) { delete state_map; }
 	};
 
 	auto it = parsec.dict.find("Initial");
@@ -102,9 +94,6 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
 	for (const auto& body_line : parsec.body) {
 		if (body_line.size() != 3) {
-			// clean up
-			clean_up();
-
 			if (body_line.size() == 2) {
 				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
 			} else {
@@ -117,9 +106,6 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		const State target = get_state_name(body_line[2]);
 		aut.delta.add(source, symbol, target);
 	}
-
-	// do the dishes and take out garbage
-	clean_up();
 
 	return aut;
 } // construct().
