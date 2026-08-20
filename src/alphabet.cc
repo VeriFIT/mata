@@ -205,9 +205,9 @@ mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
 }
 
 bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
-	if (mode == Mode::MultiLevel && !level.has_value()) {
+	if (mode_ == Mode::MultiLevel && !level.has_value()) {
 		// MultiLevel + nullopt: empty iff every underlying alphabet is empty.
-		for (const auto& alphabet : alphabets) {
+		for (const auto& alphabet : alphabets_) {
 			if (alphabet != nullptr && !alphabet->empty()) { return false; }
 		}
 		return true;
@@ -216,9 +216,9 @@ bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
 }
 
 void AlphabetLevels::clear(const std::optional<mata::Level> level) {
-	if (mode == Mode::MultiLevel && !level.has_value()) {
+	if (mode_ == Mode::MultiLevel && !level.has_value()) {
 		// MultiLevel + nullopt: clear every underlying alphabet.
-		for (const auto& alphabet : alphabets) {
+		for (const auto& alphabet : alphabets_) {
 			if (alphabet != nullptr) { alphabet->clear(); }
 		}
 		return;
@@ -227,29 +227,31 @@ void AlphabetLevels::clear(const std::optional<mata::Level> level) {
 }
 
 const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) const {
-	if (mode == Mode::Global) {
-		if (alphabets.empty() || alphabets[0] == nullptr) {
+	// Handle Mode::Global.
+	if (mode_ == Mode::Global) {
+		if (alphabets_.empty() || alphabets_[0] == nullptr) {
 			throw std::runtime_error("AlphabetLevels (Global) has no underlying alphabet.");
 		}
-		return *alphabets[0];
+		return *alphabets_[0];
 	}
 
-	// Mode::MultiLevel
-	if (!level.has_value()) { throw std::runtime_error("AlphabetLevels (MultiLevel) requires an explicit level."); }
+	// Handle Mode::MultiLevel.
 
-	if (*level >= alphabets.size()) {
+	if (not level.has_value()) { throw std::runtime_error("AlphabetLevels (MultiLevel) requires an explicit level."); }
+
+	if (*level >= alphabets_.size()) {
 		throw std::runtime_error(
 			"AlphabetLevels has no alphabet for level " + std::to_string(*level) + " (out of range)."
 		);
 	}
 
-	if (alphabets[*level] == nullptr) {
+	if (alphabets_[*level] == nullptr) {
 		throw std::runtime_error(
 			"AlphabetLevels has no alphabet for level " + std::to_string(*level) + " (entry is null)."
 		);
 	}
 
-	return *alphabets[*level];
+	return *alphabets_[*level];
 }
 
 mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) {

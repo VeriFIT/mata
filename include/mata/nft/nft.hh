@@ -470,13 +470,14 @@ class Nft : public nfa::Nfa {
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param alphabet The alphabet with symbols used for the identity transition. Identity will be created for each
-	 * symbol in the @p alphabet.
+	 *  symbol in the alphabet resolved via @c get_symbols_to_work_with(alphabet, levels[state]) (see
+	 *  @c resolve_alphabet for the resolution order).
 	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
 	 * sequence of @c DONT_CARE symbols.
 	 * @return Self with inserted identity.
 	 */
-	Nft& insert_identity(State state, const Alphabet* alphabet, JumpMode jump_mode = JumpMode::RepeatSymbol);
+	Nft& insert_identity(State state, const Alphabet* alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 	/**
 	 * Inserts an identity transition into the NFT.
@@ -1249,8 +1250,13 @@ class Nft : public nfa::Nfa {
 	 *  transitions from given `state`) to `sink_states[next_level_after(level)]` where `level == this->levels[state]`.
 	 * If NFT does not contain any states, this function does nothing.
 	 *
-	 * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
-	 *  defined, otherwise use @c this->delta.get_used_symbols().
+	 * The same symbols are used to complete every level (see @c resolve_alphabet); there is currently no support for
+	 *  completing different levels to different per-level symbol sets in this overload.
+	 *
+	 * @param[in] alphabet Alphabet to use for computing "missing" symbols, resolved via @c resolve_alphabet(alphabet).
+	 *  @warning If @p alphabet is @c nullptr and @c this->alphabets is set in @c AlphabetLevels::Mode::MultiLevel,
+	 *   resolution throws, since there is no single alphabet to use for every level; pass an explicit @p alphabet in
+	 *   that case.
 	 * @param[in] sink_states The level-indexed vector of sink states, one per level, already existing in the NFT, into
 	 *  which new transitions are added. If @c std::nullopt, add new sink states.
 	 * @return @c true if a new transition was added to the NFA, @c false otherwise.
@@ -1279,6 +1285,35 @@ class Nft : public nfa::Nfa {
 		const utils::OrdVector<Symbol>& symbols, const std::optional<std::vector<State>>& sink_states = std::nullopt
 	);
 
+	/**
+	 * @brief Resolve which alphabet to use for the current operation on @p level.
+	 *
+	 * Priority order:
+	 *  -# @p alphabet, when non-null;
+	 *  -# @c this->alphabets, when non-null, resolved for @p level (see @c AlphabetLevels::for_level for the
+	 *     semantics of @p level, including @c std::nullopt);
+	 *  -# @c this->alphabet (inherited from @c Nfa; expected to always be @c nullptr for NFTs), when non-null;
+	 *  -# an alphabet built on the fly from the symbols used on the NFT's transitions (see @c Delta::get_used_symbols).
+	 *
+	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabets/@c this->alphabet
+	 *  when non-null.
+	 * @param[in] level Level to resolve the alphabet for when falling back to @c this->alphabets.
+	 * @return The resolved alphabet.
+	 */
+	std::shared_ptr<const Alphabet>
+		resolve_alphabet(const Alphabet* alphabet = nullptr, std::optional<Level> level = std::nullopt) const;
+
+	/**
+	 * @brief Get the set of symbols to work with for the current operation on @p level.
+	 *
+	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabets/@c this->alphabet
+	 *  when non-null.
+	 * @param[in] level Level to resolve the alphabet for when falling back to @c this->alphabets.
+	 * @return Symbols of the alphabet resolved via @c resolve_alphabet(alphabet, level).
+	 */
+	utils::OrdVector<Symbol>
+		get_symbols_to_work_with(const Alphabet* alphabet = nullptr, std::optional<Level> level = std::nullopt) const;
+
 	using super::is_complete;
 	using super::is_deterministic;
 
@@ -1299,6 +1334,21 @@ template <bool...> struct BoolPack {};
 template <typename... Ts> using conjunction = std::is_same<BoolPack<true, Ts::value...>, BoolPack<Ts::value..., true>>;
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
 template <typename T, typename... Ts> using AreAllOfType = conjunction<std::is_same<Ts, T>...>::type;
+
+/**
+ * Get the set of symbols to work with during operations, for a given @p level.
+ *
+ * Resolves the alphabet to use via @c Nft::resolve_alphabet(shared_alphabet, level) and returns its symbols. Prefer
+ *  calling @c nft.get_symbols_to_work_with(shared_alphabet, level) directly when a reference to @p nft is already at
+ *  hand.
+ *
+ * @param nft NFT to get symbols from.
+ * @param[in] shared_alphabet Optional alphabet shared between NFTs passed as an argument to a function.
+ * @param[in] level Level to resolve the alphabet for when falling back to @c nft.alphabets.
+ */
+utils::OrdVector<Symbol> get_symbols_to_work_with(
+	const Nft& nft, const Alphabet* shared_alphabet = nullptr, std::optional<Level> level = std::nullopt
+);
 
 /**
  * @brief Compute non-deterministic union.
@@ -1389,6 +1439,32 @@ Nft compose(
 	bool project_out_sync_levels = true,
 	JumpMode jump_mode = JumpMode::RepeatSymbol,
 	CompositionMode composition_mode = CompositionMode::Auto
+);
+
+/**
+ * @brief Compose the per-level alphabets for NFTs to be composed.
+ *
+ * Carries through the alphabet for each output level from whichever side (@p lhs / @p rhs) that level came from,
+ *  in the same block order used to align levels for composition (non-synchronization levels from @p lhs, then
+ *  from @p rhs, then the synchronization level itself, repeated per synchronization block, with a trailing block
+ *  of remaining non-synchronization levels after the last synchronization level).
+ *
+ * The synchronization levels of @p lhs and @p rhs are expected to already share the same alphabet instance
+ *  (the caller's responsibility); when both are non-null this is checked with an assert.
+ *
+ * @param[in] lhs First transducer whose alphabets to compose.
+ * @param[in] rhs Second transducer whose alphabets to compose.
+ * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
+ * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
+ * @return @c nullptr if either @p lhs.alphabets or @p rhs.alphabets is @c nullptr.
+ */
+std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
+	const Nft& lhs,
+	const Nft& rhs,
+	const utils::OrdVector<Level>& lhs_sync_levels,
+	const utils::OrdVector<Level>& rhs_sync_levels,
+	bool project_out_sync_levels = true
 );
 
 /**

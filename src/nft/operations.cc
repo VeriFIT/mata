@@ -564,6 +564,16 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	for (State s{0}; s < result.levels.size(); s++) { result.levels[s] = new_levels[result.levels[s]]; }
 	result.levels.num_of_levels = static_cast<Level>(result.levels.num_of_levels - levels_to_project.size());
 
+	// Repare per-level alphabets: drop the entries of the projected-out levels, keeping the rest indexed by their
+	//  new level numbers. In Global mode result.alphabets (== nft.alphabets) is already correct as-is.
+	if (nft.alphabets != nullptr && nft.alphabets->mode() == AlphabetLevels::Mode::MultiLevel) {
+		auto new_alphabets = std::make_shared<AlphabetLevels>(*nft.alphabets);
+		for (auto it = levels_to_proj_v.rbegin(); it != levels_to_proj_v.rend(); ++it) {
+			new_alphabets->erase(new_alphabets->begin() + *it);
+		}
+		result.alphabets = std::move(new_alphabets);
+	}
+
 	return result;
 }
 
@@ -641,6 +651,19 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
 			Levels{new_levels_mask.size(), new_state_levels}, nft.num_of_states(), nft.initial, nft.final, nft.alphabets
 		)
 	);
+
+	// Repare per-level alphabets: insert a null slot for each newly-inserted level, keeping existing entries at
+	//  their shifted indices (matching updated_levels above). In Global mode result.alphabets (== nft.alphabets) is
+	//  already correct as-is.
+	if (nft.alphabets != nullptr && nft.alphabets->mode() == AlphabetLevels::Mode::MultiLevel) {
+		auto new_alphabets = std::make_shared<AlphabetLevels>(*nft.alphabets);
+		for (size_t i{0}; i < new_levels_mask.size(); i++) {
+			if (new_levels_mask[i]) {
+				new_alphabets->insert(new_alphabets->begin() + static_cast<std::ptrdiff_t>(i), nullptr);
+			}
+		}
+		result.alphabets = std::move(new_alphabets);
+	}
 
 	// Function to create a transition between source and target states.
 	// The transition symbol is determined based on the parameters:
@@ -1195,6 +1218,12 @@ Nft mata::nft::minimize(const Nft& aut, const ParameterMap& params) {
 	return algo(aut);
 }
 #endif
+
+OrdVector<Symbol> mata::nft::get_symbols_to_work_with(
+	const Nft& nft, const Alphabet* const shared_alphabet, const std::optional<Level> level
+) {
+	return nft.resolve_alphabet(shared_alphabet, level)->get_alphabet_symbols();
+}
 
 Nft mata::nft::union_nondet(const Nft& lhs, const Nft& rhs) {
 	Nft union_nft{lhs};

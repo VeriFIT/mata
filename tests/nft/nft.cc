@@ -124,6 +124,55 @@ TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly
     CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
 }
 
+TEST_CASE("mata::AlphabetLevels::erase()") {
+    auto a0 = std::make_shared<IntAlphabet>();
+    auto a1 = std::make_shared<IntAlphabet>();
+    auto a2 = std::make_shared<IntAlphabet>();
+
+    SECTION("erase a single position") {
+        AlphabetLevels alphabets{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } };
+        alphabets.erase(alphabets.begin() + 1);
+        REQUIRE(alphabets.size() == 2);
+        CHECK(&alphabets.for_level(0) == a0.get());
+        CHECK(&alphabets.for_level(1) == a2.get());
+    }
+
+    SECTION("erase a range") {
+        AlphabetLevels alphabets{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } };
+        alphabets.erase(alphabets.begin(), alphabets.begin() + 2);
+        REQUIRE(alphabets.size() == 1);
+        CHECK(&alphabets.for_level(0) == a2.get());
+    }
+
+    SECTION("erasing the only alphabet in Global mode empties it") {
+        AlphabetLevels alphabets{ a0 };
+        REQUIRE(alphabets.mode() == AlphabetLevels::Mode::Global);
+        alphabets.erase(alphabets.begin());
+        CHECK(alphabets.size() == 0);
+    }
+}
+
+TEST_CASE("mata::nft::Nft copying/plumbing shares the AlphabetLevels container, not just its alphabets") {
+    auto a0 = std::make_shared<IntAlphabet>();
+    auto a1 = std::make_shared<IntAlphabet>();
+    auto alphabets = std::make_shared<AlphabetLevels>(
+        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1 } });
+    Nft nft{ 2, { 0 }, { 1 }, Levels{ 2, { 0, 1 } }, alphabets };
+
+    SECTION("copy construction shares the exact same AlphabetLevels instance") {
+        Nft copy{ nft };
+        // Not just equivalent contents: the very same shared_ptr, since nothing about the level structure changed.
+        CHECK(copy.alphabets == nft.alphabets);
+        CHECK(alphabets.use_count() == 3); // local `alphabets` + nft.alphabets + copy.alphabets.
+    }
+
+    SECTION("copy assignment shares the exact same AlphabetLevels instance") {
+        Nft copy;
+        copy = nft;
+        CHECK(copy.alphabets == nft.alphabets);
+    }
+}
+
 TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
     auto input_alphabet = std::make_shared<IntAlphabet>();
     auto output_alphabet = std::make_shared<IntAlphabet>();
@@ -4463,6 +4512,125 @@ TEST_CASE("mata::nft::project_to()") {
         expected.delta.add(6, 9, 7);
         expected.delta.add(7, 11, 0);
         CHECK(nft::are_equivalent(projection, expected));
+    }
+}
+
+TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level alphabets in sync") {
+    auto a0 = std::make_shared<IntAlphabet>();
+    auto a1 = std::make_shared<IntAlphabet>();
+    auto a2 = std::make_shared<IntAlphabet>();
+    auto a3 = std::make_shared<IntAlphabet>();
+    auto alphabets = std::make_shared<AlphabetLevels>(
+        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2, a3 } });
+
+    Delta delta;
+    delta.add(0, 0, 1);
+    delta.add(1, 1, 2);
+    delta.add(2, 2, 3);
+    delta.add(3, 3, 4);
+    Nft nft(Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, delta, { 0 }, { 4 }, alphabets));
+
+    SECTION("projecting out a middle level shifts the remaining alphabets") {
+        Nft proj = project_out(nft, OrdVector<Level>{ 1 }, JumpMode::AppendDontCares);
+        REQUIRE(proj.alphabets != nullptr);
+        REQUIRE(proj.alphabets->size() == 3);
+        CHECK(&proj.alphabets->for_level(0) == a0.get());
+        CHECK(&proj.alphabets->for_level(1) == a2.get());
+        CHECK(&proj.alphabets->for_level(2) == a3.get());
+        // The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
+        REQUIRE(nft.alphabets->size() == 4);
+        CHECK(&nft.alphabets->for_level(1) == a1.get());
+        // The AlphabetLevels *container* is legitimately a new object (its contents differ from nft.alphabets'),
+        //  but each surviving level's underlying Alphabet instance is still the exact same shared one.
+        CHECK(proj.alphabets != nft.alphabets);
+        CHECK(a0.use_count() == 3); // local a0 + nft.alphabets' slot + proj.alphabets' slot.
+        CHECK(a1.use_count() == 2); // local a1 + nft.alphabets' slot only (dropped from proj).
+    }
+
+    SECTION("projecting out non-contiguous levels") {
+        Nft proj = project_out(nft, OrdVector<Level>{ 0, 2 }, JumpMode::AppendDontCares);
+        REQUIRE(proj.alphabets != nullptr);
+        REQUIRE(proj.alphabets->size() == 2);
+        CHECK(&proj.alphabets->for_level(0) == a1.get());
+        CHECK(&proj.alphabets->for_level(1) == a3.get());
+    }
+
+    SECTION("project_to keeps the alphabets of the retained levels") {
+        Nft proj = project_to(nft, OrdVector<Level>{ 1, 3 });
+        REQUIRE(proj.alphabets != nullptr);
+        REQUIRE(proj.alphabets->size() == 2);
+        CHECK(&proj.alphabets->for_level(0) == a1.get());
+        CHECK(&proj.alphabets->for_level(1) == a3.get());
+    }
+
+    SECTION("Global mode alphabets pass through unchanged") {
+        auto shared_alphabet = std::make_shared<IntAlphabet>();
+        auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
+        Nft global_nft(Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, delta, { 0 }, { 4 }, global_alphabets));
+
+        Nft proj = project_out(global_nft, OrdVector<Level>{ 1 }, JumpMode::AppendDontCares);
+        REQUIRE(proj.alphabets != nullptr);
+        CHECK(proj.alphabets->mode() == AlphabetLevels::Mode::Global);
+        CHECK(&proj.alphabets->for_level(0) == shared_alphabet.get());
+        // Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
+        //  is shared with global_nft, not just its underlying alphabet.
+        CHECK(proj.alphabets == global_nft.alphabets);
+    }
+}
+
+TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-level alphabets in sync") {
+    auto a0 = std::make_shared<IntAlphabet>();
+    auto a1 = std::make_shared<IntAlphabet>();
+    auto a2 = std::make_shared<IntAlphabet>();
+    auto alphabets = std::make_shared<AlphabetLevels>(
+        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } });
+
+    Delta delta;
+    delta.add(0, 0, 1);
+    delta.add(1, 1, 2);
+    delta.add(2, 2, 3);
+    Nft nft(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }, alphabets));
+
+    SECTION("insert_level inserts a null slot at the new level, shifting the rest") {
+        Nft output_nft = insert_level(nft, 1, JumpMode::AppendDontCares);
+        REQUIRE(output_nft.alphabets != nullptr);
+        REQUIRE(output_nft.alphabets->size() == 4);
+        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+        CHECK(output_nft.alphabets->at(1) == nullptr);
+        CHECK(&output_nft.alphabets->for_level(2) == a1.get());
+        CHECK(&output_nft.alphabets->for_level(3) == a2.get());
+        // The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
+        REQUIRE(nft.alphabets->size() == 3);
+        // The AlphabetLevels *container* is legitimately a new object, but each level's underlying Alphabet
+        //  instance is still the exact same shared one.
+        CHECK(output_nft.alphabets != nft.alphabets);
+        CHECK(a0.use_count() == 3); // local a0 + nft.alphabets' slot + output_nft.alphabets' slot.
+    }
+
+    SECTION("insert_levels inserts null slots at every new position") {
+        Nft output_nft = insert_levels(nft, { 0, 0, 1, 1, 0, 1 }, JumpMode::AppendDontCares);
+        REQUIRE(output_nft.alphabets != nullptr);
+        REQUIRE(output_nft.alphabets->size() == 6);
+        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+        CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+        CHECK(output_nft.alphabets->at(2) == nullptr);
+        CHECK(output_nft.alphabets->at(3) == nullptr);
+        CHECK(&output_nft.alphabets->for_level(4) == a2.get());
+        CHECK(output_nft.alphabets->at(5) == nullptr);
+    }
+
+    SECTION("Global mode alphabets pass through unchanged") {
+        auto shared_alphabet = std::make_shared<IntAlphabet>();
+        auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
+        Nft global_nft(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }, global_alphabets));
+
+        Nft output_nft = insert_level(global_nft, 1, JumpMode::AppendDontCares);
+        REQUIRE(output_nft.alphabets != nullptr);
+        CHECK(output_nft.alphabets->mode() == AlphabetLevels::Mode::Global);
+        CHECK(&output_nft.alphabets->for_level(0) == shared_alphabet.get());
+        // Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
+        //  is shared with global_nft, not just its underlying alphabet.
+        CHECK(output_nft.alphabets == global_nft.alphabets);
     }
 }
 
