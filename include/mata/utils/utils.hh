@@ -190,6 +190,38 @@ template <typename It> size_t hash_range(It first, It last) { // {{{
 	return accum;
 } // hash_range(It, It) }}}
 
+/**
+ * @brief A hasher for @c std::set, usable as the @c Hash template argument of unordered containers.
+ *
+ * @note We deliberately do NOT specialize @c std::hash<std::set<A>> for arbitrary @p A: the standard only allows
+ *  program-defined specializations of standard templates when at least one template argument is a program-defined
+ *  type, so specializing it for e.g. @c std::set<unsigned> would be undefined behavior (and could silently collide
+ *  with another library's specialization for the same type).
+ */
+template <class A> struct SetHash {
+	size_t operator()(const std::set<A>& cont) const { return hash_range(cont.begin(), cont.end()); }
+};
+
+/**
+ * @brief A hasher for @c std::vector, usable as the @c Hash template argument of unordered containers.
+ *
+ * @note See @c SetHash for why we do not specialize @c std::hash<std::vector<A>> directly.
+ */
+template <class A> struct VectorHash {
+	size_t operator()(const std::vector<A>& cont) const { return hash_range(cont.begin(), cont.end()); }
+};
+
+/**
+ * @brief A hasher for @c std::pair, usable as the @c Hash template argument of unordered containers.
+ *
+ * @note See @c SetHash for why we do not specialize @c std::hash<std::pair<A, B>> directly.
+ */
+template <class A, class B> struct PairHash {
+	size_t operator()(const std::pair<A, B>& pair) const {
+		return hash_combine(std::hash<A>{}(pair.first), pair.second);
+	}
+};
+
 /// checks whether a container with @p find contains a key
 template <class T, class K> inline bool haskey(const T& cont, const K& key) { return cont.find(key) != cont.cend(); }
 
@@ -304,34 +336,6 @@ template <class Vector> void inline sort_and_rmdupl(Vector& vec) {
 
 // Some things that need to go to std
 namespace std { // {{{
-
-/**
- * @brief  A hasher for pairs
- */
-template <class A, class B> struct hash<std::pair<A, B>> {
-	inline size_t operator()(const std::pair<A, B>& k) const { // {{{
-		size_t accum = std::hash<A>{}(k.first);
-		return mata::utils::hash_combine(accum, k.second);
-	} // operator() }}}
-};
-
-/**
- * @brief  A hasher for sets
- */
-template <class A> struct hash<std::set<A>> {
-	inline size_t operator()(const std::set<A>& cont) const { // {{{
-		return mata::utils::hash_range(cont.begin(), cont.end());
-	} // operator() }}}
-};
-
-/**
- * @brief  A hasher for vectors
- */
-template <class A> struct hash<std::vector<A>> {
-	inline size_t operator()(const std::vector<A>& cont) const { // {{{
-		return mata::utils::hash_range(cont.begin(), cont.end());
-	} // operator() }}}
-};
 
 /*#######################################################
  #                  std::to_string(TYPE)

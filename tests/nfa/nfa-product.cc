@@ -56,7 +56,7 @@ using namespace mata::parser;
 TEST_CASE("mata::nfa::intersection()")
 { // {{{
     Nfa a, b, res;
-    std::unordered_map<std::pair<State, State>, State> prod_map;
+    std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
 
     SECTION("Intersection of empty automata")
     {
@@ -173,7 +173,7 @@ TEST_CASE("mata::nfa::intersection()")
 
 TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
 {
-    std::unordered_map<std::pair<State, State>, State> prod_map;
+    std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
 
     Nfa a{6};
     a.initial.insert(0);

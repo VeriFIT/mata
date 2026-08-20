@@ -23,7 +23,7 @@ bool mata::nfa::algorithms::is_included_naive(
 		bigger_cmpl = complement(bigger, *alphabet);
 	}
 
-	std::unordered_map<std::pair<State, State>, State> prod_map;
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
 	Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, &prod_map);
 
 	bool result = nfa_isect.is_lang_empty(cex);

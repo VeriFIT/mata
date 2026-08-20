@@ -1364,7 +1364,7 @@ Nft product(
 	const Nft& rhs,
 	ProductFinalStateCondition final_condition,
 	Symbol first_epsilon,
-	std::unordered_map<std::pair<State, State>, State>* prod_map
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map
 ) = delete;
 
 /**
@@ -1391,7 +1391,7 @@ Nft product(
 Nft intersection(
 	const Nft& lhs,
 	const Nft& rhs,
-	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr,
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map = nullptr,
 	JumpMode jump_mode = JumpMode::RepeatSymbol,
 	State lhs_first_aux_state = Limits::max_state,
 	State rhs_first_aux_state = Limits::max_state

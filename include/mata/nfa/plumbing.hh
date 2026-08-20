@@ -97,7 +97,7 @@ inline void intersection(
 	const Nfa& lhs,
 	const Nfa& rhs,
 	const Symbol first_epsilon = EPSILON,
-	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map = nullptr
 ) {
 	*res = intersection(lhs, rhs, first_epsilon, prod_map);
 }

@@ -25,7 +25,7 @@ from libmata.nft.nft cimport (
 from libmata.nfa.nfa cimport CSparseSet, CBoolVector, CBinaryRelation
 from libmata.nfa.nfa cimport Transition
 from libmata.nfa.nfa cimport ostream, ofstream, stringstream
-from libmata.utils cimport COrdVector, BinaryRelation
+from libmata.utils cimport COrdVector, BinaryRelation, CPairHash
 from libmata.nfa.nfa import Run, run_safely_external_command
 
 
@@ -925,7 +925,7 @@ def intersection_with_product_map(
     :return: Intersection of `lhs` and `rhs`, product map of pairs of original states to new states.
     """
     result = Nft()
-    cdef umap[pair[State, State], State] c_product_map
+    cdef umap[pair[State, State], State, CPairHash[State, State]] c_product_map
     mata_nft.c_nft_intersection(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), &c_product_map,
         _c_jump_mode(jump_mode), lhs_first_aux_state, rhs_first_aux_state

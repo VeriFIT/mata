@@ -94,7 +94,7 @@ inline void intersection(
 	Nft* res,
 	const Nft& lhs,
 	const Nft& rhs,
-	std::unordered_map<std::pair<State, State>, State>* prod_map = nullptr,
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map = nullptr,
 	const JumpMode jump_mode = JumpMode::RepeatSymbol,
 	const State lhs_first_aux_state = Limits::max_state,
 	const State rhs_first_aux_state = Limits::max_state

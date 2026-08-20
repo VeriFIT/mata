@@ -9,6 +9,8 @@
 #include <cassert>
 #include <unordered_map>
 
+#include "mata/utils/utils.hh"
+
 namespace mata::utils {
 
 /**
@@ -29,7 +31,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixSize = 50'000'0
 	static_assert(std::is_unsigned_v<T>, "ProductStorage requires an unsigned type");
 
   public:
-	using Map = std::unordered_map<std::pair<T, T>, T>;
+	using Map = std::unordered_map<std::pair<T, T>, T, PairHash<T, T>>;
 	using MatrixStorage = std::vector<std::vector<T>>;
 	using VecMapStorage = std::vector<std::unordered_map<T, T>>;
 	using InvertedStorage = std::vector<T>;

@@ -132,7 +132,7 @@ Nft product(
 	const Nft& lhs,
 	const Nft& rhs,
 	const std::function<bool(State, State)>&& final_condition,
-	std::unordered_map<std::pair<State, State>, State>* product_map = nullptr,
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* product_map = nullptr,
 	JumpMode jump_mode = JumpMode::RepeatSymbol,
 	State lhs_first_aux_state = Limits::max_state,
 	State rhs_first_aux_state = Limits::max_state

@@ -1051,7 +1051,7 @@ Nfa mata::nfa::product(
 	const Nfa& rhs,
 	const ProductFinalStateCondition final_condition,
 	const Symbol first_epsilon,
-	std::unordered_map<std::pair<State, State>, State>* prod_map
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map
 ) {
 	std::function<bool(const State, const State)> is_product_state_final_func;
 	if (final_condition == ProductFinalStateCondition::Or) {
@@ -1077,7 +1077,7 @@ Nfa mata::nfa::intersection(
 	const Nfa& lhs,
 	const Nfa& rhs,
 	const Symbol first_epsilon,
-	std::unordered_map<std::pair<State, State>, State>* prod_map
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map
 ) {
 	return product(lhs, rhs, ProductFinalStateCondition::And, first_epsilon, prod_map);
 }
@@ -1569,8 +1569,12 @@ Nfa mata::nfa::lang_difference(
 ) {
 	std::unordered_set<StateSet> subset_set_included{};
 	std::unordered_set<StateSet> subset_set_excluded{};
+	using SubsetMacrostatePair =
+		std::pair<std::unordered_set<StateSet>::const_pointer, std::unordered_set<StateSet>::const_pointer>;
 	using SubsetMacrostateMap = std::unordered_map<
-		std::pair<std::unordered_set<StateSet>::const_pointer, std::unordered_set<StateSet>::const_pointer>, State>;
+		SubsetMacrostatePair, State,
+		mata::utils::PairHash<
+			std::unordered_set<StateSet>::const_pointer, std::unordered_set<StateSet>::const_pointer>>;
 	SubsetMacrostateMap subset_macrostate_map{};
 	std::vector<SubsetMacrostateMap::const_pointer> worklist{};
 
