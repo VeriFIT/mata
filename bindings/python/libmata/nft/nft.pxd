@@ -97,8 +97,8 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
         size_t num_of_states_with_level(Level)
         State insert_word(State, vector[Symbol]&, State) except +
         State insert_word(State, vector[Symbol]&) except +
-        State add_transition(State, vector[Symbol]&, State) except +
-        State add_transition(State, vector[Symbol]&) except +
+        State add_transition_by_levels(State, vector[Symbol]&, State) except +
+        State add_transition_by_levels(State, vector[Symbol]&) except +
         State add_transition_with_length(State, Symbol, size_t, CJumpMode) except +
         void add_transition_with_target(State, Symbol, State, CJumpMode) except +
         void add_transition_with_same_level_targets(State, Symbol, StateSet&, CJumpMode) except +

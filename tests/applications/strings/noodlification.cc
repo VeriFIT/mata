@@ -575,8 +575,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         x = create_from_regex("(a|b)*");
         y = create_from_regex("(a|b)*");
         t = Nft::with_levels(2, 1, { 0 }, { 0 });
-        t.add_transition(0, {'a', 'a'}, 0);
-        t.add_transition(0, {'b', 'b'}, 0);
+        t.add_transition_by_levels(0, {'a', 'a'}, 0);
+        t.add_transition_by_levels(0, {'b', 'b'}, 0);
         Nft copy = t;
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x)}, {std::make_shared<Nfa>(y)});
         REQUIRE(noodles.size() == 1);
@@ -594,8 +594,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         y = create_from_regex("(a|b)*");
         z = create_from_regex("(a|b)*");
         t = Nft::with_levels(2, 1, {0}, {0});
-        t.add_transition(0, {'a', 'a'}, 0);
-        t.add_transition(0, {'b', 'b'}, 0);
+        t.add_transition_by_levels(0, {'a', 'a'}, 0);
+        t.add_transition_by_levels(0, {'b', 'b'}, 0);
         Nft copy = t;
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x)}, {std::make_shared<Nfa>(y), std::make_shared<Nfa>(z)});
         REQUIRE(noodles.size() == 1);
@@ -619,8 +619,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         y = create_from_regex("(a|b)*");
         z = create_from_regex("(a|b)*");
         t = Nft::with_levels(2, 1, { 0 }, { 0 });
-        t.add_transition(0, {'a', 'a'}, 0);
-        t.add_transition(0, {'b', 'b'}, 0);
+        t.add_transition_by_levels(0, {'a', 'a'}, 0);
+        t.add_transition_by_levels(0, {'b', 'b'}, 0);
         Nft copy = t;
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
         REQUIRE(noodles.size() == 1);
@@ -645,8 +645,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         z = create_from_regex("(a|b)*");
         w = create_from_regex("(a|b)*");
         t = Nft::with_levels(2, 1, {0}, {0});
-        t.add_transition(0, {'a', 'a'}, 0);
-        t.add_transition(0, {'b', 'b'}, 0);
+        t.add_transition_by_levels(0, {'a', 'a'}, 0);
+        t.add_transition_by_levels(0, {'b', 'b'}, 0);
         Nft copy = t;
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y), std::make_shared<Nfa>(w)});
         REQUIRE(noodles.size() == 2);
@@ -712,8 +712,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         z = create_from_regex("(a|b)*");
         w = create_from_regex("a*");
         t = Nft::with_levels(2, 1, {0}, {0});
-        t.add_transition(0, {'a', 'a'}, 0);
-        t.add_transition(0, {'b', 'a'}, 0);
+        t.add_transition_by_levels(0, {'a', 'a'}, 0);
+        t.add_transition_by_levels(0, {'b', 'a'}, 0);
         Nft copy = t;
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
         REQUIRE(noodles.size() == 1);
@@ -737,8 +737,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
         y = create_from_regex("b+");
         z = create_from_regex("(a|b)*");
         t = Nft::with_levels(2, 1, { 0 }, { 0 });
-        t.add_transition(0, {'a', 'a'}, 0);
-        t.add_transition(0, {'b', 'a'}, 0);
+        t.add_transition_by_levels(0, {'a', 'a'}, 0);
+        t.add_transition_by_levels(0, {'b', 'a'}, 0);
         auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
         CHECK(noodles.empty());
     }

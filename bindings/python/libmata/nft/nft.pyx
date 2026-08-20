@@ -441,8 +441,8 @@ cdef class Nft:
         """
         cdef vector[Symbol] c_symbols = symbols
         if target is None:
-            return self.thisptr.get().add_transition(source, c_symbols)
-        return self.thisptr.get().add_transition(source, c_symbols, target)
+            return self.thisptr.get().add_transition_by_levels(source, c_symbols)
+        return self.thisptr.get().add_transition_by_levels(source, c_symbols, target)
 
     def add_transition_with_length(self, State source, Symbol symbol, size_t length, jump_mode = JumpMode.RepeatSymbol):
         """Add a single NFT transition with `length`, creating a new target state.

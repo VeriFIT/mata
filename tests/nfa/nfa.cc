@@ -4729,6 +4729,38 @@ TEST_CASE("mata::nfa::Nfa::get_word()") {
     }
 }
 
+TEST_CASE("mata::nfa::Nfa::add_transition()") {
+    SECTION("uses the automaton's own alphabet") {
+        Nfa aut(2);
+        aut.alphabet = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "a", "b" });
+        aut.add_transition(0, "a", 1);
+        CHECK(aut.delta.contains(0, aut.alphabet->translate_symb("a"), 1));
+    }
+
+    SECTION("an explicit alphabet takes precedence over the automaton's own alphabet") {
+        Nfa aut(2);
+        OnTheFlyAlphabet own_alph{ std::vector<std::string>{ "a" } };
+        aut.alphabet = std::make_shared<OnTheFlyAlphabet>(own_alph);
+        OnTheFlyAlphabet override_alph{ std::vector<std::string>{ "z", "a" } };
+        aut.add_transition(0, "a", 1, &override_alph);
+        CHECK(aut.delta.contains(0, override_alph.translate_symb("a"), 1));
+        // The automaton's own alphabet must be untouched.
+        CHECK(!own_alph.get_alphabet_symbols().contains(override_alph.translate_symb("a")));
+    }
+
+    SECTION("an explicit alphabet works even without the automaton having one of its own") {
+        Nfa aut(2);
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a" } };
+        aut.add_transition(0, "a", 1, &alph);
+        CHECK(aut.delta.contains(0, alph.translate_symb("a"), 1));
+    }
+
+    SECTION("throws when no alphabet is available at all") {
+        Nfa aut(2);
+        CHECK_THROWS_AS(aut.add_transition(0, "a", 1), std::runtime_error);
+    }
+}
+
 TEST_CASE("mata::nfa::Nfa::insert_word()") {
     Delta delta;
     delta.add(0, 0, 1);
