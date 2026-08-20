@@ -546,6 +546,27 @@ class Nfa:
         :return: Set of symbols.
         """
         ...
+    @property
+    def alphabet(self) -> alph.Alphabet | None:
+        """The alphabet used by the automaton, or `None` if it has none."""
+        ...
+    def resolve_alphabet(self, alphabet: alph.Alphabet = None) -> alph.Alphabet:
+        """Resolve which alphabet to use for the current operation.
+
+        Priority order: `alphabet`, when given; `self.alphabet`, when set; otherwise an alphabet built on the fly
+        from the symbols used on the NFA's transitions.
+
+        :param alph.Alphabet alphabet: Explicit alphabet to use, taking precedence over `self.alphabet`.
+        :return: The resolved alphabet.
+        """
+        ...
+    def get_symbols_to_work_with(self, alphabet: alph.Alphabet = None) -> set[Symbol]:
+        """Get the set of symbols to work with for the current operation.
+
+        :param alph.Alphabet alphabet: Explicit alphabet to use, taking precedence over `self.alphabet`.
+        :return: Symbols of the alphabet resolved via `resolve_alphabet(alphabet)`.
+        """
+        ...
 
 # Operations
 def determinize_with_subset_map(lhs: Nfa) -> tuple[Nfa, dict[tuple[State], State]]:

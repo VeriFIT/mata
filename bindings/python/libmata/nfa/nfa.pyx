@@ -7,7 +7,7 @@ from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.optional cimport make_optional
 from libcpp.list cimport list as clist
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport shared_ptr, make_shared, const_pointer_cast
 from libcpp.set cimport set as cset
 from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map as umap
@@ -23,7 +23,7 @@ from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
     CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
 
-from libmata.alphabets cimport CAlphabet
+from libmata.alphabets cimport CAlphabet, CConstAlphabet
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
 
 
@@ -833,6 +833,38 @@ cdef class Nfa:
         cdef COrdVector[Symbol] symbols = self.thisptr.get().delta.get_used_symbols()
         return {s for s in symbols}
 
+    @property
+    def alphabet(self) -> alph.Alphabet | None:
+        """The alphabet used by the automaton, or `None` if it has none."""
+        return alph.wrap_alphabet(self.thisptr.get().alphabet)
+
+    def resolve_alphabet(self, alph.Alphabet alphabet = None) -> alph.Alphabet:
+        """Resolve which alphabet to use for the current operation.
+
+        Priority order: `alphabet`, when given; `self.alphabet`, when set; otherwise an alphabet built on the fly
+        from the symbols used on the NFA's transitions.
+
+        :warning: When `self.alphabet` is used (no explicit `alphabet` given), the returned object is the automaton's
+          own live alphabet, not a copy — the same instance may be shared with other automata (see `AlphabetLevels`).
+          Treat it as read-only: mutating it (e.g. `.clear()`, `.add_new_symbol(...)`) mutates it for everyone sharing
+          it. Prefer `get_symbols_to_work_with()` if you only need the symbol set.
+        :param alph.Alphabet alphabet: Explicit alphabet to use, taking precedence over `self.alphabet`.
+        :return: The resolved alphabet.
+        """
+        cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
+        cdef shared_ptr[CConstAlphabet] resolved = self.thisptr.get().resolve_alphabet(c_alphabet)
+        return alph.wrap_alphabet(const_pointer_cast[CAlphabet, CConstAlphabet](resolved))
+
+    def get_symbols_to_work_with(self, alph.Alphabet alphabet = None):
+        """Get the set of symbols to work with for the current operation.
+
+        :param alph.Alphabet alphabet: Explicit alphabet to use, taking precedence over `self.alphabet`.
+        :return: Symbols of the alphabet resolved via `resolve_alphabet(alphabet)`.
+        """
+        cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
+        cdef COrdVector[Symbol] symbols = self.thisptr.get().get_symbols_to_work_with(c_alphabet)
+        return {s for s in symbols}
+
 
 # Operations
 def determinize_with_subset_map(Nfa lhs):
@@ -1119,9 +1151,7 @@ def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params
     :return: true if lhs is included by rhs, counter example word if not
     """
     run = Run()
-    cdef CAlphabet* c_alphabet = NULL
-    if alphabet:
-        c_alphabet = alphabet.as_base().get()
+    cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
     params = params or {'algorithm': 'antichains'}
     result = mata_nfa.c_is_included(
         dereference(lhs.thisptr.get()),
@@ -1144,9 +1174,7 @@ def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     :param dict params: additional params
     :return: true if lhs is included by rhs, counter example word if not
     """
-    cdef CAlphabet* c_alphabet = NULL
-    if alphabet:
-        c_alphabet = alphabet.as_base().get()
+    cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
     params = params or {'algorithm': 'antichains'}
     result = mata_nfa.c_is_included(
         dereference(lhs.thisptr.get()),

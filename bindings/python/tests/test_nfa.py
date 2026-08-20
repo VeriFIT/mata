@@ -1150,3 +1150,41 @@ def test_is_epsilon():
     assert not nfa.is_epsilon(0)
 
     # TODO: Add checks for user-specified epsilons when user-specified epsilons are implemented.
+
+
+def test_alphabet_property():
+    nfa = mata_nfa.Nfa(3)
+    assert nfa.alphabet is None
+
+    alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(['a', 'b'])
+    nfa_with_alphabet = mata_nfa.Nfa(3, alphabet)
+    assert nfa_with_alphabet.alphabet.get_alphabet_symbols() == alphabet.get_alphabet_symbols()
+
+
+def test_resolve_alphabet():
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+
+    # No explicit alphabet, no self.alphabet: falls back to the symbols used on the transitions.
+    resolved = nfa.resolve_alphabet()
+    assert resolved.get_alphabet_symbols() == {1, 2}
+
+    # self.alphabet takes over once set.
+    alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(['a', 'b'])
+    nfa_with_alphabet = mata_nfa.Nfa(3, alphabet)
+    assert nfa_with_alphabet.resolve_alphabet().get_alphabet_symbols() == alphabet.get_alphabet_symbols()
+
+    # An explicit alphabet takes precedence over self.alphabet.
+    explicit_alphabet = alphabets.IntAlphabet()
+    assert isinstance(nfa_with_alphabet.resolve_alphabet(explicit_alphabet), alphabets.IntAlphabet)
+
+
+def test_get_symbols_to_work_with():
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    assert nfa.get_symbols_to_work_with() == {1, 2}
+
+    explicit_alphabet = alphabets.EnumAlphabet({5, 6, 7})
+    assert nfa.get_symbols_to_work_with(explicit_alphabet) == {5, 6, 7}

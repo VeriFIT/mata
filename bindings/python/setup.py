@@ -63,7 +63,7 @@ extensions = [
         language="c++",
         extra_compile_args=extra_compile_args,
     )
-    for pkg in ("nfa.nfa", "alphabets", "utils", "parser", "nfa.strings", "plotting")
+    for pkg in ("nfa.nfa", "nft.nft", "alphabets", "utils", "parser", "nfa.strings", "plotting")
 ]
 
 

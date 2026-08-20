@@ -33,7 +33,7 @@ dependencies = [
 Homepage = "https://github.com/VeriFIT/mata"
 
 [tool.setuptools]
-packages = ["libmata", "libmata.nfa"]
+packages = ["libmata", "libmata.nfa", "libmata.nft"]
 
 [build-system]
 requires = ["setuptools", "wheel", "Cython>=0.29.32"]

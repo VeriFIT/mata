@@ -11,7 +11,7 @@ from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation
-from libmata.alphabets cimport CAlphabet, Symbol
+from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -182,6 +182,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
         void make_complete(CAlphabet*, optional[State]) except +
+        shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
+        COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
