@@ -4700,6 +4700,26 @@ TEST_CASE("mata::nft::insert_level() regression test for #684") {
     REQUIRE(inserted.alphabets != nullptr);
     CHECK_NOTHROW(inserted.alphabets->for_level(1));
     CHECK(&inserted.alphabets->for_level(1) == alph2_ptr.get());
+    // The newly-inserted level's transitions carry DONT_CARE (there is no original data to reuse for it), which
+    //  used to make print_to_dot() throw, since DONT_CARE was not special-cased like EPSILON is.
+    CHECK_NOTHROW(inserted.print_to_dot());
+}
+
+TEST_CASE("mata::nft::Nft::print_to_dot() handles DONT_CARE with a real alphabet") {
+    // DONT_CARE is a sentinel symbol, not a real alphabet member, so it must be special-cased before being handed
+    //  to Alphabet::reverse_translate_symbol() (mirroring how EPSILON is already special-cased), or printing throws
+    //  for any alphabet that does not itself know about DONT_CARE (e.g. OnTheFlyAlphabet, EnumAlphabet).
+    OnTheFlyAlphabet alphabet(std::vector<std::string>{ "a", "b" });
+    Delta delta;
+    delta.add(0, alphabet.translate_symb("a"), 1);
+    delta.add(1, DONT_CARE, 2);
+    delta.add(2, EPSILON, 3);
+    Nft nft(delta, { 0 }, { 3 });
+
+    std::string dot;
+    CHECK_NOTHROW(dot = nft.print_to_dot(false, false, -1, &alphabet));
+    CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<dntcr>"));
+    CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<eps>"));
 }
 
 TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
