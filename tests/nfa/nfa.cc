@@ -2724,6 +2724,82 @@ TEST_CASE("mata::nfa::are_equivalent")
     }
 }
 
+TEST_CASE("mata::nfa::are_equivalent() counterexample") {
+    OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
+    ParameterMap params;
+
+    const std::unordered_set<std::string> ALGORITHMS = { "naive", "antichains" };
+
+    SECTION("equivalent automata leave cex untouched") {
+        Nfa aut1(1), aut2(2);
+        aut1.initial = {0};
+        aut1.final = {0};
+        aut1.delta.add(0, alph["a"], 0);
+        aut2.initial = {0};
+        aut2.final = {0, 1};
+        aut2.delta.add(0, alph["a"], 1);
+        aut2.delta.add(1, alph["a"], 1);
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            Run cex;
+            CHECK(are_equivalent(aut1, aut2, &alph, params, &cex));
+            CHECK(cex.word.empty());
+        }
+    }
+
+    SECTION("lhs accepts a word rhs does not: cex witnesses the difference") {
+        // lhs: a*, rhs: {epsilon} -- not equivalent, lhs accepts "a" which rhs does not.
+        Nfa lhs(1), rhs(1);
+        lhs.initial = {0};
+        lhs.final = {0};
+        lhs.delta.add(0, alph["a"], 0);
+        rhs.initial = {0};
+        rhs.final = {0};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            Run cex;
+            CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
+            // The witness must be in exactly one of the two languages.
+            CHECK(lhs.is_in_lang(cex) != rhs.is_in_lang(cex));
+        }
+    }
+
+    SECTION("rhs accepts a word lhs does not: cex witnesses the difference") {
+        // lhs: {epsilon}, rhs: a* -- the reverse of the above.
+        Nfa lhs(1), rhs(1);
+        lhs.initial = {0};
+        lhs.final = {0};
+        rhs.initial = {0};
+        rhs.final = {0};
+        rhs.delta.add(0, alph["a"], 0);
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            Run cex;
+            CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
+            CHECK(lhs.is_in_lang(cex) != rhs.is_in_lang(cex));
+        }
+    }
+
+    SECTION("alphabet-less overload also fills cex") {
+        Nfa lhs(1), rhs(1);
+        lhs.initial = {0};
+        lhs.final = {0};
+        lhs.delta.add(0, alph["a"], 0);
+        rhs.initial = {0};
+        rhs.final = {0};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            Run cex;
+            CHECK(!are_equivalent(lhs, rhs, params, &cex));
+            CHECK(lhs.is_in_lang(cex) != rhs.is_in_lang(cex));
+        }
+    }
+}
+
 TEST_CASE("mata::nfa::revert()")
 { // {{{
     Nfa aut(9);

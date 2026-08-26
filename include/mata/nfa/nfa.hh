@@ -1123,10 +1123,17 @@ inline bool is_included(
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
+ *  language of one of @p lhs/@p rhs but not the other (as also produced by @c is_included() for whichever direction
+ *  of inclusion fails first). Left untouched if @p lhs and @p rhs are equivalent.
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool are_equivalent(
-	const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet, const ParameterMap& params = {{"algorithm", "antichains"}}
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const Alphabet* alphabet,
+	const ParameterMap& params = {{"algorithm", "antichains"}},
+	Run* cex = nullptr
 );
 
 /**
@@ -1144,9 +1151,13 @@ bool are_equivalent(
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
+ *  language of one of @p lhs/@p rhs but not the other. Left untouched if @p lhs and @p rhs are equivalent.
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{"algorithm", "antichains"}});
+bool are_equivalent(
+	const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{"algorithm", "antichains"}}, Run* cex = nullptr
+);
 
 /// Reverting the automaton by one of the three functions below,
 /// currently simple_revert seems best (however, not tested enough).
