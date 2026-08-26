@@ -1342,11 +1342,8 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 
 	// Assuming all sets targets are non-empty.
 	std::vector<std::pair<State, StateSet>> worklist{};
-	bool deallocate_subset_map = false;
-	if (subset_map == nullptr) {
-		subset_map = new std::unordered_map<StateSet, State>{};
-		deallocate_subset_map = true;
-	}
+	std::unordered_map<StateSet, State> subset_map_local{};
+	if (subset_map == nullptr) { subset_map = &subset_map_local; }
 
 	const StateSet sources_init{nft.initial};
 	const State source_init_res{result.add_state()};
@@ -1355,10 +1352,7 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 	if (nft.final.intersects_with(sources_init)) { result.final.insert(source_init_res); }
 	worklist.emplace_back(source_init_res, sources_init);
 
-	if (nft.delta.empty()) {
-		if (deallocate_subset_map) { delete subset_map; }
-		return result;
-	}
+	if (nft.delta.empty()) { return result; }
 
 	(*subset_map)[sources_init] = source_init_res;
 
@@ -1434,7 +1428,6 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 		}
 	}
 
-	if (deallocate_subset_map) { delete subset_map; }
 	return result;
 }
 
