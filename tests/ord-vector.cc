@@ -13,205 +13,197 @@
 using namespace mata::utils;
 
 TEST_CASE("mata::utils::OrdVector::erase()") {
-    using OrdVectorT = OrdVector<int>;
-    OrdVectorT set{ 1, 2, 3, 4, 6 };
-    set.erase(3);
-    CHECK(set == OrdVectorT{ 1, 2, 4, 6 });
-    set.erase(4);
-    CHECK(set == OrdVectorT{ 1, 2, 6 });
-    CHECK(set.erase(5) == 0);
-    set.erase(2);
-    CHECK(set == OrdVectorT{ 1, 6 });
-    set.erase(1);
-    set.erase(6);
-    CHECK(set.empty());
-    set.push_back(3);
-    CHECK(set == OrdVectorT{ 3 });
-    set.erase(3);
-    CHECK(set.empty());
-    CHECK(set.erase(0) == 0);
-    set.emplace_back(3);
-    set.emplace_back(4);
-    CHECK(set == OrdVectorT{ 3, 4 });
-    CHECK(set.erase(0) == 0);
+	using OrdVectorT = OrdVector<int>;
+	OrdVectorT set{1, 2, 3, 4, 6};
+	set.erase(3);
+	CHECK(set == OrdVectorT{1, 2, 4, 6});
+	set.erase(4);
+	CHECK(set == OrdVectorT{1, 2, 6});
+	CHECK(set.erase(5) == 0);
+	set.erase(2);
+	CHECK(set == OrdVectorT{1, 6});
+	set.erase(1);
+	set.erase(6);
+	CHECK(set.empty());
+	set.push_back(3);
+	CHECK(set == OrdVectorT{3});
+	set.erase(3);
+	CHECK(set.empty());
+	CHECK(set.erase(0) == 0);
+	set.emplace_back(3);
+	set.emplace_back(4);
+	CHECK(set == OrdVectorT{3, 4});
+	CHECK(set.erase(0) == 0);
 }
 
 TEST_CASE("mata::utils::OrdVector::front())") {
-    OrdVector<int> vector{ 0, 1, 2, 3 };
-    CHECK(vector.front() == 0);
-    vector.erase(0);
-    const OrdVector<int> vector_const{ vector };
-    CHECK(vector_const.front() == 1);
+	OrdVector<int> vector{0, 1, 2, 3};
+	CHECK(vector.front() == 0);
+	vector.erase(0);
+	const OrdVector<int> vector_const{vector};
+	CHECK(vector_const.front() == 1);
 }
 
 TEST_CASE("mata::utils::OrdVector::intersection()") {
-    using OrdVectorT = OrdVector<int>;
-    OrdVectorT set1{};
-    OrdVectorT set2{};
+	using OrdVectorT = OrdVector<int>;
+	OrdVectorT set1{};
+	OrdVectorT set2{};
 
-    SECTION("Empty sets")
-    {
-        REQUIRE(set1.intersection(set2).empty());
-    }
+	SECTION("Empty sets") { REQUIRE(set1.intersection(set2).empty()); }
 
-    SECTION("Sets of same lengths")
-    {
-        set1 = {1, 3, 5, 7};
-        set2 = {1, 2, 5, 6};
+	SECTION("Sets of same lengths") {
+		set1 = {1, 3, 5, 7};
+		set2 = {1, 2, 5, 6};
 
-        REQUIRE(set1.intersection(set2) == OrdVectorT{1, 5});
-    }
+		REQUIRE(set1.intersection(set2) == OrdVectorT{1, 5});
+	}
 
-    SECTION("Sets of different lengths")
-    {
-        set1 = {1, 3, 5, 7};
-        set2 = {1, 2, 5, 7, 8};
+	SECTION("Sets of different lengths") {
+		set1 = {1, 3, 5, 7};
+		set2 = {1, 2, 5, 7, 8};
 
-        REQUIRE(set1.intersection(set2) == OrdVectorT{1, 5, 7});
-    }
+		REQUIRE(set1.intersection(set2) == OrdVectorT{1, 5, 7});
+	}
 
-    SECTION("Empty intersection of non-empty sets")
-    {
-        set1 = {0, 3, 6};
-        set2 = {1, 2, 5, 7, 8};
+	SECTION("Empty intersection of non-empty sets") {
+		set1 = {0, 3, 6};
+		set2 = {1, 2, 5, 7, 8};
 
-        REQUIRE(set1.intersection(set2).empty());
-    }
+		REQUIRE(set1.intersection(set2).empty());
+	}
 }
 
 TEST_CASE("mata::utils::OrdVector::difference()") {
-    using OrdVectorT = OrdVector<int>;
-    OrdVectorT set1{};
-    OrdVectorT set2{};
+	using OrdVectorT = OrdVector<int>;
+	OrdVectorT set1{};
+	OrdVectorT set2{};
 
-    SECTION("Empty sets") {
-        CHECK(set1.difference(set2).empty());
-    }
+	SECTION("Empty sets") { CHECK(set1.difference(set2).empty()); }
 
-    SECTION("Empty rhs set") {
-        set1 = { 1, 2, 3 };
-        CHECK(set1.difference(set2) == set1);
-    }
+	SECTION("Empty rhs set") {
+		set1 = {1, 2, 3};
+		CHECK(set1.difference(set2) == set1);
+	}
 
-    SECTION("Empty lhs set") {
-        set2 = { 1, 2, 3 };
-        CHECK(set1.difference(set2).empty());
-    }
+	SECTION("Empty lhs set") {
+		set2 = {1, 2, 3};
+		CHECK(set1.difference(set2).empty());
+	}
 
-    SECTION("filled sets") {
-        set1 = { 1, 2, 3 };
-        set2 = { 1, 2, 3 };
-        CHECK(set1.difference(set2).empty());
+	SECTION("filled sets") {
+		set1 = {1, 2, 3};
+		set2 = {1, 2, 3};
+		CHECK(set1.difference(set2).empty());
 
-        set1 = { 1, 2, 3 };
-        set2 = { 1, 3 };
-        CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{ 2 });
+		set1 = {1, 2, 3};
+		set2 = {1, 3};
+		CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{2});
 
-        set1 = { 1, 3 };
-        set2 = { 1, 2, 3 };
-        CHECK(set1.difference(set2).empty());
+		set1 = {1, 3};
+		set2 = {1, 2, 3};
+		CHECK(set1.difference(set2).empty());
 
-        set1 = { 1, 2, 3 };
-        set2 = { 3 };
-        CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{ 1, 2 });
-    }
+		set1 = {1, 2, 3};
+		set2 = {3};
+		CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{1, 2});
+	}
 }
 
 TEST_CASE("mata::utils::OrdVector::min()") {
-    SECTION("Empty vector") {
-        OrdVector<int> vec;
-        CHECK_THROWS_AS(vec.min(), std::out_of_range);
-    }
+	SECTION("Empty vector") {
+		OrdVector<int> vec;
+		CHECK_THROWS_AS(vec.min(), std::out_of_range);
+	}
 
-    SECTION("One element") {
-        OrdVector<int> vec{ 42 };
-        CHECK(vec.min() == 42);
-    }
+	SECTION("One element") {
+		OrdVector<int> vec{42};
+		CHECK(vec.min() == 42);
+	}
 
-    SECTION("Multiple elements") {
-        OrdVector<int> vec{ 3, 2, 4, 2, 5, 99 };
-        CHECK(vec.min() == 2);
-    }
+	SECTION("Multiple elements") {
+		OrdVector<int> vec{3, 2, 4, 2, 5, 99};
+		CHECK(vec.min() == 2);
+	}
 }
 
 TEST_CASE("mata::utils::OrdVector::max()") {
-    SECTION("Empty vector") {
-        OrdVector<int> vec;
-        CHECK_THROWS_AS(vec.max(), std::out_of_range);
-    }
+	SECTION("Empty vector") {
+		OrdVector<int> vec;
+		CHECK_THROWS_AS(vec.max(), std::out_of_range);
+	}
 
-    SECTION("One element") {
-        OrdVector<int> vec{ 42 };
-        CHECK(vec.max() == 42);
-    }
+	SECTION("One element") {
+		OrdVector<int> vec{42};
+		CHECK(vec.max() == 42);
+	}
 
-    SECTION("Multiple elements") {
-        OrdVector<int> vec{ 3, 2, 4, 2, 5, 99 };
-        CHECK(vec.max() == 99);
-    }
+	SECTION("Multiple elements") {
+		OrdVector<int> vec{3, 2, 4, 2, 5, 99};
+		CHECK(vec.max() == 99);
+	}
 }
 
 TEST_CASE("mata::utils::OrdVector::at()") {
-    SECTION("Empty vector") {
-        OrdVector<int> vec;
-        CHECK_THROWS_AS(vec.at(0), std::out_of_range);
-    }
+	SECTION("Empty vector") {
+		OrdVector<int> vec;
+		CHECK_THROWS_AS(vec.at(0), std::out_of_range);
+	}
 
-    SECTION("One element") {
-        OrdVector<int> vec{ 42 };
-        CHECK(vec.at(0) == 42);
-    }
+	SECTION("One element") {
+		OrdVector<int> vec{42};
+		CHECK(vec.at(0) == 42);
+	}
 
-    SECTION("Multiple elements") {
-        OrdVector<int> vec{ 3, 2, 4, 2, 5, 99 };
-        CHECK(vec.at(0) == 2);
-        CHECK(vec.at(1) == 3);
-        CHECK(vec.at(2) == 4);
-        CHECK(vec.at(3) == 5);
-        CHECK(vec.at(4) == 99);
-        CHECK_THROWS_AS(vec.at(5), std::out_of_range);
-    }
+	SECTION("Multiple elements") {
+		OrdVector<int> vec{3, 2, 4, 2, 5, 99};
+		CHECK(vec.at(0) == 2);
+		CHECK(vec.at(1) == 3);
+		CHECK(vec.at(2) == 4);
+		CHECK(vec.at(3) == 5);
+		CHECK(vec.at(4) == 99);
+		CHECK_THROWS_AS(vec.at(5), std::out_of_range);
+	}
 }
 
 TEST_CASE("std::hash<mata::utils::OrdVector<Key>>") {
-    const OrdVector<int> vec1{ 1, 2, 3 };
-    const OrdVector<int> vec2{ 3, 2, 1 }; // Same elements, different insertion order.
-    const OrdVector<int> vec3{ 1, 2, 4 };
-    const std::hash<OrdVector<int>> hasher{};
+	const OrdVector<int> vec1{1, 2, 3};
+	const OrdVector<int> vec2{3, 2, 1}; // Same elements, different insertion order.
+	const OrdVector<int> vec3{1, 2, 4};
+	const std::hash<OrdVector<int>> hasher{};
 
-    CHECK(hasher(vec1) == hasher(vec2));
-    CHECK(hasher(vec1) != hasher(vec3));
+	CHECK(hasher(vec1) == hasher(vec2));
+	CHECK(hasher(vec1) != hasher(vec3));
 
-    // Usable as an unordered_set element without any extra Hash argument, since it is a legitimate
-    //  program-defined std::hash specialization (unlike hashing std::set/std::vector directly, see #628).
-    std::unordered_set<OrdVector<int>> set{ vec1, vec2, vec3 };
-    CHECK(set.size() == 2);
+	// Usable as an unordered_set element without any extra Hash argument, since it is a legitimate
+	//  program-defined std::hash specialization (unlike hashing std::set/std::vector directly, see #628).
+	std::unordered_set<OrdVector<int>> set{vec1, vec2, vec3};
+	CHECK(set.size() == 2);
 }
 
 TEST_CASE("mata::utils::SetHash and mata::utils::VectorHash") {
-    // #628: mata must not specialize std::hash for std::set<A>/std::vector<A> for arbitrary A, since A may not be a
-    //  program-defined type. SetHash/VectorHash are the replacement, usable as the explicit Hash argument of
-    //  unordered containers.
-    const SetHash<int> set_hasher{};
-    CHECK(set_hasher(std::set<int>{ 1, 2, 3 }) == set_hasher(std::set<int>{ 3, 2, 1 }));
-    CHECK(set_hasher(std::set<int>{ 1, 2, 3 }) != set_hasher(std::set<int>{ 1, 2, 4 }));
+	// #628: mata must not specialize std::hash for std::set<A>/std::vector<A> for arbitrary A, since A may not be a
+	//  program-defined type. SetHash/VectorHash are the replacement, usable as the explicit Hash argument of
+	//  unordered containers.
+	const SetHash<int> set_hasher{};
+	CHECK(set_hasher(std::set<int>{1, 2, 3}) == set_hasher(std::set<int>{3, 2, 1}));
+	CHECK(set_hasher(std::set<int>{1, 2, 3}) != set_hasher(std::set<int>{1, 2, 4}));
 
-    const VectorHash<int> vector_hasher{};
-    CHECK(vector_hasher(std::vector<int>{ 1, 2, 3 }) == vector_hasher(std::vector<int>{ 1, 2, 3 }));
-    CHECK(vector_hasher(std::vector<int>{ 1, 2, 3 }) != vector_hasher(std::vector<int>{ 3, 2, 1 }));
+	const VectorHash<int> vector_hasher{};
+	CHECK(vector_hasher(std::vector<int>{1, 2, 3}) == vector_hasher(std::vector<int>{1, 2, 3}));
+	CHECK(vector_hasher(std::vector<int>{1, 2, 3}) != vector_hasher(std::vector<int>{3, 2, 1}));
 
-    const std::unordered_map<std::vector<int>, int, VectorHash<int>> map{ { { 1, 2, 3 }, 42 } };
-    CHECK(map.at({ 1, 2, 3 }) == 42);
+	const std::unordered_map<std::vector<int>, int, VectorHash<int>> map{{{1, 2, 3}, 42}};
+	CHECK(map.at({1, 2, 3}) == 42);
 }
 
 TEST_CASE("mata::utils::PairHash") {
-    // #628: mata must not specialize std::hash for std::pair<A, B> for arbitrary A/B, since A/B may not be a
-    //  program-defined type. PairHash is the replacement, usable as the explicit Hash argument of unordered
-    //  containers.
-    const PairHash<int, int> pair_hasher{};
-    CHECK(pair_hasher({ 1, 2 }) == pair_hasher({ 1, 2 }));
-    CHECK(pair_hasher({ 1, 2 }) != pair_hasher({ 2, 1 }));
+	// #628: mata must not specialize std::hash for std::pair<A, B> for arbitrary A/B, since A/B may not be a
+	//  program-defined type. PairHash is the replacement, usable as the explicit Hash argument of unordered
+	//  containers.
+	const PairHash<int, int> pair_hasher{};
+	CHECK(pair_hasher({1, 2}) == pair_hasher({1, 2}));
+	CHECK(pair_hasher({1, 2}) != pair_hasher({2, 1}));
 
-    const std::unordered_map<std::pair<int, int>, int, PairHash<int, int>> map{ { { 1, 2 }, 42 } };
-    CHECK(map.at({ 1, 2 }) == 42);
+	const std::unordered_map<std::pair<int, int>, int, PairHash<int, int>> map{{{1, 2}, 42}};
+	CHECK(map.at({1, 2}) == 42);
 }

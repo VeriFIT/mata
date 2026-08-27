@@ -60,297 +60,311 @@ using Word = mata::Word;
 
 // }}}
 
-TEST_CASE("mata::nfa::get_shortest_words()")
-{
-    Nfa aut('q' + 1);
+TEST_CASE("mata::nfa::get_shortest_words()") {
+	Nfa aut('q' + 1);
 
-    SECTION("Automaton B")
-    {
-        FILL_WITH_AUT_B(aut);
-        Word word{};
-        word.push_back('b');
-        word.push_back('a');
-        std::set<Word> expected{word};
-        Word word2{};
-        word2.push_back('a');
-        word2.push_back('a');
-        expected.insert(expected.begin(), word2);
-        REQUIRE(get_shortest_words(aut) == expected);
+	SECTION("Automaton B") {
+		FILL_WITH_AUT_B(aut);
+		Word word{};
+		word.push_back('b');
+		word.push_back('a');
+		std::set<Word> expected{word};
+		Word word2{};
+		word2.push_back('a');
+		word2.push_back('a');
+		expected.insert(expected.begin(), word2);
+		REQUIRE(get_shortest_words(aut) == expected);
 
-        SECTION("Additional initial state with longer words")
-        {
-            aut.initial.insert(8);
-            REQUIRE(get_shortest_words(aut) == expected);
-        }
+		SECTION("Additional initial state with longer words") {
+			aut.initial.insert(8);
+			REQUIRE(get_shortest_words(aut) == expected);
+		}
 
-        SECTION("Change initial state")
-        {
-            aut.initial.clear();
-            aut.initial.insert(8);
+		SECTION("Change initial state") {
+			aut.initial.clear();
+			aut.initial.insert(8);
 
-            word.clear();
-            word.push_back('b');
-            word.push_back('b');
-            word.push_back('a');
-            expected = std::set<Word>{word};
-            word2.clear();
-            word2.push_back('b');
-            word2.push_back('a');
-            word2.push_back('a');
-            expected.insert(expected.begin(), word2);
+			word.clear();
+			word.push_back('b');
+			word.push_back('b');
+			word.push_back('a');
+			expected = std::set<Word>{word};
+			word2.clear();
+			word2.push_back('b');
+			word2.push_back('a');
+			word2.push_back('a');
+			expected.insert(expected.begin(), word2);
 
-            REQUIRE(get_shortest_words(aut) == expected);
-        }
-    }
+			REQUIRE(get_shortest_words(aut) == expected);
+		}
+	}
 
-    SECTION("Empty automaton")
-    {
-        REQUIRE(get_shortest_words(aut).empty());
-    }
+	SECTION("Empty automaton") { REQUIRE(get_shortest_words(aut).empty()); }
 
-    SECTION("One-state automaton accepting an empty language")
-    {
-        aut.initial.insert(0);
-        REQUIRE(get_shortest_words(aut).empty());
-        aut.final.insert(1);
-        REQUIRE(get_shortest_words(aut).empty());
-        aut.final.insert(0);
-        REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
-    }
+	SECTION("One-state automaton accepting an empty language") {
+		aut.initial.insert(0);
+		REQUIRE(get_shortest_words(aut).empty());
+		aut.final.insert(1);
+		REQUIRE(get_shortest_words(aut).empty());
+		aut.final.insert(0);
+		REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
+	}
 
-    SECTION("Automaton A")
-    {
-        FILL_WITH_AUT_A(aut);
-        Word word{};
-        word.push_back('b');
-        word.push_back('a');
-        std::set<Word> expected{word};
-        Word word2{};
-        word2.push_back('a');
-        word2.push_back('a');
-        expected.insert(expected.begin(), word2);
-        REQUIRE(get_shortest_words(aut) == expected);
-    }
+	SECTION("Automaton A") {
+		FILL_WITH_AUT_A(aut);
+		Word word{};
+		word.push_back('b');
+		word.push_back('a');
+		std::set<Word> expected{word};
+		Word word2{};
+		word2.push_back('a');
+		word2.push_back('a');
+		expected.insert(expected.begin(), word2);
+		REQUIRE(get_shortest_words(aut) == expected);
+	}
 
-    SECTION("Single transition automaton")
-    {
-        aut.initial = {1 };
-        aut.final = {2 };
-        aut.delta.add(1, 'a', 2);
+	SECTION("Single transition automaton") {
+		aut.initial = {1};
+		aut.final = {2};
+		aut.delta.add(1, 'a', 2);
 
-        REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{'a'}});
-    }
+		REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{'a'}});
+	}
 
-    SECTION("Single state automaton")
-    {
-        aut.initial = {1 };
-        aut.final = {1 };
-        aut.delta.add(1, 'a', 1);
+	SECTION("Single state automaton") {
+		aut.initial = {1};
+		aut.final = {1};
+		aut.delta.add(1, 'a', 1);
 
-        REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
-    }
+		REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
+	}
 
-    SECTION("Require FIFO queue")
-    {
-        aut.initial = {1 };
-        aut.final = {4 };
-        aut.delta.add(1, 'a', 5);
-        aut.delta.add(5, 'c', 4);
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(2, 'b', 3);
-        aut.delta.add(3, 'b', 4);
+	SECTION("Require FIFO queue") {
+		aut.initial = {1};
+		aut.final = {4};
+		aut.delta.add(1, 'a', 5);
+		aut.delta.add(5, 'c', 4);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, 'b', 4);
 
-        Word word{};
-        word.push_back('a');
-        word.push_back('c');
-        std::set<Word> expected{word};
+		Word word{};
+		word.push_back('a');
+		word.push_back('c');
+		std::set<Word> expected{word};
 
-        // LIFO queue would return as shortest words string "abb", which would be incorrect.
-        REQUIRE(get_shortest_words(aut) == expected);
-    }
+		// LIFO queue would return as shortest words string "abb", which would be incorrect.
+		REQUIRE(get_shortest_words(aut) == expected);
+	}
 }
 
 TEST_CASE("mata::nfa::get_shortest_words() for profiling", "[.profiling][shortest_words]") {
-    Nfa aut('q' + 1);
-    FILL_WITH_AUT_B(aut);
-    aut.initial.clear();
-    aut.initial.insert(8);
-    Word word{};
-    word.push_back('b');
-    word.push_back('b');
-    word.push_back('a');
-    std::set<Word> expected{ word };
-    Word word2{};
-    word2.push_back('b');
-    word2.push_back('a');
-    word2.push_back('a');
-    expected.insert(expected.begin(), word2);
+	Nfa aut('q' + 1);
+	FILL_WITH_AUT_B(aut);
+	aut.initial.clear();
+	aut.initial.insert(8);
+	Word word{};
+	word.push_back('b');
+	word.push_back('b');
+	word.push_back('a');
+	std::set<Word> expected{word};
+	Word word2{};
+	word2.push_back('b');
+	word2.push_back('a');
+	word2.push_back('a');
+	expected.insert(expected.begin(), word2);
 
-    for (size_t n{}; n < 100'000; ++n) {
-        get_shortest_words(aut);
-    }
+	for (size_t n{}; n < 100'000; ++n) { get_shortest_words(aut); }
 }
 
 TEST_CASE("mata::applications::strings::get_lengths()") {
+	SECTION("basic") {
+		Nfa x = create_from_regex("(abcde)*");
+		x.trim();
+		CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0, 5}}));
+	}
 
-    SECTION("basic") {
-        Nfa x = create_from_regex("(abcde)*");
-        x.trim();
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,5}}));
-    }
+	SECTION("basic2") {
+		Nfa x = create_from_regex("a+");
+		x.trim();
+		CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{1, 1}}));
+	}
 
-    SECTION("basic2") {
-        Nfa x = create_from_regex("a+");
-        x.trim();
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{1,1}}));
-    }
+	SECTION("basic3") {
+		Nfa x = create_from_regex("a*");
+		x.trim();
+		CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0, 1}}));
+	}
 
-    SECTION("basic3") {
-        Nfa x = create_from_regex("a*");
-        x.trim();
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,1}}));
-    }
+	SECTION("empty") {
+		Nfa x = create_from_regex("");
+		x.trim();
+		CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0, 0}}));
+	}
 
-    SECTION("empty") {
-        Nfa x = create_from_regex("");
-        x.trim();
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,0}}));
-    }
+	SECTION("finite") {
+		Nfa x = create_from_regex("abcd");
+		x.trim();
+		CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{4, 0}}));
+	}
 
-    SECTION("finite") {
-        Nfa x = create_from_regex("abcd");
-        x.trim();
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{4,0}}));
-    }
+	SECTION("advanced 1") {
+		Nfa x = create_from_regex("(cd(abcde)*)|(a(aaa)*)");
+		CHECK(
+			get_word_lengths(x) ==
+			std::set<std::pair<int, int>>({{1, 0}, {2, 15}, {4, 15}, {7, 15}, {10, 15}, {12, 15}, {13, 15}, {16, 15}})
+		);
+	}
 
-    SECTION("advanced 1") {
-        Nfa x = create_from_regex("(cd(abcde)*)|(a(aaa)*)");
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
-            {1,0}, {2,15}, {4,15}, {7,15}, {10,15}, {12,15}, {13,15}, {16,15}
-        }));
-    }
-
-    SECTION("advanced 2") {
-        Nfa x = create_from_regex("a(aaaa|aaaaaaa)*");
-        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
-            {1,0}, {5,0}, {8,0}, {9,0}, {12,0}, {13,0}, {15,0}, {16,0},
-            {17,0}, {19,0}, {20,0}, {21,0}, {22,0}, {23,0}, {24,0}, {25,0},
-            {26,1}
-        }));
-    }
+	SECTION("advanced 2") {
+		Nfa x = create_from_regex("a(aaaa|aaaaaaa)*");
+		CHECK(
+			get_word_lengths(x) == std::set<std::pair<int, int>>(
+									   {{1, 0},
+										{5, 0},
+										{8, 0},
+										{9, 0},
+										{12, 0},
+										{13, 0},
+										{15, 0},
+										{16, 0},
+										{17, 0},
+										{19, 0},
+										{20, 0},
+										{21, 0},
+										{22, 0},
+										{23, 0},
+										{24, 0},
+										{25, 0},
+										{26, 1}}
+								   )
+		);
+	}
 }
 
 TEST_CASE("mata::applications::strings::is_lang_eps()") {
+	SECTION("basic") {
+		Nfa x = create_from_regex("(abcde)*");
+		CHECK(!is_lang_eps(x));
+	}
 
-    SECTION("basic") {
-        Nfa x = create_from_regex("(abcde)*");
-        CHECK(!is_lang_eps(x));
-    }
+	SECTION("basic 2") {
+		Nfa x = create_from_regex("");
+		CHECK(is_lang_eps(x));
+	}
 
-    SECTION("basic 2") {
-        Nfa x = create_from_regex("");
-        CHECK(is_lang_eps(x));
-    }
-
-    SECTION("basic 3") {
-        Nfa x;
-        CHECK(!is_lang_eps(x));
-    }
+	SECTION("basic 3") {
+		Nfa x;
+		CHECK(!is_lang_eps(x));
+	}
 }
 
 TEST_CASE("mata::nfa::create_single_word_nfa()") {
-    SECTION("From numbers") {
-        SECTION("Simple word") {
-            std::vector<mata::Symbol> word{ 10, 20, 30, 40, 50, 60 };
-            auto nfa{ builder::create_single_word_nfa(word) };
-            CHECK(nfa.is_in_lang(word));
-            CHECK(nfa.final.size() == 1);
-            CHECK(nfa.initial.size() == 1);
-            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
-        }
+	SECTION("From numbers") {
+		SECTION("Simple word") {
+			std::vector<mata::Symbol> word{10, 20, 30, 40, 50, 60};
+			auto nfa{builder::create_single_word_nfa(word)};
+			CHECK(nfa.is_in_lang(word));
+			CHECK(nfa.final.size() == 1);
+			CHECK(nfa.initial.size() == 1);
+			CHECK(
+				mata::applications::strings::get_word_lengths(nfa) ==
+				std::set<std::pair<int, int>>{std::make_pair(6, 0)}
+			);
+		}
 
-        SECTION("Empty string") {
-            std::vector<mata::Symbol> word{};
-            auto nfa{ builder::create_single_word_nfa(word) };
-            CHECK(nfa.is_in_lang(word));
-            CHECK(mata::applications::strings::is_lang_eps(nfa));
-            CHECK(nfa.final.size() == 1);
-            CHECK(nfa.initial.size() == 1);
-            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
-        }
-    }
+		SECTION("Empty string") {
+			std::vector<mata::Symbol> word{};
+			auto nfa{builder::create_single_word_nfa(word)};
+			CHECK(nfa.is_in_lang(word));
+			CHECK(mata::applications::strings::is_lang_eps(nfa));
+			CHECK(nfa.final.size() == 1);
+			CHECK(nfa.initial.size() == 1);
+			CHECK(
+				mata::applications::strings::get_word_lengths(nfa) ==
+				std::set<std::pair<int, int>>{std::make_pair(0, 0)}
+			);
+		}
+	}
 
-    SECTION("From symbol names") {
-        SECTION("Simple word") {
-            std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
-            auto nfa{ builder::create_single_word_nfa(word) };
-            CHECK(nfa.is_in_lang(nfa.alphabet->translate_word(word)));
-            CHECK(nfa.final.size() == 1);
-            CHECK(nfa.initial.size() == 1);
-            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
-        }
+	SECTION("From symbol names") {
+		SECTION("Simple word") {
+			std::vector<std::string> word{"zero", "one", "two", "three", "four", "five"};
+			auto nfa{builder::create_single_word_nfa(word)};
+			CHECK(nfa.is_in_lang(nfa.alphabet->translate_word(word)));
+			CHECK(nfa.final.size() == 1);
+			CHECK(nfa.initial.size() == 1);
+			CHECK(
+				mata::applications::strings::get_word_lengths(nfa) ==
+				std::set<std::pair<int, int>>{std::make_pair(6, 0)}
+			);
+		}
 
-        SECTION("Empty string") {
-            std::vector<mata::Symbol> word{};
-            auto nfa{ builder::create_single_word_nfa(word) };
-            CHECK(nfa.is_in_lang(word));
-            CHECK(mata::applications::strings::is_lang_eps(nfa));
-            CHECK(nfa.final.size() == 1);
-            CHECK(nfa.initial.size() == 1);
-            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
-        }
+		SECTION("Empty string") {
+			std::vector<mata::Symbol> word{};
+			auto nfa{builder::create_single_word_nfa(word)};
+			CHECK(nfa.is_in_lang(word));
+			CHECK(mata::applications::strings::is_lang_eps(nfa));
+			CHECK(nfa.final.size() == 1);
+			CHECK(nfa.initial.size() == 1);
+			CHECK(
+				mata::applications::strings::get_word_lengths(nfa) ==
+				std::set<std::pair<int, int>>{std::make_pair(0, 0)}
+			);
+		}
 
-        SECTION("Simple word with alphabet") {
-            std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
-            mata::OnTheFlyAlphabet alphabet{};
-            for (mata::Symbol symbol{ 0 }; symbol < word.size(); ++symbol) {
-                alphabet.add_new_symbol(word[symbol], symbol);
-            }
-            auto nfa{ builder::create_single_word_nfa(word) };
-            CHECK(nfa.is_in_lang(nfa.alphabet->translate_word(word)));
-            CHECK(nfa.final.size() == 1);
-            CHECK(nfa.initial.size() == 1);
-            CHECK(mata::applications::strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
-        }
-    }
+		SECTION("Simple word with alphabet") {
+			std::vector<std::string> word{"zero", "one", "two", "three", "four", "five"};
+			mata::OnTheFlyAlphabet alphabet{};
+			for (mata::Symbol symbol{0}; symbol < word.size(); ++symbol) {
+				alphabet.add_new_symbol(word[symbol], symbol);
+			}
+			auto nfa{builder::create_single_word_nfa(word)};
+			CHECK(nfa.is_in_lang(nfa.alphabet->translate_word(word)));
+			CHECK(nfa.final.size() == 1);
+			CHECK(nfa.initial.size() == 1);
+			CHECK(
+				mata::applications::strings::get_word_lengths(nfa) ==
+				std::set<std::pair<int, int>>{std::make_pair(6, 0)}
+			);
+		}
+	}
 }
 
 TEST_CASE("mata::applications::strings::get_accepted_symbols()") {
-    Nfa x;
-    std::set<mata::Symbol> symbols;
+	Nfa x;
+	std::set<mata::Symbol> symbols;
 
-    SECTION("basic") {
-        x = create_from_regex("a|bc");
-        symbols = {'a'};
-        CHECK(get_accepted_symbols(x) == symbols);
-    }
+	SECTION("basic") {
+		x = create_from_regex("a|bc");
+		symbols = {'a'};
+		CHECK(get_accepted_symbols(x) == symbols);
+	}
 
-    SECTION("basic 2") {
-        x = create_from_regex("");
-        CHECK(get_accepted_symbols(x).empty());
-    }
+	SECTION("basic 2") {
+		x = create_from_regex("");
+		CHECK(get_accepted_symbols(x).empty());
+	}
 
-    SECTION("basic 3") {
-        CHECK(get_accepted_symbols(x).empty());
-    }
+	SECTION("basic 3") { CHECK(get_accepted_symbols(x).empty()); }
 
-    SECTION("advanced 1") {
-        x = create_from_regex("a*|c+|(db)*");
-        symbols = {'a', 'c'};
-        CHECK(get_accepted_symbols(x) == symbols);
-    }
+	SECTION("advanced 1") {
+		x = create_from_regex("a*|c+|(db)*");
+		symbols = {'a', 'c'};
+		CHECK(get_accepted_symbols(x) == symbols);
+	}
 
-    SECTION("advanced 2") {
-        (x).delta.add(0, 'a', 1);
-        (x).delta.add(0, 'b', 1);
-        (x).delta.add(2, 'c', 3);
-        (x).delta.add(2, 'd', 4);
-        (x).delta.add(4, 'e', 2);
-        (x).delta.add(2, 'f', 2);
-        (x).delta.add(5, 'g', 1);
-        (x).initial = {0, 2, 4};
-        (x).final = {1, 3, 2};
-        symbols = {'a', 'b', 'c', 'e', 'f'};
-        CHECK(get_accepted_symbols(x) == symbols);
-    }
+	SECTION("advanced 2") {
+		(x).delta.add(0, 'a', 1);
+		(x).delta.add(0, 'b', 1);
+		(x).delta.add(2, 'c', 3);
+		(x).delta.add(2, 'd', 4);
+		(x).delta.add(4, 'e', 2);
+		(x).delta.add(2, 'f', 2);
+		(x).delta.add(5, 'g', 1);
+		(x).initial = {0, 2, 4};
+		(x).final = {1, 3, 2};
+		symbols = {'a', 'b', 'c', 'e', 'f'};
+		CHECK(get_accepted_symbols(x) == symbols);
+	}
 }

@@ -56,133 +56,134 @@ using Symbol = mata::Symbol;
 
 // }}}
 
-TEST_CASE("mata::nfa::Segmentation::get_epsilon_depths()")
-{
-    Nfa aut('q' + 1);
-    constexpr Symbol epsilon{'c'};
-    const std::set<Symbol> epsilons({epsilon});
+TEST_CASE("mata::nfa::Segmentation::get_epsilon_depths()") {
+	Nfa aut('q' + 1);
+	constexpr Symbol epsilon{'c'};
+	const std::set<Symbol> epsilons({epsilon});
 
-    SECTION("Automaton A")
-    {
-        FILL_WITH_AUT_A(aut);
-        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons } };
-        const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
-        REQUIRE(epsilon_depth_transitions == seg_nfa::Segmentation::EpsilonDepthTransitions{{ 0, std::vector<Transition>{
-                {10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}
-       }});
-    }
+	SECTION("Automaton A") {
+		FILL_WITH_AUT_A(aut);
+		auto segmentation{seg_nfa::Segmentation{aut, epsilons}};
+		const auto& epsilon_depth_transitions{segmentation.get_epsilon_depths()};
+		REQUIRE(
+			epsilon_depth_transitions ==
+			seg_nfa::Segmentation::EpsilonDepthTransitions{
+				{0, std::vector<Transition>{{10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}}
+			}
+		);
+	}
 
-    SECTION("Small automaton with depths")
-    {
-        aut.initial.insert(1);
-        aut.final.insert(8);
-        aut.delta.add(1, epsilon, 2);
-        aut.delta.add(2, 'a', 3);
-        aut.delta.add(2, 'b', 4);
-        aut.delta.add(3, 'b', 6);
-        aut.delta.add(4, 'a', 6);
-        aut.delta.add(6, epsilon, 7);
-        aut.delta.add(7, epsilon, 8);
+	SECTION("Small automaton with depths") {
+		aut.initial.insert(1);
+		aut.final.insert(8);
+		aut.delta.add(1, epsilon, 2);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 6);
+		aut.delta.add(4, 'a', 6);
+		aut.delta.add(6, epsilon, 7);
+		aut.delta.add(7, epsilon, 8);
 
-        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons } };
-        const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
+		auto segmentation{seg_nfa::Segmentation{aut, epsilons}};
+		const auto& epsilon_depth_transitions{segmentation.get_epsilon_depths()};
 
-        REQUIRE(epsilon_depth_transitions == seg_nfa::Segmentation::EpsilonDepthTransitions{
-                {0, std::vector<Transition>{{ 1, epsilon, 2}}},
-                {1, std::vector<Transition>{{ 6, epsilon, 7}}},
-                {2, std::vector<Transition>{{ 7, epsilon, 8}}},
-        });
-    }
-
+		REQUIRE(
+			epsilon_depth_transitions == seg_nfa::Segmentation::EpsilonDepthTransitions{
+											 {0, std::vector<Transition>{{1, epsilon, 2}}},
+											 {1, std::vector<Transition>{{6, epsilon, 7}}},
+											 {2, std::vector<Transition>{{7, epsilon, 8}}},
+										 }
+		);
+	}
 }
 
 TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
-    Symbol epsilon{ 'c' };
-    const std::set<Symbol> epsilons({epsilon});
-    SECTION("Large automaton") {
-        Nfa aut(100);
-        aut.initial.insert(1);
-        aut.final.insert(11);
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'b', 3);
-        aut.delta.add(3, 'c', 4);
-        aut.delta.add(4, 'a', 7);
-        aut.delta.add(7, 'b', 8);
-        aut.delta.add(8, 'a', 7);
-        aut.delta.add(8, 'b', 4);
-        aut.delta.add(4, 'c', 5);
-        aut.delta.add(5, 'a', 6);
-        aut.delta.add(5, 'b', 6);
-        aut.delta.add(6, 'c', 10);
-        aut.delta.add(9, 'a', 11);
-        aut.delta.add(10, 'b', 11);
+	Symbol epsilon{'c'};
+	const std::set<Symbol> epsilons({epsilon});
+	SECTION("Large automaton") {
+		Nfa aut(100);
+		aut.initial.insert(1);
+		aut.final.insert(11);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'b', 3);
+		aut.delta.add(3, 'c', 4);
+		aut.delta.add(4, 'a', 7);
+		aut.delta.add(7, 'b', 8);
+		aut.delta.add(8, 'a', 7);
+		aut.delta.add(8, 'b', 4);
+		aut.delta.add(4, 'c', 5);
+		aut.delta.add(5, 'a', 6);
+		aut.delta.add(5, 'b', 6);
+		aut.delta.add(6, 'c', 10);
+		aut.delta.add(9, 'a', 11);
+		aut.delta.add(10, 'b', 11);
 
-        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons}};
-        auto segments{ segmentation.get_segments() };
-        REQUIRE(segments.size() == 4);
+		auto segmentation{seg_nfa::Segmentation{aut, epsilons}};
+		auto segments{segmentation.get_segments()};
+		REQUIRE(segments.size() == 4);
 
-        REQUIRE(segments[0].initial[0]);
-        REQUIRE(segments[0].final[1]);
-        REQUIRE(segments[0].delta.contains(0, 'b', 1));
-        REQUIRE(!segments[0].delta.contains(0, 'a', 2));
+		REQUIRE(segments[0].initial[0]);
+		REQUIRE(segments[0].final[1]);
+		REQUIRE(segments[0].delta.contains(0, 'b', 1));
+		REQUIRE(!segments[0].delta.contains(0, 'a', 2));
 
-        REQUIRE(segments[1].initial[0]);
-        REQUIRE(segments[1].final[0]);
-        REQUIRE(segments[1].delta.contains(0, 'a', 1));
-        REQUIRE(!segments[1].delta.contains(0, 'a', 2));
-        REQUIRE(!segments[1].delta.contains(0, 'c', 3));
-        REQUIRE(segments[1].delta.contains(1, 'b', 2));
-        REQUIRE(segments[1].delta.contains(2, 'b', 0));
-        REQUIRE(segments[1].delta.contains(2, 'a', 1));
+		REQUIRE(segments[1].initial[0]);
+		REQUIRE(segments[1].final[0]);
+		REQUIRE(segments[1].delta.contains(0, 'a', 1));
+		REQUIRE(!segments[1].delta.contains(0, 'a', 2));
+		REQUIRE(!segments[1].delta.contains(0, 'c', 3));
+		REQUIRE(segments[1].delta.contains(1, 'b', 2));
+		REQUIRE(segments[1].delta.contains(2, 'b', 0));
+		REQUIRE(segments[1].delta.contains(2, 'a', 1));
 
-        REQUIRE(segments[2].initial[0]);
-        REQUIRE(segments[2].final[1]);
-        REQUIRE(segments[2].delta.contains(0, 'a', 1));
-        REQUIRE(segments[2].delta.contains(0, 'b', 1));
+		REQUIRE(segments[2].initial[0]);
+		REQUIRE(segments[2].final[1]);
+		REQUIRE(segments[2].delta.contains(0, 'a', 1));
+		REQUIRE(segments[2].delta.contains(0, 'b', 1));
 
-        REQUIRE(segments[3].initial[0]);
-        REQUIRE(segments[3].final[1]);
-        REQUIRE(segments[3].delta.contains(0, 'b', 1));
-    }
+		REQUIRE(segments[3].initial[0]);
+		REQUIRE(segments[3].final[1]);
+		REQUIRE(segments[3].delta.contains(0, 'b', 1));
+	}
 
-    SECTION("Correctly make states final and initial") {
-        Nfa aut(100);
-        aut.initial.insert(0);
-        aut.final.insert({4, 6});
-        aut.delta.add(0, epsilon, 2);
-        aut.delta.add(0, 'a', 1);
-        aut.delta.add(1, epsilon, 3);
-        aut.delta.add(3, 'b', 5);
-        aut.delta.add(2, epsilon, 4);
-        aut.delta.add(5, epsilon, 6);
+	SECTION("Correctly make states final and initial") {
+		Nfa aut(100);
+		aut.initial.insert(0);
+		aut.final.insert({4, 6});
+		aut.delta.add(0, epsilon, 2);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, epsilon, 3);
+		aut.delta.add(3, 'b', 5);
+		aut.delta.add(2, epsilon, 4);
+		aut.delta.add(5, epsilon, 6);
 
-        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons}};
-        auto segments{ segmentation.get_segments() };
-        CHECK(segments.size() == 3);
+		auto segmentation{seg_nfa::Segmentation{aut, epsilons}};
+		auto segments{segmentation.get_segments()};
+		CHECK(segments.size() == 3);
 
-        CHECK(segments[0].initial.size() == 1);
-        CHECK(segments[0].initial[0]);
-        CHECK(segments[0].final.size() == 2);
-        CHECK(segments[0].final[0]);
-        CHECK(segments[0].final[1]);
-        CHECK(segments[0].delta.num_of_transitions() == 1);
-        CHECK(segments[0].delta.contains(0, 'a', 1));
+		CHECK(segments[0].initial.size() == 1);
+		CHECK(segments[0].initial[0]);
+		CHECK(segments[0].final.size() == 2);
+		CHECK(segments[0].final[0]);
+		CHECK(segments[0].final[1]);
+		CHECK(segments[0].delta.num_of_transitions() == 1);
+		CHECK(segments[0].delta.contains(0, 'a', 1));
 
-        CHECK(segments[1].initial.size() == 2);
-        CHECK(segments[1].initial[0]);
-        CHECK(segments[1].initial[1]);
-        CHECK(segments[1].final.size() == 2);
-        CHECK(segments[1].final[0]);
-        CHECK(segments[1].final[2]);
-        CHECK(segments[1].delta.num_of_transitions() == 1);
-        CHECK(segments[1].delta.contains(1, 'b', 2));
+		CHECK(segments[1].initial.size() == 2);
+		CHECK(segments[1].initial[0]);
+		CHECK(segments[1].initial[1]);
+		CHECK(segments[1].final.size() == 2);
+		CHECK(segments[1].final[0]);
+		CHECK(segments[1].final[2]);
+		CHECK(segments[1].delta.num_of_transitions() == 1);
+		CHECK(segments[1].delta.contains(1, 'b', 2));
 
-        CHECK(segments[2].initial.size() == 2);
-        CHECK(segments[2].initial[0]);
-        CHECK(segments[2].initial[1]);
-        CHECK(segments[2].final.size() == 2);
-        CHECK(segments[2].final[0]);
-        CHECK(segments[2].final[1]);
-        CHECK(segments[2].delta.num_of_transitions() == 0);
-    }
+		CHECK(segments[2].initial.size() == 2);
+		CHECK(segments[2].initial[0]);
+		CHECK(segments[2].initial[1]);
+		CHECK(segments[2].final.size() == 2);
+		CHECK(segments[2].final[0]);
+		CHECK(segments[2].final[1]);
+		CHECK(segments[2].delta.num_of_transitions() == 0);
+	}
 }

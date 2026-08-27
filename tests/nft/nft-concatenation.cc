@@ -60,1082 +60,1072 @@ using Symbol = mata::Symbol;
 // }}}
 
 TEST_CASE("mata::nft::concatenate()") {
-    Nft lhs{};
-    lhs.levels.num_of_levels = 1;
-    Nft rhs{};
-    rhs.levels.num_of_levels = 1;
-    Nft result{};
+	Nft lhs{};
+	lhs.levels.num_of_levels = 1;
+	Nft rhs{};
+	rhs.levels.num_of_levels = 1;
+	Nft result{};
 
-    SECTION("Empty automaton without states") {
-        result = concatenate(lhs, rhs);
+	SECTION("Empty automaton without states") {
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("One empty automaton without states") {
-        rhs.add_state();
-        result = concatenate(lhs, rhs);
+	SECTION("One empty automaton without states") {
+		rhs.add_state();
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Other empty automaton without states") {
-        lhs.add_state();
-        result = concatenate(lhs, rhs);
+	SECTION("Other empty automaton without states") {
+		lhs.add_state();
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("One empty automaton without states with other with initial states") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        result = concatenate(lhs, rhs);
+	SECTION("One empty automaton without states with other with initial states") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Other empty automaton without states with other with initial states") {
-        rhs.add_state();
-        rhs.initial.insert(0);
-        result = concatenate(lhs, rhs);
+	SECTION("Other empty automaton without states with other with initial states") {
+		rhs.add_state();
+		rhs.initial.insert(0);
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("One empty automaton without states with other non-empty automaton") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        result = concatenate(lhs, rhs);
+	SECTION("One empty automaton without states with other non-empty automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Other empty automaton without states with other non-empty automaton") {
-        rhs.add_state();
-        rhs.initial.insert(0);
-        rhs.final.insert(0);
-        result = concatenate(lhs, rhs);
+	SECTION("Other empty automaton without states with other non-empty automaton") {
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Empty automaton") {
-        lhs.add_state();
-        rhs.add_state();
-        result = concatenate(lhs, rhs);
+	SECTION("Empty automaton") {
+		lhs.add_state();
+		rhs.add_state();
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Empty language") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        rhs.add_state();
-        rhs.initial.insert(0);
+	SECTION("Empty language") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		rhs.add_state();
+		rhs.initial.insert(0);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+	}
 
-    SECTION("Empty language rhs automaton") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state();
-        rhs.initial.insert(0);
+	SECTION("Empty language rhs automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state();
+		rhs.initial.insert(0);
 
-        result = concatenate(lhs, rhs);
-        CHECK(result.is_lang_empty());
-    }
+		result = concatenate(lhs, rhs);
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Single state automata accepting an empty string") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state();
-        rhs.initial.insert(0);
-        rhs.final.insert(0);
+	SECTION("Single state automata accepting an empty string") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        CHECK(!result.is_lang_empty());
-        CHECK(result.is_in_lang(Run{ {}, {} }));
-        CHECK(result.delta.empty());
-    }
+		CHECK(!result.is_lang_empty());
+		CHECK(result.is_in_lang(Run{{}, {}}));
+		CHECK(result.delta.empty());
+	}
 
-    SECTION("Empty language rhs automaton") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state(1);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
+	SECTION("Empty language rhs automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        CHECK(!result.initial.empty());
-        CHECK(!result.final.empty());
-        CHECK(result.delta.empty());
-    }
+		CHECK(!result.initial.empty());
+		CHECK(!result.final.empty());
+		CHECK(result.delta.empty());
+	}
 
-    SECTION("Simple two state rhs automaton") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state(1);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.delta.add(0, 'a', 1);
+	SECTION("Simple two state rhs automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.delta.add(0, 'a', 1);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        CHECK(!result.initial.empty());
-        CHECK(!result.final.empty());
-    }
+		CHECK(!result.initial.empty());
+		CHECK(!result.final.empty());
+	}
 
-    SECTION("Simple two state automata") {
-        lhs.add_state(1);
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.delta.add(0, 'b', 1);
-        rhs.add_state(1);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.delta.add(0, 'a', 1);
+	SECTION("Simple two state automata") {
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'b', 1);
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.delta.add(0, 'a', 1);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        CHECK(!result.initial.empty());
-        CHECK(!result.final.empty());
+		CHECK(!result.initial.empty());
+		CHECK(!result.final.empty());
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 1);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Simple two state automata with higher state num for non-final state") {
-        lhs.add_state(1);
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.delta.add(0, 'b', 1);
-        rhs.add_state(3);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.delta.add(0, 'a', 1);
-        rhs.delta.add(0, 'c', 3);
+	SECTION("Simple two state automata with higher state num for non-final state") {
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'b', 1);
+		rhs.add_state(3);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.delta.add(0, 'a', 1);
+		rhs.delta.add(0, 'c', 3);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 1);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Simple two state lhs automaton") {
-        lhs.add_state(1);
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.delta.add(0, 'b', 1);
-        rhs.add_state();
-        rhs.initial.insert(0);
-        rhs.final.insert(0);
-        rhs.delta.add(0, 'a', 0);
+	SECTION("Simple two state lhs automaton") {
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'b', 1);
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
+		rhs.delta.add(0, 'a', 0);
 
-        result = concatenate(lhs, rhs);
-        CHECK(result.is_in_lang(Run{ { 'b' }, {} }));
-        CHECK(result.is_in_lang(Run{ { 'b', 'a' }, {} }));
-        CHECK(result.is_in_lang(Run{ { 'b', 'a', 'a' }, {} }));
-        CHECK(!result.is_in_lang(Run{ { 'a' }, {} }));
-        CHECK(!result.is_in_lang(Run{ { 'a', 'b' }, {} }));
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
-    }
+		result = concatenate(lhs, rhs);
+		CHECK(result.is_in_lang(Run{{'b'}, {}}));
+		CHECK(result.is_in_lang(Run{{'b', 'a'}, {}}));
+		CHECK(result.is_in_lang(Run{{'b', 'a', 'a'}, {}}));
+		CHECK(!result.is_in_lang(Run{{'a'}, {}}));
+		CHECK(!result.is_in_lang(Run{{'a', 'b'}, {}}));
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 1);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b'}) != shortest_words.end());
+	}
 
-    SECTION("Automaton A concatenate automaton B") {
-        lhs.add_state(10);
-        FILL_WITH_AUT_A(lhs);
-        rhs.add_state(14);
-        FILL_WITH_AUT_B(rhs);
+	SECTION("Automaton A concatenate automaton B") {
+		lhs.add_state(10);
+		FILL_WITH_AUT_A(lhs);
+		rhs.add_state(14);
+		FILL_WITH_AUT_B(rhs);
 
-        result = concatenate(lhs, rhs);
+		result = concatenate(lhs, rhs);
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 4);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'b', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', 'b', 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Automaton B concatenate automaton A") {
-        lhs.add_state(10);
-        FILL_WITH_AUT_A(lhs);
-        rhs.add_state(14);
-        FILL_WITH_AUT_B(rhs);
+	SECTION("Automaton B concatenate automaton A") {
+		lhs.add_state(10);
+		FILL_WITH_AUT_A(lhs);
+		rhs.add_state(14);
+		FILL_WITH_AUT_B(rhs);
 
-        result = concatenate(rhs, lhs);
+		result = concatenate(rhs, lhs);
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 4);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'b', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', 'b', 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Sample automata") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        lhs.delta.add(0, 58, 0);
-        lhs.delta.add(0, 65, 0);
-        lhs.delta.add(0, 102, 0);
-        lhs.delta.add(0, 112, 0);
-        lhs.delta.add(0, 115, 0);
-        lhs.delta.add(0, 116, 0);
+	SECTION("Sample automata") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		lhs.delta.add(0, 58, 0);
+		lhs.delta.add(0, 65, 0);
+		lhs.delta.add(0, 102, 0);
+		lhs.delta.add(0, 112, 0);
+		lhs.delta.add(0, 115, 0);
+		lhs.delta.add(0, 116, 0);
 
-        rhs.add_state(5);
-        rhs.final.insert({0, 5});
-        rhs.initial.insert(5);
-        rhs.delta.add(1, 112, 0);
-        rhs.delta.add(2, 116, 1);
-        rhs.delta.add(3, 102, 2);
-        rhs.delta.add(4, 115, 3);
-        rhs.delta.add(5, 102, 2);
-        rhs.delta.add(5, 112, 0);
-        rhs.delta.add(5, 115, 3);
-        rhs.delta.add(5, 116, 1);
+		rhs.add_state(5);
+		rhs.final.insert({0, 5});
+		rhs.initial.insert(5);
+		rhs.delta.add(1, 112, 0);
+		rhs.delta.add(2, 116, 1);
+		rhs.delta.add(3, 102, 2);
+		rhs.delta.add(4, 115, 3);
+		rhs.delta.add(5, 102, 2);
+		rhs.delta.add(5, 112, 0);
+		rhs.delta.add(5, 115, 3);
+		rhs.delta.add(5, 116, 1);
 
-        result = concatenate(lhs, rhs);
-        CHECK(!result.is_lang_empty());
-        // TODO: Add more checks.
-    }
+		result = concatenate(lhs, rhs);
+		CHECK(!result.is_lang_empty());
+		// TODO: Add more checks.
+	}
 }
 
 TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
-    Nft lhs{};
-    lhs.levels.num_of_levels = 1;
-    Nft rhs{};
-    rhs.levels.num_of_levels = 1;
-    Nft result{};
+	Nft lhs{};
+	lhs.levels.num_of_levels = 1;
+	Nft rhs{};
+	rhs.levels.num_of_levels = 1;
+	Nft result{};
 
-    SECTION("Empty automaton") {
-        lhs.add_state();
-        rhs.add_state();
-        result = concatenate(lhs, rhs, true);
+	SECTION("Empty automaton") {
+		lhs.add_state();
+		rhs.add_state();
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Empty language") {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        rhs.add_state();
-        rhs.initial.insert(0);
+	SECTION("Empty language") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		rhs.add_state();
+		rhs.initial.insert(0);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.num_of_states() == 0);
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-    }
+		CHECK(result.num_of_states() == 0);
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+	}
 
-    SECTION("Empty language rhs automaton")
-    {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state();
-        rhs.initial.insert(0);
+	SECTION("Empty language rhs automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state();
+		rhs.initial.insert(0);
 
-        result = concatenate(lhs, rhs, true);
-        CHECK(result.is_lang_empty());
-    }
+		result = concatenate(lhs, rhs, true);
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Single state automata accepting an empty string")
-    {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state();
-        rhs.initial.insert(0);
-        rhs.final.insert(0);
+	SECTION("Single state automata accepting an empty string") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[1]);
-        CHECK(result.num_of_states() == 2);
-        CHECK(result.delta.num_of_transitions() == 1);
-        CHECK(result.delta.contains(0, EPSILON, 1));
-    }
+		CHECK(result.initial[0]);
+		CHECK(result.final[1]);
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.num_of_transitions() == 1);
+		CHECK(result.delta.contains(0, EPSILON, 1));
+	}
 
-    SECTION("Empty language rhs automaton")
-    {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state(1);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
+	SECTION("Empty language rhs automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[2]);
-        CHECK(result.num_of_states() == 3);
-        CHECK(result.delta.num_of_transitions() == 1);
-        CHECK(result.delta.contains(0, EPSILON, 1));
-    }
+		CHECK(result.initial[0]);
+		CHECK(result.final[2]);
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.delta.num_of_transitions() == 1);
+		CHECK(result.delta.contains(0, EPSILON, 1));
+	}
 
-    SECTION("Simple two state rhs automaton")
-    {
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        rhs.add_state(1);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.delta.add(0, 'a', 1);
+	SECTION("Simple two state rhs automaton") {
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.delta.add(0, 'a', 1);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[2]);
-        CHECK(result.num_of_states() == 3);
-        CHECK(result.delta.num_of_transitions() == 2);
-        CHECK(result.delta.contains(1, 'a', 2));
-        CHECK(result.delta.contains(0, EPSILON, 1));
-    }
+		CHECK(result.initial[0]);
+		CHECK(result.final[2]);
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.delta.num_of_transitions() == 2);
+		CHECK(result.delta.contains(1, 'a', 2));
+		CHECK(result.delta.contains(0, EPSILON, 1));
+	}
 
-    SECTION("Simple two state automata")
-    {
-        lhs.add_state(1);
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.delta.add(0, 'b', 1);
-        rhs.add_state(1);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.delta.add(0, 'a', 1);
+	SECTION("Simple two state automata") {
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'b', 1);
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.delta.add(0, 'a', 1);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[3]);
-        CHECK(result.num_of_states() == 4);
-        CHECK(result.delta.num_of_transitions() == 3);
-        CHECK(result.delta.contains(0, 'b', 1));
-        CHECK(result.delta.contains(2, 'a', 3));
-        CHECK(result.delta.contains(1, EPSILON, 2));
+		CHECK(result.initial[0]);
+		CHECK(result.final[3]);
+		CHECK(result.num_of_states() == 4);
+		CHECK(result.delta.num_of_transitions() == 3);
+		CHECK(result.delta.contains(0, 'b', 1));
+		CHECK(result.delta.contains(2, 'a', 3));
+		CHECK(result.delta.contains(1, EPSILON, 2));
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON, 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 1);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', EPSILON, 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Simple two state automata with higher state num for non-final state")
-    {
-        lhs.add_state(1);
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.delta.add(0, 'b', 1);
-        rhs.add_state(3);
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.delta.add(0, 'a', 1);
-        rhs.delta.add(0, 'c', 3);
+	SECTION("Simple two state automata with higher state num for non-final state") {
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'b', 1);
+		rhs.add_state(3);
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.delta.add(0, 'a', 1);
+		rhs.delta.add(0, 'c', 3);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[3]);
-        CHECK(result.num_of_states() == 6);
-        CHECK(result.delta.num_of_transitions() == 4);
-        CHECK(result.delta.contains(0, 'b', 1));
-        CHECK(result.delta.contains(2, 'a', 3));
-        CHECK(result.delta.contains(2, 'c', 5));
-        CHECK(result.delta.contains(1, EPSILON, 2));
+		CHECK(result.initial[0]);
+		CHECK(result.final[3]);
+		CHECK(result.num_of_states() == 6);
+		CHECK(result.delta.num_of_transitions() == 4);
+		CHECK(result.delta.contains(0, 'b', 1));
+		CHECK(result.delta.contains(2, 'a', 3));
+		CHECK(result.delta.contains(2, 'c', 5));
+		CHECK(result.delta.contains(1, EPSILON, 2));
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON, 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 1);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', EPSILON, 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Simple two state lhs automaton")
-    {
-        lhs.add_state(1);
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.delta.add(0, 'b', 1);
-        rhs.add_state();
-        rhs.initial.insert(0);
-        rhs.final.insert(0);
-        rhs.delta.add(0, 'a', 0);
+	SECTION("Simple two state lhs automaton") {
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'b', 1);
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
+		rhs.delta.add(0, 'a', 0);
 
-        StateRenaming lhs_renaming{};
-        StateRenaming rhs_renaming{};
-        result = concatenate(lhs, rhs, true, &lhs_renaming, &rhs_renaming);
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		result = concatenate(lhs, rhs, true, &lhs_renaming, &rhs_renaming);
 
-        CHECK(rhs_renaming == StateRenaming{{ 0, 2 } });
+		CHECK(rhs_renaming == StateRenaming{{0, 2}});
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[2]);
-        CHECK(result.num_of_states() == 3);
-        CHECK(result.delta.num_of_transitions() == 3);
-        CHECK(result.delta.contains(0, 'b', 1));
-        CHECK(result.delta.contains(2, 'a', 2));
-        CHECK(result.delta.contains(1, EPSILON, 2));
+		CHECK(result.initial[0]);
+		CHECK(result.final[2]);
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.delta.num_of_transitions() == 3);
+		CHECK(result.delta.contains(0, 'b', 1));
+		CHECK(result.delta.contains(2, 'a', 2));
+		CHECK(result.delta.contains(1, EPSILON, 2));
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 1);
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 1);
+	}
 
-    SECTION("Automaton A concatenate automaton B")
-    {
-        lhs.add_state(10);
-        FILL_WITH_AUT_A(lhs);
-        rhs.add_state(14);
-        FILL_WITH_AUT_B(rhs);
+	SECTION("Automaton A concatenate automaton B") {
+		lhs.add_state(10);
+		FILL_WITH_AUT_A(lhs);
+		rhs.add_state(14);
+		FILL_WITH_AUT_B(rhs);
 
-        result = concatenate(lhs, rhs, true);
+		result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial.size() == 2);
-        CHECK(result.initial[1]);
-        CHECK(result.initial[3]);
+		CHECK(result.initial.size() == 2);
+		CHECK(result.initial[1]);
+		CHECK(result.initial[3]);
 
-        CHECK(result.num_of_states() == 26);
+		CHECK(result.num_of_states() == 26);
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 4);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'b', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', EPSILON, 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', EPSILON, 'b', 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Automaton B concatenate automaton A")
-    {
-        lhs.add_state(10);
-        FILL_WITH_AUT_A(lhs);
-        rhs.add_state(14);
-        FILL_WITH_AUT_B(rhs);
+	SECTION("Automaton B concatenate automaton A") {
+		lhs.add_state(10);
+		FILL_WITH_AUT_A(lhs);
+		rhs.add_state(14);
+		FILL_WITH_AUT_B(rhs);
 
-        result = concatenate(rhs, lhs, true);
+		result = concatenate(rhs, lhs, true);
 
-        CHECK(result.num_of_states() == 26);
+		CHECK(result.num_of_states() == 26);
 
-        CHECK(result.initial.size() == 1);
-        CHECK(result.initial[4]);
+		CHECK(result.initial.size() == 1);
+		CHECK(result.initial[4]);
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 4);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'b', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', EPSILON, 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', EPSILON, 'b', 'a'}) != shortest_words.end());
+	}
 }
 
 TEST_CASE("mata::nft::(a|b)*") {
-    const Nft aut1{ mata::nfa::builder::create_from_regex("a*") };
-    const Nft aut2{ mata::nfa::builder::create_from_regex("b*") };
-    const Nft aut3{ mata::nfa::builder::create_from_regex("a*b*") };
-    const Nft concatenated_aut{ concatenate(aut1, aut2) };
-    CHECK(are_equivalent(concatenated_aut, aut3));
+	const Nft aut1{mata::nfa::builder::create_from_regex("a*")};
+	const Nft aut2{mata::nfa::builder::create_from_regex("b*")};
+	const Nft aut3{mata::nfa::builder::create_from_regex("a*b*")};
+	const Nft concatenated_aut{concatenate(aut1, aut2)};
+	CHECK(are_equivalent(concatenated_aut, aut3));
 }
 
 TEST_CASE("mata::nft::Bug with epsilon transitions") {
-    Nft nft1{ Nft::with_levels(1, 4) };
-    nft1.initial.insert(0);
-    nft1.final.insert(3);
-    nft1.delta.add(0, 97, 0);
-    nft1.delta.add(0, 98, 0);
-    nft1.delta.add(0, 99, 0);
-    nft1.delta.add(0, 100, 0);
-    nft1.delta.add(0, EPSILON, 1);
-    nft1.delta.add(1, 97, 2);
-    nft1.delta.add(2, 98, 3);
+	Nft nft1{Nft::with_levels(1, 4)};
+	nft1.initial.insert(0);
+	nft1.final.insert(3);
+	nft1.delta.add(0, 97, 0);
+	nft1.delta.add(0, 98, 0);
+	nft1.delta.add(0, 99, 0);
+	nft1.delta.add(0, 100, 0);
+	nft1.delta.add(0, EPSILON, 1);
+	nft1.delta.add(1, 97, 2);
+	nft1.delta.add(2, 98, 3);
 
-    Nft nft2{ Nft::with_levels(1, 1) };
-    nft2.initial.insert(0);
-    nft2.final.insert(0);
-    nft2.delta.add(0, 97, 0);
-    nft2.delta.add(0, 98, 0);
-    nft2.delta.add(0, 99, 0);
-    nft2.delta.add(0, 100, 0);
+	Nft nft2{Nft::with_levels(1, 1)};
+	nft2.initial.insert(0);
+	nft2.final.insert(0);
+	nft2.delta.add(0, 97, 0);
+	nft2.delta.add(0, 98, 0);
+	nft2.delta.add(0, 99, 0);
+	nft2.delta.add(0, 100, 0);
 
-    const Nft result{ concatenate(nft1, nft2, true) };
+	const Nft result{concatenate(nft1, nft2, true)};
 
-    Nft expected{ nft1 };
-    assert(expected.levels.num_of_levels == nft1.levels.num_of_levels);
-    expected.delta.add(3, EPSILON, 4);
-    expected.delta.add(4, 97, 4);
-    expected.delta.add(4, 98, 4);
-    expected.delta.add(4, 99, 4);
-    expected.delta.add(4, 100, 4);
-    expected.final = { 4 };
+	Nft expected{nft1};
+	assert(expected.levels.num_of_levels == nft1.levels.num_of_levels);
+	expected.delta.add(3, EPSILON, 4);
+	expected.delta.add(4, 97, 4);
+	expected.delta.add(4, 98, 4);
+	expected.delta.add(4, 99, 4);
+	expected.delta.add(4, 100, 4);
+	expected.final = {4};
 
-    CHECK(are_equivalent(result, expected));
+	CHECK(are_equivalent(result, expected));
 }
 
 TEST_CASE("mata::nft::concatenate() inplace") {
-    SECTION("Empty automaton without states") {
-        Nft lhs{};
-        Nft rhs{};
-        Nft result{};
-        result = lhs.concatenate(rhs);
+	SECTION("Empty automaton without states") {
+		Nft lhs{};
+		Nft rhs{};
+		Nft result{};
+		result = lhs.concatenate(rhs);
 
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("One empty automaton without states") {
-        Nft lhs{};
-        Nft rhs{};
-        Nft result{};
-        rhs.add_state();
-        result = lhs.concatenate(rhs);
+	SECTION("One empty automaton without states") {
+		Nft lhs{};
+		Nft rhs{};
+		Nft result{};
+		rhs.add_state();
+		result = lhs.concatenate(rhs);
 
-        CHECK(result.initial.empty());
-        CHECK(result.final.empty());
-        CHECK(result.delta.empty());
-        CHECK(result.is_lang_empty());
-    }
+		CHECK(result.initial.empty());
+		CHECK(result.final.empty());
+		CHECK(result.delta.empty());
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Automaton A concatenate automaton B") {
-        Nft lhs{};
-        Nft rhs{};
-        Nft result{};
-        lhs.add_state(10);
-        FILL_WITH_AUT_A(lhs);
-        rhs.add_state(14);
-        FILL_WITH_AUT_B(rhs);
+	SECTION("Automaton A concatenate automaton B") {
+		Nft lhs{};
+		Nft rhs{};
+		Nft result{};
+		lhs.add_state(10);
+		FILL_WITH_AUT_A(lhs);
+		rhs.add_state(14);
+		FILL_WITH_AUT_B(rhs);
 
-        result = lhs.concatenate(rhs);
+		result = lhs.concatenate(rhs);
 
-        auto shortest_words{ get_shortest_words(result) };
-        CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
-    }
+		auto shortest_words{get_shortest_words(result)};
+		CHECK(shortest_words.size() == 4);
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'b', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', 'a', 'a'}) != shortest_words.end());
+		CHECK(shortest_words.find(std::vector<Symbol>{'a', 'a', 'b', 'a'}) != shortest_words.end());
+	}
 
-    SECTION("Sample automata") {
-        Nft lhs{};
-        Nft rhs{};
-        Nft result{};
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        lhs.delta.add(0, 58, 0);
-        lhs.delta.add(0, 65, 0);
-        lhs.delta.add(0, 102, 0);
-        lhs.delta.add(0, 112, 0);
-        lhs.delta.add(0, 115, 0);
-        lhs.delta.add(0, 116, 0);
+	SECTION("Sample automata") {
+		Nft lhs{};
+		Nft rhs{};
+		Nft result{};
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		lhs.delta.add(0, 58, 0);
+		lhs.delta.add(0, 65, 0);
+		lhs.delta.add(0, 102, 0);
+		lhs.delta.add(0, 112, 0);
+		lhs.delta.add(0, 115, 0);
+		lhs.delta.add(0, 116, 0);
 
-        rhs.add_state(5);
-        rhs.final.insert({0, 5});
-        rhs.initial.insert(5);
-        rhs.delta.add(1, 112, 0);
-        rhs.delta.add(2, 116, 1);
-        rhs.delta.add(3, 102, 2);
-        rhs.delta.add(4, 115, 3);
-        rhs.delta.add(5, 102, 2);
-        rhs.delta.add(5, 112, 0);
-        rhs.delta.add(5, 115, 3);
-        rhs.delta.add(5, 116, 1);
+		rhs.add_state(5);
+		rhs.final.insert({0, 5});
+		rhs.initial.insert(5);
+		rhs.delta.add(1, 112, 0);
+		rhs.delta.add(2, 116, 1);
+		rhs.delta.add(3, 102, 2);
+		rhs.delta.add(4, 115, 3);
+		rhs.delta.add(5, 102, 2);
+		rhs.delta.add(5, 112, 0);
+		rhs.delta.add(5, 115, 3);
+		rhs.delta.add(5, 116, 1);
 
-        result = lhs.concatenate(rhs);
-        CHECK(!result.is_lang_empty());
-        // TODO: Add more checks.
-    }
+		result = lhs.concatenate(rhs);
+		CHECK(!result.is_lang_empty());
+		// TODO: Add more checks.
+	}
 
-    SECTION("Delta smaller than states") {
-        Nft lhs{};
-        Nft rhs{};
+	SECTION("Delta smaller than states") {
+		Nft lhs{};
+		Nft rhs{};
 
-        lhs.delta.add(0, 65, 5);
-        lhs.initial.insert(0);
-        lhs.initial.insert(7);
-        lhs.final.insert(5);
-        lhs.final.insert(7);
+		lhs.delta.add(0, 65, 5);
+		lhs.initial.insert(0);
+		lhs.initial.insert(7);
+		lhs.final.insert(5);
+		lhs.final.insert(7);
 
-        rhs.delta.add(0, 65, 7);
-        rhs.initial.insert(0);
-        rhs.final.insert(7);
+		rhs.delta.add(0, 65, 7);
+		rhs.initial.insert(0);
+		rhs.final.insert(7);
 
-        Nft result = lhs.concatenate(rhs);
-        CHECK(!result.is_lang_empty());
-    }
+		Nft result = lhs.concatenate(rhs);
+		CHECK(!result.is_lang_empty());
+	}
 
-    SECTION("the same automata") {
-        Nft lhs{};
+	SECTION("the same automata") {
+		Nft lhs{};
 
-        lhs.add_state();
-        lhs.initial.insert(0);
-        lhs.final.insert(0);
-        lhs.delta.add(0, 58, 0);
-        lhs.delta.add(0, 65, 0);
-        lhs.delta.add(0, 102, 0);
-        lhs.delta.add(0, 112, 0);
-        lhs.delta.add(0, 115, 0);
-        lhs.delta.add(0, 116, 0);
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		lhs.delta.add(0, 58, 0);
+		lhs.delta.add(0, 65, 0);
+		lhs.delta.add(0, 102, 0);
+		lhs.delta.add(0, 112, 0);
+		lhs.delta.add(0, 115, 0);
+		lhs.delta.add(0, 116, 0);
 
-        size_t lhs_size = lhs.num_of_states();
-        Nft result = lhs.concatenate(lhs);
-        CHECK(result.num_of_states() == lhs_size * 2);
-    }
-
+		size_t lhs_size = lhs.num_of_states();
+		Nft result = lhs.concatenate(lhs);
+		CHECK(result.num_of_states() == lhs_size * 2);
+	}
 }
 
 TEST_CASE("mata::nft::Concat_inplace performance", "[.profiling]") {
-    Nft base;
-    base.initial.insert(0);
-    base.final.insert(4);
-    base.delta.add(0, 45, 1);
-    base.delta.add(0, 46, 1);
-    base.delta.add(0, 48, 1);
-    base.delta.add(0, 49, 1);
-    base.delta.add(0, 50, 1);
-    base.delta.add(0, 51, 1);
-    base.delta.add(0, 52, 1);
-    base.delta.add(0, 53, 1);
-    base.delta.add(0, 54, 1);
-    base.delta.add(0, 55, 1);
-    base.delta.add(0, 56, 1);
-    base.delta.add(0, 57, 1);
-    base.delta.add(0, 65, 1);
-    base.delta.add(0, 66, 1);
-    base.delta.add(0, 67, 1);
-    base.delta.add(0, 68, 1);
-    base.delta.add(0, 69, 1);
-    base.delta.add(0, 70, 1);
-    base.delta.add(0, 71, 1);
-    base.delta.add(0, 72, 1);
-    base.delta.add(0, 73, 1);
-    base.delta.add(0, 74, 1);
-    base.delta.add(0, 75, 1);
-    base.delta.add(0, 76, 1);
-    base.delta.add(0, 77, 1);
-    base.delta.add(0, 78, 1);
-    base.delta.add(0, 79, 1);
-    base.delta.add(0, 80, 1);
-    base.delta.add(0, 81, 1);
-    base.delta.add(0, 82, 1);
-    base.delta.add(0, 83, 1);
-    base.delta.add(0, 84, 1);
-    base.delta.add(0, 85, 1);
-    base.delta.add(0, 86, 1);
-    base.delta.add(0, 87, 1);
-    base.delta.add(0, 88, 1);
-    base.delta.add(0, 89, 1);
-    base.delta.add(0, 90, 1);
-    base.delta.add(0, 95, 1);
-    base.delta.add(0, 97, 1);
-    base.delta.add(0, 98, 1);
-    base.delta.add(0, 99, 1);
-    base.delta.add(0, 100, 1);
-    base.delta.add(0, 101, 1);
-    base.delta.add(0, 102, 1);
-    base.delta.add(0, 103, 1);
-    base.delta.add(0, 104, 1);
-    base.delta.add(0, 105, 1);
-    base.delta.add(0, 106, 1);
-    base.delta.add(0, 107, 1);
-    base.delta.add(0, 108, 1);
-    base.delta.add(0, 109, 1);
-    base.delta.add(0, 110, 1);
-    base.delta.add(0, 111, 1);
-    base.delta.add(0, 112, 1);
-    base.delta.add(0, 113, 1);
-    base.delta.add(0, 114, 1);
-    base.delta.add(0, 115, 1);
-    base.delta.add(0, 116, 1);
-    base.delta.add(0, 117, 1);
-    base.delta.add(0, 118, 1);
-    base.delta.add(0, 119, 1);
-    base.delta.add(0, 120, 1);
-    base.delta.add(0, 121, 1);
-    base.delta.add(0, 122, 1);
-    base.delta.add(0, 124, 1);
-    base.delta.add(1, 45, 2);
-    base.delta.add(1, 46, 2);
-    base.delta.add(1, 48, 2);
-    base.delta.add(1, 49, 2);
-    base.delta.add(1, 50, 2);
-    base.delta.add(1, 51, 2);
-    base.delta.add(1, 52, 2);
-    base.delta.add(1, 53, 2);
-    base.delta.add(1, 54, 2);
-    base.delta.add(1, 55, 2);
-    base.delta.add(1, 56, 2);
-    base.delta.add(1, 57, 2);
-    base.delta.add(1, 65, 2);
-    base.delta.add(1, 66, 2);
-    base.delta.add(1, 67, 2);
-    base.delta.add(1, 68, 2);
-    base.delta.add(1, 69, 2);
-    base.delta.add(1, 70, 2);
-    base.delta.add(1, 71, 2);
-    base.delta.add(1, 72, 2);
-    base.delta.add(1, 73, 2);
-    base.delta.add(1, 74, 2);
-    base.delta.add(1, 75, 2);
-    base.delta.add(1, 76, 2);
-    base.delta.add(1, 77, 2);
-    base.delta.add(1, 78, 2);
-    base.delta.add(1, 79, 2);
-    base.delta.add(1, 80, 2);
-    base.delta.add(1, 81, 2);
-    base.delta.add(1, 82, 2);
-    base.delta.add(1, 83, 2);
-    base.delta.add(1, 84, 2);
-    base.delta.add(1, 85, 2);
-    base.delta.add(1, 86, 2);
-    base.delta.add(1, 87, 2);
-    base.delta.add(1, 88, 2);
-    base.delta.add(1, 89, 2);
-    base.delta.add(1, 90, 2);
-    base.delta.add(1, 95, 2);
-    base.delta.add(1, 97, 2);
-    base.delta.add(1, 98, 2);
-    base.delta.add(1, 99, 2);
-    base.delta.add(1, 100, 2);
-    base.delta.add(1, 101, 2);
-    base.delta.add(1, 102, 2);
-    base.delta.add(1, 103, 2);
-    base.delta.add(1, 104, 2);
-    base.delta.add(1, 105, 2);
-    base.delta.add(1, 106, 2);
-    base.delta.add(1, 107, 2);
-    base.delta.add(1, 108, 2);
-    base.delta.add(1, 109, 2);
-    base.delta.add(1, 110, 2);
-    base.delta.add(1, 111, 2);
-    base.delta.add(1, 112, 2);
-    base.delta.add(1, 113, 2);
-    base.delta.add(1, 114, 2);
-    base.delta.add(1, 115, 2);
-    base.delta.add(1, 116, 2);
-    base.delta.add(1, 117, 2);
-    base.delta.add(1, 118, 2);
-    base.delta.add(1, 119, 2);
-    base.delta.add(1, 120, 2);
-    base.delta.add(1, 121, 2);
-    base.delta.add(1, 122, 2);
-    base.delta.add(1, 124, 2);
-    base.delta.add(2, 45, 3);
-    base.delta.add(2, 46, 3);
-    base.delta.add(2, 48, 3);
-    base.delta.add(2, 49, 3);
-    base.delta.add(2, 50, 3);
-    base.delta.add(2, 51, 3);
-    base.delta.add(2, 52, 3);
-    base.delta.add(2, 53, 3);
-    base.delta.add(2, 54, 3);
-    base.delta.add(2, 55, 3);
-    base.delta.add(2, 56, 3);
-    base.delta.add(2, 57, 3);
-    base.delta.add(2, 65, 3);
-    base.delta.add(2, 66, 3);
-    base.delta.add(2, 67, 3);
-    base.delta.add(2, 68, 3);
-    base.delta.add(2, 69, 3);
-    base.delta.add(2, 70, 3);
-    base.delta.add(2, 71, 3);
-    base.delta.add(2, 72, 3);
-    base.delta.add(2, 73, 3);
-    base.delta.add(2, 74, 3);
-    base.delta.add(2, 75, 3);
-    base.delta.add(2, 76, 3);
-    base.delta.add(2, 77, 3);
-    base.delta.add(2, 78, 3);
-    base.delta.add(2, 79, 3);
-    base.delta.add(2, 80, 3);
-    base.delta.add(2, 81, 3);
-    base.delta.add(2, 82, 3);
-    base.delta.add(2, 83, 3);
-    base.delta.add(2, 84, 3);
-    base.delta.add(2, 85, 3);
-    base.delta.add(2, 86, 3);
-    base.delta.add(2, 87, 3);
-    base.delta.add(2, 88, 3);
-    base.delta.add(2, 89, 3);
-    base.delta.add(2, 90, 3);
-    base.delta.add(2, 95, 3);
-    base.delta.add(2, 97, 3);
-    base.delta.add(2, 98, 3);
-    base.delta.add(2, 99, 3);
-    base.delta.add(2, 100, 3);
-    base.delta.add(2, 101, 3);
-    base.delta.add(2, 102, 3);
-    base.delta.add(2, 103, 3);
-    base.delta.add(2, 104, 3);
-    base.delta.add(2, 105, 3);
-    base.delta.add(2, 106, 3);
-    base.delta.add(2, 107, 3);
-    base.delta.add(2, 108, 3);
-    base.delta.add(2, 109, 3);
-    base.delta.add(2, 110, 3);
-    base.delta.add(2, 111, 3);
-    base.delta.add(2, 112, 3);
-    base.delta.add(2, 113, 3);
-    base.delta.add(2, 114, 3);
-    base.delta.add(2, 115, 3);
-    base.delta.add(2, 116, 3);
-    base.delta.add(2, 117, 3);
-    base.delta.add(2, 118, 3);
-    base.delta.add(2, 119, 3);
-    base.delta.add(2, 120, 3);
-    base.delta.add(2, 121, 3);
-    base.delta.add(2, 122, 3);
-    base.delta.add(2, 124, 3);
-    base.delta.add(3, 45, 4);
-    base.delta.add(3, 46, 4);
-    base.delta.add(3, 48, 4);
-    base.delta.add(3, 49, 4);
-    base.delta.add(3, 50, 4);
-    base.delta.add(3, 51, 4);
-    base.delta.add(3, 52, 4);
-    base.delta.add(3, 53, 4);
-    base.delta.add(3, 54, 4);
-    base.delta.add(3, 55, 4);
-    base.delta.add(3, 56, 4);
-    base.delta.add(3, 57, 4);
-    base.delta.add(3, 65, 4);
-    base.delta.add(3, 66, 4);
-    base.delta.add(3, 67, 4);
-    base.delta.add(3, 68, 4);
-    base.delta.add(3, 69, 4);
-    base.delta.add(3, 70, 4);
-    base.delta.add(3, 71, 4);
-    base.delta.add(3, 72, 4);
-    base.delta.add(3, 73, 4);
-    base.delta.add(3, 74, 4);
-    base.delta.add(3, 75, 4);
-    base.delta.add(3, 76, 4);
-    base.delta.add(3, 77, 4);
-    base.delta.add(3, 78, 4);
-    base.delta.add(3, 79, 4);
-    base.delta.add(3, 80, 4);
-    base.delta.add(3, 81, 4);
-    base.delta.add(3, 82, 4);
-    base.delta.add(3, 83, 4);
-    base.delta.add(3, 84, 4);
-    base.delta.add(3, 85, 4);
-    base.delta.add(3, 86, 4);
-    base.delta.add(3, 87, 4);
-    base.delta.add(3, 88, 4);
-    base.delta.add(3, 89, 4);
-    base.delta.add(3, 90, 4);
-    base.delta.add(3, 95, 4);
-    base.delta.add(3, 97, 4);
-    base.delta.add(3, 98, 4);
-    base.delta.add(3, 99, 4);
-    base.delta.add(3, 100, 4);
-    base.delta.add(3, 101, 4);
-    base.delta.add(3, 102, 4);
-    base.delta.add(3, 103, 4);
-    base.delta.add(3, 104, 4);
-    base.delta.add(3, 105, 4);
-    base.delta.add(3, 106, 4);
-    base.delta.add(3, 107, 4);
-    base.delta.add(3, 108, 4);
-    base.delta.add(3, 109, 4);
-    base.delta.add(3, 110, 4);
-    base.delta.add(3, 111, 4);
-    base.delta.add(3, 112, 4);
-    base.delta.add(3, 113, 4);
-    base.delta.add(3, 114, 4);
-    base.delta.add(3, 115, 4);
-    base.delta.add(3, 116, 4);
-    base.delta.add(3, 117, 4);
-    base.delta.add(3, 118, 4);
-    base.delta.add(3, 119, 4);
-    base.delta.add(3, 120, 4);
-    base.delta.add(3, 121, 4);
-    base.delta.add(3, 122, 4);
-    base.delta.add(3, 124, 4);
+	Nft base;
+	base.initial.insert(0);
+	base.final.insert(4);
+	base.delta.add(0, 45, 1);
+	base.delta.add(0, 46, 1);
+	base.delta.add(0, 48, 1);
+	base.delta.add(0, 49, 1);
+	base.delta.add(0, 50, 1);
+	base.delta.add(0, 51, 1);
+	base.delta.add(0, 52, 1);
+	base.delta.add(0, 53, 1);
+	base.delta.add(0, 54, 1);
+	base.delta.add(0, 55, 1);
+	base.delta.add(0, 56, 1);
+	base.delta.add(0, 57, 1);
+	base.delta.add(0, 65, 1);
+	base.delta.add(0, 66, 1);
+	base.delta.add(0, 67, 1);
+	base.delta.add(0, 68, 1);
+	base.delta.add(0, 69, 1);
+	base.delta.add(0, 70, 1);
+	base.delta.add(0, 71, 1);
+	base.delta.add(0, 72, 1);
+	base.delta.add(0, 73, 1);
+	base.delta.add(0, 74, 1);
+	base.delta.add(0, 75, 1);
+	base.delta.add(0, 76, 1);
+	base.delta.add(0, 77, 1);
+	base.delta.add(0, 78, 1);
+	base.delta.add(0, 79, 1);
+	base.delta.add(0, 80, 1);
+	base.delta.add(0, 81, 1);
+	base.delta.add(0, 82, 1);
+	base.delta.add(0, 83, 1);
+	base.delta.add(0, 84, 1);
+	base.delta.add(0, 85, 1);
+	base.delta.add(0, 86, 1);
+	base.delta.add(0, 87, 1);
+	base.delta.add(0, 88, 1);
+	base.delta.add(0, 89, 1);
+	base.delta.add(0, 90, 1);
+	base.delta.add(0, 95, 1);
+	base.delta.add(0, 97, 1);
+	base.delta.add(0, 98, 1);
+	base.delta.add(0, 99, 1);
+	base.delta.add(0, 100, 1);
+	base.delta.add(0, 101, 1);
+	base.delta.add(0, 102, 1);
+	base.delta.add(0, 103, 1);
+	base.delta.add(0, 104, 1);
+	base.delta.add(0, 105, 1);
+	base.delta.add(0, 106, 1);
+	base.delta.add(0, 107, 1);
+	base.delta.add(0, 108, 1);
+	base.delta.add(0, 109, 1);
+	base.delta.add(0, 110, 1);
+	base.delta.add(0, 111, 1);
+	base.delta.add(0, 112, 1);
+	base.delta.add(0, 113, 1);
+	base.delta.add(0, 114, 1);
+	base.delta.add(0, 115, 1);
+	base.delta.add(0, 116, 1);
+	base.delta.add(0, 117, 1);
+	base.delta.add(0, 118, 1);
+	base.delta.add(0, 119, 1);
+	base.delta.add(0, 120, 1);
+	base.delta.add(0, 121, 1);
+	base.delta.add(0, 122, 1);
+	base.delta.add(0, 124, 1);
+	base.delta.add(1, 45, 2);
+	base.delta.add(1, 46, 2);
+	base.delta.add(1, 48, 2);
+	base.delta.add(1, 49, 2);
+	base.delta.add(1, 50, 2);
+	base.delta.add(1, 51, 2);
+	base.delta.add(1, 52, 2);
+	base.delta.add(1, 53, 2);
+	base.delta.add(1, 54, 2);
+	base.delta.add(1, 55, 2);
+	base.delta.add(1, 56, 2);
+	base.delta.add(1, 57, 2);
+	base.delta.add(1, 65, 2);
+	base.delta.add(1, 66, 2);
+	base.delta.add(1, 67, 2);
+	base.delta.add(1, 68, 2);
+	base.delta.add(1, 69, 2);
+	base.delta.add(1, 70, 2);
+	base.delta.add(1, 71, 2);
+	base.delta.add(1, 72, 2);
+	base.delta.add(1, 73, 2);
+	base.delta.add(1, 74, 2);
+	base.delta.add(1, 75, 2);
+	base.delta.add(1, 76, 2);
+	base.delta.add(1, 77, 2);
+	base.delta.add(1, 78, 2);
+	base.delta.add(1, 79, 2);
+	base.delta.add(1, 80, 2);
+	base.delta.add(1, 81, 2);
+	base.delta.add(1, 82, 2);
+	base.delta.add(1, 83, 2);
+	base.delta.add(1, 84, 2);
+	base.delta.add(1, 85, 2);
+	base.delta.add(1, 86, 2);
+	base.delta.add(1, 87, 2);
+	base.delta.add(1, 88, 2);
+	base.delta.add(1, 89, 2);
+	base.delta.add(1, 90, 2);
+	base.delta.add(1, 95, 2);
+	base.delta.add(1, 97, 2);
+	base.delta.add(1, 98, 2);
+	base.delta.add(1, 99, 2);
+	base.delta.add(1, 100, 2);
+	base.delta.add(1, 101, 2);
+	base.delta.add(1, 102, 2);
+	base.delta.add(1, 103, 2);
+	base.delta.add(1, 104, 2);
+	base.delta.add(1, 105, 2);
+	base.delta.add(1, 106, 2);
+	base.delta.add(1, 107, 2);
+	base.delta.add(1, 108, 2);
+	base.delta.add(1, 109, 2);
+	base.delta.add(1, 110, 2);
+	base.delta.add(1, 111, 2);
+	base.delta.add(1, 112, 2);
+	base.delta.add(1, 113, 2);
+	base.delta.add(1, 114, 2);
+	base.delta.add(1, 115, 2);
+	base.delta.add(1, 116, 2);
+	base.delta.add(1, 117, 2);
+	base.delta.add(1, 118, 2);
+	base.delta.add(1, 119, 2);
+	base.delta.add(1, 120, 2);
+	base.delta.add(1, 121, 2);
+	base.delta.add(1, 122, 2);
+	base.delta.add(1, 124, 2);
+	base.delta.add(2, 45, 3);
+	base.delta.add(2, 46, 3);
+	base.delta.add(2, 48, 3);
+	base.delta.add(2, 49, 3);
+	base.delta.add(2, 50, 3);
+	base.delta.add(2, 51, 3);
+	base.delta.add(2, 52, 3);
+	base.delta.add(2, 53, 3);
+	base.delta.add(2, 54, 3);
+	base.delta.add(2, 55, 3);
+	base.delta.add(2, 56, 3);
+	base.delta.add(2, 57, 3);
+	base.delta.add(2, 65, 3);
+	base.delta.add(2, 66, 3);
+	base.delta.add(2, 67, 3);
+	base.delta.add(2, 68, 3);
+	base.delta.add(2, 69, 3);
+	base.delta.add(2, 70, 3);
+	base.delta.add(2, 71, 3);
+	base.delta.add(2, 72, 3);
+	base.delta.add(2, 73, 3);
+	base.delta.add(2, 74, 3);
+	base.delta.add(2, 75, 3);
+	base.delta.add(2, 76, 3);
+	base.delta.add(2, 77, 3);
+	base.delta.add(2, 78, 3);
+	base.delta.add(2, 79, 3);
+	base.delta.add(2, 80, 3);
+	base.delta.add(2, 81, 3);
+	base.delta.add(2, 82, 3);
+	base.delta.add(2, 83, 3);
+	base.delta.add(2, 84, 3);
+	base.delta.add(2, 85, 3);
+	base.delta.add(2, 86, 3);
+	base.delta.add(2, 87, 3);
+	base.delta.add(2, 88, 3);
+	base.delta.add(2, 89, 3);
+	base.delta.add(2, 90, 3);
+	base.delta.add(2, 95, 3);
+	base.delta.add(2, 97, 3);
+	base.delta.add(2, 98, 3);
+	base.delta.add(2, 99, 3);
+	base.delta.add(2, 100, 3);
+	base.delta.add(2, 101, 3);
+	base.delta.add(2, 102, 3);
+	base.delta.add(2, 103, 3);
+	base.delta.add(2, 104, 3);
+	base.delta.add(2, 105, 3);
+	base.delta.add(2, 106, 3);
+	base.delta.add(2, 107, 3);
+	base.delta.add(2, 108, 3);
+	base.delta.add(2, 109, 3);
+	base.delta.add(2, 110, 3);
+	base.delta.add(2, 111, 3);
+	base.delta.add(2, 112, 3);
+	base.delta.add(2, 113, 3);
+	base.delta.add(2, 114, 3);
+	base.delta.add(2, 115, 3);
+	base.delta.add(2, 116, 3);
+	base.delta.add(2, 117, 3);
+	base.delta.add(2, 118, 3);
+	base.delta.add(2, 119, 3);
+	base.delta.add(2, 120, 3);
+	base.delta.add(2, 121, 3);
+	base.delta.add(2, 122, 3);
+	base.delta.add(2, 124, 3);
+	base.delta.add(3, 45, 4);
+	base.delta.add(3, 46, 4);
+	base.delta.add(3, 48, 4);
+	base.delta.add(3, 49, 4);
+	base.delta.add(3, 50, 4);
+	base.delta.add(3, 51, 4);
+	base.delta.add(3, 52, 4);
+	base.delta.add(3, 53, 4);
+	base.delta.add(3, 54, 4);
+	base.delta.add(3, 55, 4);
+	base.delta.add(3, 56, 4);
+	base.delta.add(3, 57, 4);
+	base.delta.add(3, 65, 4);
+	base.delta.add(3, 66, 4);
+	base.delta.add(3, 67, 4);
+	base.delta.add(3, 68, 4);
+	base.delta.add(3, 69, 4);
+	base.delta.add(3, 70, 4);
+	base.delta.add(3, 71, 4);
+	base.delta.add(3, 72, 4);
+	base.delta.add(3, 73, 4);
+	base.delta.add(3, 74, 4);
+	base.delta.add(3, 75, 4);
+	base.delta.add(3, 76, 4);
+	base.delta.add(3, 77, 4);
+	base.delta.add(3, 78, 4);
+	base.delta.add(3, 79, 4);
+	base.delta.add(3, 80, 4);
+	base.delta.add(3, 81, 4);
+	base.delta.add(3, 82, 4);
+	base.delta.add(3, 83, 4);
+	base.delta.add(3, 84, 4);
+	base.delta.add(3, 85, 4);
+	base.delta.add(3, 86, 4);
+	base.delta.add(3, 87, 4);
+	base.delta.add(3, 88, 4);
+	base.delta.add(3, 89, 4);
+	base.delta.add(3, 90, 4);
+	base.delta.add(3, 95, 4);
+	base.delta.add(3, 97, 4);
+	base.delta.add(3, 98, 4);
+	base.delta.add(3, 99, 4);
+	base.delta.add(3, 100, 4);
+	base.delta.add(3, 101, 4);
+	base.delta.add(3, 102, 4);
+	base.delta.add(3, 103, 4);
+	base.delta.add(3, 104, 4);
+	base.delta.add(3, 105, 4);
+	base.delta.add(3, 106, 4);
+	base.delta.add(3, 107, 4);
+	base.delta.add(3, 108, 4);
+	base.delta.add(3, 109, 4);
+	base.delta.add(3, 110, 4);
+	base.delta.add(3, 111, 4);
+	base.delta.add(3, 112, 4);
+	base.delta.add(3, 113, 4);
+	base.delta.add(3, 114, 4);
+	base.delta.add(3, 115, 4);
+	base.delta.add(3, 116, 4);
+	base.delta.add(3, 117, 4);
+	base.delta.add(3, 118, 4);
+	base.delta.add(3, 119, 4);
+	base.delta.add(3, 120, 4);
+	base.delta.add(3, 121, 4);
+	base.delta.add(3, 122, 4);
+	base.delta.add(3, 124, 4);
 
-    Nft concat;
-    concat.initial.insert(1);
-    concat.final.insert(0);
-    concat.final.insert(1);
-    concat.delta.add(1, 45, 0);
-    concat.delta.add(1, 46, 0);
-    concat.delta.add(1, 48, 0);
-    concat.delta.add(1, 49, 0);
-    concat.delta.add(1, 50, 0);
-    concat.delta.add(1, 51, 0);
-    concat.delta.add(1, 52, 0);
-    concat.delta.add(1, 53, 0);
-    concat.delta.add(1, 54, 0);
-    concat.delta.add(1, 55, 0);
-    concat.delta.add(1, 56, 0);
-    concat.delta.add(1, 57, 0);
-    concat.delta.add(1, 65, 0);
-    concat.delta.add(1, 66, 0);
-    concat.delta.add(1, 67, 0);
-    concat.delta.add(1, 68, 0);
-    concat.delta.add(1, 69, 0);
-    concat.delta.add(1, 70, 0);
-    concat.delta.add(1, 71, 0);
-    concat.delta.add(1, 72, 0);
-    concat.delta.add(1, 73, 0);
-    concat.delta.add(1, 74, 0);
-    concat.delta.add(1, 75, 0);
-    concat.delta.add(1, 76, 0);
-    concat.delta.add(1, 77, 0);
-    concat.delta.add(1, 78, 0);
-    concat.delta.add(1, 79, 0);
-    concat.delta.add(1, 80, 0);
-    concat.delta.add(1, 81, 0);
-    concat.delta.add(1, 82, 0);
-    concat.delta.add(1, 83, 0);
-    concat.delta.add(1, 84, 0);
-    concat.delta.add(1, 85, 0);
-    concat.delta.add(1, 86, 0);
-    concat.delta.add(1, 87, 0);
-    concat.delta.add(1, 88, 0);
-    concat.delta.add(1, 89, 0);
-    concat.delta.add(1, 90, 0);
-    concat.delta.add(1, 95, 0);
-    concat.delta.add(1, 97, 0);
-    concat.delta.add(1, 98, 0);
-    concat.delta.add(1, 99, 0);
-    concat.delta.add(1, 100, 0);
-    concat.delta.add(1, 101, 0);
-    concat.delta.add(1, 102, 0);
-    concat.delta.add(1, 103, 0);
-    concat.delta.add(1, 104, 0);
-    concat.delta.add(1, 105, 0);
-    concat.delta.add(1, 106, 0);
-    concat.delta.add(1, 107, 0);
-    concat.delta.add(1, 108, 0);
-    concat.delta.add(1, 109, 0);
-    concat.delta.add(1, 110, 0);
-    concat.delta.add(1, 111, 0);
-    concat.delta.add(1, 112, 0);
-    concat.delta.add(1, 113, 0);
-    concat.delta.add(1, 114, 0);
-    concat.delta.add(1, 115, 0);
-    concat.delta.add(1, 116, 0);
-    concat.delta.add(1, 117, 0);
-    concat.delta.add(1, 118, 0);
-    concat.delta.add(1, 119, 0);
-    concat.delta.add(1, 120, 0);
-    concat.delta.add(1, 121, 0);
-    concat.delta.add(1, 122, 0);
-    concat.delta.add(1, 124, 0);
+	Nft concat;
+	concat.initial.insert(1);
+	concat.final.insert(0);
+	concat.final.insert(1);
+	concat.delta.add(1, 45, 0);
+	concat.delta.add(1, 46, 0);
+	concat.delta.add(1, 48, 0);
+	concat.delta.add(1, 49, 0);
+	concat.delta.add(1, 50, 0);
+	concat.delta.add(1, 51, 0);
+	concat.delta.add(1, 52, 0);
+	concat.delta.add(1, 53, 0);
+	concat.delta.add(1, 54, 0);
+	concat.delta.add(1, 55, 0);
+	concat.delta.add(1, 56, 0);
+	concat.delta.add(1, 57, 0);
+	concat.delta.add(1, 65, 0);
+	concat.delta.add(1, 66, 0);
+	concat.delta.add(1, 67, 0);
+	concat.delta.add(1, 68, 0);
+	concat.delta.add(1, 69, 0);
+	concat.delta.add(1, 70, 0);
+	concat.delta.add(1, 71, 0);
+	concat.delta.add(1, 72, 0);
+	concat.delta.add(1, 73, 0);
+	concat.delta.add(1, 74, 0);
+	concat.delta.add(1, 75, 0);
+	concat.delta.add(1, 76, 0);
+	concat.delta.add(1, 77, 0);
+	concat.delta.add(1, 78, 0);
+	concat.delta.add(1, 79, 0);
+	concat.delta.add(1, 80, 0);
+	concat.delta.add(1, 81, 0);
+	concat.delta.add(1, 82, 0);
+	concat.delta.add(1, 83, 0);
+	concat.delta.add(1, 84, 0);
+	concat.delta.add(1, 85, 0);
+	concat.delta.add(1, 86, 0);
+	concat.delta.add(1, 87, 0);
+	concat.delta.add(1, 88, 0);
+	concat.delta.add(1, 89, 0);
+	concat.delta.add(1, 90, 0);
+	concat.delta.add(1, 95, 0);
+	concat.delta.add(1, 97, 0);
+	concat.delta.add(1, 98, 0);
+	concat.delta.add(1, 99, 0);
+	concat.delta.add(1, 100, 0);
+	concat.delta.add(1, 101, 0);
+	concat.delta.add(1, 102, 0);
+	concat.delta.add(1, 103, 0);
+	concat.delta.add(1, 104, 0);
+	concat.delta.add(1, 105, 0);
+	concat.delta.add(1, 106, 0);
+	concat.delta.add(1, 107, 0);
+	concat.delta.add(1, 108, 0);
+	concat.delta.add(1, 109, 0);
+	concat.delta.add(1, 110, 0);
+	concat.delta.add(1, 111, 0);
+	concat.delta.add(1, 112, 0);
+	concat.delta.add(1, 113, 0);
+	concat.delta.add(1, 114, 0);
+	concat.delta.add(1, 115, 0);
+	concat.delta.add(1, 116, 0);
+	concat.delta.add(1, 117, 0);
+	concat.delta.add(1, 118, 0);
+	concat.delta.add(1, 119, 0);
+	concat.delta.add(1, 120, 0);
+	concat.delta.add(1, 121, 0);
+	concat.delta.add(1, 122, 0);
+	concat.delta.add(1, 124, 0);
 
-    for (auto i=0;i<1'000;i++) {
-        base.concatenate(concat);
-    }
+	for (auto i = 0; i < 1'000; i++) { base.concatenate(concat); }
 }
 
 TEST_CASE("mata::nft::concatenate_nth_power()") {
-    SECTION("Exponent 0 returns empty-string automaton") {
-        Nfa aut{};
-        aut.add_state(1);
-        aut.initial.insert(0);
-        aut.final.insert(1);
-        aut.delta.add(0, 'a', 1);
+	SECTION("Exponent 0 returns empty-string automaton") {
+		Nfa aut{};
+		aut.add_state(1);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 'a', 1);
 
-        Nft nft(aut);
+		Nft nft(aut);
 
-        CHECK(are_equivalent(concatenate_nth_power(nft, 0), mata::nft::builder::create_empty_string_nft(nft.levels.num_of_levels)));
-    }
+		CHECK(are_equivalent(
+			concatenate_nth_power(nft, 0), mata::nft::builder::create_empty_string_nft(nft.levels.num_of_levels)
+		));
+	}
 
-    SECTION("Exponent 1 returns the same language") {
-        Nfa aut{};
-        aut.add_state(1);
-        aut.initial.insert(0);
-        aut.final.insert(1);
-        aut.delta.add(0, 'a', 1);
+	SECTION("Exponent 1 returns the same language") {
+		Nfa aut{};
+		aut.add_state(1);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 'a', 1);
 
-        Nft nft(aut);
+		Nft nft(aut);
 
-        CHECK(are_equivalent(concatenate_nth_power(nft, 1), nft));
-    }
+		CHECK(are_equivalent(concatenate_nth_power(nft, 1), nft));
+	}
 
-    SECTION("Exponent 2 matches normal concatenate") {
-        Nfa aut{};
-        aut.add_state(2);
-        aut.initial.insert(0);
-        aut.final.insert(2);
-        aut.delta.add(0, 'a', 1);
-        aut.delta.add(1, 'b', 2);
+	SECTION("Exponent 2 matches normal concatenate") {
+		Nfa aut{};
+		aut.add_state(2);
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
 
-        Nft nft(aut);
+		Nft nft(aut);
 
-        Nft expected = nft;
-        expected.concatenate(nft);
+		Nft expected = nft;
+		expected.concatenate(nft);
 
-        CHECK(are_equivalent(concatenate_nth_power(nft, 2), expected));
-    }
+		CHECK(are_equivalent(concatenate_nth_power(nft, 2), expected));
+	}
 
-    SECTION("Exponent 4 matches repeated normal concatenate") {
-        Nfa aut{};
-        aut.add_state(1);
-        aut.initial.insert(0);
-        aut.final.insert(1);
-        aut.delta.add(0, 'c', 1);
+	SECTION("Exponent 4 matches repeated normal concatenate") {
+		Nfa aut{};
+		aut.add_state(1);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 'c', 1);
 
-        Nft nft(aut);
+		Nft nft(aut);
 
-        Nft expected = nft;
-        expected.concatenate(nft);
-        expected.concatenate(nft);
-        expected.concatenate(nft);
+		Nft expected = nft;
+		expected.concatenate(nft);
+		expected.concatenate(nft);
+		expected.concatenate(nft);
 
-        CHECK(are_equivalent(concatenate_nth_power(nft, 4), expected));
-    }
+		CHECK(are_equivalent(concatenate_nth_power(nft, 4), expected));
+	}
 }

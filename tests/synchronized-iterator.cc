@@ -7,199 +7,193 @@
 
 using namespace mata::utils;
 
-TEST_CASE("mata::utils::SynchronizedIterator")
-{
+TEST_CASE("mata::utils::SynchronizedIterator") {
+	SECTION("synchronized_universal_iterator, basic functionality") {
+		SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
 
-    SECTION("synchronized_universal_iterator, basic functionality")
-    {
-        SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
+		// Basic functionality, position[0] gets emptied first
+		OrdVector<int> v1{1, 2, 4};
+		OrdVector<int> v2{0, 1, 3, 5};
+		OrdVector<int> v3{0, 1, 2, 4};
 
-        // Basic functionality, position[0] gets emptied first
-        OrdVector<int> v1{1, 2, 4};
-        OrdVector<int> v2{0, 1, 3, 5};
-        OrdVector<int> v3{0, 1, 2, 4};
+		push_back(iu, v1);
+		push_back(iu, v2);
+		push_back(iu, v3);
 
-        push_back(iu,v1);
-        push_back(iu,v2);
-        push_back(iu,v3);
+		REQUIRE(iu.advance());
+		auto current = iu.get_current();
+		REQUIRE(current.size() == 3);
+		REQUIRE(*current[0] == 1);
+		REQUIRE(*current[1] == 1);
+		REQUIRE(*current[2] == 1);
+		REQUIRE(!iu.advance());
 
-        REQUIRE(iu.advance());
-        auto current = iu.get_current();
-        REQUIRE(current.size() == 3);
-        REQUIRE(*current[0] == 1);
-        REQUIRE(*current[1] == 1);
-        REQUIRE(*current[2] == 1);
-        REQUIRE(!iu.advance());
+		iu.reset();
 
-        iu.reset();
+		// Empty after reset
+		REQUIRE(!iu.advance());
 
-        // Empty after reset
-        REQUIRE(!iu.advance());
+		// Basic functionality, position[0] does not get emptied first
+		v1 = {1, 2, 3, 4, 5};
+		v2 = {0, 1, 3};
+		v3 = {1, 2, 3};
 
-        // Basic functionality, position[0] does not get emptied first
-        v1 = {1, 2, 3, 4, 5};
-        v2 = {0, 1, 3};
-        v3 = {1, 2, 3};
+		push_back(iu, v1);
+		push_back(iu, v2);
+		push_back(iu, v3);
 
-        push_back(iu,v1);
-        push_back(iu,v2);
-        push_back(iu,v3);
+		REQUIRE(iu.advance());
+		current = iu.get_current();
+		REQUIRE(current.size() == 3);
+		REQUIRE(*current[0] == 1);
+		REQUIRE(*current[1] == 1);
+		REQUIRE(*current[2] == 1);
+		REQUIRE(iu.advance());
+		current = iu.get_current();
+		REQUIRE(current.size() == 3);
+		REQUIRE(*current[0] == 3);
+		REQUIRE(*current[1] == 3);
+		REQUIRE(*current[2] == 3);
+		REQUIRE(!iu.advance());
+	}
 
-        REQUIRE(iu.advance());
-        current = iu.get_current();
-        REQUIRE(current.size() == 3);
-        REQUIRE(*current[0] == 1);
-        REQUIRE(*current[1] == 1);
-        REQUIRE(*current[2] == 1);
-        REQUIRE(iu.advance());
-        current = iu.get_current();
-        REQUIRE(current.size() == 3);
-        REQUIRE(*current[0] == 3);
-        REQUIRE(*current[1] == 3);
-        REQUIRE(*current[2] == 3);
-        REQUIRE(!iu.advance());
-    }
+	SECTION("synchronized_universal_iterator, corner cases") {
+		SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
 
-    SECTION("synchronized_universal_iterator, corner cases") {
+		// Empty iterator
+		REQUIRE(!iu.advance());
+		REQUIRE(!iu.advance());
+		auto current = iu.get_current();
+		REQUIRE(current.empty());
 
-        SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
+		OrdVector<int> v1{};
+		OrdVector<int> v2{1};
+		OrdVector<int> v3{};
 
-        // Empty iterator
-        REQUIRE(!iu.advance());
-        REQUIRE(!iu.advance());
-        auto current = iu.get_current();
-        REQUIRE(current.empty());
+		push_back(iu, v1);
+		push_back(iu, v2);
+		push_back(iu, v3);
 
-        OrdVector<int> v1{};
-        OrdVector<int> v2{1};
-        OrdVector<int> v3{};
+		REQUIRE(!iu.advance());
 
-        push_back(iu,v1);
-        push_back(iu,v2);
-        push_back(iu,v3);
+		// Empty after reset
+		iu.reset();
+		REQUIRE(!iu.advance());
+		REQUIRE(!iu.advance());
+		current = iu.get_current();
+		REQUIRE(current.empty());
 
-        REQUIRE(!iu.advance());
+		// Only empty vectors
+		push_back(iu, v1);
 
-        // Empty after reset
-        iu.reset();
-        REQUIRE(!iu.advance());
-        REQUIRE(!iu.advance());
-        current = iu.get_current();
-        REQUIRE(current.empty());
+		REQUIRE(!iu.advance());
 
-        // Only empty vectors
-        push_back(iu,v1);
+		push_back(iu, v3);
+		iu.reset();
 
-        REQUIRE(!iu.advance());
+		REQUIRE(!iu.advance());
 
-        push_back(iu,v3);
-        iu.reset();
+		// Insert the same vector twice
+		OrdVector<int> v4{1, 2};
+		OrdVector<int> v5{2};
 
-        REQUIRE(!iu.advance());
+		push_back(iu, v4);
+		push_back(iu, v4);
+		push_back(iu, v5);
 
-        // Insert the same vector twice
-        OrdVector<int> v4{1,2};
-        OrdVector<int> v5{2};
+		REQUIRE(iu.advance());
+		current = iu.get_current();
+		REQUIRE(*current[0] == 2);
+		REQUIRE(*current[1] == 2);
+		REQUIRE(*current[2] == 2);
+		REQUIRE(!iu.advance());
+	}
 
-        push_back(iu,v4);
-        push_back(iu,v4);
-        push_back(iu,v5);
+	SECTION("SynchronizedExistentialIterator, basic functionality") {
+		SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
 
-        REQUIRE(iu.advance());
-        current = iu.get_current();
-        REQUIRE(*current[0]==2);
-        REQUIRE(*current[1]==2);
-        REQUIRE(*current[2]==2);
-        REQUIRE(!iu.advance());
-    }
+		// Basic functionality
+		OrdVector<int> v1{1, 2};
+		OrdVector<int> v2{0, 3};
+		OrdVector<int> v3{0, 1, 2, 3};
 
-    SECTION("SynchronizedExistentialIterator, basic functionality")
-    {
-        SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
+		push_back(ie, v1);
+		push_back(ie, v2);
+		push_back(ie, v3);
 
-        // Basic functionality
-        OrdVector<int> v1{1, 2};
-        OrdVector<int> v2{0, 3};
-        OrdVector<int> v3{0, 1, 2, 3};
+		int i = 0;
+		while (ie.advance()) {
+			auto current = ie.get_current();
+			REQUIRE(current.size() == 2);
+			REQUIRE(*current[0] == i);
+			REQUIRE(*current[1] == i);
+			i++;
+		};
+		REQUIRE(i == 4);
+	}
 
-        push_back(ie,v1);
-        push_back(ie,v2);
-        push_back(ie,v3);
+	SECTION("SynchronizedExistentialIterator, corner cases") {
+		SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
 
-        int i = 0;
-        while(ie.advance()) {
-            auto current = ie.get_current();
-            REQUIRE(current.size() == 2);
-            REQUIRE(*current[0] == i);
-            REQUIRE(*current[1] == i);
-            i++;
-        };
-        REQUIRE(i==4);
-    }
+		// Empty iterator
+		REQUIRE(!ie.advance());
+		REQUIRE(!ie.advance());
+		auto current = ie.get_current();
+		REQUIRE(current.empty());
 
-    SECTION("SynchronizedExistentialIterator, corner cases") {
+		// Empty vectors
+		OrdVector<int> v1{};
+		OrdVector<int> v2{1};
+		OrdVector<int> v3{};
 
-        SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
+		push_back(ie, v1);
+		push_back(ie, v2);
+		push_back(ie, v3);
 
-        // Empty iterator
-        REQUIRE(!ie.advance());
-        REQUIRE(!ie.advance());
-        auto current = ie.get_current();
-        REQUIRE(current.empty());
+		REQUIRE(ie.advance());
+		current = ie.get_current();
+		REQUIRE(*current[0] == 1);
+		REQUIRE(current.size() == 1);
+		REQUIRE(!ie.advance());
 
-        // Empty vectors
-        OrdVector<int> v1{};
-        OrdVector<int> v2{1};
-        OrdVector<int> v3{};
+		// Empty after reset
+		ie.reset();
+		REQUIRE(!ie.advance());
+		current = ie.get_current();
+		REQUIRE(current.empty());
+		REQUIRE(!ie.advance());
+		current = ie.get_current();
+		REQUIRE(current.empty());
 
-        push_back(ie,v1);
-        push_back(ie,v2);
-        push_back(ie,v3);
+		// Only empty vectors
+		push_back(ie, v1);
 
-        REQUIRE(ie.advance());
-        current = ie.get_current();
-        REQUIRE(*current[0]==1);
-        REQUIRE(current.size()==1);
-        REQUIRE(!ie.advance());
+		REQUIRE(!ie.advance());
 
-        // Empty after reset
-        ie.reset();
-        REQUIRE(!ie.advance());
-        current = ie.get_current();
-        REQUIRE(current.empty());
-        REQUIRE(!ie.advance());
-        current = ie.get_current();
-        REQUIRE(current.empty());
+		push_back(ie, v3);
+		ie.reset();
 
-        // Only empty vectors
-        push_back(ie,v1);
+		REQUIRE(!ie.advance());
 
-        REQUIRE(!ie.advance());
+		// Insert the same vector twice
+		OrdVector<int> v4{1, 2};
+		OrdVector<int> v5{2};
 
-        push_back(ie,v3);
-        ie.reset();
+		push_back(ie, v4);
+		push_back(ie, v5);
+		push_back(ie, v4);
 
-        REQUIRE(!ie.advance());
-
-        // Insert the same vector twice
-        OrdVector<int> v4{1,2};
-        OrdVector<int> v5{2};
-
-        push_back(ie,v4);
-        push_back(ie,v5);
-        push_back(ie,v4);
-
-        REQUIRE(ie.advance());
-        current = ie.get_current();
-        REQUIRE(current.size()==2);
-        REQUIRE(*current[0]==1);
-        REQUIRE(*current[1]==1);
-        REQUIRE(ie.advance());
-        current = ie.get_current();
-        REQUIRE(current.size()==3);
-        REQUIRE(*current[0]==2);
-        REQUIRE(*current[1]==2);
-        REQUIRE(*current[2]==2);
-        REQUIRE(!ie.advance());
-    }
+		REQUIRE(ie.advance());
+		current = ie.get_current();
+		REQUIRE(current.size() == 2);
+		REQUIRE(*current[0] == 1);
+		REQUIRE(*current[1] == 1);
+		REQUIRE(ie.advance());
+		current = ie.get_current();
+		REQUIRE(current.size() == 3);
+		REQUIRE(*current[0] == 2);
+		REQUIRE(*current[1] == 2);
+		REQUIRE(*current[2] == 2);
+		REQUIRE(!ie.advance());
+	}
 }
