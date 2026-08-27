@@ -32,8 +32,6 @@ SpaceBeforeParensOptions:
   AfterRequiresInClause: true
   AfterRequiresInExpression: true
 TabWidth: 4
-Macros:
-  - TEST_CASE(x)
 UseTab: Always
 # Cpp11BracedListStyle: false
 # AllowShortEnumsOnASingleLine: false
