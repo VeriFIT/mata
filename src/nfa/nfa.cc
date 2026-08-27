@@ -747,6 +747,18 @@ State Nfa::add_state(const State state) {
 	return state;
 }
 
+void Nfa::add_transition(
+	const State source, const std::string& symbol_name, const State target, Alphabet* const alphabet
+) {
+	Alphabet* const resolved_alphabet{alphabet != nullptr ? alphabet : this->alphabet.get()};
+	if (resolved_alphabet == nullptr) {
+		throw std::runtime_error(
+			"Nfa::add_transition(): no alphabet available to translate symbol '" + symbol_name + "'"
+		);
+	}
+	delta.add(source, resolved_alphabet->translate_symb(symbol_name), target);
+}
+
 State Nfa::insert_word(const State source, const Word& word, const State target) {
 	assert(!word.empty());
 	assert(source < num_of_states());

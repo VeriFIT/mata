@@ -2896,9 +2896,9 @@ TEST_CASE("mata::nft::reduce_size_by_simulation()") {
         aut.add_state_with_level(1, 0);
         aut.initial = { 0 };
         aut.final = { 1 };
-        aut.add_transition(0, { 'a', 'a' }, 1);
-        aut.add_transition(0, { 'a', 'a' }, 1);
-        aut.add_transition(0, { 'a', 'a' }, 1);
+        aut.add_transition_by_levels(0, { 'a', 'a' }, 1);
+        aut.add_transition_by_levels(0, { 'a', 'a' }, 1);
+        aut.add_transition_by_levels(0, { 'a', 'a' }, 1);
         REQUIRE(aut.num_of_states() == 5);
         Nft result = reduce(aut, &state_renaming);
         CHECK(are_equivalent(result, aut));
@@ -3117,11 +3117,11 @@ TEST_CASE("mata::nft::remove_epsilon()") {
     SECTION("3 tapes") {
         Nft aut{ 4, { 0 }, { 2 } };
         aut.levels.num_of_levels = 3;
-        aut.add_transition(0, { 'a', 'a', 'a' }, 1);
-        aut.add_transition(0, { 'b', 'a', 'a' }, 3);
-        aut.add_transition(3, { 'a', 'a', 'a' }, 2);
-        aut.add_transition(1, { 'a', 'a', 'a' }, 2);
-        aut.add_transition(2, { 'c', 'b', 'd' }, 2);
+        aut.add_transition_by_levels(0, { 'a', 'a', 'a' }, 1);
+        aut.add_transition_by_levels(0, { 'b', 'a', 'a' }, 3);
+        aut.add_transition_by_levels(3, { 'a', 'a', 'a' }, 2);
+        aut.add_transition_by_levels(1, { 'a', 'a', 'a' }, 2);
+        aut.add_transition_by_levels(2, { 'c', 'b', 'd' }, 2);
         aut.remove_epsilon('a');
         REQUIRE(aut.delta[0].size() == 2);
         CHECK(aut.delta[0].to_vector()[0].symbol == 'b');
@@ -5318,10 +5318,10 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
         }
     }
 
-    SECTION("add_transition()") {
+    SECTION("add_transition_by_levels()") {
         nft = Nft::with_levels(3);
-        nft.add_transition(0, { 'a', 'b', 'c' }, 1);
-        nft.add_transition(1, { 'd', 'e', 'f' }, 2);
+        nft.add_transition_by_levels(0, { 'a', 'b', 'c' }, 1);
+        nft.add_transition_by_levels(1, { 'd', 'e', 'f' }, 2);
 
         expected = Nft::with_levels({ 3, { 0, 0, 0, 1, 2, 1, 2 } }, {});
         expected.delta.add(0, 'a', 3);
@@ -5503,6 +5503,75 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
 
             CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
         }
+    }
+}
+
+TEST_CASE("mata::nft::Nft::add_transition() using a symbol name") {
+    // 3-level NFT, source at level 0 and a pre-existing target at level 2: a jump spanning levels 0 and 1.
+    Nft nft{ Nft::with_levels({ 3, { 0, 0, 2 } }, 3) };
+    nft.initial.insert(0);
+    nft.final.insert(2);
+
+    SECTION("per-level alphabets translating to the same symbol on every affected level create a jump transition") {
+        auto a0 = std::make_shared<OnTheFlyAlphabet>();
+        auto a1 = std::make_shared<OnTheFlyAlphabet>();
+        auto a2 = std::make_shared<OnTheFlyAlphabet>();
+        // Both a0 and a1 assign "x" the same (first, default-initial) symbol value.
+        nft.alphabets = std::make_shared<AlphabetLevels>(
+            AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } });
+
+        nft.add_transition(0, "x", 2);
+
+        CHECK(nft.num_of_states() == 3);
+        CHECK(nft.delta.contains(0, a0->translate_symb("x"), 2));
+        CHECK(a0->translate_symb("x") == a1->translate_symb("x"));
+    }
+
+    SECTION("per-level alphabets translating to different symbols unwind the jump into a sequence of transitions") {
+        auto a0 = std::make_shared<OnTheFlyAlphabet>();
+        auto a1 = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "y" });
+        auto a2 = std::make_shared<OnTheFlyAlphabet>();
+        // "x" is the first symbol on a0 (-> 0), but the second symbol on a1 (-> 1): they disagree.
+        nft.alphabets = std::make_shared<AlphabetLevels>(
+            AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } });
+
+        nft.add_transition(0, "x", 2);
+
+        REQUIRE(nft.num_of_states() == 4);
+        const State inner{ 3 };
+        CHECK(nft.levels[inner] == 1);
+        CHECK(nft.delta.contains(0, a0->translate_symb("x"), inner));
+        CHECK(nft.delta.contains(inner, a1->translate_symb("x"), 2));
+        CHECK(a0->translate_symb("x") != a1->translate_symb("x"));
+    }
+
+    SECTION("an explicit alphabet takes precedence over this->alphabets on every affected level") {
+        auto a0 = std::make_shared<OnTheFlyAlphabet>();
+        auto a1 = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "y" });
+        nft.alphabets = std::make_shared<AlphabetLevels>(
+            AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a0 } });
+        OnTheFlyAlphabet override_alphabet{ std::vector<std::string>{ "x" } };
+
+        nft.add_transition(0, "x", 2, &override_alphabet);
+
+        // Using the same override_alphabet object for both affected levels always agrees, so a single jump
+        //  transition is created, ignoring this->alphabets entirely.
+        CHECK(nft.num_of_states() == 3);
+        CHECK(nft.delta.contains(0, override_alphabet.translate_symb("x"), 2));
+    }
+
+    SECTION("adjacent levels (no jump) add a single ordinary transition") {
+        OnTheFlyAlphabet alphabet{ std::vector<std::string>{ "x" } };
+        Nft adjacent{ Nft::with_levels({ 3, { 0, 1 } }, 2) };
+
+        adjacent.add_transition(0, "x", 1, &alphabet);
+
+        CHECK(adjacent.num_of_states() == 2);
+        CHECK(adjacent.delta.contains(0, alphabet.translate_symb("x"), 1));
+    }
+
+    SECTION("throws when no alphabet is available for some affected level") {
+        CHECK_THROWS_AS(nft.add_transition(0, "x", 2), std::runtime_error);
     }
 }
 

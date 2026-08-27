@@ -107,7 +107,7 @@ Nft algorithms::concatenate_eps(
 	const std::vector<Symbol> nft_epsilon(result.levels.num_of_levels, epsilon);
 	for (const auto& lhs_final_state : lhs.final) {
 		for (const auto& rhs_initial_state : rhs.initial) {
-			result.add_transition(lhs_final_state, nft_epsilon, rhs_states_renaming[rhs_initial_state]);
+			result.add_transition_by_levels(lhs_final_state, nft_epsilon, rhs_states_renaming[rhs_initial_state]);
 		}
 	}
 

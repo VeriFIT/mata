@@ -359,7 +359,7 @@ class Nft : public nfa::Nfa {
 	 * @param target The target state where the NFT transition ends. @p target must already exist.
 	 * @return The target state @p target.
 	 */
-	State add_transition(State source, const std::vector<Symbol>& symbols, State target);
+	State add_transition_by_levels(State source, const std::vector<Symbol>& symbols, State target);
 
 	/**
 	 * @brief Add a single NFT transition to the NFT from a source state @p source to a newly created target state,
@@ -372,7 +372,7 @@ class Nft : public nfa::Nfa {
 	 * @param symbols The nonempty set of symbols, one for each tape to be inserted into the NFT.
 	 * @return The target state @p target.
 	 */
-	State add_transition(State source, const std::vector<Symbol>& symbols);
+	State add_transition_by_levels(State source, const std::vector<Symbol>& symbols);
 
 	/**
 	 * @brief Add a single NFT transition with a length @p length from a source state @p source
@@ -418,6 +418,34 @@ class Nft : public nfa::Nfa {
 	void add_transition_with_same_level_targets(
 		State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode = JumpMode::RepeatSymbol
 	);
+
+	/**
+	 * @brief Add a new transition from @p source to @p target labeled by the symbol named @p symbol_name.
+	 *
+	 * Convenience wrapper mirroring @c Nfa::add_transition(), translating @p symbol_name to a @c Symbol via the
+	 *  resolved alphabet instead of requiring the caller to translate it themselves.
+	 *
+	 * Unlike the plain-@c Symbol overloads above, @p symbol_name is translated separately for each level the
+	 *  transition spans (i.e., @c levels[source], @c levels[next_level_after(levels[source])], ..., up to but
+	 *  excluding @c levels[target]), each via the alphabet resolved for that level (see @c resolve_alphabet):
+	 *  @p alphabet, when non-null, takes precedence over @c this->alphabets (used in @c AlphabetLevels::Mode
+	 *  ::MultiLevel via the level being translated for; ignored in @c Global mode) over @c this->alphabet.
+	 *
+	 * If every affected level translates @p symbol_name to the same @c Symbol, a single jump transition from
+	 *  @p source directly to @p target is added (no new states). Otherwise, since a single jump transition cannot
+	 *  carry a different symbol per level, the jump is unwound into a sequence of ordinary, single-level
+	 *  transitions, each carrying its own level's translation of @p symbol_name, through freshly created inner
+	 *  states.
+	 *
+	 * @param[in] source Source state of the new transition. Must already exist.
+	 * @param[in] symbol_name Name of the symbol labeling the new transition, translated separately for each level
+	 *  the transition spans.
+	 * @param[in] target Target state of the new transition. Must already exist.
+	 * @param[in] alphabet Alphabet to translate @p symbol_name with on every affected level, taking precedence over
+	 *  @c this->alphabets/@c this->alphabet when non-null.
+	 * @throws std::runtime_error If no alphabet is available to translate @p symbol_name for some affected level.
+	 */
+	void add_transition(State source, const std::string& symbol_name, State target, Alphabet* alphabet = nullptr);
 
 	/**
 	 * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT

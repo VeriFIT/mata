@@ -1012,11 +1012,11 @@ State Nft::insert_word_by_levels(const State source, const std::vector<Word>& wo
 	return insert_word_by_levels(source, word_parts_on_levels, add_state_with_level(levels[source]));
 }
 
-State Nft::add_transition(const State source, const std::vector<Symbol>& symbols, const State target) {
+State Nft::add_transition_by_levels(const State source, const std::vector<Symbol>& symbols, const State target) {
 	return insert_word(source, symbols, target);
 }
 
-State Nft::add_transition(const State source, const std::vector<Symbol>& symbols) {
+State Nft::add_transition_by_levels(const State source, const std::vector<Symbol>& symbols) {
 	return insert_word(source, symbols);
 }
 
@@ -1092,6 +1092,56 @@ void Nft::add_transition_with_same_level_targets(
 	StatePost& mutable_inner_state_post = delta.mutable_state_post(inner_src);
 	assert(mutable_inner_state_post.find(symbol) == mutable_inner_state_post.end());
 	mutable_inner_state_post.insert(std::move(SymbolPost(symbol, targets)));
+}
+
+void Nft::add_transition(
+	const State source, const std::string& symbol_name, const State target, Alphabet* const alphabet
+) {
+	assert(source < num_of_states());
+	assert(target < num_of_states());
+
+	const Level source_level{levels[source]};
+	const Level target_level{levels[target]};
+	const size_t trans_len{(target_level == 0 ? levels.num_of_levels : target_level) - source_level};
+	assert(target_level == 0 || target_level > source_level);
+	assert(trans_len > 0);
+
+	// Resolve the alphabet for each level the transition spans (source_level, next_level_after(source_level), ...)
+	//  and translate symbol_name separately for each of them, since per-level alphabets (this->alphabets in
+	//  AlphabetLevels::Mode::MultiLevel) may translate the same name to a different Symbol on different levels.
+	auto resolve_level_alphabet{[&](const Level level) -> Alphabet& {
+		if (alphabet != nullptr) { return *alphabet; }
+		if (this->alphabets != nullptr) { return this->alphabets->for_level(level); }
+		if (this->alphabet != nullptr) { return *this->alphabet; }
+		throw std::runtime_error(
+			"Nft::add_transition(): no alphabet available to translate symbol '" + symbol_name + "' for level " +
+			std::to_string(level)
+		);
+	}};
+
+	std::vector<Symbol> level_symbols;
+	level_symbols.reserve(trans_len);
+	Level lvl{source_level};
+	for (size_t i{0}; i < trans_len; ++i, lvl = levels.next_level_after(lvl)) {
+		level_symbols.push_back(resolve_level_alphabet(lvl).translate_symb(symbol_name));
+	}
+
+	if (std::ranges::all_of(level_symbols, [&](const Symbol symb) { return symb == level_symbols.front(); })) {
+		// The affected levels agree on the translation of symbol_name: a single jump transition suffices.
+		delta.add(source, level_symbols.front(), target);
+		return;
+	}
+
+	// The affected levels disagree: unwind the jump into a sequence of ordinary, single-level transitions, each
+	//  carrying its own level's translation of symbol_name.
+	State inner_src{source};
+	lvl = levels.next_level_after(source_level);
+	for (size_t i{0}; i < trans_len - 1; ++i, lvl = levels.next_level_after(lvl)) {
+		const State inner_target{add_state_with_level(lvl)};
+		delta.add(inner_src, level_symbols[i], inner_target);
+		inner_src = inner_target;
+	}
+	delta.add(inner_src, level_symbols.back(), target);
 }
 
 Nft& Nft::insert_identity(const State state, const std::vector<Symbol>& symbols, const JumpMode jump_mode) {

@@ -23,7 +23,7 @@ int main() {
 	// nft.final.insert(nft.add_state_with_level(1));
 
 	// Transduce one symbol on each tape.
-	State next_state{nft.add_transition(initial, {'a', 'A'})};
+	State next_state{nft.add_transition_by_levels(initial, {'a', 'A'})};
 	// Then transduce a sequence of 'bc' to 'BC'.
 	next_state = nft.insert_word(next_state, {'b', 'B', 'c', 'C'});
 	// Then transduce a sequence 'd' to 'DEF' (non-length-preserving operation).
@@ -54,7 +54,7 @@ int main() {
 	nft2.initial.insert(initial2);
 	State final2{nft2.add_state()};
 	nft2.final.insert(final2);
-	State next2{nft2.add_transition(initial2, {'A', '1'})};
+	State next2{nft2.add_transition_by_levels(initial2, {'A', '1'})};
 	next2 = nft2.insert_word(next2, {'B', '2', 'C', '3'});
 	nft2.insert_word_by_levels(next2, {{'D'}, {'4', '5', '6'}}, final2);
 	nft2.insert_identity(final2, &alphabet);

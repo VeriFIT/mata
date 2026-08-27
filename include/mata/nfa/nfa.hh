@@ -175,6 +175,23 @@ class Nfa {
 	State add_state(State state);
 
 	/**
+	 * @brief Add a new transition from @p source to @p target labeled by the symbol named @p symbol_name.
+	 *
+	 * Convenience wrapper around @c delta.add(), translating @p symbol_name to a @c Symbol via the resolved
+	 *  alphabet instead of requiring the caller to call @c alphabet->translate_symb() themselves, i.e.,
+	 *  @c aut.add_transition(source, "my_symbol", target) instead of
+	 *  @c aut.delta.add(source, aut.alphabet->translate_symb("my_symbol"), target).
+	 *
+	 * @param[in] source Source state of the new transition.
+	 * @param[in] symbol_name Name of the symbol labeling the new transition, translated via the resolved alphabet.
+	 * @param[in] target Target state of the new transition.
+	 * @param[in] alphabet Alphabet to translate @p symbol_name with, taking precedence over @c this->alphabet when
+	 *  non-null.
+	 * @throws std::runtime_error If neither @p alphabet nor @c this->alphabet is set.
+	 */
+	void add_transition(State source, const std::string& symbol_name, State target, Alphabet* alphabet = nullptr);
+
+	/**
 	 * Inserts a @p word into the NFA from a source state @p source to a target state @p target.
 	 * Creates new states along the path of the @p word.
 	 *
