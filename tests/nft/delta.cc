@@ -351,20 +351,24 @@ TEST_CASE("mata::nft::Delta iteration over transitions") {
 		CHECK(it == jt);
 		++it;
 		CHECK(it != jt);
-		CHECK(it != transitions.begin() && it != transitions.end());
+		CHECK(it != transitions.begin());
+		CHECK(it != transitions.end());
 		CHECK(jt == transitions.begin());
 
 		++jt;
 		CHECK(it == jt);
-		CHECK(jt != transitions.begin() && jt != transitions.end());
+		CHECK(jt != transitions.begin());
+		CHECK(jt != transitions.end());
 
 		jt = transitions.end();
 		CHECK(it != jt);
-		CHECK(jt != transitions.begin() && jt == transitions.end());
+		CHECK(jt != transitions.begin());
+		CHECK(jt == transitions.end());
 
 		it = transitions.end();
 		CHECK(it == jt);
-		CHECK(it != transitions.begin() && it == transitions.end());
+		CHECK(it != transitions.begin());
+		CHECK(it == transitions.end());
 	}
 }
 

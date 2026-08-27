@@ -6,9 +6,11 @@ CXX := env_var_or_default("CXX", "g++")
 # Number of cores for parallel compilation.
 JOBS := env_var_or_default("JOBS", "6")
 
-alias t := test
+alias test := test-cpp
+alias t := test-cpp
+alias tc := test-cpp
 [default]
-test *ARGS:
+test-cpp *ARGS:
   just build "debug"
   just test-run "debug" {{ARGS}}
 

@@ -1200,7 +1200,8 @@ TEST_CASE("mata::nft::is_universal()") {
 			bool is_univ = aut.is_universal(alph, &cex, params);
 
 			REQUIRE(!is_univ);
-			REQUIRE((cex.word == Word{alph["a"]}) || (cex.word == Word{alph["b"]}));
+			const bool cex_word_is_a_or_b = cex.word == Word{alph["a"]} || cex.word == Word{alph["b"]};
+			REQUIRE(cex_word_is_a_or_b);
 		}
 	}
 
@@ -1276,10 +1277,10 @@ TEST_CASE("mata::nft::is_universal()") {
 			REQUIRE(!is_univ);
 
 			REQUIRE(cex.word.size() == 4);
-			REQUIRE(cex.word[0] == alph["a"] || cex.word[0] == alph["b"]);
-			REQUIRE(cex.word[1] == alph["a"] || cex.word[1] == alph["b"]);
-			REQUIRE(cex.word[2] == alph["a"] || cex.word[2] == alph["b"]);
-			REQUIRE(cex.word[3] == alph["a"] || cex.word[3] == alph["b"]);
+			for (size_t i = 0; i < 4; ++i) {
+				const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
+				REQUIRE(cex_word_char_is_a_or_b);
+			}
 			REQUIRE(cex.word[2] != cex.word[3]);
 		}
 	}
@@ -1474,11 +1475,15 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
 			REQUIRE(!is_incl);
-			REQUIRE(cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]});
+			const bool cex_word_is_ab_or_ba_1 =
+				cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]};
+			REQUIRE(cex_word_is_ab_or_ba_1);
 
 			is_incl = is_included(bigger, smaller, &cex, &alph, params);
 			REQUIRE(is_incl);
-			REQUIRE(cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]});
+			const bool cex_word_is_ab_or_ba_2 =
+				cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]};
+			REQUIRE(cex_word_is_ab_or_ba_2);
 		}
 	}
 
@@ -1509,20 +1514,20 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 			REQUIRE(!is_incl);
 
 			REQUIRE(cex.word.size() == 4);
-			REQUIRE(cex.word[0] == alph["a"] || cex.word[0] == alph["b"]);
-			REQUIRE(cex.word[1] == alph["a"] || cex.word[1] == alph["b"]);
-			REQUIRE(cex.word[2] == alph["a"] || cex.word[2] == alph["b"]);
-			REQUIRE(cex.word[3] == alph["a"] || cex.word[3] == alph["b"]);
+			for (size_t i = 0; i < 4; ++i) {
+				const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
+				REQUIRE(cex_word_char_is_a_or_b);
+			}
 			REQUIRE(cex.word[2] != cex.word[3]);
 
 			is_incl = is_included(bigger, smaller, &cex, &alph, params);
 			REQUIRE(is_incl);
 
 			REQUIRE(cex.word.size() == 4);
-			REQUIRE(cex.word[0] == alph["a"] || cex.word[0] == alph["b"]);
-			REQUIRE(cex.word[1] == alph["a"] || cex.word[1] == alph["b"]);
-			REQUIRE(cex.word[2] == alph["a"] || cex.word[2] == alph["b"]);
-			REQUIRE(cex.word[3] == alph["a"] || cex.word[3] == alph["b"]);
+			for (size_t i = 0; i < 4; ++i) {
+				const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
+				REQUIRE(cex_word_char_is_a_or_b);
+			}
 			REQUIRE(cex.word[2] != cex.word[3]);
 		}
 	}
@@ -2912,7 +2917,8 @@ TEST_CASE("mata::nft::unite_nondet_with()") {
 
 		// Result accepts no other words than those accepted by the input automata.
 		for (const auto& word : result.get_words(max_word_length)) {
-			CHECK(lhs.is_in_lang(word) || rhs.is_in_lang(word));
+			const bool word_in_lhs_or_rhs = lhs.is_in_lang(word) || rhs.is_in_lang(word);
+			CHECK(word_in_lhs_or_rhs);
 		}
 	};
 
