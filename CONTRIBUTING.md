@@ -163,6 +163,11 @@ for (auto it{ xyz.begin() }; it < xyz_end ; ++it) // Note: Using prefix is more 
 ### Testing
 
 - Write unit tests for multiple cases, including edge cases.
+- Do not test for a specific automaton structure (specific states, transition, initial/final states being present, etc.).
+  Test for the expected properties: e.g., when testing `determinize()`, do **not** test whether the result automaton has
+  6 states and the state 2 is final, state 3 has a transition over 'a' to state 4, etc; instead, test whether the result
+  automaton satisfies the property of being deterministic (for no state, there are more than 1 outgoing transitions over
+  the same symbol).
 
 ## Development Tips
 
