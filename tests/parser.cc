@@ -13,23 +13,18 @@
 using namespace mata::parser;
 using namespace mata::utils;
 
-TEST_CASE("correct use of mata::Parser::parse_mf_section()")
-{ // {{{
+TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 	ParsedSection parsec;
 
-	SECTION("empty file")
-	{
-		std::string file =
-			"";
+	SECTION("empty file") {
+		std::string file = "";
 
 		parsec = parse_mf_section(file);
 		REQUIRE(parsec.empty());
 	}
 
-	SECTION("empty section")
-	{
-		std::string file =
-			"@Type\n";
+	SECTION("empty section") {
+		std::string file = "@Type\n";
 
 		parsec = parse_mf_section(file);
 
@@ -38,12 +33,10 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("file with some keys")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1\n"
-			"%key2\n";
+	SECTION("file with some keys") {
+		std::string file = "@Type\n"
+						   "%key1\n"
+						   "%key2\n";
 
 		parsec = parse_mf_section(file);
 
@@ -55,13 +48,11 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("file with some keys and values")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 value1\n"
-			"%key2\n"
-			"%key3 value3\n";
+	SECTION("file with some keys and values") {
+		std::string file = "@Type\n"
+						   "%key1 value1\n"
+						   "%key2\n"
+						   "%key3 value3\n";
 
 		parsec = parse_mf_section(file);
 
@@ -77,12 +68,10 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("file with multiple values for some keys")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1     value1.1  value1.2 value1.3			value1.4\n"
-			"%key2\n";
+	SECTION("file with multiple values for some keys") {
+		std::string file = "@Type\n"
+						   "%key1     value1.1  value1.2 value1.3			value1.4\n"
+						   "%key2\n";
 
 		parsec = parse_mf_section(file);
 
@@ -98,14 +87,12 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("file with some transitions")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 value1\n"
-			"%key2 value2.1 value2.2     \n"
-			"a\n"
-			"b0 b1 b2 b3		b4    b5";
+	SECTION("file with some transitions") {
+		std::string file = "@Type\n"
+						   "%key1 value1\n"
+						   "%key2 value2.1 value2.2     \n"
+						   "a\n"
+						   "b0 b1 b2 b3		b4    b5";
 
 		parsec = parse_mf_section(file);
 
@@ -130,14 +117,12 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[1][5] == "b5");
 	}
 
-	SECTION("file with transitions and line break")
-	{
-		std::string file =
-		        "@Type\n"
-		        "%key1 value1\n"
-		        "%key2 value2.1 value2.2     \n"
-		        "a\\\n"
-		        "b";
+	SECTION("file with transitions and line break") {
+		std::string file = "@Type\n"
+						   "%key1 value1\n"
+						   "%key2 value2.1 value2.2     \n"
+						   "a\\\n"
+						   "b";
 
 		parsec = parse_mf_section(file);
 
@@ -156,12 +141,10 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[0][1] == "b");
 	}
 
-	SECTION("file with transitions and line break")
-	{
-		std::string file =
-		        "@Type\n"
-		        "%key1 value1\n"
-		        "a x & !b&c|(a& !b)";
+	SECTION("file with transitions and line break") {
+		std::string file = "@Type\n"
+						   "%key1 value1\n"
+						   "a x & !b&c|(a& !b)";
 
 		parsec = parse_mf_section(file);
 
@@ -188,22 +171,20 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[0][13] == ")");
 	}
 
-	SECTION("file with comments and whitespaces")
-	{
-		std::string file =
-			"     \n"
-			"\n"
-			"	\n"
-			"# a comment\n"
-			"    #another comment\n"
-			"#\n"
-			"     @Ty#pe      \n"
-			"# some commment\n"
-			"%key1 value1#comment#comment2\n"
-			"   %key2 value2.1 # value2.2     \n"
-			"\t\n"
-			"a\n"
-			"   b0 b1 #b2";
+	SECTION("file with comments and whitespaces") {
+		std::string file = "     \n"
+						   "\n"
+						   "	\n"
+						   "# a comment\n"
+						   "    #another comment\n"
+						   "#\n"
+						   "     @Ty#pe      \n"
+						   "# some commment\n"
+						   "%key1 value1#comment#comment2\n"
+						   "   %key2 value2.1 # value2.2     \n"
+						   "\t\n"
+						   "a\n"
+						   "   b0 b1 #b2";
 
 		parsec = parse_mf_section(file);
 
@@ -223,24 +204,22 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[1][1] == "b1");
 	}
 
-	SECTION("using double quotes and escaping for names")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 \"value 1\"\n"
-			"%key2 \"value2.1\" value2 2 \"value 2 3\"\n"
-			"%key3 \"val#1\"    # test\n"
-			"a \"\"\n"
-			"%key4 \"val 1   \" \n"
-			"%key5\n"
-			"b0 \"b 1\" c d\n"
-			"\"%key6\"\n"
-			"%key7\n"
-			"c 0 \"\\\"he's so cool,\\\" he said \\/\" c d\n"
-			"\"a\"\n"
-			"\"\"\n"
-			"'\n"
-			"q a q'";
+	SECTION("using double quotes and escaping for names") {
+		std::string file = "@Type\n"
+						   "%key1 \"value 1\"\n"
+						   "%key2 \"value2.1\" value2 2 \"value 2 3\"\n"
+						   "%key3 \"val#1\"    # test\n"
+						   "a \"\"\n"
+						   "%key4 \"val 1   \" \n"
+						   "%key5\n"
+						   "b0 \"b 1\" c d\n"
+						   "\"%key6\"\n"
+						   "%key7\n"
+						   "c 0 \"\\\"he's so cool,\\\" he said \\/\" c d\n"
+						   "\"a\"\n"
+						   "\"\"\n"
+						   "'\n"
+						   "q a q'";
 
 		parsec = parse_mf_section(file);
 
@@ -294,14 +273,12 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[7][2] == "q'");
 	}
 
-	SECTION("file with newlines among keys")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 value1.1 value1.2   # comment\n"
-			"%key1    value1.3\n"
-			"%key2\n"
-			"%key3 \"value3\"";
+	SECTION("file with newlines among keys") {
+		std::string file = "@Type\n"
+						   "%key1 value1.1 value1.2   # comment\n"
+						   "%key1    value1.3\n"
+						   "%key2\n"
+						   "%key3 \"value3\"";
 
 		parsec = parse_mf_section(file);
 
@@ -319,12 +296,10 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("special characters inside quoted strings")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1     \"value@1\"  \"value@2\"#new\n"
-			"%key2     \"value%1\"  (\"value%2\")\n";
+	SECTION("special characters inside quoted strings") {
+		std::string file = "@Type\n"
+						   "%key1     \"value@1\"  \"value@2\"#new\n"
+						   "%key2     \"value%1\"  (\"value%2\")\n";
 
 		parsec = parse_mf_section(file);
 
@@ -342,11 +317,9 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("file with no keys")
-	{
-		std::string file =
-			"@Type\n"
-			"a b c\n";
+	SECTION("file with no keys") {
+		std::string file = "@Type\n"
+						   "a b c\n";
 
 		parsec = parse_mf_section(file);
 
@@ -359,12 +332,10 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[0][2] == "c");
 	}
 
-	SECTION("correct handling of parentheses")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 (a b)\n"
-			"a (b   c  d)(e\n";
+	SECTION("correct handling of parentheses") {
+		std::string file = "@Type\n"
+						   "%key1 (a b)\n"
+						   "a (b   c  d)(e\n";
 
 		parsec = parse_mf_section(file);
 
@@ -388,13 +359,11 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE(body[0][7] == "e");
 	}
 
-	SECTION("correct handling of start of another section")
-	{
-		std::string file =
-			"@Type1\n"
-			"%key1\n"
-			"@Type2\n"
-			"%key2\n";
+	SECTION("correct handling of start of another section") {
+		std::string file = "@Type1\n"
+						   "%key1\n"
+						   "@Type2\n"
+						   "%key2\n";
 
 		std::istringstream stream(file);
 
@@ -409,242 +378,187 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 		REQUIRE("@Type2\n%key2\n" == remains);
 	}
 
-    SECTION("Correctly parse with missing newline at the end of the file") {
-        std::string file =
-        "@NFA-explicit\n"
-        "%Alphabet-auto\n"
-        "%Initial q0\n"
-        "%Final q0\n"
-        "q0 0 q0";
-        std::istringstream stream(file);
-        mata::nfa::Nfa aut = mata::nfa::builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
-        CHECK(aut.initial.size() == 1);
-        CHECK(aut.initial.contains(0));
-        CHECK(aut.final.size() == 1);
-        CHECK(aut.initial.contains(0));
-        CHECK(aut.delta.contains(0, 0, 0) == 1);
-        CHECK(aut.delta.num_of_transitions() == 1);
-    }
+	SECTION("Correctly parse with missing newline at the end of the file") {
+		std::string file = "@NFA-explicit\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q0\n"
+						   "%Final q0\n"
+						   "q0 0 q0";
+		std::istringstream stream(file);
+		mata::nfa::Nfa aut = mata::nfa::builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
+		CHECK(aut.initial.size() == 1);
+		CHECK(aut.initial.contains(0));
+		CHECK(aut.final.size() == 1);
+		CHECK(aut.initial.contains(0));
+		CHECK(aut.delta.contains(0, 0, 0) == 1);
+		CHECK(aut.delta.num_of_transitions() == 1);
+	}
 } // parse_mf_section correct }}}
 
-
-TEST_CASE("incorrect use of mata::Parser::parse_mf_section()")
-{ // {{{
+TEST_CASE("incorrect use of mata::Parser::parse_mf_section()") { // {{{
 	ParsedSection parsec;
 
-	SECTION("no type")
-	{
-		std::string file =
-			"@\n"
-			"Type"
-			"%key1\n"
-			"%key2\n";
+	SECTION("no type") {
+		std::string file = "@\n"
+						   "Type"
+						   "%key1\n"
+						   "%key2\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("expecting automaton type"));
 	}
 
-	SECTION("trailing characters behind @TYPE")
-	{
-		std::string file =
-			"@Type another\n";
+	SECTION("trailing characters behind @TYPE") {
+		std::string file = "@Type another\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("invalid trailing characters"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid trailing characters"));
 	}
 
-	SECTION("missing type")
-	{
-		std::string file =
-			"%key1\n"
-			"%key2\n";
+	SECTION("missing type") {
+		std::string file = "%key1\n"
+						   "%key2\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("expecting automaton type"));
 	}
 
-	SECTION("unterminated quote")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 \"value\n";
+	SECTION("unterminated quote") {
+		std::string file = "@Type\n"
+						   "%key1 \"value\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("missing ending quotes"));
 	}
 
-	SECTION("unterminated quote 2")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 \"\n";
+	SECTION("unterminated quote 2") {
+		std::string file = "@Type\n"
+						   "%key1 \"\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("missing ending quotes"));
 	}
 
-	SECTION("newlines within names")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 \" value  \n"
-			"   1\"\n"
-			"\"value\n"
-			"\n"
-			"\"\n"
-			"\n"
-			"\"value    # comment\n"
-			"3\"";
+	SECTION("newlines within names") {
+		std::string file = "@Type\n"
+						   "%key1 \" value  \n"
+						   "   1\"\n"
+						   "\"value\n"
+						   "\n"
+						   "\"\n"
+						   "\n"
+						   "\"value    # comment\n"
+						   "3\"";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("missing ending quotes"));
 	}
 
-	SECTION("quoted strings starting in the middle of strings")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 val\"ue\"\n";
+	SECTION("quoted strings starting in the middle of strings") {
+		std::string file = "@Type\n"
+						   "%key1 val\"ue\"\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("misplaced quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("misplaced quotes"));
 	}
 
-	SECTION("quoted strings ending in the middle of strings")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 \"val\"ue\n";
+	SECTION("quoted strings ending in the middle of strings") {
+		std::string file = "@Type\n"
+						   "%key1 \"val\"ue\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("misplaced quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("misplaced quotes"));
 	}
 
-	SECTION("incorrect position of special characters")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 @here";
+	SECTION("incorrect position of special characters") {
+		std::string file = "@Type\n"
+						   "%key1 @here";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-			Catch::Matchers::ContainsSubstring("invalid position of @TYPE") &&
-			Catch::Matchers::ContainsSubstring("@here"));
+		CHECK_THROWS_WITH(
+			parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid position of @TYPE") &&
+										Catch::Matchers::ContainsSubstring("@here")
+		);
 	}
 
-	SECTION("incorrect position of special characters 2")
-	{
-		std::string file =
-			"@Type\n"
-			"q1 @here q2";
+	SECTION("incorrect position of special characters 2") {
+		std::string file = "@Type\n"
+						   "q1 @here q2";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-			Catch::Matchers::ContainsSubstring("invalid position of @TYPE") &&
-			Catch::Matchers::ContainsSubstring("@here"));
+		CHECK_THROWS_WITH(
+			parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid position of @TYPE") &&
+										Catch::Matchers::ContainsSubstring("@here")
+		);
 	}
 
-	SECTION("incorrect position of special characters 3")
-	{
-		std::string file =
-			"@Type\n"
-			"q1 %here q2";
+	SECTION("incorrect position of special characters 3") {
+		std::string file = "@Type\n"
+						   "q1 %here q2";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-			Catch::Matchers::ContainsSubstring("invalid position of %KEY") &&
-			Catch::Matchers::ContainsSubstring("%here"));
+		CHECK_THROWS_WITH(
+			parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid position of %KEY") &&
+										Catch::Matchers::ContainsSubstring("%here")
+		);
 	}
 
-	SECTION("incorrect position of special characters 4")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1 %here";
+	SECTION("incorrect position of special characters 4") {
+		std::string file = "@Type\n"
+						   "%key1 %here";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-			Catch::Matchers::ContainsSubstring("invalid position of %KEY") &&
-			Catch::Matchers::ContainsSubstring("%here"));
+		CHECK_THROWS_WITH(
+			parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid position of %KEY") &&
+										Catch::Matchers::ContainsSubstring("%here")
+		);
 	}
 
-	SECTION("no key name")
-	{
-		std::string file =
-			"@Type\n"
-			"%\n"
-			"%key2\n";
+	SECTION("no key name") {
+		std::string file = "@Type\n"
+						   "%\n"
+						   "%key2\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("%KEY name missing"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("%KEY name missing"));
 	}
 
-	SECTION("special characters inside strings 1")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1     value@1\n";
+	SECTION("special characters inside strings 1") {
+		std::string file = "@Type\n"
+						   "%key1     value@1\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("misplaced character \'@\'"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("misplaced character \'@\'"));
 	}
 
-	SECTION("special characters inside strings 2")
-	{
-		std::string file =
-			"@Type\n"
-			"%key2     value%1\n";
+	SECTION("special characters inside strings 2") {
+		std::string file = "@Type\n"
+						   "%key2     value%1\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("misplaced character \'%\'"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("misplaced character \'%\'"));
 	}
 
-	SECTION("special characters inside strings 3")
-	{
-		std::string file =
-			"@Type\n"
-			"%key1     @value\n";
+	SECTION("special characters inside strings 3") {
+		std::string file = "@Type\n"
+						   "%key1     @value\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("invalid position of @TYPE"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid position of @TYPE"));
 	}
 
-	SECTION("special characters inside strings 4")
-	{
-		std::string file =
-			"@Type\n"
-			"%key2     %value\n";
+	SECTION("special characters inside strings 4") {
+		std::string file = "@Type\n"
+						   "%key2     %value\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("invalid position of %KEY"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("invalid position of %KEY"));
 	}
 
-	SECTION("invalid use of quotes")
-	{
-		std::string file =
-			"\"@Type\"\n";
+	SECTION("invalid use of quotes") {
+		std::string file = "\"@Type\"\n";
 
-		CHECK_THROWS_WITH(parse_mf_section(file),
-                          Catch::Matchers::ContainsSubstring("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file), Catch::Matchers::ContainsSubstring("expecting automaton type"));
 	}
 } // parse_mf_section incorrect }}}
 
-
-TEST_CASE("correct use of mata::Parser::parse_mf()")
-{ // {{{
+TEST_CASE("correct use of mata::Parser::parse_mf()") { // {{{
 	Parsed parsed;
 
-	SECTION("empty file")
-	{
-		std::string file =
-			"";
+	SECTION("empty file") {
+		std::string file = "";
 
 		parsed = parse_mf(file);
 
 		REQUIRE(parsed.empty());
 	}
 
-	SECTION("one section")
-	{
-		std::string file =
-			"@Type1\n"
-			"%key1\n";
+	SECTION("one section") {
+		std::string file = "@Type1\n"
+						   "%key1\n";
 
 		parsed = parse_mf(file);
 		REQUIRE(parsed.size() == 1);
@@ -652,13 +566,11 @@ TEST_CASE("correct use of mata::Parser::parse_mf()")
 		REQUIRE(haskey(parsed[0].dict, "key1"));
 	}
 
-	SECTION("two sections")
-	{
-		std::string file =
-			"@Type1\n"
-			"%key1\n"
-			"@Type2\n"
-			"%key2\n";
+	SECTION("two sections") {
+		std::string file = "@Type1\n"
+						   "%key1\n"
+						   "@Type2\n"
+						   "%key2\n";
 
 		parsed = parse_mf(file);
 		REQUIRE(parsed.size() == 2);
@@ -669,161 +581,148 @@ TEST_CASE("correct use of mata::Parser::parse_mf()")
 	}
 } // parse_mf }}}
 
+TEST_CASE("parsing automata to intermediate representation") { // {{{
+	Parsed parsed;
 
-TEST_CASE("parsing automata to intermediate representation")
-{ // {{{
-    Parsed parsed;
+	SECTION("NFA") {
+		std::string file = "@NFA-explicit\n"
+						   "%States-enum q r s t \"(r,s)\"\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q & r\n"
+						   "%Final q | r\n"
+						   "q symbol & r\n";
 
-    SECTION("NFA")
-    {
-        std::string file =
-           "@NFA-explicit\n"
-           "%States-enum q r s t \"(r,s)\"\n"
-           "%Alphabet-auto\n"
-           "%Initial q & r\n"
-           "%Final q | r\n"
-           "q symbol & r\n";
+		parsed = parse_mf(file);
+		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		REQUIRE(auts.size() == 1);
+		const mata::IntermediateAut& aut = auts.back();
+		REQUIRE(aut.transitions.size() == 1);
+		REQUIRE(aut.transitions.front().first.name == "q");
+		REQUIRE(aut.transitions.front().first.is_operand());
+		REQUIRE(aut.transitions.front().second.node.is_operator());
+		REQUIRE(aut.transitions.front().second.node.name == "&");
+		REQUIRE(aut.transitions.front().second.children.size() == 2);
+		REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+		REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+		REQUIRE(aut.transitions.front().second.children.front().children.empty());
+		REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
+		REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+		REQUIRE(aut.transitions.front().second.children[1].children.empty());
+		REQUIRE(aut.initial_formula.node.name == "&");
+		REQUIRE(aut.initial_formula.children.size() == 2);
+		REQUIRE(aut.initial_formula.children[0].node.name == "q");
+		REQUIRE(aut.initial_formula.children[1].node.name == "r");
+		REQUIRE(aut.final_formula.node.name == "|");
+		REQUIRE(aut.final_formula.children.size() == 2);
+		REQUIRE(aut.final_formula.children[0].node.name == "q");
+		REQUIRE(aut.final_formula.children[1].node.name == "r");
+	}
 
-        parsed = parse_mf(file);
-        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        REQUIRE(auts.size() == 1);
-        const mata::IntermediateAut& aut = auts.back();
-        REQUIRE(aut.transitions.size() == 1);
-        REQUIRE(aut.transitions.front().first.name == "q");
-        REQUIRE(aut.transitions.front().first.is_operand());
-        REQUIRE(aut.transitions.front().second.node.is_operator());
-        REQUIRE(aut.transitions.front().second.node.name == "&");
-        REQUIRE(aut.transitions.front().second.children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
-        REQUIRE(aut.transitions.front().second.children.front().children.empty());
-        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
-        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
-        REQUIRE(aut.transitions.front().second.children[1].children.empty());
-        REQUIRE(aut.initial_formula.node.name == "&");
-        REQUIRE(aut.initial_formula.children.size() == 2);
-        REQUIRE(aut.initial_formula.children[0].node.name == "q");
-        REQUIRE(aut.initial_formula.children[1].node.name == "r");
-        REQUIRE(aut.final_formula.node.name == "|");
-        REQUIRE(aut.final_formula.children.size() == 2);
-        REQUIRE(aut.final_formula.children[0].node.name == "q");
-        REQUIRE(aut.final_formula.children[1].node.name == "r");
-    }
+	SECTION("NFA without &") {
+		std::string file = "@NFA-explicit\n"
+						   "%States-enum q r s t \"(r,s)\"\n"
+						   "%Alphabet-auto\n"
+						   "q symbol r\n";
 
-    SECTION("NFA without &")
-    {
-        std::string file =
-                "@NFA-explicit\n"
-                "%States-enum q r s t \"(r,s)\"\n"
-                "%Alphabet-auto\n"
-                "q symbol r\n";
+		parsed = parse_mf(file);
+		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		REQUIRE(auts.size() == 1);
+		const mata::IntermediateAut& aut = auts.back();
+		REQUIRE(aut.transitions.size() == 1);
+		REQUIRE(aut.transitions.front().first.name == "q");
+		REQUIRE(aut.transitions.front().first.is_operand());
+		REQUIRE(aut.transitions.front().second.node.is_operator());
+		REQUIRE(aut.transitions.front().second.node.name == "&");
+		REQUIRE(aut.transitions.front().second.children.size() == 2);
+		REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+		REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+		REQUIRE(aut.transitions.front().second.children.front().children.empty());
+		REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
+		REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+		REQUIRE(aut.transitions.front().second.children[1].children.empty());
+	}
 
-        parsed = parse_mf(file);
-        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        REQUIRE(auts.size() == 1);
-        const mata::IntermediateAut& aut = auts.back();
-        REQUIRE(aut.transitions.size() == 1);
-        REQUIRE(aut.transitions.front().first.name == "q");
-        REQUIRE(aut.transitions.front().first.is_operand());
-        REQUIRE(aut.transitions.front().second.node.is_operator());
-        REQUIRE(aut.transitions.front().second.node.name == "&");
-        REQUIRE(aut.transitions.front().second.children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
-        REQUIRE(aut.transitions.front().second.children.front().children.empty());
-        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
-        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
-        REQUIRE(aut.transitions.front().second.children[1].children.empty());
-    }
+	SECTION("NFA explicit enumeration of initials and finals") {
+		std::string file = "@NFA-explicit\n"
+						   "%States-enum q r s t \"(r,s)\"\n"
+						   "%Alphabet-auto\n"
+						   "%Initial r s\n"
+						   "%Final q t\n"
+						   "q symbol r\n";
 
-    SECTION("NFA explicit enumeration of initials and finals")
-    {
-        std::string file =
-                "@NFA-explicit\n"
-                "%States-enum q r s t \"(r,s)\"\n"
-                "%Alphabet-auto\n"
-                "%Initial r s\n"
-                "%Final q t\n"
-                "q symbol r\n";
+		parsed = parse_mf(file);
+		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		REQUIRE(auts.size() == 1);
+		const mata::IntermediateAut& aut = auts.back();
+		REQUIRE(aut.transitions.size() == 1);
+		REQUIRE(aut.initial_enumerated);
+		REQUIRE(aut.final_enumerated);
+		const auto initials = aut.get_enumerated_initials();
+		REQUIRE(initials.count("r"));
+		REQUIRE(initials.count("s"));
+		REQUIRE(!initials.count("q"));
+		const auto finals = aut.get_enumerated_finals();
+		REQUIRE(finals.count("t"));
+		REQUIRE(finals.count("q"));
+		REQUIRE(!finals.count("r"));
+	}
 
-        parsed = parse_mf(file);
-        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        REQUIRE(auts.size() == 1);
-        const mata::IntermediateAut& aut = auts.back();
-        REQUIRE(aut.transitions.size() == 1);
-        REQUIRE(aut.initial_enumerated);
-        REQUIRE(aut.final_enumerated);
-        const auto initials = aut.get_enumerated_initials();
-        REQUIRE(initials.count("r"));
-        REQUIRE(initials.count("s"));
-        REQUIRE(!initials.count("q"));
-        const auto finals = aut.get_enumerated_finals();
-        REQUIRE(finals.count("t"));
-        REQUIRE(finals.count("q"));
-        REQUIRE(!finals.count("r"));
-    }
+	SECTION("NFA - final states from multiple negations") {
+		std::string file = "@NFA-bits\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q1 q8\n"
+						   "%Final !q0 & !q1 & !q4 & !q5\n"
+						   "q0 (!a1 & !a2 & !a3 & (!a0 | a0)) q1\n"
+						   "q1 (!a2 & !a3 & !a4 & (!a0 | a0)) q2\n"
+						   "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q3\n"
+						   "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q4\n"
+						   "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q5\n"
+						   "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
+						   "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
 
-    SECTION("NFA - final states from multiple negations")
-    {
-        std::string file =
-                "@NFA-bits\n"
-                "%Alphabet-auto\n"
-                "%Initial q1 q8\n"
-                "%Final !q0 & !q1 & !q4 & !q5\n"
-                "q0 (!a1 & !a2 & !a3 & (!a0 | a0)) q1\n"
-                "q1 (!a2 & !a3 & !a4 & (!a0 | a0)) q2\n"
-                "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q3\n"
-                "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q4\n"
-                "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q5\n"
-                "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
-                "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		const mata::IntermediateAut inter_aut = auts[0];
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        const mata::IntermediateAut inter_aut = auts[0];
+		auto final_states = inter_aut.get_positive_finals();
+		REQUIRE(final_states.size() == 5);
+		REQUIRE(final_states.count("2"));
+		REQUIRE(final_states.count("3"));
+		REQUIRE(final_states.count("6"));
+		REQUIRE(final_states.count("7"));
+		REQUIRE(final_states.count("8"));
+	}
 
-        auto final_states = inter_aut.get_positive_finals();
-        REQUIRE(final_states.size() == 5);
-        REQUIRE(final_states.count("2"));
-        REQUIRE(final_states.count("3"));
-        REQUIRE(final_states.count("6"));
-        REQUIRE(final_states.count("7"));
-        REQUIRE(final_states.count("8"));
-    }
+	SECTION("NFA - final states from one negation") {
+		std::string file = "@NFA-bits\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q1 q8\n"
+						   "%Final !q0\n"
+						   "q0 (!a1 & !a2 & !a3 & (!a0 | a0)) q1\n"
+						   "q1 (!a2 & !a3 & !a4 & (!a0 | a0)) q2\n"
+						   "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q3\n"
+						   "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q4\n"
+						   "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q5\n"
+						   "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
+						   "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
 
-    SECTION("NFA - final states from one negation")
-    {
-        std::string file =
-                "@NFA-bits\n"
-                "%Alphabet-auto\n"
-                "%Initial q1 q8\n"
-                "%Final !q0\n"
-                "q0 (!a1 & !a2 & !a3 & (!a0 | a0)) q1\n"
-                "q1 (!a2 & !a3 & !a4 & (!a0 | a0)) q2\n"
-                "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q3\n"
-                "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q4\n"
-                "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q5\n"
-                "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
-                "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		const mata::IntermediateAut inter_aut = auts[0];
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        const mata::IntermediateAut inter_aut = auts[0];
+		auto final_states = inter_aut.get_positive_finals();
+		REQUIRE(final_states.size() == 8);
+		REQUIRE(final_states.count("1"));
+		REQUIRE(final_states.count("2"));
+		REQUIRE(final_states.count("3"));
+		REQUIRE(final_states.count("4"));
+		REQUIRE(final_states.count("5"));
+		REQUIRE(final_states.count("6"));
+		REQUIRE(final_states.count("7"));
+		REQUIRE(final_states.count("8"));
+	}
 
-        auto final_states = inter_aut.get_positive_finals();
-        REQUIRE(final_states.size() == 8);
-        REQUIRE(final_states.count("1"));
-        REQUIRE(final_states.count("2"));
-        REQUIRE(final_states.count("3"));
-        REQUIRE(final_states.count("4"));
-        REQUIRE(final_states.count("5"));
-        REQUIRE(final_states.count("6"));
-        REQUIRE(final_states.count("7"));
-        REQUIRE(final_states.count("8"));
-    }
-
-    SECTION("NFA - true/false constants")
-    {
-        std::string file =
-R"(@NFA-bits
+	SECTION("NFA - true/false constants") {
+		std::string file =
+			R"(@NFA-bits
 %Alphabet-auto
 %Initial q1
 %Final \true
@@ -831,138 +730,120 @@ q0 \true q1
 q1 \false q2
 )";
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        const mata::IntermediateAut inter_aut = auts[0];
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		const mata::IntermediateAut inter_aut = auts[0];
 
-        CHECK(inter_aut.final_formula.node.is_true());
+		CHECK(inter_aut.final_formula.node.is_true());
 		CHECK(inter_aut.transitions.at(0).second.children.at(0).node.is_true());
 		CHECK(inter_aut.transitions.at(1).second.children.at(0).node.is_false());
-    }
-
-    SECTION("AFA explicit")
-    {
-        std::string file =
-                "@AFA-explicit\n"
-                "%States-enum q r s t \"(r,s)\"\n"
-                "%Alphabet-auto\n"
-                "q symbol | other_symbol & (\"(r,s)\" | r | s)\n"
-                "r !b & ! c & (\"(r,s)\")\n";
-
-        parsed = parse_mf(file);
-        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        REQUIRE(auts.size() == 1);
-        const mata::IntermediateAut& aut = auts.back();
-        REQUIRE(aut.transitions.size() == 2);
-        REQUIRE(aut.transitions.front().first.name == "q");
-        REQUIRE(aut.transitions.front().first.is_operand());
-        REQUIRE(aut.transitions.front().second.node.is_operator());
-        REQUIRE(aut.transitions.front().second.node.name == "|");
-        REQUIRE(aut.transitions.front().second.children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
-        REQUIRE(aut.transitions.front().second.children.front().children.empty());
-        REQUIRE(aut.transitions.front().second.children[1].node.is_operator());
-        REQUIRE(aut.transitions.front().second.children[1].node.name == "&");
-        REQUIRE(aut.transitions.front().second.children[1].children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children[1].children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children[1].children.front().node.name == "other_symbol");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].node.is_operator());
-        REQUIRE(aut.transitions.front().second.children[1].children[1].node.name == "|");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().node.name == "|");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children[1].node.name == "s");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children.front().node.name == "(r,s)");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children[1].node.name == "r");
-
-        REQUIRE(aut.transitions[1].first.name == "r");
-        REQUIRE(aut.transitions[1].first.is_operand());
-        REQUIRE(aut.transitions[1].second.node.is_operator());
-        REQUIRE(aut.transitions[1].second.node.name == "&");
-        REQUIRE(aut.transitions[1].second.children.size() == 2);
-        REQUIRE(aut.transitions[1].second.children.front().node.is_operator());
-        REQUIRE(aut.transitions[1].second.children.front().node.name == "!");
-        REQUIRE(aut.transitions[1].second.children.front().children.front().node.name == "b");
-        REQUIRE(aut.transitions[1].second.children[1].node.is_operator());
-        REQUIRE(aut.transitions[1].second.children[1].node.name == "&");
-        REQUIRE(aut.transitions[1].second.children[1].children.size() == 2);
-    }
-
-    SECTION("AFA explicit two automatic naming")
-    {
-        std::string file =
-                "@AFA-explicit\n"
-                "%States-auto\n"
-                "%Alphabet-auto\n"
-                "r !b & ! c & d\n";
-
-        bool exception = false;
-        try {
-            parsed = parse_mf(file);
-            std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        } catch (std::exception& e) {
-            exception = true;
-
-        }
-
-        REQUIRE(exception);
-    }
-
-    SECTION("AFA explicit correct automatic naming")
-    {
-        std::string file =
-                "@AFA-explicit\n"
-                "%States-marked\n"
-                "%Alphabet-enum a b\n"
-                "q1 a & !q2 & b\n";
-
-        parsed = parse_mf(file);
-        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        const mata::IntermediateAut aut = auts[0];
-        REQUIRE(aut.transitions.front().first.name == "1");
-        REQUIRE(aut.transitions.front().first.raw == "q1");
-
-    }
-
-    SECTION("AFA explicit correct automatic naming - parentheses")
-    {
-        std::string file =
-                "@AFA-explicit\n"
-                "%States-marked\n"
-                "%Alphabet-enum a b c\n"
-                "q1 ((a & !q2) & b) | c\n";
-
-        parsed = parse_mf(file);
-        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
-        const mata::IntermediateAut aut = auts[0];
-        REQUIRE(aut.transitions.front().first.name == "1");
-        REQUIRE(aut.transitions.front().first.raw == "q1");
-    }
-
-    SECTION("AFA explicit non existing symbol error")
-    {
-        std::string file =
-                "@AFA-explicit\n"
-                "%States-marked\n"
-                "%Alphabet-enum a b\n"
-                "q1 a & !q2 & c\n";
-
-        bool exception = false;
-        parsed = parse_mf(file);
-        try {
-            mata::IntermediateAut::parse_from_mf(parsed);
-        } catch (const std::runtime_error& e) {
-            exception = true;
-        }
-
-        REQUIRE(exception);
-    }
-    } // parse_mf }}}
-
-
-TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)")
-{ // {{{
-	SECTION("aux")
-	{
-		WARN_PRINT("Insufficient testing of mata::Parser::ParsedSection::operator<<(ostream&)");
 	}
+
+	SECTION("AFA explicit") {
+		std::string file = "@AFA-explicit\n"
+						   "%States-enum q r s t \"(r,s)\"\n"
+						   "%Alphabet-auto\n"
+						   "q symbol | other_symbol & (\"(r,s)\" | r | s)\n"
+						   "r !b & ! c & (\"(r,s)\")\n";
+
+		parsed = parse_mf(file);
+		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		REQUIRE(auts.size() == 1);
+		const mata::IntermediateAut& aut = auts.back();
+		REQUIRE(aut.transitions.size() == 2);
+		REQUIRE(aut.transitions.front().first.name == "q");
+		REQUIRE(aut.transitions.front().first.is_operand());
+		REQUIRE(aut.transitions.front().second.node.is_operator());
+		REQUIRE(aut.transitions.front().second.node.name == "|");
+		REQUIRE(aut.transitions.front().second.children.size() == 2);
+		REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+		REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+		REQUIRE(aut.transitions.front().second.children.front().children.empty());
+		REQUIRE(aut.transitions.front().second.children[1].node.is_operator());
+		REQUIRE(aut.transitions.front().second.children[1].node.name == "&");
+		REQUIRE(aut.transitions.front().second.children[1].children.size() == 2);
+		REQUIRE(aut.transitions.front().second.children[1].children.front().node.is_operand());
+		REQUIRE(aut.transitions.front().second.children[1].children.front().node.name == "other_symbol");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].node.is_operator());
+		REQUIRE(aut.transitions.front().second.children[1].children[1].node.name == "|");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().node.name == "|");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].children[1].node.name == "s");
+		REQUIRE(
+			aut.transitions.front().second.children[1].children[1].children.front().children.front().node.name ==
+			"(r,s)"
+		);
+		REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children[1].node.name == "r");
+
+		REQUIRE(aut.transitions[1].first.name == "r");
+		REQUIRE(aut.transitions[1].first.is_operand());
+		REQUIRE(aut.transitions[1].second.node.is_operator());
+		REQUIRE(aut.transitions[1].second.node.name == "&");
+		REQUIRE(aut.transitions[1].second.children.size() == 2);
+		REQUIRE(aut.transitions[1].second.children.front().node.is_operator());
+		REQUIRE(aut.transitions[1].second.children.front().node.name == "!");
+		REQUIRE(aut.transitions[1].second.children.front().children.front().node.name == "b");
+		REQUIRE(aut.transitions[1].second.children[1].node.is_operator());
+		REQUIRE(aut.transitions[1].second.children[1].node.name == "&");
+		REQUIRE(aut.transitions[1].second.children[1].children.size() == 2);
+	}
+
+	SECTION("AFA explicit two automatic naming") {
+		std::string file = "@AFA-explicit\n"
+						   "%States-auto\n"
+						   "%Alphabet-auto\n"
+						   "r !b & ! c & d\n";
+
+		bool exception = false;
+		try {
+			parsed = parse_mf(file);
+			std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		} catch (std::exception& e) { exception = true; }
+
+		REQUIRE(exception);
+	}
+
+	SECTION("AFA explicit correct automatic naming") {
+		std::string file = "@AFA-explicit\n"
+						   "%States-marked\n"
+						   "%Alphabet-enum a b\n"
+						   "q1 a & !q2 & b\n";
+
+		parsed = parse_mf(file);
+		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		const mata::IntermediateAut aut = auts[0];
+		REQUIRE(aut.transitions.front().first.name == "1");
+		REQUIRE(aut.transitions.front().first.raw == "q1");
+	}
+
+	SECTION("AFA explicit correct automatic naming - parentheses") {
+		std::string file = "@AFA-explicit\n"
+						   "%States-marked\n"
+						   "%Alphabet-enum a b c\n"
+						   "q1 ((a & !q2) & b) | c\n";
+
+		parsed = parse_mf(file);
+		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		const mata::IntermediateAut aut = auts[0];
+		REQUIRE(aut.transitions.front().first.name == "1");
+		REQUIRE(aut.transitions.front().first.raw == "q1");
+	}
+
+	SECTION("AFA explicit non existing symbol error") {
+		std::string file = "@AFA-explicit\n"
+						   "%States-marked\n"
+						   "%Alphabet-enum a b\n"
+						   "q1 a & !q2 & c\n";
+
+		bool exception = false;
+		parsed = parse_mf(file);
+		try {
+			mata::IntermediateAut::parse_from_mf(parsed);
+		} catch (const std::runtime_error& e) { exception = true; }
+
+		REQUIRE(exception);
+	}
+} // parse_mf }}}
+
+TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)") { // {{{
+	SECTION("aux") { WARN_PRINT("Insufficient testing of mata::Parser::ParsedSection::operator<<(ostream&)"); }
 
 } // }}}

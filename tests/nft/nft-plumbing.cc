@@ -56,66 +56,66 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 // }}}
 
 TEST_CASE("Mata::nft::Plumbing") {
-    mata::nft::Nft lhs{};
-    mata::nft::Nft rhs{};
-    mata::nft::Nft result{};
-    OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b", "c" } };
+	mata::nft::Nft lhs{};
+	mata::nft::Nft rhs{};
+	mata::nft::Nft result{};
+	OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b", "c"}};
 
-    SECTION("Mata::nft::Plumbing::concatenate") {
-        FILL_WITH_AUT_A(lhs);
-        FILL_WITH_AUT_B(lhs);
-        mata::nft::plumbing::concatenate(&result, lhs, rhs);
-        CHECK(result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::concatenate") {
+		FILL_WITH_AUT_A(lhs);
+		FILL_WITH_AUT_B(lhs);
+		mata::nft::plumbing::concatenate(&result, lhs, rhs);
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::intersection") {
-        FILL_WITH_AUT_A(lhs);
-        FILL_WITH_AUT_B(lhs);
-        mata::nft::plumbing::intersection(&result, lhs, rhs);
-        CHECK(result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::intersection") {
+		FILL_WITH_AUT_A(lhs);
+		FILL_WITH_AUT_B(lhs);
+		mata::nft::plumbing::intersection(&result, lhs, rhs);
+		CHECK(result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::union_nondet") {
-        FILL_WITH_AUT_A(lhs);
-        FILL_WITH_AUT_B(lhs);
-        mata::nft::plumbing::union_nondet(&result, lhs, rhs);
-        CHECK(!result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::union_nondet") {
+		FILL_WITH_AUT_A(lhs);
+		FILL_WITH_AUT_B(lhs);
+		mata::nft::plumbing::union_nondet(&result, lhs, rhs);
+		CHECK(!result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::remove_epsilon") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nft::plumbing::remove_epsilon(&result, lhs);
-        CHECK(!result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::remove_epsilon") {
+		FILL_WITH_AUT_A(lhs);
+		mata::nft::plumbing::remove_epsilon(&result, lhs);
+		CHECK(!result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::revert") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nft::plumbing::revert(&result, lhs);
-        CHECK(!result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::revert") {
+		FILL_WITH_AUT_A(lhs);
+		mata::nft::plumbing::revert(&result, lhs);
+		CHECK(!result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::reduce") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nft::plumbing::reduce(&result, lhs);
-        CHECK(!result.is_lang_empty());
-        CHECK(result.num_of_states() <= lhs.num_of_states());
-    }
+	SECTION("Mata::nft::Plumbing::reduce") {
+		FILL_WITH_AUT_A(lhs);
+		mata::nft::plumbing::reduce(&result, lhs);
+		CHECK(!result.is_lang_empty());
+		CHECK(result.num_of_states() <= lhs.num_of_states());
+	}
 
-    SECTION("Mata::nft::Plumbing::determinize") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nft::plumbing::determinize(&result, lhs);
-        CHECK(!result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::determinize") {
+		FILL_WITH_AUT_A(lhs);
+		mata::nft::plumbing::determinize(&result, lhs);
+		CHECK(!result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::minimize") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nft::plumbing::minimize(&result, lhs);
-        CHECK(!result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::minimize") {
+		FILL_WITH_AUT_A(lhs);
+		mata::nft::plumbing::minimize(&result, lhs);
+		CHECK(!result.is_lang_empty());
+	}
 
-    SECTION("Mata::nft::Plumbing::complement") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nft::plumbing::complement(&result, lhs, alph);
-        CHECK(!result.is_lang_empty());
-    }
+	SECTION("Mata::nft::Plumbing::complement") {
+		FILL_WITH_AUT_A(lhs);
+		mata::nft::plumbing::complement(&result, lhs, alph);
+		CHECK(!result.is_lang_empty());
+	}
 }

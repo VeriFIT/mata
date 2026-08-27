@@ -37,6075 +37,6006 @@ using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 TEST_CASE("mata::nft::Nft()") {
-    Nft nft{};
-    nft.levels.resize(3);
-    nft.levels.num_of_levels = 5;
-    CHECK(nft.levels.num_of_levels == 5);
-    CHECK(nft.levels.size() == 3);
-    nft.levels[0] = 0;
-    nft.levels[1] = 3;
-    nft.levels[2] = 1;
-    CHECK(nft.levels[2] == 1);
-    CHECK(nft.levels == std::vector<Level>{ 0, 3, 1 });
+	Nft nft{};
+	nft.levels.resize(3);
+	nft.levels.num_of_levels = 5;
+	CHECK(nft.levels.num_of_levels == 5);
+	CHECK(nft.levels.size() == 3);
+	nft.levels[0] = 0;
+	nft.levels[1] = 3;
+	nft.levels[2] = 1;
+	CHECK(nft.levels[2] == 1);
+	CHECK(nft.levels == std::vector<Level>{0, 3, 1});
 }
 
 TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
-    auto shared_alphabet = std::make_shared<IntAlphabet>();
-    auto input_alphabet = std::make_shared<IntAlphabet>();
-    auto output_alphabet = std::make_shared<IntAlphabet>();
-    auto split_alphabets = std::make_shared<AlphabetLevels>(
-        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ input_alphabet, output_alphabet } });
+	auto shared_alphabet = std::make_shared<IntAlphabet>();
+	auto input_alphabet = std::make_shared<IntAlphabet>();
+	auto output_alphabet = std::make_shared<IntAlphabet>();
+	auto split_alphabets = std::make_shared<AlphabetLevels>(
+		AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{input_alphabet, output_alphabet}}
+	);
 
-    SECTION("a shared alphabet is wrapped via AlphabetLevels(Alphabet*) by the caller") {
-        auto shared_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, shared_alphabets };
+	SECTION("a shared alphabet is wrapped via AlphabetLevels(Alphabet*) by the caller") {
+		auto shared_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{shared_alphabet});
+		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, shared_alphabets};
 
-        CHECK(nft.alphabet == nullptr);
-        REQUIRE(nft.alphabets == shared_alphabets);
-        CHECK(&nft.alphabets->for_level(0) == shared_alphabet.get());
-        CHECK(&nft.alphabets->for_level(7) == shared_alphabet.get());
-    }
+		CHECK(nft.alphabet == nullptr);
+		REQUIRE(nft.alphabets == shared_alphabets);
+		CHECK(&nft.alphabets->for_level(0) == shared_alphabet.get());
+		CHECK(&nft.alphabets->for_level(7) == shared_alphabet.get());
+	}
 
-    SECTION("per-level alphabets are stored in the alphabets member") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, split_alphabets };
+	SECTION("per-level alphabets are stored in the alphabets member") {
+		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, split_alphabets};
 
-        REQUIRE(nft.alphabets == split_alphabets);
-        CHECK(nft.alphabet == nullptr);
-        CHECK(&nft.alphabets->for_level(0) == input_alphabet.get());
-        CHECK(&nft.alphabets->for_level(1) == output_alphabet.get());
-    }
+		REQUIRE(nft.alphabets == split_alphabets);
+		CHECK(nft.alphabet == nullptr);
+		CHECK(&nft.alphabets->for_level(0) == input_alphabet.get());
+		CHECK(&nft.alphabets->for_level(1) == output_alphabet.get());
+	}
 
-    SECTION("level-aware translation routes to the right underlying alphabet") {
-        Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, split_alphabets };
+	SECTION("level-aware translation routes to the right underlying alphabet") {
+		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, split_alphabets};
 
-        CHECK_NOTHROW(nft.alphabets->translate_symb("1", 0));
-        CHECK_NOTHROW(nft.alphabets->translate_symb("1", 1));
-        CHECK(nft.alphabets->reverse_translate_symbol(1, 0) == "1");
-        CHECK(nft.alphabets->reverse_translate_symbol(1, 1) == "1");
-    }
+		CHECK_NOTHROW(nft.alphabets->translate_symb("1", 0));
+		CHECK_NOTHROW(nft.alphabets->translate_symb("1", 1));
+		CHECK(nft.alphabets->reverse_translate_symbol(1, 0) == "1");
+		CHECK(nft.alphabets->reverse_translate_symbol(1, 1) == "1");
+	}
 
-    SECTION("level-aware complement uses the selected level") {
-        auto input_symbols = std::make_shared<EnumAlphabet>(EnumAlphabet{ 1, 2, 3 });
-        auto output_symbols = std::make_shared<EnumAlphabet>(EnumAlphabet{ 2, 4 });
-        AlphabetLevels complement_alphabets{ std::vector<std::shared_ptr<Alphabet>>{ input_symbols, output_symbols } };
+	SECTION("level-aware complement uses the selected level") {
+		auto input_symbols = std::make_shared<EnumAlphabet>(EnumAlphabet{1, 2, 3});
+		auto output_symbols = std::make_shared<EnumAlphabet>(EnumAlphabet{2, 4});
+		AlphabetLevels complement_alphabets{std::vector<std::shared_ptr<Alphabet>>{input_symbols, output_symbols}};
 
-        CHECK(complement_alphabets.get_alphabet_symbols(0) == OrdVector<Symbol>{ 1, 2, 3 });
-        CHECK(complement_alphabets.get_alphabet_symbols(1) == OrdVector<Symbol>{ 2, 4 });
-        CHECK(complement_alphabets.get_complement({ 2 }, 0) == OrdVector<Symbol>{ 1, 3 });
-        CHECK(complement_alphabets.get_complement({ 2 }, 1) == OrdVector<Symbol>{ 4 });
-    }
+		CHECK(complement_alphabets.get_alphabet_symbols(0) == OrdVector<Symbol>{1, 2, 3});
+		CHECK(complement_alphabets.get_alphabet_symbols(1) == OrdVector<Symbol>{2, 4});
+		CHECK(complement_alphabets.get_complement({2}, 0) == OrdVector<Symbol>{1, 3});
+		CHECK(complement_alphabets.get_complement({2}, 1) == OrdVector<Symbol>{4});
+	}
 
-    SECTION("level-aware empty and clear use the selected level") {
-        auto input_symbols = std::make_shared<OnTheFlyAlphabet>();
-        auto output_symbols = std::make_shared<OnTheFlyAlphabet>();
-        input_symbols->add_new_symbol("a");
-        output_symbols->add_new_symbol("b");
-        AlphabetLevels mutable_alphabets{ std::vector<std::shared_ptr<Alphabet>>{ input_symbols, output_symbols } };
+	SECTION("level-aware empty and clear use the selected level") {
+		auto input_symbols = std::make_shared<OnTheFlyAlphabet>();
+		auto output_symbols = std::make_shared<OnTheFlyAlphabet>();
+		input_symbols->add_new_symbol("a");
+		output_symbols->add_new_symbol("b");
+		AlphabetLevels mutable_alphabets{std::vector<std::shared_ptr<Alphabet>>{input_symbols, output_symbols}};
 
-        CHECK_FALSE(mutable_alphabets.empty(0));
-        CHECK_FALSE(mutable_alphabets.empty(1));
+		CHECK_FALSE(mutable_alphabets.empty(0));
+		CHECK_FALSE(mutable_alphabets.empty(1));
 
-        mutable_alphabets.clear(0);
-        CHECK(input_symbols->empty());
-        CHECK_FALSE(output_symbols->empty());
-        CHECK(mutable_alphabets.empty(0));
-        CHECK_FALSE(mutable_alphabets.empty(1));
-    }
+		mutable_alphabets.clear(0);
+		CHECK(input_symbols->empty());
+		CHECK_FALSE(output_symbols->empty());
+		CHECK(mutable_alphabets.empty(0));
+		CHECK_FALSE(mutable_alphabets.empty(1));
+	}
 }
 
 TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly") {
-    auto base = std::make_shared<IntAlphabet>();
-    AlphabetLevels uniform{ base };
+	auto base = std::make_shared<IntAlphabet>();
+	AlphabetLevels uniform{base};
 
-    CHECK(&uniform.for_level(0) == base.get());
-    CHECK(&uniform.for_level(7) == base.get());
-    CHECK(uniform.translate_symb("3", 0) == 3);
-    CHECK(uniform.translate_symb("3", 5) == 3);
-    CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
+	CHECK(&uniform.for_level(0) == base.get());
+	CHECK(&uniform.for_level(7) == base.get());
+	CHECK(uniform.translate_symb("3", 0) == 3);
+	CHECK(uniform.translate_symb("3", 5) == 3);
+	CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
 }
 
 TEST_CASE("mata::AlphabetLevels::erase()") {
-    auto a0 = std::make_shared<IntAlphabet>();
-    auto a1 = std::make_shared<IntAlphabet>();
-    auto a2 = std::make_shared<IntAlphabet>();
+	auto a0 = std::make_shared<IntAlphabet>();
+	auto a1 = std::make_shared<IntAlphabet>();
+	auto a2 = std::make_shared<IntAlphabet>();
 
-    SECTION("erase a single position") {
-        AlphabetLevels alphabets{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } };
-        alphabets.erase(alphabets.begin() + 1);
-        REQUIRE(alphabets.size() == 2);
-        CHECK(&alphabets.for_level(0) == a0.get());
-        CHECK(&alphabets.for_level(1) == a2.get());
-    }
+	SECTION("erase a single position") {
+		AlphabetLevels alphabets{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}};
+		alphabets.erase(alphabets.begin() + 1);
+		REQUIRE(alphabets.size() == 2);
+		CHECK(&alphabets.for_level(0) == a0.get());
+		CHECK(&alphabets.for_level(1) == a2.get());
+	}
 
-    SECTION("erase a range") {
-        AlphabetLevels alphabets{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } };
-        alphabets.erase(alphabets.begin(), alphabets.begin() + 2);
-        REQUIRE(alphabets.size() == 1);
-        CHECK(&alphabets.for_level(0) == a2.get());
-    }
+	SECTION("erase a range") {
+		AlphabetLevels alphabets{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}};
+		alphabets.erase(alphabets.begin(), alphabets.begin() + 2);
+		REQUIRE(alphabets.size() == 1);
+		CHECK(&alphabets.for_level(0) == a2.get());
+	}
 
-    SECTION("erasing the only alphabet in Global mode empties it") {
-        AlphabetLevels alphabets{ a0 };
-        REQUIRE(alphabets.mode() == AlphabetLevels::Mode::Global);
-        alphabets.erase(alphabets.begin());
-        CHECK(alphabets.size() == 0);
-    }
+	SECTION("erasing the only alphabet in Global mode empties it") {
+		AlphabetLevels alphabets{a0};
+		REQUIRE(alphabets.mode() == AlphabetLevels::Mode::Global);
+		alphabets.erase(alphabets.begin());
+		CHECK(alphabets.size() == 0);
+	}
 }
 
 TEST_CASE("mata::nft::Nft copying/plumbing shares the AlphabetLevels container, not just its alphabets") {
-    auto a0 = std::make_shared<IntAlphabet>();
-    auto a1 = std::make_shared<IntAlphabet>();
-    auto alphabets = std::make_shared<AlphabetLevels>(
-        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1 } });
-    Nft nft{ 2, { 0 }, { 1 }, Levels{ 2, { 0, 1 } }, alphabets };
+	auto a0 = std::make_shared<IntAlphabet>();
+	auto a1 = std::make_shared<IntAlphabet>();
+	auto alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{a0, a1}});
+	Nft nft{2, {0}, {1}, Levels{2, {0, 1}}, alphabets};
 
-    SECTION("copy construction shares the exact same AlphabetLevels instance") {
-        Nft copy{ nft };
-        // Not just equivalent contents: the very same shared_ptr, since nothing about the level structure changed.
-        CHECK(copy.alphabets == nft.alphabets);
-        CHECK(alphabets.use_count() == 3); // local `alphabets` + nft.alphabets + copy.alphabets.
-    }
+	SECTION("copy construction shares the exact same AlphabetLevels instance") {
+		Nft copy{nft};
+		// Not just equivalent contents: the very same shared_ptr, since nothing about the level structure changed.
+		CHECK(copy.alphabets == nft.alphabets);
+		CHECK(alphabets.use_count() == 3); // local `alphabets` + nft.alphabets + copy.alphabets.
+	}
 
-    SECTION("copy assignment shares the exact same AlphabetLevels instance") {
-        Nft copy;
-        copy = nft;
-        CHECK(copy.alphabets == nft.alphabets);
-    }
+	SECTION("copy assignment shares the exact same AlphabetLevels instance") {
+		Nft copy;
+		copy = nft;
+		CHECK(copy.alphabets == nft.alphabets);
+	}
 }
 
 TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
-    auto input_alphabet = std::make_shared<IntAlphabet>();
-    auto output_alphabet = std::make_shared<IntAlphabet>();
+	auto input_alphabet = std::make_shared<IntAlphabet>();
+	auto output_alphabet = std::make_shared<IntAlphabet>();
 
-    auto alphabets = std::make_shared<AlphabetLevels>(
-        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ input_alphabet, output_alphabet } });
+	auto alphabets = std::make_shared<AlphabetLevels>(
+		AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{input_alphabet, output_alphabet}}
+	);
 
-    Nft nft{ 3, { 0 }, { 2 }, Levels{ 2, { 0, 1, 0 } }, alphabets };
-    nft.delta.add(0, 1, 1);
-    nft.delta.add(1, 2, 2);
+	Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, alphabets};
+	nft.delta.add(0, 1, 1);
+	nft.delta.add(1, 2, 2);
 
-    Nft determinized = determinize(nft);
+	Nft determinized = determinize(nft);
 
-    REQUIRE(determinized.alphabets == alphabets);
-    REQUIRE(determinized.alphabet == nullptr);
-    CHECK(&determinized.alphabets->for_level(0) == input_alphabet.get());
-    CHECK(&determinized.alphabets->for_level(1) == output_alphabet.get());
+	REQUIRE(determinized.alphabets == alphabets);
+	REQUIRE(determinized.alphabet == nullptr);
+	CHECK(&determinized.alphabets->for_level(0) == input_alphabet.get());
+	CHECK(&determinized.alphabets->for_level(1) == output_alphabet.get());
 }
 
 TEST_CASE("mata::nft::size()") {
-    Nft nft{};
-    CHECK(nft.num_of_states() == 0);
+	Nft nft{};
+	CHECK(nft.num_of_states() == 0);
 
-    nft.add_state(3);
-    CHECK(nft.num_of_states() == 4);
+	nft.add_state(3);
+	CHECK(nft.num_of_states() == 4);
 
-    nft.clear();
-    nft.add_state();
-    CHECK(nft.num_of_states() == 1);
+	nft.clear();
+	nft.add_state();
+	CHECK(nft.num_of_states() == 1);
 
-    nft.clear();
-    FILL_WITH_AUT_A(nft);
-    CHECK(nft.num_of_states() == 11);
+	nft.clear();
+	FILL_WITH_AUT_A(nft);
+	CHECK(nft.num_of_states() == 11);
 
-    nft.clear();
-    FILL_WITH_AUT_B(nft);
-    CHECK(nft.num_of_states() == 15);
+	nft.clear();
+	FILL_WITH_AUT_B(nft);
+	CHECK(nft.num_of_states() == 15);
 
-    nft = Nft{ 0, {}, {} };
-    CHECK(nft.num_of_states() == 0);
+	nft = Nft{0, {}, {}};
+	CHECK(nft.num_of_states() == 0);
 }
 
 TEST_CASE("mata::nft::Trans::operator<<") {
-    Transition trans(1, 2, 3);
-    REQUIRE(std::to_string(trans) == "(1, 2, 3)");
+	Transition trans(1, 2, 3);
+	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
 }
 
 TEST_CASE("mata::nft::create_alphabet()") {
-    Nft a{ 1 };
-    a.delta.add(0, 'a', 0);
+	Nft a{1};
+	a.delta.add(0, 'a', 0);
 
-    Nft b{ 1 };
-    b.delta.add(0, 'b', 0);
-    b.delta.add(0, 'a', 0);
-    Nft c{ 1 };
-    b.delta.add(0, 'c', 0);
+	Nft b{1};
+	b.delta.add(0, 'b', 0);
+	b.delta.add(0, 'a', 0);
+	Nft c{1};
+	b.delta.add(0, 'c', 0);
 
-    auto alphabet{ create_alphabet(a, b, c) };
+	auto alphabet{create_alphabet(a, b, c)};
 
-    auto symbols{ alphabet.get_alphabet_symbols() };
-    CHECK(symbols == mata::utils::OrdVector<Symbol>{ 'c', 'b', 'a' });
+	auto symbols{alphabet.get_alphabet_symbols()};
+	CHECK(symbols == mata::utils::OrdVector<Symbol>{'c', 'b', 'a'});
 
-    // create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
-    // create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
+	// create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
+	// create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
 TEST_CASE("mata::nft::Nft::delta.add()/delta.contains()") { // {{{
-    Nft a(3);
+	Nft a(3);
 
-    SECTION("Empty automata have now transitions") { REQUIRE(!a.delta.contains(1, 'a', 1)); }
+	SECTION("Empty automata have now transitions") { REQUIRE(!a.delta.contains(1, 'a', 1)); }
 
-    SECTION("If I add a transition, it is in the automaton") {
-        a.delta.add(1, 'a', 1);
+	SECTION("If I add a transition, it is in the automaton") {
+		a.delta.add(1, 'a', 1);
 
-        REQUIRE(a.delta.contains(1, 'a', 1));
-    }
+		REQUIRE(a.delta.contains(1, 'a', 1));
+	}
 
-    SECTION("If I add a transition, only it is added") {
-        a.delta.add(1, 'a', 1);
+	SECTION("If I add a transition, only it is added") {
+		a.delta.add(1, 'a', 1);
 
-        REQUIRE(a.delta.contains(1, 'a', 1));
-        REQUIRE(!a.delta.contains(1, 'a', 2));
-        REQUIRE(!a.delta.contains(1, 'b', 2));
-        REQUIRE(!a.delta.contains(2, 'a', 1));
-    }
+		REQUIRE(a.delta.contains(1, 'a', 1));
+		REQUIRE(!a.delta.contains(1, 'a', 2));
+		REQUIRE(!a.delta.contains(1, 'b', 2));
+		REQUIRE(!a.delta.contains(2, 'a', 1));
+	}
 
-    SECTION("Adding multiple transitions") {
-        a.delta.add(2, 'b', { 2, 1, 0 });
-        REQUIRE(a.delta.contains(2, 'b', 0));
-        REQUIRE(a.delta.contains(2, 'b', 1));
-        REQUIRE(a.delta.contains(2, 'b', 2));
-        REQUIRE(!a.delta.contains(0, 'b', 0));
+	SECTION("Adding multiple transitions") {
+		a.delta.add(2, 'b', {2, 1, 0});
+		REQUIRE(a.delta.contains(2, 'b', 0));
+		REQUIRE(a.delta.contains(2, 'b', 1));
+		REQUIRE(a.delta.contains(2, 'b', 2));
+		REQUIRE(!a.delta.contains(0, 'b', 0));
 
-        a.delta.add(0, 'b', StateSet({ 0 }));
-        REQUIRE(a.delta.contains(0, 'b', 0));
-    }
+		a.delta.add(0, 'b', StateSet({0}));
+		REQUIRE(a.delta.contains(0, 'b', 0));
+	}
 
-    SECTION("Iterating over transitions") {
-        Transition t1{ 0, 0, 0 };
-        Transition t2{ 0, 1, 0 };
-        Transition t3{ 1, 1, 1 };
-        Transition t4{ 2, 2, 2 };
-        a.delta.add(t1);
-        a.delta.add(t2);
-        a.delta.add(t3);
-        a.delta.add(t4);
-        a.delta.add(t3);
-        size_t transitions_cnt{ 0 };
-        std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
-        std::vector<Transition> iterated_transitions{};
-        const Delta::Transitions transitions{ a.delta.transitions() };
-        const Delta::Transitions::const_iterator transitions_end{ transitions.end() };
-        for (Delta::Transitions::const_iterator trans_it{ transitions.begin() }; trans_it != transitions_end; ++
-             trans_it) {
-            iterated_transitions.push_back(*trans_it);
-            ++transitions_cnt;
-        }
-        CHECK(transitions_cnt == 4);
-        CHECK(expected_transitions == iterated_transitions);
+	SECTION("Iterating over transitions") {
+		Transition t1{0, 0, 0};
+		Transition t2{0, 1, 0};
+		Transition t3{1, 1, 1};
+		Transition t4{2, 2, 2};
+		a.delta.add(t1);
+		a.delta.add(t2);
+		a.delta.add(t3);
+		a.delta.add(t4);
+		a.delta.add(t3);
+		size_t transitions_cnt{0};
+		std::vector<Transition> expected_transitions{t1, t2, t3, t4};
+		std::vector<Transition> iterated_transitions{};
+		const Delta::Transitions transitions{a.delta.transitions()};
+		const Delta::Transitions::const_iterator transitions_end{transitions.end()};
+		for (Delta::Transitions::const_iterator trans_it{transitions.begin()}; trans_it != transitions_end;
+			 ++trans_it) {
+			iterated_transitions.push_back(*trans_it);
+			++transitions_cnt;
+		}
+		CHECK(transitions_cnt == 4);
+		CHECK(expected_transitions == iterated_transitions);
 
-        transitions_cnt = 0;
-        iterated_transitions.clear();
-        for (const Transition& trans : a.delta.transitions()) {
-            iterated_transitions.push_back(trans);
-            ++transitions_cnt;
-        }
-        CHECK(transitions_cnt == 4);
-        CHECK(expected_transitions == iterated_transitions);
-    }
+		transitions_cnt = 0;
+		iterated_transitions.clear();
+		for (const Transition& trans : a.delta.transitions()) {
+			iterated_transitions.push_back(trans);
+			++transitions_cnt;
+		}
+		CHECK(transitions_cnt == 4);
+		CHECK(expected_transitions == iterated_transitions);
+	}
 } // }}}
 
 TEST_CASE("mata::nft::Delta.transform/append") { // {{{
-    Nft a(3);
-    a.delta.add(1, 'a', 1);
-    a.delta.add(2, 'b', { 2, 1, 0 });
+	Nft a(3);
+	a.delta.add(1, 'a', 1);
+	a.delta.add(2, 'b', {2, 1, 0});
 
-    SECTION("transform") {
-        auto upd_fnc = [&](State st) { return st + 5; };
-        std::vector<StatePost> state_posts = a.delta.renumber_targets(upd_fnc);
-        a.delta.append(state_posts);
+	SECTION("transform") {
+		auto upd_fnc = [&](State st) { return st + 5; };
+		std::vector<StatePost> state_posts = a.delta.renumber_targets(upd_fnc);
+		a.delta.append(state_posts);
 
-        REQUIRE(a.delta.contains(4, 'a', 6));
-        REQUIRE(a.delta.contains(5, 'b', 7));
-        REQUIRE(a.delta.contains(5, 'b', 5));
-        REQUIRE(a.delta.contains(5, 'b', 6));
-    }
+		REQUIRE(a.delta.contains(4, 'a', 6));
+		REQUIRE(a.delta.contains(5, 'b', 7));
+		REQUIRE(a.delta.contains(5, 'b', 5));
+		REQUIRE(a.delta.contains(5, 'b', 6));
+	}
 } // }}}
 
 TEST_CASE("mata::nft::is_lang_empty()") { // {{{
-    Nft aut(14);
-    Run cex;
+	Nft aut(14);
+	Run cex;
 
-    SECTION("An empty automaton has an empty language") { REQUIRE(aut.is_lang_empty()); }
+	SECTION("An empty automaton has an empty language") { REQUIRE(aut.is_lang_empty()); }
 
-    SECTION("An automaton with a state that is both initial and final does not have an empty language") {
-        aut.initial = { 1, 2 };
-        aut.final = { 2, 3 };
+	SECTION("An automaton with a state that is both initial and final does not have an empty language") {
+		aut.initial = {1, 2};
+		aut.final = {2, 3};
 
-        bool is_empty = aut.is_lang_empty(&cex);
-        REQUIRE(!is_empty);
-    }
+		bool is_empty = aut.is_lang_empty(&cex);
+		REQUIRE(!is_empty);
+	}
 
-    SECTION("More complicated automaton") {
-        aut.initial = { 1, 2 };
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'a', 3);
-        aut.delta.add(1, 'b', 4);
-        aut.delta.add(2, 'a', 2);
-        aut.delta.add(2, 'a', 3);
-        aut.delta.add(2, 'b', 4);
-        aut.delta.add(3, 'b', 4);
-        aut.delta.add(3, 'c', 7);
-        aut.delta.add(3, 'b', 2);
-        aut.delta.add(7, 'a', 8);
+	SECTION("More complicated automaton") {
+		aut.initial = {1, 2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(1, 'b', 4);
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 4);
+		aut.delta.add(3, 'c', 7);
+		aut.delta.add(3, 'b', 2);
+		aut.delta.add(7, 'a', 8);
 
-        SECTION("with final states") {
-            aut.final = { 7 };
-            REQUIRE(!aut.is_lang_empty());
-        }
+		SECTION("with final states") {
+			aut.final = {7};
+			REQUIRE(!aut.is_lang_empty());
+		}
 
-        SECTION("without final states") { REQUIRE(aut.is_lang_empty()); }
+		SECTION("without final states") { REQUIRE(aut.is_lang_empty()); }
 
-        SECTION("another complicated automaton") {
-            FILL_WITH_AUT_A(aut);
+		SECTION("another complicated automaton") {
+			FILL_WITH_AUT_A(aut);
 
-            REQUIRE(!aut.is_lang_empty());
-        }
+			REQUIRE(!aut.is_lang_empty());
+		}
 
-        SECTION("a complicated automaton with unreachable final states") {
-            FILL_WITH_AUT_A(aut);
-            aut.final = { 13 };
+		SECTION("a complicated automaton with unreachable final states") {
+			FILL_WITH_AUT_A(aut);
+			aut.final = {13};
 
-            REQUIRE(aut.is_lang_empty());
-        }
-    }
+			REQUIRE(aut.is_lang_empty());
+		}
+	}
 
-    SECTION("An automaton with a state that is both initial and final does not have an empty language") {
-        aut.initial = { 1, 2 };
-        aut.final = { 2, 3 };
+	SECTION("An automaton with a state that is both initial and final does not have an empty language") {
+		aut.initial = {1, 2};
+		aut.final = {2, 3};
 
-        bool is_empty = aut.is_lang_empty(&cex);
-        REQUIRE(!is_empty);
+		bool is_empty = aut.is_lang_empty(&cex);
+		REQUIRE(!is_empty);
 
-        // check the counterexample
-        REQUIRE(cex.path.size() == 1);
-        REQUIRE(cex.path[0] == 2);
-    }
+		// check the counterexample
+		REQUIRE(cex.path.size() == 1);
+		REQUIRE(cex.path[0] == 2);
+	}
 
-    SECTION("Counterexample of an automaton with non-empty language") {
-        aut.initial = { 1, 2 };
-        aut.final = { 8, 9 };
-        aut.delta.add(1, 'c', 2);
-        aut.delta.add(2, 'a', 4);
-        aut.delta.add(2, 'c', 1);
-        aut.delta.add(2, 'c', 3);
-        aut.delta.add(3, 'e', 5);
-        aut.delta.add(4, 'c', 8);
+	SECTION("Counterexample of an automaton with non-empty language") {
+		aut.initial = {1, 2};
+		aut.final = {8, 9};
+		aut.delta.add(1, 'c', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(2, 'c', 1);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'e', 5);
+		aut.delta.add(4, 'c', 8);
 
-        bool is_empty = aut.is_lang_empty(&cex);
-        REQUIRE(!is_empty);
+		bool is_empty = aut.is_lang_empty(&cex);
+		REQUIRE(!is_empty);
 
-        // check the counterexample
-        REQUIRE(cex.path.size() == 3);
-        REQUIRE(cex.path[0] == 2);
-        REQUIRE(cex.path[1] == 4);
-        REQUIRE(cex.path[2] == 8);
-    }
+		// check the counterexample
+		REQUIRE(cex.path.size() == 3);
+		REQUIRE(cex.path[0] == 2);
+		REQUIRE(cex.path[1] == 4);
+		REQUIRE(cex.path[2] == 8);
+	}
 } // }}}
 
 TEST_CASE("mata::nft::is_acyclic") { // {{{
-    Nft aut(14);
+	Nft aut(14);
 
-    SECTION("An empty automaton is acyclic") { REQUIRE(aut.is_acyclic()); }
+	SECTION("An empty automaton is acyclic") { REQUIRE(aut.is_acyclic()); }
 
-    SECTION("An automaton with a state that is both initial and final is acyclic") {
-        aut.initial = { 1, 2 };
-        aut.final = { 2, 3 };
-        REQUIRE(aut.is_acyclic());
-    }
+	SECTION("An automaton with a state that is both initial and final is acyclic") {
+		aut.initial = {1, 2};
+		aut.final = {2, 3};
+		REQUIRE(aut.is_acyclic());
+	}
 
-    SECTION("More complicated automaton") {
-        aut.initial = { 1, 2 };
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'a', 3);
-        aut.delta.add(1, 'b', 4);
-        aut.delta.add(2, 'a', 3);
-        aut.delta.add(2, 'b', 4);
-        aut.delta.add(3, 'b', 4);
-        aut.delta.add(3, 'c', 7);
-        aut.delta.add(7, 'a', 8);
+	SECTION("More complicated automaton") {
+		aut.initial = {1, 2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(1, 'b', 4);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 4);
+		aut.delta.add(3, 'c', 7);
+		aut.delta.add(7, 'a', 8);
 
-        SECTION("without final states") { REQUIRE(aut.is_lang_empty()); }
-    }
+		SECTION("without final states") { REQUIRE(aut.is_lang_empty()); }
+	}
 
-    SECTION("Cyclic automaton") {
-        aut.initial = { 1, 2 };
-        aut.final = { 8, 9 };
-        aut.delta.add(1, 'c', 2);
-        aut.delta.add(2, 'a', 4);
-        aut.delta.add(2, 'c', 1);
-        aut.delta.add(2, 'c', 3);
-        aut.delta.add(3, 'e', 5);
-        aut.delta.add(4, 'c', 8);
-        REQUIRE(!aut.is_acyclic());
-    }
+	SECTION("Cyclic automaton") {
+		aut.initial = {1, 2};
+		aut.final = {8, 9};
+		aut.delta.add(1, 'c', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(2, 'c', 1);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'e', 5);
+		aut.delta.add(4, 'c', 8);
+		REQUIRE(!aut.is_acyclic());
+	}
 
-    SECTION("Automaton with self-loops") {
-        aut = Nft{ 2 };
-        aut.initial = { 0 };
-        aut.final = { 1 };
-        aut.delta.add(0, 'c', 1);
-        aut.delta.add(1, 'a', 1);
-        REQUIRE(!aut.is_acyclic());
-    }
+	SECTION("Automaton with self-loops") {
+		aut = Nft{2};
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, 'c', 1);
+		aut.delta.add(1, 'a', 1);
+		REQUIRE(!aut.is_acyclic());
+	}
 } // }}}
 
 TEST_CASE("mata::nft::get_word_for_path()") { // {{{
-    Nft aut{ 5 };
-    Run path;
-    Word word;
+	Nft aut{5};
+	Run path;
+	Word word;
 
-    SECTION("empty word") {
-        path = {};
+	SECTION("empty word") {
+		path = {};
 
-        auto word_bool_pair = aut.get_word_for_path(path);
-        REQUIRE(word_bool_pair.second);
-        REQUIRE(word_bool_pair.first.word.empty());
-    }
+		auto word_bool_pair = aut.get_word_for_path(path);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first.word.empty());
+	}
 
-    SECTION("empty word 2") {
-        aut.initial = { 1 };
-        path.path = { 1 };
+	SECTION("empty word 2") {
+		aut.initial = {1};
+		path.path = {1};
 
-        auto word_bool_pair = aut.get_word_for_path(path);
-        REQUIRE(word_bool_pair.second);
-        REQUIRE(word_bool_pair.first.word.empty());
-    }
+		auto word_bool_pair = aut.get_word_for_path(path);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first.word.empty());
+	}
 
-    SECTION("nonempty word") {
-        aut.initial = { 1 };
-        aut.delta.add(1, 'c', 2);
-        aut.delta.add(2, 'a', 4);
-        aut.delta.add(2, 'c', 1);
-        aut.delta.add(2, 'b', 3);
+	SECTION("nonempty word") {
+		aut.initial = {1};
+		aut.delta.add(1, 'c', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(2, 'c', 1);
+		aut.delta.add(2, 'b', 3);
 
-        path.path = { 1, 2, 3 };
+		path.path = {1, 2, 3};
 
-        auto word_bool_pair = aut.get_word_for_path(path);
-        REQUIRE(word_bool_pair.second);
-        REQUIRE(word_bool_pair.first.word == Word({'c', 'c', 'b', 'b'}));
-    }
+		auto word_bool_pair = aut.get_word_for_path(path);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first.word == Word({'c', 'c', 'b', 'b'}));
+	}
 
-    SECTION("longer word") {
-        aut.initial = { 1 };
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'c', 2);
-        aut.delta.add(2, 'a', 4);
-        aut.delta.add(2, 'c', 1);
-        aut.delta.add(2, 'b', 3);
-        aut.delta.add(3, 'd', 2);
+	SECTION("longer word") {
+		aut.initial = {1};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'c', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(2, 'c', 1);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, 'd', 2);
 
-        path.path = { 1, 2, 3, 2, 4 };
+		path.path = {1, 2, 3, 2, 4};
 
-        auto word_bool_pair = aut.get_word_for_path(path);
-        std::set<Word> possible(
-            {
-                Word({ 'c', 'c', 'b', 'b', 'd', 'd', 'a', 'a' }),
-                Word({ 'a', 'a', 'b', 'b', 'd', 'd', 'a', 'a' })
-            }
-        );
-        REQUIRE(word_bool_pair.second);
-        CHECK(haskey(possible, word_bool_pair.first.word));
-    }
+		auto word_bool_pair = aut.get_word_for_path(path);
+		std::set<Word> possible(
+			{Word({'c', 'c', 'b', 'b', 'd', 'd', 'a', 'a'}), Word({'a', 'a', 'b', 'b', 'd', 'd', 'a', 'a'})}
+		);
+		REQUIRE(word_bool_pair.second);
+		CHECK(haskey(possible, word_bool_pair.first.word));
+	}
 
-    SECTION("invalid path") {
-        aut.initial = { 1 };
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'c', 2);
-        aut.delta.add(2, 'a', 4);
-        aut.delta.add(2, 'c', 1);
-        aut.delta.add(2, 'b', 3);
-        aut.delta.add(3, 'd', 2);
+	SECTION("invalid path") {
+		aut.initial = {1};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'c', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(2, 'c', 1);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, 'd', 2);
 
-        path.path = { 1, 2, 3, 1, 2 };
+		path.path = {1, 2, 3, 1, 2};
 
-        auto word_bool_pair = aut.get_word_for_path(path);
-        REQUIRE(!word_bool_pair.second);
-    }
+		auto word_bool_pair = aut.get_word_for_path(path);
+		REQUIRE(!word_bool_pair.second);
+	}
 }
-
 
 TEST_CASE("mata::nft::is_lang_empty_cex()") {
-    Nft aut(10);
-    Run cex;
+	Nft aut(10);
+	Run cex;
 
-    SECTION("Counterexample of an automaton with non-empty language") {
-        aut.initial = { 1, 2 };
-        aut.final = { 8, 9 };
-        aut.delta.add(1, 'c', 2);
-        aut.delta.add(2, 'a', 4);
-        aut.delta.add(2, 'c', 1);
-        aut.delta.add(2, 'c', 3);
-        aut.delta.add(3, 'e', 5);
-        aut.delta.add(4, 'c', 8);
+	SECTION("Counterexample of an automaton with non-empty language") {
+		aut.initial = {1, 2};
+		aut.final = {8, 9};
+		aut.delta.add(1, 'c', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(2, 'c', 1);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'e', 5);
+		aut.delta.add(4, 'c', 8);
 
-        bool is_empty = aut.is_lang_empty(&cex);
-        REQUIRE(!is_empty);
+		bool is_empty = aut.is_lang_empty(&cex);
+		REQUIRE(!is_empty);
 
-        // check the counterexample
-        REQUIRE(cex.word.size() == 2);
-        REQUIRE(cex.word[0] == 'a');
-        REQUIRE(cex.word[1] == 'c');
-    }
+		// check the counterexample
+		REQUIRE(cex.word.size() == 2);
+		REQUIRE(cex.word[0] == 'a');
+		REQUIRE(cex.word[1] == 'c');
+	}
 }
 
-
 TEST_CASE("mata::nft::determinize()") {
-    Nft nft{ Nft::with_levels(3) };
-    Nft result;
-    std::unordered_map<StateSet, State> subset_map;
+	Nft nft{Nft::with_levels(3)};
+	Nft result;
+	std::unordered_map<StateSet, State> subset_map;
 
-    const auto CHECK_SHARED = [&] {
-        CHECK(result.initial.size() <= 1);
-        for (const auto& state_post : result.delta) {
-            for (const auto& [symbol, targets] : state_post) { CHECK(targets.size() == 1); }
-        }
-        CHECK(result.levels.num_of_levels == 3);
-        CHECK(are_equivalent(nft, result));
-        CHECK(result.num_of_states() == result.get_reachable_states().size());
-    };
+	const auto CHECK_SHARED = [&] {
+		CHECK(result.initial.size() <= 1);
+		for (const auto& state_post : result.delta) {
+			for (const auto& [symbol, targets] : state_post) { CHECK(targets.size() == 1); }
+		}
+		CHECK(result.levels.num_of_levels == 3);
+		CHECK(are_equivalent(nft, result));
+		CHECK(result.num_of_states() == result.get_reachable_states().size());
+	};
 
-    SECTION("empty automaton") {
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("empty automaton") {
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    SECTION("simple automaton 1") {
-        nft.initial = { 0 };
-        nft.final = { 0 };
-        nft.levels.set(std::vector<Level>{ 0 });
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("simple automaton 1") {
+		nft.initial = {0};
+		nft.final = {0};
+		nft.levels.set(std::vector<Level>{0});
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    SECTION("simple automaton 2") {
-        nft.initial = { 0 };
-        nft.final = { 1 };
-        nft.delta.add(0, 'a', 1);
-        nft.levels.set({ 0, 0 });
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("simple automaton 2") {
+		nft.initial = {0};
+		nft.final = {1};
+		nft.delta.add(0, 'a', 1);
+		nft.levels.set({0, 0});
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    SECTION("simple automaton with epsilons") {
-        nft.initial = { 0 };
-        nft.final = { 3, 4, 6 };
-        nft.levels.set({ 0, 1, 2, 0, 0, 2, 0 });
-        nft.delta.reserve(7);
-        nft.delta.add(0, EPSILON, 3);
-        nft.delta.add(0, EPSILON, 5);
-        nft.delta.add(5, EPSILON, 6);
-        nft.delta.add(0, EPSILON, 1);
-        nft.delta.add(1, EPSILON, 2);
-        nft.delta.add(2, EPSILON, 4);
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("simple automaton with epsilons") {
+		nft.initial = {0};
+		nft.final = {3, 4, 6};
+		nft.levels.set({0, 1, 2, 0, 0, 2, 0});
+		nft.delta.reserve(7);
+		nft.delta.add(0, EPSILON, 3);
+		nft.delta.add(0, EPSILON, 5);
+		nft.delta.add(5, EPSILON, 6);
+		nft.delta.add(0, EPSILON, 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, EPSILON, 4);
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    SECTION("simple automaton with epsilons 2") {
-        nft.initial = { 0 };
-        nft.final = { 3, 4, 6 };
-        nft.levels.set({ 0, 1, 2, 0, 0, 2, 0 });
-        nft.delta.reserve(7);
-        nft.delta.add(0, 'a', 3);
-        nft.delta.add(0, 'a', 5);
-        nft.delta.add(5, 'a', 6);
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'a', 2);
-        nft.delta.add(2, 'a', 4);
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("simple automaton with epsilons 2") {
+		nft.initial = {0};
+		nft.final = {3, 4, 6};
+		nft.levels.set({0, 1, 2, 0, 0, 2, 0});
+		nft.delta.reserve(7);
+		nft.delta.add(0, 'a', 3);
+		nft.delta.add(0, 'a', 5);
+		nft.delta.add(5, 'a', 6);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'a', 2);
+		nft.delta.add(2, 'a', 4);
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    SECTION("nft with loops") {
-        nft.initial = { 0 };
-        nft.final = { 3, 4 };
-        nft.levels.set({ 0, 2, 1, 0, 0 });
-        nft.delta.add(0, 'a', 2);
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(0, 'a', 0);
-        nft.delta.add(0, 'a', 4);
-        nft.delta.add(1, 'a', 0);
-        nft.delta.add(2, 'b', 3);
-        nft.delta.add(3, 'c', 3);
-        nft.delta.add(4, 'd', 4);
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("nft with loops") {
+		nft.initial = {0};
+		nft.final = {3, 4};
+		nft.levels.set({0, 2, 1, 0, 0});
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 0);
+		nft.delta.add(0, 'a', 4);
+		nft.delta.add(1, 'a', 0);
+		nft.delta.add(2, 'b', 3);
+		nft.delta.add(3, 'c', 3);
+		nft.delta.add(4, 'd', 4);
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    SECTION("simple automaton with symbols and epsilons") {
-        nft.initial = { 0 };
-        nft.final = { 3, 4, 6, 9, 10 };
-        nft.levels.set({ 0, 1, 2, 0, 0, 2, 0, 1, 2, 0, 0, 1 });
-        nft.delta.add(0, EPSILON, 3);
-        nft.delta.add(0, EPSILON, 5);
-        nft.delta.add(5, 'a', 6);
-        nft.delta.add(0, EPSILON, 1);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(2, 'c', 4);
-        nft.delta.add(0, EPSILON, 7);
-        nft.delta.add(7, EPSILON, 8);
-        nft.delta.add(8, 'a', 9);
-        nft.delta.add(9, 'd', 10);
-        nft.delta.add(0, 'e', 6);
-        nft.delta.add(9, 'f', 9);
-        nft.delta.add(9, 'g', 11);
-        nft.delta.add(11, 'g', 9);
-        result = determinize(nft, &subset_map);
-        CHECK_SHARED();
-    }
+	SECTION("simple automaton with symbols and epsilons") {
+		nft.initial = {0};
+		nft.final = {3, 4, 6, 9, 10};
+		nft.levels.set({0, 1, 2, 0, 0, 2, 0, 1, 2, 0, 0, 1});
+		nft.delta.add(0, EPSILON, 3);
+		nft.delta.add(0, EPSILON, 5);
+		nft.delta.add(5, 'a', 6);
+		nft.delta.add(0, EPSILON, 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'c', 4);
+		nft.delta.add(0, EPSILON, 7);
+		nft.delta.add(7, EPSILON, 8);
+		nft.delta.add(8, 'a', 9);
+		nft.delta.add(9, 'd', 10);
+		nft.delta.add(0, 'e', 6);
+		nft.delta.add(9, 'f', 9);
+		nft.delta.add(9, 'g', 11);
+		nft.delta.add(11, 'g', 9);
+		result = determinize(nft, &subset_map);
+		CHECK_SHARED();
+	}
 
-    // SECTION("This broke Delta when delta[q] could cause re-allocation of post")
-    // {
-    //     Nft x{};
-    //     x.initial.insert(0);
-    //     x.final.insert(4);
-    //     x.delta.add(0, 1, 3);
-    //     x.delta.add(3, 1, 3);
-    //     x.delta.add(3, 2, 3);
-    //     x.delta.add(3, 0, 1);
-    //     x.delta.add(1, 1, 1);
-    //     x.delta.add(1, 2, 1);
-    //     x.delta.add(1, 0, 2);
-    //     x.delta.add(2, 0, 2);
-    //     x.delta.add(2, 1, 2);
-    //     x.delta.add(2, 2, 2);
-    //     x.delta.add(2, 0, 4);
-    //     OnTheFlyAlphabet alphabet{};
-    //     auto complement_result{determinize(x)};
-    // }
+	// SECTION("This broke Delta when delta[q] could cause re-allocation of post")
+	// {
+	//     Nft x{};
+	//     x.initial.insert(0);
+	//     x.final.insert(4);
+	//     x.delta.add(0, 1, 3);
+	//     x.delta.add(3, 1, 3);
+	//     x.delta.add(3, 2, 3);
+	//     x.delta.add(3, 0, 1);
+	//     x.delta.add(1, 1, 1);
+	//     x.delta.add(1, 2, 1);
+	//     x.delta.add(1, 0, 2);
+	//     x.delta.add(2, 0, 2);
+	//     x.delta.add(2, 1, 2);
+	//     x.delta.add(2, 2, 2);
+	//     x.delta.add(2, 0, 4);
+	//     OnTheFlyAlphabet alphabet{};
+	//     auto complement_result{determinize(x)};
+	// }
 } // }}}
 
 TEST_CASE("mata::nft::minimize() for profiling", "[.profiling],[minimize]") {
-    Nft aut(4);
-    Nft result;
-    std::unordered_map<StateSet, State> subset_map;
+	Nft aut(4);
+	Nft result;
+	std::unordered_map<StateSet, State> subset_map;
 
-    aut.initial.insert(0);
-    aut.final.insert(3);
-    aut.delta.add(0, 46, 0);
-    aut.delta.add(0, 47, 0);
-    aut.delta.add(0, 58, 0);
-    aut.delta.add(0, 58, 1);
-    aut.delta.add(0, 64, 0);
-    aut.delta.add(0, 64, 0);
-    aut.delta.add(0, 82, 0);
-    aut.delta.add(0, 92, 0);
-    aut.delta.add(0, 98, 0);
-    aut.delta.add(0, 100, 0);
-    aut.delta.add(0, 103, 0);
-    aut.delta.add(0, 109, 0);
-    aut.delta.add(0, 110, 0);
-    aut.delta.add(0, 111, 0);
-    aut.delta.add(0, 114, 0);
-    aut.delta.add(1, 47, 2);
-    aut.delta.add(2, 47, 3);
-    aut.delta.add(3, 46, 3);
-    aut.delta.add(3, 47, 3);
-    aut.delta.add(3, 58, 3);
-    aut.delta.add(3, 64, 3);
-    aut.delta.add(3, 82, 3);
-    aut.delta.add(3, 92, 3);
-    aut.delta.add(3, 98, 3);
-    aut.delta.add(3, 100, 3);
-    aut.delta.add(3, 103, 3);
-    aut.delta.add(3, 109, 3);
-    aut.delta.add(3, 110, 3);
-    aut.delta.add(3, 111, 3);
-    aut.delta.add(3, 114, 3);
-    minimize(&result, aut);
+	aut.initial.insert(0);
+	aut.final.insert(3);
+	aut.delta.add(0, 46, 0);
+	aut.delta.add(0, 47, 0);
+	aut.delta.add(0, 58, 0);
+	aut.delta.add(0, 58, 1);
+	aut.delta.add(0, 64, 0);
+	aut.delta.add(0, 64, 0);
+	aut.delta.add(0, 82, 0);
+	aut.delta.add(0, 92, 0);
+	aut.delta.add(0, 98, 0);
+	aut.delta.add(0, 100, 0);
+	aut.delta.add(0, 103, 0);
+	aut.delta.add(0, 109, 0);
+	aut.delta.add(0, 110, 0);
+	aut.delta.add(0, 111, 0);
+	aut.delta.add(0, 114, 0);
+	aut.delta.add(1, 47, 2);
+	aut.delta.add(2, 47, 3);
+	aut.delta.add(3, 46, 3);
+	aut.delta.add(3, 47, 3);
+	aut.delta.add(3, 58, 3);
+	aut.delta.add(3, 64, 3);
+	aut.delta.add(3, 82, 3);
+	aut.delta.add(3, 92, 3);
+	aut.delta.add(3, 98, 3);
+	aut.delta.add(3, 100, 3);
+	aut.delta.add(3, 103, 3);
+	aut.delta.add(3, 109, 3);
+	aut.delta.add(3, 110, 3);
+	aut.delta.add(3, 111, 3);
+	aut.delta.add(3, 114, 3);
+	minimize(&result, aut);
 }
 
 TEST_CASE("mata::nft::construct() correct calls") { // {{{
-    Nft aut(10);
-    mata::parser::ParsedSection parsec;
-    OnTheFlyAlphabet alphabet;
+	Nft aut(10);
+	mata::parser::ParsedSection parsec;
+	OnTheFlyAlphabet alphabet;
 
-    SECTION("construct an empty automaton") {
-        parsec.type = nft::TYPE_NFT;
+	SECTION("construct an empty automaton") {
+		parsec.type = nft::TYPE_NFT;
 
-        aut = builder::construct(parsec);
+		aut = builder::construct(parsec);
 
-        CHECK(aut.is_lang_empty());
-    }
+		CHECK(aut.is_lang_empty());
+	}
 
-    SECTION("construct a simple non-empty automaton accepting the empty word") {
-        parsec.type = nft::TYPE_NFT;
-        parsec.dict.insert({ "Initial", { "q1" } });
-        parsec.dict.insert({ "Final", { "q1" } });
+	SECTION("construct a simple non-empty automaton accepting the empty word") {
+		parsec.type = nft::TYPE_NFT;
+		parsec.dict.insert({"Initial", {"q1"}});
+		parsec.dict.insert({"Final", {"q1"}});
 
-        aut = builder::construct(parsec);
+		aut = builder::construct(parsec);
 
-        CHECK(not aut.is_lang_empty());
-    }
+		CHECK(not aut.is_lang_empty());
+	}
 
-    SECTION("construct an automaton with more than one initial/final states") {
-        parsec.type = nft::TYPE_NFT;
-        parsec.dict.insert({ "Initial", { "q1", "q2" } });
-        parsec.dict.insert({ "Final", { "q1", "q2", "q3" } });
+	SECTION("construct an automaton with more than one initial/final states") {
+		parsec.type = nft::TYPE_NFT;
+		parsec.dict.insert({"Initial", {"q1", "q2"}});
+		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-        aut = builder::construct(parsec);
+		aut = builder::construct(parsec);
 
-        CHECK(aut.initial.size() == 2);
-        CHECK(aut.final.size() == 3);
-    }
+		CHECK(aut.initial.size() == 2);
+		CHECK(aut.final.size() == 3);
+	}
 
-    SECTION("construct a simple non-empty automaton accepting only the word 'a'") {
-        parsec.type = nft::TYPE_NFT;
-        parsec.dict.insert({ "Initial", { "q1" } });
-        parsec.dict.insert({ "Final", { "q2" } });
-        parsec.body = { { "q1", "a", "q2" } };
+	SECTION("construct a simple non-empty automaton accepting only the word 'a'") {
+		parsec.type = nft::TYPE_NFT;
+		parsec.dict.insert({"Initial", {"q1"}});
+		parsec.dict.insert({"Final", {"q2"}});
+		parsec.body = {{"q1", "a", "q2"}};
 
-        aut = builder::construct(parsec, &alphabet);
-        CHECK(aut.levels.num_of_levels == DEFAULT_NUM_OF_LEVELS);
+		aut = builder::construct(parsec, &alphabet);
+		CHECK(aut.levels.num_of_levels == DEFAULT_NUM_OF_LEVELS);
 
-        Run cex;
-        CHECK(not aut.is_lang_empty(&cex));
-        auto word_bool_pair = aut.get_word_for_path(cex);
-        CHECK(word_bool_pair.second);
-        CHECK(word_bool_pair.first.word == encode_word(&alphabet, { "a", "a"}).word);
+		Run cex;
+		CHECK(not aut.is_lang_empty(&cex));
+		auto word_bool_pair = aut.get_word_for_path(cex);
+		CHECK(word_bool_pair.second);
+		CHECK(word_bool_pair.first.word == encode_word(&alphabet, {"a", "a"}).word);
 
-        CHECK(aut.is_in_lang(encode_word(&alphabet, { "a", "a"})));
-    }
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"a", "a"})));
+	}
 
-    SECTION("construct a more complicated non-empty automaton") {
-        parsec.type = nft::TYPE_NFT;
-        parsec.dict.insert({ "Initial", { "q1", "q3" } });
-        parsec.dict.insert({ "Final", { "q5" } });
-        parsec.body.push_back({ "q1", "a", "q3" });
-        parsec.body.push_back({ "q1", "a", "q10" });
-        parsec.body.push_back({ "q1", "b", "q7" });
-        parsec.body.push_back({ "q3", "a", "q7" });
-        parsec.body.push_back({ "q3", "b", "q9" });
-        parsec.body.push_back({ "q9", "a", "q9" });
-        parsec.body.push_back({ "q7", "b", "q1" });
-        parsec.body.push_back({ "q7", "a", "q3" });
-        parsec.body.push_back({ "q7", "c", "q3" });
-        parsec.body.push_back({ "q10", "a", "q7" });
-        parsec.body.push_back({ "q10", "b", "q7" });
-        parsec.body.push_back({ "q10", "c", "q7" });
-        parsec.body.push_back({ "q7", "a", "q5" });
-        parsec.body.push_back({ "q5", "a", "q5" });
-        parsec.body.push_back({ "q5", "c", "q9" });
+	SECTION("construct a more complicated non-empty automaton") {
+		parsec.type = nft::TYPE_NFT;
+		parsec.dict.insert({"Initial", {"q1", "q3"}});
+		parsec.dict.insert({"Final", {"q5"}});
+		parsec.body.push_back({"q1", "a", "q3"});
+		parsec.body.push_back({"q1", "a", "q10"});
+		parsec.body.push_back({"q1", "b", "q7"});
+		parsec.body.push_back({"q3", "a", "q7"});
+		parsec.body.push_back({"q3", "b", "q9"});
+		parsec.body.push_back({"q9", "a", "q9"});
+		parsec.body.push_back({"q7", "b", "q1"});
+		parsec.body.push_back({"q7", "a", "q3"});
+		parsec.body.push_back({"q7", "c", "q3"});
+		parsec.body.push_back({"q10", "a", "q7"});
+		parsec.body.push_back({"q10", "b", "q7"});
+		parsec.body.push_back({"q10", "c", "q7"});
+		parsec.body.push_back({"q7", "a", "q5"});
+		parsec.body.push_back({"q5", "a", "q5"});
+		parsec.body.push_back({"q5", "c", "q9"});
 
-        aut = builder::construct(parsec, &alphabet);
+		aut = builder::construct(parsec, &alphabet);
 
-        // some samples
-        CHECK(aut.is_in_lang(encode_word(&alphabet, { "b", "b", "a", "a"})));
-        CHECK(aut.is_in_lang(encode_word(&alphabet, { "a", "a", "c", "c", "a", "a", "a", "a"})));
-        CHECK(
-            aut.is_in_lang(encode_word(&alphabet,
-                {
-                "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-                "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"
-                }))
-        );
-        // some wrong samples
-        CHECK(!aut.is_in_lang(encode_word(&alphabet, { "b", "b", "c", "c"})));
-        CHECK(!aut.is_in_lang(encode_word(&alphabet, { "a", "a", "c", "c", "c", "c", "a", "a"})));
-        CHECK(!aut.is_in_lang(encode_word(&alphabet, { "b", "b", "a", "a", "c", "c", "b","b"})));
-    }
+		// some samples
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"b", "b", "a", "a"})));
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"a", "a", "c", "c", "a", "a", "a", "a"})));
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+													 "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
+		// some wrong samples
+		CHECK(!aut.is_in_lang(encode_word(&alphabet, {"b", "b", "c", "c"})));
+		CHECK(!aut.is_in_lang(encode_word(&alphabet, {"a", "a", "c", "c", "c", "c", "a", "a"})));
+		CHECK(!aut.is_in_lang(encode_word(&alphabet, {"b", "b", "a", "a", "c", "c", "b", "b"})));
+	}
 } // }}}
 
 TEST_CASE("mata::nft::construct() invalid calls") { // {{{
-    Nft aut;
-    mata::parser::ParsedSection parsec;
+	Nft aut;
+	mata::parser::ParsedSection parsec;
 
-    SECTION("construct() call with invalid ParsedSection object") {
-        parsec.type = "FA";
+	SECTION("construct() call with invalid ParsedSection object") {
+		parsec.type = "FA";
 
-        CHECK_THROWS_WITH(
-            builder::construct(parsec),
-            Catch::Matchers::ContainsSubstring("expecting type")
-        );
-    }
+		CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("expecting type"));
+	}
 
-    SECTION("construct() call with an epsilon transition") {
-        parsec.type = nft::TYPE_NFT;
-        parsec.body = { { "q1", "q2" } };
+	SECTION("construct() call with an epsilon transition") {
+		parsec.type = nft::TYPE_NFT;
+		parsec.body = {{"q1", "q2"}};
 
-        CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("Epsilon transition"));
-    }
+		CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("Epsilon transition"));
+	}
 
-    SECTION("construct() call with a nonsense transition") {
-        parsec.type = nft::TYPE_NFT;
-        parsec.body = { { "q1", "a", "q2", "q3" } };
+	SECTION("construct() call with a nonsense transition") {
+		parsec.type = nft::TYPE_NFT;
+		parsec.body = {{"q1", "a", "q2", "q3"}};
 
-        CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
-    }
+		CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
+	}
 } // }}}
 
 TEST_CASE("mata::nft::construct() from IntermediateAut correct calls") { // {{{
-    Nft aut;
-    mata::IntermediateAut inter_aut;
-    OnTheFlyAlphabet alphabet;
+	Nft aut;
+	mata::IntermediateAut inter_aut;
+	OnTheFlyAlphabet alphabet;
 
-    SECTION("construct an empty automaton") {
-        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::Nft;
-        REQUIRE(aut.is_lang_empty());
-        aut = builder::construct(inter_aut);
-        REQUIRE(aut.is_lang_empty());
-    }
+	SECTION("construct an empty automaton") {
+		inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::Nft;
+		REQUIRE(aut.is_lang_empty());
+		aut = builder::construct(inter_aut);
+		REQUIRE(aut.is_lang_empty());
+	}
 
-    SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton") {
-        std::string file =
-                "@NFT-explicit\n"
-                "%States-enum p q r\n"
-                "%Alphabet-auto\n"
-                "%Initial p | q\n"
-                "%Final p | q\n";
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+	SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton") {
+		std::string file = "@NFT-explicit\n"
+						   "%States-enum p q r\n"
+						   "%Alphabet-auto\n"
+						   "%Initial p | q\n"
+						   "%Final p | q\n";
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        aut = builder::construct(inter_aut);
+		aut = builder::construct(inter_aut);
 
-        REQUIRE(!aut.is_lang_empty());
-    }
+		REQUIRE(!aut.is_lang_empty());
+	}
 
-    SECTION("construct an automaton with more than one initial/final states from intermediate automaton") {
-        std::string file =
-                "@NFT-explicit\n"
-                "%States-enum p q 3\n"
-                "%Alphabet-auto\n"
-                "%Initial p | q\n"
-                "%Final p | q | r\n";
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+	SECTION("construct an automaton with more than one initial/final states from intermediate automaton") {
+		std::string file = "@NFT-explicit\n"
+						   "%States-enum p q 3\n"
+						   "%Alphabet-auto\n"
+						   "%Initial p | q\n"
+						   "%Final p | q | r\n";
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        plumbing::construct(&aut, inter_aut);
+		plumbing::construct(&aut, inter_aut);
 
-        REQUIRE(aut.initial.size() == 2);
-        REQUIRE(aut.final.size() == 3);
-    }
+		REQUIRE(aut.initial.size() == 2);
+		REQUIRE(aut.final.size() == 3);
+	}
 
-    SECTION(
-        "construct an automaton with implicit operator completion one initial/final states from intermediate automaton"
-    ) {
-        std::string file =
-                "@NFT-explicit\n"
-                "%States-enum p q r\n"
-                "%Alphabet-auto\n"
-                "%Initial p q\n"
-                "%Final p q r\n";
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+	SECTION(
+		"construct an automaton with implicit operator completion one initial/final states from intermediate automaton"
+	) {
+		std::string file = "@NFT-explicit\n"
+						   "%States-enum p q r\n"
+						   "%Alphabet-auto\n"
+						   "%Initial p q\n"
+						   "%Final p q r\n";
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        plumbing::construct(&aut, inter_aut);
+		plumbing::construct(&aut, inter_aut);
 
-        REQUIRE(aut.initial.size() == 2);
-        REQUIRE(aut.final.size() == 3);
-    }
+		REQUIRE(aut.initial.size() == 2);
+		REQUIRE(aut.final.size() == 3);
+	}
 
-    SECTION(
-        "construct an automaton with implicit operator completion one initial/final states from intermediate automaton"
-    ) {
-        std::string file =
-                "@NFT-explicit\n"
-                "%States-enum p q r m n\n"
-                "%Alphabet-auto\n"
-                "%Initial p q r\n"
-                "%Final p q m n\n";
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+	SECTION(
+		"construct an automaton with implicit operator completion one initial/final states from intermediate automaton"
+	) {
+		std::string file = "@NFT-explicit\n"
+						   "%States-enum p q r m n\n"
+						   "%Alphabet-auto\n"
+						   "%Initial p q r\n"
+						   "%Final p q m n\n";
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        plumbing::construct(&aut, inter_aut);
+		plumbing::construct(&aut, inter_aut);
 
-        REQUIRE(aut.initial.size() == 3);
-        REQUIRE(aut.final.size() == 4);
-    }
+		REQUIRE(aut.initial.size() == 3);
+		REQUIRE(aut.final.size() == 4);
+	}
 
-    SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton") {
-        std::string file =
-                "@NFT-explicit\n"
-                "%States-enum p q 3\n"
-                "%Alphabet-auto\n"
-                "%Initial q1\n"
-                "%Final q2\n"
-                "q1 a q2\n";
+	SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton") {
+		std::string file = "@NFT-explicit\n"
+						   "%States-enum p q 3\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q1\n"
+						   "%Final q2\n"
+						   "q1 a q2\n";
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
-        plumbing::construct(&aut, inter_aut, &alphabet);
-        CHECK(aut.levels.num_of_levels == DEFAULT_NUM_OF_LEVELS);
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
+		plumbing::construct(&aut, inter_aut, &alphabet);
+		CHECK(aut.levels.num_of_levels == DEFAULT_NUM_OF_LEVELS);
 
-        Run cex;
-        REQUIRE(!aut.is_lang_empty(&cex));
-        auto word_bool_pair = aut.get_word_for_path(cex);
-        REQUIRE(word_bool_pair.second);
-        REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a", "a" }).word);
+		Run cex;
+		REQUIRE(!aut.is_lang_empty(&cex));
+		auto word_bool_pair = aut.get_word_for_path(cex);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, {"a", "a"}).word);
 
-        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a", "a" })));
-    }
+		REQUIRE(aut.is_in_lang(encode_word(&alphabet, {"a", "a"})));
+	}
 
-    SECTION("construct a more complicated non-empty automaton from intermediate automaton") {
-        std::string file =
-                "@NFT-explicit\n"
-                "%States-enum p q 3\n"
-                "%Alphabet-auto\n"
-                "%Initial q1 | q3\n"
-                "%Final q5\n"
-                "q1 a q3\n"
-                "q1 a q10\n"
-                "q1 b q7\n"
-                "q3 a q7\n"
-                "q3 b q9\n"
-                "q9 a q9\n"
-                "q7 b q1\n"
-                "q7 a q3\n"
-                "q7 c q3\n"
-                "q10 a q7\n"
-                "q10 b q7\n"
-                "q10 c q7\n"
-                "q7 a q5\n"
-                "q5 c q9\n";
+	SECTION("construct a more complicated non-empty automaton from intermediate automaton") {
+		std::string file = "@NFT-explicit\n"
+						   "%States-enum p q 3\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q1 | q3\n"
+						   "%Final q5\n"
+						   "q1 a q3\n"
+						   "q1 a q10\n"
+						   "q1 b q7\n"
+						   "q3 a q7\n"
+						   "q3 b q9\n"
+						   "q9 a q9\n"
+						   "q7 b q1\n"
+						   "q7 a q3\n"
+						   "q7 c q3\n"
+						   "q10 a q7\n"
+						   "q10 b q7\n"
+						   "q10 c q7\n"
+						   "q7 a q5\n"
+						   "q5 c q9\n";
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        plumbing::construct(&aut, inter_aut, &alphabet);
+		plumbing::construct(&aut, inter_aut, &alphabet);
 
-        // some samples
-        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "b", "b", "a", "a"})));
-        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a", "a", "c", "c", "a", "a", "a", "a"})));
-        REQUIRE(
-            aut.is_in_lang(encode_word(&alphabet,
-                {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"}))
-        );
-        // some wrong samples
-        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "b", "c"})));
-        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "a", "c", "c", "a"})));
-        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "b", "a", "c", "b"})));
-    }
+		// some samples
+		REQUIRE(aut.is_in_lang(encode_word(&alphabet, {"b", "b", "a", "a"})));
+		REQUIRE(aut.is_in_lang(encode_word(&alphabet, {"a", "a", "c", "c", "a", "a", "a", "a"})));
+		REQUIRE(aut.is_in_lang(encode_word(&alphabet, {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
+		// some wrong samples
+		REQUIRE(!aut.is_in_lang(encode_word(&alphabet, {"b", "c"})));
+		REQUIRE(!aut.is_in_lang(encode_word(&alphabet, {"a", "c", "c", "a"})));
+		REQUIRE(!aut.is_in_lang(encode_word(&alphabet, {"b", "a", "c", "b"})));
+	}
 
-    SECTION("construct - final states from negation") {
-        std::string file =
-                "@NFT-bits\n"
-                "%Alphabet-auto\n"
-                "%Initial q0 q8\n"
-                "%Final !q0 & !q1 & !q4 & !q5 & !q6\n"
-                "q0 a1 q1\n"
-                "q1 a2 q2\n"
-                "q2 a3 q3\n"
-                "q2 a4 q4\n"
-                "q3 a5 q5\n"
-                "q3 a6 q6\n"
-                "q5 a7 q7\n";
+	SECTION("construct - final states from negation") {
+		std::string file = "@NFT-bits\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q0 q8\n"
+						   "%Final !q0 & !q1 & !q4 & !q5 & !q6\n"
+						   "q0 a1 q1\n"
+						   "q1 a2 q2\n"
+						   "q2 a3 q3\n"
+						   "q2 a4 q4\n"
+						   "q3 a5 q5\n"
+						   "q3 a6 q6\n"
+						   "q5 a7 q7\n";
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        plumbing::construct(&aut, inter_aut, &alphabet);
-        CHECK(aut.final.size() == 4);
-        CHECK(aut.is_in_lang(encode_word(&alphabet, { "a1", "a1", "a2", "a2"})));
-        CHECK(aut.is_in_lang(encode_word(&alphabet, { "a1", "a1", "a2", "a2", "a3", "a3"})));
-        CHECK(!aut.is_in_lang(encode_word(&alphabet, { "a1", "a1", "a2", "a2", "a3", "a3", "a4", "a4"})));
-        CHECK(aut.is_in_lang(encode_word(&alphabet, { "a1", "a1", "a2", "a2", "a3", "a3", "a5", "a5", "a7", "a7"})));
-    }
+		plumbing::construct(&aut, inter_aut, &alphabet);
+		CHECK(aut.final.size() == 4);
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"a1", "a1", "a2", "a2"})));
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"a1", "a1", "a2", "a2", "a3", "a3"})));
+		CHECK(!aut.is_in_lang(encode_word(&alphabet, {"a1", "a1", "a2", "a2", "a3", "a3", "a4", "a4"})));
+		CHECK(aut.is_in_lang(encode_word(&alphabet, {"a1", "a1", "a2", "a2", "a3", "a3", "a5", "a5", "a7", "a7"})));
+	}
 
-    SECTION("construct - final states given as true") {
-        std::string file =
-                "@NFT-bits\n"
-                "%Alphabet-auto\n"
-                "%Initial q0 q8\n"
-                "%Final \\true\n"
-                "q0 a1 q1\n"
-                "q1 a2 q2\n"
-                "q2 a3 q3\n"
-                "q2 a4 q4\n"
-                "q3 a5 q5\n"
-                "q3 a6 q6\n"
-                "q5 a7 q7\n";
+	SECTION("construct - final states given as true") {
+		std::string file = "@NFT-bits\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q0 q8\n"
+						   "%Final \\true\n"
+						   "q0 a1 q1\n"
+						   "q1 a2 q2\n"
+						   "q2 a3 q3\n"
+						   "q2 a4 q4\n"
+						   "q3 a5 q5\n"
+						   "q3 a6 q6\n"
+						   "q5 a7 q7\n";
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        nft::builder::NameStateMap state_map;
-        plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
-        CHECK(aut.final.size() == 9);
-        CHECK(aut.final[state_map.at("0")]);
-        CHECK(aut.final[state_map.at("1")]);
-        CHECK(aut.final[state_map.at("2")]);
-        CHECK(aut.final[state_map.at("3")]);
-        CHECK(aut.final[state_map.at("4")]);
-        CHECK(aut.final[state_map.at("5")]);
-        CHECK(aut.final[state_map.at("6")]);
-        CHECK(aut.final[state_map.at("7")]);
-        CHECK(aut.final[state_map.at("8")]);
-    }
+		nft::builder::NameStateMap state_map;
+		plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
+		CHECK(aut.final.size() == 9);
+		CHECK(aut.final[state_map.at("0")]);
+		CHECK(aut.final[state_map.at("1")]);
+		CHECK(aut.final[state_map.at("2")]);
+		CHECK(aut.final[state_map.at("3")]);
+		CHECK(aut.final[state_map.at("4")]);
+		CHECK(aut.final[state_map.at("5")]);
+		CHECK(aut.final[state_map.at("6")]);
+		CHECK(aut.final[state_map.at("7")]);
+		CHECK(aut.final[state_map.at("8")]);
+	}
 
-    SECTION("construct - final states given as false") {
-        std::string file =
-                "@NFT-bits\n"
-                "%Alphabet-auto\n"
-                "%Initial q0 q8\n"
-                "%Final \\false\n"
-                "q0 a1 q1\n"
-                "q1 a2 q2\n"
-                "q2 a3 q3\n"
-                "q2 a4 q4\n"
-                "q3 a5 q5\n"
-                "q3 a6 q6\n"
-                "q5 a7 q7\n";
+	SECTION("construct - final states given as false") {
+		std::string file = "@NFT-bits\n"
+						   "%Alphabet-auto\n"
+						   "%Initial q0 q8\n"
+						   "%Final \\false\n"
+						   "q0 a1 q1\n"
+						   "q1 a2 q2\n"
+						   "q2 a3 q3\n"
+						   "q2 a4 q4\n"
+						   "q3 a5 q5\n"
+						   "q3 a6 q6\n"
+						   "q5 a7 q7\n";
 
-        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        inter_aut = auts[0];
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		inter_aut = auts[0];
 
-        nft::builder::NameStateMap state_map;
-        plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
-        CHECK(aut.final.empty());
-    }
+		nft::builder::NameStateMap state_map;
+		plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
+		CHECK(aut.final.empty());
+	}
 } // }}}
 
 TEST_CASE("mata::nft::make_complete()") {
-    Nft nft{ Nft::with_levels(3) };
-    Nft result{ Nft::with_levels(3) };
-    auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c' });
-    nft.alphabet = alphabet;
-    result.alphabet = alphabet;
-    auto alphabet_symbols = [&] { return alphabet->get_alphabet_symbols(); };
-    OrdVector<Symbol> symbols{ alphabet_symbols() };
+	Nft nft{Nft::with_levels(3)};
+	Nft result{Nft::with_levels(3)};
+	auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b', 'c'});
+	nft.alphabet = alphabet;
+	result.alphabet = alphabet;
+	auto alphabet_symbols = [&] { return alphabet->get_alphabet_symbols(); };
+	OrdVector<Symbol> symbols{alphabet_symbols()};
 
-    std::optional<std::vector<State>> sinks{ std::nullopt };
+	std::optional<std::vector<State>> sinks{std::nullopt};
 
-    const auto CHECK_SHARED = [&] {
-        CHECK(are_equivalent(nft, result));
-        for (State source{ 0 }; source < result.num_of_states(); ++source) {
-            for (const auto symbol : symbols) {
-                const auto& state_post{ result.delta[source] };
-                auto state_post_it{ state_post.find(symbol) };
-                REQUIRE(state_post_it != state_post.end());
-                for (const auto target : state_post_it->targets) {
-                    CHECK(result.levels.can_follow_for_states(source, target));
-                }
-            }
-        }
-        CHECK(result.is_complete(symbols));
-        CHECK(result.levels.num_of_levels == nft.levels.num_of_levels);
+	const auto CHECK_SHARED = [&] {
+		CHECK(are_equivalent(nft, result));
+		for (State source{0}; source < result.num_of_states(); ++source) {
+			for (const auto symbol : symbols) {
+				const auto& state_post{result.delta[source]};
+				auto state_post_it{state_post.find(symbol)};
+				REQUIRE(state_post_it != state_post.end());
+				for (const auto target : state_post_it->targets) {
+					CHECK(result.levels.can_follow_for_states(source, target));
+				}
+			}
+		}
+		CHECK(result.is_complete(symbols));
+		CHECK(result.levels.num_of_levels == nft.levels.num_of_levels);
 
+		// Check sinks if any were provided.
+		// CHECK(not result.make_complete(alphabet.get(), std::vector<State>{ sinks }));
+		for (auto sinks_val{sinks.value_or(std::vector<State>{})}; const State sink : sinks_val) {
+			for (const auto symbol : alphabet_symbols()) {
+				CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
+			}
+		}
+	};
 
-        // Check sinks if any were provided.
-        // CHECK(not result.make_complete(alphabet.get(), std::vector<State>{ sinks }));
-        for (auto sinks_val{ sinks.value_or(std::vector<State>{}) }; const State sink : sinks_val) {
-            for (const auto symbol : alphabet_symbols()) {
-                CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
-            }
-        }
-    };
+	SECTION("empty automaton, empty alphabet") {
+		alphabet->clear();
+		result = nft;
+		result.make_complete(alphabet.get(), sinks);
+		CHECK_SHARED();
+	}
 
-    SECTION("empty automaton, empty alphabet") {
-        alphabet->clear();
-        result = nft;
-        result.make_complete(alphabet.get(), sinks);
-        CHECK_SHARED();
-    }
+	SECTION("make_complete with levels.num_of_levels == 1") {
+		nft.levels.num_of_levels = 1;
+		nft.initial = {0};
+		nft.final = {2};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
 
-    SECTION("make_complete with levels.num_of_levels == 1") {
-        nft.levels.num_of_levels = 1;
-        nft.initial = { 0 };
-        nft.final = { 2 };
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'b', 2);
+		result = nft;
+		result.make_complete(alphabet.get());
+		CHECK_SHARED();
+	}
 
-        result = nft;
-        result.make_complete(alphabet.get());
-        CHECK_SHARED();
-    }
+	SECTION("make_complete with levels.num_of_levels == 2") {
+		nft.levels.num_of_levels = 2;
+		nft.initial = {0};
+		nft.final = {4};
+		nft.levels.set({0, 1, 0, 1, 0});
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'a', 3);
+		nft.delta.add(3, 'b', 4);
 
-    SECTION("make_complete with levels.num_of_levels == 2") {
-        nft.levels.num_of_levels = 2;
-        nft.initial = { 0 };
-        nft.final = { 4 };
-        nft.levels.set({ 0, 1, 0, 1, 0 });
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(2, 'a', 3);
-        nft.delta.add(3, 'b', 4);
+		result = nft;
+		result.make_complete(alphabet.get());
+		CHECK_SHARED();
+	}
 
-        result = nft;
-        result.make_complete(alphabet.get());
-        CHECK_SHARED();
-    }
+	SECTION("make_complete with levels.num_of_levels == 3") {
+		nft.initial = {0};
+		nft.final = {4};
+		nft.levels.set({0, 1, 2, 0, 1, 0});
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'a', 3);
+		nft.delta.add(3, 'b', 4);
+		nft.delta.add(4, 'a', 5);
 
-    SECTION("make_complete with levels.num_of_levels == 3") {
-        nft.initial = { 0 };
-        nft.final = { 4 };
-        nft.levels.set({ 0, 1, 2, 0, 1, 0 });
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(2, 'a', 3);
-        nft.delta.add(3, 'b', 4);
-        nft.delta.add(4, 'a', 5);
+		result = nft;
+		result.make_complete(alphabet.get());
+		CHECK_SHARED();
+	}
 
-        result = nft;
-        result.make_complete(alphabet.get());
-        CHECK_SHARED();
-    }
+	SECTION("self loops and jumps") {
+		nft.initial = {0};
+		nft.final = {4};
+		nft.levels.set({0, 1, 2, 0, 1, 0});
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'b', 0);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 3);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'a', 3);
+		nft.delta.add(3, 'b', 4);
+		nft.delta.add(4, 'a', 5);
 
-    SECTION("self loops and jumps") {
-        nft.initial = { 0 };
-        nft.final = { 4 };
-        nft.levels.set({ 0, 1, 2, 0, 1, 0 });
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(0, 'b', 0);
-        nft.delta.add(0, 'a', 2);
-        nft.delta.add(0, 'b', 3);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(2, 'a', 3);
-        nft.delta.add(3, 'b', 4);
-        nft.delta.add(4, 'a', 5);
+		result = nft;
+		result.make_complete(alphabet.get());
+		CHECK_SHARED();
+	}
 
-        result = nft;
-        result.make_complete(alphabet.get());
-        CHECK_SHARED();
-    }
+	SECTION("with sinks") {
+		nft.initial = {0};
+		nft.final = {4};
+		nft.levels = {0, 1, 2, 0, 1, 0, 0, 1, 2};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'b', 0);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 3);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(1, 'c', 8);
+		nft.delta.add(2, 'a', 3);
+		nft.delta.add(3, 'b', 4);
+		nft.delta.add(4, 'a', 5);
 
-    SECTION("with sinks") {
-        nft.initial = { 0 };
-        nft.final = { 4 };
-        nft.levels = { 0, 1, 2, 0, 1, 0, 0, 1, 2 };
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(0, 'b', 0);
-        nft.delta.add(0, 'a', 2);
-        nft.delta.add(0, 'b', 3);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(1, 'c', 8);
-        nft.delta.add(2, 'a', 3);
-        nft.delta.add(3, 'b', 4);
-        nft.delta.add(4, 'a', 5);
+		sinks = {6, 7, 8};
 
-        sinks = { 6, 7, 8 };
-
-        result = nft;
-        result.make_complete(alphabet.get(), sinks);
-        CHECK_SHARED();
-    }
+		result = nft;
+		result.make_complete(alphabet.get(), sinks);
+		CHECK_SHARED();
+	}
 }
 
 TEST_CASE("mata::nft::is_universal()") {
-    Nft aut(6);
-    Run cex;
-    ParameterMap params;
+	Nft aut(6);
+	Run cex;
+	ParameterMap params;
 
-    const std::unordered_set<std::string> algorithms = {
-        // "naive", // FIXME(nft): Uncomment when naive algorithm is implemented for NFTs.
-        "antichains",
-    };
+	const std::unordered_set<std::string> algorithms = {
+		// "naive", // FIXME(nft): Uncomment when naive algorithm is implemented for NFTs.
+		"antichains",
+	};
 
-    SECTION("empty automaton, empty alphabet") {
-        OnTheFlyAlphabet alph{};
+	SECTION("empty automaton, empty alphabet") {
+		OnTheFlyAlphabet alph{};
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, params);
 
-            REQUIRE(!is_univ);
-        }
-    }
+			REQUIRE(!is_univ);
+		}
+	}
 
-    SECTION("empty automaton accepting epsilon, empty alphabet") {
-        OnTheFlyAlphabet alph{};
-        aut.initial = { 1 };
-        aut.final = { 1 };
+	SECTION("empty automaton accepting epsilon, empty alphabet") {
+		OnTheFlyAlphabet alph{};
+		aut.initial = {1};
+		aut.final = {1};
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, &cex, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, &cex, params);
 
-            REQUIRE(is_univ);
-            REQUIRE(cex.word.empty());
-        }
-    }
+			REQUIRE(is_univ);
+			REQUIRE(cex.word.empty());
+		}
+	}
 
-    SECTION("empty automaton accepting epsilon") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a" } };
-        aut.initial = { 1 };
-        aut.final = { 1 };
+	SECTION("empty automaton accepting epsilon") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a"}};
+		aut.initial = {1};
+		aut.final = {1};
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, &cex, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, &cex, params);
 
-            REQUIRE(!is_univ);
-            REQUIRE(((cex.word == Word{alph["a"]}) || (cex.word == Word{alph["b"]})));
-        }
-    }
+			REQUIRE(!is_univ);
+			REQUIRE((cex.word == Word{alph["a"]}) || (cex.word == Word{alph["b"]}));
+		}
+	}
 
-    SECTION("automaton for a*b*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = { 1, 2 };
-        aut.final = { 1, 2 };
+	SECTION("automaton for a*b*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		aut.initial = {1, 2};
+		aut.final = {1, 2};
 
-        aut.delta.add(1, alph["a"], 1);
-        aut.delta.add(1, alph["a"], 2);
-        aut.delta.add(2, alph["b"], 2);
+		aut.delta.add(1, alph["a"], 1);
+		aut.delta.add(1, alph["a"], 2);
+		aut.delta.add(2, alph["b"], 2);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, params);
 
-            REQUIRE(!is_univ);
-        }
-    }
+			REQUIRE(!is_univ);
+		}
+	}
 
-    SECTION("automaton for a* + b*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = { 1, 2 };
-        aut.final = { 1, 2 };
+	SECTION("automaton for a* + b*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		aut.initial = {1, 2};
+		aut.final = {1, 2};
 
-        aut.delta.add(1, alph["a"], 1);
-        aut.delta.add(2, alph["b"], 2);
+		aut.delta.add(1, alph["a"], 1);
+		aut.delta.add(2, alph["b"], 2);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, params);
 
-            REQUIRE(!is_univ);
-        }
-    }
+			REQUIRE(!is_univ);
+		}
+	}
 
-    SECTION("automaton for (a + b)*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = { 1 };
-        aut.final = { 1 };
+	SECTION("automaton for (a + b)*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		aut.initial = {1};
+		aut.final = {1};
 
-        aut.delta.add(1, alph["a"], 1);
-        aut.delta.add(1, alph["b"], 1);
+		aut.delta.add(1, alph["a"], 1);
+		aut.delta.add(1, alph["b"], 1);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, params);
 
-            REQUIRE(is_univ);
-        }
-    }
+			REQUIRE(is_univ);
+		}
+	}
 
-    SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = { 1 };
-        aut.final = { 1, 2, 3, 4, 5 };
+	SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		aut.initial = {1};
+		aut.final = {1, 2, 3, 4, 5};
 
-        aut.delta.add(1, alph["a"], 2);
-        aut.delta.add(1, alph["b"], 2);
-        aut.delta.add(2, alph["a"], 3);
-        aut.delta.add(2, alph["b"], 3);
+		aut.delta.add(1, alph["a"], 2);
+		aut.delta.add(1, alph["b"], 2);
+		aut.delta.add(2, alph["a"], 3);
+		aut.delta.add(2, alph["b"], 3);
 
-        aut.delta.add(3, alph["a"], 4);
-        aut.delta.add(4, alph["a"], 4);
+		aut.delta.add(3, alph["a"], 4);
+		aut.delta.add(4, alph["a"], 4);
 
-        aut.delta.add(3, alph["b"], 5);
-        aut.delta.add(5, alph["b"], 5);
+		aut.delta.add(3, alph["b"], 5);
+		aut.delta.add(5, alph["b"], 5);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, &cex, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, &cex, params);
 
-            REQUIRE(!is_univ);
+			REQUIRE(!is_univ);
 
-            REQUIRE(cex.word.size() == 4);
-            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-            REQUIRE(cex.word[2] != cex.word[3]);
-        }
-    }
+			REQUIRE(cex.word.size() == 4);
+			REQUIRE(cex.word[0] == alph["a"] || cex.word[0] == alph["b"]);
+			REQUIRE(cex.word[1] == alph["a"] || cex.word[1] == alph["b"]);
+			REQUIRE(cex.word[2] == alph["a"] || cex.word[2] == alph["b"]);
+			REQUIRE(cex.word[3] == alph["a"] || cex.word[3] == alph["b"]);
+			REQUIRE(cex.word[2] != cex.word[3]);
+		}
+	}
 
-    SECTION("automaton for epsilon + a(a + b)* + b(a + b)*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = { 1, 3 };
-        aut.final = { 1, 2, 4 };
+	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		aut.initial = {1, 3};
+		aut.final = {1, 2, 4};
 
-        aut.delta.add(1, alph["a"], 2);
-        aut.delta.add(2, alph["a"], 2);
-        aut.delta.add(2, alph["b"], 2);
-        aut.delta.add(3, alph["b"], 4);
-        aut.delta.add(4, alph["a"], 4);
-        aut.delta.add(4, alph["b"], 4);
+		aut.delta.add(1, alph["a"], 2);
+		aut.delta.add(2, alph["a"], 2);
+		aut.delta.add(2, alph["b"], 2);
+		aut.delta.add(3, alph["b"], 4);
+		aut.delta.add(4, alph["a"], 4);
+		aut.delta.add(4, alph["b"], 4);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, &cex, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, &cex, params);
 
-            REQUIRE(is_univ);
-        }
-    }
+			REQUIRE(is_univ);
+		}
+	}
 
-    SECTION("example from Abdulla et al. TACAS'10") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        aut.initial = { 1, 2 };
-        aut.final = { 1, 2, 3 };
+	SECTION("example from Abdulla et al. TACAS'10") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		aut.initial = {1, 2};
+		aut.final = {1, 2, 3};
 
-        aut.delta.add(1, alph["b"], 1);
-        aut.delta.add(1, alph["a"], 2);
-        aut.delta.add(1, alph["b"], 4);
-        aut.delta.add(2, alph["b"], 2);
-        aut.delta.add(2, alph["a"], 3);
-        aut.delta.add(3, alph["b"], 3);
-        aut.delta.add(3, alph["a"], 1);
-        aut.delta.add(4, alph["b"], 2);
-        aut.delta.add(4, alph["b"], 3);
+		aut.delta.add(1, alph["b"], 1);
+		aut.delta.add(1, alph["a"], 2);
+		aut.delta.add(1, alph["b"], 4);
+		aut.delta.add(2, alph["b"], 2);
+		aut.delta.add(2, alph["a"], 3);
+		aut.delta.add(3, alph["b"], 3);
+		aut.delta.add(3, alph["a"], 1);
+		aut.delta.add(4, alph["b"], 2);
+		aut.delta.add(4, alph["b"], 3);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, &cex, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, &cex, params);
 
-            REQUIRE(is_univ);
-        }
-    }
+			REQUIRE(is_univ);
+		}
+	}
 
-    SECTION("subsumption-pruning in processed") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a" } };
-        aut.initial = { 1, 2 };
-        aut.final = { 1 };
+	SECTION("subsumption-pruning in processed") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a"}};
+		aut.initial = {1, 2};
+		aut.final = {1};
 
-        aut.delta.add(1, alph["a"], 1);
+		aut.delta.add(1, alph["a"], 1);
 
-        for (const auto& algo : algorithms) {
-            params["algorithm"] = algo;
-            bool is_univ = aut.is_universal(alph, &cex, params);
+		for (const auto& algo : algorithms) {
+			params["algorithm"] = algo;
+			bool is_univ = aut.is_universal(alph, &cex, params);
 
-            REQUIRE(is_univ);
-        }
-    }
+			REQUIRE(is_univ);
+		}
+	}
 
-    SECTION("wrong parameters 1") {
-        OnTheFlyAlphabet alph{};
+	SECTION("wrong parameters 1") {
+		OnTheFlyAlphabet alph{};
 
-        CHECK_THROWS_WITH(
-            aut.is_universal(alph, params),
-            Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
-        );
-    }
+		CHECK_THROWS_WITH(
+			aut.is_universal(alph, params), Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+	}
 
-    SECTION("wrong parameters 2") {
-        OnTheFlyAlphabet alph{};
-        params["algorithm"] = "foo";
+	SECTION("wrong parameters 2") {
+		OnTheFlyAlphabet alph{};
+		params["algorithm"] = "foo";
 
-        CHECK_THROWS_WITH(
-            aut.is_universal(alph, params),
-            Catch::Matchers::ContainsSubstring("received an unknown value")
-        );
-    }
+		CHECK_THROWS_WITH(
+			aut.is_universal(alph, params), Catch::Matchers::ContainsSubstring("received an unknown value")
+		);
+	}
 } // }}}
 
 TEST_CASE("mata::nft::is_included()") { // {{{
-    Nft smaller(10);
-    Nft bigger(16);
-    Run cex;
-    ParameterMap params;
+	Nft smaller(10);
+	Nft bigger(16);
+	Run cex;
+	ParameterMap params;
 
-    const std::unordered_set<std::string> ALGORITHMS = {
-        "naive",
-        "antichains",
-    };
+	const std::unordered_set<std::string> ALGORITHMS = {
+		"naive",
+		"antichains",
+	};
 
-    SECTION("{} <= {}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
+	SECTION("{} <= {}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &alph, params);
-            CHECK(is_incl);
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			bool is_incl = is_included(smaller, bigger, &alph, params);
+			CHECK(is_incl);
 
-            is_incl = is_included(bigger, smaller, &alph, params);
-            CHECK(is_incl);
-        }
-    }
+			is_incl = is_included(bigger, smaller, &alph, params);
+			CHECK(is_incl);
+		}
+	}
 
-    SECTION("{} <= {epsilon}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
-        bigger.initial = { 1 };
-        bigger.final = { 1 };
+	SECTION("{} <= {epsilon}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
+		bigger.initial = {1};
+		bigger.final = {1};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-            CHECK(is_incl);
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			CHECK(is_incl);
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            CHECK(!is_incl);
-        }
-    }
+			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			CHECK(!is_incl);
+		}
+	}
 
-    SECTION("{epsilon} <= {epsilon}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
-        smaller.initial = { 1 };
-        smaller.final = { 1 };
-        bigger.initial = { 11 };
-        bigger.final = { 11 };
+	SECTION("{epsilon} <= {epsilon}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
+		smaller.initial = {1};
+		smaller.final = {1};
+		bigger.initial = {11};
+		bigger.final = {11};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-            CHECK(is_incl);
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			CHECK(is_incl);
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            CHECK(is_incl);
-        }
-    }
+			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			CHECK(is_incl);
+		}
+	}
 
-    SECTION("{epsilon} !<= {}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
-        smaller.initial = { 1 };
-        smaller.final = { 1 };
+	SECTION("{epsilon} !<= {}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
+		smaller.initial = {1};
+		smaller.final = {1};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-            REQUIRE(!is_incl);
-            REQUIRE(cex.word.empty());
+			REQUIRE(!is_incl);
+			REQUIRE(cex.word.empty());
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(cex.word.empty());
-            REQUIRE(is_incl);
-        }
-    }
+			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			REQUIRE(cex.word.empty());
+			REQUIRE(is_incl);
+		}
+	}
 
-    SECTION("a* + b* <= (a+b)*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        smaller.initial = { 1, 2 };
-        smaller.final = { 1, 2 };
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(2, alph["b"], 2);
+	SECTION("a* + b* <= (a+b)*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		smaller.initial = {1, 2};
+		smaller.final = {1, 2};
+		smaller.delta.add(1, alph["a"], 1);
+		smaller.delta.add(2, alph["b"], 2);
 
-        bigger.initial = { 11 };
-        bigger.final = { 11 };
-        bigger.delta.add(11, alph["a"], 11);
-        bigger.delta.add(11, alph["b"], 11);
+		bigger.initial = {11};
+		bigger.final = {11};
+		bigger.delta.add(11, alph["a"], 11);
+		bigger.delta.add(11, alph["b"], 11);
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &alph, params);
-            REQUIRE(is_incl);
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			bool is_incl = is_included(smaller, bigger, &alph, params);
+			REQUIRE(is_incl);
 
-            is_incl = is_included(bigger, smaller, &alph, params);
-            REQUIRE(!is_incl);
-        }
-    }
+			is_incl = is_included(bigger, smaller, &alph, params);
+			REQUIRE(!is_incl);
+		}
+	}
 
-    SECTION("(a+b)* !<= a* + b*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        smaller.initial = { 1 };
-        smaller.final = { 1 };
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(1, alph["b"], 1);
+	SECTION("(a+b)* !<= a* + b*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		smaller.initial = {1};
+		smaller.final = {1};
+		smaller.delta.add(1, alph["a"], 1);
+		smaller.delta.add(1, alph["b"], 1);
 
-        bigger.initial = { 11, 12 };
-        bigger.final = { 11, 12 };
-        bigger.delta.add(11, alph["a"], 11);
-        bigger.delta.add(12, alph["b"], 12);
+		bigger.initial = {11, 12};
+		bigger.final = {11, 12};
+		bigger.delta.add(11, alph["a"], 11);
+		bigger.delta.add(12, alph["b"], 12);
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
 
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-            REQUIRE(!is_incl);
-            REQUIRE(
-                (
-                    cex.word == Word{alph["a"], alph["b"]} ||
-                    cex.word == Word{alph["b"], alph["a"]})
-            );
+			REQUIRE(!is_incl);
+			REQUIRE(cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]});
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(is_incl);
-            REQUIRE(
-                (
-                    cex.word == Word{alph["a"], alph["b"]} ||
-                    cex.word == Word{alph["b"], alph["a"]})
-            );
-        }
-    }
+			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			REQUIRE(is_incl);
+			REQUIRE(cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]});
+		}
+	}
 
-    SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        smaller.initial = { 1 };
-        smaller.final = { 1 };
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(1, alph["b"], 1);
+	SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		smaller.initial = {1};
+		smaller.final = {1};
+		smaller.delta.add(1, alph["a"], 1);
+		smaller.delta.add(1, alph["b"], 1);
 
-        bigger.initial = { 11 };
-        bigger.final = { 11, 12, 13, 14, 15 };
+		bigger.initial = {11};
+		bigger.final = {11, 12, 13, 14, 15};
 
-        bigger.delta.add(11, alph["a"], 12);
-        bigger.delta.add(11, alph["b"], 12);
-        bigger.delta.add(12, alph["a"], 13);
-        bigger.delta.add(12, alph["b"], 13);
+		bigger.delta.add(11, alph["a"], 12);
+		bigger.delta.add(11, alph["b"], 12);
+		bigger.delta.add(12, alph["a"], 13);
+		bigger.delta.add(12, alph["b"], 13);
 
-        bigger.delta.add(13, alph["a"], 14);
-        bigger.delta.add(14, alph["a"], 14);
+		bigger.delta.add(13, alph["a"], 14);
+		bigger.delta.add(14, alph["a"], 14);
 
-        bigger.delta.add(13, alph["b"], 15);
-        bigger.delta.add(15, alph["b"], 15);
+		bigger.delta.add(13, alph["b"], 15);
+		bigger.delta.add(15, alph["b"], 15);
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-            REQUIRE(!is_incl);
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			REQUIRE(!is_incl);
 
-            REQUIRE(cex.word.size() == 4);
-            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-            REQUIRE(cex.word[2] != cex.word[3]);
+			REQUIRE(cex.word.size() == 4);
+			REQUIRE(cex.word[0] == alph["a"] || cex.word[0] == alph["b"]);
+			REQUIRE(cex.word[1] == alph["a"] || cex.word[1] == alph["b"]);
+			REQUIRE(cex.word[2] == alph["a"] || cex.word[2] == alph["b"]);
+			REQUIRE(cex.word[3] == alph["a"] || cex.word[3] == alph["b"]);
+			REQUIRE(cex.word[2] != cex.word[3]);
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(is_incl);
+			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			REQUIRE(is_incl);
 
-            REQUIRE(cex.word.size() == 4);
-            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-            REQUIRE(cex.word[2] != cex.word[3]);
-        }
-    }
+			REQUIRE(cex.word.size() == 4);
+			REQUIRE(cex.word[0] == alph["a"] || cex.word[0] == alph["b"]);
+			REQUIRE(cex.word[1] == alph["a"] || cex.word[1] == alph["b"]);
+			REQUIRE(cex.word[2] == alph["a"] || cex.word[2] == alph["b"]);
+			REQUIRE(cex.word[3] == alph["a"] || cex.word[3] == alph["b"]);
+			REQUIRE(cex.word[2] != cex.word[3]);
+		}
+	}
 
-    SECTION("wrong parameters 1") {
-        OnTheFlyAlphabet alph{};
+	SECTION("wrong parameters 1") {
+		OnTheFlyAlphabet alph{};
 
-        CHECK_THROWS_WITH(
-            is_included(smaller, bigger, &alph, params),
-            Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
-        );
-        CHECK_NOTHROW(is_included(smaller, bigger, &alph));
-    }
+		CHECK_THROWS_WITH(
+			is_included(smaller, bigger, &alph, params),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
+	}
 
-    SECTION("wrong parameters 2") {
-        OnTheFlyAlphabet alph{};
-        params["algorithm"] = "foo";
+	SECTION("wrong parameters 2") {
+		OnTheFlyAlphabet alph{};
+		params["algorithm"] = "foo";
 
-        CHECK_THROWS_WITH(
-            is_included(smaller, bigger, &alph, params),
-            Catch::Matchers::ContainsSubstring("received an unknown value")
-        );
-        CHECK_NOTHROW(is_included(smaller, bigger, &alph));
-    }
+		CHECK_THROWS_WITH(
+			is_included(smaller, bigger, &alph, params), Catch::Matchers::ContainsSubstring("received an unknown value")
+		);
+		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
+	}
 } // }}}
 
 TEST_CASE("mata::nft::are_equivalent") {
-    Nft smaller(10);
-    Nft bigger(16);
-    Word cex;
-    ParameterMap params;
+	Nft smaller(10);
+	Nft bigger(16);
+	Word cex;
+	ParameterMap params;
 
-    const std::unordered_set<std::string> ALGORITHMS = {
-        "naive",
-        "antichains",
-    };
+	const std::unordered_set<std::string> ALGORITHMS = {
+		"naive",
+		"antichains",
+	};
 
-    SECTION("{} == {}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
+	SECTION("{} == {}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
 
-            CHECK(are_equivalent(smaller, bigger, &alph, params));
-            CHECK(are_equivalent(smaller, bigger, params));
-            CHECK(are_equivalent(smaller, bigger));
+			CHECK(are_equivalent(smaller, bigger, &alph, params));
+			CHECK(are_equivalent(smaller, bigger, params));
+			CHECK(are_equivalent(smaller, bigger));
 
-            CHECK(are_equivalent(bigger, smaller, &alph, params));
-            CHECK(are_equivalent(bigger, smaller, params));
-            CHECK(are_equivalent(bigger, smaller));
-        }
-    }
+			CHECK(are_equivalent(bigger, smaller, &alph, params));
+			CHECK(are_equivalent(bigger, smaller, params));
+			CHECK(are_equivalent(bigger, smaller));
+		}
+	}
 
-    SECTION("{} == {epsilon}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
-        bigger.initial = { 1 };
-        bigger.final = { 1 };
+	SECTION("{} == {epsilon}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
+		bigger.initial = {1};
+		bigger.final = {1};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
 
-            CHECK(!are_equivalent(smaller, bigger, &alph, params));
-            CHECK(!are_equivalent(smaller, bigger, params));
-            CHECK(!are_equivalent(smaller, bigger));
+			CHECK(!are_equivalent(smaller, bigger, &alph, params));
+			CHECK(!are_equivalent(smaller, bigger, params));
+			CHECK(!are_equivalent(smaller, bigger));
 
-            CHECK(!are_equivalent(bigger, smaller, &alph, params));
-            CHECK(!are_equivalent(bigger, smaller, params));
-            CHECK(!are_equivalent(bigger, smaller));
-        }
-    }
+			CHECK(!are_equivalent(bigger, smaller, &alph, params));
+			CHECK(!are_equivalent(bigger, smaller, params));
+			CHECK(!are_equivalent(bigger, smaller));
+		}
+	}
 
-    SECTION("{epsilon} == {epsilon}, empty alphabet") {
-        OnTheFlyAlphabet alph{};
-        smaller.initial = { 1 };
-        smaller.final = { 1 };
-        bigger.initial = { 11 };
-        bigger.final = { 11 };
+	SECTION("{epsilon} == {epsilon}, empty alphabet") {
+		OnTheFlyAlphabet alph{};
+		smaller.initial = {1};
+		smaller.final = {1};
+		bigger.initial = {11};
+		bigger.final = {11};
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
 
-            CHECK(are_equivalent(smaller, bigger, &alph, params));
-            CHECK(are_equivalent(smaller, bigger, params));
-            CHECK(are_equivalent(smaller, bigger));
+			CHECK(are_equivalent(smaller, bigger, &alph, params));
+			CHECK(are_equivalent(smaller, bigger, params));
+			CHECK(are_equivalent(smaller, bigger));
 
-            CHECK(are_equivalent(bigger, smaller, &alph, params));
-            CHECK(are_equivalent(bigger, smaller, params));
-            CHECK(are_equivalent(bigger, smaller));
-        }
-    }
+			CHECK(are_equivalent(bigger, smaller, &alph, params));
+			CHECK(are_equivalent(bigger, smaller, params));
+			CHECK(are_equivalent(bigger, smaller));
+		}
+	}
 
-    SECTION("a* + b* == (a+b)*") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        smaller.initial = { 1, 2 };
-        smaller.final = { 1, 2 };
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(2, alph["b"], 2);
+	SECTION("a* + b* == (a+b)*") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		smaller.initial = {1, 2};
+		smaller.final = {1, 2};
+		smaller.delta.add(1, alph["a"], 1);
+		smaller.delta.add(2, alph["b"], 2);
 
-        bigger.initial = { 11 };
-        bigger.final = { 11 };
-        bigger.delta.add(11, alph["a"], 11);
-        bigger.delta.add(11, alph["b"], 11);
+		bigger.initial = {11};
+		bigger.final = {11};
+		bigger.delta.add(11, alph["a"], 11);
+		bigger.delta.add(11, alph["b"], 11);
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
 
-            //TODO:what about we test the plumbing versions primarily?
-            // Debugging with the dispatcher is annoying.
+			// TODO:what about we test the plumbing versions primarily?
+			//  Debugging with the dispatcher is annoying.
 
-            CHECK(!are_equivalent(smaller, bigger, &alph, params));
-            CHECK(!are_equivalent(smaller, bigger, params));
-            CHECK(!are_equivalent(smaller, bigger));
+			CHECK(!are_equivalent(smaller, bigger, &alph, params));
+			CHECK(!are_equivalent(smaller, bigger, params));
+			CHECK(!are_equivalent(smaller, bigger));
 
-            CHECK(!are_equivalent(bigger, smaller, &alph, params));
-            CHECK(!are_equivalent(bigger, smaller, params));
-            CHECK(!are_equivalent(bigger, smaller));
-        }
-    }
+			CHECK(!are_equivalent(bigger, smaller, &alph, params));
+			CHECK(!are_equivalent(bigger, smaller, params));
+			CHECK(!are_equivalent(bigger, smaller));
+		}
+	}
 
-    SECTION("a* != (a|b)*, was throwing exception") {
-        Nft aut{ nfa::builder::create_from_regex("a*") };
-        Nft aut2{ nfa::builder::create_from_regex("(a|b)*") };
-        CHECK(!are_equivalent(aut, aut2));
-    }
+	SECTION("a* != (a|b)*, was throwing exception") {
+		Nft aut{nfa::builder::create_from_regex("a*")};
+		Nft aut2{nfa::builder::create_from_regex("(a|b)*")};
+		CHECK(!are_equivalent(aut, aut2));
+	}
 
-    SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)") {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
-        smaller.initial = { 1 };
-        smaller.final = { 1 };
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(1, alph["b"], 1);
+	SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)") {
+		OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
+		smaller.initial = {1};
+		smaller.final = {1};
+		smaller.delta.add(1, alph["a"], 1);
+		smaller.delta.add(1, alph["b"], 1);
 
-        bigger.initial = { 11 };
-        bigger.final = { 11, 12, 13, 14, 15 };
+		bigger.initial = {11};
+		bigger.final = {11, 12, 13, 14, 15};
 
-        bigger.delta.add(11, alph["a"], 12);
-        bigger.delta.add(11, alph["b"], 12);
-        bigger.delta.add(12, alph["a"], 13);
-        bigger.delta.add(12, alph["b"], 13);
+		bigger.delta.add(11, alph["a"], 12);
+		bigger.delta.add(11, alph["b"], 12);
+		bigger.delta.add(12, alph["a"], 13);
+		bigger.delta.add(12, alph["b"], 13);
 
-        bigger.delta.add(13, alph["a"], 14);
-        bigger.delta.add(14, alph["a"], 14);
+		bigger.delta.add(13, alph["a"], 14);
+		bigger.delta.add(14, alph["a"], 14);
 
-        bigger.delta.add(13, alph["b"], 15);
-        bigger.delta.add(15, alph["b"], 15);
+		bigger.delta.add(13, alph["b"], 15);
+		bigger.delta.add(15, alph["b"], 15);
 
-        for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
 
-            CHECK(!are_equivalent(smaller, bigger, &alph, params));
-            CHECK(!are_equivalent(smaller, bigger, params));
-            CHECK(!are_equivalent(smaller, bigger));
+			CHECK(!are_equivalent(smaller, bigger, &alph, params));
+			CHECK(!are_equivalent(smaller, bigger, params));
+			CHECK(!are_equivalent(smaller, bigger));
 
-            CHECK(!are_equivalent(bigger, smaller, &alph, params));
-            CHECK(!are_equivalent(bigger, smaller, params));
-            CHECK(!are_equivalent(bigger, smaller));
-        }
-    }
+			CHECK(!are_equivalent(bigger, smaller, &alph, params));
+			CHECK(!are_equivalent(bigger, smaller, params));
+			CHECK(!are_equivalent(bigger, smaller));
+		}
+	}
 
-    SECTION("wrong parameters 1") {
-        OnTheFlyAlphabet alph{};
+	SECTION("wrong parameters 1") {
+		OnTheFlyAlphabet alph{};
 
-        CHECK_THROWS_WITH(
-            are_equivalent(smaller, bigger, &alph, params),
-            Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
-        );
-        CHECK_THROWS_WITH(
-            are_equivalent(smaller, bigger, params),
-            Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
-        );
-        CHECK_NOTHROW(are_equivalent(smaller, bigger));
-    }
+		CHECK_THROWS_WITH(
+			are_equivalent(smaller, bigger, &alph, params),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_THROWS_WITH(
+			are_equivalent(smaller, bigger, params),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_NOTHROW(are_equivalent(smaller, bigger));
+	}
 
-    SECTION("wrong parameters 2") {
-        OnTheFlyAlphabet alph{};
-        params["algorithm"] = "foo";
+	SECTION("wrong parameters 2") {
+		OnTheFlyAlphabet alph{};
+		params["algorithm"] = "foo";
 
-        CHECK_THROWS_WITH(
-            are_equivalent(smaller, bigger, &alph, params),
-            Catch::Matchers::ContainsSubstring("received an unknown value")
-        );
-        CHECK_THROWS_WITH(
-            are_equivalent(smaller, bigger, params),
-            Catch::Matchers::ContainsSubstring("received an unknown value")
-        );
-        CHECK_NOTHROW(are_equivalent(smaller, bigger));
-    }
+		CHECK_THROWS_WITH(
+			are_equivalent(smaller, bigger, &alph, params),
+			Catch::Matchers::ContainsSubstring("received an unknown value")
+		);
+		CHECK_THROWS_WITH(
+			are_equivalent(smaller, bigger, params), Catch::Matchers::ContainsSubstring("received an unknown value")
+		);
+		CHECK_NOTHROW(are_equivalent(smaller, bigger));
+	}
 }
 
 TEST_CASE("mata::nft::revert()") { // {{{
-    Nft aut(9);
+	Nft aut(9);
 
-    SECTION("empty automaton") {
-        Nft result = revert(aut);
+	SECTION("empty automaton") {
+		Nft result = revert(aut);
 
-        REQUIRE(result.delta.empty());
-        REQUIRE(result.initial.empty());
-        REQUIRE(result.final.empty());
-    }
+		REQUIRE(result.delta.empty());
+		REQUIRE(result.initial.empty());
+		REQUIRE(result.final.empty());
+	}
 
-    SECTION("no-transition automaton") {
-        aut.initial.insert(1);
-        aut.initial.insert(3);
+	SECTION("no-transition automaton") {
+		aut.initial.insert(1);
+		aut.initial.insert(3);
 
-        aut.final.insert(2);
-        aut.final.insert(5);
+		aut.final.insert(2);
+		aut.final.insert(5);
 
-        Nft result = revert(aut);
+		Nft result = revert(aut);
 
-        REQUIRE(result.delta.empty());
-        REQUIRE(result.initial[2]);
-        REQUIRE(result.initial[5]);
-        REQUIRE(result.final[1]);
-        REQUIRE(result.final[3]);
-    }
+		REQUIRE(result.delta.empty());
+		REQUIRE(result.initial[2]);
+		REQUIRE(result.initial[5]);
+		REQUIRE(result.final[1]);
+		REQUIRE(result.final[3]);
+	}
 
-    SECTION("one-transition automaton") {
-        aut.initial.insert(1);
-        aut.final.insert(2);
-        aut.delta.add(1, 'a', 2);
+	SECTION("one-transition automaton") {
+		aut.initial.insert(1);
+		aut.final.insert(2);
+		aut.delta.add(1, 'a', 2);
 
-        Nft result = revert(aut);
+		Nft result = revert(aut);
 
-        REQUIRE(result.initial[2]);
-        REQUIRE(result.final[1]);
-        REQUIRE(result.delta.contains(2, 'a', 1));
-        REQUIRE(result.delta.num_of_transitions() == aut.delta.num_of_transitions());
-    }
+		REQUIRE(result.initial[2]);
+		REQUIRE(result.final[1]);
+		REQUIRE(result.delta.contains(2, 'a', 1));
+		REQUIRE(result.delta.num_of_transitions() == aut.delta.num_of_transitions());
+	}
 
-    SECTION("bigger automaton") {
-        aut.initial = { 1, 2 };
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'a', 3);
-        aut.delta.add(1, 'b', 4);
-        aut.delta.add(2, 'a', 2);
-        aut.delta.add(2, 'a', 3);
-        aut.delta.add(2, 'b', 4);
-        aut.delta.add(3, 'b', 4);
-        aut.delta.add(3, 'c', 7);
-        aut.delta.add(3, 'b', 2);
-        aut.delta.add(7, 'a', 8);
-        aut.final = { 3 };
+	SECTION("bigger automaton") {
+		aut.initial = {1, 2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(1, 'b', 4);
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 4);
+		aut.delta.add(3, 'c', 7);
+		aut.delta.add(3, 'b', 2);
+		aut.delta.add(7, 'a', 8);
+		aut.final = {3};
 
-        Nft result = revert(aut);
-        //REQUIRE(result.final == StateSet({1, 2}));
-        REQUIRE(StateSet(result.final) == StateSet({1, 2}));
-        REQUIRE(result.delta.contains(2, 'a', 1));
-        REQUIRE(result.delta.contains(3, 'a', 1));
-        REQUIRE(result.delta.contains(4, 'b', 1));
-        REQUIRE(result.delta.contains(2, 'a', 2));
-        REQUIRE(result.delta.contains(3, 'a', 2));
-        REQUIRE(result.delta.contains(4, 'b', 2));
-        REQUIRE(result.delta.contains(4, 'b', 3));
-        REQUIRE(result.delta.contains(7, 'c', 3));
-        REQUIRE(result.delta.contains(2, 'b', 3));
-        REQUIRE(result.delta.contains(8, 'a', 7));
-        REQUIRE(StateSet(result.initial) == StateSet({3}));
-    }
+		Nft result = revert(aut);
+		// REQUIRE(result.final == StateSet({1, 2}));
+		REQUIRE(StateSet(result.final) == StateSet({1, 2}));
+		REQUIRE(result.delta.contains(2, 'a', 1));
+		REQUIRE(result.delta.contains(3, 'a', 1));
+		REQUIRE(result.delta.contains(4, 'b', 1));
+		REQUIRE(result.delta.contains(2, 'a', 2));
+		REQUIRE(result.delta.contains(3, 'a', 2));
+		REQUIRE(result.delta.contains(4, 'b', 2));
+		REQUIRE(result.delta.contains(4, 'b', 3));
+		REQUIRE(result.delta.contains(7, 'c', 3));
+		REQUIRE(result.delta.contains(2, 'b', 3));
+		REQUIRE(result.delta.contains(8, 'a', 7));
+		REQUIRE(StateSet(result.initial) == StateSet({3}));
+	}
 
-    SECTION("Automaton A") {
-        Nft nft{ 11 };
-        FILL_WITH_AUT_A(nft);
-        Nft res = revert(nft);
-        CHECK(res.initial[5]);
-        CHECK(res.final[1]);
-        CHECK(res.final[3]);
-        CHECK(res.delta.num_of_transitions() == 15);
-        CHECK(res.delta.contains(5, 'a', 5));
-        CHECK(res.delta.contains(5, 'a', 7));
-        CHECK(res.delta.contains(9, 'a', 9));
-        CHECK(res.delta.contains(9, 'c', 5));
-        CHECK(res.delta.contains(9, 'b', 3));
-        CHECK(res.delta.contains(7, 'a', 3));
-        CHECK(res.delta.contains(7, 'a', 10));
-        CHECK(res.delta.contains(7, 'b', 10));
-        CHECK(res.delta.contains(7, 'c', 10));
-        CHECK(res.delta.contains(7, 'b', 1));
-        CHECK(res.delta.contains(3, 'a', 7));
-        CHECK(res.delta.contains(3, 'c', 7));
-        CHECK(res.delta.contains(3, 'a', 1));
-        CHECK(res.delta.contains(1, 'b', 7));
-        CHECK(res.delta.contains(10, 'a', 1));
-    }
+	SECTION("Automaton A") {
+		Nft nft{11};
+		FILL_WITH_AUT_A(nft);
+		Nft res = revert(nft);
+		CHECK(res.initial[5]);
+		CHECK(res.final[1]);
+		CHECK(res.final[3]);
+		CHECK(res.delta.num_of_transitions() == 15);
+		CHECK(res.delta.contains(5, 'a', 5));
+		CHECK(res.delta.contains(5, 'a', 7));
+		CHECK(res.delta.contains(9, 'a', 9));
+		CHECK(res.delta.contains(9, 'c', 5));
+		CHECK(res.delta.contains(9, 'b', 3));
+		CHECK(res.delta.contains(7, 'a', 3));
+		CHECK(res.delta.contains(7, 'a', 10));
+		CHECK(res.delta.contains(7, 'b', 10));
+		CHECK(res.delta.contains(7, 'c', 10));
+		CHECK(res.delta.contains(7, 'b', 1));
+		CHECK(res.delta.contains(3, 'a', 7));
+		CHECK(res.delta.contains(3, 'c', 7));
+		CHECK(res.delta.contains(3, 'a', 1));
+		CHECK(res.delta.contains(1, 'b', 7));
+		CHECK(res.delta.contains(10, 'a', 1));
+	}
 
-    SECTION("Automaton B") {
-        Nft nft{ 15 };
-        FILL_WITH_AUT_B(nft);
-        Nft res = revert(nft);
-        CHECK(res.initial[2]);
-        CHECK(res.initial[12]);
-        CHECK(res.final[4]);
-        CHECK(res.delta.num_of_transitions() == 12);
-        CHECK(res.delta.contains(8, 'a', 4));
-        CHECK(res.delta.contains(8, 'c', 4));
-        CHECK(res.delta.contains(4, 'b', 8));
-        CHECK(res.delta.contains(6, 'b', 4));
-        CHECK(res.delta.contains(6, 'a', 4));
-        CHECK(res.delta.contains(2, 'a', 6));
-        CHECK(res.delta.contains(2, 'a', 0));
-        CHECK(res.delta.contains(2, 'b', 2));
-        CHECK(res.delta.contains(0, 'a', 2));
-        CHECK(res.delta.contains(12, 'c', 2));
-        CHECK(res.delta.contains(12, 'b', 14));
-        CHECK(res.delta.contains(14, 'a', 12));
-    }
+	SECTION("Automaton B") {
+		Nft nft{15};
+		FILL_WITH_AUT_B(nft);
+		Nft res = revert(nft);
+		CHECK(res.initial[2]);
+		CHECK(res.initial[12]);
+		CHECK(res.final[4]);
+		CHECK(res.delta.num_of_transitions() == 12);
+		CHECK(res.delta.contains(8, 'a', 4));
+		CHECK(res.delta.contains(8, 'c', 4));
+		CHECK(res.delta.contains(4, 'b', 8));
+		CHECK(res.delta.contains(6, 'b', 4));
+		CHECK(res.delta.contains(6, 'a', 4));
+		CHECK(res.delta.contains(2, 'a', 6));
+		CHECK(res.delta.contains(2, 'a', 0));
+		CHECK(res.delta.contains(2, 'b', 2));
+		CHECK(res.delta.contains(0, 'a', 2));
+		CHECK(res.delta.contains(12, 'c', 2));
+		CHECK(res.delta.contains(12, 'b', 14));
+		CHECK(res.delta.contains(14, 'a', 12));
+	}
 } // }}}
 
 TEST_CASE("mata::nft::Levels") {
-    Levels levels{};
+	Levels levels{};
 
-    SECTION("empty") { CHECK(levels.count(3) == 0); }
+	SECTION("empty") { CHECK(levels.count(3) == 0); }
 
-    SECTION("construction") {
-        levels = Levels{ 1 };
-        CHECK(levels.num_of_levels == 1);
-        CHECK(levels.empty());
-    }
+	SECTION("construction") {
+		levels = Levels{1};
+		CHECK(levels.num_of_levels == 1);
+		CHECK(levels.empty());
+	}
 
-    SECTION("construction 2") {
-        levels = Levels{ 1, 2 };
-        CHECK(levels.num_of_levels == 1);
-        CHECK(levels.size() == 2);
-        CHECK(std::ranges::all_of(levels, [](const Level level) { return level == DEFAULT_LEVEL; }));
-    }
+	SECTION("construction 2") {
+		levels = Levels{1, 2};
+		CHECK(levels.num_of_levels == 1);
+		CHECK(levels.size() == 2);
+		CHECK(std::ranges::all_of(levels, [](const Level level) { return level == DEFAULT_LEVEL; }));
+	}
 
-    SECTION("construction 3") {
-        levels = Levels{ 3, { 2 } };
-        CHECK(levels.num_of_levels == 3);
-        CHECK(levels.size() == 1);
-        CHECK(levels == std::vector<Level>{ 2 });
-        CHECK(levels != Levels{ 2 });
-    }
+	SECTION("construction 3") {
+		levels = Levels{3, {2}};
+		CHECK(levels.num_of_levels == 3);
+		CHECK(levels.size() == 1);
+		CHECK(levels == std::vector<Level>{2});
+		CHECK(levels != Levels{2});
+	}
 
-    SECTION("construction 4") {
-        levels = { 3, 2 };
-        CHECK(levels.num_of_levels == 4);
-        CHECK(levels.size() == 2);
-        CHECK(levels == std::vector<Level>{ 3, 2 });
-        CHECK(levels != Levels{ 3, { 2 } });
-    }
+	SECTION("construction 4") {
+		levels = {3, 2};
+		CHECK(levels.num_of_levels == 4);
+		CHECK(levels.size() == 2);
+		CHECK(levels == std::vector<Level>{3, 2});
+		CHECK(levels != Levels{3, {2}});
+	}
 
-    SECTION("existing") {
-        levels = { 1, 0, 1, 0, 4, 2, 0 };
-        CHECK(levels.count(0) == 3);
-        CHECK(levels.count(1) == 2);
-        CHECK(levels.count(2) == 1);
-        CHECK(levels.count(4) == 1);
-    }
+	SECTION("existing") {
+		levels = {1, 0, 1, 0, 4, 2, 0};
+		CHECK(levels.count(0) == 3);
+		CHECK(levels.count(1) == 2);
+		CHECK(levels.count(2) == 1);
+		CHECK(levels.count(4) == 1);
+	}
 
-    SECTION("non-existing") {
-        levels = { 1, 0, 1, 0, 4, 2, 0 };
-        CHECK(levels.count(3) == 0);
-        CHECK(levels.count(5) == 0);
-    }
+	SECTION("non-existing") {
+		levels = {1, 0, 1, 0, 4, 2, 0};
+		CHECK(levels.count(3) == 0);
+		CHECK(levels.count(5) == 0);
+	}
 
-    SECTION("mata::nft::Levels::get_levels_of()") {
-        levels = { 1, 0, 1, 0, 4, 2, 0 };
-        StateSet states = { 0, 2, 4, 5 };
-        std::vector<Level> expected_levels = { 1, 1, 4, 2 };
-        CHECK(levels.get_levels_of(states) == expected_levels);
-    }
+	SECTION("mata::nft::Levels::get_levels_of()") {
+		levels = {1, 0, 1, 0, 4, 2, 0};
+		StateSet states = {0, 2, 4, 5};
+		std::vector<Level> expected_levels = {1, 1, 4, 2};
+		CHECK(levels.get_levels_of(states) == expected_levels);
+	}
 
-    SECTION("mata::nft::Levels::get_minimal_next_level_of()") {
-        levels = { 1, 0, 1, 0, 4, 2, 0 };
-        StateSet states = { 0, 1, 4, 5 };
-        CHECK(levels.get_minimal_next_level_of(states) == 1);
-        states.erase(0);
-        CHECK(levels.get_minimal_next_level_of(states) == 2);
-        states.erase(5);
-        CHECK(levels.get_minimal_next_level_of(states) == 4);
-        states.erase(4);
-        CHECK(levels.get_minimal_next_level_of(states) == 0);
-    }
+	SECTION("mata::nft::Levels::get_minimal_next_level_of()") {
+		levels = {1, 0, 1, 0, 4, 2, 0};
+		StateSet states = {0, 1, 4, 5};
+		CHECK(levels.get_minimal_next_level_of(states) == 1);
+		states.erase(0);
+		CHECK(levels.get_minimal_next_level_of(states) == 2);
+		states.erase(5);
+		CHECK(levels.get_minimal_next_level_of(states) == 4);
+		states.erase(4);
+		CHECK(levels.get_minimal_next_level_of(states) == 0);
+	}
 
-    SECTION("operator=(std::vector<Level>) and set(std::vector<Level>) behaviour") {
-        levels = { 1, 0, 1 };
-        levels.num_of_levels = 12;
-        levels.set(std::vector<Level>{ 5, 6, 7 });
-        CHECK(levels.num_of_levels == 12);
-        levels = std::vector<Level>{ 2, 2, 1 };
-        CHECK(levels.num_of_levels == 3);
-        CHECK(levels == std::vector<Level>{ 2, 2, 1 });
-    }
+	SECTION("operator=(std::vector<Level>) and set(std::vector<Level>) behaviour") {
+		levels = {1, 0, 1};
+		levels.num_of_levels = 12;
+		levels.set(std::vector<Level>{5, 6, 7});
+		CHECK(levels.num_of_levels == 12);
+		levels = std::vector<Level>{2, 2, 1};
+		CHECK(levels.num_of_levels == 3);
+		CHECK(levels == std::vector<Level>{2, 2, 1});
+	}
 }
 
 TEST_CASE("mata::nft::Nft::invert_levels()") {
-    SECTION("Simple 2 level tests") {
-        SECTION("Linear") {
-            Nft aut(3);
-            aut.initial.insert(0);
-            aut.final.insert(2);
-            aut.levels = { 2, { 0, 1, 0 } };
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(0, 'b', 1);
-            aut.delta.add(1, 'c', 2);
-            aut.delta.add(1, 'd', 2);
-            Nft aut_new = invert_levels(aut);
+	SECTION("Simple 2 level tests") {
+		SECTION("Linear") {
+			Nft aut(3);
+			aut.initial.insert(0);
+			aut.final.insert(2);
+			aut.levels = {2, {0, 1, 0}};
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(0, 'b', 1);
+			aut.delta.add(1, 'c', 2);
+			aut.delta.add(1, 'd', 2);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(3);
-            expected.initial.insert(0);
-            expected.final.insert(2);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 0 });
-            expected.delta.add(0, 'c', 1);
-            expected.delta.add(0, 'd', 1);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(1, 'b', 2);
+			Nft expected = Nft(3);
+			expected.initial.insert(0);
+			expected.final.insert(2);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 0});
+			expected.delta.add(0, 'c', 1);
+			expected.delta.add(0, 'd', 1);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(1, 'b', 2);
 
-            CHECK(aut_new.num_of_states() <= 3);
-            CHECK(aut_new.delta.num_of_transitions() <= 4);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 3);
+			CHECK(aut_new.delta.num_of_transitions() <= 4);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Diamond") {
-            Nft aut(4);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 1, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(0, 'b', 2);
-            aut.delta.add(1, 'c', 3);
-            aut.delta.add(2, 'd', 3);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Diamond") {
+			Nft aut(4);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 1, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(0, 'b', 2);
+			aut.delta.add(1, 'c', 3);
+			aut.delta.add(2, 'd', 3);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(4);
-            expected.initial.insert(0);
-            expected.final.insert(3);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 1, 0 });
-            expected.delta.add(0, 'c', 1);
-            expected.delta.add(0, 'd', 2);
-            expected.delta.add(1, 'a', 3);
-            expected.delta.add(2, 'b', 3);
+			Nft expected = Nft(4);
+			expected.initial.insert(0);
+			expected.final.insert(3);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 1, 0});
+			expected.delta.add(0, 'c', 1);
+			expected.delta.add(0, 'd', 2);
+			expected.delta.add(1, 'a', 3);
+			expected.delta.add(2, 'b', 3);
 
-            CHECK(aut_new.num_of_states() <= 4);
-            CHECK(aut_new.delta.num_of_transitions() <= 4);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 4);
+			CHECK(aut_new.delta.num_of_transitions() <= 4);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Branching") {
-            Nft aut(4);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 0, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(1, 'c', 3);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Branching") {
+			Nft aut(4);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 0, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(1, 'c', 3);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(5);
-            expected.initial.insert(0);
-            expected.final.insert(4);
-            expected.final.insert(5);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 1, 0, 0 });
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(0, 'c', 2);
-            expected.delta.add(1, 'a', 3);
-            expected.delta.add(2, 'a', 4);
+			Nft expected = Nft(5);
+			expected.initial.insert(0);
+			expected.final.insert(4);
+			expected.final.insert(5);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 1, 0, 0});
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(0, 'c', 2);
+			expected.delta.add(1, 'a', 3);
+			expected.delta.add(2, 'a', 4);
 
-            CHECK(aut_new.num_of_states() <= 5);
-            CHECK(aut_new.delta.num_of_transitions() <= 4);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
-    }
+			CHECK(aut_new.num_of_states() <= 5);
+			CHECK(aut_new.delta.num_of_transitions() <= 4);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
+	}
 
-    SECTION("jump_mode == RepeatSymbol") {
-        SECTION("empty automaton") {
-            Nft aut;
-            Nft aut_new = invert_levels(aut);
-            CHECK(aut_new.num_of_states() == 0);
-            CHECK(are_equivalent(aut, aut_new));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+	SECTION("jump_mode == RepeatSymbol") {
+		SECTION("empty automaton") {
+			Nft aut;
+			Nft aut_new = invert_levels(aut);
+			CHECK(aut_new.num_of_states() == 0);
+			CHECK(are_equivalent(aut, aut_new));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("no transition only states") {
-            Nft aut(3);
-            aut.initial.insert(1);
-            aut.final.insert(2);
-            aut.levels = { 2, { 1, 0, 0 } };
-            Nft aut_new = invert_levels(aut);
-            CHECK(aut_new.is_lang_empty());
-            CHECK(aut_new.delta.num_of_transitions() == 0);
-            CHECK(are_equivalent(aut, aut_new));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+		SECTION("no transition only states") {
+			Nft aut(3);
+			aut.initial.insert(1);
+			aut.final.insert(2);
+			aut.levels = {2, {1, 0, 0}};
+			Nft aut_new = invert_levels(aut);
+			CHECK(aut_new.is_lang_empty());
+			CHECK(aut_new.delta.num_of_transitions() == 0);
+			CHECK(are_equivalent(aut, aut_new));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Linear - 2 levels") {
-            Nft aut(3);
-            aut.initial.insert(0);
-            aut.final.insert(2);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Linear - 2 levels") {
+			Nft aut(3);
+			aut.initial.insert(0);
+			aut.final.insert(2);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(3);
-            expected.initial.insert(0);
-            expected.final.insert(2);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 0 });
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(1, 'a', 2);
+			Nft expected = Nft(3);
+			expected.initial.insert(0);
+			expected.final.insert(2);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 0});
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(1, 'a', 2);
 
-            CHECK(aut_new.num_of_states() <= 3);
-            CHECK(aut_new.delta.num_of_transitions() <= 2);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 3);
+			CHECK(aut_new.delta.num_of_transitions() <= 2);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Linear 2 - 2 levels") {
-            Nft aut(5);
-            aut.initial.insert(0);
-            aut.final.insert(4);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 0, 1, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(2, 'c', 3);
-            aut.delta.add(3, 'd', 4);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Linear 2 - 2 levels") {
+			Nft aut(5);
+			aut.initial.insert(0);
+			aut.final.insert(4);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 0, 1, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(2, 'c', 3);
+			aut.delta.add(3, 'd', 4);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(5);
-            expected.initial.insert(0);
-            expected.final.insert(4);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 0, 1, 0 });
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'd', 3);
-            expected.delta.add(3, 'c', 4);
+			Nft expected = Nft(5);
+			expected.initial.insert(0);
+			expected.final.insert(4);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 0, 1, 0});
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'd', 3);
+			expected.delta.add(3, 'c', 4);
 
-            CHECK(aut_new.num_of_states() <= 5);
-            CHECK(aut_new.delta.num_of_transitions() <= 4);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 5);
+			CHECK(aut_new.delta.num_of_transitions() <= 4);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Linear + long jump - 3 levels") {
-            Nft aut(4);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.levels.num_of_levels = 3;
-            aut.levels.set({ 0, 1, 2, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(2, 'c', 3);
-            aut.delta.add(0, 'd', 3);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Linear + long jump - 3 levels") {
+			Nft aut(4);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.levels.num_of_levels = 3;
+			aut.levels.set({0, 1, 2, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(2, 'c', 3);
+			aut.delta.add(0, 'd', 3);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(4);
-            expected.initial.insert(0);
-            expected.final.insert(3);
-            expected.levels.num_of_levels = 3;
-            expected.levels.set({ 0, 1, 2, 0 });
-            expected.delta.add(0, 'd', 3);
-            expected.delta.add(0, 'c', 1);
-            expected.delta.add(1, 'b', 2);
-            expected.delta.add(2, 'a', 3);
+			Nft expected = Nft(4);
+			expected.initial.insert(0);
+			expected.final.insert(3);
+			expected.levels.num_of_levels = 3;
+			expected.levels.set({0, 1, 2, 0});
+			expected.delta.add(0, 'd', 3);
+			expected.delta.add(0, 'c', 1);
+			expected.delta.add(1, 'b', 2);
+			expected.delta.add(2, 'a', 3);
 
-            CHECK(aut_new.num_of_states() <= 4);
-            CHECK(aut_new.delta.num_of_transitions() <= 4);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 4);
+			CHECK(aut_new.delta.num_of_transitions() <= 4);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Linear + long jump 2 - 4 levels") {
-            Nft aut(4);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.levels.num_of_levels = 4;
-            aut.levels.set({ 0, 1, 3, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(2, 'c', 3);
-            aut.delta.add(0, 'd', 2);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Linear + long jump 2 - 4 levels") {
+			Nft aut(4);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.levels.num_of_levels = 4;
+			aut.levels.set({0, 1, 3, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(2, 'c', 3);
+			aut.delta.add(0, 'd', 2);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(5);
-            expected.initial.insert(0);
-            expected.final.insert(4);
-            expected.levels.num_of_levels = 4;
-            expected.levels.set({ 0, 1, 3, 1, 0 });
-            expected.delta.add(0, 'c', 1);
-            expected.delta.add(1, 'b', 2);
-            expected.delta.add(2, 'a', 4);
-            expected.delta.add(0, 'c', 3);
-            expected.delta.add(3, 'd', 4);
+			Nft expected = Nft(5);
+			expected.initial.insert(0);
+			expected.final.insert(4);
+			expected.levels.num_of_levels = 4;
+			expected.levels.set({0, 1, 3, 1, 0});
+			expected.delta.add(0, 'c', 1);
+			expected.delta.add(1, 'b', 2);
+			expected.delta.add(2, 'a', 4);
+			expected.delta.add(0, 'c', 3);
+			expected.delta.add(3, 'd', 4);
 
-            CHECK(aut_new.num_of_states() <= 5);
-            CHECK(aut_new.delta.num_of_transitions() <= 5);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 5);
+			CHECK(aut_new.delta.num_of_transitions() <= 5);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Complex - 2 levels") {
-            Nft aut(5);
-            aut.initial.insert(0);
-            aut.final.insert(2);
-            aut.final.insert(4);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 0, 1, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(1, 'd', 4);
-            aut.delta.add(2, 'c', 1);
-            aut.delta.add(2, 'e', 3);
-            aut.delta.add(3, 'g', 4);
-            aut.delta.add(4, 'f', 3);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Complex - 2 levels") {
+			Nft aut(5);
+			aut.initial.insert(0);
+			aut.final.insert(2);
+			aut.final.insert(4);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 0, 1, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(1, 'd', 4);
+			aut.delta.add(2, 'c', 1);
+			aut.delta.add(2, 'e', 3);
+			aut.delta.add(3, 'g', 4);
+			aut.delta.add(4, 'f', 3);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(9);
-            expected.initial.insert(0);
-            expected.final.insert(2);
-            expected.final.insert(6);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 0, 1, 1, 1, 0, 1, 1 });
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(0, 'd', 8);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'b', 3);
-            expected.delta.add(2, 'g', 4);
-            expected.delta.add(2, 'd', 5);
-            expected.delta.add(3, 'c', 2);
-            expected.delta.add(4, 'e', 6);
-            expected.delta.add(5, 'c', 6);
-            expected.delta.add(6, 'g', 7);
-            expected.delta.add(7, 'f', 6);
-            expected.delta.add(8, 'a', 6);
+			Nft expected = Nft(9);
+			expected.initial.insert(0);
+			expected.final.insert(2);
+			expected.final.insert(6);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 0, 1, 1, 1, 0, 1, 1});
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(0, 'd', 8);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'b', 3);
+			expected.delta.add(2, 'g', 4);
+			expected.delta.add(2, 'd', 5);
+			expected.delta.add(3, 'c', 2);
+			expected.delta.add(4, 'e', 6);
+			expected.delta.add(5, 'c', 6);
+			expected.delta.add(6, 'g', 7);
+			expected.delta.add(7, 'f', 6);
+			expected.delta.add(8, 'a', 6);
 
-            CHECK(aut_new.num_of_states() <= 9);
-            CHECK(aut_new.delta.num_of_transitions() <= 12);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
+			CHECK(aut_new.num_of_states() <= 9);
+			CHECK(aut_new.delta.num_of_transitions() <= 12);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
 
-        SECTION("Complex 2 - 3 levels") {
-            Nft aut(6);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.final.insert(4);
-            aut.levels.num_of_levels = 3;
-            aut.levels.set({ 0, 1, 2, 0, 0, 2 });
-            aut.delta.add(0, 'a', 3);
-            aut.delta.add(0, 'b', 2);
-            aut.delta.add(0, 'c', 1);
-            aut.delta.add(1, 'd', 2);
-            aut.delta.add(1, 'f', 3);
-            aut.delta.add(1, 'h', 4);
-            aut.delta.add(1, 'i', 5);
-            aut.delta.add(2, 'e', 3);
-            aut.delta.add(2, 'g', 4);
-            aut.delta.add(5, 'j', 4);
-            Nft aut_new = invert_levels(aut);
+		SECTION("Complex 2 - 3 levels") {
+			Nft aut(6);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.final.insert(4);
+			aut.levels.num_of_levels = 3;
+			aut.levels.set({0, 1, 2, 0, 0, 2});
+			aut.delta.add(0, 'a', 3);
+			aut.delta.add(0, 'b', 2);
+			aut.delta.add(0, 'c', 1);
+			aut.delta.add(1, 'd', 2);
+			aut.delta.add(1, 'f', 3);
+			aut.delta.add(1, 'h', 4);
+			aut.delta.add(1, 'i', 5);
+			aut.delta.add(2, 'e', 3);
+			aut.delta.add(2, 'g', 4);
+			aut.delta.add(5, 'j', 4);
+			Nft aut_new = invert_levels(aut);
 
-            Nft expected = Nft(13);
-            expected.initial.insert(0);
-            expected.final.insert(10);
-            expected.final.insert(11);
-            expected.levels.num_of_levels = 3;
-            expected.levels.set({ 0, 1, 1, 2, 2, 2, 1, 2, 1, 2, 0, 0, 1 });
-            expected.delta.add(0, 'a', 10);
-            expected.delta.add(0, 'e', 1);
-            expected.delta.add(0, 'e', 2);
-            expected.delta.add(0, 'f', 4);
-            expected.delta.add(0, 'h', 5);
-            expected.delta.add(0, 'g', 6);
-            expected.delta.add(0, 'j', 8);
-            expected.delta.add(0, 'g', 12);
-            expected.delta.add(1, 'b', 10);
-            expected.delta.add(2, 'd', 3);
-            expected.delta.add(3, 'c', 10);
-            expected.delta.add(4, 'c', 10);
-            expected.delta.add(5, 'c', 11);
-            expected.delta.add(6, 'd', 7);
-            expected.delta.add(7, 'c', 11);
-            expected.delta.add(8, 'i', 9);
-            expected.delta.add(9, 'c', 11);
-            expected.delta.add(12, 'b', 11);
+			Nft expected = Nft(13);
+			expected.initial.insert(0);
+			expected.final.insert(10);
+			expected.final.insert(11);
+			expected.levels.num_of_levels = 3;
+			expected.levels.set({0, 1, 1, 2, 2, 2, 1, 2, 1, 2, 0, 0, 1});
+			expected.delta.add(0, 'a', 10);
+			expected.delta.add(0, 'e', 1);
+			expected.delta.add(0, 'e', 2);
+			expected.delta.add(0, 'f', 4);
+			expected.delta.add(0, 'h', 5);
+			expected.delta.add(0, 'g', 6);
+			expected.delta.add(0, 'j', 8);
+			expected.delta.add(0, 'g', 12);
+			expected.delta.add(1, 'b', 10);
+			expected.delta.add(2, 'd', 3);
+			expected.delta.add(3, 'c', 10);
+			expected.delta.add(4, 'c', 10);
+			expected.delta.add(5, 'c', 11);
+			expected.delta.add(6, 'd', 7);
+			expected.delta.add(7, 'c', 11);
+			expected.delta.add(8, 'i', 9);
+			expected.delta.add(9, 'c', 11);
+			expected.delta.add(12, 'b', 11);
 
-            CHECK(aut_new.num_of_states() <= 13);
-            CHECK(aut_new.delta.num_of_transitions() <= 18);
-            CHECK(are_equivalent(aut_new, expected));
-            CHECK(are_equivalent(invert_levels(aut_new), aut));
-        }
-    }
+			CHECK(aut_new.num_of_states() <= 13);
+			CHECK(aut_new.delta.num_of_transitions() <= 18);
+			CHECK(are_equivalent(aut_new, expected));
+			CHECK(are_equivalent(invert_levels(aut_new), aut));
+		}
+	}
 
-    SECTION("jump mode == AppendDontCares") {
-        SECTION("empty automaton") {
-            Nft aut;
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
-            CHECK(aut_new.num_of_states() == 0);
-            CHECK(are_equivalent(aut, aut_new, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+	SECTION("jump mode == AppendDontCares") {
+		SECTION("empty automaton") {
+			Nft aut;
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+			CHECK(aut_new.num_of_states() == 0);
+			CHECK(are_equivalent(aut, aut_new, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("no transition only states") {
-            Nft aut(3);
-            aut.initial.insert(1);
-            aut.final.insert(2);
-            aut.levels = { 2, { 1, 0, 0 } };
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
-            CHECK(aut_new.is_lang_empty());
-            CHECK(aut_new.delta.num_of_transitions() == 0);
-            CHECK(are_equivalent(aut, aut_new, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+		SECTION("no transition only states") {
+			Nft aut(3);
+			aut.initial.insert(1);
+			aut.final.insert(2);
+			aut.levels = {2, {1, 0, 0}};
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+			CHECK(aut_new.is_lang_empty());
+			CHECK(aut_new.delta.num_of_transitions() == 0);
+			CHECK(are_equivalent(aut, aut_new, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Linear - 2 levels") {
-            Nft aut(3);
-            aut.initial.insert(0);
-            aut.final.insert(2);
-            aut.levels = { 2, { 0, 1, 0 } };
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Linear - 2 levels") {
+			Nft aut(3);
+			aut.initial.insert(0);
+			aut.final.insert(2);
+			aut.levels = {2, {0, 1, 0}};
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(3);
-            expected.initial.insert(0);
-            expected.final.insert(2);
-            expected.levels = { 2, { 0, 1, 0 } };
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(1, 'a', 2);
+			Nft expected = Nft(3);
+			expected.initial.insert(0);
+			expected.final.insert(2);
+			expected.levels = {2, {0, 1, 0}};
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(1, 'a', 2);
 
-            CHECK(aut_new.num_of_states() <= 3);
-            CHECK(aut_new.delta.num_of_transitions() <= 2);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+			CHECK(aut_new.num_of_states() <= 3);
+			CHECK(aut_new.delta.num_of_transitions() <= 2);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Linear 2 - 2 levels") {
-            Nft aut(5);
-            aut.initial.insert(0);
-            aut.final.insert(4);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 0, 1, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(2, 'c', 3);
-            aut.delta.add(3, 'd', 4);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Linear 2 - 2 levels") {
+			Nft aut(5);
+			aut.initial.insert(0);
+			aut.final.insert(4);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 0, 1, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(2, 'c', 3);
+			aut.delta.add(3, 'd', 4);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(5);
-            expected.initial.insert(0);
-            expected.final.insert(4);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 0, 1, 0 });
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'd', 3);
-            expected.delta.add(3, 'c', 4);
+			Nft expected = Nft(5);
+			expected.initial.insert(0);
+			expected.final.insert(4);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 0, 1, 0});
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'd', 3);
+			expected.delta.add(3, 'c', 4);
 
-            CHECK(aut_new.num_of_states() <= 5);
-            CHECK(aut_new.delta.num_of_transitions() <= 4);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+			CHECK(aut_new.num_of_states() <= 5);
+			CHECK(aut_new.delta.num_of_transitions() <= 4);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Linear + long jump - 4 levels, multiple symbols") {
-            Nft aut(2);
-            aut.initial.insert(0);
-            aut.final.insert(1);
-            aut.levels.num_of_levels = 4;
-            aut.levels.set({ 0, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(0, 'b', 1);
-            aut.delta.add(0, 'c', 1);
-            aut.delta.add(0, 'd', 1);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Linear + long jump - 4 levels, multiple symbols") {
+			Nft aut(2);
+			aut.initial.insert(0);
+			aut.final.insert(1);
+			aut.levels.num_of_levels = 4;
+			aut.levels.set({0, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(0, 'b', 1);
+			aut.delta.add(0, 'c', 1);
+			aut.delta.add(0, 'd', 1);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(3);
-            expected.initial.insert(0);
-            expected.final.insert(2);
-            expected.levels.num_of_levels = 4;
-            expected.levels.set({ 0, 3, 0 });
-            expected.delta.add(0, DONT_CARE, 1);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(1, 'b', 2);
-            expected.delta.add(1, 'c', 2);
-            expected.delta.add(1, 'd', 2);
+			Nft expected = Nft(3);
+			expected.initial.insert(0);
+			expected.final.insert(2);
+			expected.levels.num_of_levels = 4;
+			expected.levels.set({0, 3, 0});
+			expected.delta.add(0, DONT_CARE, 1);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(1, 'b', 2);
+			expected.delta.add(1, 'c', 2);
+			expected.delta.add(1, 'd', 2);
 
-            CHECK(aut_new.num_of_states() <= 3);
-            CHECK(aut_new.delta.num_of_transitions() <= 5);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+			CHECK(aut_new.num_of_states() <= 3);
+			CHECK(aut_new.delta.num_of_transitions() <= 5);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Linear + long jump - 3 levels") {
-            Nft aut(4);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.levels.num_of_levels = 3;
-            aut.levels.set({ 0, 1, 2, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(2, 'c', 3);
-            aut.delta.add(0, 'd', 3);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Linear + long jump - 3 levels") {
+			Nft aut(4);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.levels.num_of_levels = 3;
+			aut.levels.set({0, 1, 2, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(2, 'c', 3);
+			aut.delta.add(0, 'd', 3);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(5);
-            expected.initial.insert(0);
-            expected.final.insert(3);
-            expected.levels.num_of_levels = 3;
-            expected.levels.set({ 0, 1, 2, 0, 2 });
-            expected.delta.add(0, 'c', 1);
-            expected.delta.add(0, DONT_CARE, 4);
-            expected.delta.add(1, 'b', 2);
-            expected.delta.add(2, 'a', 3);
-            expected.delta.add(4, 'd', 3);
+			Nft expected = Nft(5);
+			expected.initial.insert(0);
+			expected.final.insert(3);
+			expected.levels.num_of_levels = 3;
+			expected.levels.set({0, 1, 2, 0, 2});
+			expected.delta.add(0, 'c', 1);
+			expected.delta.add(0, DONT_CARE, 4);
+			expected.delta.add(1, 'b', 2);
+			expected.delta.add(2, 'a', 3);
+			expected.delta.add(4, 'd', 3);
 
-            CHECK(aut_new.num_of_states() <= 5);
-            CHECK(aut_new.delta.num_of_transitions() <= 5);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+			CHECK(aut_new.num_of_states() <= 5);
+			CHECK(aut_new.delta.num_of_transitions() <= 5);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Linear + long jump 2 - 4 levels") {
-            Nft aut(4);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.levels.num_of_levels = 4;
-            aut.levels.set({ 0, 1, 3, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(2, 'c', 3);
-            aut.delta.add(0, 'd', 2);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Linear + long jump 2 - 4 levels") {
+			Nft aut(4);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.levels.num_of_levels = 4;
+			aut.levels.set({0, 1, 3, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(2, 'c', 3);
+			aut.delta.add(0, 'd', 2);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(7);
-            expected.initial.insert(0);
-            expected.final.insert(4);
-            expected.levels.num_of_levels = 4;
-            expected.levels.set({ 0, 1, 2, 3, 0, 1, 3 });
-            expected.delta.add(0, 'c', 1);
-            expected.delta.add(0, 'c', 5);
-            expected.delta.add(1, DONT_CARE, 2);
-            expected.delta.add(2, 'b', 3);
-            expected.delta.add(3, 'a', 4);
-            expected.delta.add(5, DONT_CARE, 6);
-            expected.delta.add(6, 'd', 4);
+			Nft expected = Nft(7);
+			expected.initial.insert(0);
+			expected.final.insert(4);
+			expected.levels.num_of_levels = 4;
+			expected.levels.set({0, 1, 2, 3, 0, 1, 3});
+			expected.delta.add(0, 'c', 1);
+			expected.delta.add(0, 'c', 5);
+			expected.delta.add(1, DONT_CARE, 2);
+			expected.delta.add(2, 'b', 3);
+			expected.delta.add(3, 'a', 4);
+			expected.delta.add(5, DONT_CARE, 6);
+			expected.delta.add(6, 'd', 4);
 
-            CHECK(aut_new.num_of_states() <= 7);
-            CHECK(aut_new.delta.num_of_transitions() <= 7);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+			CHECK(aut_new.num_of_states() <= 7);
+			CHECK(aut_new.delta.num_of_transitions() <= 7);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Complex - 2 levels") {
-            Nft aut(5);
-            aut.initial.insert(0);
-            aut.final.insert(2);
-            aut.final.insert(4);
-            aut.levels.num_of_levels = 2;
-            aut.levels.set({ 0, 1, 0, 1, 0 });
-            aut.delta.add(0, 'a', 1);
-            aut.delta.add(1, 'b', 2);
-            aut.delta.add(1, 'd', 4);
-            aut.delta.add(2, 'c', 1);
-            aut.delta.add(2, 'e', 3);
-            aut.delta.add(3, 'g', 4);
-            aut.delta.add(4, 'f', 3);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Complex - 2 levels") {
+			Nft aut(5);
+			aut.initial.insert(0);
+			aut.final.insert(2);
+			aut.final.insert(4);
+			aut.levels.num_of_levels = 2;
+			aut.levels.set({0, 1, 0, 1, 0});
+			aut.delta.add(0, 'a', 1);
+			aut.delta.add(1, 'b', 2);
+			aut.delta.add(1, 'd', 4);
+			aut.delta.add(2, 'c', 1);
+			aut.delta.add(2, 'e', 3);
+			aut.delta.add(3, 'g', 4);
+			aut.delta.add(4, 'f', 3);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(9);
-            expected.initial.insert(0);
-            expected.final.insert(2);
-            expected.final.insert(6);
-            expected.levels.num_of_levels = 2;
-            expected.levels.set({ 0, 1, 0, 1, 1, 1, 0, 1, 1 });
-            expected.delta.add(0, 'b', 1);
-            expected.delta.add(0, 'd', 8);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'b', 3);
-            expected.delta.add(2, 'g', 4);
-            expected.delta.add(2, 'd', 5);
-            expected.delta.add(3, 'c', 2);
-            expected.delta.add(4, 'e', 6);
-            expected.delta.add(5, 'c', 6);
-            expected.delta.add(6, 'g', 7);
-            expected.delta.add(7, 'f', 6);
-            expected.delta.add(8, 'a', 6);
+			Nft expected = Nft(9);
+			expected.initial.insert(0);
+			expected.final.insert(2);
+			expected.final.insert(6);
+			expected.levels.num_of_levels = 2;
+			expected.levels.set({0, 1, 0, 1, 1, 1, 0, 1, 1});
+			expected.delta.add(0, 'b', 1);
+			expected.delta.add(0, 'd', 8);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'b', 3);
+			expected.delta.add(2, 'g', 4);
+			expected.delta.add(2, 'd', 5);
+			expected.delta.add(3, 'c', 2);
+			expected.delta.add(4, 'e', 6);
+			expected.delta.add(5, 'c', 6);
+			expected.delta.add(6, 'g', 7);
+			expected.delta.add(7, 'f', 6);
+			expected.delta.add(8, 'a', 6);
 
-            CHECK(aut_new.num_of_states() <= 9);
-            CHECK(aut_new.delta.num_of_transitions() <= 12);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
+			CHECK(aut_new.num_of_states() <= 9);
+			CHECK(aut_new.delta.num_of_transitions() <= 12);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
 
-        SECTION("Complex 2 - 3 levels") {
-            Nft aut(6);
-            aut.initial.insert(0);
-            aut.final.insert(3);
-            aut.final.insert(4);
-            aut.levels.num_of_levels = 3;
-            aut.levels.set({ 0, 1, 2, 0, 0, 2 });
-            aut.delta.add(0, 'a', 3);
-            aut.delta.add(0, 'b', 2);
-            aut.delta.add(0, 'c', 1);
-            aut.delta.add(1, 'd', 2);
-            aut.delta.add(1, 'f', 3);
-            aut.delta.add(1, 'h', 4);
-            aut.delta.add(1, 'i', 5);
-            aut.delta.add(2, 'e', 3);
-            aut.delta.add(2, 'g', 4);
-            aut.delta.add(5, 'j', 4);
-            Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
+		SECTION("Complex 2 - 3 levels") {
+			Nft aut(6);
+			aut.initial.insert(0);
+			aut.final.insert(3);
+			aut.final.insert(4);
+			aut.levels.num_of_levels = 3;
+			aut.levels.set({0, 1, 2, 0, 0, 2});
+			aut.delta.add(0, 'a', 3);
+			aut.delta.add(0, 'b', 2);
+			aut.delta.add(0, 'c', 1);
+			aut.delta.add(1, 'd', 2);
+			aut.delta.add(1, 'f', 3);
+			aut.delta.add(1, 'h', 4);
+			aut.delta.add(1, 'i', 5);
+			aut.delta.add(2, 'e', 3);
+			aut.delta.add(2, 'g', 4);
+			aut.delta.add(5, 'j', 4);
+			Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            Nft expected = Nft(18);
-            expected.initial.insert(0);
-            expected.final.insert(10);
-            expected.final.insert(11);
-            expected.levels.num_of_levels = 3;
-            expected.levels.set({ 0, 1, 1, 2, 2, 2, 1, 2, 1, 2, 0, 0, 1, 2, 2, 1, 1, 2 });
-            expected.delta.add(0, 'e', 1);
-            expected.delta.add(0, 'e', 2);
-            expected.delta.add(0, 'g', 6);
-            expected.delta.add(0, 'j', 8);
-            expected.delta.add(0, 'g', 12);
-            expected.delta.add(0, DONT_CARE, 13);
-            expected.delta.add(0, DONT_CARE, 15);
-            expected.delta.add(0, DONT_CARE, 16);
-            expected.delta.add(1, DONT_CARE, 14);
-            expected.delta.add(2, 'd', 3);
-            expected.delta.add(3, 'c', 10);
-            expected.delta.add(4, 'c', 10);
-            expected.delta.add(5, 'c', 11);
-            expected.delta.add(6, 'd', 7);
-            expected.delta.add(7, 'c', 11);
-            expected.delta.add(8, 'i', 9);
-            expected.delta.add(9, 'c', 11);
-            expected.delta.add(12, DONT_CARE, 17);
-            expected.delta.add(13, 'a', 10);
-            expected.delta.add(14, 'b', 10);
-            expected.delta.add(15, 'f', 4);
-            expected.delta.add(16, 'h', 5);
-            expected.delta.add(17, 'b', 11);
+			Nft expected = Nft(18);
+			expected.initial.insert(0);
+			expected.final.insert(10);
+			expected.final.insert(11);
+			expected.levels.num_of_levels = 3;
+			expected.levels.set({0, 1, 1, 2, 2, 2, 1, 2, 1, 2, 0, 0, 1, 2, 2, 1, 1, 2});
+			expected.delta.add(0, 'e', 1);
+			expected.delta.add(0, 'e', 2);
+			expected.delta.add(0, 'g', 6);
+			expected.delta.add(0, 'j', 8);
+			expected.delta.add(0, 'g', 12);
+			expected.delta.add(0, DONT_CARE, 13);
+			expected.delta.add(0, DONT_CARE, 15);
+			expected.delta.add(0, DONT_CARE, 16);
+			expected.delta.add(1, DONT_CARE, 14);
+			expected.delta.add(2, 'd', 3);
+			expected.delta.add(3, 'c', 10);
+			expected.delta.add(4, 'c', 10);
+			expected.delta.add(5, 'c', 11);
+			expected.delta.add(6, 'd', 7);
+			expected.delta.add(7, 'c', 11);
+			expected.delta.add(8, 'i', 9);
+			expected.delta.add(9, 'c', 11);
+			expected.delta.add(12, DONT_CARE, 17);
+			expected.delta.add(13, 'a', 10);
+			expected.delta.add(14, 'b', 10);
+			expected.delta.add(15, 'f', 4);
+			expected.delta.add(16, 'h', 5);
+			expected.delta.add(17, 'b', 11);
 
-            CHECK(aut_new.num_of_states() <= 18);
-            CHECK(aut_new.delta.num_of_transitions() <= 23);
-            CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
-            CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
-        }
-    }
+			CHECK(aut_new.num_of_states() <= 18);
+			CHECK(aut_new.delta.num_of_transitions() <= 23);
+			CHECK(are_equivalent(aut_new, expected, JumpMode::AppendDontCares));
+			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
+		}
+	}
 }
 
-
 TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{
-    Nft aut('s' + 1);
+	Nft aut('s' + 1);
 
-    SECTION("(almost) empty automaton") {
-        // no initial states
-        REQUIRE(!aut.is_deterministic());
+	SECTION("(almost) empty automaton") {
+		// no initial states
+		REQUIRE(!aut.is_deterministic());
 
-        // add an initial state
-        aut.initial.insert('q');
-        REQUIRE(aut.is_deterministic());
+		// add an initial state
+		aut.initial.insert('q');
+		REQUIRE(aut.is_deterministic());
 
-        // add the same initial state
-        aut.initial.insert('q');
-        REQUIRE(aut.is_deterministic());
+		// add the same initial state
+		aut.initial.insert('q');
+		REQUIRE(aut.is_deterministic());
 
-        // add another initial state
-        aut.initial.insert('r');
-        REQUIRE(!aut.is_deterministic());
+		// add another initial state
+		aut.initial.insert('r');
+		REQUIRE(!aut.is_deterministic());
 
-        // add a final state
-        aut.final.insert('q');
-        REQUIRE(!aut.is_deterministic());
-    }
+		// add a final state
+		aut.final.insert('q');
+		REQUIRE(!aut.is_deterministic());
+	}
 
-    SECTION("trivial automata") {
-        aut.initial.insert('q');
-        aut.delta.add('q', 'a', 'r');
-        REQUIRE(aut.is_deterministic());
+	SECTION("trivial automata") {
+		aut.initial.insert('q');
+		aut.delta.add('q', 'a', 'r');
+		REQUIRE(aut.is_deterministic());
 
-        // unreachable states
-        aut.delta.add('s', 'a', 'r');
-        REQUIRE(aut.is_deterministic());
+		// unreachable states
+		aut.delta.add('s', 'a', 'r');
+		REQUIRE(aut.is_deterministic());
 
-        // transitions over a different symbol
-        aut.delta.add('q', 'b', 'h');
-        REQUIRE(aut.is_deterministic());
+		// transitions over a different symbol
+		aut.delta.add('q', 'b', 'h');
+		REQUIRE(aut.is_deterministic());
 
-        // nondeterminism
-        aut.delta.add('q', 'a', 's');
-        REQUIRE(!aut.is_deterministic());
-    }
+		// nondeterminism
+		aut.delta.add('q', 'a', 's');
+		REQUIRE(!aut.is_deterministic());
+	}
 
-    SECTION("larger automaton 1") {
-        FILL_WITH_AUT_A(aut);
-        REQUIRE(!aut.is_deterministic());
-    }
+	SECTION("larger automaton 1") {
+		FILL_WITH_AUT_A(aut);
+		REQUIRE(!aut.is_deterministic());
+	}
 
-    SECTION("larger automaton 2") {
-        FILL_WITH_AUT_B(aut);
-        REQUIRE(!aut.is_deterministic());
-    }
+	SECTION("larger automaton 2") {
+		FILL_WITH_AUT_B(aut);
+		REQUIRE(!aut.is_deterministic());
+	}
 } // }}}
 
 TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
-    Nft nft{ Nft::with_levels(3) };
-    auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{ 'a', 'b', 'c', 'd', 'e' });
-    nft.alphabet = alphabet;
+	Nft nft{Nft::with_levels(3)};
+	auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b', 'c', 'd', 'e'});
+	nft.alphabet = alphabet;
 
-    SECTION("empty automaton") {
-        CHECK(nft.is_lang_empty());
-        CHECK(not nft.is_in_lang(Word{}));
-        CHECK(not nft.is_in_lang(Word{ 'a', 'b', 'c' }));
-        CHECK(not nft.is_in_lang_prefix(Word{ 'a', 'a', 'c' }));
-        CHECK(not nft.is_in_lang_by_levels({ {'a'}, {'a'}, { 'a' } }));
-        CHECK(not nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'a' }, { 'a' } }));
-        CHECK_THROWS_AS(nft.is_in_lang(Word{ 'a' }), std::invalid_argument);
-        CHECK_THROWS_AS(nft.is_in_lang_prefix(Word{ 'a' }), std::invalid_argument);
-        CHECK_THROWS_AS(nft.is_in_lang_by_levels({ { 'a' } }), std::invalid_argument);
-        CHECK_THROWS_AS(nft.is_in_lang_prefix_by_levels({ { 'a' } }), std::invalid_argument);
-    }
+	SECTION("empty automaton") {
+		CHECK(nft.is_lang_empty());
+		CHECK(not nft.is_in_lang(Word{}));
+		CHECK(not nft.is_in_lang(Word{'a', 'b', 'c'}));
+		CHECK(not nft.is_in_lang_prefix(Word{'a', 'a', 'c'}));
+		CHECK(not nft.is_in_lang_by_levels({{'a'}, {'a'}, {'a'}}));
+		CHECK(not nft.is_in_lang_prefix_by_levels({{'a'}, {'a'}, {'a'}}));
+		CHECK_THROWS_AS(nft.is_in_lang(Word{'a'}), std::invalid_argument);
+		CHECK_THROWS_AS(nft.is_in_lang_prefix(Word{'a'}), std::invalid_argument);
+		CHECK_THROWS_AS(nft.is_in_lang_by_levels({{'a'}}), std::invalid_argument);
+		CHECK_THROWS_AS(nft.is_in_lang_prefix_by_levels({{'a'}}), std::invalid_argument);
+	}
 
-    SECTION("simple automaton") {
-        nft.add_state_with_level(0, 0);
-        nft.add_state_with_level(1, 1);
-        nft.add_state_with_level(2, 2);
-        nft.add_state_with_level(3, 0);
-        nft.initial.insert(0);
-        nft.final.insert(3);
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(1, EPSILON, 2);
-        nft.delta.add(1, EPSILON, 3);
-        nft.delta.add(1, DONT_CARE, 2);
-        nft.delta.add(1, DONT_CARE, 3);
-        nft.delta.add(2, 'c', 3);
-        nft.delta.add(3, 'd', 0);
-        nft.delta.add(1, 'e', 3);
-        nft.delta.add(3, EPSILON, 0);
-        CHECK(not nft.is_lang_empty());
-        CHECK(nft.is_in_lang({ 'a', 'b', 'c' }));
-        CHECK(nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'c' } }));
-        CHECK(nft.is_in_lang(Word{ 'a', 'e', 'e', 'a', 'b', 'c' }));
-        CHECK(nft.is_in_lang_by_levels({ { 'a', 'a' }, { 'e', 'b' }, { 'e', 'c' } }));
+	SECTION("simple automaton") {
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 1);
+		nft.add_state_with_level(2, 2);
+		nft.add_state_with_level(3, 0);
+		nft.initial.insert(0);
+		nft.final.insert(3);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(1, EPSILON, 3);
+		nft.delta.add(1, DONT_CARE, 2);
+		nft.delta.add(1, DONT_CARE, 3);
+		nft.delta.add(2, 'c', 3);
+		nft.delta.add(3, 'd', 0);
+		nft.delta.add(1, 'e', 3);
+		nft.delta.add(3, EPSILON, 0);
+		CHECK(not nft.is_lang_empty());
+		CHECK(nft.is_in_lang({'a', 'b', 'c'}));
+		CHECK(nft.is_in_lang_by_levels({{'a'}, {'b'}, {'c'}}));
+		CHECK(nft.is_in_lang(Word{'a', 'e', 'e', 'a', 'b', 'c'}));
+		CHECK(nft.is_in_lang_by_levels({{'a', 'a'}, {'e', 'b'}, {'e', 'c'}}));
 
-        CHECK(nft.is_in_lang({ 'a', 'b', 'c', 'a', 'e', 'e' }, true));
-        CHECK(nft.is_in_lang(Word{ 'a', 'e', 'e', 'a', 'b', 'c' }, true));
+		CHECK(nft.is_in_lang({'a', 'b', 'c', 'a', 'e', 'e'}, true));
+		CHECK(nft.is_in_lang(Word{'a', 'e', 'e', 'a', 'b', 'c'}, true));
 
-        CHECK(nft.is_in_lang(Word{ 'a', 'e', 'e', EPSILON, EPSILON, EPSILON, 'a', 'b', 'c' }));
-        CHECK(nft.is_in_lang(Word{ DONT_CARE, DONT_CARE, 'c', DONT_CARE, 'b', DONT_CARE }));
-        CHECK(nft.is_in_lang(Word{ 'a', 'e', 'e', DONT_CARE, DONT_CARE, 'c', 'a', 'b', 'c' }));
-        CHECK(
-            nft.is_in_lang(Word{ DONT_CARE, EPSILON, EPSILON, DONT_CARE, DONT_CARE, 'c', 'a', DONT_CARE, DONT_CARE })
-        );
-        CHECK(nft.is_in_lang(Word{ 'a', EPSILON, 'c', 'a', EPSILON, EPSILON, 'a', 'b', 'c' }));
-        CHECK(nft.is_in_lang(Word{ 'a', DONT_CARE, 'c', 'a', DONT_CARE, DONT_CARE, 'a', 'b', 'c' }));
+		CHECK(nft.is_in_lang(Word{'a', 'e', 'e', EPSILON, EPSILON, EPSILON, 'a', 'b', 'c'}));
+		CHECK(nft.is_in_lang(Word{DONT_CARE, DONT_CARE, 'c', DONT_CARE, 'b', DONT_CARE}));
+		CHECK(nft.is_in_lang(Word{'a', 'e', 'e', DONT_CARE, DONT_CARE, 'c', 'a', 'b', 'c'}));
+		CHECK(nft.is_in_lang(Word{DONT_CARE, EPSILON, EPSILON, DONT_CARE, DONT_CARE, 'c', 'a', DONT_CARE, DONT_CARE}));
+		CHECK(nft.is_in_lang(Word{'a', EPSILON, 'c', 'a', EPSILON, EPSILON, 'a', 'b', 'c'}));
+		CHECK(nft.is_in_lang(Word{'a', DONT_CARE, 'c', 'a', DONT_CARE, DONT_CARE, 'a', 'b', 'c'}));
 
-        CHECK_THROWS_AS(nft.is_in_lang_prefix(Word{ 'a', 'b' }), std::invalid_argument);
-    }
+		CHECK_THROWS_AS(nft.is_in_lang_prefix(Word{'a', 'b'}), std::invalid_argument);
+	}
 
-    SECTION("epsilon cycle") {
-        // The epsilon cycle 0 -> 1 -> 2 -> 0 reads nothing, so the dedicated JumpMode::RepeatSymbol worklist, which
-        //  makes progress only by reading, cannot terminate on this automaton: every query has to declare the cycle
-        //  (the last argument) to be answered by the general post()-based algorithm instead.
-        constexpr bool HAS_EPSILON_CYCLES{ true };
-        nft.add_state_with_level(0, 0);
-        nft.add_state_with_level(1, 1);
-        nft.add_state_with_level(2, 2);
-        nft.add_state_with_level(3, 0);
-        nft.initial.insert(0);
-        nft.final.insert(3);
-        nft.delta.add(0, EPSILON, 1);
-        nft.delta.add(1, EPSILON, 2);
-        nft.delta.add(2, EPSILON, 0);
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(2, 'c', 3);
+	SECTION("epsilon cycle") {
+		// The epsilon cycle 0 -> 1 -> 2 -> 0 reads nothing, so the dedicated JumpMode::RepeatSymbol worklist, which
+		//  makes progress only by reading, cannot terminate on this automaton: every query has to declare the cycle
+		//  (the last argument) to be answered by the general post()-based algorithm instead.
+		constexpr bool HAS_EPSILON_CYCLES{true};
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 1);
+		nft.add_state_with_level(2, 2);
+		nft.add_state_with_level(3, 0);
+		nft.initial.insert(0);
+		nft.final.insert(3);
+		nft.delta.add(0, EPSILON, 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, EPSILON, 0);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'c', 3);
 
-        CHECK(nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'c' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(nft.is_in_lang(Word{ 'a', 'b', 'c' }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'b' }, { 'c' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        // The rejecting answers are the ones that have to exhaust the whole search space with the cycle in it.
-        CHECK(not nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'd' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(not nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, {} }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(not nft.is_in_lang_by_levels({ {}, {}, {} }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(not nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'b' }, { 'd' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        // Going around the cycle up to state 2 reads nothing, so 'c' alone is read on the last level.
-        CHECK(nft.is_in_lang_prefix_by_levels({ { 'a' }, { 'd' }, { 'c' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(nft.is_in_lang_by_levels({{'a'}, {'b'}, {'c'}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(nft.is_in_lang(Word{'a', 'b', 'c'}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(nft.is_in_lang_prefix_by_levels({{'a'}, {'b'}, {'c'}}, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		// The rejecting answers are the ones that have to exhaust the whole search space with the cycle in it.
+		CHECK(not nft.is_in_lang_by_levels({{'a'}, {'b'}, {'d'}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(not nft.is_in_lang_by_levels({{'a'}, {'b'}, {}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(not nft.is_in_lang_by_levels({{}, {}, {}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(not nft.is_in_lang_prefix_by_levels({{'a'}, {'b'}, {'d'}}, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		// Going around the cycle up to state 2 reads nothing, so 'c' alone is read on the last level.
+		CHECK(nft.is_in_lang_prefix_by_levels({{'a'}, {'d'}, {'c'}}, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
 
-        // The automaton has no jump transitions, so every jump mode must give the same answers.
-        for (const std::vector<Word>& level_words :
-             std::vector<std::vector<Word>>{ { { 'a' }, { 'b' }, { 'c' } }, { { 'a' }, { 'b' }, { 'd' } },
-                                             { { 'a' }, { 'd' }, { 'c' } }, { { 'a' }, { 'b' }, {} },
-                                             { {}, {}, {} } }) {
-            for (const bool match_prefix : { false, true }) {
-                CHECK(
-                    nft.is_in_lang_by_levels(level_words, match_prefix, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES) ==
-                    nft.is_in_lang_by_levels(level_words, match_prefix, JumpMode::AppendDontCares, HAS_EPSILON_CYCLES)
-                );
-            }
-        }
-    }
+		// The automaton has no jump transitions, so every jump mode must give the same answers.
+		for (const std::vector<Word>& level_words : std::vector<std::vector<Word>>{
+				 {{'a'}, {'b'}, {'c'}}, {{'a'}, {'b'}, {'d'}}, {{'a'}, {'d'}, {'c'}}, {{'a'}, {'b'}, {}}, {{}, {}, {}}
+			 }) {
+			for (const bool match_prefix : {false, true}) {
+				CHECK(
+					nft.is_in_lang_by_levels(level_words, match_prefix, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES) ==
+					nft.is_in_lang_by_levels(level_words, match_prefix, JumpMode::AppendDontCares, HAS_EPSILON_CYCLES)
+				);
+			}
+		}
+	}
 
-    SECTION("epsilon self-loop") {
-        constexpr bool HAS_EPSILON_CYCLES{ true };
-        nft.add_state_with_level(0, 0);
-        nft.add_state_with_level(1, 1);
-        nft.add_state_with_level(2, 2);
-        nft.add_state_with_level(3, 0);
-        nft.initial.insert(0);
-        nft.final.insert(3);
-        nft.delta.add(0, EPSILON, 0); // The shortest cycle there is, and it reads nothing.
-        nft.delta.add(0, 'a', 1);
-        nft.delta.add(1, 'b', 2);
-        nft.delta.add(2, 'c', 3);
+	SECTION("epsilon self-loop") {
+		constexpr bool HAS_EPSILON_CYCLES{true};
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 1);
+		nft.add_state_with_level(2, 2);
+		nft.add_state_with_level(3, 0);
+		nft.initial.insert(0);
+		nft.final.insert(3);
+		nft.delta.add(0, EPSILON, 0); // The shortest cycle there is, and it reads nothing.
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'c', 3);
 
-        CHECK(nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'c' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(not nft.is_in_lang_by_levels({ { 'a' }, { 'b' }, { 'd' } }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(not nft.is_in_lang_by_levels({ {}, {}, {} }, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-        CHECK(not nft.is_in_lang_prefix_by_levels({ { 'd' }, { 'b' }, { 'c' } }, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
-    }
+		CHECK(nft.is_in_lang_by_levels({{'a'}, {'b'}, {'c'}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(not nft.is_in_lang_by_levels({{'a'}, {'b'}, {'d'}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(not nft.is_in_lang_by_levels({{}, {}, {}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+		CHECK(not nft.is_in_lang_prefix_by_levels({{'d'}, {'b'}, {'c'}}, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
+	}
 }
 
 TEST_CASE("mata::nft::fw-direct-simulation()") { // {{{
-    Nft aut;
+	Nft aut;
 
-    SECTION("empty automaton") {
-        Simlib::Util::BinaryRelation result = compute_relation(aut);
+	SECTION("empty automaton") {
+		Simlib::Util::BinaryRelation result = compute_relation(aut);
 
-        REQUIRE(result.size() == 0);
-    }
+		REQUIRE(result.size() == 0);
+	}
 
-    aut.add_state(8);
-    SECTION("no-transition automaton") {
-        aut.initial.insert(1);
-        aut.initial.insert(3);
+	aut.add_state(8);
+	SECTION("no-transition automaton") {
+		aut.initial.insert(1);
+		aut.initial.insert(3);
 
-        aut.final.insert(2);
-        aut.final.insert(5);
+		aut.final.insert(2);
+		aut.final.insert(5);
 
-        Simlib::Util::BinaryRelation result = compute_relation(aut);
-        REQUIRE(result.get(1,3));
-        REQUIRE(result.get(2,5));
-        REQUIRE(!result.get(5,1));
-        REQUIRE(!result.get(2,3));
-    }
+		Simlib::Util::BinaryRelation result = compute_relation(aut);
+		REQUIRE(result.get(1, 3));
+		REQUIRE(result.get(2, 5));
+		REQUIRE(!result.get(5, 1));
+		REQUIRE(!result.get(2, 3));
+	}
 
-    SECTION("small automaton") {
-        aut.initial.insert(1);
-        aut.final.insert(2);
-        aut.delta.add(1, 'a', 4);
-        aut.delta.add(4, 'b', 5);
-        aut.delta.add(2, 'b', 5);
-        aut.delta.add(1, 'b', 4);
+	SECTION("small automaton") {
+		aut.initial.insert(1);
+		aut.final.insert(2);
+		aut.delta.add(1, 'a', 4);
+		aut.delta.add(4, 'b', 5);
+		aut.delta.add(2, 'b', 5);
+		aut.delta.add(1, 'b', 4);
 
-        Simlib::Util::BinaryRelation result = compute_relation(aut);
-        REQUIRE(result.get(4,1));
-        REQUIRE(!result.get(2,5));
-    }
+		Simlib::Util::BinaryRelation result = compute_relation(aut);
+		REQUIRE(result.get(4, 1));
+		REQUIRE(!result.get(2, 5));
+	}
 
-    Nft aut_big(9);
+	Nft aut_big(9);
 
-    SECTION("bigger automaton") {
-        aut_big.initial = { 1, 2 };
-        aut_big.delta.add(1, 'a', 2);
-        aut_big.delta.add(1, 'a', 3);
-        aut_big.delta.add(1, 'b', 4);
-        aut_big.delta.add(2, 'a', 2);
-        aut_big.delta.add(2, 'b', 2);
-        aut_big.delta.add(2, 'a', 3);
-        aut_big.delta.add(2, 'b', 4);
-        aut_big.delta.add(3, 'b', 4);
-        aut_big.delta.add(3, 'c', 7);
-        aut_big.delta.add(3, 'b', 2);
-        aut_big.delta.add(5, 'c', 3);
-        aut_big.delta.add(7, 'a', 8);
-        aut_big.final = { 3 };
+	SECTION("bigger automaton") {
+		aut_big.initial = {1, 2};
+		aut_big.delta.add(1, 'a', 2);
+		aut_big.delta.add(1, 'a', 3);
+		aut_big.delta.add(1, 'b', 4);
+		aut_big.delta.add(2, 'a', 2);
+		aut_big.delta.add(2, 'b', 2);
+		aut_big.delta.add(2, 'a', 3);
+		aut_big.delta.add(2, 'b', 4);
+		aut_big.delta.add(3, 'b', 4);
+		aut_big.delta.add(3, 'c', 7);
+		aut_big.delta.add(3, 'b', 2);
+		aut_big.delta.add(5, 'c', 3);
+		aut_big.delta.add(7, 'a', 8);
+		aut_big.final = {3};
 
-        Simlib::Util::BinaryRelation result = compute_relation(aut_big);
-        REQUIRE(result.get(1,2));
-        REQUIRE(!result.get(2,1));
-        REQUIRE(!result.get(3,1));
-        REQUIRE(!result.get(3,2));
-        REQUIRE(result.get(4,1));
-        REQUIRE(result.get(4,2));
-        REQUIRE(result.get(4,5));
-        REQUIRE(!result.get(5,2));
-        REQUIRE(!result.get(5,1));
-        REQUIRE(result.get(7,1));
-        REQUIRE(result.get(7,2));
-        REQUIRE(result.get(8,1));
-        REQUIRE(result.get(8,2));
-        REQUIRE(result.get(8,5));
-    }
+		Simlib::Util::BinaryRelation result = compute_relation(aut_big);
+		REQUIRE(result.get(1, 2));
+		REQUIRE(!result.get(2, 1));
+		REQUIRE(!result.get(3, 1));
+		REQUIRE(!result.get(3, 2));
+		REQUIRE(result.get(4, 1));
+		REQUIRE(result.get(4, 2));
+		REQUIRE(result.get(4, 5));
+		REQUIRE(!result.get(5, 2));
+		REQUIRE(!result.get(5, 1));
+		REQUIRE(result.get(7, 1));
+		REQUIRE(result.get(7, 2));
+		REQUIRE(result.get(8, 1));
+		REQUIRE(result.get(8, 2));
+		REQUIRE(result.get(8, 5));
+	}
 
-    SECTION("more than one level") {
-        aut.add_state_with_level(0, 0);
-        aut.add_state_with_level(1, 0);
-        aut.add_state_with_level(2, 1);
-        aut.add_state_with_level(3, 0);
+	SECTION("more than one level") {
+		aut.add_state_with_level(0, 0);
+		aut.add_state_with_level(1, 0);
+		aut.add_state_with_level(2, 1);
+		aut.add_state_with_level(3, 0);
 
-        aut.initial.insert(0);
-        aut.final.insert(3);
+		aut.initial.insert(0);
+		aut.final.insert(3);
 
-        aut.delta.add(0, 'a', 1);
-        aut.delta.add(1, 'a', 3);
-        aut.delta.add(0, 'a', 2);
-        aut.delta.add(2, 'a', 3);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(2, 'a', 3);
 
-        Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut);
-        Simlib::Util::BinaryRelation sim_for_nft = compute_relation(aut);
+		Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut);
+		Simlib::Util::BinaryRelation sim_for_nft = compute_relation(aut);
 
-        CHECK(sim_for_nfa.get(0,0));
-        CHECK(!sim_for_nfa.get(0,1));
-        CHECK(!sim_for_nfa.get(0,2));
-        CHECK(!sim_for_nfa.get(0,3));
-        CHECK(!sim_for_nfa.get(1,0));
-        CHECK(sim_for_nfa.get(1,1));
-        CHECK(sim_for_nfa.get(1,2));
-        CHECK(!sim_for_nfa.get(1,3));
-        CHECK(!sim_for_nfa.get(2,0));
-        CHECK(sim_for_nfa.get(2,1));
-        CHECK(sim_for_nfa.get(2,2));
-        CHECK(!sim_for_nfa.get(2,3));
-        CHECK(!sim_for_nfa.get(3,0));
-        CHECK(!sim_for_nfa.get(3,1));
-        CHECK(!sim_for_nfa.get(3,2));
-        CHECK(sim_for_nfa.get(3,3));
+		CHECK(sim_for_nfa.get(0, 0));
+		CHECK(!sim_for_nfa.get(0, 1));
+		CHECK(!sim_for_nfa.get(0, 2));
+		CHECK(!sim_for_nfa.get(0, 3));
+		CHECK(!sim_for_nfa.get(1, 0));
+		CHECK(sim_for_nfa.get(1, 1));
+		CHECK(sim_for_nfa.get(1, 2));
+		CHECK(!sim_for_nfa.get(1, 3));
+		CHECK(!sim_for_nfa.get(2, 0));
+		CHECK(sim_for_nfa.get(2, 1));
+		CHECK(sim_for_nfa.get(2, 2));
+		CHECK(!sim_for_nfa.get(2, 3));
+		CHECK(!sim_for_nfa.get(3, 0));
+		CHECK(!sim_for_nfa.get(3, 1));
+		CHECK(!sim_for_nfa.get(3, 2));
+		CHECK(sim_for_nfa.get(3, 3));
 
-        CHECK(sim_for_nft.get(0,0));
-        CHECK(!sim_for_nft.get(0,1));
-        CHECK(!sim_for_nft.get(0,2));
-        CHECK(!sim_for_nft.get(0,3));
-        CHECK(!sim_for_nft.get(1,0));
-        CHECK(sim_for_nft.get(1,1));
-        CHECK(!sim_for_nft.get(1,2));
-        CHECK(!sim_for_nft.get(1,3));
-        CHECK(!sim_for_nft.get(2,0));
-        CHECK(!sim_for_nft.get(2,1));
-        CHECK(sim_for_nft.get(2,2));
-        CHECK(!sim_for_nft.get(2,3));
-        CHECK(!sim_for_nft.get(3,0));
-        CHECK(!sim_for_nft.get(3,1));
-        CHECK(!sim_for_nft.get(3,2));
-        CHECK(sim_for_nft.get(3,3));
-    }
+		CHECK(sim_for_nft.get(0, 0));
+		CHECK(!sim_for_nft.get(0, 1));
+		CHECK(!sim_for_nft.get(0, 2));
+		CHECK(!sim_for_nft.get(0, 3));
+		CHECK(!sim_for_nft.get(1, 0));
+		CHECK(sim_for_nft.get(1, 1));
+		CHECK(!sim_for_nft.get(1, 2));
+		CHECK(!sim_for_nft.get(1, 3));
+		CHECK(!sim_for_nft.get(2, 0));
+		CHECK(!sim_for_nft.get(2, 1));
+		CHECK(sim_for_nft.get(2, 2));
+		CHECK(!sim_for_nft.get(2, 3));
+		CHECK(!sim_for_nft.get(3, 0));
+		CHECK(!sim_for_nft.get(3, 1));
+		CHECK(!sim_for_nft.get(3, 2));
+		CHECK(sim_for_nft.get(3, 3));
+	}
 } // }}
 
 TEST_CASE("mata::nft::reduce_size_by_simulation()") {
-    Nft aut;
-    StateRenaming state_renaming;
+	Nft aut;
+	StateRenaming state_renaming;
 
-    SECTION("empty automaton") {
-        Nft result = reduce(aut, &state_renaming);
+	SECTION("empty automaton") {
+		Nft result = reduce(aut, &state_renaming);
 
-        REQUIRE(result.delta.empty());
-        REQUIRE(result.initial.empty());
-        REQUIRE(result.final.empty());
-    }
+		REQUIRE(result.delta.empty());
+		REQUIRE(result.initial.empty());
+		REQUIRE(result.final.empty());
+	}
 
-    SECTION("simple automaton") {
-        aut.add_state(2);
-        aut.initial.insert(1);
+	SECTION("simple automaton") {
+		aut.add_state(2);
+		aut.initial.insert(1);
 
-        aut.final.insert(2);
-        Nft result = reduce(aut, &state_renaming);
+		aut.final.insert(2);
+		Nft result = reduce(aut, &state_renaming);
 
-        REQUIRE(result.delta.empty());
-        REQUIRE(result.initial[state_renaming[1]]);
-        REQUIRE(result.final[state_renaming[2]]);
-        REQUIRE(result.num_of_states() == 2);
-        REQUIRE(state_renaming[1] == state_renaming[0]);
-        REQUIRE(state_renaming[2] != state_renaming[0]);
-    }
+		REQUIRE(result.delta.empty());
+		REQUIRE(result.initial[state_renaming[1]]);
+		REQUIRE(result.final[state_renaming[2]]);
+		REQUIRE(result.num_of_states() == 2);
+		REQUIRE(state_renaming[1] == state_renaming[0]);
+		REQUIRE(state_renaming[2] != state_renaming[0]);
+	}
 
-    SECTION("big automaton") {
-        aut.add_state(9);
-        aut.initial = { 1, 2 };
-        aut.delta.add(1, 'a', 2);
-        aut.delta.add(1, 'a', 3);
-        aut.delta.add(1, 'b', 4);
-        aut.delta.add(2, 'a', 2);
-        aut.delta.add(2, 'b', 2);
-        aut.delta.add(2, 'a', 3);
-        aut.delta.add(2, 'b', 4);
-        aut.delta.add(3, 'b', 4);
-        aut.delta.add(3, 'c', 7);
-        aut.delta.add(3, 'b', 2);
-        aut.delta.add(5, 'c', 3);
-        aut.delta.add(7, 'a', 8);
-        aut.delta.add(9, 'b', 2);
-        aut.delta.add(9, 'c', 0);
-        aut.delta.add(0, 'a', 4);
-        aut.final = { 3, 9 };
+	SECTION("big automaton") {
+		aut.add_state(9);
+		aut.initial = {1, 2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(1, 'b', 4);
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(2, 'b', 2);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 4);
+		aut.delta.add(3, 'c', 7);
+		aut.delta.add(3, 'b', 2);
+		aut.delta.add(5, 'c', 3);
+		aut.delta.add(7, 'a', 8);
+		aut.delta.add(9, 'b', 2);
+		aut.delta.add(9, 'c', 0);
+		aut.delta.add(0, 'a', 4);
+		aut.final = {3, 9};
 
+		Nft result = reduce(aut, &state_renaming);
 
-        Nft result = reduce(aut, &state_renaming);
+		REQUIRE(result.num_of_states() == 6);
+		REQUIRE(result.initial[state_renaming[1]]);
+		REQUIRE(result.initial[state_renaming[2]]);
+		REQUIRE(result.delta.contains(state_renaming[9], 'c', state_renaming[0]));
+		REQUIRE(result.delta.contains(state_renaming[9], 'c', state_renaming[7]));
+		REQUIRE(result.delta.contains(state_renaming[3], 'c', state_renaming[0]));
+		REQUIRE(result.delta.contains(state_renaming[0], 'a', state_renaming[8]));
+		REQUIRE(result.delta.contains(state_renaming[7], 'a', state_renaming[4]));
+		REQUIRE(result.delta.contains(state_renaming[1], 'a', state_renaming[3]));
+		REQUIRE(!result.delta.contains(state_renaming[3], 'b', state_renaming[4]));
+		REQUIRE(result.delta.contains(state_renaming[2], 'a', state_renaming[2]));
+		REQUIRE(result.final[state_renaming[9]]);
+		REQUIRE(result.final[state_renaming[3]]);
 
-        REQUIRE(result.num_of_states() == 6);
-        REQUIRE(result.initial[state_renaming[1]]);
-        REQUIRE(result.initial[state_renaming[2]]);
-        REQUIRE(result.delta.contains(state_renaming[9], 'c', state_renaming[0]));
-        REQUIRE(result.delta.contains(state_renaming[9], 'c', state_renaming[7]));
-        REQUIRE(result.delta.contains(state_renaming[3], 'c', state_renaming[0]));
-        REQUIRE(result.delta.contains(state_renaming[0], 'a', state_renaming[8]));
-        REQUIRE(result.delta.contains(state_renaming[7], 'a', state_renaming[4]));
-        REQUIRE(result.delta.contains(state_renaming[1], 'a', state_renaming[3]));
-        REQUIRE(!result.delta.contains(state_renaming[3], 'b', state_renaming[4]));
-        REQUIRE(result.delta.contains(state_renaming[2], 'a', state_renaming[2]));
-        REQUIRE(result.final[state_renaming[9]]);
-        REQUIRE(result.final[state_renaming[3]]);
+		result = reduce(aut.trim(), &state_renaming);
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.initial == SparseSet<State>{0, 1});
+		CHECK(result.final == SparseSet<State>{2});
+		CHECK(result.delta.num_of_transitions() == 6);
+		CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[2]));
+		CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[1]));
+		CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[1]));
+		CHECK(result.delta.contains(state_renaming[1], 'b', state_renaming[1]));
+		CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[2]));
+		CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[1]));
+	}
 
-        result = reduce(aut.trim(), &state_renaming);
-        CHECK(result.num_of_states() == 3);
-        CHECK(result.initial == SparseSet<State>{ 0, 1 });
-        CHECK(result.final == SparseSet<State>{ 2 });
-        CHECK(result.delta.num_of_transitions() == 6);
-        CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[1]));
-        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[1]));
-        CHECK(result.delta.contains(state_renaming[1], 'b', state_renaming[1]));
-        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[1]));
-    }
+	SECTION("no transitions from non-final state") {
+		aut.delta.add(0, 'a', 1);
+		aut.initial = {0};
+		Nft result = reduce(aut.trim(), &state_renaming);
+		CHECK(are_equivalent(result, aut));
+	}
 
-    SECTION("no transitions from non-final state") {
-        aut.delta.add(0, 'a', 1);
-        aut.initial = { 0 };
-        Nft result = reduce(aut.trim(), &state_renaming);
-        CHECK(are_equivalent(result, aut));
-    }
-
-    SECTION("multiple tapes") {
-        aut.add_state_with_level(0, 0);
-        aut.add_state_with_level(1, 0);
-        aut.initial = { 0 };
-        aut.final = { 1 };
-        aut.add_transition_by_levels(0, { 'a', 'a' }, 1);
-        aut.add_transition_by_levels(0, { 'a', 'a' }, 1);
-        aut.add_transition_by_levels(0, { 'a', 'a' }, 1);
-        REQUIRE(aut.num_of_states() == 5);
-        Nft result = reduce(aut, &state_renaming);
-        CHECK(are_equivalent(result, aut));
-        REQUIRE(result.num_of_states() == 3);
-        REQUIRE(state_renaming.size() == 5);
-        State middle_state = state_renaming.at(2);
-        CHECK(middle_state == state_renaming.at(3));
-        CHECK(middle_state == state_renaming.at(4));
-        CHECK(result.delta.contains(state_renaming.at(0), 'a', middle_state));
-        CHECK(result.delta.contains(middle_state, 'a', state_renaming.at(1)));
-        REQUIRE(result.levels.num_of_levels == 2);
-        CHECK(result.levels[state_renaming.at(0)] == 0);
-        CHECK(result.levels[state_renaming.at(1)] == 0);
-        CHECK(result.levels[middle_state] == 1);
-    }
+	SECTION("multiple tapes") {
+		aut.add_state_with_level(0, 0);
+		aut.add_state_with_level(1, 0);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.add_transition_by_levels(0, {'a', 'a'}, 1);
+		aut.add_transition_by_levels(0, {'a', 'a'}, 1);
+		aut.add_transition_by_levels(0, {'a', 'a'}, 1);
+		REQUIRE(aut.num_of_states() == 5);
+		Nft result = reduce(aut, &state_renaming);
+		CHECK(are_equivalent(result, aut));
+		REQUIRE(result.num_of_states() == 3);
+		REQUIRE(state_renaming.size() == 5);
+		State middle_state = state_renaming.at(2);
+		CHECK(middle_state == state_renaming.at(3));
+		CHECK(middle_state == state_renaming.at(4));
+		CHECK(result.delta.contains(state_renaming.at(0), 'a', middle_state));
+		CHECK(result.delta.contains(middle_state, 'a', state_renaming.at(1)));
+		REQUIRE(result.levels.num_of_levels == 2);
+		CHECK(result.levels[state_renaming.at(0)] == 0);
+		CHECK(result.levels[state_renaming.at(1)] == 0);
+		CHECK(result.levels[middle_state] == 1);
+	}
 }
 
 TEST_CASE("mata::nft::union_nondet() minimal") {
-    Run one{ { 1, 1 }, {} };
-    Run zero{ { 0, 0 }, {} };
+	Run one{{1, 1}, {}};
+	Run zero{{0, 0}, {}};
 
-    Nft lhs(2);
-    lhs.initial.insert(0);
-    lhs.delta.add(0, 0, 1);
-    lhs.final.insert(1);
-    CHECK(not lhs.is_in_lang(one));
-    CHECK(lhs.is_in_lang(zero));
+	Nft lhs(2);
+	lhs.initial.insert(0);
+	lhs.delta.add(0, 0, 1);
+	lhs.final.insert(1);
+	CHECK(not lhs.is_in_lang(one));
+	CHECK(lhs.is_in_lang(zero));
 
-    Nft rhs(2);
-    rhs.initial.insert(0);
-    rhs.delta.add(0, 1, 1);
-    rhs.final.insert(1);
-    CHECK(rhs.is_in_lang(one));
-    CHECK(not rhs.is_in_lang(zero));
+	Nft rhs(2);
+	rhs.initial.insert(0);
+	rhs.delta.add(0, 1, 1);
+	rhs.final.insert(1);
+	CHECK(rhs.is_in_lang(one));
+	CHECK(not rhs.is_in_lang(zero));
 
-    SECTION("failing minimal scenario") {
-        Nft result = union_nondet(lhs, rhs);
-        CHECK(result.is_in_lang(zero));
-        // FIXME: Causes segfault due to UB in, most probably, `Nft::is_in_lang_by_levels()`.
-        // CHECK(result.is_in_lang(one));
-    }
+	SECTION("failing minimal scenario") {
+		Nft result = union_nondet(lhs, rhs);
+		CHECK(result.is_in_lang(zero));
+		// FIXME: Causes segfault due to UB in, most probably, `Nft::is_in_lang_by_levels()`.
+		// CHECK(result.is_in_lang(one));
+	}
 }
 
 TEST_CASE("mata::nft::unite_nondet_with()") {
+	Nft lhs{};
+	Nft rhs{};
+	Nft result{};
 
-    Nft lhs{};
-    Nft rhs{};
-    Nft result{};
+	const auto CHECK_SHARED = [&](size_t max_word_length = std::numeric_limits<size_t>::max()) {
+		// The result preserves all originally accepted words from input automata.
+		for (const auto& word : lhs.get_words(max_word_length)) { CHECK(result.is_in_lang(word)); }
+		for (const auto& word : rhs.get_words(max_word_length)) { CHECK(result.is_in_lang(word)); }
 
-    const auto CHECK_SHARED = [&](size_t max_word_length = std::numeric_limits<size_t>::max()) {
-        // The result preserves all originally accepted words from input automata.
-        for (const auto& word : lhs.get_words(max_word_length)) {
-            CHECK(result.is_in_lang(word));
-        }
-        for (const auto& word : rhs.get_words(max_word_length)) {
-            CHECK(result.is_in_lang(word));
-        }
+		// Result accepts no other words than those accepted by the input automata.
+		for (const auto& word : result.get_words(max_word_length)) {
+			CHECK(lhs.is_in_lang(word) || rhs.is_in_lang(word));
+		}
+	};
 
-        // Result accepts no other words than those accepted by the input automata.
-        for (const auto& word : result.get_words(max_word_length)) {
-            CHECK((lhs.is_in_lang(word) || rhs.is_in_lang(word)));
-        }
-    };
+	SECTION("empty automata") {
+		lhs.unite_nondet_with(rhs);
+		CHECK_SHARED();
+	}
 
-    SECTION("empty automata") {
-        lhs.unite_nondet_with(rhs);
-        CHECK_SHARED();
-    }
+	SECTION("simple NFTs") {
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.insert_word(0, {'a', 'b', 'c', 'd'}, 1);
+		rhs.insert_word(0, {'e', 'f', 'g', 'h'}, 1);
 
-    SECTION("simple NFTs") {
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.insert_word(0, {'a', 'b', 'c', 'd'}, 1);
-        rhs.insert_word(0, {'e', 'f', 'g', 'h'}, 1);
+		result = lhs;
+		result.unite_nondet_with(rhs);
+		CHECK_SHARED();
+	}
 
-        result = lhs;
-        result.unite_nondet_with(rhs);
-        CHECK_SHARED();
-    }
+	SECTION("NFTs with multiple initial/final states") {
+		lhs.levels.num_of_levels = 3;
+		lhs.initial.insert(0);
+		lhs.initial.insert(1);
+		lhs.final.insert(2);
+		lhs.final.insert(3);
+		lhs.insert_word(0, {'a', 'b', 'c'}, 2);
+		lhs.insert_word(1, {'d', 'e', 'f'}, 3);
 
-    SECTION("NFTs with multiple initial/final states") {
-        lhs.levels.num_of_levels = 3;
-        lhs.initial.insert(0);
-        lhs.initial.insert(1);
-        lhs.final.insert(2);
-        lhs.final.insert(3);
-        lhs.insert_word(0, {'a', 'b', 'c'}, 2);
-        lhs.insert_word(1, {'d', 'e', 'f'}, 3);
+		rhs.levels.num_of_levels = 3;
+		rhs.initial.insert(0);
+		rhs.initial.insert(1);
+		rhs.final.insert(2);
+		rhs.final.insert(3);
+		rhs.insert_word(0, {'g', 'h', 'i'}, 2);
+		rhs.insert_word(1, {'j', 'k', 'l'}, 3);
 
-        rhs.levels.num_of_levels = 3;
-        rhs.initial.insert(0);
-        rhs.initial.insert(1);
-        rhs.final.insert(2);
-        rhs.final.insert(3);
-        rhs.insert_word(0, {'g', 'h', 'i'}, 2);
-        rhs.insert_word(1, {'j', 'k', 'l'}, 3);
+		result = lhs;
+		result.unite_nondet_with(rhs);
+		CHECK_SHARED();
+	}
 
-        result = lhs;
-        result.unite_nondet_with(rhs);
-        CHECK_SHARED();
-    }
+	SECTION("NFTs with loops") {
+		lhs.levels.num_of_levels = 3;
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.insert_word(0, {'a', 'b', 'c'}, 1);
+		lhs.insert_word(1, {'d', 'e', 'f'}, 1);
 
-    SECTION("NFTs with loops") {
-        lhs.levels.num_of_levels = 3;
-        lhs.initial.insert(0);
-        lhs.final.insert(1);
-        lhs.insert_word(0, {'a', 'b', 'c'}, 1);
-        lhs.insert_word(1, {'d', 'e', 'f'}, 1);
+		rhs.levels.num_of_levels = 3;
+		rhs.initial.insert(0);
+		rhs.final.insert(1);
+		rhs.insert_word(0, {'g', 'h', 'i'}, 1);
+		rhs.insert_word(1, {'j', 'k', 'l'}, 1);
 
-        rhs.levels.num_of_levels = 3;
-        rhs.initial.insert(0);
-        rhs.final.insert(1);
-        rhs.insert_word(0, {'g', 'h', 'i'}, 1);
-        rhs.insert_word(1, {'j', 'k', 'l'}, 1);
-
-        result = lhs;
-        result.unite_nondet_with(rhs);
-        CHECK_SHARED(15);
-    }
+		result = lhs;
+		result.unite_nondet_with(rhs);
+		CHECK_SHARED(15);
+	}
 }
 
 TEST_CASE("mata::nft::remove_final()") {
-    Nft aut('q' + 1);
+	Nft aut('q' + 1);
 
-    SECTION("Automaton B") {
-        FILL_WITH_AUT_B(aut);
-        CHECK(aut.final[2]);
-        CHECK(aut.final[12]);
-        aut.final.erase(12);
-        CHECK(aut.final[2]);
-        CHECK(!aut.final[12]);
-    }
+	SECTION("Automaton B") {
+		FILL_WITH_AUT_B(aut);
+		CHECK(aut.final[2]);
+		CHECK(aut.final[12]);
+		aut.final.erase(12);
+		CHECK(aut.final[2]);
+		CHECK(!aut.final[12]);
+	}
 }
 
 TEST_CASE("mata::nft::delta.remove()") {
-    Nft aut('q' + 1);
+	Nft aut('q' + 1);
 
-    SECTION("Automaton B") {
-        FILL_WITH_AUT_B(aut);
-        aut.delta.add(1, 3, 4);
-        aut.delta.add(1, 3, 5);
+	SECTION("Automaton B") {
+		FILL_WITH_AUT_B(aut);
+		aut.delta.add(1, 3, 4);
+		aut.delta.add(1, 3, 5);
 
-        SECTION("Simple remove") {
-            CHECK(aut.delta.contains(1, 3, 4));
-            CHECK(aut.delta.contains(1, 3, 5));
-            aut.delta.remove(1, 3, 5);
-            CHECK(aut.delta.contains(1, 3, 4));
-            CHECK(!aut.delta.contains(1, 3, 5));
-        }
+		SECTION("Simple remove") {
+			CHECK(aut.delta.contains(1, 3, 4));
+			CHECK(aut.delta.contains(1, 3, 5));
+			aut.delta.remove(1, 3, 5);
+			CHECK(aut.delta.contains(1, 3, 4));
+			CHECK(!aut.delta.contains(1, 3, 5));
+		}
 
-        SECTION("Remove missing transition") { CHECK_THROWS_AS(aut.delta.remove(1, 1, 5), std::invalid_argument); }
+		SECTION("Remove missing transition") { CHECK_THROWS_AS(aut.delta.remove(1, 1, 5), std::invalid_argument); }
 
-        SECTION("Remove the last state_to from targets") {
-            CHECK(aut.delta.contains(6, 'a', 2));
-            aut.delta.remove(6, 'a', 2);
-            CHECK(!aut.delta.contains(6, 'a', 2));
-            CHECK(aut.delta[6].empty());
+		SECTION("Remove the last state_to from targets") {
+			CHECK(aut.delta.contains(6, 'a', 2));
+			aut.delta.remove(6, 'a', 2);
+			CHECK(!aut.delta.contains(6, 'a', 2));
+			CHECK(aut.delta[6].empty());
 
-            CHECK(aut.delta.contains(4, 'a', 8));
-            CHECK(aut.delta.contains(4, 'c', 8));
-            CHECK(aut.delta.contains(4, 'a', 6));
-            CHECK(aut.delta.contains(4, 'b', 6));
-            CHECK(aut.delta[4].size() == 3);
-            aut.delta.remove(4, 'a', 6);
-            CHECK(!aut.delta.contains(4, 'a', 6));
-            CHECK(aut.delta.contains(4, 'b', 6));
-            CHECK(aut.delta[4].size() == 3);
+			CHECK(aut.delta.contains(4, 'a', 8));
+			CHECK(aut.delta.contains(4, 'c', 8));
+			CHECK(aut.delta.contains(4, 'a', 6));
+			CHECK(aut.delta.contains(4, 'b', 6));
+			CHECK(aut.delta[4].size() == 3);
+			aut.delta.remove(4, 'a', 6);
+			CHECK(!aut.delta.contains(4, 'a', 6));
+			CHECK(aut.delta.contains(4, 'b', 6));
+			CHECK(aut.delta[4].size() == 3);
 
-            aut.delta.remove(4, 'a', 8);
-            CHECK(!aut.delta.contains(4, 'a', 8));
-            CHECK(aut.delta.contains(4, 'c', 8));
-            CHECK(aut.delta[4].size() == 2);
+			aut.delta.remove(4, 'a', 8);
+			CHECK(!aut.delta.contains(4, 'a', 8));
+			CHECK(aut.delta.contains(4, 'c', 8));
+			CHECK(aut.delta[4].size() == 2);
 
-            aut.delta.remove(4, 'c', 8);
-            CHECK(!aut.delta.contains(4, 'a', 8));
-            CHECK(!aut.delta.contains(4, 'c', 8));
-            CHECK(aut.delta[4].size() == 1);
-        }
-    }
+			aut.delta.remove(4, 'c', 8);
+			CHECK(!aut.delta.contains(4, 'a', 8));
+			CHECK(!aut.delta.contains(4, 'c', 8));
+			CHECK(aut.delta[4].size() == 1);
+		}
+	}
 }
 
 TEST_CASE("mata::nft::get_trans_as_sequence(}") {
-    Nft aut('q' + 1);
-    std::vector<Transition> expected{};
+	Nft aut('q' + 1);
+	std::vector<Transition> expected{};
 
-    aut.delta.add(1, 2, 3);
-    expected.emplace_back(1, 2, 3);
-    aut.delta.add(1, 3, 4);
-    expected.emplace_back(1, 3, 4);
-    aut.delta.add(2, 3, 4);
-    expected.emplace_back(2, 3, 4);
+	aut.delta.add(1, 2, 3);
+	expected.emplace_back(1, 2, 3);
+	aut.delta.add(1, 3, 4);
+	expected.emplace_back(1, 3, 4);
+	aut.delta.add(2, 3, 4);
+	expected.emplace_back(2, 3, 4);
 
-
-    const Delta::Transitions transitions{ aut.delta.transitions() };
-    REQUIRE(std::vector<Transition>{ transitions.begin(), transitions.end() } == expected);
+	const Delta::Transitions transitions{aut.delta.transitions()};
+	REQUIRE(std::vector<Transition>{transitions.begin(), transitions.end()} == expected);
 }
 
 TEST_CASE("mata::nft::remove_epsilon()") {
-    SECTION("1 tape") {
-        Nft aut{ 20 };
-        FILL_WITH_AUT_A(aut);
-        aut.remove_epsilon('c');
-        REQUIRE(aut.delta.contains(10, 'a', 7));
-        REQUIRE(aut.delta.contains(10, 'b', 7));
-        REQUIRE(!aut.delta.contains(10, 'c', 7));
-        REQUIRE(aut.delta.contains(7, 'a', 5));
-        REQUIRE(aut.delta.contains(7, 'a', 3));
-        REQUIRE(!aut.delta.contains(7, 'c', 3));
-        REQUIRE(aut.delta.contains(7, 'b', 9));
-        REQUIRE(aut.delta.contains(7, 'a', 7));
-        REQUIRE(aut.delta.contains(5, 'a', 5));
-        REQUIRE(!aut.delta.contains(5, 'c', 9));
-        REQUIRE(aut.delta.contains(5, 'a', 9));
-    }
+	SECTION("1 tape") {
+		Nft aut{20};
+		FILL_WITH_AUT_A(aut);
+		aut.remove_epsilon('c');
+		REQUIRE(aut.delta.contains(10, 'a', 7));
+		REQUIRE(aut.delta.contains(10, 'b', 7));
+		REQUIRE(!aut.delta.contains(10, 'c', 7));
+		REQUIRE(aut.delta.contains(7, 'a', 5));
+		REQUIRE(aut.delta.contains(7, 'a', 3));
+		REQUIRE(!aut.delta.contains(7, 'c', 3));
+		REQUIRE(aut.delta.contains(7, 'b', 9));
+		REQUIRE(aut.delta.contains(7, 'a', 7));
+		REQUIRE(aut.delta.contains(5, 'a', 5));
+		REQUIRE(!aut.delta.contains(5, 'c', 9));
+		REQUIRE(aut.delta.contains(5, 'a', 9));
+	}
 
-    SECTION("3 tapes") {
-        Nft aut{ 4, { 0 }, { 2 } };
-        aut.levels.num_of_levels = 3;
-        aut.add_transition_by_levels(0, { 'a', 'a', 'a' }, 1);
-        aut.add_transition_by_levels(0, { 'b', 'a', 'a' }, 3);
-        aut.add_transition_by_levels(3, { 'a', 'a', 'a' }, 2);
-        aut.add_transition_by_levels(1, { 'a', 'a', 'a' }, 2);
-        aut.add_transition_by_levels(2, { 'c', 'b', 'd' }, 2);
-        aut.remove_epsilon('a');
-        REQUIRE(aut.delta[0].size() == 2);
-        CHECK(aut.delta[0].to_vector()[0].symbol == 'b');
-        CHECK(aut.delta[0].to_vector()[1].symbol == 'c');
-        REQUIRE(aut.delta[2].size() == 1);
-        CHECK(aut.delta[0].to_vector()[1].targets == aut.delta[2].to_vector()[0].targets);
-        REQUIRE(aut.delta[1].size() == 1);
-        CHECK(aut.delta[1].to_vector()[0].symbol == 'c');
-        CHECK(aut.delta[1].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
-        REQUIRE(aut.delta[3].size() == 1);
-        CHECK(aut.delta[3].to_vector()[0].symbol == 'c');
-        CHECK(aut.delta[3].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
-    }
+	SECTION("3 tapes") {
+		Nft aut{4, {0}, {2}};
+		aut.levels.num_of_levels = 3;
+		aut.add_transition_by_levels(0, {'a', 'a', 'a'}, 1);
+		aut.add_transition_by_levels(0, {'b', 'a', 'a'}, 3);
+		aut.add_transition_by_levels(3, {'a', 'a', 'a'}, 2);
+		aut.add_transition_by_levels(1, {'a', 'a', 'a'}, 2);
+		aut.add_transition_by_levels(2, {'c', 'b', 'd'}, 2);
+		aut.remove_epsilon('a');
+		REQUIRE(aut.delta[0].size() == 2);
+		CHECK(aut.delta[0].to_vector()[0].symbol == 'b');
+		CHECK(aut.delta[0].to_vector()[1].symbol == 'c');
+		REQUIRE(aut.delta[2].size() == 1);
+		CHECK(aut.delta[0].to_vector()[1].targets == aut.delta[2].to_vector()[0].targets);
+		REQUIRE(aut.delta[1].size() == 1);
+		CHECK(aut.delta[1].to_vector()[0].symbol == 'c');
+		CHECK(aut.delta[1].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
+		REQUIRE(aut.delta[3].size() == 1);
+		CHECK(aut.delta[3].to_vector()[0].symbol == 'c');
+		CHECK(aut.delta[3].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
+	}
 
-    SECTION("issue #565") {
-        Nft lhs(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, 4, { 0 }, { 3 }));
-        lhs.delta.add(0, EPSILON, 1);
-        lhs.delta.add(0, EPSILON, 3);
-        lhs.delta.add(1, 'a', 2);
-        lhs.delta.add(2, 'b', 3);
+	SECTION("issue #565") {
+		Nft lhs(Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3}));
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(0, EPSILON, 3);
+		lhs.delta.add(1, 'a', 2);
+		lhs.delta.add(2, 'b', 3);
 
-        Nft rhs(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, 4, { 0 }, { 0, 3 }));
-        rhs.delta.add(0, 'c', 1);
-        rhs.delta.add(1, EPSILON, 2);
-        rhs.delta.add(2, 'd', 3);
+		Nft rhs(Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {0, 3}));
+		rhs.delta.add(0, 'c', 1);
+		rhs.delta.add(1, EPSILON, 2);
+		rhs.delta.add(2, 'd', 3);
 
-        Nft result = compose(lhs, rhs, 0, 1, false, JumpMode::RepeatSymbol);
-        REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
-        result.remove_epsilon();
-        REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
-    }
+		Nft result = compose(lhs, rhs, 0, 1, false, JumpMode::RepeatSymbol);
+		REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
+		result.remove_epsilon();
+		REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
+	}
 }
 
 TEST_CASE("Profile mata::nft::remove_epsilon()", "[.profiling]") {
-    for (size_t n{}; n < 100'000; ++n) {
-        Nft aut{ 20 };
-        FILL_WITH_AUT_A(aut);
-        aut.remove_epsilon('c');
-    }
+	for (size_t n{}; n < 100'000; ++n) {
+		Nft aut{20};
+		FILL_WITH_AUT_A(aut);
+		aut.remove_epsilon('c');
+	}
 }
 
 TEST_CASE("mata::nft::get_num_of_trans()") {
-    Nft aut{ 20 };
-    FILL_WITH_AUT_A(aut);
-    REQUIRE(aut.delta.num_of_transitions() == 15);
+	Nft aut{20};
+	FILL_WITH_AUT_A(aut);
+	REQUIRE(aut.delta.num_of_transitions() == 15);
 }
 
 TEST_CASE("mata::nft::get_one_letter_aut()") {
-    Nft aut(11);
-    Symbol abstract_symbol{ 'x' };
-    FILL_WITH_AUT_A(aut);
+	Nft aut(11);
+	Symbol abstract_symbol{'x'};
+	FILL_WITH_AUT_A(aut);
 
-    Nft digraph{ aut.get_one_letter_aut() };
+	Nft digraph{aut.get_one_letter_aut()};
 
-    REQUIRE(digraph.num_of_states() == aut.num_of_states());
-    REQUIRE(digraph.delta.num_of_transitions() == 12);
-    REQUIRE(digraph.delta.contains(1, abstract_symbol, 10));
-    REQUIRE(digraph.delta.contains(10, abstract_symbol, 7));
-    REQUIRE(!digraph.delta.contains(10, 'a', 7));
-    REQUIRE(!digraph.delta.contains(10, 'b', 7));
-    REQUIRE(!digraph.delta.contains(10, 'c', 7));
+	REQUIRE(digraph.num_of_states() == aut.num_of_states());
+	REQUIRE(digraph.delta.num_of_transitions() == 12);
+	REQUIRE(digraph.delta.contains(1, abstract_symbol, 10));
+	REQUIRE(digraph.delta.contains(10, abstract_symbol, 7));
+	REQUIRE(!digraph.delta.contains(10, 'a', 7));
+	REQUIRE(!digraph.delta.contains(10, 'b', 7));
+	REQUIRE(!digraph.delta.contains(10, 'c', 7));
 }
 
 TEST_CASE("mata::nft::get_reachable_states()") {
-    Nft aut{ 20 };
+	Nft aut{20};
 
-    SECTION("Automaton A") {
-        FILL_WITH_AUT_A(aut);
-        aut.delta.remove(3, 'b', 9);
-        aut.delta.remove(5, 'c', 9);
-        aut.delta.remove(1, 'a', 10);
+	SECTION("Automaton A") {
+		FILL_WITH_AUT_A(aut);
+		aut.delta.remove(3, 'b', 9);
+		aut.delta.remove(5, 'c', 9);
+		aut.delta.remove(1, 'a', 10);
 
-        StateSet reachable{ aut.get_reachable_states() };
-        CHECK(!reachable.contains(0));
-        CHECK(reachable.contains(1));
-        CHECK(!reachable.contains(2));
-        CHECK(reachable.contains(3));
-        CHECK(!reachable.contains(4));
-        CHECK(reachable.contains(5));
-        CHECK(!reachable.contains(6));
-        CHECK(reachable.contains(7));
-        CHECK(!reachable.contains(8));
-        CHECK(!reachable.contains(9));
-        CHECK(!reachable.contains(10));
+		StateSet reachable{aut.get_reachable_states()};
+		CHECK(!reachable.contains(0));
+		CHECK(reachable.contains(1));
+		CHECK(!reachable.contains(2));
+		CHECK(reachable.contains(3));
+		CHECK(!reachable.contains(4));
+		CHECK(reachable.contains(5));
+		CHECK(!reachable.contains(6));
+		CHECK(reachable.contains(7));
+		CHECK(!reachable.contains(8));
+		CHECK(!reachable.contains(9));
+		CHECK(!reachable.contains(10));
 
-        aut.initial.erase(1);
-        aut.initial.erase(3);
-        reachable = aut.get_reachable_states();
-        CHECK(reachable.empty());
-    }
+		aut.initial.erase(1);
+		aut.initial.erase(3);
+		reachable = aut.get_reachable_states();
+		CHECK(reachable.empty());
+	}
 
-    SECTION("Automaton B") {
-        FILL_WITH_AUT_B(aut);
-        aut.delta.remove(2, 'c', 12);
-        aut.delta.remove(4, 'c', 8);
-        aut.delta.remove(4, 'a', 8);
+	SECTION("Automaton B") {
+		FILL_WITH_AUT_B(aut);
+		aut.delta.remove(2, 'c', 12);
+		aut.delta.remove(4, 'c', 8);
+		aut.delta.remove(4, 'a', 8);
 
-        auto reachable{ aut.get_reachable_states() };
-        CHECK(reachable.find(0) != reachable.end());
-        CHECK(reachable.find(1) == reachable.end());
-        CHECK(reachable.find(2) != reachable.end());
-        CHECK(reachable.find(3) == reachable.end());
-        CHECK(reachable.find(4) != reachable.end());
-        CHECK(reachable.find(5) == reachable.end());
-        CHECK(reachable.find(6) != reachable.end());
-        CHECK(reachable.find(7) == reachable.end());
-        CHECK(reachable.find(8) == reachable.end());
-        CHECK(reachable.find(9) == reachable.end());
-        CHECK(reachable.find(10) == reachable.end());
-        CHECK(reachable.find(11) == reachable.end());
-        CHECK(reachable.find(12) == reachable.end());
-        CHECK(reachable.find(13) == reachable.end());
-        CHECK(reachable.find(14) == reachable.end());
+		auto reachable{aut.get_reachable_states()};
+		CHECK(reachable.find(0) != reachable.end());
+		CHECK(reachable.find(1) == reachable.end());
+		CHECK(reachable.find(2) != reachable.end());
+		CHECK(reachable.find(3) == reachable.end());
+		CHECK(reachable.find(4) != reachable.end());
+		CHECK(reachable.find(5) == reachable.end());
+		CHECK(reachable.find(6) != reachable.end());
+		CHECK(reachable.find(7) == reachable.end());
+		CHECK(reachable.find(8) == reachable.end());
+		CHECK(reachable.find(9) == reachable.end());
+		CHECK(reachable.find(10) == reachable.end());
+		CHECK(reachable.find(11) == reachable.end());
+		CHECK(reachable.find(12) == reachable.end());
+		CHECK(reachable.find(13) == reachable.end());
+		CHECK(reachable.find(14) == reachable.end());
 
-        aut.final.erase(2);
-        reachable = aut.get_reachable_states();
-        CHECK(reachable.size() == 4);
-        CHECK(reachable.find(0) != reachable.end());
-        CHECK(reachable.find(2) != reachable.end());
-        CHECK(reachable.find(4) != reachable.end());
-        CHECK(reachable.find(6) != reachable.end());
-        CHECK(aut.get_useful_states().count() == 0);
+		aut.final.erase(2);
+		reachable = aut.get_reachable_states();
+		CHECK(reachable.size() == 4);
+		CHECK(reachable.find(0) != reachable.end());
+		CHECK(reachable.find(2) != reachable.end());
+		CHECK(reachable.find(4) != reachable.end());
+		CHECK(reachable.find(6) != reachable.end());
+		CHECK(aut.get_useful_states().count() == 0);
 
-        aut.final.insert(4);
-        reachable = aut.get_reachable_states();
-        CHECK(reachable.find(4) != reachable.end());
-    }
+		aut.final.insert(4);
+		reachable = aut.get_reachable_states();
+		CHECK(reachable.find(4) != reachable.end());
+	}
 }
 
 TEST_CASE("mata::nft::trim() for profiling", "[.profiling],[trim]") {
-    Nft aut{ 20 };
-    FILL_WITH_AUT_A(aut);
-    aut.delta.remove(1, 'a', 10);
+	Nft aut{20};
+	FILL_WITH_AUT_A(aut);
+	aut.delta.remove(1, 'a', 10);
 
-    for (size_t i{ 0 }; i < 10'000; ++i) {
-        Nft new_aut{ aut };
-        new_aut.trim();
-    }
+	for (size_t i{0}; i < 10'000; ++i) {
+		Nft new_aut{aut};
+		new_aut.trim();
+	}
 }
 
-//TODO: make this a test for the new version
+// TODO: make this a test for the new version
 TEST_CASE("mata::nft::get_useful_states() for profiling", "[.profiling],[useful_states]") {
-    Nft aut{ 20 };
-    FILL_WITH_AUT_A(aut);
-    aut.delta.remove(1, 'a', 10);
+	Nft aut{20};
+	FILL_WITH_AUT_A(aut);
+	aut.delta.remove(1, 'a', 10);
 
-    for (size_t i{ 0 }; i < 10'000; ++i) { aut.get_useful_states(); }
+	for (size_t i{0}; i < 10'000; ++i) { aut.get_useful_states(); }
 }
 
 TEST_CASE("mata::nft::trim() trivial") {
-    Nft aut{ 1 };
-    aut.initial.insert(0);
-    aut.final.insert(0);
-    aut.trim();
+	Nft aut{1};
+	aut.initial.insert(0);
+	aut.final.insert(0);
+	aut.trim();
 }
 
 TEST_CASE("mata::nft::trim()") {
-    Nft orig_aut{ 20 };
-    FILL_WITH_AUT_A(orig_aut);
-    orig_aut.delta.remove(1, 'a', 10);
+	Nft orig_aut{20};
+	FILL_WITH_AUT_A(orig_aut);
+	orig_aut.delta.remove(1, 'a', 10);
 
+	SECTION("Without state map") {
+		Nft aut{orig_aut};
+		aut.trim();
+		CHECK(aut.initial.size() == orig_aut.initial.size());
+		CHECK(aut.final.size() == orig_aut.final.size());
+		CHECK(aut.num_of_states() == 4);
+		for (const Word& word : get_shortest_words(orig_aut)) { CHECK(aut.is_in_lang(Run{word, {}})); }
 
-    SECTION("Without state map") {
-        Nft aut{ orig_aut };
-        aut.trim();
-        CHECK(aut.initial.size() == orig_aut.initial.size());
-        CHECK(aut.final.size() == orig_aut.final.size());
-        CHECK(aut.num_of_states() == 4);
-        for (const Word& word : get_shortest_words(orig_aut)) { CHECK(aut.is_in_lang(Run{word,{}})); }
+		aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
+		aut.trim();
+		CHECK(aut.delta.empty());
+		CHECK(aut.num_of_states() == 0);
+	}
 
-        aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
-        aut.trim();
-        CHECK(aut.delta.empty());
-        CHECK(aut.num_of_states() == 0);
-    }
+	SECTION("With state map") {
+		Nft aut{orig_aut};
+		StateRenaming state_map{};
+		aut.trim(&state_map);
+		CHECK(aut.initial.size() == orig_aut.initial.size());
+		CHECK(aut.final.size() == orig_aut.final.size());
+		CHECK(aut.num_of_states() == 4);
+		for (const Word& word : get_shortest_words(orig_aut)) { CHECK(aut.is_in_lang(Run{word, {}})); }
+		REQUIRE(state_map.size() == 4);
+		CHECK(state_map.at(1) == 0);
+		CHECK(state_map.at(3) == 1);
+		CHECK(state_map.at(7) == 3);
+		CHECK(state_map.at(5) == 2);
 
-    SECTION("With state map") {
-        Nft aut{ orig_aut };
-        StateRenaming state_map{};
-        aut.trim(&state_map);
-        CHECK(aut.initial.size() == orig_aut.initial.size());
-        CHECK(aut.final.size() == orig_aut.final.size());
-        CHECK(aut.num_of_states() == 4);
-        for (const Word& word : get_shortest_words(orig_aut)) { CHECK(aut.is_in_lang(Run{word,{}})); }
-        REQUIRE(state_map.size() == 4);
-        CHECK(state_map.at(1) == 0);
-        CHECK(state_map.at(3) == 1);
-        CHECK(state_map.at(7) == 3);
-        CHECK(state_map.at(5) == 2);
-
-        aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
-        aut.trim(&state_map);
-        CHECK(aut.delta.empty());
-        CHECK(aut.num_of_states() == 0);
-        CHECK(state_map.empty());
-    }
+		aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
+		aut.trim(&state_map);
+		CHECK(aut.delta.empty());
+		CHECK(aut.num_of_states() == 0);
+		CHECK(state_map.empty());
+	}
 }
 
 TEST_CASE("mata::nft::Nft::delta.empty()") {
-    Nft aut{};
+	Nft aut{};
 
-    SECTION("Empty automaton") { CHECK(aut.delta.empty()); }
+	SECTION("Empty automaton") { CHECK(aut.delta.empty()); }
 
-    SECTION("No transitions automaton") {
-        aut.add_state();
-        CHECK(aut.delta.empty());
-    }
+	SECTION("No transitions automaton") {
+		aut.add_state();
+		CHECK(aut.delta.empty());
+	}
 
-    SECTION("Single state automaton with no transitions") {
-        aut.add_state();
-        aut.initial.insert(0);
-        aut.final.insert(0);
-        CHECK(aut.delta.empty());
-    }
+	SECTION("Single state automaton with no transitions") {
+		aut.add_state();
+		aut.initial.insert(0);
+		aut.final.insert(0);
+		CHECK(aut.delta.empty());
+	}
 
-    SECTION("Single state automaton with transitions") {
-        aut.add_state();
-        aut.initial.insert(0);
-        aut.final.insert(0);
-        aut.delta.add(0, 'a', 0);
-        CHECK(!aut.delta.empty());
-    }
+	SECTION("Single state automaton with transitions") {
+		aut.add_state();
+		aut.initial.insert(0);
+		aut.final.insert(0);
+		aut.delta.add(0, 'a', 0);
+		CHECK(!aut.delta.empty());
+	}
 
-    SECTION("Single state automaton with transitions") {
-        aut.add_state(1);
-        aut.initial.insert(0);
-        aut.final.insert(1);
-        CHECK(aut.delta.empty());
-    }
+	SECTION("Single state automaton with transitions") {
+		aut.add_state(1);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		CHECK(aut.delta.empty());
+	}
 
-    SECTION("Single state automaton with transitions") {
-        aut.add_state(1);
-        aut.initial.insert(0);
-        aut.final.insert(1);
-        aut.delta.add(0, 'a', 1);
-        CHECK(!aut.delta.empty());
-    }
+	SECTION("Single state automaton with transitions") {
+		aut.add_state(1);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 'a', 1);
+		CHECK(!aut.delta.empty());
+	}
 }
 
 TEST_CASE("mata::nft::delta.operator[]") {
-    Nft aut{ 20 };
-    FILL_WITH_AUT_A(aut);
-    REQUIRE(aut.delta.num_of_transitions() == 15);
-    aut.delta[25];
-    REQUIRE(aut.num_of_states() == 20);
+	Nft aut{20};
+	FILL_WITH_AUT_A(aut);
+	REQUIRE(aut.delta.num_of_transitions() == 15);
+	aut.delta[25];
+	REQUIRE(aut.num_of_states() == 20);
 
-    aut.delta.mutable_state_post(25);
-    REQUIRE(aut.num_of_states() == 26);
-    REQUIRE(aut.delta[25].empty());
+	aut.delta.mutable_state_post(25);
+	REQUIRE(aut.num_of_states() == 26);
+	REQUIRE(aut.delta[25].empty());
 
-    aut.delta.mutable_state_post(50);
-    REQUIRE(aut.num_of_states() == 51);
-    REQUIRE(aut.delta[50].empty());
+	aut.delta.mutable_state_post(50);
+	REQUIRE(aut.num_of_states() == 51);
+	REQUIRE(aut.delta[50].empty());
 
-    Nft aut1 = aut;
-    aut1.delta.mutable_state_post(60);
-    REQUIRE(aut1.num_of_states() == 61);
-    REQUIRE(aut1.delta[60].empty());
+	Nft aut1 = aut;
+	aut1.delta.mutable_state_post(60);
+	REQUIRE(aut1.num_of_states() == 61);
+	REQUIRE(aut1.delta[60].empty());
 
-    const Nft aut2 = aut;
-    aut2.delta[60];
-    REQUIRE(aut2.num_of_states() == 51);
-    REQUIRE(aut2.delta[60].empty());
+	const Nft aut2 = aut;
+	aut2.delta[60];
+	REQUIRE(aut2.num_of_states() == 51);
+	REQUIRE(aut2.delta[60].empty());
 }
 
 TEST_CASE("mata::nft::Nft::unify_(initial/final)()") {
-    Nft nft{ 10 };
+	Nft nft{10};
 
-    SECTION("No initial") {
-        nft.unify_initial();
-        CHECK(nft.num_of_states() == 10);
-        CHECK(nft.initial.empty());
-    }
+	SECTION("No initial") {
+		nft.unify_initial();
+		CHECK(nft.num_of_states() == 10);
+		CHECK(nft.initial.empty());
+	}
 
-    SECTION("initial==final unify final") {
-        nft.initial.insert(0);
-        nft.final.insert(0);
-        nft.final.insert(1);
-        nft.unify_final();
-        REQUIRE(nft.num_of_states() == 11);
-        CHECK(nft.final.size() == 1);
-        CHECK(nft.final[10]);
-        CHECK(nft.initial[10]);
-    }
+	SECTION("initial==final unify final") {
+		nft.initial.insert(0);
+		nft.final.insert(0);
+		nft.final.insert(1);
+		nft.unify_final();
+		REQUIRE(nft.num_of_states() == 11);
+		CHECK(nft.final.size() == 1);
+		CHECK(nft.final[10]);
+		CHECK(nft.initial[10]);
+	}
 
-    SECTION("initial==final unify initial") {
-        nft.initial.insert(0);
-        nft.initial.insert(1);
-        nft.final.insert(0);
-        nft.unify_initial();
-        REQUIRE(nft.num_of_states() == 11);
-        CHECK(nft.initial.size() == 1);
-        CHECK(nft.initial[10]);
-        CHECK(nft.final[10]);
-    }
+	SECTION("initial==final unify initial") {
+		nft.initial.insert(0);
+		nft.initial.insert(1);
+		nft.final.insert(0);
+		nft.unify_initial();
+		REQUIRE(nft.num_of_states() == 11);
+		CHECK(nft.initial.size() == 1);
+		CHECK(nft.initial[10]);
+		CHECK(nft.final[10]);
+	}
 
-    SECTION("Single initial") {
-        nft.initial.insert(0);
-        nft.unify_initial();
-        CHECK(nft.num_of_states() == 10);
-        CHECK(nft.initial.size() == 1);
-        CHECK(nft.initial[0]);
-    }
+	SECTION("Single initial") {
+		nft.initial.insert(0);
+		nft.unify_initial();
+		CHECK(nft.num_of_states() == 10);
+		CHECK(nft.initial.size() == 1);
+		CHECK(nft.initial[0]);
+	}
 
-    SECTION("Multiple initial") {
-        nft.initial.insert(0);
-        nft.initial.insert(1);
-        nft.unify_initial();
-        CHECK(nft.num_of_states() == 11);
-        CHECK(nft.initial.size() == 1);
-        CHECK(nft.initial[10]);
-    }
+	SECTION("Multiple initial") {
+		nft.initial.insert(0);
+		nft.initial.insert(1);
+		nft.unify_initial();
+		CHECK(nft.num_of_states() == 11);
+		CHECK(nft.initial.size() == 1);
+		CHECK(nft.initial[10]);
+	}
 
-    SECTION("With transitions") {
-        nft.initial.insert(0);
-        nft.initial.insert(1);
-        nft.delta.add(0, 'a', 3);
-        nft.delta.add(1, 'b', 0);
-        nft.delta.add(1, 'c', 1);
-        nft.unify_initial();
-        CHECK(nft.num_of_states() == 11);
-        CHECK(nft.initial.size() == 1);
-        CHECK(nft.initial[10]);
-        CHECK(nft.delta.contains(10, 'a', 3));
-        CHECK(nft.delta.contains(10, 'b', 0));
-        CHECK(nft.delta.contains(10, 'c', 1));
-        CHECK(nft.delta.contains(0, 'a', 3));
-        CHECK(nft.delta.contains(1, 'b', 0));
-        CHECK(nft.delta.contains(1, 'c', 1));
-    }
+	SECTION("With transitions") {
+		nft.initial.insert(0);
+		nft.initial.insert(1);
+		nft.delta.add(0, 'a', 3);
+		nft.delta.add(1, 'b', 0);
+		nft.delta.add(1, 'c', 1);
+		nft.unify_initial();
+		CHECK(nft.num_of_states() == 11);
+		CHECK(nft.initial.size() == 1);
+		CHECK(nft.initial[10]);
+		CHECK(nft.delta.contains(10, 'a', 3));
+		CHECK(nft.delta.contains(10, 'b', 0));
+		CHECK(nft.delta.contains(10, 'c', 1));
+		CHECK(nft.delta.contains(0, 'a', 3));
+		CHECK(nft.delta.contains(1, 'b', 0));
+		CHECK(nft.delta.contains(1, 'c', 1));
+	}
 
-    SECTION("No final") {
-        nft.unify_final();
-        CHECK(nft.num_of_states() == 10);
-        CHECK(nft.final.empty());
-    }
+	SECTION("No final") {
+		nft.unify_final();
+		CHECK(nft.num_of_states() == 10);
+		CHECK(nft.final.empty());
+	}
 
-    SECTION("Single final") {
-        nft.final.insert(0);
-        nft.unify_final();
-        CHECK(nft.num_of_states() == 10);
-        CHECK(nft.final.size() == 1);
-        CHECK(nft.final[0]);
-    }
+	SECTION("Single final") {
+		nft.final.insert(0);
+		nft.unify_final();
+		CHECK(nft.num_of_states() == 10);
+		CHECK(nft.final.size() == 1);
+		CHECK(nft.final[0]);
+	}
 
-    SECTION("Multiple final") {
-        nft.final.insert(0);
-        nft.final.insert(1);
-        nft.unify_final();
-        CHECK(nft.num_of_states() == 11);
-        CHECK(nft.final.size() == 1);
-        CHECK(nft.final[10]);
-    }
+	SECTION("Multiple final") {
+		nft.final.insert(0);
+		nft.final.insert(1);
+		nft.unify_final();
+		CHECK(nft.num_of_states() == 11);
+		CHECK(nft.final.size() == 1);
+		CHECK(nft.final[10]);
+	}
 
-    SECTION("With transitions") {
-        nft.final.insert(0);
-        nft.final.insert(1);
-        nft.delta.add(3, 'a', 0);
-        nft.delta.add(4, 'b', 1);
-        nft.delta.add(1, 'c', 1);
-        nft.unify_final();
-        CHECK(nft.num_of_states() == 11);
-        CHECK(nft.final.size() == 1);
-        CHECK(nft.final[10]);
-        CHECK(nft.delta.contains(3, 'a', 10));
-        CHECK(nft.delta.contains(4, 'b', 10));
-        CHECK(nft.delta.contains(1, 'c', 10));
-        CHECK(nft.delta.contains(3, 'a', 0));
-        CHECK(nft.delta.contains(4, 'b', 1));
-        CHECK(nft.delta.contains(1, 'c', 1));
-    }
+	SECTION("With transitions") {
+		nft.final.insert(0);
+		nft.final.insert(1);
+		nft.delta.add(3, 'a', 0);
+		nft.delta.add(4, 'b', 1);
+		nft.delta.add(1, 'c', 1);
+		nft.unify_final();
+		CHECK(nft.num_of_states() == 11);
+		CHECK(nft.final.size() == 1);
+		CHECK(nft.final[10]);
+		CHECK(nft.delta.contains(3, 'a', 10));
+		CHECK(nft.delta.contains(4, 'b', 10));
+		CHECK(nft.delta.contains(1, 'c', 10));
+		CHECK(nft.delta.contains(3, 'a', 0));
+		CHECK(nft.delta.contains(4, 'b', 1));
+		CHECK(nft.delta.contains(1, 'c', 1));
+	}
 
-    SECTION("Bug: NFT with empty string unifying initial/final repeatedly") {
-        Nft aut{ nfa::builder::create_from_regex("a*b*") };
-        for (size_t i{ 0 }; i < 8; ++i) {
-            aut.unify_initial();
-            aut.unify_final();
-        }
-        CHECK(true); // Check that the program does not seg fault.
-    }
+	SECTION("Bug: NFT with empty string unifying initial/final repeatedly") {
+		Nft aut{nfa::builder::create_from_regex("a*b*")};
+		for (size_t i{0}; i < 8; ++i) {
+			aut.unify_initial();
+			aut.unify_final();
+		}
+		CHECK(true); // Check that the program does not seg fault.
+	}
 }
 
 TEST_CASE("mata::nft::Nft::get_delta.epsilon_symbol_posts()") {
-    Nft aut{ 20 };
-    FILL_WITH_AUT_A(aut);
-    aut.delta.add(0, EPSILON, 3);
-    aut.delta.add(3, EPSILON, 3);
-    aut.delta.add(3, EPSILON, 4);
+	Nft aut{20};
+	FILL_WITH_AUT_A(aut);
+	aut.delta.add(0, EPSILON, 3);
+	aut.delta.add(3, EPSILON, 3);
+	aut.delta.add(3, EPSILON, 4);
 
-    auto state_eps_trans{ aut.delta.epsilon_symbol_posts(0) };
-    CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->targets == StateSet{3 });
-    state_eps_trans = aut.delta.epsilon_symbol_posts(3);
-    CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->targets == StateSet{3, 4 });
+	auto state_eps_trans{aut.delta.epsilon_symbol_posts(0)};
+	CHECK(state_eps_trans->symbol == EPSILON);
+	CHECK(state_eps_trans->targets == StateSet{3});
+	state_eps_trans = aut.delta.epsilon_symbol_posts(3);
+	CHECK(state_eps_trans->symbol == EPSILON);
+	CHECK(state_eps_trans->targets == StateSet{3, 4});
 
-    aut.delta.add(8, 42, 3);
-    aut.delta.add(8, 42, 4);
-    aut.delta.add(8, 42, 6);
+	aut.delta.add(8, 42, 3);
+	aut.delta.add(8, 42, 4);
+	aut.delta.add(8, 42, 6);
 
-    state_eps_trans = aut.delta.epsilon_symbol_posts(8, 42);
-    CHECK(state_eps_trans->symbol == 42);
-    CHECK(state_eps_trans->targets == StateSet{3, 4, 6 });
+	state_eps_trans = aut.delta.epsilon_symbol_posts(8, 42);
+	CHECK(state_eps_trans->symbol == 42);
+	CHECK(state_eps_trans->targets == StateSet{3, 4, 6});
 
-    CHECK(aut.delta.epsilon_symbol_posts(1) == aut.delta.state_post(1).end());
-    CHECK(aut.delta.epsilon_symbol_posts(5) == aut.delta.state_post(5).end());
-    CHECK(aut.delta.epsilon_symbol_posts(19) == aut.delta.state_post(19).end());
+	CHECK(aut.delta.epsilon_symbol_posts(1) == aut.delta.state_post(1).end());
+	CHECK(aut.delta.epsilon_symbol_posts(5) == aut.delta.state_post(5).end());
+	CHECK(aut.delta.epsilon_symbol_posts(19) == aut.delta.state_post(19).end());
 
-    StatePost state_post{ aut.delta[0] };
-    state_eps_trans = mata::nfa::Delta::epsilon_symbol_posts(state_post);
-    CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->targets == StateSet{3 });
-    state_post = aut.delta[3];
-    state_eps_trans = Delta::epsilon_symbol_posts(state_post);
-    CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->targets == StateSet{3, 4 });
+	StatePost state_post{aut.delta[0]};
+	state_eps_trans = mata::nfa::Delta::epsilon_symbol_posts(state_post);
+	CHECK(state_eps_trans->symbol == EPSILON);
+	CHECK(state_eps_trans->targets == StateSet{3});
+	state_post = aut.delta[3];
+	state_eps_trans = Delta::epsilon_symbol_posts(state_post);
+	CHECK(state_eps_trans->symbol == EPSILON);
+	CHECK(state_eps_trans->targets == StateSet{3, 4});
 
-    state_post = aut.delta.state_post(1);
-    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
-    state_post = aut.delta.state_post(5);
-    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
-    state_post = aut.delta.state_post(19);
-    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
+	state_post = aut.delta.state_post(1);
+	CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
+	state_post = aut.delta.state_post(5);
+	CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
+	state_post = aut.delta.state_post(19);
+	CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
 }
 
 TEST_CASE("mata::nft::Nft::delta()") { Delta delta(6); }
 
 TEST_CASE("mata::nft::make_complement(): A segmentation fault") {
-    Nft r(1);
-    OnTheFlyAlphabet alph{};
-    alph["a"];
-    alph["b"];
+	Nft r(1);
+	OnTheFlyAlphabet alph{};
+	alph["a"];
+	alph["b"];
 
-    r.initial = { 0 };
-    r.delta.add(0, 0, 0);
-    REQUIRE(not r.is_complete(&alph));
-    r.make_complete(&alph);
-    REQUIRE(r.is_complete(&alph));
+	r.initial = {0};
+	r.delta.add(0, 0, 0);
+	REQUIRE(not r.is_complete(&alph));
+	r.make_complete(&alph);
+	REQUIRE(r.is_complete(&alph));
 }
 
 TEST_CASE("mata::nft:: create simple automata") {
-    Nft nft{ builder::create_empty_string_nft(1) };
-    CHECK(nft.is_in_lang(Word{}));
-    CHECK(get_word_lengths(nft) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+	Nft nft{builder::create_empty_string_nft(1)};
+	CHECK(nft.is_in_lang(Word{}));
+	CHECK(get_word_lengths(nft) == std::set<std::pair<int, int>>{std::make_pair(0, 0)});
 
-    auto alphabet = std::make_shared<OnTheFlyAlphabet>(OnTheFlyAlphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } });
-    nft = builder::create_sigma_star_nft(alphabet, 1);
-    CHECK(nft.is_in_lang(Word{}));
-    CHECK(nft.is_in_lang({ 0 }));
-    CHECK(nft.is_in_lang({ 1 }));
-    CHECK(nft.is_in_lang({ 2 }));
-    CHECK(nft.is_in_lang({ 0, 1 }));
-    CHECK(nft.is_in_lang({ 1, 0 }));
-    CHECK(nft.is_in_lang({ 2, 2, 2 }));
-    CHECK(nft.is_in_lang({ 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }));
-    CHECK(!nft.is_in_lang({ 3 }));
+	auto alphabet = std::make_shared<OnTheFlyAlphabet>(OnTheFlyAlphabet{{"a", 0}, {"b", 1}, {"c", 2}});
+	nft = builder::create_sigma_star_nft(alphabet, 1);
+	CHECK(nft.is_in_lang(Word{}));
+	CHECK(nft.is_in_lang({0}));
+	CHECK(nft.is_in_lang({1}));
+	CHECK(nft.is_in_lang({2}));
+	CHECK(nft.is_in_lang({0, 1}));
+	CHECK(nft.is_in_lang({1, 0}));
+	CHECK(nft.is_in_lang({2, 2, 2}));
+	CHECK(nft.is_in_lang({0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1}));
+	CHECK(!nft.is_in_lang({3}));
 }
 
 TEST_CASE("ISSUE #613 - mata::nft::nft::is_in_lang()") {
-    SECTION("DONT_CARE jump") {
-        Nft nft{ builder::create_sigma_star_nft(2) };
-        CHECK(nft.is_in_lang({ 'a', 'b' }));
-        CHECK(nft.is_in_lang({ 'a', 'a' }));
-        CHECK(nft.is_in_lang({ 'b', 'a' }));
+	SECTION("DONT_CARE jump") {
+		Nft nft{builder::create_sigma_star_nft(2)};
+		CHECK(nft.is_in_lang({'a', 'b'}));
+		CHECK(nft.is_in_lang({'a', 'a'}));
+		CHECK(nft.is_in_lang({'b', 'a'}));
 
-        Nft nft3{ builder::create_sigma_star_nft(3) };
-        CHECK(nft3.is_in_lang({ 'a', 'b', 'c' }));
-    }
+		Nft nft3{builder::create_sigma_star_nft(3)};
+		CHECK(nft3.is_in_lang({'a', 'b', 'c'}));
+	}
 
-    SECTION("DONT_CARE in the word") {
-        Nft nft{ Nft::with_levels({ 2, { 0 } }, 1, { 0 }, { 0 }) };
-        nft.delta.add(0, 'x', 0);
+	SECTION("DONT_CARE in the word") {
+		Nft nft{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		nft.delta.add(0, 'x', 0);
 
-        CHECK(nft.is_in_lang({ 'x', 'x' }));
-        CHECK(nft.is_in_lang({ DONT_CARE, 'x' }));
-        CHECK(nft.is_in_lang({ 'x', DONT_CARE }));
-        CHECK(!nft.is_in_lang({ DONT_CARE, 'b' }));
-        CHECK(!nft.is_in_lang({ 'b', DONT_CARE }));
-    }
+		CHECK(nft.is_in_lang({'x', 'x'}));
+		CHECK(nft.is_in_lang({DONT_CARE, 'x'}));
+		CHECK(nft.is_in_lang({'x', DONT_CARE}));
+		CHECK(!nft.is_in_lang({DONT_CARE, 'b'}));
+		CHECK(!nft.is_in_lang({'b', DONT_CARE}));
+	}
 }
 
-
 TEST_CASE("mata::nft::print_to_mata()") {
-    Nft aut_big{ Nft::with_levels(2, 9) };
-    aut_big.initial = { 1, 2 };
-    aut_big.delta.add(1, 'a', 2);
-    aut_big.delta.add(1, 'a', 3);
-    aut_big.delta.add(1, 'b', 4);
-    aut_big.delta.add(2, 'a', 2);
-    aut_big.delta.add(2, 'b', 2);
-    aut_big.delta.add(2, 'a', 3);
-    aut_big.delta.add(2, 'b', 4);
-    aut_big.delta.add(3, 'b', 4);
-    aut_big.delta.add(3, 'c', 7);
-    aut_big.delta.add(3, 'b', 2);
-    aut_big.delta.add(5, 'c', 3);
-    aut_big.delta.add(7, 'a', 8);
-    aut_big.final = { 3 };
-    CHECK(are_equivalent(aut_big, nft::builder::parse_from_mata(aut_big.print_to_mata())));
+	Nft aut_big{Nft::with_levels(2, 9)};
+	aut_big.initial = {1, 2};
+	aut_big.delta.add(1, 'a', 2);
+	aut_big.delta.add(1, 'a', 3);
+	aut_big.delta.add(1, 'b', 4);
+	aut_big.delta.add(2, 'a', 2);
+	aut_big.delta.add(2, 'b', 2);
+	aut_big.delta.add(2, 'a', 3);
+	aut_big.delta.add(2, 'b', 4);
+	aut_big.delta.add(3, 'b', 4);
+	aut_big.delta.add(3, 'c', 7);
+	aut_big.delta.add(3, 'b', 2);
+	aut_big.delta.add(5, 'c', 3);
+	aut_big.delta.add(7, 'a', 8);
+	aut_big.final = {3};
+	CHECK(are_equivalent(aut_big, nft::builder::parse_from_mata(aut_big.print_to_mata())));
 }
 
 TEST_CASE("mata::nft::Nft::trim() bug") {
-    Nft aut(5, { 0 }, { 4 });
-    aut.delta.add(0, 122, 1);
-    aut.delta.add(1, 98, 1);
-    aut.delta.add(1, 122, 1);
-    aut.delta.add(1, 97, 2);
-    aut.delta.add(2, 122, 1);
-    aut.delta.add(2, 97, 1);
-    aut.delta.add(1, 97, 4);
-    aut.delta.add(3, 97, 4);
+	Nft aut(5, {0}, {4});
+	aut.delta.add(0, 122, 1);
+	aut.delta.add(1, 98, 1);
+	aut.delta.add(1, 122, 1);
+	aut.delta.add(1, 97, 2);
+	aut.delta.add(2, 122, 1);
+	aut.delta.add(2, 97, 1);
+	aut.delta.add(1, 97, 4);
+	aut.delta.add(3, 97, 4);
 
-    Nft aut_copy{ aut };
-    CHECK(are_equivalent(aut_copy.trim(), aut));
+	Nft aut_copy{aut};
+	CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
 TEST_CASE("mata::nft::get_useful_states_tarjan") {
-    SECTION("Nft 1") {
-        Nft aut(5, { 0 }, { 4 });
-        aut.delta.add(0, 122, 1);
-        aut.delta.add(1, 98, 1);
-        aut.delta.add(1, 122, 1);
-        aut.delta.add(1, 97, 2);
-        aut.delta.add(2, 122, 1);
-        aut.delta.add(2, 97, 1);
-        aut.delta.add(1, 97, 4);
-        aut.delta.add(3, 97, 4);
+	SECTION("Nft 1") {
+		Nft aut(5, {0}, {4});
+		aut.delta.add(0, 122, 1);
+		aut.delta.add(1, 98, 1);
+		aut.delta.add(1, 122, 1);
+		aut.delta.add(1, 97, 2);
+		aut.delta.add(2, 122, 1);
+		aut.delta.add(2, 97, 1);
+		aut.delta.add(1, 97, 4);
+		aut.delta.add(3, 97, 4);
 
-        mata::BoolVector bv = aut.get_useful_states();
-        mata::BoolVector ref({ 1, 1, 1, 0, 1 });
-        CHECK(bv == ref);
-    }
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({1, 1, 1, 0, 1});
+		CHECK(bv == ref);
+	}
 
-    SECTION("Empty NFT") {
-        Nft aut;
-        mata::BoolVector bv = aut.get_useful_states();
-        CHECK(bv == mata::BoolVector({}));
-    }
+	SECTION("Empty NFT") {
+		Nft aut;
+		mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == mata::BoolVector({}));
+	}
 
-    SECTION("Single-state NFT") {
-        Nft aut(1, { 0 }, {});
-        mata::BoolVector bv = aut.get_useful_states();
-        CHECK(bv == mata::BoolVector({ 0}));
-    }
+	SECTION("Single-state NFT") {
+		Nft aut(1, {0}, {});
+		mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == mata::BoolVector({0}));
+	}
 
-    SECTION("Single-state NFT acc") {
-        Nft aut(1, { 0 }, { 0 });
-        mata::BoolVector bv = aut.get_useful_states();
-        CHECK(bv == mata::BoolVector({ 1}));
-    }
+	SECTION("Single-state NFT acc") {
+		Nft aut(1, {0}, {0});
+		mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == mata::BoolVector({1}));
+	}
 
-    SECTION("Nft 2") {
-        Nft aut(5, { 0, 1 }, { 2 });
-        aut.delta.add(0, 122, 2);
-        aut.delta.add(2, 98, 3);
-        aut.delta.add(1, 98, 4);
-        aut.delta.add(4, 97, 3);
+	SECTION("Nft 2") {
+		Nft aut(5, {0, 1}, {2});
+		aut.delta.add(0, 122, 2);
+		aut.delta.add(2, 98, 3);
+		aut.delta.add(1, 98, 4);
+		aut.delta.add(4, 97, 3);
 
-        mata::BoolVector bv = aut.get_useful_states();
-        mata::BoolVector ref({ 1, 0, 1, 0, 0 });
-        CHECK(bv == ref);
-    }
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({1, 0, 1, 0, 0});
+		CHECK(bv == ref);
+	}
 
-    SECTION("Nft 3") {
-        Nft aut(2, { 0, 1 }, { 0, 1 });
-        aut.delta.add(0, 122, 0);
-        aut.delta.add(1, 98, 1);
+	SECTION("Nft 3") {
+		Nft aut(2, {0, 1}, {0, 1});
+		aut.delta.add(0, 122, 0);
+		aut.delta.add(1, 98, 1);
 
-        mata::BoolVector bv = aut.get_useful_states();
-        mata::BoolVector ref({ 1, 1 });
-        CHECK(bv == ref);
-    }
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({1, 1});
+		CHECK(bv == ref);
+	}
 
-    SECTION("Nft no final") {
-        Nft aut(5, { 0 }, {});
-        aut.delta.add(0, 122, 1);
-        aut.delta.add(1, 98, 1);
-        aut.delta.add(1, 122, 1);
-        aut.delta.add(1, 97, 2);
-        aut.delta.add(2, 122, 1);
-        aut.delta.add(2, 97, 1);
-        aut.delta.add(1, 97, 4);
-        aut.delta.add(3, 97, 4);
+	SECTION("Nft no final") {
+		Nft aut(5, {0}, {});
+		aut.delta.add(0, 122, 1);
+		aut.delta.add(1, 98, 1);
+		aut.delta.add(1, 122, 1);
+		aut.delta.add(1, 97, 2);
+		aut.delta.add(2, 122, 1);
+		aut.delta.add(2, 97, 1);
+		aut.delta.add(1, 97, 4);
+		aut.delta.add(3, 97, 4);
 
-        mata::BoolVector bv = aut.get_useful_states();
-        mata::BoolVector ref({ 0, 0, 0, 0, 0 });
-        CHECK(bv == ref);
-    }
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({0, 0, 0, 0, 0});
+		CHECK(bv == ref);
+	}
 
-    SECTION("more initials") {
-        Nft aut(4, { 0, 1, 2 }, { 0, 3 });
-        aut.delta.add(1, 48, 0);
-        aut.delta.add(2, 53, 3);
-        CHECK(aut.get_useful_states() == mata::BoolVector{ 1, 1, 1, 1});
-    }
+	SECTION("more initials") {
+		Nft aut(4, {0, 1, 2}, {0, 3});
+		aut.delta.add(1, 48, 0);
+		aut.delta.add(2, 53, 3);
+		CHECK(aut.get_useful_states() == mata::BoolVector{1, 1, 1, 1});
+	}
 }
 
 TEST_CASE("mata::nft::Nft::get_words()") {
-    Nft nft{ Nft::with_levels(3) };
-    std::set<Word> words_expected{};
+	Nft nft{Nft::with_levels(3)};
+	std::set<Word> words_expected{};
 
-    const auto CHECK_SHARED = [&]() {
-        if (words_expected.empty()) {
-            CHECK(nft.get_words().empty());
-            CHECK(nft.get_words(0).empty());
-            CHECK(nft.get_words(5).empty());
-            return;
-        }
+	const auto CHECK_SHARED = [&]() {
+		if (words_expected.empty()) {
+			CHECK(nft.get_words().empty());
+			CHECK(nft.get_words(0).empty());
+			CHECK(nft.get_words(5).empty());
+			return;
+		}
 
-        const size_t word_length_max = std::ranges::max_element(
-            words_expected,
-            [](const Word& a, const Word& b) { return a.size() < b.size(); }
-        )->size();
-        const auto words_result{ nft.get_words(word_length_max) };
-        CHECK(words_result.size() == words_expected.size());
-        for (const Word& word : words_expected) { CHECK(words_result.contains(word)); }
-    };
+		const size_t word_length_max = std::ranges::max_element(words_expected, [](const Word& a, const Word& b) {
+										   return a.size() < b.size();
+									   })->size();
+		const auto words_result{nft.get_words(word_length_max)};
+		CHECK(words_result.size() == words_expected.size());
+		for (const Word& word : words_expected) { CHECK(words_result.contains(word)); }
+	};
 
-    SECTION("empty") {
-        CHECK(nft.get_words().empty());
-        CHECK(nft.get_words(0).empty());
-        CHECK(nft.get_words(5).empty());
-    }
+	SECTION("empty") {
+		CHECK(nft.get_words().empty());
+		CHECK(nft.get_words(0).empty());
+		CHECK(nft.get_words(5).empty());
+	}
 
-    SECTION("empty word") {
-        nft = Nft{ 1, { 0 }, { 0 } };
-        words_expected = { {} };
-        CHECK_SHARED();
-    }
+	SECTION("empty word") {
+		nft = Nft{1, {0}, {0}};
+		words_expected = {{}};
+		CHECK_SHARED();
+	}
 
-    SECTION("noodle - one final") {
-        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 0, 4);
-        nft.delta.add(4, 1, 5);
-        nft.delta.add(5, 2, 6);
+	SECTION("noodle - one final") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 2, 6);
 
-        words_expected = { { 0, 1, 2, 0, 1, 2 } };
-        CHECK_SHARED();
-    }
+		words_expected = {{0, 1, 2, 0, 1, 2}};
+		CHECK_SHARED();
+	}
 
-    SECTION("noodle - two final") {
-        nft = Nft{ 7, { 0 }, { 3, 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 0, 4);
-        nft.delta.add(4, 1, 5);
-        nft.delta.add(5, 2, 6);
+	SECTION("noodle - two final") {
+		nft = Nft{7, {0}, {3, 6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 2, 6);
 
-        words_expected = { { 0, 1, 2 }, { 0, 1, 2, 0, 1, 2 } };
-        CHECK_SHARED();
-    }
+		words_expected = {{0, 1, 2}, {0, 1, 2, 0, 1, 2}};
+		CHECK_SHARED();
+	}
 
-    SECTION("noodle - one final with multiple paths") {
-        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(2, 3, 3);
-        nft.delta.add(3, 0, 4);
-        nft.delta.add(4, 1, 5);
-        nft.delta.add(2, 4, 3);
-        nft.delta.add(5, 2, 6);
+	SECTION("noodle - one final with multiple paths") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(2, 3, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(2, 4, 3);
+		nft.delta.add(5, 2, 6);
 
-        words_expected = { { 0, 1, 2, 0, 1, 2 }, { 0, 1, 3, 0, 1, 2 }, { 0, 1, 4, 0, 1, 2 } };
-        CHECK_SHARED();
-    }
+		words_expected = {{0, 1, 2, 0, 1, 2}, {0, 1, 3, 0, 1, 2}, {0, 1, 4, 0, 1, 2}};
+		CHECK_SHARED();
+	}
 
-    SECTION("noodle - one final with multiple paths with epsilons") {
-        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, EPSILON, 3);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 0, 4);
-        nft.delta.add(4, 1, 5);
-        nft.delta.add(5, 3, 6);
-        nft.delta.add(5, EPSILON, 6);
+	SECTION("noodle - one final with multiple paths with epsilons") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, EPSILON, 3);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 3, 6);
+		nft.delta.add(5, EPSILON, 6);
 
-        words_expected = {
-            { 0, 1, EPSILON, 0, 1, EPSILON },
-            { 0, 1, 2, 0, 1, EPSILON },
-            { 0, 1, EPSILON, 0, 1, 3 },
-            { 0, 1, 2, 0, 1, 3 },
-        };
-        CHECK_SHARED();
-    }
+		words_expected = {
+			{0, 1, EPSILON, 0, 1, EPSILON},
+			{0, 1, 2, 0, 1, EPSILON},
+			{0, 1, EPSILON, 0, 1, 3},
+			{0, 1, 2, 0, 1, 3},
+		};
+		CHECK_SHARED();
+	}
 
-    SECTION("Loop") {
-        nft = Nft{ 4, { 0 }, { 3 }, { 3, { 0, 1, 2, 0 } } };
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 0, 1);
+	SECTION("Loop") {
+		nft = Nft{4, {0}, {3}, {3, {0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 1);
 
-        words_expected = { { 0, 1, 2 }, { 0, 1, 2, 0, 1, 2 }, { 0, 1, 2, 0, 1, 2, 0, 1, 2 } };
-        CHECK_SHARED();
-    }
+		words_expected = {{0, 1, 2}, {0, 1, 2, 0, 1, 2}, {0, 1, 2, 0, 1, 2, 0, 1, 2}};
+		CHECK_SHARED();
+	}
 
-    SECTION("Jumps") {
-        nft = Nft{ 7, { 0 }, { 6 }, { 3, { 0, 1, 2, 0, 1, 2, 0 } } };
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, EPSILON, 3);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 3, 6);
-        nft.delta.add(3, 0, 4);
-        nft.delta.add(4, 1, 5);
-        nft.delta.add(5, 4, 6);
+	SECTION("Jumps") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, EPSILON, 3);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 6);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 4, 6);
 
-        words_expected = {
-            { 0, EPSILON, EPSILON, 3, 3, 3 }, { 0, 1, 2, 3, 3, 3 },
-            { 0, EPSILON, EPSILON, 0, 1, 4 }, { 0, 1, 2, 0, 1, 4 }
-        };
-        CHECK_SHARED();
-    }
+		words_expected = {
+			{0, EPSILON, EPSILON, 3, 3, 3}, {0, 1, 2, 3, 3, 3}, {0, EPSILON, EPSILON, 0, 1, 4}, {0, 1, 2, 0, 1, 4}
+		};
+		CHECK_SHARED();
+	}
 }
 
 TEST_CASE("mata::nft::Nft::unwind_jump") {
-    #define REPLACE_DONT_CARE(delta, src, trg)\
-                delta.add(src, 0, trg);\
-                (delta).add(src, 1, trg);
-    #define SPLIT_TRANSITION(delta, src, symbol, inter, trg)\
-                (((symbol) == DONT_CARE) ? ((delta).add(src, 0, inter), (delta).add(src, 1, inter)) : ((delta).add(src, symbol, inter)));\
-                REPLACE_DONT_CARE(delta, inter, trg);
-    SECTION("level_cnt == 1") {
-        Nft aut{ Nft::with_levels({ 5, { 3, 4 } }, 5, { 0 }) };
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(0, 1, 2);
-        aut.delta.add(1, 0, 1);
-        aut.delta.add(1, DONT_CARE, 3);
-        aut.delta.add(2, DONT_CARE, 2);
-        aut.delta.add(2, DONT_CARE, 4);
-        aut.delta.add(3, 0, 1);
-        aut.delta.add(3, DONT_CARE, 3);
-        aut.delta.add(4, 1, 2);
-        aut.delta.add(4, DONT_CARE, 4);
+#define REPLACE_DONT_CARE(delta, src, trg)                                                                             \
+	delta.add(src, 0, trg);                                                                                            \
+	(delta).add(src, 1, trg);
+#define SPLIT_TRANSITION(delta, src, symbol, inter, trg)                                                               \
+	(((symbol) == DONT_CARE) ? ((delta).add(src, 0, inter), (delta).add(src, 1, inter))                                \
+							 : ((delta).add(src, symbol, inter)));                                                     \
+	REPLACE_DONT_CARE(delta, inter, trg);
+	SECTION("level_cnt == 1") {
+		Nft aut{Nft::with_levels({5, {3, 4}}, 5, {0})};
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(0, 1, 2);
+		aut.delta.add(1, 0, 1);
+		aut.delta.add(1, DONT_CARE, 3);
+		aut.delta.add(2, DONT_CARE, 2);
+		aut.delta.add(2, DONT_CARE, 4);
+		aut.delta.add(3, 0, 1);
+		aut.delta.add(3, DONT_CARE, 3);
+		aut.delta.add(4, 1, 2);
+		aut.delta.add(4, DONT_CARE, 4);
 
-        Nft expected{ Nft::with_levels({ 5, { 3, 4 } }, 5, { 0 }) };
-        expected.delta.add(0, 0, 1);
-        expected.delta.add(0, 1, 2);
-        expected.delta.add(1, 0, 1);
-        REPLACE_DONT_CARE(expected.delta, 1, 3);
-        REPLACE_DONT_CARE(expected.delta, 2, 2);
-        REPLACE_DONT_CARE(expected.delta, 2, 4);
-        expected.delta.add(3, 0, 1);
-        REPLACE_DONT_CARE(expected.delta, 3, 3);
-        expected.delta.add(4, 1, 2);
-        REPLACE_DONT_CARE(expected.delta, 4, 4);
+		Nft expected{Nft::with_levels({5, {3, 4}}, 5, {0})};
+		expected.delta.add(0, 0, 1);
+		expected.delta.add(0, 1, 2);
+		expected.delta.add(1, 0, 1);
+		REPLACE_DONT_CARE(expected.delta, 1, 3);
+		REPLACE_DONT_CARE(expected.delta, 2, 2);
+		REPLACE_DONT_CARE(expected.delta, 2, 4);
+		expected.delta.add(3, 0, 1);
+		REPLACE_DONT_CARE(expected.delta, 3, 3);
+		expected.delta.add(4, 1, 2);
+		REPLACE_DONT_CARE(expected.delta, 4, 4);
 
-        CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
-        CHECK(
-            nfa::are_equivalent(aut.unwind_jumps({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jumps({ 0, 1 },
-                JumpMode::AppendDontCares), expected)
-        );
-        CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
-    }
+		CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares),
+				expected
+			)
+		);
+		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
+	}
 
-    SECTION("level_cnt == 2") {
-        Nft aut{ Nft::with_levels({ 2, { 0, 1, 1, 0, 0, 0, 0 } }, 7, { 0 }, { 5, 6 }) };
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(0, 1, 2);
-        aut.delta.add(1, DONT_CARE, 3);
-        aut.delta.add(2, DONT_CARE, 4);
-        aut.delta.add(3, 0, 3);
-        aut.delta.add(3, 0, 5);
-        aut.delta.add(4, DONT_CARE, 4);
-        aut.delta.add(4, DONT_CARE, 6);
-        aut.delta.add(5, DONT_CARE, 5);
-        aut.delta.add(5, 0, 3);
-        aut.delta.add(6, DONT_CARE, 6);
-        aut.delta.add(6, 1, 4);
+	SECTION("level_cnt == 2") {
+		Nft aut{Nft::with_levels({2, {0, 1, 1, 0, 0, 0, 0}}, 7, {0}, {5, 6})};
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(0, 1, 2);
+		aut.delta.add(1, DONT_CARE, 3);
+		aut.delta.add(2, DONT_CARE, 4);
+		aut.delta.add(3, 0, 3);
+		aut.delta.add(3, 0, 5);
+		aut.delta.add(4, DONT_CARE, 4);
+		aut.delta.add(4, DONT_CARE, 6);
+		aut.delta.add(5, DONT_CARE, 5);
+		aut.delta.add(5, 0, 3);
+		aut.delta.add(6, DONT_CARE, 6);
+		aut.delta.add(6, 1, 4);
 
-        Nft expected{ Nft::with_levels({ 2, { 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 } }, 15, { 0 }, { 5, 6 }) };
-        expected.delta.add(0, 0, 1);
-        expected.delta.add(0, 1, 2);
-        REPLACE_DONT_CARE(expected.delta, 1, 3);
-        REPLACE_DONT_CARE(expected.delta, 2, 4);
-        SPLIT_TRANSITION(expected.delta, 3, 0, 7, 3);
-        SPLIT_TRANSITION(expected.delta, 3, 0, 8, 5);
-        SPLIT_TRANSITION(expected.delta, 4, DONT_CARE, 10, 4);
-        SPLIT_TRANSITION(expected.delta, 4, DONT_CARE, 12, 6);
-        SPLIT_TRANSITION(expected.delta, 5, DONT_CARE, 13, 5);
-        SPLIT_TRANSITION(expected.delta, 5, 0, 9, 3);
-        SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 14, 6);
-        SPLIT_TRANSITION(expected.delta, 6, 1, 11, 4);
+		Nft expected{Nft::with_levels({2, {0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}}, 15, {0}, {5, 6})};
+		expected.delta.add(0, 0, 1);
+		expected.delta.add(0, 1, 2);
+		REPLACE_DONT_CARE(expected.delta, 1, 3);
+		REPLACE_DONT_CARE(expected.delta, 2, 4);
+		SPLIT_TRANSITION(expected.delta, 3, 0, 7, 3);
+		SPLIT_TRANSITION(expected.delta, 3, 0, 8, 5);
+		SPLIT_TRANSITION(expected.delta, 4, DONT_CARE, 10, 4);
+		SPLIT_TRANSITION(expected.delta, 4, DONT_CARE, 12, 6);
+		SPLIT_TRANSITION(expected.delta, 5, DONT_CARE, 13, 5);
+		SPLIT_TRANSITION(expected.delta, 5, 0, 9, 3);
+		SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 14, 6);
+		SPLIT_TRANSITION(expected.delta, 6, 1, 11, 4);
 
-        CHECK(nfa::are_equivalent(aut.unwind_jumps({ 0, 1 }, JumpMode::AppendDontCares), expected));
-        CHECK(
-            nfa::are_equivalent(aut.unwind_jumps({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jumps({0, 1}, JumpMode
-                ::AppendDontCares), expected)
-        );
-        CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
-    }
+		CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
+					.unwind_jumps({0, 1}, JumpMode ::AppendDontCares),
+				expected
+			)
+		);
+		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
+	}
 
-    SECTION("level_cnt == 4") {
-        Nft aut{
-            Nft::with_levels(
-                { 4, { 0, 1, 1, 3, 3, 0, 0, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0 } }, 17, { 0 }, { 15, 16 }
-            )
-        };
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(0, 1, 2);
-        aut.delta.add(1, 0, 3);
-        aut.delta.add(2, DONT_CARE, 4);
-        aut.delta.add(3, 0, 5);
-        aut.delta.add(4, DONT_CARE, 6);
-        aut.delta.add(5, 0, 5);
-        aut.delta.add(5, 0, 7);
-        aut.delta.add(6, DONT_CARE, 6);
-        aut.delta.add(6, DONT_CARE, 8);
-        aut.delta.add(7, 0, 9);
-        aut.delta.add(8, DONT_CARE, 10);
-        aut.delta.add(9, 0, 11);
-        aut.delta.add(10, DONT_CARE, 12);
-        aut.delta.add(11, 0, 13);
-        aut.delta.add(12, DONT_CARE, 14);
-        aut.delta.add(13, 0, 15);
-        aut.delta.add(14, DONT_CARE, 16);
+	SECTION("level_cnt == 4") {
+		Nft aut{Nft::with_levels({4, {0, 1, 1, 3, 3, 0, 0, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0}}, 17, {0}, {15, 16})};
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(0, 1, 2);
+		aut.delta.add(1, 0, 3);
+		aut.delta.add(2, DONT_CARE, 4);
+		aut.delta.add(3, 0, 5);
+		aut.delta.add(4, DONT_CARE, 6);
+		aut.delta.add(5, 0, 5);
+		aut.delta.add(5, 0, 7);
+		aut.delta.add(6, DONT_CARE, 6);
+		aut.delta.add(6, DONT_CARE, 8);
+		aut.delta.add(7, 0, 9);
+		aut.delta.add(8, DONT_CARE, 10);
+		aut.delta.add(9, 0, 11);
+		aut.delta.add(10, DONT_CARE, 12);
+		aut.delta.add(11, 0, 13);
+		aut.delta.add(12, DONT_CARE, 14);
+		aut.delta.add(13, 0, 15);
+		aut.delta.add(14, DONT_CARE, 16);
 
-        Nft expected{
-            Nft::with_levels(
-                { 4, { 0, 1, 1, 3, 3, 0, 0, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0, 2, 2, 2, 1, 1, 3, 3, 1, 2, 1, 3, 3, 3, 3 } },
-                31, { 0 }, { 15, 16 }
-            )
-        };
-        expected.delta.add(0, 0, 1);
-        expected.delta.add(0, 1, 2);
-        SPLIT_TRANSITION(expected.delta, 1, 0, 17, 3);
-        SPLIT_TRANSITION(expected.delta, 2, DONT_CARE, 18, 4);
-        expected.delta.add(3, 0, 5);
-        REPLACE_DONT_CARE(expected.delta, 4, 6);
-        expected.delta.add(5, 0, 20);
-        REPLACE_DONT_CARE(expected.delta, 20, 19);
-        REPLACE_DONT_CARE(expected.delta, 19, 29);
-        REPLACE_DONT_CARE(expected.delta, 29, 5);
-        SPLIT_TRANSITION(expected.delta, 5, 0, 21, 7);
-        REPLACE_DONT_CARE(expected.delta, 6, 24);
-        REPLACE_DONT_CARE(expected.delta, 24, 25);
-        REPLACE_DONT_CARE(expected.delta, 25, 30);
-        REPLACE_DONT_CARE(expected.delta, 30, 6);
-        SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 26, 8);
-        SPLIT_TRANSITION(expected.delta, 7, 0, 22, 9);
-        SPLIT_TRANSITION(expected.delta, 8, DONT_CARE, 27, 10);
-        expected.delta.add(9, 0, 11);
-        REPLACE_DONT_CARE(expected.delta, 10, 12);
-        expected.delta.add(11, 0, 13);
-        REPLACE_DONT_CARE(expected.delta, 12, 14);
-        SPLIT_TRANSITION(expected.delta, 13, 0, 23, 15);
-        SPLIT_TRANSITION(expected.delta, 14, DONT_CARE, 28, 16);
+		Nft expected{Nft::with_levels(
+			{4, {0, 1, 1, 3, 3, 0, 0, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0, 2, 2, 2, 1, 1, 3, 3, 1, 2, 1, 3, 3, 3, 3}}, 31, {0},
+			{15, 16}
+		)};
+		expected.delta.add(0, 0, 1);
+		expected.delta.add(0, 1, 2);
+		SPLIT_TRANSITION(expected.delta, 1, 0, 17, 3);
+		SPLIT_TRANSITION(expected.delta, 2, DONT_CARE, 18, 4);
+		expected.delta.add(3, 0, 5);
+		REPLACE_DONT_CARE(expected.delta, 4, 6);
+		expected.delta.add(5, 0, 20);
+		REPLACE_DONT_CARE(expected.delta, 20, 19);
+		REPLACE_DONT_CARE(expected.delta, 19, 29);
+		REPLACE_DONT_CARE(expected.delta, 29, 5);
+		SPLIT_TRANSITION(expected.delta, 5, 0, 21, 7);
+		REPLACE_DONT_CARE(expected.delta, 6, 24);
+		REPLACE_DONT_CARE(expected.delta, 24, 25);
+		REPLACE_DONT_CARE(expected.delta, 25, 30);
+		REPLACE_DONT_CARE(expected.delta, 30, 6);
+		SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 26, 8);
+		SPLIT_TRANSITION(expected.delta, 7, 0, 22, 9);
+		SPLIT_TRANSITION(expected.delta, 8, DONT_CARE, 27, 10);
+		expected.delta.add(9, 0, 11);
+		REPLACE_DONT_CARE(expected.delta, 10, 12);
+		expected.delta.add(11, 0, 13);
+		REPLACE_DONT_CARE(expected.delta, 12, 14);
+		SPLIT_TRANSITION(expected.delta, 13, 0, 23, 15);
+		SPLIT_TRANSITION(expected.delta, 14, DONT_CARE, 28, 16);
 
-        CHECK(nfa::are_equivalent(aut.unwind_jumps({ 0, 1 }, JumpMode::AppendDontCares), expected));
-        CHECK(
-            nfa::are_equivalent(aut.unwind_jumps({ DONT_CARE }, JumpMode::AppendDontCares).unwind_jumps({ 0, 1 },
-                JumpMode::AppendDontCares), expected)
-        );
-        CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
-    }
+		CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares),
+				expected
+			)
+		);
+		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
+	}
 }
 
 TEST_CASE("mata::nft::Nft::add_state()") {
-    Nft nft{ Nft::with_levels(4) };
-    State state{ nft.add_state() };
-    CHECK(state == 0);
-    CHECK(nft.levels[state] == 0);
-    state = nft.add_state(4);
-    CHECK(state == 4);
-    CHECK(nft.levels[state] == 0);
-    CHECK(nft.num_of_states() == 5);
-    state = nft.add_state_with_level(3);
-    CHECK(state == 5);
-    CHECK(nft.levels[state] == 3);
-    CHECK(nft.num_of_states() == 6);
-    state = nft.add_state_with_level(12, 1);
-    CHECK(state == 12);
-    CHECK(nft.levels[state] == 1);
-    CHECK(nft.num_of_states() == 13);
+	Nft nft{Nft::with_levels(4)};
+	State state{nft.add_state()};
+	CHECK(state == 0);
+	CHECK(nft.levels[state] == 0);
+	state = nft.add_state(4);
+	CHECK(state == 4);
+	CHECK(nft.levels[state] == 0);
+	CHECK(nft.num_of_states() == 5);
+	state = nft.add_state_with_level(3);
+	CHECK(state == 5);
+	CHECK(nft.levels[state] == 3);
+	CHECK(nft.num_of_states() == 6);
+	state = nft.add_state_with_level(12, 1);
+	CHECK(state == 12);
+	CHECK(nft.levels[state] == 1);
+	CHECK(nft.num_of_states() == 13);
 }
 
-
 TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::AppendDontCares)") {
-    SECTION("LINEAR") {
-        Delta delta;
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
+	SECTION("LINEAR") {
+		Delta delta;
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
 
-        Nft atm(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }));
+		Nft atm(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}));
 
-        SECTION("project 0") {
-            Nft proj0 = project_out(atm, OrdVector<Level>{ 0 }, JumpMode::AppendDontCares);
-            Nft proj0_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj0_expected.delta.add(0, 1, 1);
-            proj0_expected.delta.add(1, 2, 2);
-            CHECK(are_equivalent(proj0, proj0_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0") {
+			Nft proj0 = project_out(atm, OrdVector<Level>{0}, JumpMode::AppendDontCares);
+			Nft proj0_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj0_expected.delta.add(0, 1, 1);
+			proj0_expected.delta.add(1, 2, 2);
+			CHECK(are_equivalent(proj0, proj0_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1") {
-            Nft proj1 = project_out(atm, 1, JumpMode::AppendDontCares);
-            Nft proj1_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj1_expected.delta.add(0, 0, 1);
-            proj1_expected.delta.add(1, 2, 2);
-            CHECK(are_equivalent(proj1, proj1_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1") {
+			Nft proj1 = project_out(atm, 1, JumpMode::AppendDontCares);
+			Nft proj1_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj1_expected.delta.add(0, 0, 1);
+			proj1_expected.delta.add(1, 2, 2);
+			CHECK(are_equivalent(proj1, proj1_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 2") {
-            Nft proj2 = project_out(atm, 2, JumpMode::AppendDontCares);
-            Nft proj2_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj2_expected.delta.add(0, 0, 1);
-            proj2_expected.delta.add(1, 1, 2);
-            CHECK(are_equivalent(proj2, proj2_expected, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("project 2") {
+			Nft proj2 = project_out(atm, 2, JumpMode::AppendDontCares);
+			Nft proj2_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj2_expected.delta.add(0, 0, 1);
+			proj2_expected.delta.add(1, 1, 2);
+			CHECK(are_equivalent(proj2, proj2_expected, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("LOOP") {
-        Delta delta;
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
-        delta.add(0, 3, 0);
-        delta.add(3, 4, 3);
+	SECTION("LOOP") {
+		Delta delta;
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
+		delta.add(0, 3, 0);
+		delta.add(3, 4, 3);
 
-        Nft atm_loop(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }));
+		Nft atm_loop(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}));
 
-        SECTION("project 0") {
-            Nft proj0_loop = project_out(atm_loop, 0, JumpMode::AppendDontCares);
-            Nft proj0_loop_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj0_loop_expected.delta.add(0, DONT_CARE, 0);
-            proj0_loop_expected.delta.add(0, 1, 1);
-            proj0_loop_expected.delta.add(1, 2, 2);
-            proj0_loop_expected.delta.add(2, DONT_CARE, 2);
-            CHECK(are_equivalent(proj0_loop, proj0_loop_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0") {
+			Nft proj0_loop = project_out(atm_loop, 0, JumpMode::AppendDontCares);
+			Nft proj0_loop_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj0_loop_expected.delta.add(0, DONT_CARE, 0);
+			proj0_loop_expected.delta.add(0, 1, 1);
+			proj0_loop_expected.delta.add(1, 2, 2);
+			proj0_loop_expected.delta.add(2, DONT_CARE, 2);
+			CHECK(are_equivalent(proj0_loop, proj0_loop_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1") {
-            Nft proj1_loop = project_out(atm_loop, 1, JumpMode::AppendDontCares);
-            Nft proj1_loop_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj1_loop_expected.delta.add(0, 3, 0);
-            proj1_loop_expected.delta.add(0, 0, 1);
-            proj1_loop_expected.delta.add(1, 2, 2);
-            proj1_loop_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj1_loop, proj1_loop_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1") {
+			Nft proj1_loop = project_out(atm_loop, 1, JumpMode::AppendDontCares);
+			Nft proj1_loop_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj1_loop_expected.delta.add(0, 3, 0);
+			proj1_loop_expected.delta.add(0, 0, 1);
+			proj1_loop_expected.delta.add(1, 2, 2);
+			proj1_loop_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj1_loop, proj1_loop_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 2") {
-            Nft proj2_loop = project_out(atm_loop, 2, JumpMode::AppendDontCares);
-            Nft proj2_loop_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj2_loop_expected.delta.add(0, 3, 0);
-            proj2_loop_expected.delta.add(0, 0, 1);
-            proj2_loop_expected.delta.add(1, 1, 2);
-            proj2_loop_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj2_loop, proj2_loop_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 2") {
+			Nft proj2_loop = project_out(atm_loop, 2, JumpMode::AppendDontCares);
+			Nft proj2_loop_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj2_loop_expected.delta.add(0, 3, 0);
+			proj2_loop_expected.delta.add(0, 0, 1);
+			proj2_loop_expected.delta.add(1, 1, 2);
+			proj2_loop_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj2_loop, proj2_loop_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 1, 2") {
-            Nft atm_empty(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, {}));
-            CHECK_THROWS_AS(project_out(atm_empty, { 0, 1, 2 }, JumpMode::AppendDontCares), std::invalid_argument);
-            // Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 }, JumpMode::AppendDontCares);
-            // CHECK(are_equivalent(proj012_empty, Nft::with_levels(0), JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("project 0, 1, 2") {
+			Nft atm_empty(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {}));
+			CHECK_THROWS_AS(project_out(atm_empty, {0, 1, 2}, JumpMode::AppendDontCares), std::invalid_argument);
+			// Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 }, JumpMode::AppendDontCares);
+			// CHECK(are_equivalent(proj012_empty, Nft::with_levels(0), JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("COMPLEX") {
-        Delta delta;
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
-        delta.add(0, 3, 3);
-        delta.add(3, 4, 2);
+	SECTION("COMPLEX") {
+		Delta delta;
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
+		delta.add(0, 3, 3);
+		delta.add(3, 4, 2);
 
-        Nft nft_complex(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }));
+		Nft nft_complex(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}));
 
-        SECTION("project 0") {
-            Nft proj0_complex = project_out(nft_complex, 0, JumpMode::AppendDontCares);
-            Nft proj0_complex_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj0_complex_expected.delta.add(0, 1, 1);
-            proj0_complex_expected.delta.add(0, DONT_CARE, 2);
-            proj0_complex_expected.delta.add(1, 2, 2);
-            proj0_complex_expected.delta.add(2, DONT_CARE, 1);
-            CHECK(are_equivalent(proj0_complex, proj0_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0") {
+			Nft proj0_complex = project_out(nft_complex, 0, JumpMode::AppendDontCares);
+			Nft proj0_complex_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj0_complex_expected.delta.add(0, 1, 1);
+			proj0_complex_expected.delta.add(0, DONT_CARE, 2);
+			proj0_complex_expected.delta.add(1, 2, 2);
+			proj0_complex_expected.delta.add(2, DONT_CARE, 1);
+			CHECK(are_equivalent(proj0_complex, proj0_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1") {
-            Nft proj1_complex = project_out(nft_complex, 1, JumpMode::AppendDontCares);
-            Nft proj1_complex_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj1_complex_expected.delta.add(0, 0, 1);
-            proj1_complex_expected.delta.add(0, 3, 2);
-            proj1_complex_expected.delta.add(1, 2, 2);
-            proj1_complex_expected.delta.add(2, 4, 1);
-            CHECK(are_equivalent(proj1_complex, proj1_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1") {
+			Nft proj1_complex = project_out(nft_complex, 1, JumpMode::AppendDontCares);
+			Nft proj1_complex_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj1_complex_expected.delta.add(0, 0, 1);
+			proj1_complex_expected.delta.add(0, 3, 2);
+			proj1_complex_expected.delta.add(1, 2, 2);
+			proj1_complex_expected.delta.add(2, 4, 1);
+			CHECK(are_equivalent(proj1_complex, proj1_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 2") {
-            Nft proj2_complex = project_out(nft_complex, OrdVector<Level>{ 2 }, JumpMode::AppendDontCares);
-            Nft proj2_complex_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj2_complex_expected.delta.add(0, 0, 1);
-            proj2_complex_expected.delta.add(0, 3, 2);
-            proj2_complex_expected.delta.add(1, 1, 2);
-            proj2_complex_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
+		SECTION("project 2") {
+			Nft proj2_complex = project_out(nft_complex, OrdVector<Level>{2}, JumpMode::AppendDontCares);
+			Nft proj2_complex_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj2_complex_expected.delta.add(0, 0, 1);
+			proj2_complex_expected.delta.add(0, 3, 2);
+			proj2_complex_expected.delta.add(1, 1, 2);
+			proj2_complex_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
 
-            proj2_complex = project_to(nft_complex, OrdVector<Level>{ 2 });
-            proj2_complex_expected = Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 });
-            proj2_complex_expected.delta.add(0, 2, 1);
-            proj2_complex_expected.delta.add(0, 3, 1);
-            proj2_complex_expected.delta.add(1, 2, 1);
-            CHECK(are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
-            proj2_complex_expected.delta.add(0, 0, 1);
-            CHECK(!are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
-        }
+			proj2_complex = project_to(nft_complex, OrdVector<Level>{2});
+			proj2_complex_expected = Nft::with_levels({1, {0, 0}}, 2, {0}, {1});
+			proj2_complex_expected.delta.add(0, 2, 1);
+			proj2_complex_expected.delta.add(0, 3, 1);
+			proj2_complex_expected.delta.add(1, 2, 1);
+			CHECK(are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
+			proj2_complex_expected.delta.add(0, 0, 1);
+			CHECK(!are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 1") {
-            Nft proj01_complex = project_out(nft_complex, { 0, 1 }, JumpMode::AppendDontCares);
-            Nft proj01_complex_expected{ Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 }) };
-            proj01_complex_expected.delta.add(0, 2, 1);
-            proj01_complex_expected.delta.add(0, DONT_CARE, 1);
-            proj01_complex_expected.delta.add(1, 2, 1);
-            CHECK(are_equivalent(proj01_complex, proj01_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0, 1") {
+			Nft proj01_complex = project_out(nft_complex, {0, 1}, JumpMode::AppendDontCares);
+			Nft proj01_complex_expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+			proj01_complex_expected.delta.add(0, 2, 1);
+			proj01_complex_expected.delta.add(0, DONT_CARE, 1);
+			proj01_complex_expected.delta.add(1, 2, 1);
+			CHECK(are_equivalent(proj01_complex, proj01_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 2") {
-            Nft proj02_complex = project_out(nft_complex, { 0, 2 }, JumpMode::AppendDontCares);
-            Nft proj02_complex_expected{ Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 }) };
-            proj02_complex_expected.delta.add(0, 1, 1);
-            proj02_complex_expected.delta.add(0, DONT_CARE, 1);
-            proj02_complex_expected.delta.add(1, DONT_CARE, 1);
-            CHECK(are_equivalent(proj02_complex, proj02_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0, 2") {
+			Nft proj02_complex = project_out(nft_complex, {0, 2}, JumpMode::AppendDontCares);
+			Nft proj02_complex_expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+			proj02_complex_expected.delta.add(0, 1, 1);
+			proj02_complex_expected.delta.add(0, DONT_CARE, 1);
+			proj02_complex_expected.delta.add(1, DONT_CARE, 1);
+			CHECK(are_equivalent(proj02_complex, proj02_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1, 2") {
-            Nft proj12_complex = project_out(nft_complex, { 1, 2 }, JumpMode::AppendDontCares);
-            Nft proj12_complex_expected{ Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 }) };
-            proj12_complex_expected.delta.add(0, 0, 1);
-            proj12_complex_expected.delta.add(0, 3, 1);
-            proj12_complex_expected.delta.add(1, 4, 1);
-            CHECK(are_equivalent(proj12_complex, proj12_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1, 2") {
+			Nft proj12_complex = project_out(nft_complex, {1, 2}, JumpMode::AppendDontCares);
+			Nft proj12_complex_expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+			proj12_complex_expected.delta.add(0, 0, 1);
+			proj12_complex_expected.delta.add(0, 3, 1);
+			proj12_complex_expected.delta.add(1, 4, 1);
+			CHECK(are_equivalent(proj12_complex, proj12_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 1, 2") {
-            CHECK_THROWS_AS(project_out(nft_complex, { 0, 1, 2 }, JumpMode::AppendDontCares), std::invalid_argument);
-            // Nft proj012_complex = project_out(nft_complex, { 0, 1, 2 }, JumpMode::AppendDontCares);
-            // Nft proj012_complex_expected{ Nft::with_levels(0, 1, { 0 }, { 0 }) };
-            // CHECK(are_equivalent(proj012_complex, proj012_complex_expected, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("project 0, 1, 2") {
+			CHECK_THROWS_AS(project_out(nft_complex, {0, 1, 2}, JumpMode::AppendDontCares), std::invalid_argument);
+			// Nft proj012_complex = project_out(nft_complex, { 0, 1, 2 }, JumpMode::AppendDontCares);
+			// Nft proj012_complex_expected{ Nft::with_levels(0, 1, { 0 }, { 0 }) };
+			// CHECK(are_equivalent(proj012_complex, proj012_complex_expected, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("HARD") {
-        Nft atm_hard(Nft::with_levels({ 6, { 0, 1, 0, 2, 3, 4, 5, 0 } }, {}, { 0, 2 }, { 7 }));
-        atm_hard.delta.add(0, 1, 1);
-        atm_hard.delta.add(2, 2, 1);
-        atm_hard.delta.add(2, 3, 2);
-        atm_hard.delta.add(1, 0, 3);
-        atm_hard.delta.add(1, 10, 4);
-        atm_hard.delta.add(3, 4, 4);
-        atm_hard.delta.add(4, 5, 5);
-        atm_hard.delta.add(5, 6, 6);
-        atm_hard.delta.add(6, 7, 0);
-        atm_hard.delta.add(6, 8, 7);
-        atm_hard.delta.add(7, 9, 2);
+	SECTION("HARD") {
+		Nft atm_hard(Nft::with_levels({6, {0, 1, 0, 2, 3, 4, 5, 0}}, {}, {0, 2}, {7}));
+		atm_hard.delta.add(0, 1, 1);
+		atm_hard.delta.add(2, 2, 1);
+		atm_hard.delta.add(2, 3, 2);
+		atm_hard.delta.add(1, 0, 3);
+		atm_hard.delta.add(1, 10, 4);
+		atm_hard.delta.add(3, 4, 4);
+		atm_hard.delta.add(4, 5, 5);
+		atm_hard.delta.add(5, 6, 6);
+		atm_hard.delta.add(6, 7, 0);
+		atm_hard.delta.add(6, 8, 7);
+		atm_hard.delta.add(7, 9, 2);
 
-        Nft proj_hard = project_out(atm_hard, { 0, 3, 4, 5 }, JumpMode::AppendDontCares);
+		Nft proj_hard = project_out(atm_hard, {0, 3, 4, 5}, JumpMode::AppendDontCares);
 
-        Nft proj_hard_expected{ Nft::with_levels({ 2, { 0, 0, 1, 0 } }, 4, { 0, 1 }, { 3 }) };
-        proj_hard_expected.delta.add(0, 0, 2);
-        proj_hard_expected.delta.add(0, 10, 3);
-        proj_hard_expected.delta.add(1, 0, 2);
-        proj_hard_expected.delta.add(1, 10, 3);
-        proj_hard_expected.delta.add(1, DONT_CARE, 1);
-        proj_hard_expected.delta.add(2, 4, 3);
-        proj_hard_expected.delta.add(3, 10, 3);
-        proj_hard_expected.delta.add(3, 0, 2);
-        proj_hard_expected.delta.add(3, DONT_CARE, 1);
-        CHECK(are_equivalent(proj_hard, proj_hard_expected, JumpMode::AppendDontCares));
-    }
+		Nft proj_hard_expected{Nft::with_levels({2, {0, 0, 1, 0}}, 4, {0, 1}, {3})};
+		proj_hard_expected.delta.add(0, 0, 2);
+		proj_hard_expected.delta.add(0, 10, 3);
+		proj_hard_expected.delta.add(1, 0, 2);
+		proj_hard_expected.delta.add(1, 10, 3);
+		proj_hard_expected.delta.add(1, DONT_CARE, 1);
+		proj_hard_expected.delta.add(2, 4, 3);
+		proj_hard_expected.delta.add(3, 10, 3);
+		proj_hard_expected.delta.add(3, 0, 2);
+		proj_hard_expected.delta.add(3, DONT_CARE, 1);
+		CHECK(are_equivalent(proj_hard, proj_hard_expected, JumpMode::AppendDontCares));
+	}
 }
 
 TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::RepeatSymbol)") {
-    SECTION("LINEAR") {
-        Delta delta;
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
+	SECTION("LINEAR") {
+		Delta delta;
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
 
-        Nft atm(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }));
+		Nft atm(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}));
 
-        SECTION("project 0") {
-            Nft proj0 = project_out(atm, 0);
-            Nft proj0_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj0_expected.delta.add(0, 1, 1);
-            proj0_expected.delta.add(1, 2, 2);
-            CHECK(are_equivalent(proj0, proj0_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0") {
+			Nft proj0 = project_out(atm, 0);
+			Nft proj0_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj0_expected.delta.add(0, 1, 1);
+			proj0_expected.delta.add(1, 2, 2);
+			CHECK(are_equivalent(proj0, proj0_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1") {
-            Nft proj1 = project_out(atm, 1);
-            Nft proj1_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj1_expected.delta.add(0, 0, 1);
-            proj1_expected.delta.add(1, 2, 2);
-            CHECK(are_equivalent(proj1, proj1_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1") {
+			Nft proj1 = project_out(atm, 1);
+			Nft proj1_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj1_expected.delta.add(0, 0, 1);
+			proj1_expected.delta.add(1, 2, 2);
+			CHECK(are_equivalent(proj1, proj1_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 2") {
-            Nft proj2 = project_out(atm, 2);
-            Nft proj2_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj2_expected.delta.add(0, 0, 1);
-            proj2_expected.delta.add(1, 1, 2);
-            CHECK(are_equivalent(proj2, proj2_expected, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("project 2") {
+			Nft proj2 = project_out(atm, 2);
+			Nft proj2_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj2_expected.delta.add(0, 0, 1);
+			proj2_expected.delta.add(1, 1, 2);
+			CHECK(are_equivalent(proj2, proj2_expected, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("LOOP") {
-        Delta delta;
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
-        delta.add(0, 3, 0);
-        delta.add(3, 4, 3);
+	SECTION("LOOP") {
+		Delta delta;
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
+		delta.add(0, 3, 0);
+		delta.add(3, 4, 3);
 
-        Nft atm_loop(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }));
+		Nft atm_loop(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}));
 
-        SECTION("project 0") {
-            Nft proj0_loop = project_out(atm_loop, 0);
-            Nft proj0_loop_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj0_loop_expected.delta.add(0, 3, 0);
-            proj0_loop_expected.delta.add(0, 1, 1);
-            proj0_loop_expected.delta.add(1, 2, 2);
-            proj0_loop_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj0_loop, proj0_loop_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0") {
+			Nft proj0_loop = project_out(atm_loop, 0);
+			Nft proj0_loop_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj0_loop_expected.delta.add(0, 3, 0);
+			proj0_loop_expected.delta.add(0, 1, 1);
+			proj0_loop_expected.delta.add(1, 2, 2);
+			proj0_loop_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj0_loop, proj0_loop_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1") {
-            Nft proj1_loop = project_out(atm_loop, 1);
-            Nft proj1_loop_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj1_loop_expected.delta.add(0, 3, 0);
-            proj1_loop_expected.delta.add(0, 0, 1);
-            proj1_loop_expected.delta.add(1, 2, 2);
-            proj1_loop_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj1_loop, proj1_loop_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1") {
+			Nft proj1_loop = project_out(atm_loop, 1);
+			Nft proj1_loop_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj1_loop_expected.delta.add(0, 3, 0);
+			proj1_loop_expected.delta.add(0, 0, 1);
+			proj1_loop_expected.delta.add(1, 2, 2);
+			proj1_loop_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj1_loop, proj1_loop_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 2") {
-            Nft proj2_loop = project_out(atm_loop, 2);
-            Nft proj2_loop_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj2_loop_expected.delta.add(0, 3, 0);
-            proj2_loop_expected.delta.add(0, 0, 1);
-            proj2_loop_expected.delta.add(1, 1, 2);
-            proj2_loop_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj2_loop, proj2_loop_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 2") {
+			Nft proj2_loop = project_out(atm_loop, 2);
+			Nft proj2_loop_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj2_loop_expected.delta.add(0, 3, 0);
+			proj2_loop_expected.delta.add(0, 0, 1);
+			proj2_loop_expected.delta.add(1, 1, 2);
+			proj2_loop_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj2_loop, proj2_loop_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 1, 2") {
-            Nft atm_empty(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, {}));
-            CHECK_THROWS_AS(project_out(atm_empty, { 0, 1, 2 }), std::invalid_argument);
-            // Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 });
-            // CHECK(are_equivalent(proj012_empty, Nft::with_levels(0), JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("project 0, 1, 2") {
+			Nft atm_empty(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {}));
+			CHECK_THROWS_AS(project_out(atm_empty, {0, 1, 2}), std::invalid_argument);
+			// Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 });
+			// CHECK(are_equivalent(proj012_empty, Nft::with_levels(0), JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("COMPLEX") {
-        Delta delta;
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
-        delta.add(0, 3, 3);
-        delta.add(3, 4, 2);
+	SECTION("COMPLEX") {
+		Delta delta;
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
+		delta.add(0, 3, 3);
+		delta.add(3, 4, 2);
 
-        Nft atm_complex(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }));
+		Nft atm_complex(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}));
 
-        SECTION("project 0") {
-            Nft proj0_complex = project_out(atm_complex, 0);
-            Nft proj0_complex_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj0_complex_expected.delta.add(0, 1, 1);
-            proj0_complex_expected.delta.add(0, 3, 2);
-            proj0_complex_expected.delta.add(1, 2, 2);
-            proj0_complex_expected.delta.add(2, 4, 1);
-            CHECK(are_equivalent(proj0_complex, proj0_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0") {
+			Nft proj0_complex = project_out(atm_complex, 0);
+			Nft proj0_complex_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj0_complex_expected.delta.add(0, 1, 1);
+			proj0_complex_expected.delta.add(0, 3, 2);
+			proj0_complex_expected.delta.add(1, 2, 2);
+			proj0_complex_expected.delta.add(2, 4, 1);
+			CHECK(are_equivalent(proj0_complex, proj0_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1") {
-            Nft proj1_complex = project_out(atm_complex, 1);
-            Nft proj1_complex_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj1_complex_expected.delta.add(0, 0, 1);
-            proj1_complex_expected.delta.add(0, 3, 2);
-            proj1_complex_expected.delta.add(1, 2, 2);
-            proj1_complex_expected.delta.add(2, 4, 1);
-            CHECK(are_equivalent(proj1_complex, proj1_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1") {
+			Nft proj1_complex = project_out(atm_complex, 1);
+			Nft proj1_complex_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj1_complex_expected.delta.add(0, 0, 1);
+			proj1_complex_expected.delta.add(0, 3, 2);
+			proj1_complex_expected.delta.add(1, 2, 2);
+			proj1_complex_expected.delta.add(2, 4, 1);
+			CHECK(are_equivalent(proj1_complex, proj1_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 2") {
-            Nft proj2_complex = project_out(atm_complex, 2);
-            Nft proj2_complex_expected{ Nft::with_levels({ 2, { 0, 1, 0 } }, 3, { 0 }, { 2 }) };
-            proj2_complex_expected.delta.add(0, 0, 1);
-            proj2_complex_expected.delta.add(0, 3, 2);
-            proj2_complex_expected.delta.add(1, 1, 2);
-            proj2_complex_expected.delta.add(2, 4, 2);
-            CHECK(are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 2") {
+			Nft proj2_complex = project_out(atm_complex, 2);
+			Nft proj2_complex_expected{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+			proj2_complex_expected.delta.add(0, 0, 1);
+			proj2_complex_expected.delta.add(0, 3, 2);
+			proj2_complex_expected.delta.add(1, 1, 2);
+			proj2_complex_expected.delta.add(2, 4, 2);
+			CHECK(are_equivalent(proj2_complex, proj2_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 1") {
-            Nft proj01_complex = project_out(atm_complex, { 0, 1 });
-            Nft proj01_complex_expected{ Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 }) };
-            proj01_complex_expected.delta.add(0, 2, 1);
-            proj01_complex_expected.delta.add(0, 3, 1);
-            proj01_complex_expected.delta.add(1, 2, 1);
-            CHECK(are_equivalent(proj01_complex, proj01_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0, 1") {
+			Nft proj01_complex = project_out(atm_complex, {0, 1});
+			Nft proj01_complex_expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+			proj01_complex_expected.delta.add(0, 2, 1);
+			proj01_complex_expected.delta.add(0, 3, 1);
+			proj01_complex_expected.delta.add(1, 2, 1);
+			CHECK(are_equivalent(proj01_complex, proj01_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 2") {
-            Nft proj02_complex = project_out(atm_complex, { 0, 2 });
-            Nft proj02_complex_expected{ Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 }) };
-            proj02_complex_expected.delta.add(0, 1, 1);
-            proj02_complex_expected.delta.add(0, 3, 1);
-            proj02_complex_expected.delta.add(1, 4, 1);
-            CHECK(are_equivalent(proj02_complex, proj02_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 0, 2") {
+			Nft proj02_complex = project_out(atm_complex, {0, 2});
+			Nft proj02_complex_expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+			proj02_complex_expected.delta.add(0, 1, 1);
+			proj02_complex_expected.delta.add(0, 3, 1);
+			proj02_complex_expected.delta.add(1, 4, 1);
+			CHECK(are_equivalent(proj02_complex, proj02_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 1, 2") {
-            Nft proj12_complex = project_out(atm_complex, { 1, 2 });
-            Nft proj12_complex_expected{ Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 }) };
-            proj12_complex_expected.delta.add(0, 0, 1);
-            proj12_complex_expected.delta.add(0, 3, 1);
-            proj12_complex_expected.delta.add(1, 4, 1);
-            CHECK(are_equivalent(proj12_complex, proj12_complex_expected, JumpMode::AppendDontCares));
-        }
+		SECTION("project 1, 2") {
+			Nft proj12_complex = project_out(atm_complex, {1, 2});
+			Nft proj12_complex_expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+			proj12_complex_expected.delta.add(0, 0, 1);
+			proj12_complex_expected.delta.add(0, 3, 1);
+			proj12_complex_expected.delta.add(1, 4, 1);
+			CHECK(are_equivalent(proj12_complex, proj12_complex_expected, JumpMode::AppendDontCares));
+		}
 
-        SECTION("project 0, 1, 2") {
-            CHECK_THROWS_AS(project_out(atm_complex, { 0, 1, 2 }), std::invalid_argument);
-            // Nft proj012_complex = project_out(atm_complex, { 0, 1, 2 });
-            // Nft proj012_complex_expected{ Nft::with_levels({0, {} }, 1, { 0 }, { 0 }) };
-            // CHECK(are_equivalent(proj012_complex, proj012_complex_expected, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("project 0, 1, 2") {
+			CHECK_THROWS_AS(project_out(atm_complex, {0, 1, 2}), std::invalid_argument);
+			// Nft proj012_complex = project_out(atm_complex, { 0, 1, 2 });
+			// Nft proj012_complex_expected{ Nft::with_levels({0, {} }, 1, { 0 }, { 0 }) };
+			// CHECK(are_equivalent(proj012_complex, proj012_complex_expected, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("HARD") {
-        Nft atm_hard(Nft::with_levels({ 6, { 0, 1, 0, 2, 3, 4, 5, 0 } }, {}, { 0, 2 }, { 7 }));
-        atm_hard.delta.add(0, 1, 1);
-        atm_hard.delta.add(2, 2, 1);
-        atm_hard.delta.add(2, 3, 2);
-        atm_hard.delta.add(1, 0, 3);
-        atm_hard.delta.add(1, 10, 4);
-        atm_hard.delta.add(3, 4, 4);
-        atm_hard.delta.add(4, 5, 5);
-        atm_hard.delta.add(5, 6, 6);
-        atm_hard.delta.add(6, 7, 0);
-        atm_hard.delta.add(6, 8, 7);
-        atm_hard.delta.add(7, 9, 2);
+	SECTION("HARD") {
+		Nft atm_hard(Nft::with_levels({6, {0, 1, 0, 2, 3, 4, 5, 0}}, {}, {0, 2}, {7}));
+		atm_hard.delta.add(0, 1, 1);
+		atm_hard.delta.add(2, 2, 1);
+		atm_hard.delta.add(2, 3, 2);
+		atm_hard.delta.add(1, 0, 3);
+		atm_hard.delta.add(1, 10, 4);
+		atm_hard.delta.add(3, 4, 4);
+		atm_hard.delta.add(4, 5, 5);
+		atm_hard.delta.add(5, 6, 6);
+		atm_hard.delta.add(6, 7, 0);
+		atm_hard.delta.add(6, 8, 7);
+		atm_hard.delta.add(7, 9, 2);
 
-        Nft proj_hard = project_out(atm_hard, { 0, 3, 4, 5 }, JumpMode::RepeatSymbol);
+		Nft proj_hard = project_out(atm_hard, {0, 3, 4, 5}, JumpMode::RepeatSymbol);
 
-        Nft proj_hard_expected{ Nft::with_levels({ 2, { 0, 0, 1, 0 } }, 4, { 0, 1 }, { 3 }) };
-        proj_hard_expected.delta.add(0, 0, 2);
-        proj_hard_expected.delta.add(0, 10, 3);
-        proj_hard_expected.delta.add(1, 0, 2);
-        proj_hard_expected.delta.add(1, 10, 3);
-        proj_hard_expected.delta.add(1, 3, 1);
-        proj_hard_expected.delta.add(2, 4, 3);
-        proj_hard_expected.delta.add(3, 10, 3);
-        proj_hard_expected.delta.add(3, 0, 2);
-        proj_hard_expected.delta.add(3, 9, 1);
-        CHECK(are_equivalent(proj_hard, proj_hard_expected, JumpMode::AppendDontCares));
-    }
+		Nft proj_hard_expected{Nft::with_levels({2, {0, 0, 1, 0}}, 4, {0, 1}, {3})};
+		proj_hard_expected.delta.add(0, 0, 2);
+		proj_hard_expected.delta.add(0, 10, 3);
+		proj_hard_expected.delta.add(1, 0, 2);
+		proj_hard_expected.delta.add(1, 10, 3);
+		proj_hard_expected.delta.add(1, 3, 1);
+		proj_hard_expected.delta.add(2, 4, 3);
+		proj_hard_expected.delta.add(3, 10, 3);
+		proj_hard_expected.delta.add(3, 0, 2);
+		proj_hard_expected.delta.add(3, 9, 1);
+		CHECK(are_equivalent(proj_hard, proj_hard_expected, JumpMode::AppendDontCares));
+	}
 }
 
 TEST_CASE("mata::nft::project_to()") {
-    Nft nft;
-    Nft projection;
-    Nft expected;
+	Nft nft;
+	Nft projection;
+	Nft expected;
 
-    SECTION("linear") {
-        nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, {}, { 0 }, { 3 });
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        projection = project_to(nft, 2);
-        expected = Nft::with_levels({ 1, { 0, 0 } }, 2, { 0 }, { 1 });
-        expected.delta.add(0, 2, 1);
-        CHECK(nft::are_equivalent(projection, expected));
-    }
+	SECTION("linear") {
+		nft = Nft::with_levels({3, {0, 1, 2, 0}}, {}, {0}, {3});
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		projection = project_to(nft, 2);
+		expected = Nft::with_levels({1, {0, 0}}, 2, {0}, {1});
+		expected.delta.add(0, 2, 1);
+		CHECK(nft::are_equivalent(projection, expected));
+	}
 
-    SECTION("linear longer") {
-        nft = Nft::with_levels({ 3, { 0, 1, 2, 0, 1, 2, 0 } }, {}, { 0 }, { 6 });
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 3, 4);
-        nft.delta.add(4, 4, 5);
-        nft.delta.add(5, 5, 6);
-        projection = project_to(nft, 2);
-        expected = Nft::with_levels({ 1, { 0, 0, 0 } }, {}, { 0 }, { 2 });
-        expected.delta.add(0, 2, 1);
-        expected.delta.add(1, 5, 2);
-        CHECK(nft::are_equivalent(projection, expected));
-    }
+	SECTION("linear longer") {
+		nft = Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0}}, {}, {0}, {6});
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 4);
+		nft.delta.add(4, 4, 5);
+		nft.delta.add(5, 5, 6);
+		projection = project_to(nft, 2);
+		expected = Nft::with_levels({1, {0, 0, 0}}, {}, {0}, {2});
+		expected.delta.add(0, 2, 1);
+		expected.delta.add(1, 5, 2);
+		CHECK(nft::are_equivalent(projection, expected));
+	}
 
-    SECTION("linear longer symbol long jump") {
-        nft = Nft::with_levels({ 3, { 0, 1, 2, 0, 1, 2, 0 } }, {}, { 0 }, { 6 });
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 3, 4);
-        nft.delta.add(4, 4, 5);
-        nft.delta.add(5, 5, 6);
-        nft.delta.add(0, 'j', 6);
-        projection = project_to(nft, 2);
-        expected = Nft::with_levels({ 1, { 0, 0, 0 } }, {}, { 0 }, { 2 });
-        expected.delta.add(0, 2, 1);
-        expected.delta.add(1, 5, 2);
-        expected.delta.add(0, 'j', 2);
-        CHECK(nft::are_equivalent(projection, expected));
-        expected.delta.add(0, 'b', 2);
-        CHECK(!nft::are_equivalent(projection, expected));
-    }
+	SECTION("linear longer symbol long jump") {
+		nft = Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0}}, {}, {0}, {6});
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 4);
+		nft.delta.add(4, 4, 5);
+		nft.delta.add(5, 5, 6);
+		nft.delta.add(0, 'j', 6);
+		projection = project_to(nft, 2);
+		expected = Nft::with_levels({1, {0, 0, 0}}, {}, {0}, {2});
+		expected.delta.add(0, 2, 1);
+		expected.delta.add(1, 5, 2);
+		expected.delta.add(0, 'j', 2);
+		CHECK(nft::are_equivalent(projection, expected));
+		expected.delta.add(0, 'b', 2);
+		CHECK(!nft::are_equivalent(projection, expected));
+	}
 
-    SECTION("cycle longer") {
-        nft = Nft::with_levels({ 3, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2 } }, {}, { 0 }, { 6 });
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 3, 4);
-        nft.delta.add(4, 4, 5);
-        nft.delta.add(5, 5, 6);
-        nft.delta.add(3, 6, 7);
-        nft.delta.add(7, 7, 8);
-        nft.delta.add(8, 8, 0);
-        nft.delta.add(6, 9, 9);
-        nft.delta.add(9, 9, 10);
-        nft.delta.add(10, 10, 0);
-        projection = project_to(nft, 2);
-        expected = Nft::with_levels({ 1, { 0, 0, 0 } }, {}, { 0 }, { 2 });
-        expected.delta.add(0, 2, 1);
-        expected.delta.add(1, 8, 0);
-        expected.delta.add(1, 5, 2);
-        expected.delta.add(2, 10, 0);
-        CHECK(nft::are_equivalent(projection, expected));
-    }
+	SECTION("cycle longer") {
+		nft = Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2}}, {}, {0}, {6});
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 4);
+		nft.delta.add(4, 4, 5);
+		nft.delta.add(5, 5, 6);
+		nft.delta.add(3, 6, 7);
+		nft.delta.add(7, 7, 8);
+		nft.delta.add(8, 8, 0);
+		nft.delta.add(6, 9, 9);
+		nft.delta.add(9, 9, 10);
+		nft.delta.add(10, 10, 0);
+		projection = project_to(nft, 2);
+		expected = Nft::with_levels({1, {0, 0, 0}}, {}, {0}, {2});
+		expected.delta.add(0, 2, 1);
+		expected.delta.add(1, 8, 0);
+		expected.delta.add(1, 5, 2);
+		expected.delta.add(2, 10, 0);
+		CHECK(nft::are_equivalent(projection, expected));
+	}
 
-    SECTION("cycle longer project to { 0, 2 }") {
-        nft = Nft::with_levels({ 3, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2 } }, {}, { 0 }, { 6 });
-        nft.delta.add(0, 0, 1);
-        nft.delta.add(1, 1, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 3, 4);
-        nft.delta.add(4, 4, 5);
-        nft.delta.add(5, 5, 6);
-        nft.delta.add(3, 6, 7);
-        nft.delta.add(7, 7, 8);
-        nft.delta.add(8, 8, 0);
-        nft.delta.add(6, 9, 9);
-        nft.delta.add(9, 9, 10);
-        nft.delta.add(10, 10, 0);
-        projection = project_to(nft, { 0, 2 });
-        expected = Nft::with_levels({ 2, { 0, 1, 0, 1, 0, 1, 0 } }, {}, { 0 }, { 6 });
-        expected.delta.add(0, 0, 1);
-        expected.delta.add(1, 2, 3);
-        expected.delta.add(3, 6, 4);
-        expected.delta.add(3, 3, 5);
-        expected.delta.add(4, 8, 0);
-        expected.delta.add(5, 5, 6);
-        expected.delta.add(6, 9, 7);
-        expected.delta.add(7, 10, 0);
-        CHECK(nft::are_equivalent(projection, expected));
-    }
+	SECTION("cycle longer project to { 0, 2 }") {
+		nft = Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2}}, {}, {0}, {6});
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 4);
+		nft.delta.add(4, 4, 5);
+		nft.delta.add(5, 5, 6);
+		nft.delta.add(3, 6, 7);
+		nft.delta.add(7, 7, 8);
+		nft.delta.add(8, 8, 0);
+		nft.delta.add(6, 9, 9);
+		nft.delta.add(9, 9, 10);
+		nft.delta.add(10, 10, 0);
+		projection = project_to(nft, {0, 2});
+		expected = Nft::with_levels({2, {0, 1, 0, 1, 0, 1, 0}}, {}, {0}, {6});
+		expected.delta.add(0, 0, 1);
+		expected.delta.add(1, 2, 3);
+		expected.delta.add(3, 6, 4);
+		expected.delta.add(3, 3, 5);
+		expected.delta.add(4, 8, 0);
+		expected.delta.add(5, 5, 6);
+		expected.delta.add(6, 9, 7);
+		expected.delta.add(7, 10, 0);
+		CHECK(nft::are_equivalent(projection, expected));
+	}
 
-    SECTION("cycle longer project to { 0, 2 } with epsilon and dont care symbols") {
-        nft = Nft::with_levels({ 3, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2 } }, {}, { 0 }, { 6 });
-        nft.delta.add(0, EPSILON, 2);
-        nft.delta.add(2, 2, 3);
-        nft.delta.add(3, 3, 4);
-        nft.delta.add(4, 4, 5);
-        nft.delta.add(5, 5, 6);
-        nft.delta.add(3, EPSILON, 7);
-        nft.delta.add(7, 7, 8);
-        nft.delta.add(8, DONT_CARE, 0);
-        nft.delta.add(6, 9, 9);
-        nft.delta.add(9, 10, 10);
-        nft.delta.add(10, 11, 0);
-        projection = project_to(nft, { 0, 2 });
-        expected = Nft::with_levels({ 2, { 0, 1, 0, 0, 1, 1, 0, 1 } }, {}, { 0 }, { 6 });
-        expected.delta.add(0, EPSILON, 1);
-        expected.delta.add(1, 2, 3);
-        expected.delta.add(3, EPSILON, 4);
-        expected.delta.add(3, 3, 5);
-        expected.delta.add(4, DONT_CARE, 0);
-        expected.delta.add(5, 5, 6);
-        expected.delta.add(6, 9, 7);
-        expected.delta.add(7, 11, 0);
-        CHECK(nft::are_equivalent(projection, expected));
-    }
+	SECTION("cycle longer project to { 0, 2 } with epsilon and dont care symbols") {
+		nft = Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2}}, {}, {0}, {6});
+		nft.delta.add(0, EPSILON, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 4);
+		nft.delta.add(4, 4, 5);
+		nft.delta.add(5, 5, 6);
+		nft.delta.add(3, EPSILON, 7);
+		nft.delta.add(7, 7, 8);
+		nft.delta.add(8, DONT_CARE, 0);
+		nft.delta.add(6, 9, 9);
+		nft.delta.add(9, 10, 10);
+		nft.delta.add(10, 11, 0);
+		projection = project_to(nft, {0, 2});
+		expected = Nft::with_levels({2, {0, 1, 0, 0, 1, 1, 0, 1}}, {}, {0}, {6});
+		expected.delta.add(0, EPSILON, 1);
+		expected.delta.add(1, 2, 3);
+		expected.delta.add(3, EPSILON, 4);
+		expected.delta.add(3, 3, 5);
+		expected.delta.add(4, DONT_CARE, 0);
+		expected.delta.add(5, 5, 6);
+		expected.delta.add(6, 9, 7);
+		expected.delta.add(7, 11, 0);
+		CHECK(nft::are_equivalent(projection, expected));
+	}
 }
 
 TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level alphabets in sync") {
-    auto a0 = std::make_shared<IntAlphabet>();
-    auto a1 = std::make_shared<IntAlphabet>();
-    auto a2 = std::make_shared<IntAlphabet>();
-    auto a3 = std::make_shared<IntAlphabet>();
-    auto alphabets = std::make_shared<AlphabetLevels>(
-        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2, a3 } });
+	auto a0 = std::make_shared<IntAlphabet>();
+	auto a1 = std::make_shared<IntAlphabet>();
+	auto a2 = std::make_shared<IntAlphabet>();
+	auto a3 = std::make_shared<IntAlphabet>();
+	auto alphabets =
+		std::make_shared<AlphabetLevels>(AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2, a3}});
 
-    Delta delta;
-    delta.add(0, 0, 1);
-    delta.add(1, 1, 2);
-    delta.add(2, 2, 3);
-    delta.add(3, 3, 4);
-    Nft nft(Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, delta, { 0 }, { 4 }, alphabets));
+	Delta delta;
+	delta.add(0, 0, 1);
+	delta.add(1, 1, 2);
+	delta.add(2, 2, 3);
+	delta.add(3, 3, 4);
+	Nft nft(Nft::with_levels({4, {0, 1, 2, 3, 0}}, delta, {0}, {4}, alphabets));
 
-    SECTION("projecting out a middle level shifts the remaining alphabets") {
-        Nft proj = project_out(nft, OrdVector<Level>{ 1 }, JumpMode::AppendDontCares);
-        REQUIRE(proj.alphabets != nullptr);
-        REQUIRE(proj.alphabets->size() == 3);
-        CHECK(&proj.alphabets->for_level(0) == a0.get());
-        CHECK(&proj.alphabets->for_level(1) == a2.get());
-        CHECK(&proj.alphabets->for_level(2) == a3.get());
-        // The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
-        REQUIRE(nft.alphabets->size() == 4);
-        CHECK(&nft.alphabets->for_level(1) == a1.get());
-        // The AlphabetLevels *container* is legitimately a new object (its contents differ from nft.alphabets'),
-        //  but each surviving level's underlying Alphabet instance is still the exact same shared one.
-        CHECK(proj.alphabets != nft.alphabets);
-        CHECK(a0.use_count() == 3); // local a0 + nft.alphabets' slot + proj.alphabets' slot.
-        CHECK(a1.use_count() == 2); // local a1 + nft.alphabets' slot only (dropped from proj).
-    }
+	SECTION("projecting out a middle level shifts the remaining alphabets") {
+		Nft proj = project_out(nft, OrdVector<Level>{1}, JumpMode::AppendDontCares);
+		REQUIRE(proj.alphabets != nullptr);
+		REQUIRE(proj.alphabets->size() == 3);
+		CHECK(&proj.alphabets->for_level(0) == a0.get());
+		CHECK(&proj.alphabets->for_level(1) == a2.get());
+		CHECK(&proj.alphabets->for_level(2) == a3.get());
+		// The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
+		REQUIRE(nft.alphabets->size() == 4);
+		CHECK(&nft.alphabets->for_level(1) == a1.get());
+		// The AlphabetLevels *container* is legitimately a new object (its contents differ from nft.alphabets'),
+		//  but each surviving level's underlying Alphabet instance is still the exact same shared one.
+		CHECK(proj.alphabets != nft.alphabets);
+		CHECK(a0.use_count() == 3); // local a0 + nft.alphabets' slot + proj.alphabets' slot.
+		CHECK(a1.use_count() == 2); // local a1 + nft.alphabets' slot only (dropped from proj).
+	}
 
-    SECTION("projecting out non-contiguous levels") {
-        Nft proj = project_out(nft, OrdVector<Level>{ 0, 2 }, JumpMode::AppendDontCares);
-        REQUIRE(proj.alphabets != nullptr);
-        REQUIRE(proj.alphabets->size() == 2);
-        CHECK(&proj.alphabets->for_level(0) == a1.get());
-        CHECK(&proj.alphabets->for_level(1) == a3.get());
-    }
+	SECTION("projecting out non-contiguous levels") {
+		Nft proj = project_out(nft, OrdVector<Level>{0, 2}, JumpMode::AppendDontCares);
+		REQUIRE(proj.alphabets != nullptr);
+		REQUIRE(proj.alphabets->size() == 2);
+		CHECK(&proj.alphabets->for_level(0) == a1.get());
+		CHECK(&proj.alphabets->for_level(1) == a3.get());
+	}
 
-    SECTION("project_to keeps the alphabets of the retained levels") {
-        Nft proj = project_to(nft, OrdVector<Level>{ 1, 3 });
-        REQUIRE(proj.alphabets != nullptr);
-        REQUIRE(proj.alphabets->size() == 2);
-        CHECK(&proj.alphabets->for_level(0) == a1.get());
-        CHECK(&proj.alphabets->for_level(1) == a3.get());
-    }
+	SECTION("project_to keeps the alphabets of the retained levels") {
+		Nft proj = project_to(nft, OrdVector<Level>{1, 3});
+		REQUIRE(proj.alphabets != nullptr);
+		REQUIRE(proj.alphabets->size() == 2);
+		CHECK(&proj.alphabets->for_level(0) == a1.get());
+		CHECK(&proj.alphabets->for_level(1) == a3.get());
+	}
 
-    SECTION("Global mode alphabets pass through unchanged") {
-        auto shared_alphabet = std::make_shared<IntAlphabet>();
-        auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
-        Nft global_nft(Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, delta, { 0 }, { 4 }, global_alphabets));
+	SECTION("Global mode alphabets pass through unchanged") {
+		auto shared_alphabet = std::make_shared<IntAlphabet>();
+		auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{shared_alphabet});
+		Nft global_nft(Nft::with_levels({4, {0, 1, 2, 3, 0}}, delta, {0}, {4}, global_alphabets));
 
-        Nft proj = project_out(global_nft, OrdVector<Level>{ 1 }, JumpMode::AppendDontCares);
-        REQUIRE(proj.alphabets != nullptr);
-        CHECK(proj.alphabets->mode() == AlphabetLevels::Mode::Global);
-        CHECK(&proj.alphabets->for_level(0) == shared_alphabet.get());
-        // Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
-        //  is shared with global_nft, not just its underlying alphabet.
-        CHECK(proj.alphabets == global_nft.alphabets);
-    }
+		Nft proj = project_out(global_nft, OrdVector<Level>{1}, JumpMode::AppendDontCares);
+		REQUIRE(proj.alphabets != nullptr);
+		CHECK(proj.alphabets->mode() == AlphabetLevels::Mode::Global);
+		CHECK(&proj.alphabets->for_level(0) == shared_alphabet.get());
+		// Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
+		//  is shared with global_nft, not just its underlying alphabet.
+		CHECK(proj.alphabets == global_nft.alphabets);
+	}
 }
 
 TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-level alphabets in sync") {
-    auto a0 = std::make_shared<IntAlphabet>();
-    auto a1 = std::make_shared<IntAlphabet>();
-    auto a2 = std::make_shared<IntAlphabet>();
-    auto alphabets = std::make_shared<AlphabetLevels>(
-        AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } });
+	auto a0 = std::make_shared<IntAlphabet>();
+	auto a1 = std::make_shared<IntAlphabet>();
+	auto a2 = std::make_shared<IntAlphabet>();
+	auto alphabets =
+		std::make_shared<AlphabetLevels>(AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}});
 
-    Delta delta;
-    delta.add(0, 0, 1);
-    delta.add(1, 1, 2);
-    delta.add(2, 2, 3);
-    Nft nft(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }, alphabets));
+	Delta delta;
+	delta.add(0, 0, 1);
+	delta.add(1, 1, 2);
+	delta.add(2, 2, 3);
+	Nft nft(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}, alphabets));
 
-    SECTION("insert_level inserts a null slot at the new level, shifting the rest") {
-        Nft output_nft = insert_level(nft, 1, nullptr, JumpMode::AppendDontCares);
-        REQUIRE(output_nft.alphabets != nullptr);
-        REQUIRE(output_nft.alphabets->size() == 4);
-        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-        CHECK(output_nft.alphabets->at(1) == nullptr);
-        CHECK(&output_nft.alphabets->for_level(2) == a1.get());
-        CHECK(&output_nft.alphabets->for_level(3) == a2.get());
-        // The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
-        REQUIRE(nft.alphabets->size() == 3);
-        // The AlphabetLevels *container* is legitimately a new object, but each level's underlying Alphabet
-        //  instance is still the exact same shared one.
-        CHECK(output_nft.alphabets != nft.alphabets);
-        CHECK(a0.use_count() == 3); // local a0 + nft.alphabets' slot + output_nft.alphabets' slot.
-    }
+	SECTION("insert_level inserts a null slot at the new level, shifting the rest") {
+		Nft output_nft = insert_level(nft, 1, nullptr, JumpMode::AppendDontCares);
+		REQUIRE(output_nft.alphabets != nullptr);
+		REQUIRE(output_nft.alphabets->size() == 4);
+		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+		CHECK(output_nft.alphabets->at(1) == nullptr);
+		CHECK(&output_nft.alphabets->for_level(2) == a1.get());
+		CHECK(&output_nft.alphabets->for_level(3) == a2.get());
+		// The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
+		REQUIRE(nft.alphabets->size() == 3);
+		// The AlphabetLevels *container* is legitimately a new object, but each level's underlying Alphabet
+		//  instance is still the exact same shared one.
+		CHECK(output_nft.alphabets != nft.alphabets);
+		CHECK(a0.use_count() == 3); // local a0 + nft.alphabets' slot + output_nft.alphabets' slot.
+	}
 
-    SECTION("insert_levels inserts null slots at every new position") {
-        Nft output_nft = insert_levels(nft, { 0, 0, 1, 1, 0, 1 }, {}, JumpMode::AppendDontCares);
-        REQUIRE(output_nft.alphabets != nullptr);
-        REQUIRE(output_nft.alphabets->size() == 6);
-        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-        CHECK(&output_nft.alphabets->for_level(1) == a1.get());
-        CHECK(output_nft.alphabets->at(2) == nullptr);
-        CHECK(output_nft.alphabets->at(3) == nullptr);
-        CHECK(&output_nft.alphabets->for_level(4) == a2.get());
-        CHECK(output_nft.alphabets->at(5) == nullptr);
-    }
+	SECTION("insert_levels inserts null slots at every new position") {
+		Nft output_nft = insert_levels(nft, {0, 0, 1, 1, 0, 1}, {}, JumpMode::AppendDontCares);
+		REQUIRE(output_nft.alphabets != nullptr);
+		REQUIRE(output_nft.alphabets->size() == 6);
+		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+		CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+		CHECK(output_nft.alphabets->at(2) == nullptr);
+		CHECK(output_nft.alphabets->at(3) == nullptr);
+		CHECK(&output_nft.alphabets->for_level(4) == a2.get());
+		CHECK(output_nft.alphabets->at(5) == nullptr);
+	}
 
-    SECTION("Global mode alphabets pass through unchanged") {
-        auto shared_alphabet = std::make_shared<IntAlphabet>();
-        auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{ shared_alphabet });
-        Nft global_nft(Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 }, global_alphabets));
+	SECTION("Global mode alphabets pass through unchanged") {
+		auto shared_alphabet = std::make_shared<IntAlphabet>();
+		auto global_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{shared_alphabet});
+		Nft global_nft(Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3}, global_alphabets));
 
-        Nft output_nft = insert_level(global_nft, 1, nullptr, JumpMode::AppendDontCares);
-        REQUIRE(output_nft.alphabets != nullptr);
-        CHECK(output_nft.alphabets->mode() == AlphabetLevels::Mode::Global);
-        CHECK(&output_nft.alphabets->for_level(0) == shared_alphabet.get());
-        // Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
-        //  is shared with global_nft, not just its underlying alphabet.
-        CHECK(output_nft.alphabets == global_nft.alphabets);
-    }
+		Nft output_nft = insert_level(global_nft, 1, nullptr, JumpMode::AppendDontCares);
+		REQUIRE(output_nft.alphabets != nullptr);
+		CHECK(output_nft.alphabets->mode() == AlphabetLevels::Mode::Global);
+		CHECK(&output_nft.alphabets->for_level(0) == shared_alphabet.get());
+		// Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
+		//  is shared with global_nft, not just its underlying alphabet.
+		CHECK(output_nft.alphabets == global_nft.alphabets);
+	}
 
-    SECTION("insert_level fills the new level's slot with the given alphabet instead of null") {
-        auto a3 = std::make_shared<IntAlphabet>();
-        Nft output_nft = insert_level(nft, 1, a3, JumpMode::AppendDontCares);
-        REQUIRE(output_nft.alphabets != nullptr);
-        REQUIRE(output_nft.alphabets->size() == 4);
-        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-        CHECK(&output_nft.alphabets->for_level(1) == a3.get());
-        CHECK(&output_nft.alphabets->for_level(2) == a1.get());
-        CHECK(&output_nft.alphabets->for_level(3) == a2.get());
-    }
+	SECTION("insert_level fills the new level's slot with the given alphabet instead of null") {
+		auto a3 = std::make_shared<IntAlphabet>();
+		Nft output_nft = insert_level(nft, 1, a3, JumpMode::AppendDontCares);
+		REQUIRE(output_nft.alphabets != nullptr);
+		REQUIRE(output_nft.alphabets->size() == 4);
+		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+		CHECK(&output_nft.alphabets->for_level(1) == a3.get());
+		CHECK(&output_nft.alphabets->for_level(2) == a1.get());
+		CHECK(&output_nft.alphabets->for_level(3) == a2.get());
+	}
 
-    SECTION("insert_levels fills every new slot with the given alphabets instead of null") {
-        auto a3 = std::make_shared<IntAlphabet>();
-        auto a4 = std::make_shared<IntAlphabet>();
-        auto a5 = std::make_shared<IntAlphabet>();
-        Nft output_nft = insert_levels(
-            nft, { 0, 0, 1, 1, 0, 1 }, { a3, a4, a5 }, JumpMode::AppendDontCares);
-        REQUIRE(output_nft.alphabets != nullptr);
-        REQUIRE(output_nft.alphabets->size() == 6);
-        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-        CHECK(&output_nft.alphabets->for_level(1) == a1.get());
-        CHECK(&output_nft.alphabets->for_level(2) == a3.get());
-        CHECK(&output_nft.alphabets->for_level(3) == a4.get());
-        CHECK(&output_nft.alphabets->for_level(4) == a2.get());
-        CHECK(&output_nft.alphabets->for_level(5) == a5.get());
-    }
+	SECTION("insert_levels fills every new slot with the given alphabets instead of null") {
+		auto a3 = std::make_shared<IntAlphabet>();
+		auto a4 = std::make_shared<IntAlphabet>();
+		auto a5 = std::make_shared<IntAlphabet>();
+		Nft output_nft = insert_levels(nft, {0, 0, 1, 1, 0, 1}, {a3, a4, a5}, JumpMode::AppendDontCares);
+		REQUIRE(output_nft.alphabets != nullptr);
+		REQUIRE(output_nft.alphabets->size() == 6);
+		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+		CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+		CHECK(&output_nft.alphabets->for_level(2) == a3.get());
+		CHECK(&output_nft.alphabets->for_level(3) == a4.get());
+		CHECK(&output_nft.alphabets->for_level(4) == a2.get());
+		CHECK(&output_nft.alphabets->for_level(5) == a5.get());
+	}
 
-    SECTION("insert_levels rejects a mismatched number of new_level_alphabets") {
-        auto a3 = std::make_shared<IntAlphabet>();
-        CHECK_THROWS_AS(
-            insert_levels(nft, { 0, 0, 1, 1, 0, 1 }, { a3 }, JumpMode::AppendDontCares),
-            std::invalid_argument
-        );
-    }
+	SECTION("insert_levels rejects a mismatched number of new_level_alphabets") {
+		auto a3 = std::make_shared<IntAlphabet>();
+		CHECK_THROWS_AS(insert_levels(nft, {0, 0, 1, 1, 0, 1}, {a3}, JumpMode::AppendDontCares), std::invalid_argument);
+	}
 
-    SECTION("insert_level beyond num_of_levels only assigns the alphabet to the requested level") {
-        auto a3 = std::make_shared<IntAlphabet>();
-        // nft has 3 levels (0, 1, 2); inserting level 4 pads with a new level 3 (no alphabet) before it.
-        Nft output_nft = insert_level(nft, 4, a3, JumpMode::AppendDontCares);
-        REQUIRE(output_nft.alphabets != nullptr);
-        REQUIRE(output_nft.alphabets->size() == 5);
-        CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-        CHECK(&output_nft.alphabets->for_level(1) == a1.get());
-        CHECK(&output_nft.alphabets->for_level(2) == a2.get());
-        CHECK(output_nft.alphabets->at(3) == nullptr);
-        CHECK(&output_nft.alphabets->for_level(4) == a3.get());
-    }
+	SECTION("insert_level beyond num_of_levels only assigns the alphabet to the requested level") {
+		auto a3 = std::make_shared<IntAlphabet>();
+		// nft has 3 levels (0, 1, 2); inserting level 4 pads with a new level 3 (no alphabet) before it.
+		Nft output_nft = insert_level(nft, 4, a3, JumpMode::AppendDontCares);
+		REQUIRE(output_nft.alphabets != nullptr);
+		REQUIRE(output_nft.alphabets->size() == 5);
+		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+		CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+		CHECK(&output_nft.alphabets->for_level(2) == a2.get());
+		CHECK(output_nft.alphabets->at(3) == nullptr);
+		CHECK(&output_nft.alphabets->for_level(4) == a3.get());
+	}
 }
 
 TEST_CASE("mata::nft::insert_level() regression test for #684") {
-    // Reproduces the scenario from https://github.com/VeriFIT/mata/issues/684: inserting a level used to leave its
-    //  alphabet slot null, which made any operation resolving a per-level alphabet (e.g. reverse_translate_symbol,
-    //  used internally by print_to_dot) throw.
-    OnTheFlyAlphabet alph1(std::vector<std::string>{ "aa", "b" });
-    OnTheFlyAlphabet alph2(std::vector<std::string>{ "c", "xy" });
-    auto alph1_ptr = std::shared_ptr<Alphabet>(&alph1, [](Alphabet*) {});
-    auto alph2_ptr = std::shared_ptr<Alphabet>(&alph2, [](Alphabet*) {});
-    auto alphabets = std::make_shared<AlphabetLevels>(
-        std::vector<std::shared_ptr<Alphabet>>{ alph1_ptr, alph2_ptr }, AlphabetLevels::Mode::MultiLevel);
-    Nft aut = Nft::with_levels(2, 1, { 0 }, { 0 }, alphabets);
-    aut.insert_word_by_levels(
-        0, { alph1.translate_word({ "aa", "aa", "b" }), alph2.translate_word({ "c", "xy", "xy" }) });
+	// Reproduces the scenario from https://github.com/VeriFIT/mata/issues/684: inserting a level used to leave its
+	//  alphabet slot null, which made any operation resolving a per-level alphabet (e.g. reverse_translate_symbol,
+	//  used internally by print_to_dot) throw.
+	OnTheFlyAlphabet alph1(std::vector<std::string>{"aa", "b"});
+	OnTheFlyAlphabet alph2(std::vector<std::string>{"c", "xy"});
+	auto alph1_ptr = std::shared_ptr<Alphabet>(&alph1, [](Alphabet*) {});
+	auto alph2_ptr = std::shared_ptr<Alphabet>(&alph2, [](Alphabet*) {});
+	auto alphabets = std::make_shared<AlphabetLevels>(
+		std::vector<std::shared_ptr<Alphabet>>{alph1_ptr, alph2_ptr}, AlphabetLevels::Mode::MultiLevel
+	);
+	Nft aut = Nft::with_levels(2, 1, {0}, {0}, alphabets);
+	aut.insert_word_by_levels(0, {alph1.translate_word({"aa", "aa", "b"}), alph2.translate_word({"c", "xy", "xy"})});
 
-    Nft inserted = insert_level(aut, 1, alph2_ptr, JumpMode::RepeatSymbol);
-    REQUIRE(inserted.alphabets != nullptr);
-    CHECK_NOTHROW(inserted.alphabets->for_level(1));
-    CHECK(&inserted.alphabets->for_level(1) == alph2_ptr.get());
-    // The newly-inserted level's transitions carry DONT_CARE (there is no original data to reuse for it), which
-    //  used to make print_to_dot() throw, since DONT_CARE was not special-cased like EPSILON is.
-    CHECK_NOTHROW(inserted.print_to_dot());
+	Nft inserted = insert_level(aut, 1, alph2_ptr, JumpMode::RepeatSymbol);
+	REQUIRE(inserted.alphabets != nullptr);
+	CHECK_NOTHROW(inserted.alphabets->for_level(1));
+	CHECK(&inserted.alphabets->for_level(1) == alph2_ptr.get());
+	// The newly-inserted level's transitions carry DONT_CARE (there is no original data to reuse for it), which
+	//  used to make print_to_dot() throw, since DONT_CARE was not special-cased like EPSILON is.
+	CHECK_NOTHROW(inserted.print_to_dot());
 }
 
 TEST_CASE("mata::nft::Nft::print_to_dot() handles DONT_CARE with a real alphabet") {
-    // DONT_CARE is a sentinel symbol, not a real alphabet member, so it must be special-cased before being handed
-    //  to Alphabet::reverse_translate_symbol() (mirroring how EPSILON is already special-cased), or printing throws
-    //  for any alphabet that does not itself know about DONT_CARE (e.g. OnTheFlyAlphabet, EnumAlphabet).
-    OnTheFlyAlphabet alphabet(std::vector<std::string>{ "a", "b" });
-    Delta delta;
-    delta.add(0, alphabet.translate_symb("a"), 1);
-    delta.add(1, DONT_CARE, 2);
-    delta.add(2, EPSILON, 3);
-    Nft nft(delta, { 0 }, { 3 });
+	// DONT_CARE is a sentinel symbol, not a real alphabet member, so it must be special-cased before being handed
+	//  to Alphabet::reverse_translate_symbol() (mirroring how EPSILON is already special-cased), or printing throws
+	//  for any alphabet that does not itself know about DONT_CARE (e.g. OnTheFlyAlphabet, EnumAlphabet).
+	OnTheFlyAlphabet alphabet(std::vector<std::string>{"a", "b"});
+	Delta delta;
+	delta.add(0, alphabet.translate_symb("a"), 1);
+	delta.add(1, DONT_CARE, 2);
+	delta.add(2, EPSILON, 3);
+	Nft nft(delta, {0}, {3});
 
-    std::string dot;
-    CHECK_NOTHROW(dot = nft.print_to_dot(false, false, -1, &alphabet));
-    CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<dntcr>"));
-    CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<eps>"));
+	std::string dot;
+	CHECK_NOTHROW(dot = nft.print_to_dot(false, false, -1, &alphabet));
+	CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<dntcr>"));
+	CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<eps>"));
 }
 
 TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
-    Delta delta;
-    Nft input_nft, output_nft, expected_nft;
+	Delta delta;
+	Nft input_nft, output_nft, expected_nft;
 
-    SECTION("Linear - jump_mode == JumpMode::AppendDontCares") {
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
+	SECTION("Linear - jump_mode == JumpMode::AppendDontCares") {
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
 
-        input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
+		input_nft = Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3});
 
-        SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, DONT_CARE, 1);
-            expected_nft.delta.add(1, 0, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 0") {
+			output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, DONT_CARE, 1);
+			expected_nft.delta.add(1, 0, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, DONT_CARE, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 1") {
+			output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, DONT_CARE, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, DONT_CARE, 3);
-            expected_nft.delta.add(3, 2, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 2") {
+			output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, DONT_CARE, 3);
+			expected_nft.delta.add(3, 2, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, DONT_CARE, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 3") {
+			output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, DONT_CARE, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 4") {
-            output_nft = insert_level(input_nft, 4, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 5, { 0, 1, 2, 3, 4, 0 } }, 6, { 0 }, { 5 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, DONT_CARE, 4);
-            expected_nft.delta.add(4, DONT_CARE, 5);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 4") {
+			output_nft = insert_level(input_nft, 4, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({5, {0, 1, 2, 3, 4, 0}}, 6, {0}, {5});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, DONT_CARE, 4);
+			expected_nft.delta.add(4, DONT_CARE, 5);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add levels according to the mask 100011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 0, 0, 1, 1 }, {}, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 6, { 0, 1, 2, 3, 4, 5, 0 } }, 7, { 0 }, { 6 });
-            expected_nft.delta.add(0, DONT_CARE, 1);
-            expected_nft.delta.add(1, 0, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            expected_nft.delta.add(4, DONT_CARE, 5);
-            expected_nft.delta.add(5, DONT_CARE, 6);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("add levels according to the mask 100011") {
+			output_nft = insert_levels(input_nft, {1, 0, 0, 0, 1, 1}, {}, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({6, {0, 1, 2, 3, 4, 5, 0}}, 7, {0}, {6});
+			expected_nft.delta.add(0, DONT_CARE, 1);
+			expected_nft.delta.add(1, 0, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			expected_nft.delta.add(4, DONT_CARE, 5);
+			expected_nft.delta.add(5, DONT_CARE, 6);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("Linear - default_symbol = DONT_CARE, jump_mode == JumpMode::RepeatSymbol") {
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
+	SECTION("Linear - default_symbol = DONT_CARE, jump_mode == JumpMode::RepeatSymbol") {
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
 
-        input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
+		input_nft = Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3});
 
-        SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, DONT_CARE, 1);
-            expected_nft.delta.add(1, 0, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
+		SECTION("add level 0") {
+			output_nft = insert_level(input_nft, 0);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, DONT_CARE, 1);
+			expected_nft.delta.add(1, 0, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
 
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
-        }
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, DONT_CARE, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
-        }
+		SECTION("add level 1") {
+			output_nft = insert_level(input_nft, 1);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, DONT_CARE, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, DONT_CARE, 3);
-            expected_nft.delta.add(3, 2, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
-        }
+		SECTION("add level 2") {
+			output_nft = insert_level(input_nft, 2);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, DONT_CARE, 3);
+			expected_nft.delta.add(3, 2, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0 } }, 5, { 0 }, { 4 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, DONT_CARE, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
-        }
+		SECTION("add level 3") {
+			output_nft = insert_level(input_nft, 3);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, DONT_CARE, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("add level 4") {
-            output_nft = insert_level(input_nft, 4);
-            expected_nft = Nft::with_levels({ 5, { 0, 1, 2, 3, 4, 0 } }, 6, { 0 }, { 5 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, DONT_CARE, 4);
-            expected_nft.delta.add(4, DONT_CARE, 5);
+		SECTION("add level 4") {
+			output_nft = insert_level(input_nft, 4);
+			expected_nft = Nft::with_levels({5, {0, 1, 2, 3, 4, 0}}, 6, {0}, {5});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, DONT_CARE, 4);
+			expected_nft.delta.add(4, DONT_CARE, 5);
 
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
-        }
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("add levels according to the mask 100011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 0, 0, 1, 1 });
-            expected_nft = Nft::with_levels({ 6, { 0, 1, 2, 3, 4, 5, 0 } }, 7, { 0 }, { 6 });
-            expected_nft.delta.add(0, DONT_CARE, 1);
-            expected_nft.delta.add(1, 0, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            expected_nft.delta.add(4, DONT_CARE, 5);
-            expected_nft.delta.add(5, DONT_CARE, 6);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
-        }
-    }
+		SECTION("add levels according to the mask 100011") {
+			output_nft = insert_levels(input_nft, {1, 0, 0, 0, 1, 1});
+			expected_nft = Nft::with_levels({6, {0, 1, 2, 3, 4, 5, 0}}, 7, {0}, {6});
+			expected_nft.delta.add(0, DONT_CARE, 1);
+			expected_nft.delta.add(1, 0, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			expected_nft.delta.add(4, DONT_CARE, 5);
+			expected_nft.delta.add(5, DONT_CARE, 6);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::RepeatSymbol));
+		}
+	}
 
-    SECTION("loop - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
-        delta.clear();
-        delta.add(0, 4, 0);
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 2);
-        delta.add(2, 2, 3);
-        delta.add(3, 5, 3);
+	SECTION("loop - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
+		delta.clear();
+		delta.add(0, 4, 0);
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 2);
+		delta.add(2, 2, 3);
+		delta.add(3, 5, 3);
 
-        input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
+		input_nft = Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3});
 
-        SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 1, 1 } }, 7, { 0 }, { 4 });
-            expected_nft.delta.add(0, DONT_CARE, 5);
-            expected_nft.delta.add(5, 4, 0);
-            expected_nft.delta.add(0, DONT_CARE, 1);
-            expected_nft.delta.add(1, 0, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            expected_nft.delta.add(4, DONT_CARE, 6);
-            expected_nft.delta.add(6, 5, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 0") {
+			output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0, 1, 1}}, 7, {0}, {4});
+			expected_nft.delta.add(0, DONT_CARE, 5);
+			expected_nft.delta.add(5, 4, 0);
+			expected_nft.delta.add(0, DONT_CARE, 1);
+			expected_nft.delta.add(1, 0, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			expected_nft.delta.add(4, DONT_CARE, 6);
+			expected_nft.delta.add(6, 5, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 1, 1, 2, 3, 2, 3 } }, 11, { 0 }, { 4 });
-            expected_nft.delta.add(0, 4, 5);
-            expected_nft.delta.add(5, DONT_CARE, 7);
-            expected_nft.delta.add(7, DONT_CARE, 8);
-            expected_nft.delta.add(8, DONT_CARE, 0);
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, DONT_CARE, 2);
-            expected_nft.delta.add(2, 1, 3);
-            expected_nft.delta.add(3, 2, 4);
-            expected_nft.delta.add(4, 5, 6);
-            expected_nft.delta.add(6, DONT_CARE, 9);
-            expected_nft.delta.add(9, DONT_CARE, 10);
-            expected_nft.delta.add(10, DONT_CARE, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 1") {
+			output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0, 1, 1, 2, 3, 2, 3}}, 11, {0}, {4});
+			expected_nft.delta.add(0, 4, 5);
+			expected_nft.delta.add(5, DONT_CARE, 7);
+			expected_nft.delta.add(7, DONT_CARE, 8);
+			expected_nft.delta.add(8, DONT_CARE, 0);
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, DONT_CARE, 2);
+			expected_nft.delta.add(2, 1, 3);
+			expected_nft.delta.add(3, 2, 4);
+			expected_nft.delta.add(4, 5, 6);
+			expected_nft.delta.add(6, DONT_CARE, 9);
+			expected_nft.delta.add(9, DONT_CARE, 10);
+			expected_nft.delta.add(10, DONT_CARE, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 2, 3, 2, 3 } }, 9, { 0 }, { 4 });
-            expected_nft.delta.add(0, 4, 7);
-            expected_nft.delta.add(7, DONT_CARE, 8);
-            expected_nft.delta.add(8, DONT_CARE, 0);
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, DONT_CARE, 3);
-            expected_nft.delta.add(3, 2, 4);
-            expected_nft.delta.add(4, 5, 5);
-            expected_nft.delta.add(5, DONT_CARE, 6);
-            expected_nft.delta.add(6, DONT_CARE, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 2") {
+			output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0, 2, 3, 2, 3}}, 9, {0}, {4});
+			expected_nft.delta.add(0, 4, 7);
+			expected_nft.delta.add(7, DONT_CARE, 8);
+			expected_nft.delta.add(8, DONT_CARE, 0);
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, DONT_CARE, 3);
+			expected_nft.delta.add(3, 2, 4);
+			expected_nft.delta.add(4, 5, 5);
+			expected_nft.delta.add(5, DONT_CARE, 6);
+			expected_nft.delta.add(6, DONT_CARE, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 3, 0, 3, 3 } }, 7, { 0 }, { 4 });
-            expected_nft.delta.add(0, 4, 5);
-            expected_nft.delta.add(5, DONT_CARE, 0);
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, DONT_CARE, 4);
-            expected_nft.delta.add(4, 5, 6);
-            expected_nft.delta.add(6, DONT_CARE, 4);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 3") {
+			output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 3, 0, 3, 3}}, 7, {0}, {4});
+			expected_nft.delta.add(0, 4, 5);
+			expected_nft.delta.add(5, DONT_CARE, 0);
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, DONT_CARE, 4);
+			expected_nft.delta.add(4, 5, 6);
+			expected_nft.delta.add(6, DONT_CARE, 4);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add levels according to the mask 1010011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, {}, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels(
-                { 7, { 0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6 } }, 20, { 0 }, { 7 }
-            );
-            expected_nft.delta.add(0, DONT_CARE, 8);
-            expected_nft.delta.add(8, 4, 9);
-            expected_nft.delta.add(9, DONT_CARE, 10);
-            expected_nft.delta.add(10, DONT_CARE, 11);
-            expected_nft.delta.add(11, DONT_CARE, 12);
-            expected_nft.delta.add(12, DONT_CARE, 13);
-            expected_nft.delta.add(13, DONT_CARE, 0);
-            expected_nft.delta.add(0, DONT_CARE, 1);
-            expected_nft.delta.add(1, 0, 2);
-            expected_nft.delta.add(2, DONT_CARE, 3);
-            expected_nft.delta.add(3, 1, 4);
-            expected_nft.delta.add(4, 2, 5);
-            expected_nft.delta.add(5, DONT_CARE, 6);
-            expected_nft.delta.add(6, DONT_CARE, 7);
-            expected_nft.delta.add(7, DONT_CARE, 14);
-            expected_nft.delta.add(14, 5, 15);
-            expected_nft.delta.add(15, DONT_CARE, 16);
-            expected_nft.delta.add(16, DONT_CARE, 17);
-            expected_nft.delta.add(17, DONT_CARE, 18);
-            expected_nft.delta.add(18, DONT_CARE, 19);
-            expected_nft.delta.add(19, DONT_CARE, 7);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("add levels according to the mask 1010011") {
+			output_nft = insert_levels(input_nft, {1, 0, 1, 0, 0, 1, 1}, {}, JumpMode::AppendDontCares);
+			expected_nft =
+				Nft::with_levels({7, {0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6}}, 20, {0}, {7});
+			expected_nft.delta.add(0, DONT_CARE, 8);
+			expected_nft.delta.add(8, 4, 9);
+			expected_nft.delta.add(9, DONT_CARE, 10);
+			expected_nft.delta.add(10, DONT_CARE, 11);
+			expected_nft.delta.add(11, DONT_CARE, 12);
+			expected_nft.delta.add(12, DONT_CARE, 13);
+			expected_nft.delta.add(13, DONT_CARE, 0);
+			expected_nft.delta.add(0, DONT_CARE, 1);
+			expected_nft.delta.add(1, 0, 2);
+			expected_nft.delta.add(2, DONT_CARE, 3);
+			expected_nft.delta.add(3, 1, 4);
+			expected_nft.delta.add(4, 2, 5);
+			expected_nft.delta.add(5, DONT_CARE, 6);
+			expected_nft.delta.add(6, DONT_CARE, 7);
+			expected_nft.delta.add(7, DONT_CARE, 14);
+			expected_nft.delta.add(14, 5, 15);
+			expected_nft.delta.add(15, DONT_CARE, 16);
+			expected_nft.delta.add(16, DONT_CARE, 17);
+			expected_nft.delta.add(17, DONT_CARE, 18);
+			expected_nft.delta.add(18, DONT_CARE, 19);
+			expected_nft.delta.add(19, DONT_CARE, 7);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("complex - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
-        delta.clear();
-        delta.add(0, 0, 1);
-        delta.add(0, 4, 2);
-        delta.add(1, 1, 2);
-        delta.add(1, 5, 3);
-        delta.add(2, 2, 3);
-        delta.add(3, 3, 0);
+	SECTION("complex - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
+		delta.clear();
+		delta.add(0, 0, 1);
+		delta.add(0, 4, 2);
+		delta.add(1, 1, 2);
+		delta.add(1, 5, 3);
+		delta.add(2, 2, 3);
+		delta.add(3, 3, 0);
 
-        input_nft = Nft::with_levels({ 3, { 0, 1, 2, 0 } }, delta, { 0 }, { 3 });
+		input_nft = Nft::with_levels({3, {0, 1, 2, 0}}, delta, {0}, {3});
 
-        SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 2, 3, 0, 1, 1, 1 } }, 7, { 0 }, { 3 });
-            expected_nft.delta.add(0, DONT_CARE, 4);
-            expected_nft.delta.add(0, DONT_CARE, 5);
-            expected_nft.delta.add(4, 0, 1);
-            expected_nft.delta.add(5, 4, 2);
-            expected_nft.delta.add(1, 5, 3);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, DONT_CARE, 6);
-            expected_nft.delta.add(6, 3, 0);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 0") {
+			output_nft = insert_level(input_nft, 0, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 2, 3, 0, 1, 1, 1}}, 7, {0}, {3});
+			expected_nft.delta.add(0, DONT_CARE, 4);
+			expected_nft.delta.add(0, DONT_CARE, 5);
+			expected_nft.delta.add(4, 0, 1);
+			expected_nft.delta.add(5, 4, 2);
+			expected_nft.delta.add(1, 5, 3);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, DONT_CARE, 6);
+			expected_nft.delta.add(6, 3, 0);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 3, 0, 2, 2, 2, 2 } }, 8, { 0 }, { 3 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(0, 4, 6);
-            expected_nft.delta.add(1, DONT_CARE, 4);
-            expected_nft.delta.add(1, DONT_CARE, 5);
-            expected_nft.delta.add(4, 1, 2);
-            expected_nft.delta.add(5, 5, 3);
-            expected_nft.delta.add(6, DONT_CARE, 2);
-            expected_nft.delta.add(2, 2, 3);
-            expected_nft.delta.add(3, 3, 7);
-            expected_nft.delta.add(7, DONT_CARE, 0);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 1") {
+			output_nft = insert_level(input_nft, 1, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 3, 0, 2, 2, 2, 2}}, 8, {0}, {3});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(0, 4, 6);
+			expected_nft.delta.add(1, DONT_CARE, 4);
+			expected_nft.delta.add(1, DONT_CARE, 5);
+			expected_nft.delta.add(4, 1, 2);
+			expected_nft.delta.add(5, 5, 3);
+			expected_nft.delta.add(6, DONT_CARE, 2);
+			expected_nft.delta.add(2, 2, 3);
+			expected_nft.delta.add(3, 3, 7);
+			expected_nft.delta.add(7, DONT_CARE, 0);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 0, 2, 3, 2 } }, 7, { 0 }, { 3 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(0, 4, 2);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(1, 5, 4);
-            expected_nft.delta.add(2, DONT_CARE, 5);
-            expected_nft.delta.add(5, 2, 3);
-            expected_nft.delta.add(4, DONT_CARE, 3);
-            expected_nft.delta.add(3, 3, 6);
-            expected_nft.delta.add(6, DONT_CARE, 0);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 2") {
+			output_nft = insert_level(input_nft, 2, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 0, 2, 3, 2}}, 7, {0}, {3});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(0, 4, 2);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(1, 5, 4);
+			expected_nft.delta.add(2, DONT_CARE, 5);
+			expected_nft.delta.add(5, 2, 3);
+			expected_nft.delta.add(4, DONT_CARE, 3);
+			expected_nft.delta.add(3, 3, 6);
+			expected_nft.delta.add(6, DONT_CARE, 0);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels({ 4, { 0, 1, 2, 0, 3, 3, 3 } }, 7, { 0 }, { 3 });
-            expected_nft.delta.add(0, 0, 1);
-            expected_nft.delta.add(0, 4, 2);
-            expected_nft.delta.add(1, 1, 2);
-            expected_nft.delta.add(1, 5, 4);
-            expected_nft.delta.add(2, 2, 5);
-            expected_nft.delta.add(5, DONT_CARE, 3);
-            expected_nft.delta.add(4, DONT_CARE, 3);
-            expected_nft.delta.add(3, 3, 6);
-            expected_nft.delta.add(6, DONT_CARE, 0);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
+		SECTION("add level 3") {
+			output_nft = insert_level(input_nft, 3, nullptr, JumpMode::AppendDontCares);
+			expected_nft = Nft::with_levels({4, {0, 1, 2, 0, 3, 3, 3}}, 7, {0}, {3});
+			expected_nft.delta.add(0, 0, 1);
+			expected_nft.delta.add(0, 4, 2);
+			expected_nft.delta.add(1, 1, 2);
+			expected_nft.delta.add(1, 5, 4);
+			expected_nft.delta.add(2, 2, 5);
+			expected_nft.delta.add(5, DONT_CARE, 3);
+			expected_nft.delta.add(4, DONT_CARE, 3);
+			expected_nft.delta.add(3, 3, 6);
+			expected_nft.delta.add(6, DONT_CARE, 0);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
 
-        SECTION("add levels according to the mask 1010011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, {}, JumpMode::AppendDontCares);
-            expected_nft = Nft::with_levels(
-                { 7, { 0, 2, 4, 0, 1, 1, 3, 3, 3, 5, 5, 6, 6, 1, 5, 6, 3, 2, 4, 2, 4 } }, 21, { 0 }, { 3 }
-            );
-            expected_nft.delta.add(0, DONT_CARE, 5);
-            expected_nft.delta.add(5, 0, 1);
-            expected_nft.delta.add(0, DONT_CARE, 4);
-            expected_nft.delta.add(4, 4, 17);
-            expected_nft.delta.add(17, DONT_CARE, 8);
-            expected_nft.delta.add(8, DONT_CARE, 2);
-            expected_nft.delta.add(1, DONT_CARE, 6);
-            expected_nft.delta.add(1, DONT_CARE, 7);
-            expected_nft.delta.add(6, 5, 18);
-            expected_nft.delta.add(18, DONT_CARE, 9);
-            expected_nft.delta.add(9, DONT_CARE, 11);
-            expected_nft.delta.add(11, DONT_CARE, 3);
-            expected_nft.delta.add(7, 1, 2);
-            expected_nft.delta.add(2, 2, 10);
-            expected_nft.delta.add(10, DONT_CARE, 12);
-            expected_nft.delta.add(12, DONT_CARE, 3);
-            expected_nft.delta.add(3, DONT_CARE, 13);
-            expected_nft.delta.add(13, 3, 19);
-            expected_nft.delta.add(19, DONT_CARE, 16);
-            expected_nft.delta.add(16, DONT_CARE, 20);
-            expected_nft.delta.add(20, DONT_CARE, 14);
-            expected_nft.delta.add(14, DONT_CARE, 15);
-            expected_nft.delta.add(15, DONT_CARE, 0);
-            CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
-        }
-    }
+		SECTION("add levels according to the mask 1010011") {
+			output_nft = insert_levels(input_nft, {1, 0, 1, 0, 0, 1, 1}, {}, JumpMode::AppendDontCares);
+			expected_nft =
+				Nft::with_levels({7, {0, 2, 4, 0, 1, 1, 3, 3, 3, 5, 5, 6, 6, 1, 5, 6, 3, 2, 4, 2, 4}}, 21, {0}, {3});
+			expected_nft.delta.add(0, DONT_CARE, 5);
+			expected_nft.delta.add(5, 0, 1);
+			expected_nft.delta.add(0, DONT_CARE, 4);
+			expected_nft.delta.add(4, 4, 17);
+			expected_nft.delta.add(17, DONT_CARE, 8);
+			expected_nft.delta.add(8, DONT_CARE, 2);
+			expected_nft.delta.add(1, DONT_CARE, 6);
+			expected_nft.delta.add(1, DONT_CARE, 7);
+			expected_nft.delta.add(6, 5, 18);
+			expected_nft.delta.add(18, DONT_CARE, 9);
+			expected_nft.delta.add(9, DONT_CARE, 11);
+			expected_nft.delta.add(11, DONT_CARE, 3);
+			expected_nft.delta.add(7, 1, 2);
+			expected_nft.delta.add(2, 2, 10);
+			expected_nft.delta.add(10, DONT_CARE, 12);
+			expected_nft.delta.add(12, DONT_CARE, 3);
+			expected_nft.delta.add(3, DONT_CARE, 13);
+			expected_nft.delta.add(13, 3, 19);
+			expected_nft.delta.add(19, DONT_CARE, 16);
+			expected_nft.delta.add(16, DONT_CARE, 20);
+			expected_nft.delta.add(20, DONT_CARE, 14);
+			expected_nft.delta.add(14, DONT_CARE, 15);
+			expected_nft.delta.add(15, DONT_CARE, 0);
+			CHECK(are_equivalent(output_nft, expected_nft, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("Testing inner state reuse with JumpMode::RepeatSymbol.") {
-        delta.clear();
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 3);
-        delta.add(1, 2, 3);
-        delta.add(1, 3, 2);
-        delta.add(2, 4, 3);
+	SECTION("Testing inner state reuse with JumpMode::RepeatSymbol.") {
+		delta.clear();
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 3);
+		delta.add(1, 2, 3);
+		delta.add(1, 3, 2);
+		delta.add(2, 4, 3);
 
-        input_nft = Nft::with_levels({ 4, { 0, 1, 3, 0 } }, delta, { 0 }, { 3 });
+		input_nft = Nft::with_levels({4, {0, 1, 3, 0}}, delta, {0}, {3});
 
-        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 }, {}, JumpMode::RepeatSymbol);
-        CHECK(output_nft.num_of_states() == 13);
-    }
+		output_nft = insert_levels(input_nft, {0, 1, 1, 0, 0, 1, 0}, {}, JumpMode::RepeatSymbol);
+		CHECK(output_nft.num_of_states() == 13);
+	}
 
-    SECTION("Testing inner state reuse with JumpMode::AppendDontCares.") {
-        delta.clear();
-        delta.add(0, 0, 1);
-        delta.add(1, 1, 3);
-        delta.add(1, 2, 3);
-        delta.add(1, 3, 2);
-        delta.add(2, 4, 3);
+	SECTION("Testing inner state reuse with JumpMode::AppendDontCares.") {
+		delta.clear();
+		delta.add(0, 0, 1);
+		delta.add(1, 1, 3);
+		delta.add(1, 2, 3);
+		delta.add(1, 3, 2);
+		delta.add(2, 4, 3);
 
-        input_nft = Nft::with_levels({ 4, { 0, 1, 3, 0 } }, delta, { 0 }, { 3 });
+		input_nft = Nft::with_levels({4, {0, 1, 3, 0}}, delta, {0}, {3});
 
-        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 }, {}, JumpMode::AppendDontCares);
-        CHECK(output_nft.num_of_states() == 9);
-    }
+		output_nft = insert_levels(input_nft, {0, 1, 1, 0, 0, 1, 0}, {}, JumpMode::AppendDontCares);
+		CHECK(output_nft.num_of_states() == 9);
+	}
 }
 
 TEST_CASE("mata::nft::Nft::insert_word()") {
-    Delta delta;
-    delta.add(0, 0, 1);
-    delta.add(0, 4, 0);
-    delta.add(1, 1, 2);
-    delta.add(1, 5, 1);
-    delta.add(2, 2, 3);
-    delta.add(2, 6, 2);
-    delta.add(3, 3, 4);
-    delta.add(3, 7, 3);
+	Delta delta;
+	delta.add(0, 0, 1);
+	delta.add(0, 4, 0);
+	delta.add(1, 1, 2);
+	delta.add(1, 5, 1);
+	delta.add(2, 2, 3);
+	delta.add(2, 6, 2);
+	delta.add(3, 3, 4);
+	delta.add(3, 7, 3);
 
-    Nft nft, expected;
+	Nft nft, expected;
 
-    SECTION("Insert 'a'") {
-        SECTION("levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(1, { 'a' }, 3);
-            CHECK(new_tgt == 3);
+	SECTION("Insert 'a'") {
+		SECTION("levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(1, {'a'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(1, 'a', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(1, 'a', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("levels.num_of_levels == 3") {
-            nft = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(1, { 'a' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("levels.num_of_levels == 3") {
+			nft = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(1, {'a'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(1, 'a', 3);
+			expected = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(1, 'a', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("self-loop, levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(3, { 'a' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("self-loop, levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(3, {'a'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(3, 'a', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(3, 'a', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("self-loop, levels.num_of_levels == 3") {
-            nft = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(3, { 'a' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("self-loop, levels.num_of_levels == 3") {
+			nft = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(3, {'a'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(3, 'a', 3);
+			expected = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(3, 'a', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("tgt is not specified") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, {});
-            State new_tgt = nft.insert_word(1, { 'a' });
-            nft.final.insert(new_tgt);
+		SECTION("tgt is not specified") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {});
+			State new_tgt = nft.insert_word(1, {'a'});
+			nft.final.insert(new_tgt);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0 } }, 3, { 0 }, { 2 });
-            expected.delta.add(0, 0, 1);
-            expected.delta.add(0, 4, 0);
-            expected.delta.add(1, 5, 1);
-            expected.delta.add(1, 'a', 2);
+			expected = Nft::with_levels({1, {0, 0, 0, 0}}, 3, {0}, {2});
+			expected.delta.add(0, 0, 1);
+			expected.delta.add(0, 4, 0);
+			expected.delta.add(1, 5, 1);
+			expected.delta.add(1, 'a', 2);
 
-            CHECK(are_equivalent(nft, expected));
-        }
-    }
+			CHECK(are_equivalent(nft, expected));
+		}
+	}
 
-    SECTION("Insert 'ab'") {
-        SECTION("levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(1, { 'a', 'b' }, 3);
-            CHECK(new_tgt == 3);
+	SECTION("Insert 'ab'") {
+		SECTION("levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(1, {'a', 'b'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(1, 'a', 5);
-            expected.delta.add(5, 'b', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(1, 'a', 5);
+			expected.delta.add(5, 'b', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("levels.num_of_levels == 3") {
-            nft = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(1, { 'a', 'b' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("levels.num_of_levels == 3") {
+			nft = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(1, {'a', 'b'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 3, { 0, 0, 0, 0, 0, 1 } }, delta, { 0 }, { 4 });
-            expected.delta.add(1, 'a', 5);
-            expected.delta.add(5, 'b', 3);
+			expected = Nft::with_levels({3, {0, 0, 0, 0, 0, 1}}, delta, {0}, {4});
+			expected.delta.add(1, 'a', 5);
+			expected.delta.add(5, 'b', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("self-loop, levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(3, { 'a', 'b' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("self-loop, levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(3, {'a', 'b'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(3, 'a', 5);
-            expected.delta.add(5, 'b', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(3, 'a', 5);
+			expected.delta.add(5, 'b', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("self-loop, levels.num_of_levels == 3") {
-            nft = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(3, { 'a', 'b' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("self-loop, levels.num_of_levels == 3") {
+			nft = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(3, {'a', 'b'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 3, { 0, 0, 0, 0, 0, 1 } }, delta, { 0 }, { 4 });
-            expected.delta.add(3, 'a', 5);
-            expected.delta.add(5, 'b', 3);
+			expected = Nft::with_levels({3, {0, 0, 0, 0, 0, 1}}, delta, {0}, {4});
+			expected.delta.add(3, 'a', 5);
+			expected.delta.add(5, 'b', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("tgt is not specified") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, {});
-            State new_tgt = nft.insert_word(1, { 'a', 'b' });
-            nft.final.insert(new_tgt);
+		SECTION("tgt is not specified") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {});
+			State new_tgt = nft.insert_word(1, {'a', 'b'});
+			nft.final.insert(new_tgt);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, 4, { 0 }, { 3 });
-            expected.delta.add(0, 0, 1);
-            expected.delta.add(0, 4, 0);
-            expected.delta.add(1, 5, 1);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'b', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0}}, 4, {0}, {3});
+			expected.delta.add(0, 0, 1);
+			expected.delta.add(0, 4, 0);
+			expected.delta.add(1, 5, 1);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'b', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
-    }
+			CHECK(are_equivalent(nft, expected));
+		}
+	}
 
-    SECTION("Insert 'abcd'") {
-        SECTION("levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(1, { 'a', 'b', 'c', 'd' }, 3);
-            CHECK(new_tgt == 3);
+	SECTION("Insert 'abcd'") {
+		SECTION("levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(1, 'a', 5);
-            expected.delta.add(5, 'b', 6);
-            expected.delta.add(6, 'c', 7);
-            expected.delta.add(7, 'd', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(1, 'a', 5);
+			expected.delta.add(5, 'b', 6);
+			expected.delta.add(6, 'c', 7);
+			expected.delta.add(7, 'd', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("levels.num_of_levels == 3") {
-            nft = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(1, { 'a', 'b', 'c', 'd' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("levels.num_of_levels == 3") {
+			nft = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 3, { 0, 0, 0, 0, 0, 1, 2, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(1, 'a', 5);
-            expected.delta.add(5, 'b', 6);
-            expected.delta.add(6, 'c', 7);
-            expected.delta.add(7, 'd', 3);
+			expected = Nft::with_levels({3, {0, 0, 0, 0, 0, 1, 2, 0}}, delta, {0}, {4});
+			expected.delta.add(1, 'a', 5);
+			expected.delta.add(5, 'b', 6);
+			expected.delta.add(6, 'c', 7);
+			expected.delta.add(7, 'd', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("self-loop, levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(3, { 'a', 'b', 'c', 'd' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("self-loop, levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(3, 'a', 5);
-            expected.delta.add(5, 'b', 6);
-            expected.delta.add(6, 'c', 7);
-            expected.delta.add(7, 'd', 3);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0, 0, 0, 0}}, delta, {0}, {4});
+			expected.delta.add(3, 'a', 5);
+			expected.delta.add(5, 'b', 6);
+			expected.delta.add(6, 'c', 7);
+			expected.delta.add(7, 'd', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("self-loop, levels.num_of_levels == 3") {
-            nft = Nft::with_levels({ 3, { 0, 0, 0, 0, 0 } }, delta, { 0 }, { 4 });
-            State new_tgt = nft.insert_word(3, { 'a', 'b', 'c', 'd' }, 3);
-            CHECK(new_tgt == 3);
+		SECTION("self-loop, levels.num_of_levels == 3") {
+			nft = Nft::with_levels({3, {0, 0, 0, 0, 0}}, delta, {0}, {4});
+			State new_tgt = nft.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+			CHECK(new_tgt == 3);
 
-            expected = Nft::with_levels({ 3, { 0, 0, 0, 0, 0, 1, 2, 0 } }, delta, { 0 }, { 4 });
-            expected.delta.add(3, 'a', 5);
-            expected.delta.add(5, 'b', 6);
-            expected.delta.add(6, 'c', 7);
-            expected.delta.add(7, 'd', 3);
+			expected = Nft::with_levels({3, {0, 0, 0, 0, 0, 1, 2, 0}}, delta, {0}, {4});
+			expected.delta.add(3, 'a', 5);
+			expected.delta.add(5, 'b', 6);
+			expected.delta.add(6, 'c', 7);
+			expected.delta.add(7, 'd', 3);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("tgt is not specified") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0 }, {});
-            State new_tgt = nft.insert_word(1, { 'a', 'b', 'c', 'd' });
-            nft.final.insert(new_tgt);
+		SECTION("tgt is not specified") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0}, {});
+			State new_tgt = nft.insert_word(1, {'a', 'b', 'c', 'd'});
+			nft.final.insert(new_tgt);
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0, 0, 0 } }, 6, { 0 }, { 5 });
-            expected.delta.add(0, 0, 1);
-            expected.delta.add(0, 4, 0);
-            expected.delta.add(1, 5, 1);
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'b', 3);
-            expected.delta.add(3, 'c', 4);
-            expected.delta.add(4, 'd', 5);
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0, 0, 0}}, 6, {0}, {5});
+			expected.delta.add(0, 0, 1);
+			expected.delta.add(0, 4, 0);
+			expected.delta.add(1, 5, 1);
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'b', 3);
+			expected.delta.add(3, 'c', 4);
+			expected.delta.add(4, 'd', 5);
 
-            CHECK(are_equivalent(nft, expected));
-        }
-    }
+			CHECK(are_equivalent(nft, expected));
+		}
+	}
 
-    SECTION("add_transition_by_levels()") {
-        nft = Nft::with_levels(3);
-        nft.add_transition_by_levels(0, { 'a', 'b', 'c' }, 1);
-        nft.add_transition_by_levels(1, { 'd', 'e', 'f' }, 2);
+	SECTION("add_transition_by_levels()") {
+		nft = Nft::with_levels(3);
+		nft.add_transition_by_levels(0, {'a', 'b', 'c'}, 1);
+		nft.add_transition_by_levels(1, {'d', 'e', 'f'}, 2);
 
-        expected = Nft::with_levels({ 3, { 0, 0, 0, 1, 2, 1, 2 } }, {});
-        expected.delta.add(0, 'a', 3);
-        expected.delta.add(3, 'b', 4);
-        expected.delta.add(4, 'c', 1);
-        expected.delta.add(1, 'd', 5);
-        expected.delta.add(5, 'e', 6);
-        expected.delta.add(6, 'f', 2);
+		expected = Nft::with_levels({3, {0, 0, 0, 1, 2, 1, 2}}, {});
+		expected.delta.add(0, 'a', 3);
+		expected.delta.add(3, 'b', 4);
+		expected.delta.add(4, 'c', 1);
+		expected.delta.add(1, 'd', 5);
+		expected.delta.add(5, 'e', 6);
+		expected.delta.add(6, 'f', 2);
 
-        CHECK(are_equivalent(nft, expected));
-    }
+		CHECK(are_equivalent(nft, expected));
+	}
 }
 
 TEST_CASE("mata::nft::Nft::insert_identity()") {
-    Nft nft, expected;
-    SECTION("Creating an identity on two states (both initial and final) with empty delta.") {
-        Delta delta{};
-        SECTION("levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            nft.insert_identity(0, 'a');
-            nft.insert_identity(1, 'b');
+	Nft nft, expected;
+	SECTION("Creating an identity on two states (both initial and final) with empty delta.") {
+		Delta delta{};
+		SECTION("levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0}}, delta, {0, 1}, {0, 1});
+			nft.insert_identity(0, 'a');
+			nft.insert_identity(1, 'b');
 
-            expected = Nft::with_levels({ 1, { 0, 0 } }, 2, { 0, 1 }, { 0, 1 });
-            expected.delta.add(0, 'a', 0);
-            expected.delta.add(1, 'b', 1);
+			expected = Nft::with_levels({1, {0, 0}}, 2, {0, 1}, {0, 1});
+			expected.delta.add(0, 'a', 0);
+			expected.delta.add(1, 'b', 1);
 
-            CHECK(are_equivalent(nft, expected));
-        }
+			CHECK(are_equivalent(nft, expected));
+		}
 
-        SECTION("levels.num_of_levels == 2") {
-            nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            nft.insert_identity(0, 'a');
-            nft.insert_identity(1, 'b');
+		SECTION("levels.num_of_levels == 2") {
+			nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+			nft.insert_identity(0, 'a');
+			nft.insert_identity(1, 'b');
 
-            expected = Nft::with_levels({ 2, { 0, 0, 1, 1 } }, 4, { 0, 1 }, { 0, 1 });
-            expected.delta.add(0, 'a', 2);
-            expected.delta.add(2, 'a', 0);
-            expected.delta.add(1, 'b', 3);
-            expected.delta.add(3, 'b', 1);
+			expected = Nft::with_levels({2, {0, 0, 1, 1}}, 4, {0, 1}, {0, 1});
+			expected.delta.add(0, 'a', 2);
+			expected.delta.add(2, 'a', 0);
+			expected.delta.add(1, 'b', 3);
+			expected.delta.add(3, 'b', 1);
 
-            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-        }
+			CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("levels.num_of_levels == 4") {
-            nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            nft.insert_identity(0, 'a', JumpMode::AppendDontCares);
-            nft.insert_identity(1, 'b', JumpMode::AppendDontCares);
+		SECTION("levels.num_of_levels == 4") {
+			nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+			nft.insert_identity(0, 'a', JumpMode::AppendDontCares);
+			nft.insert_identity(1, 'b', JumpMode::AppendDontCares);
 
-            expected = Nft::with_levels({ 4, { 0, 0, 1, 1, 2, 2, 3, 3 } }, 8, { 0, 1 }, { 0, 1 });
-            expected.delta.add(0, 'a', 2);
-            expected.delta.add(2, 'a', 4);
-            expected.delta.add(4, 'a', 6);
-            expected.delta.add(6, 'a', 0);
-            expected.delta.add(1, 'b', 3);
-            expected.delta.add(3, 'b', 5);
-            expected.delta.add(5, 'b', 7);
-            expected.delta.add(7, 'b', 1);
+			expected = Nft::with_levels({4, {0, 0, 1, 1, 2, 2, 3, 3}}, 8, {0, 1}, {0, 1});
+			expected.delta.add(0, 'a', 2);
+			expected.delta.add(2, 'a', 4);
+			expected.delta.add(4, 'a', 6);
+			expected.delta.add(6, 'a', 0);
+			expected.delta.add(1, 'b', 3);
+			expected.delta.add(3, 'b', 5);
+			expected.delta.add(5, 'b', 7);
+			expected.delta.add(7, 'b', 1);
 
-            CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
-        }
-    }
+			CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
+		}
+	}
 
-    SECTION("Creating an identity on a state with incoming and outcoming transitions.") {
-        Delta delta{};
-        delta.add(0, 'a', 1);
-        delta.add(1, 'b', 2);
+	SECTION("Creating an identity on a state with incoming and outcoming transitions.") {
+		Delta delta{};
+		delta.add(0, 'a', 1);
+		delta.add(1, 'b', 2);
 
-        SECTION("levels.num_of_levels == 1") {
-            SECTION("symbols cnt == 1") {
-                nft = Nft::with_levels({ 1, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                nft.insert_identity(1, 'c', JumpMode::AppendDontCares);
+		SECTION("levels.num_of_levels == 1") {
+			SECTION("symbols cnt == 1") {
+				nft = Nft::with_levels({1, {0, 0, 0}}, delta, {0}, {2});
+				nft.insert_identity(1, 'c', JumpMode::AppendDontCares);
 
-                expected = Nft::with_levels({ 1, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                expected.delta.add(1, 'c', 1);
+				expected = Nft::with_levels({1, {0, 0, 0}}, delta, {0}, {2});
+				expected.delta.add(1, 'c', 1);
 
-                CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
-            }
+				CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
+			}
 
-            SECTION("symbols cnt == 2") {
-                nft = Nft::with_levels({ 1, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                nft.insert_identity(1, { 'c', 'd' });
+			SECTION("symbols cnt == 2") {
+				nft = Nft::with_levels({1, {0, 0, 0}}, delta, {0}, {2});
+				nft.insert_identity(1, {'c', 'd'});
 
-                expected = Nft::with_levels({ 1, { 0, 0, 0, 0 } }, delta, { 0 }, { 2 });
-                expected.insert_identity(1, 'c');
-                expected.insert_identity(1, 'd');
+				expected = Nft::with_levels({1, {0, 0, 0, 0}}, delta, {0}, {2});
+				expected.insert_identity(1, 'c');
+				expected.insert_identity(1, 'd');
 
-                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-            }
-        }
+				CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+			}
+		}
 
-        SECTION("levels.num_of_levels == 2") {
-            SECTION("symbols cnt == 1") {
-                nft = Nft::with_levels({ 2, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                nft.insert_identity(1, 'c');
+		SECTION("levels.num_of_levels == 2") {
+			SECTION("symbols cnt == 1") {
+				nft = Nft::with_levels({2, {0, 0, 0}}, delta, {0}, {2});
+				nft.insert_identity(1, 'c');
 
-                expected = Nft::with_levels({ 2, { 0, 0, 0, 1 } }, delta, { 0 }, { 2 });
-                expected.delta.add(1, 'c', 3);
-                expected.delta.add(3, 'c', 1);
+				expected = Nft::with_levels({2, {0, 0, 0, 1}}, delta, {0}, {2});
+				expected.delta.add(1, 'c', 3);
+				expected.delta.add(3, 'c', 1);
 
-                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-            }
+				CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+			}
 
-            SECTION("symbols cnt == 2") {
-                nft = Nft::with_levels({ 2, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                nft.insert_identity(1, { 'c', 'd' }, JumpMode::AppendDontCares);
+			SECTION("symbols cnt == 2") {
+				nft = Nft::with_levels({2, {0, 0, 0}}, delta, {0}, {2});
+				nft.insert_identity(1, {'c', 'd'}, JumpMode::AppendDontCares);
 
-                expected = Nft::with_levels({ 2, { 0, 0, 0, 1 } }, delta, { 0 }, { 2 });
-                expected.insert_identity(1, 'c', JumpMode::AppendDontCares);
-                expected.insert_identity(1, 'd', JumpMode::AppendDontCares);
+				expected = Nft::with_levels({2, {0, 0, 0, 1}}, delta, {0}, {2});
+				expected.insert_identity(1, 'c', JumpMode::AppendDontCares);
+				expected.insert_identity(1, 'd', JumpMode::AppendDontCares);
 
-                CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
-            }
-        }
+				CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
+			}
+		}
 
-        SECTION("levels.num_of_levels == 4") {
-            SECTION("symbols cnt == 1") {
-                nft = Nft::with_levels({ 4, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                nft.insert_identity(1, 'c');
+		SECTION("levels.num_of_levels == 4") {
+			SECTION("symbols cnt == 1") {
+				nft = Nft::with_levels({4, {0, 0, 0}}, delta, {0}, {2});
+				nft.insert_identity(1, 'c');
 
-                expected = Nft::with_levels({ 4, { 0, 0, 0, 1, 2, 3 } }, delta, { 0 }, { 2 });
-                expected.delta.add(1, 'c', 3);
-                expected.delta.add(3, 'c', 4);
-                expected.delta.add(4, 'c', 5);
-                expected.delta.add(5, 'c', 1);
+				expected = Nft::with_levels({4, {0, 0, 0, 1, 2, 3}}, delta, {0}, {2});
+				expected.delta.add(1, 'c', 3);
+				expected.delta.add(3, 'c', 4);
+				expected.delta.add(4, 'c', 5);
+				expected.delta.add(5, 'c', 1);
 
-                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-            }
+				CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+			}
 
-            SECTION("symbols cnt == 4") {
-                nft = Nft::with_levels({ 4, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                nft.insert_identity(1, { 'c', 'd', 'e', 'f' });
+			SECTION("symbols cnt == 4") {
+				nft = Nft::with_levels({4, {0, 0, 0}}, delta, {0}, {2});
+				nft.insert_identity(1, {'c', 'd', 'e', 'f'});
 
-                expected = Nft::with_levels({ 4, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-                expected.insert_identity(1, 'c');
-                expected.insert_identity(1, 'd');
-                expected.insert_identity(1, 'e');
-                expected.insert_identity(1, 'f');
+				expected = Nft::with_levels({4, {0, 0, 0}}, delta, {0}, {2});
+				expected.insert_identity(1, 'c');
+				expected.insert_identity(1, 'd');
+				expected.insert_identity(1, 'e');
+				expected.insert_identity(1, 'f');
 
-                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-            }
-        }
-    }
+				CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+			}
+		}
+	}
 
-    SECTION("Creating an identity on a state with only incoming transitions.") {
-        Delta delta{};
-        delta.add(0, 'a', 1);
-        delta.add(1, 'b', 2);
+	SECTION("Creating an identity on a state with only incoming transitions.") {
+		Delta delta{};
+		delta.add(0, 'a', 1);
+		delta.add(1, 'b', 2);
 
-        SECTION("levels.num_of_levels == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-            nft.insert_identity(2, 'c');
+		SECTION("levels.num_of_levels == 1") {
+			nft = Nft::with_levels({1, {0, 0, 0}}, delta, {0}, {2});
+			nft.insert_identity(2, 'c');
 
-            expected = Nft::with_levels({ 1, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-            expected.delta.add(2, 'c', 2);
+			expected = Nft::with_levels({1, {0, 0, 0}}, delta, {0}, {2});
+			expected.delta.add(2, 'c', 2);
 
-            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-        }
+			CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("levels.num_of_levels == 2") {
-            nft = Nft::with_levels({ 2, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-            nft.insert_identity(2, 'c');
+		SECTION("levels.num_of_levels == 2") {
+			nft = Nft::with_levels({2, {0, 0, 0}}, delta, {0}, {2});
+			nft.insert_identity(2, 'c');
 
-            expected = Nft::with_levels({ 2, { 0, 0, 0, 1 } }, delta, { 0 }, { 2 });
-            expected.delta.add(2, 'c', 3);
-            expected.delta.add(3, 'c', 2);
+			expected = Nft::with_levels({2, {0, 0, 0, 1}}, delta, {0}, {2});
+			expected.delta.add(2, 'c', 3);
+			expected.delta.add(3, 'c', 2);
 
-            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-        }
+			CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+		}
 
-        SECTION("levels.num_of_levels == 4") {
-            nft = Nft::with_levels({ 4, { 0, 0, 0 } }, delta, { 0 }, { 2 });
-            nft.insert_identity(2, 'c');
+		SECTION("levels.num_of_levels == 4") {
+			nft = Nft::with_levels({4, {0, 0, 0}}, delta, {0}, {2});
+			nft.insert_identity(2, 'c');
 
-            expected = Nft::with_levels({ 4, { 0, 0, 0, 1, 2, 3 } }, delta, { 0 }, { 2 });
-            expected.delta.add(2, 'c', 3);
-            expected.delta.add(3, 'c', 4);
-            expected.delta.add(4, 'c', 5);
-            expected.delta.add(5, 'c', 2);
+			expected = Nft::with_levels({4, {0, 0, 0, 1, 2, 3}}, delta, {0}, {2});
+			expected.delta.add(2, 'c', 3);
+			expected.delta.add(3, 'c', 4);
+			expected.delta.add(4, 'c', 5);
+			expected.delta.add(5, 'c', 2);
 
-            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
-        }
-    }
+			CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
+		}
+	}
 }
 
 TEST_CASE("mata::nft::Nft::add_transition() using a symbol name") {
-    // 3-level NFT, source at level 0 and a pre-existing target at level 2: a jump spanning levels 0 and 1.
-    Nft nft{ Nft::with_levels({ 3, { 0, 0, 2 } }, 3) };
-    nft.initial.insert(0);
-    nft.final.insert(2);
+	// 3-level NFT, source at level 0 and a pre-existing target at level 2: a jump spanning levels 0 and 1.
+	Nft nft{Nft::with_levels({3, {0, 0, 2}}, 3)};
+	nft.initial.insert(0);
+	nft.final.insert(2);
 
-    SECTION("per-level alphabets translating to the same symbol on every affected level create a jump transition") {
-        auto a0 = std::make_shared<OnTheFlyAlphabet>();
-        auto a1 = std::make_shared<OnTheFlyAlphabet>();
-        auto a2 = std::make_shared<OnTheFlyAlphabet>();
-        // Both a0 and a1 assign "x" the same (first, default-initial) symbol value.
-        nft.alphabets = std::make_shared<AlphabetLevels>(
-            AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } });
+	SECTION("per-level alphabets translating to the same symbol on every affected level create a jump transition") {
+		auto a0 = std::make_shared<OnTheFlyAlphabet>();
+		auto a1 = std::make_shared<OnTheFlyAlphabet>();
+		auto a2 = std::make_shared<OnTheFlyAlphabet>();
+		// Both a0 and a1 assign "x" the same (first, default-initial) symbol value.
+		nft.alphabets =
+			std::make_shared<AlphabetLevels>(AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}});
 
-        nft.add_transition(0, "x", 2);
+		nft.add_transition(0, "x", 2);
 
-        CHECK(nft.num_of_states() == 3);
-        CHECK(nft.delta.contains(0, a0->translate_symb("x"), 2));
-        CHECK(a0->translate_symb("x") == a1->translate_symb("x"));
-    }
+		CHECK(nft.num_of_states() == 3);
+		CHECK(nft.delta.contains(0, a0->translate_symb("x"), 2));
+		CHECK(a0->translate_symb("x") == a1->translate_symb("x"));
+	}
 
-    SECTION("per-level alphabets translating to different symbols unwind the jump into a sequence of transitions") {
-        auto a0 = std::make_shared<OnTheFlyAlphabet>();
-        auto a1 = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "y" });
-        auto a2 = std::make_shared<OnTheFlyAlphabet>();
-        // "x" is the first symbol on a0 (-> 0), but the second symbol on a1 (-> 1): they disagree.
-        nft.alphabets = std::make_shared<AlphabetLevels>(
-            AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a2 } });
+	SECTION("per-level alphabets translating to different symbols unwind the jump into a sequence of transitions") {
+		auto a0 = std::make_shared<OnTheFlyAlphabet>();
+		auto a1 = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{"y"});
+		auto a2 = std::make_shared<OnTheFlyAlphabet>();
+		// "x" is the first symbol on a0 (-> 0), but the second symbol on a1 (-> 1): they disagree.
+		nft.alphabets =
+			std::make_shared<AlphabetLevels>(AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}});
 
-        nft.add_transition(0, "x", 2);
+		nft.add_transition(0, "x", 2);
 
-        REQUIRE(nft.num_of_states() == 4);
-        const State inner{ 3 };
-        CHECK(nft.levels[inner] == 1);
-        CHECK(nft.delta.contains(0, a0->translate_symb("x"), inner));
-        CHECK(nft.delta.contains(inner, a1->translate_symb("x"), 2));
-        CHECK(a0->translate_symb("x") != a1->translate_symb("x"));
-    }
+		REQUIRE(nft.num_of_states() == 4);
+		const State inner{3};
+		CHECK(nft.levels[inner] == 1);
+		CHECK(nft.delta.contains(0, a0->translate_symb("x"), inner));
+		CHECK(nft.delta.contains(inner, a1->translate_symb("x"), 2));
+		CHECK(a0->translate_symb("x") != a1->translate_symb("x"));
+	}
 
-    SECTION("an explicit alphabet takes precedence over this->alphabets on every affected level") {
-        auto a0 = std::make_shared<OnTheFlyAlphabet>();
-        auto a1 = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{ "y" });
-        nft.alphabets = std::make_shared<AlphabetLevels>(
-            AlphabetLevels{ std::vector<std::shared_ptr<Alphabet>>{ a0, a1, a0 } });
-        OnTheFlyAlphabet override_alphabet{ std::vector<std::string>{ "x" } };
+	SECTION("an explicit alphabet takes precedence over this->alphabets on every affected level") {
+		auto a0 = std::make_shared<OnTheFlyAlphabet>();
+		auto a1 = std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{"y"});
+		nft.alphabets =
+			std::make_shared<AlphabetLevels>(AlphabetLevels{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a0}});
+		OnTheFlyAlphabet override_alphabet{std::vector<std::string>{"x"}};
 
-        nft.add_transition(0, "x", 2, &override_alphabet);
+		nft.add_transition(0, "x", 2, &override_alphabet);
 
-        // Using the same override_alphabet object for both affected levels always agrees, so a single jump
-        //  transition is created, ignoring this->alphabets entirely.
-        CHECK(nft.num_of_states() == 3);
-        CHECK(nft.delta.contains(0, override_alphabet.translate_symb("x"), 2));
-    }
+		// Using the same override_alphabet object for both affected levels always agrees, so a single jump
+		//  transition is created, ignoring this->alphabets entirely.
+		CHECK(nft.num_of_states() == 3);
+		CHECK(nft.delta.contains(0, override_alphabet.translate_symb("x"), 2));
+	}
 
-    SECTION("adjacent levels (no jump) add a single ordinary transition") {
-        OnTheFlyAlphabet alphabet{ std::vector<std::string>{ "x" } };
-        Nft adjacent{ Nft::with_levels({ 3, { 0, 1 } }, 2) };
+	SECTION("adjacent levels (no jump) add a single ordinary transition") {
+		OnTheFlyAlphabet alphabet{std::vector<std::string>{"x"}};
+		Nft adjacent{Nft::with_levels({3, {0, 1}}, 2)};
 
-        adjacent.add_transition(0, "x", 1, &alphabet);
+		adjacent.add_transition(0, "x", 1, &alphabet);
 
-        CHECK(adjacent.num_of_states() == 2);
-        CHECK(adjacent.delta.contains(0, alphabet.translate_symb("x"), 1));
-    }
+		CHECK(adjacent.num_of_states() == 2);
+		CHECK(adjacent.delta.contains(0, alphabet.translate_symb("x"), 1));
+	}
 
-    SECTION("throws when no alphabet is available for some affected level") {
-        CHECK_THROWS_AS(nft.add_transition(0, "x", 2), std::runtime_error);
-    }
+	SECTION("throws when no alphabet is available for some affected level") {
+		CHECK_THROWS_AS(nft.add_transition(0, "x", 2), std::runtime_error);
+	}
 }
 
 TEST_CASE("mata::nft::Nft::insert_word_by_levels()") {
-    Nft nft, expected;
-
-    SECTION("Inserting a word between two states (both initial and final) with empty delta.") {
-        Delta delta{};
-
-        SECTION("levels.num_of_levels == 1 && word_part.size() == 1") {
-            nft = Nft::with_levels({ 1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            State new_tgt = nft.insert_word_by_levels(0, { { 'a' } }, 1);
-            CHECK(new_tgt == 1);
-
-            expected = Nft::with_levels({ 1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            expected.delta.add(0, 'a', 1);
-
-            CHECK(are_equivalent(nft, expected));
-        }
-
-        SECTION("levels.num_of_levels == 1 && word_part.size() == 2") {
-            nft = Nft::with_levels({ 1, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b' } }, 1);
-            CHECK(new_tgt == 1);
-
-            expected = Nft::with_levels({ 1, { 0, 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            expected.delta.add(0, 'a', 2);
-            expected.delta.add(2, 'b', 1);
-
-            CHECK(are_equivalent(nft, expected));
-        }
-
-        SECTION("levels.num_of_levels == 1 && word_part.size() == 4") {
-            nft = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b', 'c', 'd' } }, 1);
-            CHECK(new_tgt == 1);
-
-            expected = Nft::with_levels({ 1, { 0, 0, 0, 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-            expected.delta.add(0, 'a', 2);
-            expected.delta.add(2, 'b', 3);
-            expected.delta.add(3, 'c', 4);
-            expected.delta.add(4, 'd', 1);
-
-            CHECK(are_equivalent(nft, expected));
-        }
-    }
-
-    SECTION("The source sate and target state are in delta.") {
-        Delta delta;
-        delta.add(0, 'w', 0);
-        delta.add(0, 'y', 1);
-        delta.add(1, 'x', 1);
-        delta.add(1, 'z', 0);
-        SECTION("levels.num_of_levels == 2") {
-            SECTION("word_part.size() == 1") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a' }, { 'b' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'b', 1);
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 2") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b' }, { 'c', 'd' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'c', 3);
-                expected.delta.add(3, 'b', 4);
-                expected.delta.add(4, 'd', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 4") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b', 'c', 'd' }, { 'e', 'f', 'g', 'h' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0, 1, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'b', 4);
-                expected.delta.add(4, 'f', 5);
-                expected.delta.add(5, 'c', 6);
-                expected.delta.add(6, 'g', 7);
-                expected.delta.add(7, 'd', 8);
-                expected.delta.add(8, 'h', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-        }
-
-        SECTION("levels.num_of_levels == 4") {
-            SECTION("word_part.size() == 1") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a' }, { 'b' }, { 'c' }, { 'd' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 4, { 0, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'b', 3);
-                expected.delta.add(3, 'c', 4);
-                expected.delta.add(4, 'd', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 2") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(
-                    0, { { 'a', 'b' }, { 'c', 'd' }, { 'e', 'f' }, { 'g', 'h' } }, 1
-                );
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'c', 3);
-                expected.delta.add(3, 'e', 4);
-                expected.delta.add(4, 'g', 5);
-                expected.delta.add(5, 'b', 6);
-                expected.delta.add(6, 'd', 7);
-                expected.delta.add(7, 'f', 8);
-                expected.delta.add(8, 'h', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 4") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(
-                    0, {
-                        { 'a', 'b', 'c', 'd' }, { 'e', 'f', 'g', 'h' }, { 'i', 'j', 'k', 'l' }, { 'm', 'n', 'o', 'p' }
-                    }, 1
-                );
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels(
-                    { 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 }
-                );
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'i', 4);
-                expected.delta.add(4, 'm', 5);
-                expected.delta.add(5, 'b', 6);
-                expected.delta.add(6, 'f', 7);
-                expected.delta.add(7, 'j', 8);
-                expected.delta.add(8, 'n', 9);
-                expected.delta.add(9, 'c', 10);
-                expected.delta.add(10, 'g', 11);
-                expected.delta.add(11, 'k', 12);
-                expected.delta.add(12, 'o', 13);
-                expected.delta.add(13, 'd', 14);
-                expected.delta.add(14, 'h', 15);
-                expected.delta.add(15, 'l', 16);
-                expected.delta.add(16, 'p', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-        }
-    }
-
-    SECTION("The target state is not specified.") {
-        Delta delta;
-        delta.add(0, 'w', 0);
-        delta.add(0, 'y', 1);
-        delta.add(1, 'x', 1);
-        delta.add(1, 'z', 0);
-
-        SECTION("levels.num_of_levels == 2") {
-            SECTION("word_part.size() == 1") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a' }, { 'b' } });
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0 } }, delta, { 0, 1 }, { 3 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'b', 3);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 2") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b' }, { 'c', 'd' } });
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0, 1, 0 } }, delta, { 0, 1 }, { 5 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'c', 3);
-                expected.delta.add(3, 'b', 4);
-                expected.delta.add(4, 'd', 5);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 4") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b', 'c', 'd' }, { 'e', 'f', 'g', 'h' } });
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0, 1, 0, 1, 0, 1, 0 } }, delta, { 0, 1 }, { 9 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'b', 4);
-                expected.delta.add(4, 'f', 5);
-                expected.delta.add(5, 'c', 6);
-                expected.delta.add(6, 'g', 7);
-                expected.delta.add(7, 'd', 8);
-                expected.delta.add(8, 'h', 9);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-        }
-
-        SECTION("levels.num_of_levels == 4") {
-            SECTION("word_part.size() == 1") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a' }, { 'b' }, { 'c' }, { 'd' } });
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels({ 4, { 0, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 5 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'b', 3);
-                expected.delta.add(3, 'c', 4);
-                expected.delta.add(4, 'd', 5);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 2") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(
-                    0, { { 'a', 'b' }, { 'c', 'd' }, { 'e', 'f' }, { 'g', 'h' } }
-                );
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels({ 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 9 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'c', 3);
-                expected.delta.add(3, 'e', 4);
-                expected.delta.add(4, 'g', 5);
-                expected.delta.add(5, 'b', 6);
-                expected.delta.add(6, 'd', 7);
-                expected.delta.add(7, 'f', 8);
-                expected.delta.add(8, 'h', 9);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 4") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(
-                    0, {
-                        { 'a', 'b', 'c', 'd' }, { 'e', 'f', 'g', 'h' }, { 'i', 'j', 'k', 'l' }, { 'm', 'n', 'o', 'p' }
-                    }
-                );
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels(
-                    { 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 17 }
-                );
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'i', 4);
-                expected.delta.add(4, 'm', 5);
-                expected.delta.add(5, 'b', 6);
-                expected.delta.add(6, 'f', 7);
-                expected.delta.add(7, 'j', 8);
-                expected.delta.add(8, 'n', 9);
-                expected.delta.add(9, 'c', 10);
-                expected.delta.add(10, 'g', 11);
-                expected.delta.add(11, 'k', 12);
-                expected.delta.add(12, 'o', 13);
-                expected.delta.add(13, 'd', 14);
-                expected.delta.add(14, 'h', 15);
-                expected.delta.add(15, 'l', 16);
-                expected.delta.add(16, 'p', 17);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("The lengths of word pats dont have the same length.") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, {});
-                State new_tgt = nft.insert_word_by_levels(
-                    0, { { 'a', 'b' }, { 'e', 'f', 'g', 'h' }, { 'i', 'j', 'k', 'l' }, {} }
-                );
-                nft.final.insert(new_tgt);
-
-                expected = Nft::with_levels(
-                    { 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0 } }, delta, { 0, 1 }, { 17 }
-                );
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'i', 4);
-                expected.delta.add(4, EPSILON, 5);
-                expected.delta.add(5, 'b', 6);
-                expected.delta.add(6, 'f', 7);
-                expected.delta.add(7, 'j', 8);
-                expected.delta.add(8, EPSILON, 9);
-                expected.delta.add(9, EPSILON, 10);
-                expected.delta.add(10, 'g', 11);
-                expected.delta.add(11, 'k', 12);
-                expected.delta.add(12, EPSILON, 13);
-                expected.delta.add(13, EPSILON, 14);
-                expected.delta.add(14, 'h', 15);
-                expected.delta.add(15, 'l', 16);
-                expected.delta.add(16, EPSILON, 17);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-        }
-    }
-
-    SECTION("The lengths of word parts dont have to match.") {
-        Delta delta;
-        delta.add(0, 'w', 0);
-        delta.add(0, 'y', 1);
-        delta.add(1, 'x', 1);
-        delta.add(1, 'z', 0);
-
-        SECTION("levels.num_of_levels == 2") {
-            SECTION("word_part.size() == 1") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { {}, { 'b' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, EPSILON, 2);
-                expected.delta.add(2, 'b', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 2") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b' }, { 'c' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'c', 3);
-                expected.delta.add(3, 'b', 4);
-                expected.delta.add(4, EPSILON, 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 4") {
-                nft = Nft::with_levels({ 2, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a', 'b', 'c', 'd' }, { 'e' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 2, { 0, 0, 1, 0, 1, 0, 1, 0, 1 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'b', 4);
-                expected.delta.add(4, EPSILON, 5);
-                expected.delta.add(5, 'c', 6);
-                expected.delta.add(6, EPSILON, 7);
-                expected.delta.add(7, 'd', 8);
-                expected.delta.add(8, EPSILON, 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-        }
-
-        SECTION("levels.num_of_levels == 4") {
-            SECTION("word_part.size() == 1") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a' }, {}, { 'c' }, {} }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 4, { 0, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, EPSILON, 3);
-                expected.delta.add(3, 'c', 4);
-                expected.delta.add(4, EPSILON, 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 2") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(0, { { 'a' }, { 'c', 'd' }, {}, { 'g' } }, 1);
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels({ 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 });
-                expected.delta.add(0, 'a', 2);
-                expected.delta.add(2, 'c', 3);
-                expected.delta.add(3, EPSILON, 4);
-                expected.delta.add(4, 'g', 5);
-                expected.delta.add(5, EPSILON, 6);
-                expected.delta.add(6, 'd', 7);
-                expected.delta.add(7, EPSILON, 8);
-                expected.delta.add(8, EPSILON, 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-
-            SECTION("word_part.size() == 4") {
-                nft = Nft::with_levels({ 4, { 0, 0 } }, delta, { 0, 1 }, { 0, 1 });
-                State new_tgt = nft.insert_word_by_levels(
-                    0, { {}, { 'e', 'f' }, { 'i', 'j', 'k', 'l' }, { 'm', 'n', 'o', 'p' } }, 1
-                );
-                CHECK(new_tgt == 1);
-
-                expected = Nft::with_levels(
-                    { 4, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 } }, delta, { 0, 1 }, { 0, 1 }
-                );
-                expected.delta.add(0, EPSILON, 2);
-                expected.delta.add(2, 'e', 3);
-                expected.delta.add(3, 'i', 4);
-                expected.delta.add(4, 'm', 5);
-                expected.delta.add(5, EPSILON, 6);
-                expected.delta.add(6, 'f', 7);
-                expected.delta.add(7, 'j', 8);
-                expected.delta.add(8, 'n', 9);
-                expected.delta.add(9, EPSILON, 10);
-                expected.delta.add(10, EPSILON, 11);
-                expected.delta.add(11, 'k', 12);
-                expected.delta.add(12, 'o', 13);
-                expected.delta.add(13, EPSILON, 14);
-                expected.delta.add(14, EPSILON, 15);
-                expected.delta.add(15, 'l', 16);
-                expected.delta.add(16, 'p', 1);
-
-                CHECK(are_equivalent(nft, expected));
-            }
-        }
-    }
-
-    SECTION("begin insertion from levels != 0") {
-        SECTION("from level 1") {
-            nft = Nft{};
-            nft.levels.num_of_levels = 3;
-            const State state_lvl1{ nft.add_state_with_level(1) };
-            const State target{ nft.insert_word_by_levels(state_lvl1, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
-            CHECK(nft.levels[target] == 1);
-            expected = Nft{};
-            expected.levels.num_of_levels = 3;
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'd', 3);
-            expected.delta.add(3, 'f', 4);
-            expected.delta.add(4, 'b', 5);
-            expected.delta.add(5, 'e', 6);
-            expected.delta.add(6, EPSILON, 7);
-            expected.delta.add(7, 'c', 8);
-            expected.delta.add(8, EPSILON, 9);
-            expected.delta.add(9, EPSILON, 10);
-            expected.levels.set({ 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1 });
-            CHECK(are_equivalent(nft, expected));
-        }
-
-        SECTION("from level 2") {
-            nft = Nft{};
-            nft.levels.num_of_levels = 3;
-            const State state_lvl2{ nft.add_state_with_level(2) };
-            const State target{ nft.insert_word_by_levels(state_lvl2, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
-            CHECK(nft.levels[target] == 2);
-            expected = Nft{};
-            expected.levels.num_of_levels = 3;
-            expected.delta.add(1, 'a', 2);
-            expected.delta.add(2, 'd', 3);
-            expected.delta.add(3, 'f', 4);
-            expected.delta.add(4, 'b', 5);
-            expected.delta.add(5, 'e', 6);
-            expected.delta.add(6, EPSILON, 7);
-            expected.delta.add(7, 'c', 8);
-            expected.delta.add(8, EPSILON, 9);
-            expected.delta.add(9, EPSILON, 10);
-            expected.levels.set({ 0, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2 });
-            CHECK(are_equivalent(nft, expected));
-        }
-    }
+	Nft nft, expected;
+
+	SECTION("Inserting a word between two states (both initial and final) with empty delta.") {
+		Delta delta{};
+
+		SECTION("levels.num_of_levels == 1 && word_part.size() == 1") {
+			nft = Nft::with_levels({1, {0, 0}}, delta, {0, 1}, {0, 1});
+			State new_tgt = nft.insert_word_by_levels(0, {{'a'}}, 1);
+			CHECK(new_tgt == 1);
+
+			expected = Nft::with_levels({1, {0, 0}}, delta, {0, 1}, {0, 1});
+			expected.delta.add(0, 'a', 1);
+
+			CHECK(are_equivalent(nft, expected));
+		}
+
+		SECTION("levels.num_of_levels == 1 && word_part.size() == 2") {
+			nft = Nft::with_levels({1, {0, 0}}, delta, {0, 1}, {0, 1});
+			State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b'}}, 1);
+			CHECK(new_tgt == 1);
+
+			expected = Nft::with_levels({1, {0, 0, 0}}, delta, {0, 1}, {0, 1});
+			expected.delta.add(0, 'a', 2);
+			expected.delta.add(2, 'b', 1);
+
+			CHECK(are_equivalent(nft, expected));
+		}
+
+		SECTION("levels.num_of_levels == 1 && word_part.size() == 4") {
+			nft = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0, 1}, {0, 1});
+			State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b', 'c', 'd'}}, 1);
+			CHECK(new_tgt == 1);
+
+			expected = Nft::with_levels({1, {0, 0, 0, 0, 0}}, delta, {0, 1}, {0, 1});
+			expected.delta.add(0, 'a', 2);
+			expected.delta.add(2, 'b', 3);
+			expected.delta.add(3, 'c', 4);
+			expected.delta.add(4, 'd', 1);
+
+			CHECK(are_equivalent(nft, expected));
+		}
+	}
+
+	SECTION("The source sate and target state are in delta.") {
+		Delta delta;
+		delta.add(0, 'w', 0);
+		delta.add(0, 'y', 1);
+		delta.add(1, 'x', 1);
+		delta.add(1, 'z', 0);
+		SECTION("levels.num_of_levels == 2") {
+			SECTION("word_part.size() == 1") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a'}, {'b'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({2, {0, 0, 1}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'b', 1);
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 2") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b'}, {'c', 'd'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0, 1}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'c', 3);
+				expected.delta.add(3, 'b', 4);
+				expected.delta.add(4, 'd', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 4") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0, 1, 0, 1, 0, 1}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'b', 4);
+				expected.delta.add(4, 'f', 5);
+				expected.delta.add(5, 'c', 6);
+				expected.delta.add(6, 'g', 7);
+				expected.delta.add(7, 'd', 8);
+				expected.delta.add(8, 'h', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+		}
+
+		SECTION("levels.num_of_levels == 4") {
+			SECTION("word_part.size() == 1") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a'}, {'b'}, {'c'}, {'d'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({4, {0, 0, 1, 2, 3}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'b', 3);
+				expected.delta.add(3, 'c', 4);
+				expected.delta.add(4, 'd', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 2") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'c', 3);
+				expected.delta.add(3, 'e', 4);
+				expected.delta.add(4, 'g', 5);
+				expected.delta.add(5, 'b', 6);
+				expected.delta.add(6, 'd', 7);
+				expected.delta.add(7, 'f', 8);
+				expected.delta.add(8, 'h', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 4") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(
+					0, {{'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'}}, 1
+				);
+				CHECK(new_tgt == 1);
+
+				expected =
+					Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'i', 4);
+				expected.delta.add(4, 'm', 5);
+				expected.delta.add(5, 'b', 6);
+				expected.delta.add(6, 'f', 7);
+				expected.delta.add(7, 'j', 8);
+				expected.delta.add(8, 'n', 9);
+				expected.delta.add(9, 'c', 10);
+				expected.delta.add(10, 'g', 11);
+				expected.delta.add(11, 'k', 12);
+				expected.delta.add(12, 'o', 13);
+				expected.delta.add(13, 'd', 14);
+				expected.delta.add(14, 'h', 15);
+				expected.delta.add(15, 'l', 16);
+				expected.delta.add(16, 'p', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+		}
+	}
+
+	SECTION("The target state is not specified.") {
+		Delta delta;
+		delta.add(0, 'w', 0);
+		delta.add(0, 'y', 1);
+		delta.add(1, 'x', 1);
+		delta.add(1, 'z', 0);
+
+		SECTION("levels.num_of_levels == 2") {
+			SECTION("word_part.size() == 1") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a'}, {'b'}});
+				nft.final.insert(new_tgt);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0}}, delta, {0, 1}, {3});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'b', 3);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 2") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b'}, {'c', 'd'}});
+				nft.final.insert(new_tgt);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0, 1, 0}}, delta, {0, 1}, {5});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'c', 3);
+				expected.delta.add(3, 'b', 4);
+				expected.delta.add(4, 'd', 5);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 4") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}});
+				nft.final.insert(new_tgt);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0, 1, 0, 1, 0, 1, 0}}, delta, {0, 1}, {9});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'b', 4);
+				expected.delta.add(4, 'f', 5);
+				expected.delta.add(5, 'c', 6);
+				expected.delta.add(6, 'g', 7);
+				expected.delta.add(7, 'd', 8);
+				expected.delta.add(8, 'h', 9);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+		}
+
+		SECTION("levels.num_of_levels == 4") {
+			SECTION("word_part.size() == 1") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a'}, {'b'}, {'c'}, {'d'}});
+				nft.final.insert(new_tgt);
+
+				expected = Nft::with_levels({4, {0, 0, 1, 2, 3, 0}}, delta, {0, 1}, {5});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'b', 3);
+				expected.delta.add(3, 'c', 4);
+				expected.delta.add(4, 'd', 5);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 2") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'}});
+				nft.final.insert(new_tgt);
+
+				expected = Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3, 0}}, delta, {0, 1}, {9});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'c', 3);
+				expected.delta.add(3, 'e', 4);
+				expected.delta.add(4, 'g', 5);
+				expected.delta.add(5, 'b', 6);
+				expected.delta.add(6, 'd', 7);
+				expected.delta.add(7, 'f', 8);
+				expected.delta.add(8, 'h', 9);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 4") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt = nft.insert_word_by_levels(
+					0, {{'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'}}
+				);
+				nft.final.insert(new_tgt);
+
+				expected =
+					Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0}}, delta, {0, 1}, {17});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'i', 4);
+				expected.delta.add(4, 'm', 5);
+				expected.delta.add(5, 'b', 6);
+				expected.delta.add(6, 'f', 7);
+				expected.delta.add(7, 'j', 8);
+				expected.delta.add(8, 'n', 9);
+				expected.delta.add(9, 'c', 10);
+				expected.delta.add(10, 'g', 11);
+				expected.delta.add(11, 'k', 12);
+				expected.delta.add(12, 'o', 13);
+				expected.delta.add(13, 'd', 14);
+				expected.delta.add(14, 'h', 15);
+				expected.delta.add(15, 'l', 16);
+				expected.delta.add(16, 'p', 17);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("The lengths of word pats dont have the same length.") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {});
+				State new_tgt =
+					nft.insert_word_by_levels(0, {{'a', 'b'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {}});
+				nft.final.insert(new_tgt);
+
+				expected =
+					Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0}}, delta, {0, 1}, {17});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'i', 4);
+				expected.delta.add(4, EPSILON, 5);
+				expected.delta.add(5, 'b', 6);
+				expected.delta.add(6, 'f', 7);
+				expected.delta.add(7, 'j', 8);
+				expected.delta.add(8, EPSILON, 9);
+				expected.delta.add(9, EPSILON, 10);
+				expected.delta.add(10, 'g', 11);
+				expected.delta.add(11, 'k', 12);
+				expected.delta.add(12, EPSILON, 13);
+				expected.delta.add(13, EPSILON, 14);
+				expected.delta.add(14, 'h', 15);
+				expected.delta.add(15, 'l', 16);
+				expected.delta.add(16, EPSILON, 17);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+		}
+	}
+
+	SECTION("The lengths of word parts dont have to match.") {
+		Delta delta;
+		delta.add(0, 'w', 0);
+		delta.add(0, 'y', 1);
+		delta.add(1, 'x', 1);
+		delta.add(1, 'z', 0);
+
+		SECTION("levels.num_of_levels == 2") {
+			SECTION("word_part.size() == 1") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{}, {'b'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({2, {0, 0, 1}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, EPSILON, 2);
+				expected.delta.add(2, 'b', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 2") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b'}, {'c'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0, 1}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'c', 3);
+				expected.delta.add(3, 'b', 4);
+				expected.delta.add(4, EPSILON, 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 4") {
+				nft = Nft::with_levels({2, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a', 'b', 'c', 'd'}, {'e'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({2, {0, 0, 1, 0, 1, 0, 1, 0, 1}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'b', 4);
+				expected.delta.add(4, EPSILON, 5);
+				expected.delta.add(5, 'c', 6);
+				expected.delta.add(6, EPSILON, 7);
+				expected.delta.add(7, 'd', 8);
+				expected.delta.add(8, EPSILON, 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+		}
+
+		SECTION("levels.num_of_levels == 4") {
+			SECTION("word_part.size() == 1") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a'}, {}, {'c'}, {}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({4, {0, 0, 1, 2, 3}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, EPSILON, 3);
+				expected.delta.add(3, 'c', 4);
+				expected.delta.add(4, EPSILON, 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 2") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt = nft.insert_word_by_levels(0, {{'a'}, {'c', 'd'}, {}, {'g'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected = Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, 'a', 2);
+				expected.delta.add(2, 'c', 3);
+				expected.delta.add(3, EPSILON, 4);
+				expected.delta.add(4, 'g', 5);
+				expected.delta.add(5, EPSILON, 6);
+				expected.delta.add(6, 'd', 7);
+				expected.delta.add(7, EPSILON, 8);
+				expected.delta.add(8, EPSILON, 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+
+			SECTION("word_part.size() == 4") {
+				nft = Nft::with_levels({4, {0, 0}}, delta, {0, 1}, {0, 1});
+				State new_tgt =
+					nft.insert_word_by_levels(0, {{}, {'e', 'f'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'}}, 1);
+				CHECK(new_tgt == 1);
+
+				expected =
+					Nft::with_levels({4, {0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3}}, delta, {0, 1}, {0, 1});
+				expected.delta.add(0, EPSILON, 2);
+				expected.delta.add(2, 'e', 3);
+				expected.delta.add(3, 'i', 4);
+				expected.delta.add(4, 'm', 5);
+				expected.delta.add(5, EPSILON, 6);
+				expected.delta.add(6, 'f', 7);
+				expected.delta.add(7, 'j', 8);
+				expected.delta.add(8, 'n', 9);
+				expected.delta.add(9, EPSILON, 10);
+				expected.delta.add(10, EPSILON, 11);
+				expected.delta.add(11, 'k', 12);
+				expected.delta.add(12, 'o', 13);
+				expected.delta.add(13, EPSILON, 14);
+				expected.delta.add(14, EPSILON, 15);
+				expected.delta.add(15, 'l', 16);
+				expected.delta.add(16, 'p', 1);
+
+				CHECK(are_equivalent(nft, expected));
+			}
+		}
+	}
+
+	SECTION("begin insertion from levels != 0") {
+		SECTION("from level 1") {
+			nft = Nft{};
+			nft.levels.num_of_levels = 3;
+			const State state_lvl1{nft.add_state_with_level(1)};
+			const State target{nft.insert_word_by_levels(state_lvl1, {{'a', 'b', 'c'}, {'d', 'e'}, {'f'}})};
+			CHECK(nft.levels[target] == 1);
+			expected = Nft{};
+			expected.levels.num_of_levels = 3;
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'd', 3);
+			expected.delta.add(3, 'f', 4);
+			expected.delta.add(4, 'b', 5);
+			expected.delta.add(5, 'e', 6);
+			expected.delta.add(6, EPSILON, 7);
+			expected.delta.add(7, 'c', 8);
+			expected.delta.add(8, EPSILON, 9);
+			expected.delta.add(9, EPSILON, 10);
+			expected.levels.set({0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1});
+			CHECK(are_equivalent(nft, expected));
+		}
+
+		SECTION("from level 2") {
+			nft = Nft{};
+			nft.levels.num_of_levels = 3;
+			const State state_lvl2{nft.add_state_with_level(2)};
+			const State target{nft.insert_word_by_levels(state_lvl2, {{'a', 'b', 'c'}, {'d', 'e'}, {'f'}})};
+			CHECK(nft.levels[target] == 2);
+			expected = Nft{};
+			expected.levels.num_of_levels = 3;
+			expected.delta.add(1, 'a', 2);
+			expected.delta.add(2, 'd', 3);
+			expected.delta.add(3, 'f', 4);
+			expected.delta.add(4, 'b', 5);
+			expected.delta.add(5, 'e', 6);
+			expected.delta.add(6, EPSILON, 7);
+			expected.delta.add(7, 'c', 8);
+			expected.delta.add(8, EPSILON, 9);
+			expected.delta.add(9, EPSILON, 10);
+			expected.levels.set({0, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2});
+			CHECK(are_equivalent(nft, expected));
+		}
+	}
 }
 
 TEST_CASE("mata::nft::Nft::apply()") {
-    SECTION("replace reluctant regex NFT") {
-        Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
-        mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{ mata::applications::strings::replace::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
-        Nft nft_applied_nfa{ nft.apply(nfa, 0, true, mata::nft::JumpMode::NoJump) };
-        Nfa result{ nft_applied_nfa.to_nfa_move() };
-        result.remove_epsilon();
-        result.trim();
-        Nfa expected{};
-        expected.initial.insert(0);
-        expected.delta.add(0, 'd', 1);
-        expected.delta.add(1, 'f', 2);
-        expected.delta.add(2, 'e', 3);
-        expected.final.insert(3);
-        CHECK(nfa::are_equivalent(result, expected));
-    }
+	SECTION("replace reluctant regex NFT") {
+		Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
+		mata::EnumAlphabet alphabet{'a', 'b', 'c', 'd', 'e', 'f'};
+		Nft nft{mata::applications::strings::replace::replace_reluctant_regex("a+b+c", {'f'}, &alphabet)};
+		Nft nft_applied_nfa{nft.apply(nfa, 0, true, mata::nft::JumpMode::NoJump)};
+		Nfa result{nft_applied_nfa.to_nfa_move()};
+		result.remove_epsilon();
+		result.trim();
+		Nfa expected{};
+		expected.initial.insert(0);
+		expected.delta.add(0, 'd', 1);
+		expected.delta.add(1, 'f', 2);
+		expected.delta.add(2, 'e', 3);
+		expected.final.insert(3);
+		CHECK(nfa::are_equivalent(result, expected));
+	}
 
-    SECTION("replace reluctant literal NFT") {
-        Nfa nfa = nfa::builder::create_from_regex("dabce");
-        mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
-        Nft nft{ mata::applications::strings::replace::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
-        Nft nft_applied_nfa{ nft.apply(nfa, 0, true, JumpMode::NoJump) };
-        Nfa result{ nft_applied_nfa.to_nfa_move() };
-        result.remove_epsilon();
-        result.trim();
-        Nfa expected{};
-        expected.initial.insert(0);
-        expected.delta.add(0, 'd', 1);
-        expected.delta.add(1, 'f', 2);
-        expected.delta.add(2, 'e', 3);
-        expected.final.insert(3);
-        CHECK(nfa::are_equivalent(result, expected));
-    }
+	SECTION("replace reluctant literal NFT") {
+		Nfa nfa = nfa::builder::create_from_regex("dabce");
+		mata::EnumAlphabet alphabet{'a', 'b', 'c', 'd', 'e', 'f'};
+		Nft nft{mata::applications::strings::replace::replace_reluctant_literal({'a', 'b', 'c'}, {'f'}, &alphabet)};
+		Nft nft_applied_nfa{nft.apply(nfa, 0, true, JumpMode::NoJump)};
+		Nfa result{nft_applied_nfa.to_nfa_move()};
+		result.remove_epsilon();
+		result.trim();
+		Nfa expected{};
+		expected.initial.insert(0);
+		expected.delta.add(0, 'd', 1);
+		expected.delta.add(1, 'f', 2);
+		expected.delta.add(2, 'e', 3);
+		expected.final.insert(3);
+		CHECK(nfa::are_equivalent(result, expected));
+	}
 
-    SECTION("apply with 5 tapes") {
-        Nfa nfa = nfa::builder::create_from_regex("(a|b)*");
-        Nft nft{ Nft::with_levels({ 5, { 0, 0 } }, 1, { 0 }, { 0 }) };
-        nft.insert_identity(0, 'a');
-        CHECK(nft.apply(nfa, 0, true, JumpMode::NoJump).levels.num_of_levels == 4);
-        CHECK(nft.apply(nfa, 3, false, JumpMode::NoJump).levels.num_of_levels == 5);
-    }
+	SECTION("apply with 5 tapes") {
+		Nfa nfa = nfa::builder::create_from_regex("(a|b)*");
+		Nft nft{Nft::with_levels({5, {0, 0}}, 1, {0}, {0})};
+		nft.insert_identity(0, 'a');
+		CHECK(nft.apply(nfa, 0, true, JumpMode::NoJump).levels.num_of_levels == 4);
+		CHECK(nft.apply(nfa, 3, false, JumpMode::NoJump).levels.num_of_levels == 5);
+	}
 }
 
 TEST_CASE("mata::nft::symbols_match") {
-    CHECK(symbols_match('a', 'a'));
-    CHECK(not symbols_match('a', 'b'));
-    CHECK(symbols_match(EPSILON, EPSILON));
-    CHECK(not symbols_match('a', EPSILON));
-    CHECK(not symbols_match(EPSILON, 'b'));
-    CHECK(symbols_match(DONT_CARE, 'b'));
-    CHECK(symbols_match('b', DONT_CARE));
-    CHECK(not symbols_match(DONT_CARE, EPSILON));
-    CHECK(not symbols_match(EPSILON, DONT_CARE));
+	CHECK(symbols_match('a', 'a'));
+	CHECK(not symbols_match('a', 'b'));
+	CHECK(symbols_match(EPSILON, EPSILON));
+	CHECK(not symbols_match('a', EPSILON));
+	CHECK(not symbols_match(EPSILON, 'b'));
+	CHECK(symbols_match(DONT_CARE, 'b'));
+	CHECK(symbols_match('b', DONT_CARE));
+	CHECK(not symbols_match(DONT_CARE, EPSILON));
+	CHECK(not symbols_match(EPSILON, DONT_CARE));
 }
