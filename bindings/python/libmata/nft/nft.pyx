@@ -177,10 +177,9 @@ cdef class Levels:
 
     def map_levels_to(self, states) -> list[set[State]]:
         """Get a mapping of levels to sets of states from `states`."""
-        result = [set() for _ in range(self.num_of_levels)]
-        for state in states:
-            result[self[state]].add(state)
-        return result
+        cdef StateSet c_states = _c_state_set(states)
+        cdef vector[StateSet] result = self.thisptr.map_levels_to(c_states)
+        return [set(level_states.to_vector()) for level_states in result]
 
     def next_level_after(self, Level level) -> Level:
         """Get the next level that should follow after `level`."""
@@ -201,7 +200,7 @@ cdef class Levels:
     @staticmethod
     def can_follow(source_level: Level, target_level: Level) -> bool:
         """Check whether a transition can be made from a state with `source_level` to a state with `target_level`."""
-        return target_level > source_level or target_level == 0
+        return CLevels.can_follow(<Level>source_level, <Level>target_level)
 
     def can_follow_for_states(self, State source, State target) -> bool:
         """Check whether a transition can be made from `source` to `target`."""

@@ -66,6 +66,10 @@ cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
         optional[Level] get_minimal_next_level_of(StateSet&) except +
         bool can_follow_for_states(State, State)
         optional[size_t] num_of_levels_used()
+        vector[StateSet] map_levels_to(StateSet&)
+
+        @staticmethod
+        bool can_follow(Level, Level)
 
 
 cdef extern from "mata/nft/delta.hh" namespace "mata::nft":
