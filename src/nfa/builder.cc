@@ -6,6 +6,7 @@
 #include "mata/nfa/builder.hh"
 #include "mata/parser/mintermization.hh"
 #include "mata/parser/re2parser.hh"
+#include "mata/utils/assert.hh"
 
 #include <cmath>
 #include <fstream>
@@ -17,7 +18,7 @@ using mata::nfa::Nfa;
 
 Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map) {
 	Nfa aut;
-	assert(nullptr != alphabet);
+	MATA_ASSERT(nullptr != alphabet);
 
 	if (parsec.type != TYPE_NFA) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFA + "\"");
@@ -80,7 +81,7 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 
 Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map) {
 	Nfa aut;
-	assert(nullptr != alphabet);
+	MATA_ASSERT(nullptr != alphabet);
 
 	if (!inter_aut.is_nfa()) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFA + "\"");

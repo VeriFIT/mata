@@ -9,6 +9,7 @@
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/types.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 
 #include <algorithm>
@@ -247,7 +248,7 @@ Delta::Transitions::const_iterator::const_iterator(const Delta& delta, const Sta
 }
 
 Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator++() {
-	assert(delta_->begin() != delta_->end());
+	MATA_ASSERT(delta_->begin() != delta_->end());
 
 	++symbol_post_it_;
 	if (symbol_post_it_ != state_post_it_->targets.end()) {

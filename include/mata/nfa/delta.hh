@@ -8,6 +8,7 @@
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/synchronized-iterator.hh"
 
@@ -405,7 +406,7 @@ class Delta {
 	 *  num_of_states() + 1.
 	 */
 	void allocate(const size_t num_of_states) {
-		assert(num_of_states >= this->num_of_states());
+		MATA_ASSERT(num_of_states >= this->num_of_states());
 		state_posts_.resize(num_of_states);
 	}
 

@@ -15,6 +15,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/utils/sparse-set.hh"
 #include <mata/simlib/explicit_lts.hh>
+#include <mata/utils/assert.hh>
 
 using std::tie;
 
@@ -646,7 +647,7 @@ bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
 					// Also set that tgt_state was accessed from state.
 					paths[target] = state;
 				} else {
-					assert(haskey(paths, target)); /* Invariant. */
+					MATA_ASSERT(haskey(paths, target)); /* Invariant. */
 				}
 			}
 		}
@@ -932,8 +933,8 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 		// The automaton is trivially minimal.
 		return Nfa{dfa_trimmed};
 	}
-	assert(dfa_trimmed.is_deterministic());
-	assert(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
+	MATA_ASSERT(dfa_trimmed.is_deterministic());
+	MATA_ASSERT(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
 
 	// Initialize equivalence classes. The initial partition is {Q}.
 	RefinablePartition<State> brp(dfa_trimmed.num_of_states());
@@ -967,7 +968,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	 */
 	auto split_block = [&](const size_t b) {
 		// touched_splitters has been moved to a higher scope to avoid multiple constructions/destructions.
-		assert(touched_splitters.empty());
+		MATA_ASSERT(touched_splitters.empty());
 		size_t b_prime = brp.split(b); // One block will keep the old name 'b'.
 		if (b_prime == RefinablePartition<size_t>::no_split) {
 			// All or no states in the block were marked (touched) during the backpropagation.
@@ -1030,14 +1031,14 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	}
 
 	// Construct the minimized automaton using equivalence classes (BRP).
-	assert(dfa_trimmed.initial.size() == 1);
+	MATA_ASSERT(dfa_trimmed.initial.size() == 1);
 	Nfa result(brp.num_of_sets, {brp.set_idx[*dfa_trimmed.initial.begin()]}, {});
 	for (size_t block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
 		const State q = brp.get_first(block_idx);
 		if (dfa_trimmed.final.contains(q)) { result.final.insert(block_idx); }
 		StatePost& mut_state_post = result.delta.mutable_state_post(block_idx);
 		for (const SymbolPost& symbol_post : dfa_trimmed.delta[q]) {
-			assert(symbol_post.targets.size() == 1);
+			MATA_ASSERT(symbol_post.targets.size() == 1);
 			const State target = brp.set_idx[*symbol_post.targets.begin()];
 			mut_state_post.push_back(SymbolPost{symbol_post.symbol, StateSet{target}});
 		}
@@ -1085,10 +1086,10 @@ Nfa mata::nfa::intersection(
 Nfa mata::nfa::union_nondet(const Nfa& lhs, const Nfa& rhs) { return Nfa{lhs}.unite_nondet_with(rhs); }
 
 Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
-	assert(lhs.is_deterministic());
-	assert(rhs.is_deterministic());
-	assert(lhs.is_complete());
-	assert(rhs.is_complete());
+	MATA_ASSERT(lhs.is_deterministic());
+	MATA_ASSERT(rhs.is_deterministic());
+	MATA_ASSERT(lhs.is_complete());
+	MATA_ASSERT(rhs.is_complete());
 	return product(lhs, rhs, ProductFinalStateCondition::Or, EPSILON);
 }
 
@@ -1513,7 +1514,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 		auto symbols_it{symbols.begin()};
 		while (sync_it_advanced || symbols_it != symbols_end) {
 			if (!sync_it_advanced) {
-				assert(symbols_it != symbols_end);
+				MATA_ASSERT(symbols_it != symbols_end);
 				// There are no more transitions from the 'orig_states' but there is a symbol from the 'symbols'. Make
 				//  the complemented NFA complete by adding a transition to a sink state. We can now return the access
 				//  word for the sink state.
@@ -1521,7 +1522,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 				continue_complementation = false;
 				break;
 			}
-			assert(sync_it_advanced);
+			MATA_ASSERT(sync_it_advanced);
 			const std::vector<Iterator>& orig_symbol_posts{synchronized_iterator.get_current()};
 			const Symbol symbol_advanced_to{(*orig_symbol_posts.begin())->symbol};
 			StateSet orig_targets{synchronized_iterator.unify_targets()};
@@ -1543,7 +1544,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 				}
 				nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
 			} else {
-				assert(symbol_advanced_to > *symbols_it);
+				MATA_ASSERT(symbol_advanced_to > *symbols_it);
 				// There are more transitions from the 'orig_states', but there is a missing transition over
 				//  '*symbols_it'. Make the complemented NFA complete by adding a transition to a sink state. We can now
 				//  return the access word for the sink state.

@@ -4,9 +4,8 @@
  * It transforms an automaton with a bitvector formula used a symbol to mintermized version of the automaton.
  */
 
-#include <cassert>
-
 #include "mata/parser/mintermization.hh"
+#include "mata/utils/assert.hh"
 
 #include <ranges>
 
@@ -17,7 +16,7 @@ const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 	std::vector<const mata::FormulaGraph*> worklist{node};
 	while (!worklist.empty()) {
 		const auto act_node = worklist.back();
-		assert(act_node != nullptr);
+		MATA_ASSERT(act_node != nullptr);
 		worklist.pop_back();
 		if (act_node->children.size() != 2) { continue; }
 
@@ -43,13 +42,13 @@ const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 } // namespace
 
 void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut& aut) {
-	assert(aut.is_nfa());
+	MATA_ASSERT(aut.is_nfa());
 
 	for (const auto& trans : aut.transitions) {
 		// Foreach transition create a BDD
 		const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
-		assert(
-			(symbol_part.node.is_operator() || symbol_part.children.empty()) &&
+		MATA_ASSERT(
+			symbol_part.node.is_operator() || symbol_part.children.empty(),
 			"Symbol part must be either formula or single symbol"
 		);
 		const BDD bdd = graph_to_bdd_nfa(symbol_part);
@@ -60,7 +59,7 @@ void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut& aut) {
 }
 
 void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut& aut) {
-	assert(aut.is_afa());
+	MATA_ASSERT(aut.is_afa());
 
 	for (const auto& [formula_node, formula_graph] : aut.transitions) {
 		lhs_to_disjuncts_and_states_[&formula_node] = std::vector<DisjunctStatesPair>();
@@ -94,7 +93,7 @@ void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut& aut) {
 								 OptionalBdd(bdd_mng_.bddOne())
 															: // transition from state to states -> add true as symbol
 								 graph_to_bdd_afa(*disjunct_lhs);
-			assert(bdd.type == OptionalBdd::Type::BddE);
+			MATA_ASSERT(bdd.type == OptionalBdd::Type::BddE);
 			if (bdd.val.IsZero()) { continue; }
 			trans_to_bddvar_[disjunct_lhs] = bdd.val;
 			bdds_.insert(bdd.val);
@@ -134,25 +133,25 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 		}
 	} else if (node.is_operator()) {
 		if (node.operator_type == FormulaNode::OperatorType::And) {
-			assert(graph.children.size() == 2);
+			MATA_ASSERT(graph.children.size() == 2);
 			const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
 			const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
 			return op1 * op2;
 		} else if (node.operator_type == FormulaNode::OperatorType::Or) {
-			assert(graph.children.size() == 2);
+			MATA_ASSERT(graph.children.size() == 2);
 			const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
 			const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
 			return op1 + op2;
 		} else if (node.operator_type == FormulaNode::OperatorType::Neg) {
-			assert(graph.children.size() == 1);
+			MATA_ASSERT(graph.children.size() == 1);
 			const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
 			return !op1;
 		} else {
-			assert(false && "Unknown type of operation. It should conjunction, disjunction, or negation.");
+			MATA_ASSERT(false, "Unknown type of operation. It should conjunction, disjunction, or negation.");
 		}
 	}
 
-	assert(false);
+	MATA_ASSERT(false);
 	return {};
 }
 
@@ -167,25 +166,25 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 		}
 	} else if (node.is_operator()) {
 		if (node.operator_type == FormulaNode::OperatorType::And) {
-			assert(graph.children.size() == 2);
+			MATA_ASSERT(graph.children.size() == 2);
 			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
 			const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
 			return op1 * op2;
 		} else if (node.operator_type == FormulaNode::OperatorType::Or) {
-			assert(graph.children.size() == 2);
+			MATA_ASSERT(graph.children.size() == 2);
 			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
 			const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
 			return op1 + op2;
 		} else if (node.operator_type == FormulaNode::OperatorType::Neg) {
-			assert(graph.children.size() == 1);
+			MATA_ASSERT(graph.children.size() == 1);
 			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
 			return !op1;
 		} else {
-			assert(false);
+			MATA_ASSERT(false);
 		}
 	}
 
-	assert(false);
+	MATA_ASSERT(false);
 	return {};
 }
 

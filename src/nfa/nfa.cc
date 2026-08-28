@@ -15,6 +15,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/utils/sparse-set.hh"
 #include <mata/simlib/explicit_lts.hh>
+#include <mata/utils/assert.hh>
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -760,9 +761,9 @@ void Nfa::add_transition(
 }
 
 State Nfa::insert_word(const State source, const Word& word, const State target) {
-	assert(!word.empty());
-	assert(source < num_of_states());
-	assert(target < num_of_states());
+	MATA_ASSERT(!word.empty());
+	MATA_ASSERT(source < num_of_states());
+	MATA_ASSERT(target < num_of_states());
 
 	const size_t word_len = word.size();
 	if (word_len == 1) {
@@ -903,12 +904,12 @@ Nfa Nfa::decode_utf8() const {
 				for (const SymbolPost& sp2 : this->delta[q2]) {
 					const Symbol s2 = sp2.symbol;
 					if ((s1 & 0xE0) == 0xC0) {
-						assert((s2 & 0xC0) == 0x80);
+						MATA_ASSERT((s2 & 0xC0) == 0x80);
 						const Symbol symbol = ((s1 & 0x1F) << 6) | (s2 & 0x3F);
 						if (symbol < 0x80) {
 							continue; // Invalid UTF-8 sequence
 						}
-						assert(symbol <= 0x7'FF);
+						MATA_ASSERT(symbol <= 0x7'FF);
 						add_to_state_post(q1_state_post, SymbolPost{symbol, sp2.targets}, is_nondet1);
 						push_state_set(sp2.targets);
 						continue;
@@ -919,12 +920,12 @@ Nfa Nfa::decode_utf8() const {
 						for (const SymbolPost& sp3 : this->delta[q3]) {
 							const Symbol s3 = sp3.symbol;
 							if ((s1 & 0xF0) == 0xE0) {
-								assert((s3 & 0xC0) == 0x80);
+								MATA_ASSERT((s3 & 0xC0) == 0x80);
 								const Symbol symbol = ((s1 & 0x0F) << 12) | ((s2 & 0x3F) << 6) | (s3 & 0x3F);
 								if (symbol < 0x8'00) {
 									continue; // Invalid UTF-8 sequence
 								}
-								assert(symbol <= 0xFF'FF);
+								MATA_ASSERT(symbol <= 0xFF'FF);
 								add_to_state_post(q1_state_post, SymbolPost{symbol, sp3.targets}, is_nondet2);
 								push_state_set(sp3.targets);
 								continue;
@@ -934,8 +935,8 @@ Nfa Nfa::decode_utf8() const {
 							for (const State q4 : sp3.targets) {
 								for (const SymbolPost& sp4 : this->delta[q4]) {
 									const Symbol s4 = sp4.symbol;
-									assert((s1 & 0xF8) == 0xF0);
-									assert((s4 & 0xC0) == 0x80);
+									MATA_ASSERT((s1 & 0xF8) == 0xF0);
+									MATA_ASSERT((s4 & 0xC0) == 0x80);
 									const Symbol symbol =
 										((s1 & 0x07) << 18) | ((s2 & 0x3F) << 12) | ((s3 & 0x3F) << 6) | (s4 & 0x3F);
 									if (symbol < 0x1'00'00 || symbol > 0x10'FF'FF) {

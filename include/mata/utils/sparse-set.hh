@@ -16,12 +16,12 @@
 #ifndef LIBMATA_SPARSE_SET_HH
 #define LIBMATA_SPARSE_SET_HH
 
-#include <cassert>
 #include <concepts>
 #include <iterator>
 #include <type_traits>
 #include <vector>
 
+#include "assert.hh"
 #include "ord-vector.hh"
 
 namespace mata::utils {
@@ -91,7 +91,7 @@ template <typename Number> class SparseSet {
 			sparse_.resize(u, 0);
 			domain_size_ = u;
 		}
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	bool contains(const Number val) const {
@@ -99,7 +99,7 @@ template <typename Number> class SparseSet {
 	}
 
 	void insert(const Number val) {
-		assert(consistent());
+		MATA_ASSERT(consistent());
 
 		if (!contains(val)) {
 			if (static_cast<size_t>(val) >= domain_size_) { reserve(val + 1); }
@@ -108,7 +108,7 @@ template <typename Number> class SparseSet {
 			++size_;
 		}
 
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	/**
@@ -139,22 +139,22 @@ template <typename Number> class SparseSet {
 		  sparse_(domain_size, 0),
 		  size_(0),
 		  domain_size_(domain_size) {
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	};
 
 	SparseSet(std::initializer_list<Number> list) {
 		insert(list.begin(), list.end());
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	template <class InputIterator> explicit SparseSet(InputIterator first, InputIterator last) {
 		insert(first, last);
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	template <class T> explicit SparseSet(T& container) {
 		insert(container.begin(), container.end());
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	// This is actually weird, what if the vector is not boolean values but values themselves?
@@ -163,7 +163,7 @@ template <typename Number> class SparseSet {
 		for (size_t i = 0; i < bv.size(); i++) {
 			if (bv[i]) { insert(i); }
 		}
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	SparseSet(const SparseSet<Number>& rhs) = default;
@@ -174,7 +174,7 @@ template <typename Number> class SparseSet {
 		  domain_size_{other.domain_size_} {
 		other.size_ = 0;
 		other.domain_size_ = 0;
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	SparseSet<Number>& operator=(const SparseSet<Number>& rhs) = default;
@@ -187,7 +187,7 @@ template <typename Number> class SparseSet {
 			other.size_ = 0;
 			other.domain_size_ = 0;
 		}
-		assert(consistent());
+		MATA_ASSERT(consistent());
 		return *this;
 	}
 
@@ -213,7 +213,7 @@ template <typename Number> class SparseSet {
 			insert(*first);
 			++first;
 		}
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	template <Iterable T> void insert(const T& set) { insert(set.begin(), set.end()); }
@@ -225,7 +225,7 @@ template <typename Number> class SparseSet {
 			erase(*first);
 			++first;
 		}
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	template <Iterable T> void erase(const T& set) { erase(set.begin(), set.end()); }
@@ -255,7 +255,7 @@ template <typename Number> class SparseSet {
 		}
 		for (Number i = new_domain_size; i < old_domain_size; ++i) { erase(i); }
 
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	template <typename F> void filter(F&& is_staying) {
@@ -263,14 +263,14 @@ template <typename Number> class SparseSet {
 			while (i < size_ && !is_staying(dense_[i])) { erase(dense_[i]); }
 		}
 
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	void sort() {
 		std::sort(dense_.begin(), dense_.begin() + static_cast<long>(size_));
 		for (Number i = 0; i < size_; ++i) { sparse_[dense_[i]] = i; }
 
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	template <typename F> void rename(F&& renaming) {
@@ -282,7 +282,7 @@ template <typename Number> class SparseSet {
 			}
 		}
 
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	/// @brief Maximal Number in set.
@@ -303,7 +303,7 @@ template <typename Number> class SparseSet {
 			domain_size_ = max() + 1;
 		}
 
-		assert(consistent());
+		MATA_ASSERT(consistent());
 	}
 
 	// This could be a template with types of A and B both as parameters, in utils?

@@ -4,6 +4,7 @@
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 
 using namespace mata::nft;
 using namespace mata::utils;
@@ -21,7 +22,7 @@ Nft algorithms::complement_classical(
 		// result = determinize_and_minimize(aut);
 		// result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
 		// if (result.final.empty() && !result.initial.empty()) {
-		//     assert(result.initial.size() == 1);
+		//     MATA_ASSERT(result.initial.size() == 1);
 		//     // if automaton does not accept anything, then there is only one (initial) state
 		//     // which can be the sink state (so we do not create unnecessary one)
 		//     sink_state = *result.initial.begin();

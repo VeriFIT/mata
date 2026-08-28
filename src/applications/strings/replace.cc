@@ -7,6 +7,7 @@
 #include "mata/applications/strings.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/assert.hh"
 
 using namespace mata;
 using mata::Symbol;
@@ -22,7 +23,7 @@ using nft::State;
 
 namespace {
 template <class Sequence> bool is_subsequence(const Sequence& subsequence, const Sequence& sequence) {
-	assert(subsequence.size() <= sequence.size());
+	MATA_ASSERT(subsequence.size() <= sequence.size());
 	for (size_t i{0}; const Symbol symbol : subsequence) {
 		if (symbol != sequence[i]) { return false; }
 		++i;

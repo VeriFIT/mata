@@ -4,6 +4,7 @@
 // MATA headers
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/utils/assert.hh"
 
 using namespace mata::nfa;
 using namespace mata::utils;
@@ -15,7 +16,7 @@ Nfa algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& sy
 Nfa algorithms::complement_brzozowski(const Nfa& aut, const OrdVector<Symbol>& symbols) {
 	Nfa result{minimize_brzozowski(aut)}; // Brzozowski minimization makes it deterministic.
 	if (result.final.empty() && !result.initial.empty()) {
-		assert(result.initial.size() == 1);
+		MATA_ASSERT(result.initial.size() == 1);
 		// If the DFA does not accept anything, then there is only one (initial) state which can be the sink state (so
 		//  we do not create an unnecessary new sink state).
 		return result.complement_deterministic(symbols, *result.initial.begin());

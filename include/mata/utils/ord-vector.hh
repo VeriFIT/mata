@@ -5,9 +5,9 @@
 #define MATA_ORD_VECTOR_HH_
 
 #include <algorithm>
-#include <cassert>
 #include <vector>
 
+#include "assert.hh"
 #include "utils.hh"
 
 namespace mata::utils {
@@ -93,7 +93,7 @@ template <class Key> class OrdVector {
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(const OrdVector& rhs) = default;
 	OrdVector(OrdVector&& other) noexcept : vec_{std::move(other.vec_)} {}
-	explicit OrdVector(const Key& key) : vec_(1, key) { assert(is_sorted()); }
+	explicit OrdVector(const Key& key) : vec_(1, key) { MATA_ASSERT(is_sorted()); }
 	template <class InputIterator> explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) {
 		utils::sort_and_rmdupl(vec_);
 	}
@@ -155,7 +155,7 @@ template <class Key> class OrdVector {
 	}
 
 	virtual std::pair<iterator, bool> insert(const Key& x) {
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 
 		reserve_on_insert(vec_);
 
@@ -201,14 +201,14 @@ template <class Key> class OrdVector {
 		//// insert the new element
 		// vec_[first] = x;
 
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 		return {pos, inserted};
 	}
 
 	virtual bool insert(const OrdVector& vec) {
 		static OrdVector tmp{};
-		assert(is_sorted());
-		assert(vec.is_sorted());
+		MATA_ASSERT(is_sorted());
+		MATA_ASSERT(vec.is_sorted());
 		tmp.clear();
 
 		const auto inserted{set_union(*this, vec, tmp)};
@@ -219,7 +219,7 @@ template <class Key> class OrdVector {
 		 * It would be good to try it with removing epsilon transitions or determinization.
 		 */
 		// std::swap(tmp.vec_,vec_);
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 		return inserted;
 	}
 
@@ -228,7 +228,7 @@ template <class Key> class OrdVector {
 	virtual inline size_t size() const { return vec_.size(); }
 
 	inline size_t count(const Key& key) const {
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 		for (auto v : this->vec_) {
 			if (v == key) {
 				return 1;
@@ -249,7 +249,7 @@ template <class Key> class OrdVector {
 	OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
 	virtual const_iterator find(const Key& key) const {
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
 		if (it == vec_.end() || *it != key) {
@@ -260,7 +260,7 @@ template <class Key> class OrdVector {
 	}
 
 	virtual iterator find(const Key& key) {
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
 		if (it == vec_.end() || *it != key) {
@@ -307,12 +307,12 @@ template <class Key> class OrdVector {
 	 * This function expects the vector to be sorted.
 	 */
 	inline size_t erase(const Key& k) {
-		assert(is_sorted());
+		MATA_ASSERT(is_sorted());
 		auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
 		if (found_value_it != vec_.end()) {
 			if (*found_value_it == k) {
 				vec_.erase(found_value_it);
-				assert(is_sorted());
+				MATA_ASSERT(is_sorted());
 				return 1;
 			}
 		}
@@ -371,14 +371,14 @@ template <class Key> class OrdVector {
 	}
 
 	bool operator==(const OrdVector& rhs) const {
-		assert(is_sorted());
-		assert(rhs.is_sorted());
+		MATA_ASSERT(is_sorted());
+		MATA_ASSERT(rhs.is_sorted());
 		return vec_ == rhs.vec_;
 	}
 
 	std::weak_ordering operator<=>(const OrdVector& rhs) const {
-		assert(is_sorted());
-		assert(rhs.is_sorted());
+		MATA_ASSERT(is_sorted());
+		MATA_ASSERT(rhs.is_sorted());
 		return vec_ <=> rhs.vec_;
 	}
 
@@ -390,8 +390,8 @@ template <class Key> class OrdVector {
 	}
 
 	bool is_intersection_empty_with(const OrdVector& rhs) const {
-		assert(is_sorted());
-		assert(rhs.is_sorted());
+		MATA_ASSERT(is_sorted());
+		MATA_ASSERT(rhs.is_sorted());
 
 		const_iterator it_lhs = begin();
 		const_iterator it_rhs = rhs.begin();
@@ -403,7 +403,7 @@ template <class Key> class OrdVector {
 			} else if (*it_lhs < *it_rhs) { // in case the element in lhs is smaller
 				++it_lhs;
 			} else { // in case the element in rhs is smaller
-				assert(*it_lhs > *it_rhs);
+				MATA_ASSERT(*it_lhs > *it_rhs);
 				++it_rhs;
 			}
 		}
@@ -414,8 +414,8 @@ template <class Key> class OrdVector {
 	void rename(const std::vector<Key>& renaming) { utils::rename(vec_, renaming); }
 
 	static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
-		assert(lhs.is_sorted());
-		assert(rhs.is_sorted());
+		MATA_ASSERT(lhs.is_sorted());
+		MATA_ASSERT(rhs.is_sorted());
 
 		OrdVector result{};
 		auto lhs_it{lhs.begin()};
@@ -436,13 +436,13 @@ template <class Key> class OrdVector {
 			}
 		}
 
-		assert(result.is_sorted());
+		MATA_ASSERT(result.is_sorted());
 		return result;
 	}
 
 	static bool set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
-		assert(lhs.is_sorted());
-		assert(rhs.is_sorted());
+		MATA_ASSERT(lhs.is_sorted());
+		MATA_ASSERT(rhs.is_sorted());
 
 		const bool rhs_empty{rhs.empty()};
 		if (lhs.empty()) {
@@ -483,7 +483,7 @@ template <class Key> class OrdVector {
 		//     }
 		// }
 
-		assert(result.is_sorted());
+		MATA_ASSERT(result.is_sorted());
 		// FIXME: This always returns `.begin()`, even if the first inserted element is further in the vector. Made to
 		//  keep the interface similar to std::set.
 		if (result.size() > lhs.size()) { return true; }
@@ -497,8 +497,8 @@ template <class Key> class OrdVector {
 	}
 
 	static OrdVector intersection(const OrdVector& lhs, const OrdVector& rhs) {
-		assert(lhs.is_sorted());
-		assert(rhs.is_sorted());
+		MATA_ASSERT(lhs.is_sorted());
+		MATA_ASSERT(rhs.is_sorted());
 
 		OrdVector result{};
 
@@ -517,7 +517,7 @@ template <class Key> class OrdVector {
 			}
 		}
 
-		assert(result.is_sorted());
+		MATA_ASSERT(result.is_sorted());
 		return result;
 	}
 }; // Class OrdVector.
