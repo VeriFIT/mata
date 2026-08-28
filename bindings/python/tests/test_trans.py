@@ -2,8 +2,7 @@
 
 import libmata.nfa.nfa as mata_nfa
 
-
-__author__ = 'Tomas Fiedor'
+__author__ = "Tomas Fiedor"
 
 
 def test_trans():
@@ -26,7 +25,7 @@ def test_move():
 
     # Test getter and setters
     a.symbol = 1
-    assert not a.symbol == 0
+    assert a.symbol != 0
     assert a.symbol == 1
     a.targets = []
     assert a.targets == []
@@ -42,49 +41,53 @@ def test_move():
 
 def test_transition_operations(prepare_automaton_a):
     nfa = mata_nfa.Nfa(10)
-    nfa.add_transition(3, ord('c'), 4)
-    assert nfa.has_transition(3, ord('c'), 4)
-    trans = mata_nfa.Transition(4, ord('c'), 5)
+    nfa.add_transition(3, ord("c"), 4)
+    assert nfa.has_transition(3, ord("c"), 4)
+    trans = mata_nfa.Transition(4, ord("c"), 5)
     nfa.add_transition_object(trans)
     assert nfa.has_transition(trans.source, trans.symbol, trans.target)
 
-    nfa.remove_trans_raw(3, ord('c'), 4)
-    assert not nfa.has_transition(3, ord('c'), 4)
+    nfa.remove_trans_raw(3, ord("c"), 4)
+    assert not nfa.has_transition(3, ord("c"), 4)
     nfa.remove_trans(trans)
     assert not nfa.has_transition(trans.source, trans.symbol, trans.target)
 
     nfa = prepare_automaton_a()
 
-    expected_trans = [mata_nfa.Transition(3, ord('b'), 9), mata_nfa.Transition(5, ord('c'), 9), mata_nfa.Transition(9, ord('a'), 9)]
+    expected_trans = [
+        mata_nfa.Transition(3, ord("b"), 9),
+        mata_nfa.Transition(5, ord("c"), 9),
+        mata_nfa.Transition(9, ord("a"), 9),
+    ]
 
     trans = nfa.get_transitions_to_state(9)
     assert trans == expected_trans
 
     trans = nfa.get_trans_as_sequence()
     expected_trans = [
-        mata_nfa.Transition(1, ord('a'), 3),
-        mata_nfa.Transition(1, ord('a'), 10),
-        mata_nfa.Transition(1, ord('b'), 7),
-        mata_nfa.Transition(3, ord('a'), 7),
-        mata_nfa.Transition(3, ord('b'), 9),
-        mata_nfa.Transition(5, ord('a'), 5),
-        mata_nfa.Transition(5, ord('c'), 9),
-        mata_nfa.Transition(7, ord('a'), 3),
-        mata_nfa.Transition(7, ord('a'), 5),
-        mata_nfa.Transition(7, ord('b'), 1),
-        mata_nfa.Transition(7, ord('c'), 3),
-        mata_nfa.Transition(9, ord('a'), 9),
-        mata_nfa.Transition(10, ord('a'), 7),
-        mata_nfa.Transition(10, ord('b'), 7),
-        mata_nfa.Transition(10, ord('c'), 7),
+        mata_nfa.Transition(1, ord("a"), 3),
+        mata_nfa.Transition(1, ord("a"), 10),
+        mata_nfa.Transition(1, ord("b"), 7),
+        mata_nfa.Transition(3, ord("a"), 7),
+        mata_nfa.Transition(3, ord("b"), 9),
+        mata_nfa.Transition(5, ord("a"), 5),
+        mata_nfa.Transition(5, ord("c"), 9),
+        mata_nfa.Transition(7, ord("a"), 3),
+        mata_nfa.Transition(7, ord("a"), 5),
+        mata_nfa.Transition(7, ord("b"), 1),
+        mata_nfa.Transition(7, ord("c"), 3),
+        mata_nfa.Transition(9, ord("a"), 9),
+        mata_nfa.Transition(10, ord("a"), 7),
+        mata_nfa.Transition(10, ord("b"), 7),
+        mata_nfa.Transition(10, ord("c"), 7),
     ]
     assert trans == expected_trans
 
     trans = nfa.get_trans_from_state_as_sequence(1)
     expected_trans = [
-        mata_nfa.Transition(1, ord('a'), 3),
-        mata_nfa.Transition(1, ord('a'), 10),
-        mata_nfa.Transition(1, ord('b'), 7),
+        mata_nfa.Transition(1, ord("a"), 3),
+        mata_nfa.Transition(1, ord("a"), 10),
+        mata_nfa.Transition(1, ord("b"), 7),
     ]
     assert trans == expected_trans
 
@@ -128,25 +131,25 @@ def test_delta_add_remove_contains():
     assert nfa.delta.empty()
     assert len(nfa.delta) == 0
 
-    nfa.delta.add(0, ord('a'), 1)
+    nfa.delta.add(0, ord("a"), 1)
     assert not nfa.delta.empty()
     assert len(nfa.delta) == 1
-    assert nfa.delta.contains(0, ord('a'), 1)
-    assert (0, ord('a'), 1) in nfa.delta
+    assert nfa.delta.contains(0, ord("a"), 1)
+    assert (0, ord("a"), 1) in nfa.delta
 
-    tr = mata_nfa.Transition(1, ord('b'), 2)
+    tr = mata_nfa.Transition(1, ord("b"), 2)
     nfa.delta.add(tr)
     assert nfa.delta.contains(tr)
     assert tr in nfa.delta
 
     # Adding a transition to multiple targets at once.
-    nfa.delta.add(2, ord('c'), {3, 4})
-    assert nfa.delta.contains(2, ord('c'), 3)
-    assert nfa.delta.contains(2, ord('c'), 4)
+    nfa.delta.add(2, ord("c"), {3, 4})
+    assert nfa.delta.contains(2, ord("c"), 3)
+    assert nfa.delta.contains(2, ord("c"), 4)
     assert len(nfa.delta) == 4
 
-    nfa.delta.remove(0, ord('a'), 1)
-    assert not nfa.delta.contains(0, ord('a'), 1)
+    nfa.delta.remove(0, ord("a"), 1)
+    assert not nfa.delta.contains(0, ord("a"), 1)
     nfa.delta.remove(tr)
     assert not nfa.delta.contains(tr)
 

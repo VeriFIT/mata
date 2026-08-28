@@ -1,7 +1,7 @@
-import libmata.alphabets as alphabets
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
 import libmata.nft.nft as mata_nft
+from libmata import alphabets
 
 
 def test_shortest_words_map():
@@ -136,46 +136,46 @@ def test_get_words_of_lengths():
 
 
 def test_create_identity():
-    alphabet = alphabets.EnumAlphabet({ord('a'), ord('b'), ord('c')})
+    alphabet = alphabets.EnumAlphabet({ord("a"), ord("b"), ord("c")})
     identity = mata_strings.create_identity(alphabet, num_of_levels=2)
-    assert identity.is_in_lang([ord('a'), ord('a')])
-    assert not identity.is_in_lang([ord('a'), ord('b')])
+    assert identity.is_in_lang([ord("a"), ord("a")])
+    assert not identity.is_in_lang([ord("a"), ord("b")])
 
 
 def test_create_identity_with_single_symbol_replace():
-    alphabet = alphabets.EnumAlphabet({ord('a'), ord('b'), ord('c')})
+    alphabet = alphabets.EnumAlphabet({ord("a"), ord("b"), ord("c")})
 
-    replaced_symbol = mata_strings.create_identity_with_single_symbol_replace(alphabet, ord('a'), ord('b'))
-    assert replaced_symbol.is_in_lang([ord('a'), ord('b')])
-    assert replaced_symbol.is_in_lang([ord('b'), ord('b')])
+    replaced_symbol = mata_strings.create_identity_with_single_symbol_replace(alphabet, ord("a"), ord("b"))
+    assert replaced_symbol.is_in_lang([ord("a"), ord("b")])
+    assert replaced_symbol.is_in_lang([ord("b"), ord("b")])
 
-    replaced_word = mata_strings.create_identity_with_single_symbol_replace(alphabet, ord('a'), [ord('b'), ord('c')])
+    replaced_word = mata_strings.create_identity_with_single_symbol_replace(alphabet, ord("a"), [ord("b"), ord("c")])
     assert isinstance(replaced_word, mata_nft.Nft)
 
 
 def test_replace_reluctant_literal_and_single_symbol():
-    alphabet = alphabets.EnumAlphabet({ord('a'), ord('b'), ord('x'), ord('z')})
+    alphabet = alphabets.EnumAlphabet({ord("a"), ord("b"), ord("x"), ord("z")})
 
-    literal_nft = mata_strings.replace_reluctant_literal([ord('a'), ord('b')], [ord('x')], alphabet)
-    assert literal_nft.apply([ord('a'), ord('b')]).is_in_lang([ord('x')])
+    literal_nft = mata_strings.replace_reluctant_literal([ord("a"), ord("b")], [ord("x")], alphabet)
+    assert literal_nft.apply([ord("a"), ord("b")]).is_in_lang([ord("x")])
 
-    symbol_nft = mata_strings.replace_reluctant_single_symbol(ord('a'), ord('z'), alphabet)
-    assert symbol_nft.apply([ord('a')]).is_in_lang([ord('z')])
+    symbol_nft = mata_strings.replace_reluctant_single_symbol(ord("a"), ord("z"), alphabet)
+    assert symbol_nft.apply([ord("a")]).is_in_lang([ord("z")])
 
-    symbol_word_nft = mata_strings.replace_reluctant_single_symbol(ord('a'), [ord('z'), ord('z')], alphabet)
+    symbol_word_nft = mata_strings.replace_reluctant_single_symbol(ord("a"), [ord("z"), ord("z")], alphabet)
     assert isinstance(symbol_word_nft, mata_nft.Nft)
 
 
 def test_replace_reluctant_regex():
-    alphabet = alphabets.EnumAlphabet({ord('a'), ord('x')})
-    regex_nft = mata_strings.replace_reluctant_regex('a', [ord('x')], alphabet)
-    assert regex_nft.apply([ord('a')]).is_in_lang([ord('x')])
+    alphabet = alphabets.EnumAlphabet({ord("a"), ord("x")})
+    regex_nft = mata_strings.replace_reluctant_regex("a", [ord("x")], alphabet)
+    assert regex_nft.apply([ord("a")]).is_in_lang([ord("x")])
 
 
 def test_replace_mode_enum():
     assert mata_strings.ReplaceMode.Single != mata_strings.ReplaceMode.All
-    alphabet = alphabets.EnumAlphabet({ord('a'), ord('b')})
+    alphabet = alphabets.EnumAlphabet({ord("a"), ord("b")})
     single_mode_nft = mata_strings.create_identity_with_single_symbol_replace(
-        alphabet, ord('a'), ord('b'), mata_strings.ReplaceMode.Single
+        alphabet, ord("a"), ord("b"), mata_strings.ReplaceMode.Single
     )
     assert isinstance(single_mode_nft, mata_nft.Nft)

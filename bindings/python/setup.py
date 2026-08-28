@@ -138,8 +138,7 @@ def get_version():
         """
         version = version.strip()
 
-        if version.startswith("v"):
-            version = version[1:]
+        version = version.removeprefix("v")
         version = re.sub(r"-dev\.", ".dev", version)
 
         return version
@@ -154,10 +153,9 @@ def get_version():
             if not content:
                 raise RuntimeError(f"VERSION file '{candidate}' is empty.")
             return normalize_version(content[0])
-    else:
-        version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
-        if not re.match(r"v\d+\.\d+\.\d+(.*)", version):
-            raise AssertionError("The library version is invalid")
+    version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
+    if not re.match(r"v\d+\.\d+\.\d+(.*)", version):
+        raise AssertionError("The library version is invalid")
 
     return normalize_version(version)
 
@@ -176,14 +174,10 @@ def _build_mata():
             print(line, end="")
         process.wait()
         if process.returncode != 0:
-            raise RuntimeError(
-                f"make release-lib failed with exit code {process.returncode}"
-            )
+            raise RuntimeError(f"make release-lib failed with exit code {process.returncode}")
 
 
-def run_safely_external_command(
-    cmd: str, check_results=True, quiet=True, timeout=None, **kwargs
-):
+def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeout=None, **kwargs):
     """Safely runs the piped command, without executing of the shell.
 
     Courtesy of: https://blog.avinetworks.com/tech/python-best-practices
@@ -241,9 +235,7 @@ def run_safely_external_command(
                 if not quiet and (cmdout or cmderr):
                     print(f"captured stdout: {cmdout.decode('utf-8')}", "red")
                     print(f"captured stderr: {cmderr.decode('utf-8')}", "red")
-                raise subprocess.CalledProcessError(
-                    objects[i].returncode, unpiped_commands[i]
-                )
+                raise subprocess.CalledProcessError(objects[i].returncode, unpiped_commands[i])
 
     return cmdout.decode("utf-8"), cmderr.decode("utf-8")
 
