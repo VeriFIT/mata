@@ -267,11 +267,21 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/workflows/actions/setup
+      - name: Check .treefmt.toml is in sync with nix/treefmt.nix
+        run: |
+          nix run .#write-treefmt-toml
+          if [ -n "$(git status --porcelain -- .treefmt.toml)" ]; then
+              echo "ERROR: .treefmt.toml is out of date with nix/treefmt.nix. Run 'nix run .#write-treefmt-toml' locally and commit the changes:"
+              git diff -- .treefmt.toml
+              exit 1
+          else
+              echo ".treefmt.toml is in sync with nix/treefmt.nix."
+          fi
       - name: Check formatting using treefmt through Nix
         run: |
           nix fmt
           if [ -n "$(git status --porcelain)" ]; then
-              echo "ERROR: Code is not properly formatted. Please run 'nix fmt' locally and commit the changes:"
+              echo "ERROR: Code is not properly formatted. Please run 'nix fmt' or 'treefmt' locally and commit the changes:"
               git diff
               exit 1
           else
