@@ -355,7 +355,7 @@ def test_concatenate():
     result.remove_epsilon_inplace()
     assert mata_nfa.equivalence_check(result, result_in_place)
 
-    result, _, rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
+    result, _, _rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
     assert result.num_of_states() == 4
@@ -1098,7 +1098,7 @@ def test_noodlify():
     right_side.add_transition(5, ord("b"), 6)
     right_side.make_final_states([3, 6])
 
-    left_side: list[Nfa] = [left1, left2, left3]
+    left_side: list[mata_nfa.Nfa] = [left1, left2, left3]
     result = mata_strings.noodlify_for_equation(left_side, right_side)
     assert len(result) == 2
     assert mata_nfa.equivalence_check(result[0][0], noodle1_segment1)

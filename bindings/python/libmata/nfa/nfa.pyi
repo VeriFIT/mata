@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import Any, Literal, Self, TypedDict, overload
 
 import networkx
@@ -116,7 +116,7 @@ class Delta:
     def __getitem__(self, state: State) -> list[SymbolPost]: ...
     def transitions(self) -> Iterable[Transition]:
         """Iterate over all transitions in Delta."""
-    def __iter__(self) -> Iterable[Transition]: ...
+    def __iter__(self) -> Iterator[Transition]: ...
     def get_transitions_from(self, source: State) -> list[Transition]:
         """Get the transitions leading from `source`."""
     def get_transitions_to(self, target: State) -> list[Transition]:
@@ -450,21 +450,21 @@ class Nfa:
         :param Symbol symbol: source symbol
         :return: set of reachable states
         """
-    def remove_epsilon_inplace(self, epsilon: Symbol = epsilon()) -> None:
+    def remove_epsilon_inplace(self, epsilon: Symbol = ...) -> None:
         """Removes transitions which contain epsilon symbol.
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
 
         :param Symbol epsilon: Symbol representing the epsilon symbol.
         """
-    def epsilon_symbol_posts(self, state: State, epsilon: Symbol = epsilon()) -> SymbolPost | None:
+    def epsilon_symbol_posts(self, state: State, epsilon: Symbol = ...) -> SymbolPost | None:
         """Get epsilon transitions for a state.
 
         :param state: State to get epsilon transitions for.
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-    def is_universal(self, alphabet: alph.Alphabet, params: dict[Literal["algorithm"], str] = None) -> bool:
+    def is_universal(self, alphabet: alph.Alphabet, params: dict[Literal["algorithm"], str] | None = None) -> bool:
         """Tests if NFA is universal with regard to the given alphabet.
 
         :param OnTheFlyAlphabet alphabet: on the fly alphabet.
@@ -562,7 +562,7 @@ def union(lhs: Nfa, rhs: Nfa) -> Nfa:
     :return: union of lhs and rhs
     """
 
-def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> Nfa:
+def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = ...) -> Nfa:
     """Performs intersection of lhs and rhs.
 
     Supports epsilon symbols when preserve_epsilon is set to True.
@@ -581,7 +581,7 @@ def intersection(lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()) -> Nfa:
     """
 
 def intersection_with_product_map(
-    lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = epsilon()
+    lhs: Nfa, rhs: Nfa, first_epsilon: Symbol = ...
 ) -> tuple[Nfa, dict[tuple[State, State], State]]:
     """Performs intersection of lhs and rhs.
 
@@ -622,7 +622,9 @@ def concatenate_with_result_state_maps(
     """
 
 def complement(
-    nfa: Nfa, alphabet: alph.Alphabet, params: dict[Literal["algorithm"], Literal["classical", "brzozowski"]] = None
+    nfa: Nfa,
+    alphabet: alph.Alphabet,
+    params: dict[Literal["algorithm"], Literal["classical", "brzozowski"]] | None = None,
 ) -> Nfa:
     """Computes the complement of the nfa.
 
@@ -644,7 +646,7 @@ def revert(lhs: Nfa) -> Nfa:
     :return: automaton with reversed transitions
     """
 
-def remove_epsilon(lhs: Nfa, epsilon: Symbol = epsilon()) -> Nfa:
+def remove_epsilon(lhs: Nfa, epsilon: Symbol = ...) -> Nfa:
     """Removes transitions that contain epsilon symbol.
 
     :param Nfa lhs: Automaton, where epsilon transitions will be removed.
@@ -652,7 +654,7 @@ def remove_epsilon(lhs: Nfa, epsilon: Symbol = epsilon()) -> Nfa:
     :return: Nfa: Automaton with epsilon transitions removed.
     """
 
-def minimize(lhs: Nfa, params: dict[Literal["algorithm"], Literal["brzozowski", "hopcroft"]] = None) -> Nfa:
+def minimize(lhs: Nfa, params: dict[Literal["algorithm"], Literal["brzozowski", "hopcroft"]] | None = None) -> Nfa:
     """Minimizes the automaton lhs
 
     :param Nfa lhs: automaton to be minimized
@@ -664,7 +666,7 @@ def minimize(lhs: Nfa, params: dict[Literal["algorithm"], Literal["brzozowski", 
     """
 
 def reduce_with_state_map(
-    aut: Nfa, params: dict[Literal["algorithm"], Literal["simulation"]] = None
+    aut: Nfa, params: dict[Literal["algorithm"], Literal["simulation"]] | None = None
 ) -> tuple[Nfa, dict[State, State]]:
     """Reduce the automaton.
 
@@ -711,7 +713,7 @@ def reduce_residual_with(aut: Nfa) -> Nfa:
     :return: Reduced automaton.
     """
 
-def compute_relation(lhs: Nfa, params: dict[str, str] = None) -> BinaryRelation:
+def compute_relation(lhs: Nfa, params: dict[str, str] | None = None) -> BinaryRelation:
     """Computes the relation for the automaton
 
     :param Nfa lhs: automaton
@@ -721,7 +723,7 @@ def compute_relation(lhs: Nfa, params: dict[str, str] = None) -> BinaryRelation:
 
 # Tests
 def is_included_with_cex(
-    lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] = None
+    lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] | None = None
 ) -> tuple[bool, Run]:
     """Test inclusion between two automata
 
@@ -732,7 +734,7 @@ def is_included_with_cex(
     :return: true if lhs is included by rhs, counter example word if not
     """
 
-def is_included(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] = None) -> bool:
+def is_included(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] | None = None) -> bool:
     """Test inclusion between two automata
 
     :param Nfa lhs: smaller automaton
@@ -742,7 +744,7 @@ def is_included(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict
     :return: true if lhs is included by rhs, counter example word if not
     """
 
-def equivalence_check(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] = None) -> bool:
+def equivalence_check(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] | None = None) -> bool:
     """Test equivalence of two automata.
 
     :param Nfa lhs: Smaller automaton.
@@ -777,7 +779,7 @@ def divisible_by(k: int) -> Nfa:
     """Constructs automaton accepting strings containing ones divisible by "k"."""
 
 def run_safely_external_command(
-    cmd: str, check_results: bool = True, quiet: bool = True, timeout: int = None, **kwargs
+    cmd: str, check_results: bool = True, quiet: bool = True, timeout: int | None = None, **kwargs
 ) -> tuple[str, str] | tuple[bytes, bytes]:
     """Safely runs the piped command, without executing of the shell
 

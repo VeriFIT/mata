@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import tempfile
 
 import libmata.nfa.nfa as mata_nfa
 import pytest

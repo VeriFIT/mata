@@ -8,8 +8,8 @@ import libmata.nfa.nfa as mata_nfa
 def plot(
     automata: mata_nfa.Nfa,
     with_scc: bool = False,
-    node_highlight: list = None,
-    edge_highlight: list = None,
+    node_highlight: list | None = None,
+    edge_highlight: list | None = None,
     alphabet: alph.Alphabet = None,
 ) -> None:
     """Plots the stream of automata
@@ -31,8 +31,8 @@ def get_configuration_for(default: dict, rules: list, *args) -> None:
 def plot_using_graphviz(
     aut: mata_nfa.Nfa,
     with_scc: bool = False,
-    node_highlight: list = None,
-    edge_highlight: list = None,
+    node_highlight: list | None = None,
+    edge_highlight: list | None = None,
     alphabet: alph.Alphabet = None,
 ) -> graphviz.Digraph:
     """Plots automaton using graphviz

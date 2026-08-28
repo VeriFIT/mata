@@ -89,11 +89,8 @@ def test_enum_alphabet():
     """Tests EnumAlphabet, a direct alphabet maintaining an explicit, ordered set of symbols."""
     alphabet = alph.EnumAlphabet({0, 4, 6, 8, 9})
     assert alphabet.translate_symbol("6") == 6
-    try:
+    with pytest.raises(RuntimeError, match="Unknown symbol"):
         alphabet.translate_symbol("5")
-        assert False, "Expected an exception for an unknown symbol."
-    except Exception:
-        pass
     assert alphabet.get_complement({0, 6, 9}) == {4, 8}
     assert alphabet.get_alphabet_symbols() == {0, 4, 6, 8, 9}
     assert not alphabet.is_empty()
@@ -122,16 +119,10 @@ def test_alphabet_levels_multi_level_mode():
     assert alphabets[0] == level0
     assert alphabets.at(1) == level1
 
-    try:
+    with pytest.raises(RuntimeError, match="requires an explicit level"):
         alphabets.for_level(None)
-        assert False, "Expected an exception: MultiLevel requires an explicit level."
-    except Exception:
-        pass
-    try:
+    with pytest.raises(RuntimeError, match="out of range"):
         alphabets.for_level(5)
-        assert False, "Expected an exception: level 5 is out of range."
-    except Exception:
-        pass
 
     alphabets.push_back(alph.IntAlphabet())
     assert len(alphabets) == 3

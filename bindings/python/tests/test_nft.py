@@ -167,7 +167,7 @@ def test_nft_alphabets_property_and_resolve_alphabet():
     nft.alphabets = alphabets.AlphabetLevels([level0, level1])
     assert nft.alphabets.mode == alphabets.AlphabetLevelsMode.MultiLevel
 
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError, match="requires an explicit level"):
         nft.resolve_alphabet()
 
     resolved = nft.resolve_alphabet(level=1)

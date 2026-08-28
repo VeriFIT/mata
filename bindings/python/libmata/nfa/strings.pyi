@@ -60,7 +60,7 @@ def noodlify_for_equation(
     left_side_automata: list[mata_nfa.Nfa],
     right_side_automaton: mata_nfa.Nfa,
     include_empty: bool = False,
-    params: dict[Literal["reduce"], Literal["false", "forward", "backward", "bidirectional"]] = None,
+    params: dict[Literal["reduce"], Literal["false", "forward", "backward", "bidirectional"]] | None = None,
 ) -> None:
     """Create noodles for equation.
 
