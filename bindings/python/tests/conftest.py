@@ -2,12 +2,13 @@
 
 import os
 import shutil
-import pytest
+import tempfile
 
-import libmata.alphabets as alphabets
 import libmata.nfa.nfa as mata_nfa
+import pytest
+from libmata import alphabets
 
-__author__ = 'Tomas Fiedor'
+__author__ = "Tomas Fiedor"
 
 
 @pytest.fixture(scope="function")
@@ -56,7 +57,7 @@ def divisible_by(k: int):
     Constructs automaton accepting strings containing ones divisible by "k"
     """
     assert k > 1
-    lhs = mata_nfa.Nfa(k+1)
+    lhs = mata_nfa.Nfa(k + 1)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     for i in range(1, k + 1):
@@ -122,21 +123,21 @@ def prepare_automaton_a():
         nfa = mata_nfa.Nfa(100)
         nfa.make_initial_states([1, 3])
         nfa.make_final_state(5)
-        nfa.add_transition(1, ord('a'), 3)
-        nfa.add_transition(1, ord('a'), 10)
-        nfa.add_transition(1, ord('b'), 7)
-        nfa.add_transition(3, ord('a'), 7)
-        nfa.add_transition(3, ord('b'), 9)
-        nfa.add_transition(9, ord('a'), 9)
-        nfa.add_transition(7, ord('b'), 1)
-        nfa.add_transition(7, ord('a'), 3)
-        nfa.add_transition(7, ord('c'), 3)
-        nfa.add_transition(10, ord('a'), 7)
-        nfa.add_transition(10, ord('b'), 7)
-        nfa.add_transition(10, ord('c'), 7)
-        nfa.add_transition(7, ord('a'), 5)
-        nfa.add_transition(5, ord('a'), 5)
-        nfa.add_transition(5, ord('c'), 9)
+        nfa.add_transition(1, ord("a"), 3)
+        nfa.add_transition(1, ord("a"), 10)
+        nfa.add_transition(1, ord("b"), 7)
+        nfa.add_transition(3, ord("a"), 7)
+        nfa.add_transition(3, ord("b"), 9)
+        nfa.add_transition(9, ord("a"), 9)
+        nfa.add_transition(7, ord("b"), 1)
+        nfa.add_transition(7, ord("a"), 3)
+        nfa.add_transition(7, ord("c"), 3)
+        nfa.add_transition(10, ord("a"), 7)
+        nfa.add_transition(10, ord("b"), 7)
+        nfa.add_transition(10, ord("c"), 7)
+        nfa.add_transition(7, ord("a"), 5)
+        nfa.add_transition(5, ord("a"), 5)
+        nfa.add_transition(5, ord("c"), 9)
         return nfa
 
     return _prepare_automaton_a
@@ -152,18 +153,18 @@ def prepare_automaton_b():
         nfa = mata_nfa.Nfa(100)
         nfa.make_initial_states([4])
         nfa.make_final_states([2, 12])
-        nfa.add_transition(4, ord('c'), 8)
-        nfa.add_transition(4, ord('a'), 8)
-        nfa.add_transition(8, ord('b'), 4)
-        nfa.add_transition(4, ord('a'), 6)
-        nfa.add_transition(4, ord('b'), 6)
-        nfa.add_transition(6, ord('a'), 2)
-        nfa.add_transition(2, ord('b'), 2)
-        nfa.add_transition(2, ord('a'), 0)
-        nfa.add_transition(0, ord('a'), 2)
-        nfa.add_transition(2, ord('c'), 12)
-        nfa.add_transition(12, ord('a'), 14)
-        nfa.add_transition(14, ord('b'), 12)
+        nfa.add_transition(4, ord("c"), 8)
+        nfa.add_transition(4, ord("a"), 8)
+        nfa.add_transition(8, ord("b"), 4)
+        nfa.add_transition(4, ord("a"), 6)
+        nfa.add_transition(4, ord("b"), 6)
+        nfa.add_transition(6, ord("a"), 2)
+        nfa.add_transition(2, ord("b"), 2)
+        nfa.add_transition(2, ord("a"), 0)
+        nfa.add_transition(0, ord("a"), 2)
+        nfa.add_transition(2, ord("c"), 12)
+        nfa.add_transition(12, ord("a"), 14)
+        nfa.add_transition(14, ord("b"), 12)
         return nfa
 
     return _prepare_automaton_b

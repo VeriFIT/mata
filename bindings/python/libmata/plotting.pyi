@@ -1,15 +1,16 @@
-from typing import Literal, Any
+from typing import Any, Literal
+
+import graphviz
 
 import libmata.alphabets as alph
 import libmata.nfa.nfa as mata_nfa
-import graphviz
 
 def plot(
-        automata: mata_nfa.Nfa,
-        with_scc: bool = False,
-        node_highlight: list = None,
-        edge_highlight: list = None,
-        alphabet: alph.Alphabet = None
+    automata: mata_nfa.Nfa,
+    with_scc: bool = False,
+    node_highlight: list | None = None,
+    edge_highlight: list | None = None,
+    alphabet: alph.Alphabet = None,
 ) -> None:
     """Plots the stream of automata
 
@@ -19,7 +20,6 @@ def plot(
     :param list edge_highlight: list of rules for changing style of edges
     :param alph.Alphabet alphabet: alphabet for printing the symbols
     """
-    ...
 
 def get_configuration_for(default: dict, rules: list, *args) -> None:
     """For given node or edge, processes the list of rules and applies them.
@@ -27,14 +27,13 @@ def get_configuration_for(default: dict, rules: list, *args) -> None:
     :param dict default: default style of the primitive
     :param list rules: list of rules in form of condition and style
     """
-    ...
 
 def plot_using_graphviz(
-        aut: mata_nfa.Nfa,
-        with_scc: bool = False,
-        node_highlight: list = None,
-        edge_highlight: list = None,
-        alphabet: alph.Alphabet = None
+    aut: mata_nfa.Nfa,
+    with_scc: bool = False,
+    node_highlight: list | None = None,
+    edge_highlight: list | None = None,
+    alphabet: alph.Alphabet = None,
 ) -> graphviz.Digraph:
     """Plots automaton using graphviz
 
@@ -45,9 +44,8 @@ def plot_using_graphviz(
     :param alph.Alphabet alphabet: alphabet for reverse translation of symbols
     :return: automaton in graphviz
     """
-    ...
 
-def get_interactive_mode() -> Literal['none', 'notebook', 'terminal']:
+def get_interactive_mode() -> Literal["none", "notebook", "terminal"]:
     """Checks and returns, which interactive mode (if any) the code is run in
 
     The function returns:
@@ -57,7 +55,6 @@ def get_interactive_mode() -> Literal['none', 'notebook', 'terminal']:
 
     :return: type of the interactive mode
     """
-    ...
 
 def display_inline(*args, per_row=None, show=None) -> None:
     """
@@ -72,34 +69,28 @@ def display_inline(*args, per_row=None, show=None) -> None:
     If the `per_row` argument is given, at most `per_row` arguments are
     displayed on each row, each one taking 1/per_row of the line width.
     """
-    ...
 
 def setup(**kwargs) -> None:
     """
     Provides the setup of the configuration of the mata library
     """
-    ...
 
 class Style:
     """
     Collection of helper styles for coloring nodes and edges in automata
     """
     @classmethod
-    def filled(cls, fillcolor, edgecolor=None) -> dict[Literal['fillcolor', 'color'], Any]:
+    def filled(cls, fillcolor, edgecolor=None) -> dict[Literal["fillcolor", "color"], Any]:
         """Style that fills the primitive with color"""
-        ...
     @classmethod
-    def colored(cls, color) -> dict[Literal['color'], Any]:
+    def colored(cls, color) -> dict[Literal["color"], Any]:
         """Style that make primitive colored"""
-        ...
     @classmethod
-    def dashed(cls, color=None) -> dict[Literal['style', 'color'], Any]:
+    def dashed(cls, color=None) -> dict[Literal["style", "color"], Any]:
         """Style that makes lines dashed"""
-        ...
     @classmethod
-    def hidden(cls) -> dict[Literal['style'], Literal['invis']]:
+    def hidden(cls) -> dict[Literal["style"], Literal["invis"]]:
         """Style that hides the primitive"""
-        ...
 
 class Condition:
     """
@@ -108,11 +99,9 @@ class Condition:
     @classmethod
     def state_is_initial(cls, automaton, state) -> bool:
         """Tests if state in automaton is initial"""
-        ...
     @classmethod
     def state_is_final(cls, automaton, state) -> bool:
         """Tests if state in automaton is final"""
-        ...
     @classmethod
     def transition_is_cycle(cls, _, trans) -> bool:
         """Tests if transition is self cycle"""

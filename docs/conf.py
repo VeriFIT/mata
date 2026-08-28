@@ -11,25 +11,27 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Mata'
-copyright = '2025, Automata@FIT Group, BUT, FIT'
-author = 'Automata@FIT Group, BUT, FIT'
+project = "Mata"
+copyright = "2025, Automata@FIT Group, BUT, FIT"
+author = "Automata@FIT Group, BUT, FIT"
 
 
 def get_version():
     """Parses the version of the library from the VERSION file"""
     version_file = os.path.join("..", "VERSION")
     if os.path.exists(version_file):
-        with open(version_file, 'r') as version_handle:
+        with open(version_file, "r") as version_handle:
             return version_handle.read().split()[0]
     else:
         return ""
+
 
 # The full version, including alpha/beta/rc tags
 release = get_version()
@@ -41,28 +43,25 @@ release = get_version()
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.todo',
-    'breathe',
-    'myst_parser'
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.imgmath",
+    "sphinx.ext.todo",
+    "breathe",
+    "myst_parser",
 ]
 
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown'
-}
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -70,15 +69,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "alabaster"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
-breathe_projects = {
-    project: "xml/"
-}
+breathe_projects = {project: "xml/"}
 breathe_default_project = project
 myst_heading_anchors = 7

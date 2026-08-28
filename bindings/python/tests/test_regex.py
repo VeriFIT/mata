@@ -1,8 +1,8 @@
-__author__ = 'Tomas Fiedor'
+__author__ = "Tomas Fiedor"
 
-import libmata.parser as parser
-import libmata.nfa.nfa as mata_nfa
 import libmata.alphabets as mata_alphabets
+import libmata.nfa.nfa as mata_nfa
+from libmata import parser
 
 
 def test_regex():
@@ -27,7 +27,7 @@ def test_stars_concatenation():
     expected = mata_nfa.Nfa(2)
     expected.make_initial_state(0)
     expected.make_final_states([0, 1])
-    expected.add_transition(0, ord('c'), 0)
-    expected.add_transition(0, ord('a'), 1)
-    expected.add_transition(1, ord('a'), 1)
+    expected.add_transition(0, ord("c"), 0)
+    expected.add_transition(0, ord("a"), 1)
+    expected.add_transition(1, ord("a"), 1)
     assert mata_nfa.equivalence_check(aut, expected)

@@ -1,8 +1,8 @@
-__author__ = 'Tomas Fiedor'
+__author__ = "Tomas Fiedor"
 
 import pytest
-
-from libmata import alphabets as alph, parser
+from libmata import alphabets as alph
+from libmata import parser
 
 
 def test_on_the_fly_alphabet_with_character_symbols():
@@ -28,10 +28,10 @@ def test_on_the_fly_alphabet_with_enumeration_of_symbols():
 
     OnTheFlyAlphabet translates the symbols into values on-the-fly, based on a given counter.
     """
-    alphabet = alph.OnTheFlyAlphabet.from_symbol_map({'a': 0, 'b': 1, 'c': 2})
-    assert alphabet.translate_symbol('a') == 0
-    assert alphabet.translate_symbol('b') == 1
-    assert alphabet.translate_symbol('c') == 2
+    alphabet = alph.OnTheFlyAlphabet.from_symbol_map({"a": 0, "b": 1, "c": 2})
+    assert alphabet.translate_symbol("a") == 0
+    assert alphabet.translate_symbol("b") == 1
+    assert alphabet.translate_symbol("c") == 2
 
 
 def test_on_the_fly_alphabet():
@@ -41,30 +41,30 @@ def test_on_the_fly_alphabet():
     based on a given counter.
     """
     alphabet = alph.OnTheFlyAlphabet()
-    assert alphabet.translate_symbol('a') == 0
-    assert alphabet.translate_symbol('a') == 0
-    assert alphabet.translate_symbol('b') == 1
-    assert alphabet.translate_symbol('a') == 0
-    assert alphabet.translate_symbol('c') == 2
+    assert alphabet.translate_symbol("a") == 0
+    assert alphabet.translate_symbol("a") == 0
+    assert alphabet.translate_symbol("b") == 1
+    assert alphabet.translate_symbol("a") == 0
+    assert alphabet.translate_symbol("c") == 2
 
     alphabet = alph.OnTheFlyAlphabet(3)
-    assert alphabet.translate_symbol('a') == 3
-    assert alphabet.translate_symbol('b') == 4
-    assert alphabet.translate_symbol('c') == 5
-    assert alphabet.translate_symbol('a') == 3
+    assert alphabet.translate_symbol("a") == 3
+    assert alphabet.translate_symbol("b") == 4
+    assert alphabet.translate_symbol("c") == 5
+    assert alphabet.translate_symbol("a") == 3
 
 
 def test_int_alphabet():
     alphabet = alph.IntAlphabet()
-    assert alphabet.translate_symbol('4') == 4
-    assert alphabet.reverse_translate_symbol(4) == '4'
+    assert alphabet.translate_symbol("4") == 4
+    assert alphabet.reverse_translate_symbol(4) == "4"
 
 
 def test_alphabet_get_symbol_map():
-    alpha = alph.OnTheFlyAlphabet.from_symbol_map({'a': 0})
+    alpha = alph.OnTheFlyAlphabet.from_symbol_map({"a": 0})
     symbol_map = alpha.get_symbol_map()
     assert len(symbol_map) > 0
-    assert symbol_map['a'] == 0
+    assert symbol_map["a"] == 0
 
 
 def test_get_symbols():
@@ -76,7 +76,7 @@ def test_get_symbols():
 
 def test_alphabet_gap_fill_parity():
     """Tests get_complement()/is_empty()/clear() added to Alphabet and its subclasses."""
-    alpha = alph.OnTheFlyAlphabet.for_symbol_names(['a', 'b', 'c'])
+    alpha = alph.OnTheFlyAlphabet.for_symbol_names(["a", "b", "c"])
     assert not alpha.is_empty()
     alpha.clear()
     assert alpha.is_empty()
@@ -88,20 +88,17 @@ def test_alphabet_gap_fill_parity():
 def test_enum_alphabet():
     """Tests EnumAlphabet, a direct alphabet maintaining an explicit, ordered set of symbols."""
     alphabet = alph.EnumAlphabet({0, 4, 6, 8, 9})
-    assert alphabet.translate_symbol('6') == 6
-    try:
-        alphabet.translate_symbol('5')
-        assert False, "Expected an exception for an unknown symbol."
-    except Exception:
-        pass
+    assert alphabet.translate_symbol("6") == 6
+    with pytest.raises(RuntimeError, match="Unknown symbol"):
+        alphabet.translate_symbol("5")
     assert alphabet.get_complement({0, 6, 9}) == {4, 8}
     assert alphabet.get_alphabet_symbols() == {0, 4, 6, 8, 9}
     assert not alphabet.is_empty()
 
     alphabet.add_new_symbol(10)
     assert 10 in alphabet.get_alphabet_symbols()
-    alphabet.add_new_symbol('11')
-    assert alphabet.translate_symbol('11') == 11
+    alphabet.add_new_symbol("11")
+    assert alphabet.translate_symbol("11") == 11
 
     assert alphabet.erase(10) == 1
     assert 10 not in alphabet.get_alphabet_symbols()
@@ -122,16 +119,10 @@ def test_alphabet_levels_multi_level_mode():
     assert alphabets[0] == level0
     assert alphabets.at(1) == level1
 
-    try:
+    with pytest.raises(RuntimeError, match="requires an explicit level"):
         alphabets.for_level(None)
-        assert False, "Expected an exception: MultiLevel requires an explicit level."
-    except Exception:
-        pass
-    try:
+    with pytest.raises(RuntimeError, match="out of range"):
         alphabets.for_level(5)
-        assert False, "Expected an exception: level 5 is out of range."
-    except Exception:
-        pass
 
     alphabets.push_back(alph.IntAlphabet())
     assert len(alphabets) == 3

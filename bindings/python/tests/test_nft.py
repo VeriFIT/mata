@@ -1,8 +1,7 @@
-import pytest
-
-import libmata.alphabets as alphabets
 import libmata.nfa.nfa as mata_nfa
 import libmata.nft.nft as mata_nft
+import pytest
+from libmata import alphabets
 
 
 def test_nft_construction_and_states():
@@ -62,7 +61,7 @@ def test_nft_from_nfa():
 def test_nft_alphabet_inherited_from_source_nfa():
     """Nft.alphabet is copied as-is from a source Nfa's alphabet (from_nfa/from_nfa_with_levels); it is not always
     None, even though NFT operations themselves never read it (they use `alphabets` instead)."""
-    alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(['a', 'b'])
+    alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(["a", "b"])
     nfa = mata_nfa.Nfa(2, alphabet)
     nfa.make_initial_state(0)
     nfa.make_final_state(1)
@@ -168,7 +167,7 @@ def test_nft_alphabets_property_and_resolve_alphabet():
     nft.alphabets = alphabets.AlphabetLevels([level0, level1])
     assert nft.alphabets.mode == alphabets.AlphabetLevelsMode.MultiLevel
 
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError, match="requires an explicit level"):
         nft.resolve_alphabet()
 
     resolved = nft.resolve_alphabet(level=1)

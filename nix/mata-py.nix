@@ -21,6 +21,7 @@ python3Packages.buildPythonPackage (finalAttrs: {
   pythonImportsCheck = [
     "libmata"
     "libmata.nfa.nfa"
+    "libmata.nft.nft"
     "libmata.alphabets"
     "libmata.parser"
   ];
@@ -31,6 +32,7 @@ python3Packages.buildPythonPackage (finalAttrs: {
   nativeBuildInputs = with python3Packages; [
     cython
     setuptools
+    ruff
   ];
 
   propagatedBuildInputs = [
