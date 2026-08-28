@@ -13,21 +13,20 @@
           excludes = [ "3rdparty/*" ];
           allow-missing-formatter = true;
         };
+        programs = {
+          prettier.enable = true;
 
-        programs.clang-format.enable = true;
-        programs.nixfmt.enable = true;
-        programs.yamlfmt.enable = true;
-        programs.taplo.enable = true;
+          clang-format.enable = true;
+          nixfmt.enable = true;
+          yamlfmt.enable = true;
+          taplo.enable = true;
 
-        programs.ruff-check.enable = true;
-        programs.ruff-format = {
-          enable = true;
-          lineLength = 120;
-        };
-
-        programs.prettier = {
-          enable = true;
-          priority = 10;
+          ruff-check.enable = true;
+          ruff-format = {
+            enable = true;
+            lineLength = 120;
+            priority = 1;
+          };
         };
       };
 
