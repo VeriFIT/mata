@@ -107,11 +107,14 @@ TEST_CASE("Mata::nft::Plumbing") {
 		CHECK(!result.is_lang_empty());
 	}
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+	// TODO(nft): Re-enable once mata::nft::minimize() (and thus plumbing::minimize()) exists.
 	SECTION("Mata::nft::Plumbing::minimize") {
 		FILL_WITH_AUT_A(lhs);
 		mata::nft::plumbing::minimize(&result, lhs);
 		CHECK(!result.is_lang_empty());
 	}
+#endif
 
 	SECTION("Mata::nft::Plumbing::complement") {
 		FILL_WITH_AUT_A(lhs);

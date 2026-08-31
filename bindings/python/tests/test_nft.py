@@ -58,9 +58,9 @@ def test_nft_from_nfa():
     assert list(nft_with_levels.levels) == [0, 0]
 
 
-def test_nft_alphabet_inherited_from_source_nfa():
-    """Nft.alphabet is copied as-is from a source Nfa's alphabet (from_nfa/from_nfa_with_levels); it is not always
-    None, even though NFT operations themselves never read it (they use `alphabets` instead)."""
+def test_nft_does_not_inherit_an_nfa_alphabet():
+    """An Nft has no flat `alphabet`: it resolves symbols per level through `alphabets`.
+    Building one from an Nfa drops that Nfa's alphabet rather than carrying it over."""
     alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(["a", "b"])
     nfa = mata_nfa.Nfa(2, alphabet)
     nfa.make_initial_state(0)
@@ -68,12 +68,8 @@ def test_nft_alphabet_inherited_from_source_nfa():
     nfa.add_transition(0, 0, 1)
 
     nft = mata_nft.Nft.from_nfa(nfa, num_of_levels=1)
-    assert nft.alphabet is not None
-    assert nft.alphabet.get_alphabet_symbols() == alphabet.get_alphabet_symbols()
-
-    # A plain Nft constructor / with_levels never sets the inherited `alphabet` field.
-    plain_nft = mata_nft.Nft(1, num_of_levels=2)
-    assert plain_nft.alphabet is None
+    assert not hasattr(nft, "alphabet")
+    assert nft.alphabets is None
 
 
 def _make_word_nft(word: list[int]) -> mata_nft.Nft:

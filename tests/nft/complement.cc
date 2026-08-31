@@ -21,9 +21,7 @@ using namespace mata;
 TEST_CASE("mata::nft::complement()") {
 	auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b', 'c'});
 	Nft nft{Nft::with_levels(3, 10)};
-	nft.alphabet = alphabet;
 	Nft nft_complemented{Nft::with_levels(3)};
-	nft_complemented.alphabet = alphabet;
 
 	const auto CHECK_SHARED = [&] {
 		CHECK(intersection(nft, nft_complemented).is_lang_empty());

@@ -195,7 +195,6 @@ Nft builder::construct(
 
 	Nft aut;
 	aut.alphabets = alphabets;
-	aut.alphabet = nullptr;
 
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }

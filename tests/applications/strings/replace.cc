@@ -33,7 +33,6 @@ TEST_CASE("nft::create_identity()") {
 	nft.final = {0};
 	SECTION("small identity nft") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0, 1, 2, 3});
-		nft.alphabet = alphabet;
 		nft.delta.add(0, 0, 1);
 		nft.delta.add(1, 0, 2);
 		nft.delta.add(2, 0, 0);
@@ -63,7 +62,6 @@ TEST_CASE("nft::create_identity()") {
 
 	SECTION("identity nft no symbols") {
 		auto alphabet = std::make_shared<EnumAlphabet>();
-		nft.alphabet = alphabet;
 		nft.levels.num_of_levels = 3;
 		nft.levels.resize(1);
 		nft.levels[0] = 0;
@@ -73,7 +71,6 @@ TEST_CASE("nft::create_identity()") {
 
 	SECTION("identity nft one symbol") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0});
-		nft.alphabet = alphabet;
 		nft.levels.num_of_levels = 2;
 		nft.levels.resize(2);
 		nft.levels[0] = 0;
@@ -88,7 +85,6 @@ TEST_CASE("nft::create_identity()") {
 
 	SECTION("small identity nft one level") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0, 1, 2, 3});
-		nft.alphabet = alphabet;
 		nft.delta.add(0, 0, 0);
 		nft.delta.add(0, 1, 0);
 		nft.delta.add(0, 2, 0);
@@ -107,7 +103,6 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
 	expected.final = {0};
 	SECTION("small identity nft") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0, 1, 2, 3});
-		expected.alphabet = alphabet;
 		expected.delta.add(0, 0, 1);
 		expected.delta.add(1, 0, 0);
 		expected.delta.add(0, 1, 2);
@@ -134,7 +129,6 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
 
 	SECTION("identity nft one symbol") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0});
-		expected.alphabet = alphabet;
 		expected.levels.num_of_levels = 2;
 		expected.levels.resize(2);
 		expected.levels[0] = 0;
@@ -147,7 +141,6 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
 
 	SECTION("small identity expected longer replace") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0, 1, 2, 3});
-		expected.alphabet = alphabet;
 		expected.delta.add(0, 0, 1);
 		expected.delta.add(1, 0, 0);
 		expected.delta.add(0, 1, 2);
@@ -177,7 +170,6 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
 
 	SECTION("small identity expected replace symbol with empty string") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0, 1, 2, 3});
-		expected.alphabet = alphabet;
 		expected.delta.add(0, 0, 1);
 		expected.delta.add(1, 0, 0);
 		expected.delta.add(0, 1, 2);
@@ -199,7 +191,6 @@ TEST_CASE("nft::create_identity_with_single_symbol_replace()") {
 
 	SECTION("identity expected one symbol with word replace") {
 		auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0});
-		expected.alphabet = alphabet;
 		expected.levels.num_of_levels = 2;
 		expected.levels.resize(2);
 		expected.levels[0] = 0;

@@ -129,6 +129,12 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[State].const_iterator begin()
         COrdVector[State].const_iterator end()
 
+    # Structural base shared by mata::nfa::Nfa and mata::nft::Nft.
+    cdef cppclass CAutomaton "mata::Automaton":
+        CSparseSet[State] initial
+        CSparseSet[State] final
+        CDelta delta
+
     cdef cppclass CNfa "mata::nfa::Nfa":
         # Public Attributes
         CSparseSet[State] initial
@@ -237,6 +243,6 @@ cdef class Transition:
 cdef class Delta:
     # Holds a shared pointer to the owning automaton (rather than a raw `CDelta*`) so that the `Delta` view stays
     # valid even if all other Python references to the automaton are dropped.
-    cdef shared_ptr[CNfa] nfa_ptr
+    cdef shared_ptr[CAutomaton] automaton_ptr
 
-cdef object wrap_delta(shared_ptr[CNfa] nfa_ptr)
+cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr)

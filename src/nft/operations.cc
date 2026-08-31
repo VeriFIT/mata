@@ -304,7 +304,7 @@ bool mata::nft::has_epsilon_cycle(const Nft& nft) {
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 	const size_t num_of_states{aut.num_of_states()};
-	mata::nfa::Nfa reversed_nfa{mata::nfa::revert(aut)};
+	mata::nfa::Nfa reversed_nfa{mata::nfa::revert(mata::nft::to_nfa(aut))};
 
 	// this vector will collect epsilon run from level 0 state to level 0 state
 	// that contains only epsilon transitions, and all states inbetween (i.e.
@@ -1272,7 +1272,33 @@ void Nft::assert_num_of_levels_match_(const Nft& nft) const {
 Nft& Nft::unite_nondet_with(const Nft& nft) {
 	assert_num_of_levels_match_(nft);
 
-	super::unite_nondet_with(nft);
+	// The structural union. Duplicated from mata::nfa::Nfa::unite_nondet_with(): the two automaton classes are
+	// siblings, so there is no inherited version to call any more.
+	if (this != &nft) {
+		if (final.empty() || initial.empty()) {
+			Automaton::operator=(nft);
+		} else if (!nft.final.empty() && !nft.initial.empty()) {
+			const size_t num_of_states_this{this->num_of_states()};
+			const size_t num_of_states_aut{nft.num_of_states()};
+			const size_t num_of_states_result{num_of_states_this + num_of_states_aut};
+
+			this->delta.reserve(num_of_states_result);
+			// Allocate space for initial and final states from 'this' which might be missing in Delta.
+			// This ensures that the next state appended to Delta will have the correct index for the first state of
+			// 'nft'.
+			this->delta.allocate(num_of_states_this);
+
+			auto renumber_states{[&](const State state) { return num_of_states_this + state; }};
+			this->delta.append(nft.delta.renumber_targets(renumber_states));
+
+			// Set accepting states.
+			this->final.reserve(num_of_states_result);
+			for (const State& aut_fin : nft.final) { this->final.insert(renumber_states(aut_fin)); }
+			// Set initial states.
+			this->initial.reserve(num_of_states_result);
+			for (const State& aut_ini : nft.initial) { this->initial.insert(renumber_states(aut_ini)); }
+		}
+	}
 
 	// Combine the levels of both NFTs.
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft.levels.num_of_levels);

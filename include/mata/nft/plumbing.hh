@@ -34,7 +34,10 @@ inline void complement(
 	*result = complement(aut, alphabet, params);
 }
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+// TODO(nft): Enable once mata::nft::minimize() exists.
 inline void minimize(Nft* res, const Nft& aut) { *res = minimize(aut); }
+#endif
 
 inline void determinize(Nft* result, const Nft& aut, std::unordered_map<StateSet, State>* subset_map = nullptr) {
 	*result = determinize(aut, subset_map);

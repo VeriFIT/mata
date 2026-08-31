@@ -13,7 +13,7 @@ from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, Symbo
 
 from libmata.nfa.nfa cimport (
     State, StateSet, StateRenaming, ParameterMap,
-    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON,
+    CAutomaton, CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON,
     ostream, ofstream, stringstream,
 )
 
@@ -79,8 +79,11 @@ cdef extern from "mata/nft/delta.hh" namespace "mata::nft":
 
 
 cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
-    cdef cppclass CNft "mata::nft::Nft" (CNfa):
+    cdef cppclass CNft "mata::nft::Nft":
         # Public attributes.
+        CSparseSet[State] initial
+        CSparseSet[State] final
+        CDelta delta
         CLevels levels
         shared_ptr[CAlphabetLevels] alphabets
 
@@ -93,9 +96,8 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
         CNft(CNfa&, CLevels) except +
 
         # State/transition construction.
-        # add_state()/add_state(State) are not redeclared here: they are inherited from CNfa's identical signature
-        # (Cython would otherwise flag calls as ambiguous); Nft's own override is still dispatched to at the C++
-        # level via name hiding, since it is called through a CNft-typed pointer.
+        State add_state() except +
+        State add_state(State) except +
         State add_state_with_level(Level) except +
         State add_state_with_level(State, Level) except +
         size_t num_of_states_with_level(Level)
@@ -114,8 +116,11 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
         CNft& insert_identity(State, Symbol, CJumpMode) except +
 
         bool contains_jump_transitions() except +
-        # clear()/trim(StateRenaming*)/remove_epsilon(Symbol) are not redeclared: identical signatures are already
-        # inherited from CNfa (see the add_state note above for why).
+        void clear()
+        size_t num_of_states()
+        bool is_state(State)
+        CNft& trim(StateRenaming*)
+        void remove_epsilon(Symbol) except +
         bool is_identical(CNft&)
 
         CNft& concatenate(CNft&) except +
@@ -129,16 +134,21 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
         string print_to_mata() except +
         void print_to_mata(ostream&) except +
 
-        # post(StateSet&, Symbol) [2-arg] is not redeclared: identical to the inherited CNfa signature.
+        StateSet post(StateSet&, Symbol) except +
         StateSet post(StateSet&, Symbol, Level) except +
 
+        bool is_lang_empty(CRun*)
+        bool is_deterministic()
+        bool is_complete(CAlphabet*) except +
+        bool is_complete() except +
+        bool is_epsilon(Symbol)
         bool is_universal(CAlphabet&, CRun*, ParameterMap&) except +
-        # is_universal(CAlphabet&, ParameterMap&) [2-arg] is not redeclared: identical to the inherited CNfa signature.
+        bool is_universal(CAlphabet&, ParameterMap&) except +
         bool is_in_lang(CRun&, bool, CJumpMode, bool) except +
         bool is_in_lang_prefix(CRun&, CJumpMode, bool) except +
         bool is_in_lang_by_levels(vector[vector[Symbol]]&, bool, CJumpMode, bool) except +
         bool is_in_lang_prefix_by_levels(vector[vector[Symbol]]&, CJumpMode, bool) except +
-        # get_word_for_path(CRun&) is not redeclared: identical to the inherited CNfa signature.
+        pair[CRun, bool] get_word_for_path(CRun&)
         vector[vector[Symbol]] mk_level_word_from_word(vector[Symbol]&) except +
         vector[Symbol] mk_word_from_level_word(vector[vector[Symbol]]&) except +
         cset[vector[Symbol]] get_words(size_t, CJumpMode) except +

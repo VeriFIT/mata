@@ -605,54 +605,10 @@ bool Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_pr
 }
 
 bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
-	// TODO: hot fix for performance reasons for TACAS.
-	//  Perhaps make the get_useful_states return a witness on demand somehow.
-	if (!cex) { return is_lang_empty_scc(); }
-
-	std::list<State> worklist(initial.begin(), initial.end());
-	std::unordered_set<State> processed(initial.begin(), initial.end());
-
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<State, State> paths;
-	// Initialize paths.
-	for (const State s : worklist) { paths[s] = s; }
-
-	while (!worklist.empty()) {
-		State state{worklist.front()};
-		worklist.pop_front();
-
-		if (final[state]) {
-			if (nullptr != cex) {
-				cex->path.clear();
-				cex->path.push_back(state);
-				while (paths[state] != state) {
-					state = paths[state];
-					cex->path.push_back(state);
-				}
-				std::ranges::reverse(cex->path);
-				cex->word = this->get_word_for_path(*cex).first.word;
-			}
-			return false;
-		}
-
-		if (delta.empty()) { continue; }
-
-		for (const SymbolPost& symbol_post : delta[state]) {
-			for (const State& target : symbol_post.targets) {
-				bool inserted;
-				tie(std::ignore, inserted) = processed.insert(target);
-				if (inserted) {
-					worklist.push_back(target);
-					// Also set that tgt_state was accessed from state.
-					paths[target] = state;
-				} else {
-					MATA_ASSERT(haskey(paths, target)); /* Invariant. */
-				}
-			}
-		}
-	} // while (!worklist.empty()).
-	return true;
+	if (has_no_accepting_path(cex)) { return true; }
+	// The structural search filled only the path; reading the path as a word is NFA-specific.
+	if (cex != nullptr) { cex->word = get_word_for_path(*cex).first.word; }
+	return false;
 } // is_lang_empty().
 
 Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
