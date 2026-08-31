@@ -1,0 +1,22 @@
+// Project settings for Zed. These take precedence over the user's settings.json.
+{
+  "languages": {
+    // Justfiles are indented with tabs two columns wide, as declared in .editorconfig. Zed's
+    // support for .editorconfig is undocumented and has open bugs (zed-industries/zed#24108,
+    // zed-industries/zed#62911), so the indentation is repeated here.
+    "Just": {
+      "hard_tabs": true
+    }
+  },
+  // The Just extension formats through just-lsp, which delegates to `just --fmt`. Without this
+  // option it uses just's default of four spaces and reindents every justfile on save.
+  "lsp": {
+    "just-lsp": {
+      "initialization_options": {
+        "formatting": {
+          "indentation": "\t"
+        }
+      }
+    }
+  }
+}

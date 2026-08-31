@@ -2,7 +2,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# The notebooks import 'libmata' from the in-place build of the Python bindings, so make it
+# importable regardless of the directory this script is called from.
+export PYTHONPATH="$SCRIPT_DIR/../../bindings/python${PYTHONPATH:+:$PYTHONPATH}"
 
 TMP_OUT="$(mktemp --tmpdir mata-papermill-XXXXXX.ipynb)"
 trap 'rm -f "$TMP_OUT"' EXIT

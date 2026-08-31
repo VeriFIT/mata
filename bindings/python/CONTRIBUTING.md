@@ -48,6 +48,7 @@ may arise during development.
   - [A weird error when Cython cannot retype C/C++ object to Python object](#a-weird-error-when-cython-cannot-retype-cc-object-to-python-object)
   - [An error when Cython cannot find cimported function, even if it is defined](#an-error-when-cython-cannot-find-cimported-function-even-if-it-is-defined)
 - [Quick glossary](#quick-glossary)
+
 <!-- TOC -->
 
 ## Getting started

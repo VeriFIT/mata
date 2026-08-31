@@ -1,78 +1,55 @@
 #!/usr/bin/env -S just --justfile
 
-# Compiler to use. Options: "g++", "clang", ...
-CXX := env_var_or_default("CXX", "g++")
+# Root justfile of the Mata library. Every subdirectory owns its recipes in '<dir>/<dir>.just' and is
+# imported here as a submodule. Run a module recipe as 'just tests run release', a module default
+# recipe as 'just docs', and list the recipes of a single module as 'just --list tests'.
 
-# Number of cores for parallel compilation.
-JOBS := env_var_or_default("JOBS", "6")
+import 'just/common.just'
 
-alias test := test-cpp
-alias t := test-cpp
-alias tc := test-cpp
-[default]
-test-cpp *ARGS:
-  just build "debug"
-  just test-run "debug" {{ARGS}}
+mod bench 'tests-integration/tests-integration.just'
+mod bindings 'bindings/bindings.just'
+mod cpp 'src/src.just'
+mod docs 'docs/docs.just'
+mod examples 'examples/examples.just'
+mod nix 'nix/nix.just'
+mod tests-cpp 'tests/tests.just'
 
-  just build "release"
-  just test-run "release" {{ARGS}}
-
-test-run BUILD_MODE="debug" *ARGS:
-  ./build/{{BUILD_MODE}}/{{CXX}}/tests/tests {{ARGS}}
-
-alias b := build
-build BUILD_MODE="debug":
-  make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_MODE}}/{{CXX}}"
-
-alias w := wip
-wip BUILD_DIR BUILD_MODE="debug" *ARGS:
-  make {{BUILD_MODE}} BUILD_DIR="build/{{BUILD_DIR}}/{{CXX}}"
-  ./build/{{BUILD_DIR}}/{{CXX}}/tests/tests {{ARGS}}
-
-alias tp := test-python
-[working-directory: "bindings/python/"]
-test-python:
-  # source .venv/bin/activate.fish &&
-  make -j {{JOBS}} BUILD_DIR=build/bindings/python
-  make -j {{JOBS}} test
-  ../../examples/notebooks/run_papermill_examples.sh
-  # ; deactivate
-
-alias vc := valgrind-callgrind
-valgrind-callgrind +ARGS:
-  valgrind --tool=callgrind {{ARGS}}
-
-alias c := clean
-clean:
-  make clean
-
+alias t := test
+alias tc := tests-cpp
+alias tp := bindings::python
+alias ti := bench::performance
+alias b := cpp::build
+alias w := tests-cpp::wip
+alias vc := tests-cpp::callgrind
+alias d := docs::build
+alias f := nix::fmt
 alias r := release
-release: (build "release")
-
 alias rd := release-debuginfo
-release-debuginfo: (build "release-debuginfo")
+alias c := clean
+alias h := help
 
-alias d := docs
-docs:
-  make docs BUILD_DIR="build/debug/{{CXX}}"
-  make -C docs/ html
+# Run the whole test suite: C++ unit tests in debug and release mode, Python bindings, and notebooks.
+[default]
+test *ARGS: (tests-cpp::check ARGS) bindings::test examples::notebooks::run
+
+# Build the whole project in release mode.
+release: (cpp::build "release")
+
+# Build the whole project in release mode with debug information.
+release-debuginfo: (cpp::build "release-debuginfo")
+
+# Remove the build artifacts of the project, the bindings, and the documentation.
+clean: cpp::clean bindings::clean docs::clean
 
 # TODO: Implement.
 ci:
-  @! echo "Unimplemented"
+	@! echo "Unimplemented"
 
-alias h := help
+# List all recipes, including the recipes of all modules.
 help:
-  just --list --justfile {{justfile()}}
+	@just --list --list-submodules --justfile '{{ justfile() }}'
 
-alias f := fmt
-fmt:
-  nix fmt
-
-[working-directory: "examples/notebooks/"]
-notebook-sync:
-  jupytext --sync examples/notebooks/*.ipynb
-
+# Update and synchronize the locked Python dependencies of the workspace.
 uv-update:
-  uv lock --upgrade
-  uv sync
+	uv lock --upgrade
+	uv sync

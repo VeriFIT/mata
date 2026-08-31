@@ -37,6 +37,23 @@ includes = [
 ]
 options = ["-i"]
 
+[formatter.just]
+command = "bash"
+excludes = []
+includes = [
+  "[Jj][Uu][Ss][Tt][Ff][Ii][Ll][Ee]",
+  "*/[Jj][Uu][Ss][Tt][Ff][Ii][Ll][Ee]",
+  ".[Jj][Uu][Ss][Tt][Ff][Ii][Ll][Ee]",
+  "*/.[Jj][Uu][Ss][Tt][Ff][Ii][Ll][Ee]",
+  "*.[Jj][Uu][Ss][Tt]",
+  "*.[Jj][Uu][Ss][Tt][Ff][Ii][Ll][Ee]",
+]
+options = ["-euc", """
+for f in "$@"; do
+  just --fmt --unstable --indentation '\t' --justfile "$f"
+done
+""", "--"]
+
 [formatter.nixfmt]
 command = "nixfmt"
 excludes = []

@@ -16,6 +16,11 @@
         programs = {
           prettier.enable = true;
 
+          just = {
+            enable = true;
+            indentation = "\t";
+          };
+
           clang-format.enable = true;
           nixfmt.enable = true;
           yamlfmt.enable = true;
@@ -40,7 +45,9 @@
               echo "# GENERATED FILE. DO NOT EDIT."
               echo "# Source of truth is the \`treefmt\` option in nix/treefmt.nix. Regenerate with: nix run .#write-treefmt-toml"
               echo
-              ${pkgs.gnused}/bin/sed -E 's|^command = "/nix/store/[^/]+/bin/([^"]+)"|command = "\1"|' ${config.treefmt.build.configFile}
+              # Strip the store path of every executable, both in 'command =' and inside inlined formatter scripts, so
+              #  that the committed config resolves the tools from PATH.
+              ${lib.getExe pkgs.gnused} -E 's|/nix/store/[^/"[:space:]]+/bin/||g' ${config.treefmt.build.configFile}
             } > "$root/.treefmt.toml"
             ${lib.getExe config.treefmt.build.wrapper} --working-dir "$root" "$root/.treefmt.toml"
             echo "Wrote $root/.treefmt.toml"
