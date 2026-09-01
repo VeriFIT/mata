@@ -4345,6 +4345,37 @@ TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::RepeatSymbol)") {
 	}
 }
 
+TEST_CASE("mata::nft::project_out() closure fixpoint does not use-after-free") {
+	constexpr State A = 0, B = 1, Z = 2;
+	constexpr size_t NUM_LEAVES = 32;
+
+	Delta delta;
+	delta.add(A, 'a', B);
+	delta.add(A, 'b', Z);
+	StateSet leaves;
+	for (size_t i = 0; i < NUM_LEAVES; ++i) { leaves.insert(static_cast<State>(3 + i)); }
+	delta.add(B, 'c', leaves);
+
+	// All states share level 1, which is the level being projected out below.
+	const std::vector<Level> levels_v(3 + NUM_LEAVES, 1);
+	Nft nft{Nft::with_levels(Levels(2, levels_v), delta, {}, {})};
+
+	Nft result;
+	CHECK_NOTHROW(result = project_out(nft, 1));
+	CHECK(result.num_of_states() == 0); // Nothing is final, so nothing survives trimming.
+}
+
+TEST_CASE("mata::nft::project_out() does not read useful_states out of bounds") {
+	Delta delta;
+	delta.add(1, 'x', 1);
+	Nft nft{Nft::with_levels(Levels(2, {0, 1}), delta, {0}, {0})};
+
+	Nft result;
+	CHECK_NOTHROW(result = project_out(nft, 1));
+	CHECK(result.num_of_states() == 1);
+	CHECK(result.levels.size() == 1);
+}
+
 TEST_CASE("mata::nft::project_to()") {
 	Nft nft;
 	Nft projection;

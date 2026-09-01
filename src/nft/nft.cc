@@ -162,7 +162,7 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
 			[&](Level&) -> bool {
 				const State prev{move_index};
 				++move_index;
-				return !useful_states[prev];
+				return not is_state_useful(prev);
 			}
 		).begin(),
 		levels.end()
