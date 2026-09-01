@@ -515,7 +515,8 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	while (changed) { // Compute the fixpoint.
 		changed = false;
 		for (const State s : states_to_project) {
-			for (const State cls_state : closure[s]) {
+			for (const std::vector<State> cls_states_orig = closure[s].to_vector();
+				 const State cls_state : cls_states_orig) {
 				if (!closure[cls_state].is_subset_of(closure[s])) {
 					closure[s].insert(closure[cls_state]);
 					changed = true;
