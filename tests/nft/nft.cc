@@ -535,7 +535,7 @@ TEST_CASE("mata::nft::is_lang_empty_cex()") {
 		bool is_empty = aut.is_lang_empty(&cex);
 		REQUIRE(!is_empty);
 
-        // check the counterexample
+		// check the counterexample
 		REQUIRE(cex.word == Word{'a', 'a', 'c', 'c'});
 		REQUIRE(aut.is_in_lang(cex.word));
 	}
@@ -2539,9 +2539,7 @@ TEST_CASE("mata::nft::Nft::is_complete() with DONT_CARE") {
 	aut.delta.add(0, DONT_CARE, 1);
 	aut.delta.add(1, DONT_CARE, 1);
 
-	SECTION("DONT_CARE covers every concrete alphabet symbol") {
-		CHECK(aut.is_complete(alphabet));
-	}
+	SECTION("DONT_CARE covers every concrete alphabet symbol") { CHECK(aut.is_complete(alphabet)); }
 
 	SECTION("EPSILON is allowed but does not affect completeness for a concrete alphabet") {
 		aut.delta.add(0, EPSILON, 0);
@@ -3947,7 +3945,7 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		CHECK(
 			nfa::are_equivalent(
 				to_nfa(aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-				    .unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
+						   .unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
 				to_nfa(expected)
 			)
 		);
@@ -4008,7 +4006,7 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		CHECK(
 			nfa::are_equivalent(
 				to_nfa(aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
+						   .unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
 				to_nfa(expected)
 			)
 		);

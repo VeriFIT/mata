@@ -211,8 +211,8 @@ void Automaton::trim_impl(const BoolVector& useful_states, StateRenaming* state_
 
 	delta.defragment(useful_states, renaming);
 	// Only useful states have a meaningful entry in `renaming`.
-    // Removed states keep the default zero.
-    // Check that the useful-state projection is the expected dense, ascending sequence.
+	// Removed states keep the default zero.
+	// Check that the useful-state projection is the expected dense, ascending sequence.
 	MATA_ASSERT(
 		[&] {
 			State expected_new_state{0};

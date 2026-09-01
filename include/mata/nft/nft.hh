@@ -568,7 +568,9 @@ class Nft : public mata::Automaton {
 	 *
 	 * @param[in] alphabet Alphabet to use, resolved via @c resolve_alphabet(alphabet).
 	 */
-	bool is_complete(const Alphabet* alphabet = nullptr) const { return is_complete(get_symbols_to_work_with(alphabet)); }
+	bool is_complete(const Alphabet* alphabet = nullptr) const {
+		return is_complete(get_symbols_to_work_with(alphabet));
+	}
 
 	/**
 	 * @brief Test for transducer completeness with regard to a set of symbols.

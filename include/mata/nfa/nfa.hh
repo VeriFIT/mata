@@ -107,7 +107,7 @@ class Nfa : public Automaton {
 	// TODO: When there is a need for state dictionary, consider creating default library implementation of state
 	//  dictionary in the attributes.
 	// TODO: Deletion candidate. This is a @c void* map with no in-tree use.
-    // Removing it needs a downstream check (Z3-Noodler) first.
+	// Removing it needs a downstream check (Z3-Noodler) first.
 	std::unordered_map<std::string, void*> attributes{};
 
   public:

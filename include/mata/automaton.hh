@@ -32,13 +32,13 @@ class Automaton {
 	utils::SparseSet<nfa::State> final{}; ///< Set of final states of the automaton.
 
   public:
-    /**
-     * @brief Construct a new Automaton with optional @p delta, @p initial_states and @p final_states.
-     *
-     * @param[in] delta Transition relation of the automaton.
-     * @param[in] initial_states Set of initial states of the automaton.
-     * @param[in] final_states Set of final states of the automaton.
-     */
+	/**
+	 * @brief Construct a new Automaton with optional @p delta, @p initial_states and @p final_states.
+	 *
+	 * @param[in] delta Transition relation of the automaton.
+	 * @param[in] initial_states Set of initial states of the automaton.
+	 * @param[in] final_states Set of final states of the automaton.
+	 */
 	explicit Automaton(
 		nfa::Delta delta = {},
 		utils::SparseSet<nfa::State> initial_states = {},
@@ -49,7 +49,8 @@ class Automaton {
 		  final(std::move(final_states)) {}
 
 	/**
-	 * @brief Construct a new Automaton with @p num_of_states states and optionally @p initial_states and @p final_states.
+	 * @brief Construct a new Automaton with @p num_of_states states and optionally @p initial_states and @p
+	 * final_states.
 	 *
 	 * @param[in] num_of_states Number of states for which to preallocate Delta.
 	 * @param[in] initial_states Set of initial states of the automaton.
@@ -82,21 +83,21 @@ class Automaton {
 	 */
 	size_t num_of_states() const;
 
-    /**
-     * @brief Check if a given state is a valid state in the automaton.
-     *
-     * @param[in] state_to_check The state to check.
-     * @return true if the state is valid, false otherwise.
-     */
+	/**
+	 * @brief Check if a given state is a valid state in the automaton.
+	 *
+	 * @param[in] state_to_check The state to check.
+	 * @return true if the state is valid, false otherwise.
+	 */
 	bool is_state(const nfa::State& state_to_check) const { return state_to_check < num_of_states(); }
 
 	/**
 	 * @brief Get set of reachable states.
 	 *
-     * Reachable states are states accessible from any initial state.
-     * @todo With the new get_useful_states, it might be useless now.
-     * @param[in] filter Optional filter function to apply to reachable states.
-     *  If provided, only states for which the filter returns true will be included in the result.
+	 * Reachable states are states accessible from any initial state.
+	 * @todo With the new get_useful_states, it might be useless now.
+	 * @param[in] filter Optional filter function to apply to reachable states.
+	 *  If provided, only states for which the filter returns true will be included in the result.
 	 * @return Set of reachable states.
 	 */
 	nfa::StateSet get_reachable_states(const std::function<bool(nfa::State)>& filter = nullptr) const;
@@ -105,7 +106,7 @@ class Automaton {
 	 * @brief Get set of terminating states.
 	 *
 	 * Terminating states are states leading to any final state.
-     * @todo With the new get_useful_states, it might be useless now.
+	 * @todo With the new get_useful_states, it might be useless now.
 	 * @return Set of terminating states.
 	 */
 	nfa::StateSet get_terminating_states() const;
@@ -186,7 +187,7 @@ class Automaton {
 	 * Add a new (fresh) state to the automaton.
 	 *
 	 * @note Protected on purpose. Growing the state space is a leaf-class concern
-     *  Each leaf publishes its own @c add_state() that maintains its invariants.
+	 *  Each leaf publishes its own @c add_state() that maintains its invariants.
 	 * @return The newly created state.
 	 */
 	nfa::State add_state();
@@ -203,7 +204,7 @@ class Automaton {
 	 * @brief Clear @c delta, @c initial and @c final.
 	 *
 	 * @note Protected on purpose. See @c add_state().
-     *  A leaf has to clear its own per-state data as well.
+	 *  A leaf has to clear its own per-state data as well.
 	 */
 	void clear();
 
@@ -211,8 +212,8 @@ class Automaton {
 	 * @brief Reverse the automaton structurally: reverse every transition and swap initial and final states.
 	 *
 	 * @note Kept as a protected helper so that @c get_terminating_states() and @c distances_to_final() do not
-     *  have to go through a leaf-specific `revert()` free function.
-     * @return A new automaton with reversed transitions and swapped initial/final states.
+	 *  have to go through a leaf-specific `revert()` free function.
+	 * @return A new automaton with reversed transitions and swapped initial/final states.
 	 */
 	Automaton reverted() const;
 
@@ -220,17 +221,18 @@ class Automaton {
 	 * @brief Structural part of `is_identical()`. See @c mata::nfa::Nfa::is_identical().
 	 *
 	 * Compares only @c delta, @c initial and @c final.
-     * @note Kept protected so that comparing an NFA against an NFT (or either against a bare @c Automaton) never compiles.
-     *  The leaves have to expose their own same-type overloads.
-     * @return true iff the structural parts of the two automata are identical.
+	 * @note Kept protected so that comparing an NFA against an NFT (or either against a bare @c Automaton) never
+	 * compiles. The leaves have to expose their own same-type overloads.
+	 * @return true iff the structural parts of the two automata are identical.
 	 */
 	bool is_identical_impl(const Automaton& aut) const;
 
 	/**
 	 * @brief Structural part of `trim()`. See @c mata::nfa::Nfa::trim().
-     *
-     * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states after trimming.
-     *  If provided, the map will be filled with the mapping from old state numbers to new state numbers after trimming.
+	 *
+	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states after
+	 * trimming. If provided, the map will be filled with the mapping from old state numbers to new state numbers after
+	 * trimming.
 	 */
 	void trim_impl(nfa::StateRenaming* state_renaming = nullptr);
 
@@ -239,11 +241,11 @@ class Automaton {
 	 *
 	 * Lets a leaf class compute the useful states once, adjust its own per-state data (such as
 	 *  @c mata::nft::Nft::levels) and then hand the same bool vector over, instead of running Tarjan twice.
-     *  Any renaming that happens after the trim follows ascending order of the original state numbers.
-     * @param useful_states A @c BoolVector indicating which states are useful (true) and which are not (false).
-     * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states
-     *  after trimming. If provided, the map will be filled with the mapping from old state numbers to
-     *  new state numbers after trimming.
+	 *  Any renaming that happens after the trim follows ascending order of the original state numbers.
+	 * @param useful_states A @c BoolVector indicating which states are useful (true) and which are not (false).
+	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states
+	 *  after trimming. If provided, the map will be filled with the mapping from old state numbers to
+	 *  new state numbers after trimming.
 	 */
 	void trim_impl(const BoolVector& useful_states, nfa::StateRenaming* state_renaming);
 
@@ -253,9 +255,9 @@ class Automaton {
 	 * Fills only @c cex->path; reconstructing @c cex->word from the path is word semantics and therefore the
 	 *  responsibility of the leaf class, which knows how to read a path as a word. Delegates to
 	 *  @c has_no_accepting_path() when @p cex is @c nullptr.
-     * @param[out] cex Pointer to a @c nfa::Run structure to fill with a witness path if an accepting path exists.
-     *  If @c nullptr, no witness is recorded.
-     * @return true iff no accepting path exists.
+	 * @param[out] cex Pointer to a @c nfa::Run structure to fill with a witness path if an accepting path exists.
+	 *  If @c nullptr, no witness is recorded.
+	 * @return true iff no accepting path exists.
 	 */
 	bool has_no_accepting_path(nfa::Run* cex) const;
 }; // class Automaton.

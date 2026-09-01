@@ -142,7 +142,7 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
 #endif
 
 	// Drop the levels of the states that are about to be removed.
-    // Independent of the structural renaming below, which does not touch `levels`.
+	// Independent of the structural renaming below, which does not touch `levels`.
 	State move_index{0};
 	levels.erase(
 		std::ranges::remove_if(
@@ -1252,7 +1252,7 @@ bool Nft::is_deterministic() const {
 		if (!has_dont_care) { continue; }
 		for (const SymbolPost& symbol_post : state_post) {
 			// DONT_CARE overlaps every non-epsilon concrete symbol.
-            // Overlapping transitions are still deterministic when they lead to the same state.
+			// Overlapping transitions are still deterministic when they lead to the same state.
 			if (symbol_post.symbol != DONT_CARE && symbol_post.symbol != EPSILON &&
 				*symbol_post.targets.begin() != dont_care_target) {
 				return false;
