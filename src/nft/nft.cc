@@ -1238,43 +1238,71 @@ bool Nft::is_deterministic() const {
 
 	const size_t aut_size{num_of_states()};
 	for (size_t i = 0; i < aut_size; ++i) {
-		for (const auto& symbol_post : delta[i]) {
+		const StatePost& state_post{delta[i]};
+		bool has_dont_care{false};
+		State dont_care_target{};
+		for (const SymbolPost& symbol_post : state_post) {
 			if (symbol_post.num_of_targets() != 1) { return false; }
+			if (symbol_post.symbol == DONT_CARE) {
+				has_dont_care = true;
+				dont_care_target = *symbol_post.targets.begin();
+			}
+		}
+
+		if (!has_dont_care) { continue; }
+		for (const SymbolPost& symbol_post : state_post) {
+			// DONT_CARE overlaps every non-epsilon concrete symbol.
+            // Overlapping transitions are still deterministic when they lead to the same state.
+			if (symbol_post.symbol != DONT_CARE && symbol_post.symbol != EPSILON &&
+				*symbol_post.targets.begin() != dont_care_target) {
+				return false;
+			}
 		}
 	}
 	return true;
 }
 
-bool Nft::is_complete(const Alphabet* const alphabet) const { return is_complete(get_symbols_to_work_with(alphabet)); }
-
 bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
 	// TODO: make a general function for traversal over reachable states that can be shared by other functions?
 	std::list<State> worklist(initial.begin(), initial.end());
 	std::unordered_set<State> processed(initial.begin(), initial.end());
+	const bool epsilon_is_in_alphabet{!symbols.empty() && symbols.back() == EPSILON};
 
 	while (!worklist.empty()) {
 		const State state = *worklist.begin();
 		worklist.pop_front();
 
-		size_t n = 0; // counter of symbols
-		if (!delta.empty()) {
-			for (const auto& symb_stateset : delta[state]) {
-				++n;
-				if (!haskey(symbols, symb_stateset.symbol)) {
+		size_t num_of_exact_symbols{0};
+		bool has_dont_care{false};
+		bool has_epsilon{false};
+		for (const SymbolPost& symbol_post : delta[state]) {
+			if (symbol_post.symbol < DONT_CARE) {
+				if (!haskey(symbols, symbol_post.symbol)) {
 					throw std::runtime_error(
 						std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
 					);
 				}
+				++num_of_exact_symbols;
+			} else if (symbol_post.symbol == DONT_CARE) {
+				has_dont_care = true;
+			} else {
+				MATA_ASSERT(symbol_post.symbol == EPSILON, "Nft::is_complete: unexpected special symbol.");
+				has_epsilon = true;
+				if (epsilon_is_in_alphabet) { ++num_of_exact_symbols; }
+			}
 
-				for (const auto& tgt_state : symb_stateset.targets) {
-					bool inserted;
-					tie(std::ignore, inserted) = processed.insert(tgt_state);
-					if (inserted) { worklist.push_back(tgt_state); }
-				}
+			for (const State target_state : symbol_post.targets) {
+				const bool inserted{processed.insert(target_state).second};
+				if (inserted) { worklist.push_back(target_state); }
 			}
 		}
 
-		if (symbols.size() != n) { return false; }
+		// DONT_CARE covers every non-epsilon symbol. EPSILON only matches itself.
+		if (has_dont_care) {
+			if (epsilon_is_in_alphabet && !has_epsilon) { return false; }
+		} else if (num_of_exact_symbols != symbols.size()) {
+			return false;
+		}
 	}
 
 	return true;

@@ -554,7 +554,8 @@ class Nft : public mata::Automaton {
 	 * @brief Test whether the transducer is deterministic.
 	 *
 	 * I.e., whether it has exactly one initial state and every state has at most one outgoing transition over every
-	 *  symbol.
+	 *  matching symbol. @c DONT_CARE overlaps every non-epsilon concrete symbol. Overlapping transitions are
+	 *  deterministic only when they lead to the same target state.
 	 * Checks the whole transducer, not only the reachable part.
 	 */
 	bool is_deterministic() const;
@@ -563,15 +564,17 @@ class Nft : public mata::Automaton {
 	 * @brief Test for transducer completeness with regard to an alphabet.
 	 *
 	 * A transducer is complete if every reachable state has at least one outgoing transition over every symbol.
+	 * A @c DONT_CARE transition covers every non-epsilon symbol.
 	 *
 	 * @param[in] alphabet Alphabet to use, resolved via @c resolve_alphabet(alphabet).
 	 */
-	bool is_complete(const Alphabet* alphabet = nullptr) const;
+	bool is_complete(const Alphabet* alphabet = nullptr) const { return is_complete(get_symbols_to_work_with(alphabet)); }
 
 	/**
 	 * @brief Test for transducer completeness with regard to a set of symbols.
 	 *
 	 * A transducer is complete if every reachable state has at least one outgoing transition over every symbol.
+	 * A @c DONT_CARE transition covers every non-epsilon symbol.
 	 */
 	bool is_complete(const utils::OrdVector<Symbol>& symbols) const;
 

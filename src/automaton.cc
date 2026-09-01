@@ -210,11 +210,22 @@ void Automaton::trim_impl(const BoolVector& useful_states, StateRenaming* state_
 	}
 
 	delta.defragment(useful_states, renaming);
-    // Renaming has to be in ascending order, callers using trim_impl rely on this property.
-    MATA_ASSERT(
-        std::is_sorted(renaming.begin(), renaming.end()),
-        "Automaton::trim_impl: renaming must be sorted in ascending order."
-    );
+	// Only useful states have a meaningful entry in `renaming`.
+    // Removed states keep the default zero.
+    // Check that the useful-state projection is the expected dense, ascending sequence.
+	MATA_ASSERT(
+		[&] {
+			State expected_new_state{0};
+			for (State orig_state{0}; orig_state < useful_states_size; ++orig_state) {
+				if (useful_states[orig_state]) {
+					if (renaming[orig_state] != expected_new_state) { return false; }
+					++expected_new_state;
+				}
+			}
+			return true;
+		}(),
+		"Automaton::trim_impl: useful states must be renamed densely in ascending order."
+	);
 
 	auto is_state_useful = [&](const State q) { return q < useful_states_size && useful_states[q]; };
 	initial.filter(is_state_useful);

@@ -2508,6 +2508,20 @@ TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{
 		REQUIRE(!aut.is_deterministic());
 	}
 
+	SECTION("DONT_CARE overlaps concrete symbols") {
+		aut.initial = {'q'};
+		aut.delta.add('q', DONT_CARE, 'r');
+		REQUIRE(aut.is_deterministic());
+
+		// Both transitions match 'a', but agree on the target.
+		aut.delta.add('q', 'a', 'r');
+		REQUIRE(aut.is_deterministic());
+
+		// Both transitions match 'b' and disagree on the target.
+		aut.delta.add('q', 'b', 's');
+		REQUIRE(!aut.is_deterministic());
+	}
+
 	SECTION("larger automaton 1") {
 		FILL_WITH_AUT_A(aut);
 		REQUIRE(!aut.is_deterministic());
@@ -2518,6 +2532,36 @@ TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{
 		REQUIRE(!aut.is_deterministic());
 	}
 } // }}}
+
+TEST_CASE("mata::nft::Nft::is_complete() with DONT_CARE") {
+	const OrdVector<Symbol> alphabet{'a', 'b'};
+	Nft aut{Nft::with_levels(1, 2, {0})};
+	aut.delta.add(0, DONT_CARE, 1);
+	aut.delta.add(1, DONT_CARE, 1);
+
+	SECTION("DONT_CARE covers every concrete alphabet symbol") {
+		CHECK(aut.is_complete(alphabet));
+	}
+
+	SECTION("EPSILON is allowed but does not affect completeness for a concrete alphabet") {
+		aut.delta.add(0, EPSILON, 0);
+		CHECK(aut.is_complete(alphabet));
+	}
+
+	SECTION("DONT_CARE does not cover EPSILON") {
+		CHECK_FALSE(aut.is_complete(OrdVector<Symbol>{'a', EPSILON}));
+		aut.delta.add(0, EPSILON, 0);
+		aut.delta.add(1, EPSILON, 1);
+		CHECK(aut.is_complete(OrdVector<Symbol>{'a', EPSILON}));
+	}
+
+	SECTION("unknown concrete transition symbol is rejected") {
+		aut.delta.add(0, 'c', 0);
+		CHECK_THROWS_WITH(
+			aut.is_complete(alphabet), Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
+		);
+	}
+}
 
 TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 	Nft nft{Nft::with_levels(3)};
@@ -2913,6 +2957,47 @@ TEST_CASE("mata::nft::unite_nondet_with()") {
 	SECTION("empty automata") {
 		lhs.unite_nondet_with(rhs);
 		CHECK_SHARED();
+	}
+
+	SECTION("self union") {
+		lhs.initial = {0};
+		lhs.final = {1};
+		lhs.insert_word(0, {'a', 'b'}, 1);
+		const Nft original{lhs};
+
+		lhs.unite_nondet_with(lhs);
+
+		CHECK(lhs.is_identical(original));
+		CHECK(lhs.levels.size() == lhs.num_of_states());
+	}
+
+	SECTION("empty right operand with allocated states") {
+		lhs.initial = {0};
+		lhs.final = {1};
+		lhs.insert_word(0, {'a', 'b'}, 1);
+		rhs = Nft{4};
+		const Nft original{lhs};
+
+		lhs.unite_nondet_with(rhs);
+
+		CHECK(lhs.is_identical(original));
+		CHECK(lhs.levels.size() == lhs.num_of_states());
+	}
+
+	SECTION("empty left operand with allocated states") {
+		lhs = Nft{4};
+		rhs.initial = {0};
+		rhs.final = {1};
+		rhs.insert_word(0, {'a', 'b'}, 1);
+		auto alphabet =
+			std::make_shared<AlphabetLevels>(AlphabetLevels{std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b'})});
+		rhs.alphabets = alphabet;
+
+		lhs.unite_nondet_with(rhs);
+
+		CHECK(lhs.is_identical(rhs));
+		CHECK(lhs.levels.size() == lhs.num_of_states());
+		CHECK(lhs.alphabets == alphabet);
 	}
 
 	SECTION("simple NFTs") {
