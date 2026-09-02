@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <fstream>
 #include <limits>
+#include <list>
 #include <optional>
 #include <queue>
 #include <ranges>
@@ -133,28 +134,17 @@ size_t Nft::num_of_states_with_level(const Level level) const { return levels.co
 
 Nft& Nft::trim(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{useful_states()};
+	BoolVector useful_states{get_useful_states()};
 	useful_states.clear();
-	useful_states = useful_states();
+	useful_states = get_useful_states();
 #else
 	const BoolVector useful_states{get_useful_states()};
 #endif
-	const size_t useful_states_size{useful_states.size()};
-	std::vector<State> renaming(useful_states_size);
-	for (State new_state{0}, orig_state{0}; orig_state < useful_states_size; ++orig_state) {
-		if (useful_states[orig_state]) {
-			renaming[orig_state] = new_state;
-			++new_state;
-		}
-	}
 
-	delta.defragment(useful_states, renaming);
-
+	// Drop the levels of the states that are about to be removed.
+	// Independent of the structural renaming below, which does not touch `levels`.
+	// `levels` may hold more entries than `useful_states` has states, so the bounds check is load-bearing.
 	auto is_state_useful = [&](const State q) { return q < useful_states.size() && useful_states[q]; };
-	initial.filter(is_state_useful);
-	final.filter(is_state_useful);
-
-	// Specific for levels
 	State move_index{0};
 	levels.erase(
 		std::ranges::remove_if(
@@ -168,18 +158,8 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
 		levels.end()
 	);
 
-	auto rename_state = [&](const State q) { return renaming[q]; };
-	initial.rename(rename_state);
-	final.rename(rename_state);
-	initial.truncate();
-	final.truncate();
-	if (state_renaming != nullptr) {
-		state_renaming->clear();
-		state_renaming->reserve(useful_states_size);
-		for (State q{0}; q < useful_states_size; ++q) {
-			if (useful_states[q]) { (*state_renaming)[q] = renaming[q]; }
-		}
-	}
+	// TODO(c++23): drop this forwarder.
+	trim_impl(useful_states, state_renaming);
 	return *this;
 }
 
@@ -225,7 +205,6 @@ void Nft::print_to_dot(
 		if (decode_ascii_chars) { return to_ascii(symbol); }
 		if (alphabet != nullptr) { return alphabet->reverse_translate_symbol(symbol); }
 		if (this->alphabets != nullptr) { return this->alphabets->reverse_translate_symbol(symbol, level); }
-		if (this->alphabet != nullptr) { return this->alphabet->reverse_translate_symbol(symbol); }
 		return std::to_string(symbol);
 	};
 
@@ -388,8 +367,6 @@ void Nft::print_to_mata(std::ostream& output) const {
 		std::string symbol_label;
 		if (alphabets != nullptr) {
 			symbol_label = alphabets->reverse_translate_symbol(trans.symbol, levels[trans.source]);
-		} else if (alphabet != nullptr) {
-			symbol_label = alphabet->reverse_translate_symbol(trans.symbol);
 		} else {
 			symbol_label = std::to_string(trans.symbol);
 		}
@@ -881,7 +858,7 @@ StateSet Nft::post(
 
 Nft& Nft::operator=(Nft&& other) noexcept {
 	if (this != &other) {
-		Nfa::operator=(std::move(other));
+		Automaton::operator=(std::move(other));
 		levels = std::move(other.levels);
 		levels.num_of_levels = other.levels.num_of_levels;
 		alphabets = std::exchange(other.alphabets, nullptr);
@@ -889,44 +866,54 @@ Nft& Nft::operator=(Nft&& other) noexcept {
 	return *this;
 }
 
-Nft& Nft::operator=(const Nfa& other) noexcept {
-	if (this != &other) {
-		Nfa::operator=(other);
-		levels = Levels(num_of_states(), DEFAULT_LEVEL);
-		levels.num_of_levels = 1;
-	}
-	return *this;
-}
-
-Nft& Nft::operator=(Nfa&& other) noexcept {
-	if (this != &other) {
-		Nfa::operator=(std::move(other));
-		levels = Levels(num_of_states(), DEFAULT_LEVEL);
-		levels.num_of_levels = 1;
-	}
-	return *this;
-}
-
 State Nft::add_state() {
-	const State state{Nfa::add_state()};
+	const State state{Automaton::add_state()};
 	levels.set(state);
 	return state;
 }
 
 State Nft::add_state(const State state) {
 	levels.set(state);
-	return Nfa::add_state(state);
+	return Automaton::add_state(state);
 }
 
 State Nft::add_state_with_level(const Level level) {
-	const State state{Nfa::add_state()};
+	const State state{Automaton::add_state()};
 	levels.set(state, level);
 	return state;
 }
 
 State Nft::add_state_with_level(const State state, const Level level) {
 	levels.set(state, level);
-	return Nfa::add_state(state);
+	return Automaton::add_state(state);
+}
+
+State Nft::insert_word_impl_(const State source, const Word& word, const State target) {
+	MATA_ASSERT(!word.empty());
+	MATA_ASSERT(source < num_of_states());
+	MATA_ASSERT(target < num_of_states());
+
+	const size_t word_len = word.size();
+	if (word_len == 1) {
+		delta.add(source, word[0], target);
+		return target;
+	}
+
+	// Add transition source --> inner_state.
+	State inner_state = Automaton::add_state();
+	delta.add(source, word[0], inner_state);
+
+	// Add transitions inner_state --> inner_state
+	State prev_state = inner_state;
+	for (size_t idx{1}; idx < word_len - 1; idx++) {
+		inner_state = Automaton::add_state();
+		delta.add(prev_state, word[idx], inner_state);
+		prev_state = inner_state;
+	}
+
+	// Add transition inner_state --> target
+	delta.add(prev_state, word[word_len - 1], target);
+	return target;
 }
 
 State Nft::insert_word(const State source, const Word& word, const State target) {
@@ -937,7 +924,7 @@ State Nft::insert_word(const State source, const Word& word, const State target)
 	}
 
 	const State first_new_state{num_of_states()};
-	const State word_target{Nfa::insert_word(source, word, target)};
+	const State word_target{insert_word_impl_(source, word, target)};
 	const size_t num_of_states_after{num_of_states()};
 	const Level source_level{levels[source]};
 	Level lvl{levels.next_level_after(source_level)};
@@ -1113,7 +1100,6 @@ void Nft::add_transition(
 	auto resolve_level_alphabet{[&](const Level level) -> Alphabet& {
 		if (alphabet != nullptr) { return *alphabet; }
 		if (this->alphabets != nullptr) { return this->alphabets->for_level(level); }
-		if (this->alphabet != nullptr) { return *this->alphabet; }
 		throw std::runtime_error(
 			"Nft::add_transition(): no alphabet available to translate symbol '" + symbol_name + "' for level " +
 			std::to_string(level)
@@ -1179,7 +1165,6 @@ std::shared_ptr<const mata::Alphabet>
 	if (this->alphabets != nullptr) {
 		return std::shared_ptr<const Alphabet>(this->alphabets, &this->alphabets->for_level(level));
 	}
-	if (this->alphabet != nullptr) { return this->alphabet; }
 	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
 }
 
@@ -1204,12 +1189,159 @@ bool Nft::contains_jump_transitions() const {
 }
 
 void Nft::clear() {
-	Nfa::clear();
+	Automaton::clear();
 	levels.clear();
 }
 
+Nft& Nft::unify_initial(const bool force_new_state) {
+	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
+
+	// Nft::add_state() puts the new state on level 0 and grows `levels` along with `delta`.
+	const State new_initial_state{add_state()};
+	for (const State orig_initial_state : initial) {
+		for (const StatePost& state_post{delta.state_post(orig_initial_state)}; const auto& symbol_post : state_post) {
+			for (const State target : symbol_post.targets) { delta.add(new_initial_state, symbol_post.symbol, target); }
+		}
+		if (final[orig_initial_state]) { final.insert(new_initial_state); }
+	}
+
+	initial.clear();
+	initial.insert(new_initial_state);
+	return *this;
+}
+
+Nft& Nft::unify_final(const bool force_new_state) {
+	if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
+
+	// Nft::add_state() puts the new state on level 0 and grows `levels` along with `delta`.
+	const State new_final_state{add_state()};
+	for (const auto& orig_final_state : final) {
+		for (const auto transitions_to{delta.get_transitions_to(orig_final_state)};
+			 const auto& transition : transitions_to) {
+			delta.add(transition.source, transition.symbol, new_final_state);
+		}
+		if (initial[orig_final_state]) { initial.insert(new_final_state); }
+	}
+
+	final.clear();
+	final.insert(new_final_state);
+	return *this;
+}
+
+bool Nft::is_lang_empty(Run* cex) const {
+	// TODO(c++23): drop this split; with `deducing this` Automaton can call the leaf's get_word_for_path() itself.
+	if (has_no_accepting_path(cex)) { return true; }
+	// The structural search filled only the path; reading the path as a word is level-aware for NFTs.
+	if (cex != nullptr) { cex->word = get_word_for_path(*cex).first.word; }
+	return false;
+}
+
+bool Nft::is_deterministic() const {
+	if (initial.size() != 1) { return false; }
+	if (delta.empty()) { return true; }
+
+	const size_t aut_size{num_of_states()};
+	for (size_t i = 0; i < aut_size; ++i) {
+		const StatePost& state_post{delta[i]};
+		bool has_dont_care{false};
+		State dont_care_target{};
+		for (const SymbolPost& symbol_post : state_post) {
+			if (symbol_post.num_of_targets() != 1) { return false; }
+			if (symbol_post.symbol == DONT_CARE) {
+				has_dont_care = true;
+				dont_care_target = *symbol_post.targets.begin();
+			}
+		}
+
+		if (!has_dont_care) { continue; }
+		for (const SymbolPost& symbol_post : state_post) {
+			// DONT_CARE overlaps every non-epsilon concrete symbol.
+			// Overlapping transitions are still deterministic when they lead to the same state.
+			if (symbol_post.symbol != DONT_CARE && symbol_post.symbol != EPSILON &&
+				*symbol_post.targets.begin() != dont_care_target) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
+	// TODO: make a general function for traversal over reachable states that can be shared by other functions?
+	std::list<State> worklist(initial.begin(), initial.end());
+	std::unordered_set<State> processed(initial.begin(), initial.end());
+	const bool epsilon_is_in_alphabet{!symbols.empty() && symbols.back() == EPSILON};
+
+	while (!worklist.empty()) {
+		const State state = *worklist.begin();
+		worklist.pop_front();
+
+		size_t num_of_exact_symbols{0};
+		bool has_dont_care{false};
+		bool has_epsilon{false};
+		for (const SymbolPost& symbol_post : delta[state]) {
+			if (symbol_post.symbol < DONT_CARE) {
+				if (!haskey(symbols, symbol_post.symbol)) {
+					throw std::runtime_error(
+						std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
+					);
+				}
+				++num_of_exact_symbols;
+			} else if (symbol_post.symbol == DONT_CARE) {
+				has_dont_care = true;
+			} else {
+				MATA_ASSERT(symbol_post.symbol == EPSILON, "Nft::is_complete: unexpected special symbol.");
+				has_epsilon = true;
+				if (epsilon_is_in_alphabet) { ++num_of_exact_symbols; }
+			}
+
+			for (const State target_state : symbol_post.targets) {
+				const bool inserted{processed.insert(target_state).second};
+				if (inserted) { worklist.push_back(target_state); }
+			}
+		}
+
+		// DONT_CARE covers every non-epsilon symbol. EPSILON only matches itself.
+		if (has_dont_care) {
+			if (epsilon_is_in_alphabet && !has_epsilon) { return false; }
+		} else if (num_of_exact_symbols != symbols.size()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+	StateSet closure{source_states};
+	std::queue<State> worklist;
+	for (const State state : source_states) { worklist.push(state); }
+	while (!worklist.empty()) {
+		const State state = worklist.front();
+		worklist.pop();
+		for (const Symbol epsilon : epsilons) {
+			if (auto move_it{delta[state].find(epsilon)}; move_it != delta[state].end()) {
+				for (const State target : move_it->targets) {
+					if (closure.insert(target).second) { worklist.push(target); }
+				}
+			}
+		}
+	}
+	return closure;
+}
+
+void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
+	for (const StatePost& state_post : delta) {
+		for (const SymbolPost& symbol_post : state_post) {
+			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
+			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+		}
+	}
+}
+
+// TODO(c++23): drop this forwarder. `deducing this` lets Automaton take a same-type parameter directly.
 bool Nft::is_identical(const Nft& aut) const {
-	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && Nfa::is_identical(aut);
+	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && is_identical_impl(aut);
 }
 
 mata::nfa::Nfa
@@ -1224,7 +1356,10 @@ mata::nfa::Nfa
 }
 
 Nft Nft::apply(
-	const Nfa& nfa, const Level level_to_apply_on, const bool project_out_applied_level, const JumpMode jump_mode
+	const mata::nfa::Nfa& nfa,
+	const Level level_to_apply_on,
+	const bool project_out_applied_level,
+	const JumpMode jump_mode
 ) const {
 	return compose(Nft{nfa}, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
 }

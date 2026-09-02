@@ -83,6 +83,7 @@
 
 #include "delta.hh"
 #include "mata/alphabet.hh"
+#include "mata/automaton.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
@@ -94,17 +95,8 @@ namespace mata::nfa {
 /**
  * A class representing an NFA.
  */
-class Nfa {
+class Nfa : public Automaton {
   public:
-	/**
-	 * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
-	 *
-	 * The set of states of this automaton are the numbers from 0 to the number of states minus one.
-	 */
-	Delta delta;
-	utils::SparseSet<State> initial{};
-	utils::SparseSet<State> final{};
-
 	std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
 	/// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
 	///  are up to the user.
@@ -114,6 +106,8 @@ class Nfa {
 	///  transition.
 	// TODO: When there is a need for state dictionary, consider creating default library implementation of state
 	//  dictionary in the attributes.
+	// TODO: Deletion candidate. This is a @c void* map with no in-tree use.
+	// Removing it needs a downstream check (Z3-Noodler) first.
 	std::unordered_map<std::string, void*> attributes{};
 
   public:
@@ -123,9 +117,7 @@ class Nfa {
 		utils::SparseSet<State> final_states = {},
 		std::shared_ptr<Alphabet> alphabet = nullptr
 	)
-		: delta(std::move(delta)),
-		  initial(std::move(initial_states)),
-		  final(std::move(final_states)),
+		: Automaton(std::move(delta), std::move(initial_states), std::move(final_states)),
 		  alphabet(std::move(alphabet)) {}
 
 	/**
@@ -142,9 +134,7 @@ class Nfa {
 		utils::SparseSet<State> final_states = {},
 		std::shared_ptr<Alphabet> alphabet = nullptr
 	)
-		: delta(num_of_states),
-		  initial(std::move(initial_states)),
-		  final(std::move(final_states)),
+		: Automaton(num_of_states, std::move(initial_states), std::move(final_states)),
 		  alphabet(std::move(alphabet)) {}
 
 	/**
@@ -153,9 +143,7 @@ class Nfa {
 	Nfa(const Nfa& other) = default;
 
 	Nfa(Nfa&& other) noexcept
-		: delta{std::move(other.delta)},
-		  initial{std::move(other.initial)},
-		  final{std::move(other.final)},
+		: Automaton{std::move(other)},
 		  alphabet{std::move(other.alphabet)},
 		  attributes{std::move(other.attributes)} {}
 
@@ -166,13 +154,20 @@ class Nfa {
 	 * Add a new (fresh) state to the automaton.
 	 * @return The newly created state.
 	 */
-	State add_state();
+	State add_state() { return Automaton::add_state(); }
 
 	/**
 	 * Add state @p state to @c delta if @p state is not in @c delta yet.
 	 * @return The requested @p state.
 	 */
-	State add_state(State state);
+	State add_state(const State state) { return Automaton::add_state(state); }
+
+	/**
+	 * @brief Clear the underlying NFA to a blank NFA.
+	 *
+	 * The whole NFA is cleared, each member is set to its zero value.
+	 */
+	void clear() { Automaton::clear(); }
 
 	/**
 	 * @brief Add a new transition from @p source to @p target labeled by the symbol named @p symbol_name.
@@ -213,14 +208,6 @@ class Nfa {
 	State insert_word(State source, const Word& word);
 
 	/**
-	 * @brief Get the current number of states in the whole automaton.
-	 *
-	 * This includes the initial and final states as well as states in the transition relation.
-	 * @return The number of states.
-	 */
-	size_t num_of_states() const;
-
-	/**
 	 * @brief Unify initial states into a single new initial state.
 	 *
 	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
@@ -244,15 +231,6 @@ class Nfa {
 		return *this;
 	}
 
-	bool is_state(const State& state_to_check) const { return state_to_check < num_of_states(); }
-
-	/**
-	 * @brief Clear the underlying NFA to a blank NFA.
-	 *
-	 * The whole NFA is cleared, each member is set to its zero value.
-	 */
-	void clear();
-
 	/**
 	 * @brief Check if @c this is exactly identical to @p aut.
 	 *
@@ -261,67 +239,6 @@ class Nfa {
 	 * @return True if automata are exactly identical, false otherwise.
 	 */
 	bool is_identical(const Nfa& aut) const;
-
-	/**
-	 * @brief Get set of reachable states.
-	 *
-	 * Reachable states are states accessible from any initial state.
-	 * @return Set of reachable states.
-	 * TODO: with the new get_useful_states, it might be useless now.
-	 */
-	StateSet get_reachable_states(const std::function<bool(State)>& filter = nullptr) const;
-
-	/**
-	 * @brief Get set of terminating states.
-	 *
-	 * Terminating states are states leading to any final state.
-	 * @return Set of terminating states.
-	 * TODO: with the new get_useful_states, it might be useless now.
-	 */
-	StateSet get_terminating_states() const;
-
-	/**
-	 * @brief Get the useful states using a modified Tarjan's algorithm.
-	 *
-	 * A state is useful if it is reachable from an initial state and can reach a final state.
-	 *
-	 * @param initial_states Optional set of initial states to consider when computing usefulness. If @c std::nullopt,
-	 * uses the NFA's initial states.
-	 * @param final_states Optional set of final states to consider when computing usefulness. If @c std::nullopt, uses
-	 * the NFA's final states.
-	 * @return BoolVector Bool vector whose `i`-th value is true iff the state `i` is useful.
-	 */
-	BoolVector get_useful_states(
-		std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt,
-		std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt
-	) const;
-
-	/**
-	 * @brief Structure for storing callback functions (event handlers) utilizing
-	 * Tarjan's SCC discover algorithm.
-	 */
-	struct TarjanDiscoverCallback {
-		// event handler for the first-time state discovery
-		std::function<bool(State)> state_discover;
-		// event handler for SCC discovery (together with the whole Tarjan stack)
-		std::function<bool(const std::vector<State>&, const std::vector<State>&)> scc_discover;
-		// event handler for state in SCC discovery
-		std::function<void(State)> scc_state_discover;
-		// event handler for visiting of the state successors
-		std::function<void(State, State)> succ_state_discover;
-	};
-
-	/**
-	 * @brief Tarjan's SCC discover algorithm.
-	 *
-	 * @param callback Callback class to instantiate callbacks for the Tarjan's algorithm.
-	 * @param initial_states Optional set of initial states to consider when computing SCCs. If @c std::nullopt, uses
-	 * all states in the NFA.
-	 */
-	void tarjan_scc_discover(
-		const TarjanDiscoverCallback& callback,
-		std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt
-	) const;
 
 	/**
 	 * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -335,7 +252,11 @@ class Nfa {
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
-	Nfa& trim(StateRenaming* state_renaming = nullptr);
+	Nfa& trim(StateRenaming* state_renaming = nullptr) {
+		// TODO(c++23): drop this forwarder.
+		trim_impl(state_renaming);
+		return *this;
+	}
 
 	/**
 	 * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
@@ -353,16 +274,6 @@ class Nfa {
 	 * @return Epsilon closure of the given set of states.
 	 */
 	StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = {EPSILON}) const;
-
-	/**
-	 * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
-	 */
-	std::vector<State> distances_from_initial() const;
-
-	/**
-	 * @brief Returns vector ret where ret[q] is the length of the shortest path from q to any final state
-	 */
-	std::vector<State> distances_to_final() const;
 
 	/**
 	 * @brief Get some shortest accepting run from state @p state.
@@ -545,7 +456,7 @@ class Nfa {
 	 *
 	 * @return Language empty <-> True
 	 */
-	bool is_lang_empty_scc() const;
+	bool is_lang_empty_scc() const { return has_no_accepting_path(); }
 
 	/**
 	 * @brief Test whether an automaton is deterministic.
@@ -569,13 +480,6 @@ class Nfa {
 	 * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.
 	 */
 	bool is_complete(const utils::OrdVector<Symbol>& symbols) const;
-
-	/**
-	 * @brief Is the automaton graph acyclic? Used for checking language finiteness.
-	 *
-	 * @return true <-> Automaton graph is acyclic.
-	 */
-	bool is_acyclic() const;
 
 	/**
 	 * @brief Is the automaton flat?

@@ -19,7 +19,7 @@ cimport libmata.alphabets as alph
 from libmata.nft.nft cimport (
     Symbol, State, StateSet, StateRenaming, Level,
     CLevels, CNft, CJumpMode, CCompositionMode,
-    CDelta, CRun, CTrans, CSymbolPost, CNfa,
+    CAutomaton, CDelta, CRun, CTrans, CSymbolPost, CNfa,
     CAlphabet, CConstAlphabet, CAlphabetLevels,
 )
 from libmata.nfa.nfa cimport CSparseSet, CBoolVector, CBinaryRelation
@@ -319,16 +319,6 @@ cdef class Nft:
             self.thisptr.get().alphabets = value.thisptr
 
     @property
-    def alphabet(self) -> alph.Alphabet | None:
-        """The alphabet inherited from `Nfa`.
-
-        NFT operations never read this field themselves (they use `alphabets` instead), so it is `None` for NFTs
-        built via the `Nft`/`with_levels` constructors. It can still be non-`None` when converted from an `Nfa` that
-        had its own `alphabet` set (e.g. via `from_nfa`/`from_nfa_with_levels`), since that field is copied as-is.
-        """
-        return alph.wrap_alphabet(self.thisptr.get().alphabet)
-
-    @property
     def initial_states(self):
         return [s for s in self.thisptr.get().initial]
 
@@ -424,7 +414,7 @@ cdef class Nft:
         Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
         e.g. `nft.delta.add(source, symbol, target)`, `nft.delta.contains(...)`, or iterating `for t in nft.delta`.
         """
-        return mata_nfa.wrap_delta(static_pointer_cast[CNfa, CNft](self.thisptr))
+        return mata_nfa.wrap_delta(static_pointer_cast[CAutomaton, CNft](self.thisptr))
 
     def add_transition_object(self, Transition tr):
         self.thisptr.get().delta.add(dereference((<mata_nfa.Transition>tr).thisptr))

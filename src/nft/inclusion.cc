@@ -47,8 +47,11 @@ bool mata::nft::algorithms::is_included_antichains(
 		symbols = alphabet->get_alphabet_symbols();
 	}
 
+	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly.
+	Nft smaller_unwound{smaller.unwind_jumps(symbols, jump_mode)};
+	Nft bigger_unwound{bigger.unwind_jumps(symbols, jump_mode)};
 	return nfa::algorithms::is_included_antichains(
-		smaller.unwind_jumps(symbols, jump_mode), bigger.unwind_jumps(symbols, jump_mode), alphabet, cex
+		smaller_unwound.to_nfa_move(), bigger_unwound.to_nfa_move(), alphabet, cex
 	);
 } // }}}
 
@@ -107,9 +110,10 @@ bool mata::nft::are_equivalent(
 		symbols = alphabet->get_alphabet_symbols();
 	}
 
-	return nfa::are_equivalent(
-		lhs.unwind_jumps(symbols, jump_mode), rhs.unwind_jumps(symbols, jump_mode), alphabet, params
-	);
+	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly.
+	Nft lhs_unwound{lhs.unwind_jumps(symbols, jump_mode)};
+	Nft rhs_unwound{rhs.unwind_jumps(symbols, jump_mode)};
+	return nfa::are_equivalent(lhs_unwound.to_nfa_move(), rhs_unwound.to_nfa_move(), alphabet, params);
 }
 
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const JumpMode jump_mode, const ParameterMap& params) {

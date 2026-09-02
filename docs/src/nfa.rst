@@ -1,6 +1,9 @@
 Nondeterministic Finite automata
 ================================
 
+The structural members and graph-only operations inherited by ``mata::nfa::Nfa``
+are documented in :doc:`automaton`.
+
 .. doxygenpage:: nfa
 
 Types

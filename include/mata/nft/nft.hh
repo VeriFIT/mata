@@ -100,11 +100,13 @@
 
 #include "delta.hh"
 #include "mata/alphabet.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 #include "types.hh"
 
+#include "mata/automaton.hh"
 #include "mata/nfa/nfa.hh"
 
 namespace mata::nft {
@@ -112,9 +114,9 @@ namespace mata::nft {
 /**
  * @brief A class representing an NFT.
  */
-class Nft : public nfa::Nfa {
+class Nft : public mata::Automaton {
   private:
-	using super = nfa::Nfa;
+	using super = mata::Automaton;
 
   public:
 	/**
@@ -129,19 +131,9 @@ class Nft : public nfa::Nfa {
 	/**
 	 * @brief Per-level alphabets
 	 *
-	 * NFT operations always go through this member; the inherited @c Nfa::alphabet field is kept as @c nullptr and
-	 * ignored, anticipating the planned class split where NFT no longer derives from NFA.
+	 * NFT operations always go through this member. NFTs have no single flat alphabet: each level has its own.
 	 */
 	std::shared_ptr<AlphabetLevels> alphabets{nullptr};
-
-	/// Key value store for additional attributes for the NFT. Keys are attribute names as strings and the value types
-	///  are up to the user.
-	/// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to
-	/// their
-	///  respective names, or "transition_dict" for transition dictionary adding a human-readable meaning to each
-	///  transition.
-	// TODO: When there is a need for state dictionary, consider creating default library implementation of state
-	//  dictionary in the attributes.
 
 	explicit Nft(
 		Delta delta = {},
@@ -150,7 +142,7 @@ class Nft : public nfa::Nfa {
 		Levels levels = {},
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	)
-		: Nfa{std::move(delta), std::move(initial_states), std::move(final_states), nullptr},
+		: Automaton{std::move(delta), std::move(initial_states), std::move(final_states)},
 		  levels{levels.empty() ? Levels{levels.num_of_levels, num_of_states(), DEFAULT_LEVEL} : std::move(levels)},
 		  alphabets{std::move(alphabets)} {}
 
@@ -170,7 +162,7 @@ class Nft : public nfa::Nfa {
 		Levels levels = {},
 		std::shared_ptr<AlphabetLevels> alphabets = nullptr
 	)
-		: Nfa{num_of_states, std::move(initial_states), std::move(final_states), nullptr},
+		: Automaton{num_of_states, std::move(initial_states), std::move(final_states)},
 		  levels{levels.empty() ? Levels{levels.num_of_levels, num_of_states, DEFAULT_LEVEL} : std::move(levels)},
 		  alphabets{std::move(alphabets)} {}
 
@@ -225,6 +217,67 @@ class Nft : public nfa::Nfa {
 		};
 	}
 
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p levels to its states.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] levels Levels for the states of @p aut.
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft from_nfa(const nfa::Nfa& aut, Levels levels) {
+		MATA_ASSERT(aut.num_of_states() == levels.size(), "NFA and levels must have the same number of states");
+		return Nft{aut, std::move(levels)};
+	}
+
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p levels to its states.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] levels Levels for the states of @p aut.
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft from_nfa(nfa::Nfa&& aut, Levels levels) {
+		MATA_ASSERT(aut.num_of_states() == levels.size(), "NFA and levels must have the same number of states");
+		return Nft{std::move(aut), std::move(levels)};
+	}
+
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p num_of_levels to its states, all set to @p default_level.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] num_of_levels Number of levels for the NFT. (default: 1)
+	 * @param[in] default_level Default level for the states. (default: 0)
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft
+		from_nfa(const nfa::Nfa& aut, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL) {
+		return Nft{aut, num_of_levels, default_level};
+	}
+
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p num_of_levels to its states, all set to @p default_level.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] num_of_levels Number of levels for the NFT. (default: 1)
+	 * @param[in] default_level Default level for the states. (default: 0)
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft from_nfa(nfa::Nfa&& aut, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL) {
+		return Nft{std::move(aut), num_of_levels, default_level};
+	}
+
 	Nft(const Nft& other) = default;
 	Nft(Nft&& other) noexcept = default;
 
@@ -243,7 +296,7 @@ class Nft : public nfa::Nfa {
 	 * @param default_level Default level for the states. (default: 0)
 	 */
 	explicit Nft(const mata::nfa::Nfa& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL)
-		: mata::nfa::Nfa(other),
+		: Automaton{other.delta, other.initial, other.final},
 		  levels{num_of_levels, num_of_states(), default_level} {}
 
 	/**
@@ -257,8 +310,8 @@ class Nft : public nfa::Nfa {
 	 * @param num_of_levels Number of levels for the NFT. (default: 1)
 	 * @param default_level Default level for the states. (default: 0)
 	 */
-	explicit Nft(Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL)
-		: Nfa(std::move(other)),
+	explicit Nft(nfa::Nfa&& other, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL)
+		: Automaton{std::move(other.delta), std::move(other.initial), std::move(other.final)},
 		  levels{num_of_levels, num_of_states(), default_level} {}
 
 	/**
@@ -271,7 +324,11 @@ class Nft : public nfa::Nfa {
 	 * @param other NFA to be converted to NFT.
 	 * @param levels Levels for the states of the NFA @c other.
 	 */
-	explicit Nft(const Nfa& other, Levels levels) : Nfa(other), levels{std::move(levels)} {}
+	explicit Nft(const nfa::Nfa& other, Levels levels)
+		: Automaton{other.delta, other.initial, other.final},
+		  levels{std::move(levels)} {
+		MATA_ASSERT(other.num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
+	}
 
 	/**
 	 * @brief Construct a new NFT with @p num_of_levels levels from NFA.
@@ -283,10 +340,11 @@ class Nft : public nfa::Nfa {
 	 * @param other NFA to be converted to NFT.
 	 * @param levels Levels for the states of the NFA @c other.
 	 */
-	explicit Nft(Nfa&& other, Levels levels) : Nfa{std::move(other)}, levels{std::move(levels)} {}
-
-	Nft& operator=(const Nfa& other) noexcept;
-	Nft& operator=(Nfa&& other) noexcept;
+	explicit Nft(nfa::Nfa&& other, Levels levels)
+		: Automaton{std::move(other.delta), std::move(other.initial), std::move(other.final)},
+		  levels{std::move(levels)} {
+		MATA_ASSERT(other.num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
+	}
 
 	/**
 	 * Add a new (fresh) state to the automaton.
@@ -422,7 +480,7 @@ class Nft : public nfa::Nfa {
 	/**
 	 * @brief Add a new transition from @p source to @p target labeled by the symbol named @p symbol_name.
 	 *
-	 * Convenience wrapper mirroring @c Nfa::add_transition(), translating @p symbol_name to a @c Symbol via the
+	 * Convenience wrapper mirroring @c nfa::Nfa::add_transition(), translating @p symbol_name to a @c Symbol via the
 	 *  resolved alphabet instead of requiring the caller to translate it themselves.
 	 *
 	 * Unlike the plain-@c Symbol overloads above, @p symbol_name is translated separately for each level the
@@ -524,6 +582,85 @@ class Nft : public nfa::Nfa {
 	 * @brief Checks if the transducer contains any jump transition
 	 */
 	bool contains_jump_transitions() const;
+
+	/**
+	 * @brief Unify initial states into a single new initial state.
+	 *
+	 * The new state is created at level 0, which is where the initial states of a well-formed NFT live.
+	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+	 * @return @c this after unification.
+	 */
+	Nft& unify_initial(bool force_new_state = false);
+
+	/**
+	 * @brief Unify final states into a single new final state.
+	 *
+	 * The new state is created at level 0, which is where the final states of a well-formed NFT live.
+	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+	 * @return @c this after unification.
+	 */
+	Nft& unify_final(bool force_new_state = false);
+
+	/**
+	 * Check whether the relation of the NFT is empty.
+	 * Currently, calls is_lang_empty_scc if cex is null.
+	 * @param[out] cex Counter-example path for a case the relation is not empty.
+	 * @return True if the relation is empty, false otherwise.
+	 */
+	bool is_lang_empty(Run* cex = nullptr) const;
+
+	/**
+	 * @brief Check if the relation is empty using Tarjan's SCC discover algorithm.
+	 *
+	 * @return Relation empty <-> True
+	 */
+	bool is_lang_empty_scc() const { return has_no_accepting_path(); }
+
+	/**
+	 * @brief Test whether the transducer is deterministic.
+	 *
+	 * I.e., whether it has exactly one initial state and every state has at most one outgoing transition over every
+	 *  matching symbol. @c DONT_CARE overlaps every non-epsilon concrete symbol. Overlapping transitions are
+	 *  deterministic only when they lead to the same target state.
+	 * Checks the whole transducer, not only the reachable part.
+	 */
+	bool is_deterministic() const;
+
+	/**
+	 * @brief Test for transducer completeness with regard to an alphabet.
+	 *
+	 * A transducer is complete if every reachable state has at least one outgoing transition over every symbol.
+	 * A @c DONT_CARE transition covers every non-epsilon symbol.
+	 *
+	 * @param[in] alphabet Alphabet to use, resolved via @c resolve_alphabet(alphabet).
+	 */
+	bool is_complete(const Alphabet* alphabet = nullptr) const {
+		return is_complete(get_symbols_to_work_with(alphabet));
+	}
+
+	/**
+	 * @brief Test for transducer completeness with regard to a set of symbols.
+	 *
+	 * A transducer is complete if every reachable state has at least one outgoing transition over every symbol.
+	 * A @c DONT_CARE transition covers every non-epsilon symbol.
+	 */
+	bool is_complete(const utils::OrdVector<Symbol>& symbols) const;
+
+	/**
+	 * Check whether @p symbol is epsilon symbol or not.
+	 * @param symbol Symbol to check.
+	 * @return True if the passed @p symbol is epsilon, false otherwise.
+	 */
+	static bool is_epsilon(const Symbol symbol) { return symbol == EPSILON; }
+
+	/**
+	 * @brief Get the epsilon closure of the given set of states.
+	 *
+	 * @param source_states Set of source states.
+	 * @param epsilons Set of symbols to consider as epsilons when computing the closure.
+	 * @return Epsilon closure of the given set of states.
+	 */
+	StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = {EPSILON}) const;
 
 	/**
 	 * @brief Clear the underlying NFT to a blank NFT.
@@ -1011,7 +1148,6 @@ class Nft : public nfa::Nfa {
 		JumpMode jump_mode = JumpMode::RepeatSymbol,
 		bool has_epsilon_cycles = true
 	) const;
-	bool is_in_lang(const Run&, bool, bool) const = delete;
 
 	/**
 	 * @brief Check whether a @p word (or its prefix with @p match_prefix set) is in the language of an automaton.
@@ -1038,7 +1174,6 @@ class Nft : public nfa::Nfa {
 	) const {
 		return is_in_lang(Run{word, {}}, match_prefix, jump_mode, has_epsilon_cycles);
 	}
-	bool is_in_lang(const Word& word, bool, bool) const = delete;
 
 	/**
 	 * @brief Check whether a prefix of a @p run is in the language of an automaton.
@@ -1061,7 +1196,6 @@ class Nft : public nfa::Nfa {
 	) const {
 		return is_in_lang(run, true, jump_mode, has_epsilon_cycles);
 	}
-	bool is_in_lang_prefix(const Run&, bool) const = delete;
 
 	/**
 	 * @brief Check whether a prefix of a @p word is in the language of an automaton.
@@ -1084,7 +1218,6 @@ class Nft : public nfa::Nfa {
 	) const {
 		return is_in_lang_prefix(Run{word, {}}, jump_mode, has_epsilon_cycles);
 	}
-	bool is_in_lang_prefix(const Word&, bool) const = delete;
 
 	/**
 	 * @brief Checks whether @p level_words are in the language of the transducer.
@@ -1229,18 +1362,23 @@ class Nft : public nfa::Nfa {
 	 * @brief Copy NFT as NFA.
 	 *
 	 * Transitions are not updated to only have one level.
+	 *
+	 * @warning Lossy: levels are dropped, so the result reads an NFT transition sequence
+	 *  as a flat word on a single tape.
+	 * @note Prefer @c to_nfa_move() when @c this is no longer needed.
 	 * @return A newly created NFA with copied members from NFT.
 	 */
-	Nfa to_nfa_copy() const { return Nfa{delta, initial, final, alphabet}; }
+	nfa::Nfa to_nfa_copy() const { return nfa::Nfa{delta, initial, final, nullptr}; }
 
 	/**
 	 * @brief Move NFT as NFA.
 	 *
-	 * The NFT can no longer be used.
-	 * Transitions are not updated to only have one level.
+	 * The NFT can no longer be used. Transitions are not updated to only have one level.
+	 * @warning Lossy: levels are dropped, so the result reads an NFT transition sequence
+	 *  as a flat word on a single tape.
 	 * @return A newly created NFA with moved members from NFT.
 	 */
-	Nfa to_nfa_move() { return Nfa{std::move(delta), std::move(initial), std::move(final), alphabet}; }
+	nfa::Nfa to_nfa_move() { return nfa::Nfa{std::move(delta), std::move(initial), std::move(final), nullptr}; }
 
 	/**
 	 * @brief Copy NFT as NFA updating the transitions to have one level only.
@@ -1251,7 +1389,7 @@ class Nft : public nfa::Nfa {
 	 * sequence of @c DONT_CARE symbols.
 	 * @return A newly created NFA with copied members from NFT with updated transitions.
 	 */
-	Nfa to_nfa_update_copy(
+	nfa::Nfa to_nfa_update_copy(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
 		JumpMode jump_mode = JumpMode::RepeatSymbol
 	) const;
@@ -1266,7 +1404,7 @@ class Nft : public nfa::Nfa {
 	 * sequence of @c DONT_CARE symbols.
 	 * @return A newly created NFA with moved members from NFT with updated transitions.
 	 */
-	Nfa to_nfa_update_move(
+	nfa::Nfa to_nfa_update_move(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
 		JumpMode jump_mode = JumpMode::RepeatSymbol
 	);
@@ -1314,17 +1452,21 @@ class Nft : public nfa::Nfa {
 	);
 
 	/**
+	 * Fill @p alphabet_to_fill with symbols from @c this.
+	 * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @c this.
+	 */
+	void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
+
+	/**
 	 * @brief Resolve which alphabet to use for the current operation on @p level.
 	 *
 	 * Priority order:
 	 *  -# @p alphabet, when non-null;
 	 *  -# @c this->alphabets, when non-null, resolved for @p level (see @c AlphabetLevels::for_level for the
 	 *     semantics of @p level, including @c std::nullopt);
-	 *  -# @c this->alphabet (inherited from @c Nfa; expected to always be @c nullptr for NFTs), when non-null;
 	 *  -# an alphabet built on the fly from the symbols used on the NFT's transitions (see @c Delta::get_used_symbols).
 	 *
-	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabets/@c this->alphabet
-	 *  when non-null.
+	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabets when non-null.
 	 * @param[in] level Level to resolve the alphabet for when falling back to @c this->alphabets.
 	 * @return The resolved alphabet.
 	 */
@@ -1334,22 +1476,25 @@ class Nft : public nfa::Nfa {
 	/**
 	 * @brief Get the set of symbols to work with for the current operation on @p level.
 	 *
-	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabets/@c this->alphabet
-	 *  when non-null.
+	 * @param[in] alphabet Explicit alphabet to use, taking precedence over @c this->alphabets when non-null.
 	 * @param[in] level Level to resolve the alphabet for when falling back to @c this->alphabets.
 	 * @return Symbols of the alphabet resolved via @c resolve_alphabet(alphabet, level).
 	 */
 	utils::OrdVector<Symbol>
 		get_symbols_to_work_with(const Alphabet* alphabet = nullptr, std::optional<Level> level = std::nullopt) const;
 
-	using super::is_complete;
-	using super::is_deterministic;
-
   protected:
 	/**
 	 * @brief Assert that the number of levels in @c this and @p nft match.
 	 */
 	void assert_num_of_levels_match_(const Nft& nft) const;
+
+	/**
+	 * @brief Insert @p word as a chain of transitions from @p source to @p target, ignoring levels.
+	 *
+	 * The levels of the newly created inner states are assigned by @c insert_word(), which is the only caller.
+	 */
+	State insert_word_impl_(State source, const Word& word, State target);
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.
@@ -1362,6 +1507,20 @@ template <bool...> struct BoolPack {};
 template <typename... Ts> using conjunction = std::is_same<BoolPack<true, Ts::value...>, BoolPack<Ts::value..., true>>;
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
 template <typename T, typename... Ts> using AreAllOfType = conjunction<std::is_same<Ts, T>...>::type;
+
+/**
+ * Create alphabet from variadic number of NFTs given as arguments.
+ * @tparam[in] Nfts Type Nft.
+ * @param[in] nfts NFTs to create alphabet from.
+ * @return Created alphabet.
+ */
+template <typename... Nfts, typename = AreAllOfType<const Nft&, Nfts...>>
+OnTheFlyAlphabet create_alphabet(const Nfts&... nfts) {
+	mata::OnTheFlyAlphabet alphabet{};
+	auto f = [&alphabet](const Nft& aut) { aut.fill_alphabet(alphabet); };
+	(f(nfts), ...);
+	return alphabet;
+}
 
 /**
  * Get the set of symbols to work with during operations, for a given @p level.
@@ -1385,15 +1544,6 @@ utils::OrdVector<Symbol> get_symbols_to_work_with(
  * @return Non-deterministic union of @p lhs and @p rhs.
  */
 Nft union_nondet(const Nft& lhs, const Nft& rhs);
-
-Nft union_det_complete(const Nft& lhs, const Nft& rhs) = delete;
-Nft product(
-	const Nft& lhs,
-	const Nft& rhs,
-	ProductFinalStateCondition final_condition,
-	Symbol first_epsilon,
-	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* prod_map
-) = delete;
 
 /**
  * @brief Compute intersection of two NFTs.

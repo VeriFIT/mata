@@ -598,10 +598,10 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 			TransducerNoodleElement transd_el{
 				element_nft,
 				// the language of the input automaton is the projection to input track
-				std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))),
+				std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0).to_nfa_move()))),
 				element_indices[0],
 				// the language of the output automaton is the projection to output track
-				std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))),
+				std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1).to_nfa_move()))),
 				element_indices[1]
 			};
 			seg_nfa_to_transducer_el.insert({element_aut, transd_el});

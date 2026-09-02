@@ -108,9 +108,6 @@ class Nft:
     @alphabets.setter
     def alphabets(self, value: alph.AlphabetLevels | None) -> None: ...
     @property
-    def alphabet(self) -> alph.Alphabet | None:
-        """The alphabet inherited from `Nfa`; always `None` for NFTs (use `alphabets` instead)."""
-    @property
     def initial_states(self) -> list[State]: ...
     @initial_states.setter
     def initial_states(self, value: list[State]) -> None: ...

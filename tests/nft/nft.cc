@@ -61,7 +61,6 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
 		auto shared_alphabets = std::make_shared<AlphabetLevels>(AlphabetLevels{shared_alphabet});
 		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, shared_alphabets};
 
-		CHECK(nft.alphabet == nullptr);
 		REQUIRE(nft.alphabets == shared_alphabets);
 		CHECK(&nft.alphabets->for_level(0) == shared_alphabet.get());
 		CHECK(&nft.alphabets->for_level(7) == shared_alphabet.get());
@@ -71,7 +70,6 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
 		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, split_alphabets};
 
 		REQUIRE(nft.alphabets == split_alphabets);
-		CHECK(nft.alphabet == nullptr);
 		CHECK(&nft.alphabets->for_level(0) == input_alphabet.get());
 		CHECK(&nft.alphabets->for_level(1) == output_alphabet.get());
 	}
@@ -188,7 +186,6 @@ TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
 	Nft determinized = determinize(nft);
 
 	REQUIRE(determinized.alphabets == alphabets);
-	REQUIRE(determinized.alphabet == nullptr);
 	CHECK(&determinized.alphabets->for_level(0) == input_alphabet.get());
 	CHECK(&determinized.alphabets->for_level(1) == output_alphabet.get());
 }
@@ -539,9 +536,8 @@ TEST_CASE("mata::nft::is_lang_empty_cex()") {
 		REQUIRE(!is_empty);
 
 		// check the counterexample
-		REQUIRE(cex.word.size() == 2);
-		REQUIRE(cex.word[0] == 'a');
-		REQUIRE(cex.word[1] == 'c');
+		REQUIRE(cex.word == Word{'a', 'a', 'c', 'c'});
+		REQUIRE(aut.is_in_lang(cex.word));
 	}
 }
 
@@ -671,6 +667,8 @@ TEST_CASE("mata::nft::determinize()") {
 	// }
 } // }}}
 
+#ifdef MATA_NFT_NOT_IMPLEMENTED
+// TODO(nft): Re-enable once mata::nft::minimize() exists.
 TEST_CASE("mata::nft::minimize() for profiling", "[.profiling],[minimize]") {
 	Nft aut(4);
 	Nft result;
@@ -710,6 +708,7 @@ TEST_CASE("mata::nft::minimize() for profiling", "[.profiling],[minimize]") {
 	aut.delta.add(3, 114, 3);
 	minimize(&result, aut);
 }
+#endif
 
 TEST_CASE("mata::nft::construct() correct calls") { // {{{
 	Nft aut(10);
@@ -1035,8 +1034,6 @@ TEST_CASE("mata::nft::make_complete()") {
 	Nft nft{Nft::with_levels(3)};
 	Nft result{Nft::with_levels(3)};
 	auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b', 'c'});
-	nft.alphabet = alphabet;
-	result.alphabet = alphabet;
 	auto alphabet_symbols = [&] { return alphabet->get_alphabet_symbols(); };
 	OrdVector<Symbol> symbols{alphabet_symbols()};
 
@@ -1377,10 +1374,10 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &alph, JumpMode::RepeatSymbol, params);
 			CHECK(is_incl);
 
-			is_incl = is_included(bigger, smaller, &alph, params);
+			is_incl = is_included(bigger, smaller, &alph, JumpMode::RepeatSymbol, params);
 			CHECK(is_incl);
 		}
 	}
@@ -1392,10 +1389,10 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, JumpMode::RepeatSymbol, params);
 			CHECK(is_incl);
 
-			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			is_incl = is_included(bigger, smaller, &cex, &alph, JumpMode::RepeatSymbol, params);
 			CHECK(!is_incl);
 		}
 	}
@@ -1409,10 +1406,10 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, JumpMode::RepeatSymbol, params);
 			CHECK(is_incl);
 
-			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			is_incl = is_included(bigger, smaller, &cex, &alph, JumpMode::RepeatSymbol, params);
 			CHECK(is_incl);
 		}
 	}
@@ -1424,12 +1421,12 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, JumpMode::RepeatSymbol, params);
 
 			REQUIRE(!is_incl);
 			REQUIRE(cex.word.empty());
 
-			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			is_incl = is_included(bigger, smaller, &cex, &alph, JumpMode::RepeatSymbol, params);
 			REQUIRE(cex.word.empty());
 			REQUIRE(is_incl);
 		}
@@ -1449,10 +1446,10 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &alph, JumpMode::RepeatSymbol, params);
 			REQUIRE(is_incl);
 
-			is_incl = is_included(bigger, smaller, &alph, params);
+			is_incl = is_included(bigger, smaller, &alph, JumpMode::RepeatSymbol, params);
 			REQUIRE(!is_incl);
 		}
 	}
@@ -1472,18 +1469,14 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
 
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, JumpMode::RepeatSymbol, params);
 
 			REQUIRE(!is_incl);
-			const bool cex_word_is_ab_or_ba_1 =
-				cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]};
-			REQUIRE(cex_word_is_ab_or_ba_1);
+			REQUIRE(smaller.is_in_lang(cex.word));
+			REQUIRE(!bigger.is_in_lang(cex.word));
 
-			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			is_incl = is_included(bigger, smaller, &cex, &alph, JumpMode::RepeatSymbol, params);
 			REQUIRE(is_incl);
-			const bool cex_word_is_ab_or_ba_2 =
-				cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]};
-			REQUIRE(cex_word_is_ab_or_ba_2);
 		}
 	}
 
@@ -1510,25 +1503,19 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, JumpMode::RepeatSymbol, params);
 			REQUIRE(!is_incl);
 
-			REQUIRE(cex.word.size() == 4);
-			for (size_t i = 0; i < 4; ++i) {
-				const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
+			// See the previous section: the counterexample is an NFT word of algorithm-dependent length.
+			REQUIRE(smaller.is_in_lang(cex.word));
+			REQUIRE(!bigger.is_in_lang(cex.word));
+			for (const Symbol symbol : cex.word) {
+				const bool cex_word_char_is_a_or_b = symbol == alph["a"] || symbol == alph["b"];
 				REQUIRE(cex_word_char_is_a_or_b);
 			}
-			REQUIRE(cex.word[2] != cex.word[3]);
 
-			is_incl = is_included(bigger, smaller, &cex, &alph, params);
+			is_incl = is_included(bigger, smaller, &cex, &alph, JumpMode::RepeatSymbol, params);
 			REQUIRE(is_incl);
-
-			REQUIRE(cex.word.size() == 4);
-			for (size_t i = 0; i < 4; ++i) {
-				const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
-				REQUIRE(cex_word_char_is_a_or_b);
-			}
-			REQUIRE(cex.word[2] != cex.word[3]);
 		}
 	}
 
@@ -1536,7 +1523,7 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 		OnTheFlyAlphabet alph{};
 
 		CHECK_THROWS_WITH(
-			is_included(smaller, bigger, &alph, params),
+			is_included(smaller, bigger, &alph, JumpMode::RepeatSymbol, params),
 			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
 		);
 		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
@@ -1547,7 +1534,8 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 		params["algorithm"] = "foo";
 
 		CHECK_THROWS_WITH(
-			is_included(smaller, bigger, &alph, params), Catch::Matchers::ContainsSubstring("received an unknown value")
+			is_included(smaller, bigger, &alph, JumpMode::RepeatSymbol, params),
+			Catch::Matchers::ContainsSubstring("received an unknown value")
 		);
 		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
 	}
@@ -1570,12 +1558,12 @@ TEST_CASE("mata::nft::are_equivalent") {
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
 
-			CHECK(are_equivalent(smaller, bigger, &alph, params));
-			CHECK(are_equivalent(smaller, bigger, params));
+			CHECK(are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params));
 			CHECK(are_equivalent(smaller, bigger));
 
-			CHECK(are_equivalent(bigger, smaller, &alph, params));
-			CHECK(are_equivalent(bigger, smaller, params));
+			CHECK(are_equivalent(bigger, smaller, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(are_equivalent(bigger, smaller, JumpMode::RepeatSymbol, params));
 			CHECK(are_equivalent(bigger, smaller));
 		}
 	}
@@ -1588,12 +1576,12 @@ TEST_CASE("mata::nft::are_equivalent") {
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
 
-			CHECK(!are_equivalent(smaller, bigger, &alph, params));
-			CHECK(!are_equivalent(smaller, bigger, params));
+			CHECK(!are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(!are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params));
 			CHECK(!are_equivalent(smaller, bigger));
 
-			CHECK(!are_equivalent(bigger, smaller, &alph, params));
-			CHECK(!are_equivalent(bigger, smaller, params));
+			CHECK(!are_equivalent(bigger, smaller, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(!are_equivalent(bigger, smaller, JumpMode::RepeatSymbol, params));
 			CHECK(!are_equivalent(bigger, smaller));
 		}
 	}
@@ -1608,12 +1596,12 @@ TEST_CASE("mata::nft::are_equivalent") {
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
 
-			CHECK(are_equivalent(smaller, bigger, &alph, params));
-			CHECK(are_equivalent(smaller, bigger, params));
+			CHECK(are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params));
 			CHECK(are_equivalent(smaller, bigger));
 
-			CHECK(are_equivalent(bigger, smaller, &alph, params));
-			CHECK(are_equivalent(bigger, smaller, params));
+			CHECK(are_equivalent(bigger, smaller, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(are_equivalent(bigger, smaller, JumpMode::RepeatSymbol, params));
 			CHECK(are_equivalent(bigger, smaller));
 		}
 	}
@@ -1636,12 +1624,12 @@ TEST_CASE("mata::nft::are_equivalent") {
 			// TODO:what about we test the plumbing versions primarily?
 			//  Debugging with the dispatcher is annoying.
 
-			CHECK(!are_equivalent(smaller, bigger, &alph, params));
-			CHECK(!are_equivalent(smaller, bigger, params));
+			CHECK(!are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(!are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params));
 			CHECK(!are_equivalent(smaller, bigger));
 
-			CHECK(!are_equivalent(bigger, smaller, &alph, params));
-			CHECK(!are_equivalent(bigger, smaller, params));
+			CHECK(!are_equivalent(bigger, smaller, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(!are_equivalent(bigger, smaller, JumpMode::RepeatSymbol, params));
 			CHECK(!are_equivalent(bigger, smaller));
 		}
 	}
@@ -1676,12 +1664,12 @@ TEST_CASE("mata::nft::are_equivalent") {
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
 
-			CHECK(!are_equivalent(smaller, bigger, &alph, params));
-			CHECK(!are_equivalent(smaller, bigger, params));
+			CHECK(!are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(!are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params));
 			CHECK(!are_equivalent(smaller, bigger));
 
-			CHECK(!are_equivalent(bigger, smaller, &alph, params));
-			CHECK(!are_equivalent(bigger, smaller, params));
+			CHECK(!are_equivalent(bigger, smaller, &alph, JumpMode::RepeatSymbol, params));
+			CHECK(!are_equivalent(bigger, smaller, JumpMode::RepeatSymbol, params));
 			CHECK(!are_equivalent(bigger, smaller));
 		}
 	}
@@ -1690,11 +1678,11 @@ TEST_CASE("mata::nft::are_equivalent") {
 		OnTheFlyAlphabet alph{};
 
 		CHECK_THROWS_WITH(
-			are_equivalent(smaller, bigger, &alph, params),
+			are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params),
 			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
 		);
 		CHECK_THROWS_WITH(
-			are_equivalent(smaller, bigger, params),
+			are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params),
 			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
 		);
 		CHECK_NOTHROW(are_equivalent(smaller, bigger));
@@ -1705,11 +1693,12 @@ TEST_CASE("mata::nft::are_equivalent") {
 		params["algorithm"] = "foo";
 
 		CHECK_THROWS_WITH(
-			are_equivalent(smaller, bigger, &alph, params),
+			are_equivalent(smaller, bigger, &alph, JumpMode::RepeatSymbol, params),
 			Catch::Matchers::ContainsSubstring("received an unknown value")
 		);
 		CHECK_THROWS_WITH(
-			are_equivalent(smaller, bigger, params), Catch::Matchers::ContainsSubstring("received an unknown value")
+			are_equivalent(smaller, bigger, JumpMode::RepeatSymbol, params),
+			Catch::Matchers::ContainsSubstring("received an unknown value")
 		);
 		CHECK_NOTHROW(are_equivalent(smaller, bigger));
 	}
@@ -2519,6 +2508,20 @@ TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{
 		REQUIRE(!aut.is_deterministic());
 	}
 
+	SECTION("DONT_CARE overlaps concrete symbols") {
+		aut.initial = {'q'};
+		aut.delta.add('q', DONT_CARE, 'r');
+		REQUIRE(aut.is_deterministic());
+
+		// Both transitions match 'a', but agree on the target.
+		aut.delta.add('q', 'a', 'r');
+		REQUIRE(aut.is_deterministic());
+
+		// Both transitions match 'b' and disagree on the target.
+		aut.delta.add('q', 'b', 's');
+		REQUIRE(!aut.is_deterministic());
+	}
+
 	SECTION("larger automaton 1") {
 		FILL_WITH_AUT_A(aut);
 		REQUIRE(!aut.is_deterministic());
@@ -2530,10 +2533,37 @@ TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{
 	}
 } // }}}
 
+TEST_CASE("mata::nft::Nft::is_complete() with DONT_CARE") {
+	const OrdVector<Symbol> alphabet{'a', 'b'};
+	Nft aut{Nft::with_levels(1, 2, {0})};
+	aut.delta.add(0, DONT_CARE, 1);
+	aut.delta.add(1, DONT_CARE, 1);
+
+	SECTION("DONT_CARE covers every concrete alphabet symbol") { CHECK(aut.is_complete(alphabet)); }
+
+	SECTION("EPSILON is allowed but does not affect completeness for a concrete alphabet") {
+		aut.delta.add(0, EPSILON, 0);
+		CHECK(aut.is_complete(alphabet));
+	}
+
+	SECTION("DONT_CARE does not cover EPSILON") {
+		CHECK_FALSE(aut.is_complete(OrdVector<Symbol>{'a', EPSILON}));
+		aut.delta.add(0, EPSILON, 0);
+		aut.delta.add(1, EPSILON, 1);
+		CHECK(aut.is_complete(OrdVector<Symbol>{'a', EPSILON}));
+	}
+
+	SECTION("unknown concrete transition symbol is rejected") {
+		aut.delta.add(0, 'c', 0);
+		CHECK_THROWS_WITH(
+			aut.is_complete(alphabet), Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
+		);
+	}
+}
+
 TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 	Nft nft{Nft::with_levels(3)};
 	auto alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b', 'c', 'd', 'e'});
-	nft.alphabet = alphabet;
 
 	SECTION("empty automaton") {
 		CHECK(nft.is_lang_empty());
@@ -2732,7 +2762,7 @@ TEST_CASE("mata::nft::fw-direct-simulation()") { // {{{
 		aut.delta.add(0, 'a', 2);
 		aut.delta.add(2, 'a', 3);
 
-		Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut);
+		Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut.to_nfa_copy());
 		Simlib::Util::BinaryRelation sim_for_nft = compute_relation(aut);
 
 		CHECK(sim_for_nfa.get(0, 0));
@@ -2925,6 +2955,47 @@ TEST_CASE("mata::nft::unite_nondet_with()") {
 	SECTION("empty automata") {
 		lhs.unite_nondet_with(rhs);
 		CHECK_SHARED();
+	}
+
+	SECTION("self union") {
+		lhs.initial = {0};
+		lhs.final = {1};
+		lhs.insert_word(0, {'a', 'b'}, 1);
+		const Nft original{lhs};
+
+		lhs.unite_nondet_with(lhs);
+
+		CHECK(lhs.is_identical(original));
+		CHECK(lhs.levels.size() == lhs.num_of_states());
+	}
+
+	SECTION("empty right operand with allocated states") {
+		lhs.initial = {0};
+		lhs.final = {1};
+		lhs.insert_word(0, {'a', 'b'}, 1);
+		rhs = Nft{4};
+		const Nft original{lhs};
+
+		lhs.unite_nondet_with(rhs);
+
+		CHECK(lhs.is_identical(original));
+		CHECK(lhs.levels.size() == lhs.num_of_states());
+	}
+
+	SECTION("empty left operand with allocated states") {
+		lhs = Nft{4};
+		rhs.initial = {0};
+		rhs.final = {1};
+		rhs.insert_word(0, {'a', 'b'}, 1);
+		auto alphabet =
+			std::make_shared<AlphabetLevels>(AlphabetLevels{std::make_shared<EnumAlphabet>(EnumAlphabet{'a', 'b'})});
+		rhs.alphabets = alphabet;
+
+		lhs.unite_nondet_with(rhs);
+
+		CHECK(lhs.is_identical(rhs));
+		CHECK(lhs.levels.size() == lhs.num_of_states());
+		CHECK(lhs.alphabets == alphabet);
 	}
 
 	SECTION("simple NFTs") {
@@ -3247,7 +3318,7 @@ TEST_CASE("mata::nft::trim()") {
 		CHECK(aut.initial.size() == orig_aut.initial.size());
 		CHECK(aut.final.size() == orig_aut.final.size());
 		CHECK(aut.num_of_states() == 4);
-		for (const Word& word : get_shortest_words(orig_aut)) { CHECK(aut.is_in_lang(Run{word, {}})); }
+		for (const Word& word : get_shortest_words(orig_aut.to_nfa_copy())) { CHECK(aut.is_in_lang(Run{word, {}})); }
 
 		aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
 		aut.trim();
@@ -3262,7 +3333,7 @@ TEST_CASE("mata::nft::trim()") {
 		CHECK(aut.initial.size() == orig_aut.initial.size());
 		CHECK(aut.final.size() == orig_aut.final.size());
 		CHECK(aut.num_of_states() == 4);
-		for (const Word& word : get_shortest_words(orig_aut)) { CHECK(aut.is_in_lang(Run{word, {}})); }
+		for (const Word& word : get_shortest_words(orig_aut.to_nfa_copy())) { CHECK(aut.is_in_lang(Run{word, {}})); }
 		REQUIRE(state_map.size() == 4);
 		CHECK(state_map.at(1) == 0);
 		CHECK(state_map.at(3) == 1);
@@ -3522,7 +3593,7 @@ TEST_CASE("mata::nft::make_complement(): A segmentation fault") {
 TEST_CASE("mata::nft:: create simple automata") {
 	Nft nft{builder::create_empty_string_nft(1)};
 	CHECK(nft.is_in_lang(Word{}));
-	CHECK(get_word_lengths(nft) == std::set<std::pair<int, int>>{std::make_pair(0, 0)});
+	CHECK(get_word_lengths(nft.to_nfa_copy()) == std::set<std::pair<int, int>>{std::make_pair(0, 0)});
 
 	auto alphabet = std::make_shared<OnTheFlyAlphabet>(OnTheFlyAlphabet{{"a", 0}, {"b", 1}, {"c", 2}});
 	nft = builder::create_sigma_star_nft(alphabet, 1);
@@ -3830,12 +3901,17 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		expected.delta.add(4, 1, 2);
 		REPLACE_DONT_CARE(expected.delta, 4, 4);
 
-		CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares).to_nfa_move(), expected.to_nfa_copy()
+			)
+		);
 		CHECK(
 			nfa::are_equivalent(
 				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-					.unwind_jumps({0, 1}, JumpMode::AppendDontCares),
-				expected
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)
+					.to_nfa_move(),
+				expected.to_nfa_copy()
 			)
 		);
 		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
@@ -3870,12 +3946,17 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 14, 6);
 		SPLIT_TRANSITION(expected.delta, 6, 1, 11, 4);
 
-		CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares).to_nfa_move(), expected.to_nfa_copy()
+			)
+		);
 		CHECK(
 			nfa::are_equivalent(
 				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-					.unwind_jumps({0, 1}, JumpMode ::AppendDontCares),
-				expected
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)
+					.to_nfa_move(),
+				expected.to_nfa_copy()
 			)
 		);
 		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
@@ -3931,12 +4012,17 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		SPLIT_TRANSITION(expected.delta, 13, 0, 23, 15);
 		SPLIT_TRANSITION(expected.delta, 14, DONT_CARE, 28, 16);
 
-		CHECK(nfa::are_equivalent(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares), expected));
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares).to_nfa_move(), expected.to_nfa_copy()
+			)
+		);
 		CHECK(
 			nfa::are_equivalent(
 				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-					.unwind_jumps({0, 1}, JumpMode::AppendDontCares),
-				expected
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)
+					.to_nfa_move(),
+				expected.to_nfa_copy()
 			)
 		);
 		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
