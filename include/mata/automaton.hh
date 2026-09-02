@@ -220,6 +220,8 @@ class Automaton {
 	/**
 	 * @brief Structural part of `is_identical()`. See @c mata::nfa::Nfa::is_identical().
 	 *
+	 * TODO(c++23): fold into a public `is_identical(this const Self&, const Self&)`.
+	 *
 	 * Compares only @c delta, @c initial and @c final.
 	 * @note Kept protected so that comparing an NFA against an NFT (or either against a bare @c Automaton) never
 	 * compiles. The leaves have to expose their own same-type overloads.
@@ -230,6 +232,8 @@ class Automaton {
 	/**
 	 * @brief Structural part of `trim()`. See @c mata::nfa::Nfa::trim().
 	 *
+	 * TODO(c++23): fold into a public `Self& trim(this Self&, ...)`, dropping the Nfa/Nft forwarders.
+	 *
 	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states after
 	 * trimming. If provided, the map will be filled with the mapping from old state numbers to new state numbers after
 	 * trimming.
@@ -238,6 +242,8 @@ class Automaton {
 
 	/**
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.
+	 *
+	 * TODO(c++23): fold into a public `Self& trim(this Self&, ...)`, dropping the Nfa/Nft forwarders.
 	 *
 	 * Lets a leaf class compute the useful states once, adjust its own per-state data (such as
 	 *  @c mata::nft::Nft::levels) and then hand the same bool vector over, instead of running Tarjan twice.
@@ -251,6 +257,8 @@ class Automaton {
 
 	/**
 	 * @brief As @c has_no_accepting_path(), but records a witness when an accepting path exists.
+	 *
+	 * TODO(c++23): with `deducing this` this can be the public `is_lang_empty()` itself.
 	 *
 	 * Fills only @c cex->path; reconstructing @c cex->word from the path is word semantics and therefore the
 	 *  responsibility of the leaf class, which knows how to read a path as a word. Delegates to

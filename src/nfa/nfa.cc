@@ -444,6 +444,7 @@ State Nfa::insert_word(const State source, const Word& word, const State target)
 
 State Nfa::insert_word(const State source, const Word& word) { return insert_word(source, word, add_state()); }
 
+// TODO(c++23): drop this forwarder.
 bool Nfa::is_identical(const Nfa& aut) const { return is_identical_impl(aut); }
 
 Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {

@@ -156,6 +156,7 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
 		levels.end()
 	);
 
+	// TODO(c++23): drop this forwarder.
 	trim_impl(useful_states, state_renaming);
 	return *this;
 }
@@ -1226,6 +1227,7 @@ Nft& Nft::unify_final(const bool force_new_state) {
 }
 
 bool Nft::is_lang_empty(Run* cex) const {
+	// TODO(c++23): drop this split; with `deducing this` Automaton can call the leaf's get_word_for_path() itself.
 	if (has_no_accepting_path(cex)) { return true; }
 	// The structural search filled only the path; reading the path as a word is level-aware for NFTs.
 	if (cex != nullptr) { cex->word = get_word_for_path(*cex).first.word; }
@@ -1335,6 +1337,7 @@ void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	}
 }
 
+// TODO(c++23): drop this forwarder. `deducing this` lets Automaton take a same-type parameter directly.
 bool Nft::is_identical(const Nft& aut) const {
 	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && is_identical_impl(aut);
 }

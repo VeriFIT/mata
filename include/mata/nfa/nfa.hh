@@ -253,6 +253,7 @@ class Nfa : public Automaton {
 	 * @return @c this after trimming.
 	 */
 	Nfa& trim(StateRenaming* state_renaming = nullptr) {
+		// TODO(c++23): drop this forwarder.
 		trim_impl(state_renaming);
 		return *this;
 	}
