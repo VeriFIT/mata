@@ -2762,7 +2762,7 @@ TEST_CASE("mata::nft::fw-direct-simulation()") { // {{{
 		aut.delta.add(0, 'a', 2);
 		aut.delta.add(2, 'a', 3);
 
-		Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(to_nfa(aut));
+		Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut.to_nfa_copy());
 		Simlib::Util::BinaryRelation sim_for_nft = compute_relation(aut);
 
 		CHECK(sim_for_nfa.get(0, 0));
@@ -3318,7 +3318,7 @@ TEST_CASE("mata::nft::trim()") {
 		CHECK(aut.initial.size() == orig_aut.initial.size());
 		CHECK(aut.final.size() == orig_aut.final.size());
 		CHECK(aut.num_of_states() == 4);
-		for (const Word& word : get_shortest_words(to_nfa(orig_aut))) { CHECK(aut.is_in_lang(Run{word, {}})); }
+		for (const Word& word : get_shortest_words(orig_aut.to_nfa_copy())) { CHECK(aut.is_in_lang(Run{word, {}})); }
 
 		aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
 		aut.trim();
@@ -3333,7 +3333,7 @@ TEST_CASE("mata::nft::trim()") {
 		CHECK(aut.initial.size() == orig_aut.initial.size());
 		CHECK(aut.final.size() == orig_aut.final.size());
 		CHECK(aut.num_of_states() == 4);
-		for (const Word& word : get_shortest_words(to_nfa(orig_aut))) { CHECK(aut.is_in_lang(Run{word, {}})); }
+		for (const Word& word : get_shortest_words(orig_aut.to_nfa_copy())) { CHECK(aut.is_in_lang(Run{word, {}})); }
 		REQUIRE(state_map.size() == 4);
 		CHECK(state_map.at(1) == 0);
 		CHECK(state_map.at(3) == 1);
@@ -3593,7 +3593,7 @@ TEST_CASE("mata::nft::make_complement(): A segmentation fault") {
 TEST_CASE("mata::nft:: create simple automata") {
 	Nft nft{builder::create_empty_string_nft(1)};
 	CHECK(nft.is_in_lang(Word{}));
-	CHECK(get_word_lengths(to_nfa(nft)) == std::set<std::pair<int, int>>{std::make_pair(0, 0)});
+	CHECK(get_word_lengths(nft.to_nfa_copy()) == std::set<std::pair<int, int>>{std::make_pair(0, 0)});
 
 	auto alphabet = std::make_shared<OnTheFlyAlphabet>(OnTheFlyAlphabet{{"a", 0}, {"b", 1}, {"c", 2}});
 	nft = builder::create_sigma_star_nft(alphabet, 1);
@@ -3901,12 +3901,17 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		expected.delta.add(4, 1, 2);
 		REPLACE_DONT_CARE(expected.delta, 4, 4);
 
-		CHECK(nfa::are_equivalent(to_nfa(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares)), to_nfa(expected)));
 		CHECK(
 			nfa::are_equivalent(
-				to_nfa(aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-						   .unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
-				to_nfa(expected)
+				aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares).to_nfa_move(), expected.to_nfa_copy()
+			)
+		);
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)
+					.to_nfa_move(),
+				expected.to_nfa_copy()
 			)
 		);
 		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
@@ -3941,12 +3946,17 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 14, 6);
 		SPLIT_TRANSITION(expected.delta, 6, 1, 11, 4);
 
-		CHECK(nfa::are_equivalent(to_nfa(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares)), to_nfa(expected)));
 		CHECK(
 			nfa::are_equivalent(
-				to_nfa(aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-						   .unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
-				to_nfa(expected)
+				aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares).to_nfa_move(), expected.to_nfa_copy()
+			)
+		);
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)
+					.to_nfa_move(),
+				expected.to_nfa_copy()
 			)
 		);
 		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));
@@ -4002,12 +4012,17 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		SPLIT_TRANSITION(expected.delta, 13, 0, 23, 15);
 		SPLIT_TRANSITION(expected.delta, 14, DONT_CARE, 28, 16);
 
-		CHECK(nfa::are_equivalent(to_nfa(aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares)), to_nfa(expected)));
 		CHECK(
 			nfa::are_equivalent(
-				to_nfa(aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
-						   .unwind_jumps({0, 1}, JumpMode::AppendDontCares)),
-				to_nfa(expected)
+				aut.unwind_jumps({0, 1}, JumpMode::AppendDontCares).to_nfa_move(), expected.to_nfa_copy()
+			)
+		);
+		CHECK(
+			nfa::are_equivalent(
+				aut.unwind_jumps({DONT_CARE}, JumpMode::AppendDontCares)
+					.unwind_jumps({0, 1}, JumpMode::AppendDontCares)
+					.to_nfa_move(),
+				expected.to_nfa_copy()
 			)
 		);
 		CHECK(nft::are_equivalent(aut, expected, JumpMode::AppendDontCares));

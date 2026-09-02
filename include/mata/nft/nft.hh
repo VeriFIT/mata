@@ -100,6 +100,7 @@
 
 #include "delta.hh"
 #include "mata/alphabet.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
@@ -216,6 +217,67 @@ class Nft : public mata::Automaton {
 		};
 	}
 
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p levels to its states.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] levels Levels for the states of @p aut.
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft from_nfa(const nfa::Nfa& aut, Levels levels) {
+		MATA_ASSERT(aut.num_of_states() == levels.size(), "NFA and levels must have the same number of states");
+		return Nft{aut, std::move(levels)};
+	}
+
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p levels to its states.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] levels Levels for the states of @p aut.
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft from_nfa(nfa::Nfa&& aut, Levels levels) {
+		MATA_ASSERT(aut.num_of_states() == levels.size(), "NFA and levels must have the same number of states");
+		return Nft{std::move(aut), std::move(levels)};
+	}
+
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p num_of_levels to its states, all set to @p default_level.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] num_of_levels Number of levels for the NFT. (default: 1)
+	 * @param[in] default_level Default level for the states. (default: 0)
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft
+		from_nfa(const nfa::Nfa& aut, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL) {
+		return Nft{aut, num_of_levels, default_level};
+	}
+
+	/**
+	 * @brief Build an NFT from an NFA by attaching @p num_of_levels to its states, all set to @p default_level.
+	 *
+	 * The transition relation and the initial and final states are taken over unchanged.
+	 *  The NFA's alphabet is dropped, since an NFT resolves symbols per level (see @c Nft::alphabets).
+	 *
+	 * @param[in] aut NFA to build the NFT from.
+	 * @param[in] num_of_levels Number of levels for the NFT. (default: 1)
+	 * @param[in] default_level Default level for the states. (default: 0)
+	 * @return NFT over the structure of @p aut.
+	 */
+	static Nft from_nfa(nfa::Nfa&& aut, const size_t num_of_levels = 1, const Level default_level = DEFAULT_LEVEL) {
+		return Nft{std::move(aut), num_of_levels, default_level};
+	}
+
 	Nft(const Nft& other) = default;
 	Nft(Nft&& other) noexcept = default;
 
@@ -264,7 +326,9 @@ class Nft : public mata::Automaton {
 	 */
 	explicit Nft(const nfa::Nfa& other, Levels levels)
 		: Automaton{other.delta, other.initial, other.final},
-		  levels{std::move(levels)} {}
+		  levels{std::move(levels)} {
+		MATA_ASSERT(other.num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
+	}
 
 	/**
 	 * @brief Construct a new NFT with @p num_of_levels levels from NFA.
@@ -278,7 +342,9 @@ class Nft : public mata::Automaton {
 	 */
 	explicit Nft(nfa::Nfa&& other, Levels levels)
 		: Automaton{std::move(other.delta), std::move(other.initial), std::move(other.final)},
-		  levels{std::move(levels)} {}
+		  levels{std::move(levels)} {
+		MATA_ASSERT(other.num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
+	}
 
 	/**
 	 * Add a new (fresh) state to the automaton.
@@ -1296,6 +1362,10 @@ class Nft : public mata::Automaton {
 	 * @brief Copy NFT as NFA.
 	 *
 	 * Transitions are not updated to only have one level.
+	 *
+	 * @warning Lossy: levels are dropped, so the result reads an NFT transition sequence
+	 *  as a flat word on a single tape.
+	 * @note Prefer @c to_nfa_move() when @c this is no longer needed.
 	 * @return A newly created NFA with copied members from NFT.
 	 */
 	nfa::Nfa to_nfa_copy() const { return nfa::Nfa{delta, initial, final, nullptr}; }
@@ -1303,8 +1373,9 @@ class Nft : public mata::Automaton {
 	/**
 	 * @brief Move NFT as NFA.
 	 *
-	 * The NFT can no longer be used.
-	 * Transitions are not updated to only have one level.
+	 * The NFT can no longer be used. Transitions are not updated to only have one level.
+	 * @warning Lossy: levels are dropped, so the result reads an NFT transition sequence
+	 *  as a flat word on a single tape.
 	 * @return A newly created NFA with moved members from NFT.
 	 */
 	nfa::Nfa to_nfa_move() { return nfa::Nfa{std::move(delta), std::move(initial), std::move(final), nullptr}; }
@@ -1465,36 +1536,6 @@ OnTheFlyAlphabet create_alphabet(const Nfts&... nfts) {
 utils::OrdVector<Symbol> get_symbols_to_work_with(
 	const Nft& nft, const Alphabet* shared_alphabet = nullptr, std::optional<Level> level = std::nullopt
 );
-
-/**
- * @brief Build an NFT from an NFA by attaching @p levels to its states.
- *
- * @c mata::nfa::Nfa and @c mata::nft::Nft are unrelated types: an NFA accepts a set of words, an NFT accepts a
- *  relation over word tuples. There is deliberately no implicit conversion between them, so every crossing of that
- *  boundary is spelled out through this function (or @c to_nfa()).
- *
- * The transition relation and the initial and final states are taken over unchanged; the NFA's alphabet is dropped,
- *  since an NFT resolves symbols per level (see @c Nft::alphabets).
- *
- * @param[in] aut NFA to build the NFT from.
- * @param[in] levels Levels for the states of @p aut.
- * @return NFT over the structure of @p aut.
- */
-Nft from_nfa(const nfa::Nfa& aut, Levels levels);
-
-/**
- * @brief Read the structure of an NFT as an NFA.
- *
- * @warning This is a lossy, structural reinterpretation and NOT a language-preserving conversion. The levels are
- *  dropped, so the result reads an NFT transition sequence as a flat word over a single tape: what the NFT accepts as
- *  an n-tuple of words the result accepts as the interleaving of those words. Use @c Nft::to_nfa_update_copy() (which
- *  unwinds jumps first) when you need the transitions normalised, and @c Nft::apply() when you want the image or
- *  preimage of a language.
- *
- * @param[in] aut NFT to read as an NFA.
- * @return NFA over the structure of @p aut, without levels.
- */
-nfa::Nfa to_nfa(const Nft& aut);
 
 /**
  * @brief Compute non-deterministic union.

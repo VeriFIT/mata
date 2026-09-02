@@ -1335,10 +1335,6 @@ void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	}
 }
 
-Nft mata::nft::from_nfa(const mata::nfa::Nfa& aut, Levels levels) { return Nft{aut, std::move(levels)}; }
-
-mata::nfa::Nfa mata::nft::to_nfa(const Nft& aut) { return aut.to_nfa_copy(); }
-
 bool Nft::is_identical(const Nft& aut) const {
 	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && is_identical_impl(aut);
 }

@@ -245,7 +245,7 @@ TEST_CASE("mata::nft::concatenate()") {
 		CHECK(!result.initial.empty());
 		CHECK(!result.final.empty());
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 1);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a'}) != shortest_words.end());
 	}
@@ -263,7 +263,7 @@ TEST_CASE("mata::nft::concatenate()") {
 
 		result = concatenate(lhs, rhs);
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 1);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a'}) != shortest_words.end());
 	}
@@ -284,7 +284,7 @@ TEST_CASE("mata::nft::concatenate()") {
 		CHECK(result.is_in_lang(Run{{'b', 'a', 'a'}, {}}));
 		CHECK(!result.is_in_lang(Run{{'a'}, {}}));
 		CHECK(!result.is_in_lang(Run{{'a', 'b'}, {}}));
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 1);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b'}) != shortest_words.end());
 	}
@@ -297,7 +297,7 @@ TEST_CASE("mata::nft::concatenate()") {
 
 		result = concatenate(lhs, rhs);
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 4);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'a', 'a'}) != shortest_words.end());
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'b', 'a'}) != shortest_words.end());
@@ -313,7 +313,7 @@ TEST_CASE("mata::nft::concatenate()") {
 
 		result = concatenate(rhs, lhs);
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 4);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'a', 'a'}) != shortest_words.end());
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'b', 'a'}) != shortest_words.end());
@@ -467,7 +467,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 		CHECK(result.delta.contains(2, 'a', 3));
 		CHECK(result.delta.contains(1, EPSILON, 2));
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 1);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', EPSILON, 'a'}) != shortest_words.end());
 	}
@@ -494,7 +494,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 		CHECK(result.delta.contains(2, 'c', 5));
 		CHECK(result.delta.contains(1, EPSILON, 2));
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 1);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', EPSILON, 'a'}) != shortest_words.end());
 	}
@@ -523,7 +523,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 		CHECK(result.delta.contains(2, 'a', 2));
 		CHECK(result.delta.contains(1, EPSILON, 2));
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 1);
 	}
 
@@ -541,7 +541,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 
 		CHECK(result.num_of_states() == 26);
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 4);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'a', 'a'}) != shortest_words.end());
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'b', 'a'}) != shortest_words.end());
@@ -562,7 +562,7 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 		CHECK(result.initial.size() == 1);
 		CHECK(result.initial[4]);
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 4);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'a', 'a'}) != shortest_words.end());
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', EPSILON, 'b', 'a'}) != shortest_words.end());
@@ -650,7 +650,7 @@ TEST_CASE("mata::nft::concatenate() inplace") {
 
 		result = lhs.concatenate(rhs);
 
-		auto shortest_words{get_shortest_words(to_nfa(result))};
+		auto shortest_words{get_shortest_words(result.to_nfa_copy())};
 		CHECK(shortest_words.size() == 4);
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'a', 'a'}) != shortest_words.end());
 		CHECK(shortest_words.find(std::vector<Symbol>{'b', 'a', 'b', 'a'}) != shortest_words.end());

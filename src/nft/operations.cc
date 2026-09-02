@@ -304,7 +304,7 @@ bool mata::nft::has_epsilon_cycle(const Nft& nft) {
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 	const size_t num_of_states{aut.num_of_states()};
-	mata::nfa::Nfa reversed_nfa{mata::nfa::revert(mata::nft::to_nfa(aut))};
+	mata::nfa::Nfa reversed_nfa{mata::nfa::revert(aut.to_nfa_copy())};
 
 	// this vector will collect epsilon run from level 0 state to level 0 state
 	// that contains only epsilon transitions, and all states inbetween (i.e.
