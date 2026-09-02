@@ -143,6 +143,8 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
 
 	// Drop the levels of the states that are about to be removed.
 	// Independent of the structural renaming below, which does not touch `levels`.
+	// `levels` may hold more entries than `useful_states` has states, so the bounds check is load-bearing.
+	auto is_state_useful = [&](const State q) { return q < useful_states.size() && useful_states[q]; };
 	State move_index{0};
 	levels.erase(
 		std::ranges::remove_if(
