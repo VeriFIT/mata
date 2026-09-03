@@ -8,7 +8,7 @@ import 'just/common.just'
 
 mod bench 'tests-integration/tests-integration.just'
 mod bindings 'bindings/bindings.just'
-mod cpp 'src/src.just'
+mod cpp 'src/cpp.just'
 mod docs 'docs/docs.just'
 mod examples 'examples/examples.just'
 mod nix 'nix/nix.just'
@@ -25,6 +25,7 @@ alias d := docs::build
 alias f := nix::fmt
 alias r := release
 alias rd := release-debuginfo
+alias l := lint
 alias c := clean
 alias h := help
 
@@ -37,6 +38,9 @@ release: (cpp::build "release")
 
 # Build the whole project in release mode with debug information.
 release-debuginfo: (cpp::build "release-debuginfo")
+
+# Run project linters.
+lint *ARGS: (cpp::lint BUILD_MODE ARGS)
 
 # Remove the build artifacts of the project, the bindings, and the documentation.
 clean: cpp::clean bindings::clean docs::clean
