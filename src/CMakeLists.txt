@@ -14,8 +14,7 @@ add_library (libmata STATIC
 	$<TARGET_OBJECTS:re2>
 )
 
-# libmata needs at least c++20
-target_compile_features (libmata PUBLIC cxx_std_20)
+target_compile_features (libmata PUBLIC cxx_std_23)
 
 set_target_properties (libmata PROPERTIES
 	OUTPUT_NAME mata
