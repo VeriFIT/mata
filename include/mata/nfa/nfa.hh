@@ -232,33 +232,6 @@ class Nfa : public Automaton {
 	}
 
 	/**
-	 * @brief Check if @c this is exactly identical to @p aut.
-	 *
-	 * This is exact equality of automata, including state numbering (so even stronger than isomorphism),
-	 *  essentially only useful for testing purposes.
-	 * @return True if automata are exactly identical, false otherwise.
-	 */
-	bool is_identical(const Nfa& aut) const;
-
-	/**
-	 * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
-	 *
-	 * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
-	 * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
-	 * the starting point of a path ending in a final state).
-	 *
-	 * @note The states are renumbered after trimming.
-	 *
-	 * @param[out] state_renaming Mapping of trimmed states to new states.
-	 * @return @c this after trimming.
-	 */
-	Nfa& trim(StateRenaming* state_renaming = nullptr) {
-		// TODO(c++23): drop this forwarder.
-		trim_impl(state_renaming);
-		return *this;
-	}
-
-	/**
 	 * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
 	 *
 	 * @return Decoded automaton.
@@ -442,14 +415,6 @@ class Nfa : public Automaton {
 	 * @return Set of states reachable from the given state over the given symbol.
 	 */
 	const StateSet& post(const State state, const Symbol symbol) const { return delta.get_successors(state, symbol); }
-
-	/**
-	 * Check whether the language of NFA is empty.
-	 * Currently, calls is_lang_empty_scc if cex is null
-	 * @param[out] cex Counter-example path for a case the language is not empty.
-	 * @return True if the language is empty, false otherwise.
-	 */
-	bool is_lang_empty(Run* cex = nullptr) const;
 
 	/**
 	 * @brief Check if the language is empty using Tarjan's SCC discover algorithm.

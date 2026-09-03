@@ -4,22 +4,16 @@
 
 #include <algorithm>
 #include <deque>
-#include <list>
-#include <map>
-#include <unordered_set>
 
 #include "mata/automaton.hh"
-#include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 
 using namespace mata;
 using namespace mata::utils;
 
 using mata::nfa::Delta;
-using mata::nfa::Run;
 using mata::nfa::State;
 using mata::nfa::StatePost;
-using mata::nfa::StateRenaming;
 using mata::nfa::StateSet;
 using mata::nfa::SymbolPost;
 
@@ -121,12 +115,6 @@ void Automaton::clear() {
 	final.clear();
 }
 
-bool Automaton::is_identical_impl(const Automaton& aut) const {
-	if (utils::OrdVector<State>(initial) != utils::OrdVector<State>(aut.initial)) { return false; }
-	if (utils::OrdVector<State>(final) != utils::OrdVector<State>(aut.final)) { return false; }
-	return delta == aut.delta;
-}
-
 Automaton Automaton::reverted() const {
 	Automaton result{};
 
@@ -187,62 +175,6 @@ std::vector<State> Automaton::distances_from_initial() const {
 }
 
 std::vector<State> Automaton::distances_to_final() const { return reverted().distances_from_initial(); }
-
-void Automaton::trim_impl(StateRenaming* state_renaming) {
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{get_useful_states()};
-	useful_states.clear();
-	useful_states = get_useful_states();
-#else
-	const BoolVector useful_states{get_useful_states()};
-#endif
-	trim_impl(useful_states, state_renaming);
-}
-
-void Automaton::trim_impl(const BoolVector& useful_states, StateRenaming* state_renaming) {
-	const size_t useful_states_size{useful_states.size()};
-	std::vector<State> renaming(useful_states_size);
-	for (State new_state{0}, orig_state{0}; orig_state < useful_states_size; ++orig_state) {
-		if (useful_states[orig_state]) {
-			renaming[orig_state] = new_state;
-			++new_state;
-		}
-	}
-
-	delta.defragment(useful_states, renaming);
-	// Only useful states have a meaningful entry in `renaming`.
-	// Removed states keep the default zero.
-	// Check that the useful-state projection is the expected dense, ascending sequence.
-	MATA_ASSERT(
-		[&] {
-			State expected_new_state{0};
-			for (State orig_state{0}; orig_state < useful_states_size; ++orig_state) {
-				if (useful_states[orig_state]) {
-					if (renaming[orig_state] != expected_new_state) { return false; }
-					++expected_new_state;
-				}
-			}
-			return true;
-		}(),
-		"Automaton::trim_impl: useful states must be renamed densely in ascending order."
-	);
-
-	auto is_state_useful = [&](const State q) { return q < useful_states_size && useful_states[q]; };
-	initial.filter(is_state_useful);
-	final.filter(is_state_useful);
-	auto rename_state = [&](const State q) { return renaming[q]; };
-	initial.rename(rename_state);
-	final.rename(rename_state);
-	initial.truncate();
-	final.truncate();
-	if (state_renaming != nullptr) {
-		state_renaming->clear();
-		state_renaming->reserve(useful_states_size);
-		for (State q{0}; q < useful_states_size; ++q) {
-			if (useful_states[q]) { (*state_renaming)[q] = renaming[q]; }
-		}
-	}
-}
 
 /**
  * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
@@ -431,51 +363,3 @@ bool Automaton::is_acyclic() const {
 	tarjan_scc_discover(callback);
 	return acyclic;
 }
-
-bool Automaton::has_no_accepting_path(Run* cex) const {
-	// TODO: hot fix for performance reasons for TACAS.
-	//  Perhaps make the get_useful_states return a witness on demand somehow.
-	if (!cex) { return has_no_accepting_path(); }
-
-	std::list<State> worklist(initial.begin(), initial.end());
-	std::unordered_set<State> processed(initial.begin(), initial.end());
-
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<State, State> paths;
-	// Initialize paths.
-	for (const State s : worklist) { paths[s] = s; }
-
-	while (!worklist.empty()) {
-		State state{worklist.front()};
-		worklist.pop_front();
-
-		if (final[state]) {
-			cex->path.clear();
-			cex->path.push_back(state);
-			while (paths[state] != state) {
-				state = paths[state];
-				cex->path.push_back(state);
-			}
-			std::ranges::reverse(cex->path);
-			return false;
-		}
-
-		if (delta.empty()) { continue; }
-
-		for (const SymbolPost& symbol_post : delta[state]) {
-			for (const State& target : symbol_post.targets) {
-				bool inserted;
-				tie(std::ignore, inserted) = processed.insert(target);
-				if (inserted) {
-					worklist.push_back(target);
-					// Also set that tgt_state was accessed from state.
-					paths[target] = state;
-				} else {
-					MATA_ASSERT(haskey(paths, target)); /* Invariant. */
-				}
-			}
-		}
-	} // while (!worklist.empty()).
-	return true;
-} // has_no_accepting_path(Run*).

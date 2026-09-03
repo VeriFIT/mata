@@ -182,6 +182,42 @@ class Automaton {
 	 */
 	bool is_acyclic() const;
 
+	/**
+	 * @brief Check if @c this is structuralry identical to @p other.
+	 *
+	 * Compares only @c delta, @c initial and @c final. This is exact structural
+	 *  equality, including state numbering (so even stronger than isomorphism),
+	 *  essentially only useful for testing purposes.
+	 *
+	 * @note Templated on @p Self (`deducing this`) so that only same-type comparisons compile.
+	 * @param[in] other The other automaton to compare with.
+	 * @return true iff the structural parts of @c this and @p other are identical.
+	 */
+	template <typename Self>
+	bool is_identical(this const Self& self, const Self& other);
+
+	/**
+	 * @brief Remove unreachable and non-terminating states in-place.
+	 *  Remaining states are renumbered densely in ascending order.
+	 *
+	 * @note A state is reachable when the state is the endpoint of a path starting from an initial state.
+	 *  A state is terminating when the state is the starting point of a path ending in a final state.
+	 * @param[out] state_renaming Mapping of trimmed states to new states.
+	 * @return @c this after trimming.
+	 */
+	template <typename Self>
+	Self& trim(this Self&& self, nfa::StateRenaming* state_renaming = nullptr);
+
+	/**
+	 * Check whether no accepting path exists, recording a witness in @p cex when one does.
+	 *
+	 * @param[out] cex Counter-example path (and, via the leaf's @c get_word_for_path(), word) for a case an
+	 *  accepting path exists.
+	 * @return true if no accepting path exists, false otherwise.
+	 */
+	template <typename Self>
+	bool is_lang_empty(this const Self& self, nfa::Run* cex = nullptr);
+
   protected:
 	/**
 	 * Add a new (fresh) state to the automaton.
@@ -218,58 +254,31 @@ class Automaton {
 	Automaton reverted() const;
 
 	/**
-	 * @brief Structural part of `is_identical()`. See @c mata::nfa::Nfa::is_identical().
-	 *
-	 * TODO(c++23): fold into a public `is_identical(this const Self&, const Self&)`.
-	 *
-	 * Compares only @c delta, @c initial and @c final.
-	 * @note Kept protected so that comparing an NFA against an NFT (or either against a bare @c Automaton) never
-	 * compiles. The leaves have to expose their own same-type overloads.
-	 * @return true iff the structural parts of the two automata are identical.
-	 */
-	bool is_identical_impl(const Automaton& aut) const;
-
-	/**
-	 * @brief Structural part of `trim()`. See @c mata::nfa::Nfa::trim().
-	 *
-	 * TODO(c++23): fold into a public `Self& trim(this Self&, ...)`, dropping the Nfa/Nft forwarders.
-	 *
-	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states after
-	 * trimming. If provided, the map will be filled with the mapping from old state numbers to new state numbers after
-	 * trimming.
-	 */
-	void trim_impl(nfa::StateRenaming* state_renaming = nullptr);
-
-	/**
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.
-	 *
-	 * TODO(c++23): fold into a public `Self& trim(this Self&, ...)`, dropping the Nfa/Nft forwarders.
 	 *
 	 * Lets a leaf class compute the useful states once, adjust its own per-state data (such as
 	 *  @c mata::nft::Nft::levels) and then hand the same bool vector over, instead of running Tarjan twice.
 	 *  Any renaming that happens after the trim follows ascending order of the original state numbers.
+	 *
+	 * @note Kept protected: it assumes @p useful_states was computed for @c self and gives no guarantee about a
+	 *  mismatched one. Templated on @p Self (`deducing this`) purely so it can return @p Self& for @c trim() to
+	 *  return directly; a leaf that redeclares its own @c trim() (hiding this by name, since both share the name
+	 *  `trim`) still reaches it unqualified as `trim_impl(...)`, since only `trim` is redeclared, not `trim_impl`.
 	 * @param useful_states A @c BoolVector indicating which states are useful (true) and which are not (false).
 	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states
 	 *  after trimming. If provided, the map will be filled with the mapping from old state numbers to
 	 *  new state numbers after trimming.
+	 * @return @c self after trimming.
 	 */
-	void trim_impl(const BoolVector& useful_states, nfa::StateRenaming* state_renaming);
-
-	/**
-	 * @brief As @c has_no_accepting_path(), but records a witness when an accepting path exists.
-	 *
-	 * TODO(c++23): with `deducing this` this can be the public `is_lang_empty()` itself.
-	 *
-	 * Fills only @c cex->path; reconstructing @c cex->word from the path is word semantics and therefore the
-	 *  responsibility of the leaf class, which knows how to read a path as a word. Delegates to
-	 *  @c has_no_accepting_path() when @p cex is @c nullptr.
-	 * @param[out] cex Pointer to a @c nfa::Run structure to fill with a witness path if an accepting path exists.
-	 *  If @c nullptr, no witness is recorded.
-	 * @return true iff no accepting path exists.
-	 */
-	bool has_no_accepting_path(nfa::Run* cex) const;
+	template <typename Self>
+	Self& trim_impl(this Self& self, const BoolVector& useful_states, nfa::StateRenaming* state_renaming);
 }; // class Automaton.
 
 } // namespace mata.
+
+// Template member definitions. Kept out of this file so that automaton.hh reads like an ordinary class declaration;
+//  see automaton.tpp itself for why these have to live somewhere textually included by every translation unit that
+//  instantiates them, rather than in automaton.cc.
+#include "mata/automaton.tpp"
 
 #endif // MATA_AUTOMATON_HH_
