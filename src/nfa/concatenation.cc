@@ -2,8 +2,6 @@
  * @brief Concatenation of NFAs.
  */
 
-#include <ranges>
-
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"

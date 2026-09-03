@@ -6,7 +6,6 @@
 #include "mata/utils/utils.hh"
 
 #include <algorithm>
-#include <cstring>
 #include <sstream>
 
 using std::tie;

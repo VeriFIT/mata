@@ -1451,7 +1451,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 						if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
 					}
 					// Reverse the backtracked word
-					std::reverse(res.begin(), res.end());
+					std::ranges::reverse(res);
 					return res;
 				}
 

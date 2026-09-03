@@ -30,7 +30,7 @@ void seg_nfa::Segmentation::handle_epsilon_transitions(
 	std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
 	visited_eps_aux[move.symbol]++;
 
-	for (State target_state : move.targets) {
+	for (const State target_state : move.targets) {
 		// TODO: Use vector indexed by depths instead of a map.
 		this->epsilon_depth_transitions_[state_depth_pair.depth].emplace_back(
 			state_depth_pair.state, move.symbol, target_state
@@ -38,7 +38,7 @@ void seg_nfa::Segmentation::handle_epsilon_transitions(
 		this->eps_depth_trans_map_[state_depth_pair.depth][state_depth_pair.state].emplace_back(
 			state_depth_pair.state, move.symbol, target_state
 		);
-		worklist.push_back({target_state, state_depth_pair.depth + 1, visited_eps_aux});
+		worklist.push_back({.state = target_state, .depth = state_depth_pair.depth + 1, .eps = visited_eps_aux});
 		this->visited_eps_[target_state] = visited_eps_aux;
 	}
 }
@@ -46,8 +46,8 @@ void seg_nfa::Segmentation::handle_epsilon_transitions(
 void seg_nfa::Segmentation::add_transitions_to_worklist(
 	const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
 ) {
-	for (State target_state : move.targets) {
-		worklist.push_back(StateDepthTuple{target_state, state_depth_pair.depth, state_depth_pair.eps});
+	for (const State target_state : move.targets) {
+		worklist.push_back({.state = target_state, .depth = state_depth_pair.depth, .eps = state_depth_pair.eps});
 		this->visited_eps_[target_state] = state_depth_pair.eps;
 	}
 }

@@ -441,7 +441,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 	Nfa concatenated_output = concatenate_with(output_automata, output_delimiter);
 
 	// we will work with nfts, so we just transfer nfas to nfts
-	Nft concatenated_input_nft(std::move(concatenated_input));
+	const Nft concatenated_input_nft(std::move(concatenated_input));
 	Nft concatenated_output_nft(std::move(concatenated_output));
 
 	auto add_self_loop_for_every_default_state = [](Nft& nft, const Symbol symbol) {
@@ -472,7 +472,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 			mata::nft::compose(mata::nft::Nft(*input_automata[0]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump)
 		};
 		for (size_t i = 1; i < input_automata.size(); ++i) {
-			mata::nft::Nft composition =
+			const Nft composition =
 				mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump);
 			concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, input_delimiter, true);
 		}

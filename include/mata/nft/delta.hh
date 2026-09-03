@@ -6,14 +6,7 @@
 #ifndef MATA_NFT_DELTA_HH
 #define MATA_NFT_DELTA_HH
 
-#include "mata/alphabet.hh"
-#include "mata/nft/types.hh"
-#include "mata/utils/sparse-set.hh"
-#include "mata/utils/synchronized-iterator.hh"
-
 #include "mata/nfa/delta.hh"
-
-#include <iterator>
 
 namespace mata::nft {
 

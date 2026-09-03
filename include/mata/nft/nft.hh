@@ -89,7 +89,6 @@
 //  fragile_revert).
 // #define _STATIC_STRUCTURES_
 
-#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <limits>
@@ -1142,7 +1141,7 @@ class Nft : public mata::Automaton {
 	 * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
 	 * be aware that it is linear-time.
 	 *
-	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
+	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leave it set to @c true.
 	 * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
 	 *
 	 * @return @c true if @p run is in the language of the automaton, @c false otherwise.
@@ -1166,7 +1165,7 @@ class Nft : public mata::Automaton {
 	 * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
 	 * be aware that it is linear-time.
 	 *
-	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
+	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leave it set to @c true.
 	 * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
 	 *
 	 * @return @c true if @p word is in the language of the automaton, @c false otherwise.
@@ -1191,7 +1190,7 @@ class Nft : public mata::Automaton {
 	 * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
 	 * be aware that it is linear-time.
 	 *
-	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
+	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leave it set to @c true.
 	 * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
 	 *
 	 * @return @c true if the prefix of @p run is in the language of the automaton, @c false otherwise.
@@ -1213,7 +1212,7 @@ class Nft : public mata::Automaton {
 	 * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
 	 * be aware that it is linear-time.
 	 *
-	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
+	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leave it set to @c true.
 	 * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
 	 *
 	 * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
@@ -1243,7 +1242,7 @@ class Nft : public mata::Automaton {
 	 * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
 	 * be aware that it is linear-time.
 	 *
-	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
+	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leave it set to @c true.
 	 * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
 	 *
 	 * @return @c true if @p word is in the language of the automaton, @c false otherwise.
@@ -1269,7 +1268,7 @@ class Nft : public mata::Automaton {
 	 * @c mata::nft::has_epsilon_cycle() to compute this value if it is not already known. However,
 	 * be aware that it is linear-time.
 	 *
-	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leve it set to @c true.
+	 * @warning If @p has_epsilon_cycles is unknown, it is recommended leave it set to @c true.
 	 * if it is set to @c false and the automaton does have an epsilon cycle, the query will loop forever.
 	 *
 	 * @return @c true if the prefix of @p word is in the language of the automaton, @c false otherwise.
@@ -2174,7 +2173,7 @@ bool symbols_match(Symbol a, Symbol b);
  * @param nft The transducer to check.
  * @return @c true if @p nft has a cycle of epsilon transitions, @c false otherwise.
  */
-bool has_epsilon_cycle(const Nft& fnt);
+bool has_epsilon_cycle(const Nft& nft);
 
 } // namespace mata::nft
 
