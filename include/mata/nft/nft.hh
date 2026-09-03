@@ -602,6 +602,14 @@ class Nft : public mata::Automaton {
 	Nft& unify_final(bool force_new_state = false);
 
 	/**
+	 * Check whether the relation of the NFT is empty.
+	 * Currently, calls is_lang_empty_scc if cex is null.
+	 * @param[out] cex Counter-example path for a case the relation is not empty.
+	 * @return True if the relation is empty, false otherwise.
+	 */
+	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
+
+	/**
 	 * @brief Check if the relation is empty using Tarjan's SCC discover algorithm.
 	 *
 	 * @return Relation empty <-> True

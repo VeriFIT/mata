@@ -193,8 +193,7 @@ class Automaton {
 	 * @param[in] other The other automaton to compare with.
 	 * @return true iff the structural parts of @c this and @p other are identical.
 	 */
-	template <typename Self>
-	bool is_identical(this const Self& self, const Self& other);
+	template <typename Self> bool is_identical(this const Self& self, const Self& other);
 
 	/**
 	 * @brief Remove unreachable and non-terminating states in-place.
@@ -202,11 +201,11 @@ class Automaton {
 	 *
 	 * @note A state is reachable when the state is the endpoint of a path starting from an initial state.
 	 *  A state is terminating when the state is the starting point of a path ending in a final state.
+	 * @note Reached only through a leaf's own one-line @c trim(), on @c *this, so an lvalue @p Self suffices here.
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
-	template <typename Self>
-	Self& trim(this Self&& self, nfa::StateRenaming* state_renaming = nullptr);
+	template <typename Self> Self& trim(this Self& self, nfa::StateRenaming* state_renaming = nullptr);
 
 	/**
 	 * Check whether no accepting path exists, recording a witness in @p cex when one does.
@@ -215,8 +214,7 @@ class Automaton {
 	 *  accepting path exists.
 	 * @return true if no accepting path exists, false otherwise.
 	 */
-	template <typename Self>
-	bool is_lang_empty(this const Self& self, nfa::Run* cex = nullptr);
+	template <typename Self> bool is_lang_empty(this const Self& self, nfa::Run* cex = nullptr);
 
   protected:
 	/**
