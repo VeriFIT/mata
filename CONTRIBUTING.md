@@ -26,7 +26,7 @@ For information on contributing to the Python bindings, refer to [bindings/pytho
    Open the PR against **`devel`** if the PR contains **breaking changes** or is a part of a **multi-PR effort** that
    needs longer to prepare before a new stable release.
    When opening a PR, either set its status to `Open` (the default behaviour) when you want the PR to be immediately
-   up for review, or set its status to `Draft` when the PR is work-in-progress and you do not want the PR to be
+   up for review, or set its status to `Draft` when the PR is work-in-progress, and you do not want the PR to be
    reviewed yet.
    When the draft PR is finished and ready for review, switch the status to `Open` to indicate we should review the PR.
    Optionally, you can tag `@Adda0` (and any other contributors you explicitly want to review the PR) to request the
@@ -181,7 +181,7 @@ The information in this section concerns only maintainers of the project.
 
 ### Versioning during PR merge
 
-By default (or using a tag `#minor`), each merge automatically increases the `minor` version of the library
+By default (or when using a tag `#minor`), each merge automatically increases the `minor` version of the library
 (i.e., `v0.0.0 -> v0.0.1` ).
 This can be overruled by using either tag `#major` (increasing the major version, i.e., `v0.1.0 -> v0.2.0`) or `#generation`
 (increasing the generation version, i.e., `v0.0.0 -> v1.0.0`).

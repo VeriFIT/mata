@@ -68,7 +68,7 @@ make test
 ```
 
 You might, need to install the dependencies to measure the coverage of the tests.
-Run the following to install the dependencies for MacOS:
+Run the following to install the dependencies for macOS:
 
 ```shell
 brew install lcov gcovr
@@ -82,12 +82,12 @@ sudo apt install -y build-essential lcov gcovr xdg-utils
 
 ## Python binding
 
-Mata offers binding of its efficient library to Python. You can install the binding as an Python
+Mata offers binding of its efficient library to Python. You can install the binding as a Python
 package on your system as follows.
 
 ### Installation from PyPI
 
-To install a latest version from the PyPI repository, run:
+To install the latest version from the PyPI repository, run:
 
 ```shell
 # Using uv:
@@ -146,9 +146,9 @@ This directory contains examples of various usage in form of:
 python3 examples/example01-python-binding.py
 ```
 
-4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
-   a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
-   Navigate to generated link to see the available jupyter notebooks:
+4. Python Jupyter notebooks. To run the Jupyter notebook, one needs to have jupyter installed as
+   a prerequisite. The run the Jupyter notebook, that creates an instance on your local server.
+   Navigate to generated link to see the available Jupyter notebooks:
 
 ```shell
 pip3 install jupyter
