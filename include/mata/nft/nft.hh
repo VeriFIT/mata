@@ -607,7 +607,7 @@ class Nft : public mata::Automaton {
 	 * @param[out] cex Counter-example path for a case the relation is not empty.
 	 * @return True if the relation is empty, false otherwise.
 	 */
-	bool is_lang_empty(Run* cex = nullptr) const;
+	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
 	/**
 	 * @brief Check if the relation is empty using Tarjan's SCC discover algorithm.

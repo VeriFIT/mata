@@ -12,6 +12,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # It needs the same C++23-capable compiler as the other C++ jobs.
+    - uses: ./.github/workflows/actions/setup
+      with:
+        os: ${{ inputs.os }}
     - name: Setup Python environment
       uses: ./.github/workflows/actions/setup-python
       with:

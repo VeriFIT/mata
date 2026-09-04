@@ -604,14 +604,6 @@ bool Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_pr
 	return this->final.intersects_with(read_word(run, use_epsilon));
 }
 
-bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
-	// TODO(c++23): drop this split. `deducing this` Automaton can call the leaf's get_word_for_path() itself.
-	if (has_no_accepting_path(cex)) { return true; }
-	// The structural search filled only the path; reading the path as a word is NFA-specific.
-	if (cex != nullptr) { cex->word = get_word_for_path(*cex).first.word; }
-	return false;
-} // is_lang_empty().
-
 Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
 	// compute the minimal deterministic automaton, Brzozovski algorithm
 	return determinize(revert(determinize(revert(aut))));

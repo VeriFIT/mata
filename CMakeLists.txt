@@ -5,6 +5,18 @@ project (
 	DESCRIPTION "A fast and simple automata library"
 	LANGUAGES C CXX) # C is needed for CUDD
 
+# Mata uses C++23. Setting CMAKE_CXX_STANDARD to 23 is not enough. The compiler has to actually
+# implement the feature. Fail here with a readable message instead of letting it surface during compilation.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+	message (FATAL_ERROR
+		"Mata requires GCC >= 14 (found ${CMAKE_CXX_COMPILER_VERSION}). "
+		"Install a newer compiler and select it, e.g. `CXX=g++-14 cmake ...`.")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18)
+	message (FATAL_ERROR
+		"Mata requires Clang >= 18 (found ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}) for C++23. "
+		"Note AppleClang version numbers differ from upstream LLVM.")
+endif ()
+
 # 3rd party modules
 set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 

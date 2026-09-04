@@ -49,7 +49,7 @@ project_includes = [
     os.path.join(src_dir, "3rdparty", "cudd", "include"),
 ]
 
-extra_compile_args = ["-std=c++20", "-DNO_THROW_DISPATCHER"]
+extra_compile_args = ["-std=c++23", "-DNO_THROW_DISPATCHER"]
 if platform.system() == "Darwin":
     extra_compile_args.append("-mmacosx-version-min=10.15")
 

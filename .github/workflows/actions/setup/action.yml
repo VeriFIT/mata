@@ -16,3 +16,25 @@ runs:
       if: ${{ inputs.os == 'ubuntu-latest' }}
       shell: sh
       run: sudo apt install -y build-essential lcov gcovr xdg-utils
+    # Mata uses C++23, which needs GCC >= 14 or Clang >= 18.
+    # The Ubuntu 24.04 runner image ships GCC 12/13/14, but *defaults* to 13.
+    - name: Select a C++23-capable compiler (Linux)
+      if: ${{ inputs.os == 'ubuntu-latest' }}
+      shell: sh
+      run: |
+        command -v g++-14 >/dev/null || sudo apt install -y g++-14 gcc-14
+        echo "CC=gcc-14" >> "$GITHUB_ENV"
+        echo "CXX=g++-14" >> "$GITHUB_ENV"
+        g++-14 --version
+    # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new enough.
+    - name: Select a C++23-capable compiler (macOS)
+      if: ${{ inputs.os == 'macos-latest' }}
+      shell: sh
+      run: |
+        brew install llvm
+        LLVM_PREFIX="$(brew --prefix llvm)"
+        echo "CC=$LLVM_PREFIX/bin/clang" >> "$GITHUB_ENV"
+        echo "CXX=$LLVM_PREFIX/bin/clang++" >> "$GITHUB_ENV"
+        echo "LDFLAGS=-L$LLVM_PREFIX/lib/c++ -L$LLVM_PREFIX/lib -Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
+        echo "CPPFLAGS=-I$LLVM_PREFIX/include" >> "$GITHUB_ENV"
+        "$LLVM_PREFIX/bin/clang++" --version
