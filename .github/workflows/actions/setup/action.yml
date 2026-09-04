@@ -27,6 +27,9 @@ runs:
         echo "CXX=g++-14" >> "$GITHUB_ENV"
         g++-14 --version
     # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new enough.
+    # Note it is not enough to just point CC/CXX at Homebrew's clang++: by default it still compiles against the
+    #  macOS SDK's system libc++, which is missing newer C++23 library features (e.g. <generator>). We must
+    #  explicitly opt into Homebrew's own bundled libc++ headers/library via -stdlib=libc++ and -I/-L.
     - name: Select a C++23-capable compiler (macOS)
       if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
@@ -37,4 +40,5 @@ runs:
         echo "CXX=$LLVM_PREFIX/bin/clang++" >> "$GITHUB_ENV"
         echo "LDFLAGS=-L$LLVM_PREFIX/lib/c++ -L$LLVM_PREFIX/lib -Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
         echo "CPPFLAGS=-I$LLVM_PREFIX/include" >> "$GITHUB_ENV"
+        echo "CXXFLAGS=-stdlib=libc++ -I$LLVM_PREFIX/include/c++/v1" >> "$GITHUB_ENV"
         "$LLVM_PREFIX/bin/clang++" --version
