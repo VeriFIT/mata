@@ -26,19 +26,21 @@ runs:
         echo "CC=gcc-14" >> "$GITHUB_ENV"
         echo "CXX=g++-14" >> "$GITHUB_ENV"
         g++-14 --version
-    # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new enough.
-    # Note it is not enough to just point CC/CXX at Homebrew's clang++: by default it still compiles against the
-    #  macOS SDK's system libc++, which is missing newer C++23 library features (e.g. <generator>). We must
-    #  explicitly opt into Homebrew's own bundled libc++ headers/library via -stdlib=libc++ and -I/-L.
+    # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new
+    #  enough. Homebrew's own "llvm" formula looked like an alternative, but its bundled libc++ does not ship
+    #  the <generator> header we need at all (confirmed: no file matching it under its include/c++/v1), no
+    #  matter which flags point at it. Use Homebrew's GCC instead, matching the Linux job's approach, since
+    #  GCC's libstdc++ has shipped <generator> since GCC 14.
     - name: Select a C++23-capable compiler (macOS)
       if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
       run: |
-        brew install llvm
-        LLVM_PREFIX="$(brew --prefix llvm)"
-        echo "CC=$LLVM_PREFIX/bin/clang" >> "$GITHUB_ENV"
-        echo "CXX=$LLVM_PREFIX/bin/clang++" >> "$GITHUB_ENV"
-        echo "LDFLAGS=-L$LLVM_PREFIX/lib/c++ -L$LLVM_PREFIX/lib -Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
-        echo "CPPFLAGS=-I$LLVM_PREFIX/include" >> "$GITHUB_ENV"
-        echo "CXXFLAGS=-stdlib=libc++ -I$LLVM_PREFIX/include/c++/v1" >> "$GITHUB_ENV"
-        "$LLVM_PREFIX/bin/clang++" --version
+        brew install gcc
+        GCC_PREFIX="$(brew --prefix gcc)"
+        # Restrict to gcc-<N>/g++-<N>: the keg also ships helper binaries such as gcc-ar-<N>,
+        #  gcc-nm-<N> and gcc-ranlib-<N> that a looser glob (e.g. gcc-*) would also match.
+        GXX="$(ls "$GCC_PREFIX"/bin/g++-[0-9]* | sort -V | tail -n 1)"
+        GCC_BIN="$(ls "$GCC_PREFIX"/bin/gcc-[0-9]* | sort -V | tail -n 1)"
+        echo "CC=$GCC_BIN" >> "$GITHUB_ENV"
+        echo "CXX=$GXX" >> "$GITHUB_ENV"
+        "$GXX" --version
