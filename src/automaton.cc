@@ -13,9 +13,8 @@ using namespace mata::utils;
 
 using mata::nfa::Delta;
 using mata::nfa::State;
-using mata::nfa::StatePost;
 using mata::nfa::StateSet;
-using mata::nfa::SymbolPost;
+using mata::nfa::SuccessorCursor;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -43,15 +42,13 @@ StateBoolArray reachable_states(
 	while (!worklist.empty()) {
 		const State state{worklist.back()};
 		worklist.pop_back();
-		for (const SymbolPost& move : aut.delta[state]) {
-			for (const State target_state : move.targets) {
-				if (!reachable[target_state] &&
-					(!states_to_consider.has_value() || states_to_consider.value()[target_state])) {
-					worklist.push_back(target_state);
-					reachable[target_state] = true;
-				}
+		aut.delta.for_each_successor(state, [&](const State target_state) {
+			if (!reachable[target_state] &&
+				(!states_to_consider.has_value() || states_to_consider.value()[target_state])) {
+				worklist.push_back(target_state);
+				reachable[target_state] = true;
 			}
-		}
+		});
 	}
 	return reachable;
 }
@@ -60,8 +57,7 @@ StateBoolArray reachable_states(
 // of useful states. It contains Tarjan's metadata and the state of the
 // iteration through the successors.
 struct TarjanNodeData {
-	StatePost::Moves::const_iterator current_move{};
-	StatePost::Moves::const_iterator end_move{};
+	SuccessorCursor::const_iterator current_successor_it{};
 	// index of a node (corresponds to the time of discovery)
 	unsigned long index{0};
 	// index of a lower node in the same SCC
@@ -78,9 +74,7 @@ struct TarjanNodeData {
 		  lowlink(index),
 		  initilized(true),
 		  on_stack(true) {
-		const StatePost::Moves moves{delta[q].moves()};
-		current_move = moves.begin();
-		end_move = moves.end();
+		current_successor_it = delta.successor_cursor(q).begin();
 	};
 };
 } // anonymous namespace
@@ -122,11 +116,9 @@ Automaton Automaton::reverted() const {
 	result.delta.allocate(num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				result.delta.add(target_state, transition.symbol, source_state);
-			}
-		}
+		delta.for_each_move(source_state, [&](const Symbol symbol, const State target_state) {
+			result.delta.add(target_state, symbol, source_state);
+		});
 	}
 
 	result.initial = final;
@@ -162,13 +154,13 @@ std::vector<State> Automaton::distances_from_initial() const {
 	while (!que.empty()) {
 		const State src = que.front();
 		que.pop_front();
-		for (auto [_, target] : delta[src].moves()) {
+		delta.for_each_successor(src, [&](const State target) {
 			if (!visited[target]) {
 				visited[target] = true;
 				distances[target] = distances[src] + 1;
 				que.push_back(target);
 			}
-		}
+		});
 	}
 
 	return distances;
@@ -241,10 +233,10 @@ void Automaton::tarjan_scc_discover(
 
 			if (callback.state_discover && callback.state_discover(act_state)) { return; }
 		} else { // return from the recursive call
-			const State act_succ = act_state_data.current_move->target;
+			const State act_succ = *act_state_data.current_successor_it;
 			act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
-			// act_succ is the state that cased the recursive call. Move to another successor.
-			++act_state_data.current_move;
+			// act_succ is the state that caused the recursive call. Move on to the next successor.
+			++act_state_data.current_successor_it;
 		}
 
 		// iterate through outgoing edges
@@ -252,8 +244,8 @@ void Automaton::tarjan_scc_discover(
 		// rec_call simulates call of the strongconnect. Since c++ cannot do continue over
 		// multiple loops, we use rec_call to jump to the main loop
 		bool rec_call = false;
-		for (; act_state_data.current_move != act_state_data.end_move; ++act_state_data.current_move) {
-			next_state = act_state_data.current_move->target;
+		for (; act_state_data.current_successor_it != std::default_sentinel; ++act_state_data.current_successor_it) {
+			next_state = *act_state_data.current_successor_it;
 			if (callback.succ_state_discover) { callback.succ_state_discover(act_state, next_state); }
 			if (!node_info[next_state].initilized) { // recursive call
 				program_stack.push_back(next_state);
@@ -350,11 +342,9 @@ bool Automaton::is_acyclic() const {
 			acyclic = false;
 			return true;
 		} else { // check for self-loops
-			for (const State st = scc[0]; const auto& sp : this->delta[st]) {
-				if (sp.targets.find(st) != sp.targets.end()) {
-					acyclic = false;
-					return true;
-				}
+			if (delta.has_self_loop(scc[0])) {
+				acyclic = false;
+				return true;
 			}
 		}
 		return false;

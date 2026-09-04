@@ -13,6 +13,7 @@
 #include "mata/utils/synchronized-iterator.hh"
 
 #include <iterator>
+#include <span>
 
 namespace mata::nfa {
 
@@ -97,6 +98,33 @@ class SymbolPost {
 
 	std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
 	std::vector<State>::iterator find(const State s) { return targets.find(s); }
+
+	/**
+	 * @brief Apply @p fn to every target state of this symbol post.
+	 *
+	 * The innermost level of the traversal that @c mata::Automaton is written against.
+	 *  Callers above this level never need to know how the targets are stored.
+	 */
+	template <typename Fn> void for_each_target(Fn&& fn) const {
+		for (const State target : targets) { fn(target); }
+	}
+
+	/**
+	 * @brief Is @p target among the targets of this symbol post?
+	 *
+	 * @param[in] target Target state to check.
+	 * @return True if @p target is among the targets of this symbol post, false otherwise.
+	 */
+	bool has_target(const State target) const { return targets.find(target) != targets.end(); }
+
+	/**
+	 * The targets as a contiguous range.
+	 * Used to build a flat successor cursor without exposing storage.
+	 */
+	std::span<const State> target_span() const {
+		const std::vector<State>& v{targets.to_vector()};
+		return {v.data(), v.size()};
+	}
 }; // class mata::nfa::SymbolPost.
 
 /**
@@ -229,7 +257,96 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * Count the number of all moves in @c StatePost.
 	 */
 	size_t num_of_moves() const;
+
+	/**
+	 * @brief Apply @p fn to every target state reachable from this state post, over any symbol.
+	 */
+	template <typename Fn> void for_each_target(Fn&& fn) const {
+		for (const SymbolPost& symbol_post : *this) { symbol_post.for_each_target(fn); }
+	}
+
+	/**
+	 * @brief Apply @p fn to every @c Move of this state post, as a (symbol, target) pair.
+	 */
+	template <typename Fn> void for_each_move(Fn&& fn) const {
+		for (const SymbolPost& symbol_post : *this) {
+			symbol_post.for_each_target([&](const State target) { fn(symbol_post.symbol, target); });
+		}
+	}
+
+	/**
+	 * @brief Is @p target reachable from this state post over any symbol?
+	 *
+	 * @param[in] target Target state to check.
+	 * @return True if @p target is reachable from this state post over any symbol, false otherwise.
+	 */
+	bool has_target(const State target) const {
+		for (const SymbolPost& symbol_post : *this) {
+			if (symbol_post.has_target(target)) { return true; }
+		}
+		return false;
+	}
 }; // class StatePost.
+
+/**
+ * @brief A resumable cursor over every target reachable from one state post.
+ *
+ * Flattens the (symbol post -> targets) walk into a single pointer walk,
+ *  so a traversal position can be stored and continued later
+ *
+ * @note Header-defined so it inlines. The inner range is loaded without a branch.
+ *
+ * @note Unlike @c for_each_target(), this deliberately knows the nesting depth.
+ *  Composing a cursor out of per-level cursors is measurably slower,
+ *  and @c Delta is the one place entitled to know its own representation.
+ */
+class SuccessorCursor {
+  public:
+	class const_iterator {
+	  public:
+		StatePost::const_iterator symbol_post_it_{}, symbol_post_end_{};
+		const State *target_it_{nullptr}, *target_end_{nullptr};
+
+		void load_targets() {
+			const std::span<const State> targets{symbol_post_it_->target_span()};
+			target_it_ = targets.data();
+			target_end_ = target_it_ + targets.size();
+		}
+		/// Restore the invariant "positioned on a target, or exhausted".
+		void seek() {
+			while (target_it_ == target_end_) {
+				if (++symbol_post_it_ == symbol_post_end_) {
+					target_it_ = target_end_ = nullptr;
+					return;
+				}
+				load_targets();
+			}
+		}
+		const State& operator*() const { return *target_it_; }
+		const_iterator& operator++() {
+			if (++target_it_ == target_end_) { seek(); }
+			return *this;
+		}
+		/// Compares against @c std::default_sentinel: the end is stateless, so no end iterator is stored.
+		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
+	};
+
+	explicit SuccessorCursor(const StatePost& state_post) : state_post_{&state_post} {}
+
+	const_iterator begin() const {
+		const_iterator it;
+		it.symbol_post_it_ = state_post_->begin();
+		it.symbol_post_end_ = state_post_->end();
+		if (it.symbol_post_it_ == it.symbol_post_end_) { return it; }
+		it.load_targets();
+		it.seek();
+		return it;
+	}
+	std::default_sentinel_t end() const { return std::default_sentinel; }
+
+  private:
+	const StatePost* state_post_;
+};
 
 /**
  * Iterator over moves.
@@ -474,6 +591,44 @@ class Delta {
 	 * @param targets Set of states to
 	 */
 	void add(State source, Symbol symbol, const StateSet& targets);
+
+	/**
+	 * @brief Apply @p fn to every target state reachable from @p source, over any symbol.
+	 */
+	template <typename Fn> void for_each_successor(const State source, Fn&& fn) const {
+		state_post(source).for_each_target(fn);
+	}
+
+	/**
+	 * @brief Apply @p fn to every @c Move leaving @p source, as a (symbol, target) pair.
+	 */
+	template <typename Fn> void for_each_move(const State source, Fn&& fn) const {
+		state_post(source).for_each_move(fn);
+	}
+
+	/**
+	 * @brief Does @p source have @p target among its successors, over any symbol?
+	 *
+	 * @param[in] source Source state to look from.
+	 * @param[in] target Target state to look for.
+	 */
+	bool is_successor(const State source, const State target) const { return state_post(source).has_target(target); }
+
+	/**
+	 * @brief Does @p state have a transition back to itself over any symbol?
+	 *
+	 * @param[in] state State to check for self-loop.
+	 * @return True if @p state has a transition back to itself over any symbol, false otherwise.
+	 */
+	bool has_self_loop(const State state) const { return is_successor(state, state); }
+
+	/**
+	 * @brief A resumable cursor over the successors of @p source. See @c SuccessorCursor.
+	 *
+	 * @param source Source state to get the successors of.
+	 * @return A resumable cursor over the successors of @p source.
+	 */
+	SuccessorCursor successor_cursor(const State source) const { return SuccessorCursor{state_post(source)}; }
 
 	using const_iterator = std::vector<StatePost>::const_iterator;
 	const_iterator cbegin() const { return state_posts_.cbegin(); }
