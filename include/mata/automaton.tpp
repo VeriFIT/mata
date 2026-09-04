@@ -16,15 +16,13 @@
 
 namespace mata {
 
-template <typename Self>
-bool Automaton::is_identical(this const Self& self, const Self& other) {
+template <typename Self> bool Automaton::is_identical(this const Self& self, const Self& other) {
 	if (utils::OrdVector<nfa::State>(self.initial) != utils::OrdVector<nfa::State>(other.initial)) { return false; }
 	if (utils::OrdVector<nfa::State>(self.final) != utils::OrdVector<nfa::State>(other.final)) { return false; }
 	return self.delta == other.delta;
 }
 
-template <typename Self>
-Self& Automaton::trim(this Self& self, nfa::StateRenaming* state_renaming) {
+template <typename Self> Self& Automaton::trim(this Self& self, nfa::StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
 	BoolVector useful_states{self.get_useful_states()};
 	useful_states.clear();
@@ -35,8 +33,7 @@ Self& Automaton::trim(this Self& self, nfa::StateRenaming* state_renaming) {
 	return self.trim_impl(useful_states, state_renaming);
 }
 
-template <typename Self>
-bool Automaton::is_lang_empty(this const Self& self, nfa::Run* const cex) {
+template <typename Self> bool Automaton::is_lang_empty(this const Self& self, nfa::Run* const cex) {
 	// TODO: hot fix for performance reasons for TACAS.
 	//  Perhaps make the get_useful_states return a witness on demand somehow.
 	if (!cex) { return self.has_no_accepting_path(); }
@@ -71,19 +68,17 @@ bool Automaton::is_lang_empty(this const Self& self, nfa::Run* const cex) {
 
 		if (self.delta.empty()) { continue; }
 
-		for (const nfa::SymbolPost& symbol_post : self.delta[state]) {
-			for (const nfa::State& target : symbol_post.targets) {
-				bool inserted;
-				std::tie(std::ignore, inserted) = processed.insert(target);
-				if (inserted) {
-					worklist.push_back(target);
-					// Also set that tgt_state was accessed from state.
-					paths[target] = state;
-				} else {
-					MATA_ASSERT(utils::haskey(paths, target)); /* Invariant. */
-				}
+		self.delta.for_each_successor(state, [&](const nfa::State target) {
+			bool inserted;
+			std::tie(std::ignore, inserted) = processed.insert(target);
+			if (inserted) {
+				worklist.push_back(target);
+				// Also set that tgt_state was accessed from state.
+				paths[target] = state;
+			} else {
+				MATA_ASSERT(utils::haskey(paths, target)); /* Invariant. */
 			}
-		}
+		});
 	} // while (!worklist.empty()).
 	return true;
 } // is_lang_empty().
