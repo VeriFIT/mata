@@ -70,12 +70,11 @@ struct TarjanNodeData {
 	TarjanNodeData() = default;
 
 	TarjanNodeData(const State q, const Delta& delta, const unsigned long index)
-		: index(index),
+		: current_successor_it(delta.successor_cursor(q).begin()),
+		  index(index),
 		  lowlink(index),
 		  initilized(true),
-		  on_stack(true) {
-		current_successor_it = delta.successor_cursor(q).begin();
-	};
+		  on_stack(true) {}
 };
 } // anonymous namespace
 
