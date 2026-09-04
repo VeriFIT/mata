@@ -274,9 +274,6 @@ class Automaton {
 
 } // namespace mata.
 
-// Template member definitions. Kept out of this file so that automaton.hh reads like an ordinary class declaration;
-//  see automaton.tpp itself for why these have to live somewhere textually included by every translation unit that
-//  instantiates them, rather than in automaton.cc.
 #include "mata/automaton.tpp"
 
 #endif // MATA_AUTOMATON_HH_

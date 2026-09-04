@@ -1,6 +1,4 @@
 cmake_minimum_required (VERSION 3.15.0)
-
-
 project (
 	libMATA
 	#VERSION ???? TODO: set the version automatically during merging
