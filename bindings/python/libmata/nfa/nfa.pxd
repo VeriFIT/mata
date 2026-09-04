@@ -11,7 +11,7 @@ from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
-from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol
+from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol, CLazyWordGenerator
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -190,6 +190,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         StateSet read_word(CRun&, bool)
         optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
+        cset[vector[Symbol]] get_words(size_t) except +
         void make_complete(CAlphabet*, optional[State]) except +
         shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
         COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +
@@ -222,6 +223,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&)
     cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&)
     cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&)
+    cdef CLazyWordGenerator* c_get_words_lazy_ptr "mata::nfa::plumbing::get_words_lazy_ptr" (CNfa&, size_t) except +
 
 
 

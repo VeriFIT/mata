@@ -1188,3 +1188,34 @@ def test_get_symbols_to_work_with():
 
     explicit_alphabet = alphabets.EnumAlphabet({5, 6, 7})
     assert nfa.get_symbols_to_work_with(explicit_alphabet) == {5, 6, 7}
+
+
+def test_get_words():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    assert nfa.get_words(5) == {(1, 2)}
+
+
+def test_get_words_lazy():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    assert set(nfa.get_words_lazy(5)) == nfa.get_words(5)
+
+    # get_words_lazy() must stay usable (not hang) on an infinite language with the default unbounded max_length,
+    #  unlike get_words() with an unbounded max_length would.
+    cyclic = mata_nfa.Nfa(1)
+    cyclic.make_initial_state(0)
+    cyclic.make_final_state(0)
+    cyclic.add_transition(0, 0, 0)
+    first_words = []
+    for word in cyclic.get_words_lazy():
+        first_words.append(word)
+        if len(first_words) == 3:
+            break
+    assert first_words == [(), (0,), (0, 0)]

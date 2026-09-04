@@ -74,6 +74,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <generator>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <set>
@@ -651,6 +653,23 @@ class Nfa : public Automaton {
 	 *      get_words(aut.num_of_states())
 	 */
 	std::set<Word> get_words(size_t max_length) const;
+
+	/**
+	 * @brief Lazily enumerate the words in the language of the automaton whose length is <= @p max_length.
+	 *
+	 * Equivalent to @ref get_words(), but yields each word as soon as it is found instead of computing the whole set
+	 * up front. Prefer this over @ref get_words() when the caller may stop after finding the first few words, or when
+	 * the language might be large (a big @p max_length on a highly branching automaton can make @ref get_words()
+	 * materialize a very large set before returning anything, whereas this can be iterated and stopped at will).
+	 *
+	 * Words are still deduplicated the same way @ref get_words() deduplicates them (the same word can be reachable
+	 * via more than one accepting path), so a duplicate is silently skipped rather than re-yielded.
+	 *
+	 * @param max_length Maximum length of words to be returned. Default: "no limit"; will keep yielding forever if the
+	 * language is infinite.
+	 * @return Generator lazily yielding each word in the language of the automaton whose length is <= @p max_length.
+	 */
+	std::generator<Word> get_words_lazy(size_t max_length = std::numeric_limits<size_t>::max()) const;
 
 	/**
 	 * @brief Get any arbitrary accepted word in the language of the automaton.

@@ -23,7 +23,7 @@ from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
     CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
 
-from libmata.alphabets cimport CAlphabet, CConstAlphabet
+from libmata.alphabets cimport CAlphabet, CConstAlphabet, CLazyWordGenerator
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation, CPairHash
 
 
@@ -1023,6 +1023,28 @@ cdef class Nfa:
         input.path = path
         cdef pair[CRun, bool] result = self.thisptr.get().get_word_for_path(dereference(input.thisptr))
         return result.first.word, result.second
+
+    def get_words(self, max_length) -> set[tuple[int, ...]]:
+        """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
+        cdef cset[vector[Symbol]] result = self.thisptr.get().get_words(<size_t>max_length)
+        return {tuple(word) for word in result}
+
+    def get_words_lazy(self, max_length = None):
+        """Lazily enumerate the words in the language of the automaton whose length is <= `max_length`.
+
+        Unlike `get_words()`, this does not compute the whole set before returning anything: words are produced
+        one at a time, so the caller can stop early, or work with a language that would otherwise be too large
+        (or, with `max_length` left unbounded, infinite) to enumerate up front.
+
+        :return: Generator of words, each as a tuple of symbols.
+        """
+        cdef size_t c_max_length = max_length if max_length is not None else <size_t>(-1)
+        cdef CLazyWordGenerator* it = c_get_words_lazy_ptr(dereference(self.thisptr.get()), c_max_length)
+        try:
+            while not it.done():
+                yield tuple(it.next())
+        finally:
+            del it
 
     def make_complete(self, State sink_state, alph.Alphabet alphabet):
         """Makes NFA complete.
