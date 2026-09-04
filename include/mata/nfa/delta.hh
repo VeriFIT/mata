@@ -119,7 +119,7 @@ class SymbolPost {
 
 	/**
 	 * @brief The targets as a contiguous range.
-	 * 
+	 *
 	 * Used to build a flat successor cursor without exposing storage.
 	 */
 	std::span<const State> target_span() const {
