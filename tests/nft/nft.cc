@@ -2676,6 +2676,82 @@ TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 	}
 }
 
+TEST_CASE("mata::nft::Nft::read_word[_by_levels]()") {
+	Nft nft{Nft::with_levels(3)};
+
+	SECTION("empty automaton") {
+		CHECK(nft.read_word(Word{}).empty());
+		CHECK(nft.read_word(Word{'a', 'b', 'c'}).empty());
+		CHECK(nft.read_word_by_levels({{'a'}, {'a'}, {'a'}}).empty());
+		CHECK_THROWS_AS(nft.read_word_by_levels({{'a'}}), std::invalid_argument);
+	}
+
+	SECTION("simple automaton") {
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 1);
+		nft.add_state_with_level(2, 2);
+		nft.add_state_with_level(3, 0);
+		nft.add_state_with_level(4, 0);
+		nft.initial.insert(0);
+		nft.final.insert(3);
+		nft.final.insert(4);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'c', 3);
+		nft.delta.add(1, 'e', 4);
+		nft.delta.add(3, 'a', 1); // Single-level-step loop back for a second round (no jump, no epsilon).
+
+		CHECK(nft.read_word(Word{'a', 'b', 'c'}) == StateSet{3});
+		CHECK(nft.read_word_by_levels({{'a'}, {'b'}, {'c'}}) == StateSet{3});
+		CHECK(nft.read_word(Word{'a', 'b', 'd'}).empty());
+		CHECK(nft.read_word_by_levels({{'a'}, {'b'}, {'d'}}).empty());
+		// The jump transition 1 -e-> 4 spans levels 1 and 2 (target is level 0), repeating 'e' on both
+		// (JumpMode::RepeatSymbol), so the word on level 2 must also supply a matching 'e'. This forces the fast
+		// (single-step) path to abort mid-search and fall back to the general post()-based algorithm.
+		CHECK(nft.read_word_by_levels({{'a'}, {'e'}, {'e'}}) == StateSet{4});
+		CHECK(nft.read_word_by_levels({{'a'}, {'e'}, {}}).empty());
+
+		// Looping back through the single-level-step chain 3 -a-> 1 and reading a second round.
+		CHECK(nft.read_word(Word{'a', 'b', 'c', 'a', 'b', 'c'}) == StateSet{3});
+		CHECK(nft.read_word_by_levels({{'a', 'a'}, {'b', 'b'}, {'c', 'c'}}) == StateSet{3});
+
+		CHECK_THROWS_AS(nft.read_word(Word{'a', 'b'}), std::invalid_argument); // Not a multiple of num_of_levels.
+		CHECK_THROWS_AS(nft.read_word_by_levels({{'a'}, {'b'}}), std::invalid_argument);
+	}
+
+	SECTION("epsilon transition out of the final reached state") {
+		// The general post()-based algorithm epsilon-closes past a fully-consumed zero-level state by default
+		// (epsilon_closure_after). This exercises that the fast (single-step) path correctly detects it cannot do
+		// this itself and falls back, instead of returning a result that is silently missing state 4.
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 1);
+		nft.add_state_with_level(2, 2);
+		nft.add_state_with_level(3, 0);
+		nft.add_state_with_level(4, 0);
+		nft.initial.insert(0);
+		nft.final.insert(3);
+		nft.final.insert(4);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'c', 3);
+		nft.delta.add(3, EPSILON, 4);
+
+		CHECK(nft.read_word(Word{'a', 'b', 'c'}) == StateSet{3, 4});
+		CHECK(nft.read_word_by_levels({{'a'}, {'b'}, {'c'}}) == StateSet{3, 4});
+	}
+
+	SECTION("epsilon transition out of an initial state, empty word") {
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 0);
+		nft.initial.insert(0);
+		nft.final.insert(1);
+		nft.delta.add(0, EPSILON, 1);
+
+		CHECK(nft.read_word(Word{}) == StateSet{0, 1});
+		CHECK(nft.read_word_by_levels({{}, {}, {}}) == StateSet{0, 1});
+	}
+}
+
 TEST_CASE("mata::nft::fw-direct-simulation()") { // {{{
 	Nft aut;
 
@@ -3750,11 +3826,20 @@ TEST_CASE("mata::nft::Nft::get_words()") {
 	Nft nft{Nft::with_levels(3)};
 	std::set<Word> words_expected{};
 
+	const auto words_lazy_to_set = [&](size_t max_length) {
+		std::set<Word> result;
+		for (Word&& word : nft.get_words_lazy(max_length)) { result.insert(std::move(word)); }
+		return result;
+	};
+
 	const auto CHECK_SHARED = [&]() {
 		if (words_expected.empty()) {
 			CHECK(nft.get_words().empty());
 			CHECK(nft.get_words(0).empty());
 			CHECK(nft.get_words(5).empty());
+			CHECK(words_lazy_to_set(std::numeric_limits<size_t>::max()).empty());
+			CHECK(words_lazy_to_set(0).empty());
+			CHECK(words_lazy_to_set(5).empty());
 			return;
 		}
 
@@ -3764,12 +3849,18 @@ TEST_CASE("mata::nft::Nft::get_words()") {
 		const auto words_result{nft.get_words(word_length_max)};
 		CHECK(words_result.size() == words_expected.size());
 		for (const Word& word : words_expected) { CHECK(words_result.contains(word)); }
+
+		// get_words_lazy() must agree with get_words() exactly, just yielded one word at a time.
+		CHECK(words_lazy_to_set(word_length_max) == words_result);
 	};
 
 	SECTION("empty") {
 		CHECK(nft.get_words().empty());
 		CHECK(nft.get_words(0).empty());
 		CHECK(nft.get_words(5).empty());
+		CHECK(words_lazy_to_set(std::numeric_limits<size_t>::max()).empty());
+		CHECK(words_lazy_to_set(0).empty());
+		CHECK(words_lazy_to_set(5).empty());
 	}
 
 	SECTION("empty word") {
@@ -3866,6 +3957,22 @@ TEST_CASE("mata::nft::Nft::get_words()") {
 		};
 		CHECK_SHARED();
 	}
+}
+
+TEST_CASE("mata::nft::Nft::get_words_lazy() - infinite language stays lazy") {
+	// A single self-loop accepts an infinite language (all-zero words of every length). get_words() would never
+	//  return on this automaton with its default (unbounded) max_length; get_words_lazy() must still let the caller
+	//  stop after a handful of words.
+	Nft nft{1, {0}, {0}, {1, {0}}};
+	nft.delta.add(0, 0, 0);
+
+	std::vector<Word> first_words;
+	for (Word&& word : nft.get_words_lazy()) {
+		first_words.push_back(std::move(word));
+		if (first_words.size() == 5) { break; }
+	}
+
+	CHECK(first_words == std::vector<Word>{{}, {0}, {0, 0}, {0, 0, 0}, {0, 0, 0, 0}});
 }
 
 TEST_CASE("mata::nft::Nft::unwind_jump") {

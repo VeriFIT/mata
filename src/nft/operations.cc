@@ -6,6 +6,7 @@
 #include <deque>
 #include <format>
 #include <iterator>
+#include <optional>
 #include <ranges>
 #include <stdexcept>
 
@@ -255,6 +256,94 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 		if (symbol_post_it != state_post_end && handle_symbol_it()) { return true; }
 	}
 	return false;
+}
+
+/// Fast path for @c Nft::read_word_by_levels(): whenever every transition it actually visits turns out to be a
+/// single level step (never a jump longer than 1) and never epsilon-labeled, every state active at a given point of
+/// the read has consumed exactly the same number of input symbols on every level. That collapses the search from
+/// the general post()'s per-(state, per-level-position) worklist down to tracking one plain @c StateSet per step (
+/// exactly like @c Nfa::read_word() ) with no position bookkeeping and no dedup machinery needed.
+///
+/// The assumption is verified lazily as the search visits states, not upfront over the whole automaton: an
+/// epsilon-labeled transition out of a visited state, or a traversed transition landing more than one level away,
+/// aborts the fast path by returning @c std::nullopt, and the caller falls back to the general post()-based
+/// algorithm for a guaranteed-correct answer. This makes the fast path self-verifying -- it never trusts an
+/// unchecked assumption about the automaton's structure that could otherwise silently produce a wrong result -- and
+/// its cost stays proportional to what it actually visits (bounded by @c num_of_states() per step regardless, since
+/// targets are merged into a set), not to the whole automaton or to the number of distinct paths through it.
+/// @warning Correct only when it succeeds (returns a value). A @c std::nullopt result carries no information about
+/// whether @p level_words is readable. The caller must fall back to the general algorithm to find out.
+std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const std::vector<Word>& level_words) {
+	MATA_ASSERT(std::all_of(nft.initial.begin(), nft.initial.end(), [&](const State s) { return nft.levels[s] == 0; }));
+	const size_t num_of_levels{level_words.size()};
+	std::vector<size_t> position(num_of_levels, 0);
+	StateSet current{nft.initial.begin(), nft.initial.end()};
+	Level level{0};
+
+	while (true) {
+		if (level == 0) {
+			bool all_consumed{true};
+			for (size_t i{0}; i < num_of_levels; ++i) {
+				if (position[i] != level_words[i].size()) {
+					all_consumed = false;
+					break;
+				}
+			}
+			if (all_consumed) {
+				// The general algorithm additionally epsilon-closes past a fully-consumed zero-level state (its
+				// epsilon_closure_after default). This fast path has no epsilon-closure step of its own, so it must
+				// abort here -- rather than return an answer that is silently missing what an epsilon-closure would
+				// have added -- whenever a reached state could still take an epsilon transition.
+				for (const State state : current) {
+					const StatePost& state_post{nft.delta[state]};
+					if (!state_post.empty() && state_post.back().symbol == nft::EPSILON) { return std::nullopt; }
+				}
+				return current;
+			}
+		}
+		if (current.empty()) { return StateSet{}; }
+
+		// A word exhausted on this level (while the overall read is not yet finished), or a literal EPSILON symbol
+		// in the word, can never be matched by a real transition (EPSILON only matches an EPSILON-labeled
+		// transition, per the symbols_match() rule used by the general post()) -- the fast path only applies once
+		// no EPSILON-labeled transition exists (checked below), so both are dead ends for it.
+		const bool level_has_symbol{position[level] < level_words[level].size()};
+		const Symbol symbol{level_has_symbol ? level_words[level][position[level]] : nft::EPSILON};
+
+		StateSet next;
+		for (const State state : current) {
+			const StatePost& state_post{nft.delta[state]};
+			// EPSILON sorts last in a StatePost (see epsilon_targets() above), so this is an O(1) check.
+			if (!state_post.empty() && state_post.back().symbol == nft::EPSILON) { return std::nullopt; }
+			if (symbol == nft::EPSILON) { continue; } // No transition can match; nothing to add.
+
+			const auto state_post_end{state_post.end()};
+			const auto add_targets{[&](const SymbolPost& symbol_post) -> bool {
+				for (const State target : symbol_post.targets) {
+					if (nft.levels[target] != nft.levels.next_level_after(level)) { return false; }
+					next.insert(target);
+				}
+				return true;
+			}};
+			if (symbol == DONT_CARE) {
+				// DONT_CARE in the word matches every non-epsilon transition symbol.
+				for (const SymbolPost& symbol_post : state_post) {
+					if (!add_targets(symbol_post)) { return std::nullopt; }
+				}
+			} else {
+				if (const auto it = state_post.find(symbol); it != state_post_end) {
+					if (!add_targets(*it)) { return std::nullopt; }
+				}
+				if (const auto it = state_post.find(DONT_CARE); it != state_post_end) {
+					if (!add_targets(*it)) { return std::nullopt; }
+				}
+			}
+		}
+
+		current = std::move(next);
+		++position[level];
+		level = nft.levels.next_level_after(level);
+	}
 }
 } // Anonymous namespace.
 
@@ -1135,6 +1224,24 @@ bool Nft::is_in_lang_by_levels(
 	return accepted;
 }
 
+StateSet Nft::read_word(const Run& run, const JumpMode jump_mode) const {
+	return read_word_by_levels(mk_level_word_from_word(run.word), jump_mode);
+}
+
+StateSet Nft::read_word_by_levels(const std::vector<Word>& level_words, const JumpMode jump_mode) const {
+	if (level_words.size() != levels.num_of_levels) {
+		throw std::invalid_argument("Invalid number of tracks. Expected " + std::to_string(levels.num_of_levels) + ".");
+	}
+	// The fast path is correct for any jump_mode when it succeeds: it only ever returns a value once it has
+	// confirmed (lazily, while exploring) that no transition it traversed was a jump at all, at which point
+	// jump_mode makes no difference to the general algorithm's behaviour either.
+	if (const std::optional<StateSet> fast_result{read_word_by_levels_single_step(*this, level_words)};
+		fast_result.has_value()) {
+		return *fast_result;
+	}
+	return post(StateSet{initial.begin(), initial.end()}, level_words, nullptr, true, jump_mode);
+}
+
 std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {
 	if (run.path.empty()) { return {{}, true}; }
 
@@ -1471,57 +1578,67 @@ bool nft::symbols_match(const Symbol a, const Symbol b) {
 										  : (a == b || a == DONT_CARE || b == DONT_CARE);
 }
 
-std::set<Word> Nft::get_words(const size_t max_length, const JumpMode jump_mode) const {
-	std::set<Word> result;
+namespace {
+/// Shared DFS traversal behind @c Nft::get_words() and @c Nft::get_words_lazy(). Walks one path at a time and shares
+///  @p word as scratch space (push on descent, truncate back on backtrack) instead of copying it at every edge, the
+///  way a BFS-by-length frontier would.
+std::generator<Word> get_words_lazy_impl(
+	const Nft& nft, const State state, const size_t depth, const size_t max_length, const JumpMode jump_mode, Word& word
+) {
+	if (nft.final.contains(state)) { co_yield word; }
+	if (depth >= max_length) { co_return; }
 
-	// contains a pair: a state s and the word with which we got to the state s
-	std::vector<std::pair<State, Word>> worklist;
-	// initializing worklist
-	for (State init_state : initial) {
-		worklist.push_back({init_state, {}});
-		if (final.contains(init_state)) { result.insert(mata::Word()); }
-	}
+	const Level level_next{nft.levels.next_level_after(nft.levels[state])};
+	for (const SymbolPost& symbol_post : nft.delta[state]) {
+		const auto map_level_targets{nft.levels.map_levels_to(symbol_post.targets)};
+		for (size_t target_level{0}; target_level < map_level_targets.size(); ++target_level) {
+			const auto& targets_for_level{map_level_targets[target_level]};
+			if (targets_for_level.empty()) { continue; }
 
-	// will be used during the loop
-	std::vector<std::pair<State, Word>> new_worklist;
-
-	size_t cur_length = 0;
-	while (!worklist.empty() && cur_length < max_length) {
-		new_worklist.clear();
-		for (const auto& [source, word] : worklist) {
-			const auto level_next{levels.next_level_after(levels[source])};
-			for (const SymbolPost& symbol_post : delta[source]) {
-				auto targets{symbol_post.targets};
-				auto map_level_targets{levels.map_levels_to(targets)};
-				for (size_t target_level{0}; target_level < map_level_targets.size(); ++target_level) {
-					const auto& targets_for_level{map_level_targets[target_level]};
-					if (targets_for_level.empty()) { continue; }
-					Word new_word{word};
-					new_word.push_back(symbol_post.symbol);
-					if (target_level != level_next) {
-						for (Level level{level_next}; level != target_level; level = levels.next_level_after(level)) {
-							switch (jump_mode) {
-								case JumpMode::AppendDontCares:
-									new_word.push_back(DONT_CARE);
-									break;
-								case JumpMode::RepeatSymbol:
-									new_word.push_back(symbol_post.symbol);
-									break;
-								default:
-									throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
-							}
-						}
-					}
-					for (auto target : targets_for_level) {
-						new_worklist.emplace_back(target, new_word);
-						if (final.contains(target)) { result.insert(new_word); }
+			const size_t word_size_before{word.size()};
+			word.push_back(symbol_post.symbol);
+			if (target_level != level_next) {
+				for (Level level{level_next}; level != target_level; level = nft.levels.next_level_after(level)) {
+					switch (jump_mode) {
+						case JumpMode::AppendDontCares:
+							word.push_back(DONT_CARE);
+							break;
+						case JumpMode::RepeatSymbol:
+							word.push_back(symbol_post.symbol);
+							break;
+						default:
+							throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
 					}
 				}
 			}
+			for (const State target : targets_for_level) {
+				for (Word&& sub_word : get_words_lazy_impl(nft, target, depth + 1, max_length, jump_mode, word)) {
+					co_yield std::move(sub_word);
+				}
+			}
+			word.resize(word_size_before);
 		}
-		worklist.swap(new_worklist);
-		++cur_length;
 	}
+}
+} // namespace
 
+std::set<Word> Nft::get_words(const size_t max_length, const JumpMode jump_mode) const {
+	std::set<Word> result;
+	Word word;
+	for (const State init_state : initial) {
+		for (Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, jump_mode, word)) {
+			result.insert(std::move(w));
+		}
+	}
 	return result;
+}
+
+std::generator<Word> Nft::get_words_lazy(const size_t max_length, const JumpMode jump_mode) const {
+	std::set<Word> seen;
+	Word word;
+	for (const State init_state : initial) {
+		for (Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, jump_mode, word)) {
+			if (seen.insert(w).second) { co_yield std::move(w); }
+		}
+	}
 }

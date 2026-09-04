@@ -26,6 +26,7 @@ from libmata.nfa.nfa cimport CSparseSet, CBoolVector, CBinaryRelation
 from libmata.nfa.nfa cimport Transition
 from libmata.nfa.nfa cimport ostream, ofstream, stringstream
 from libmata.utils cimport COrdVector, BinaryRelation, CPairHash
+from libmata.alphabets cimport CLazyWordGenerator
 from libmata.nfa.nfa import Run, run_safely_external_command
 
 
@@ -772,6 +773,25 @@ cdef class Nft:
         cdef size_t c_max_length = max_length if max_length is not None else <size_t>(-1)
         cdef cset[vector[Symbol]] result = self.thisptr.get().get_words(c_max_length, _c_jump_mode(jump_mode))
         return {tuple(word) for word in result}
+
+    def get_words_lazy(self, max_length = None, jump_mode = JumpMode.RepeatSymbol):
+        """Lazily enumerate the words in the language of the NFT whose length is <= `max_length`.
+
+        Unlike `get_words()`, this does not compute the whole set before returning anything: words are produced
+        one at a time, so the caller can stop early, or work with a language that would otherwise be too large
+        (or, with `max_length` left unbounded, infinite) to enumerate up front.
+
+        :return: Generator of words, each as a tuple of symbols.
+        """
+        cdef size_t c_max_length = max_length if max_length is not None else <size_t>(-1)
+        cdef CLazyWordGenerator* it = c_nft_get_words_lazy_ptr(
+            dereference(self.thisptr.get()), c_max_length, _c_jump_mode(jump_mode)
+        )
+        try:
+            while not it.done():
+                yield tuple(it.next())
+        finally:
+            del it
 
     def apply(self, nfa_or_word, level_to_apply_on: Level = 0, project_out_applied_level = True, jump_mode = JumpMode.RepeatSymbol) -> Nft:
         """Apply `nfa_or_word` to `self`, intersecting it with `level_to_apply_on` of `self`."""

@@ -333,12 +333,10 @@ Nfa Nfa::get_one_letter_aut(const Symbol abstract_symbol) const {
 void Nfa::get_one_letter_aut(Nfa& result) const { result = get_one_letter_aut(); }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-	StateSet res{};
-
 	// If the symbol is EPSILON, we can stay in the same state.
-	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) { res = states; }
+	const bool stays_via_epsilon{symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None};
 
-	if (delta.empty()) { return res; }
+	if (delta.empty()) { return stays_via_epsilon ? states : StateSet{}; }
 
 	StateSet from_states = states;
 	if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
@@ -346,16 +344,21 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 		from_states = mk_epsilon_closure(states);
 	}
 
-	// Now, we can make the step using the symbol.
+	// Now, we can make the step using the symbol. Gathering every matching target list once and merging them all in
+	// a single sort + dedup pass. It keeps the merge cost close to the number of distinct targets instead of growing
+	// with the number of source states touched.
+	std::vector<State> merged{};
+	if (stays_via_epsilon) { merged.assign(states.begin(), states.end()); }
 	for (const State state : from_states) {
 		const StatePost& post{delta[state]};
-		if (const auto move_it{post.find(symbol)}; move_it != post.end()) { res.insert(move_it->targets); }
+		if (const auto move_it{post.find(symbol)}; move_it != post.end()) {
+			merged.insert(merged.end(), move_it->targets.begin(), move_it->targets.end());
+		}
 	}
+	StateSet res{merged};
 
-	if (epsilon_closure_opt == EpsilonClosureOpt::After) {
-		// We need to compute the epsilon closure of the resulting states.
-		res = mk_epsilon_closure(res);
-	}
+	// Compute the epsilon closure of the resulting states.
+	if (epsilon_closure_opt == EpsilonClosureOpt::After) { res = mk_epsilon_closure(res); }
 
 	return res;
 }

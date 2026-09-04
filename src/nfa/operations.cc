@@ -1242,38 +1242,51 @@ Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::stri
 	return {.word = alphabet->translate_word(input)};
 }
 
-std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
-	std::set<mata::Word> result;
+namespace {
+/// Shared DFS traversal behind @c Nfa::get_words() and @c Nfa::get_words_lazy(). Walks one path at a time and shares
+///  @p word as scratch space (push on descent, truncate back on backtrack), instead of copying it at every edge the
+///  way a BFS-by-length frontier would.
+std::generator<mata::Word> get_words_lazy_impl(
+	const mata::nfa::Nfa& nfa,
+	const mata::nfa::State state,
+	const size_t depth,
+	const size_t max_length,
+	mata::Word& word
+) {
+	if (nfa.final.contains(state)) { co_yield word; }
+	if (depth >= max_length) { co_return; }
 
-	// contains a pair: a state s and the word with which we got to the state s
-	std::vector<std::pair<State, mata::Word>> worklist;
-	// initializing worklist
-	for (State init_state : initial) {
-		worklist.push_back({init_state, {}});
-		if (final.contains(init_state)) { result.insert(mata::Word()); }
-	}
-
-	// will be used during the loop
-	std::vector<std::pair<State, mata::Word>> new_worklist;
-
-	unsigned cur_length = 0;
-	while (!worklist.empty() && cur_length < max_length) {
-		new_worklist.clear();
-		for (const auto& [state, word] : worklist) {
-			for (const SymbolPost& sp : delta[state]) {
-				mata::Word new_word = word;
-				new_word.push_back(sp.symbol);
-				for (State s_to : sp.targets) {
-					new_worklist.emplace_back(s_to, new_word);
-					if (final.contains(s_to)) { result.insert(new_word); }
-				}
+	for (const mata::nfa::SymbolPost& sp : nfa.delta[state]) {
+		word.push_back(sp.symbol);
+		for (const mata::nfa::State target : sp.targets) {
+			for (mata::Word&& sub_word : get_words_lazy_impl(nfa, target, depth + 1, max_length, word)) {
+				co_yield std::move(sub_word);
 			}
 		}
-		worklist.swap(new_worklist);
-		++cur_length;
+		word.pop_back();
 	}
+}
+} // namespace
 
+std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
+	std::set<mata::Word> result;
+	mata::Word word;
+	for (const State init_state : initial) {
+		for (mata::Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, word)) {
+			result.insert(std::move(w));
+		}
+	}
 	return result;
+}
+
+std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const size_t max_length) const {
+	std::set<mata::Word> seen;
+	mata::Word word;
+	for (const State init_state : initial) {
+		for (mata::Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, word)) {
+			if (seen.insert(w).second) { co_yield std::move(w); }
+		}
+	}
 }
 
 OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet* const shared_alphabet) {
