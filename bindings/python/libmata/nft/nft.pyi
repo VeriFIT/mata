@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from enum import IntEnum
 from typing import Self
 
@@ -296,6 +296,10 @@ class Nft:
         self, max_length: int | None = None, jump_mode: JumpMode = JumpMode.RepeatSymbol
     ) -> set[tuple[Symbol, ...]]:
         """Get the set of all words in the language of the NFT whose length is <= `max_length`."""
+    def get_words_lazy(
+        self, max_length: int | None = None, jump_mode: JumpMode = JumpMode.RepeatSymbol
+    ) -> Iterator[tuple[Symbol, ...]]:
+        """Lazily enumerate the words in the language of the NFT whose length is <= `max_length`."""
     def apply(
         self,
         nfa_or_word: mata_nfa.Nfa | list[Symbol],

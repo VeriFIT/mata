@@ -1274,6 +1274,43 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
 	return result;
 }
 
+#if MATA_HAS_GENERATOR_SUPPORT
+namespace {
+/// Shared DFS traversal behind @c Nfa::get_words_lazy(). Same shape as @c get_words_dfs_impl(), but written as a
+///  coroutine so it can yield each word as it is found instead of collecting them all before returning.
+std::generator<mata::Word> get_words_lazy_impl(
+	const mata::nfa::Nfa& nfa,
+	const mata::nfa::State state,
+	const size_t depth,
+	const std::optional<size_t> max_length,
+	mata::Word& word
+) {
+	if (nfa.final.contains(state)) { co_yield word; }
+	if (max_length.has_value() && depth >= max_length.value()) { co_return; }
+
+	for (const mata::nfa::SymbolPost& sp : nfa.delta[state]) {
+		word.push_back(sp.symbol);
+		for (const mata::nfa::State target : sp.targets) {
+			for (mata::Word&& sub_word : get_words_lazy_impl(nfa, target, depth + 1, max_length, word)) {
+				co_yield std::move(sub_word);
+			}
+		}
+		word.pop_back();
+	}
+}
+} // namespace
+
+std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<size_t> max_length) const {
+	std::set<mata::Word> seen;
+	mata::Word word;
+	for (const State init_state : initial) {
+		for (mata::Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, word)) {
+			if (seen.insert(w).second) { co_yield std::move(w); }
+		}
+	}
+}
+#endif // MATA_HAS_GENERATOR_SUPPORT
+
 OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet* const shared_alphabet) {
 	return nfa.resolve_alphabet(shared_alphabet)->get_alphabet_symbols();
 }

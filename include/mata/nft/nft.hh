@@ -101,10 +101,15 @@
 #include "delta.hh"
 #include "mata/alphabet.hh"
 #include "mata/utils/assert.hh"
+#include "mata/utils/generator-support.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 #include "types.hh"
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	#include <generator>
+#endif
 
 #include "mata/automaton.hh"
 #include "mata/nfa/nfa.hh"
@@ -1369,6 +1374,32 @@ class Nft : public mata::Automaton {
 	 */
 	std::set<Word>
 		get_words(std::optional<size_t> max_length = std::nullopt, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	/**
+	 * @brief Lazily enumerate the words in the language of the automaton whose length is <= @p max_length.
+	 *
+	 * Equivalent to @ref get_words(), but yields each word as soon as it is found instead of computing the whole set
+	 * up front. Prefer this over @ref get_words() when the caller may stop after finding the first few words, or when
+	 * the language might be large or infinite (with @p max_length left at its default, @ref get_words() will never
+	 * return for a cyclic automaton with an infinite language, whereas this can still be iterated and stopped at
+	 * will).
+	 *
+	 * Words are still deduplicated the same way @ref get_words() deduplicates them (the same word can be reachable
+	 * via more than one accepting path), so a duplicate is silently skipped rather than re-yielded.
+	 *
+	 * Only available when @c MATA_HAS_GENERATOR_SUPPORT is set (i.e. the standard library actually implements
+	 * @c std::generator — some, like Apple's system libc++, do not, even under `-std=c++23`).
+	 *
+	 * @param max_length Maximum length of words to be returned. Default: "no limit"; will keep yielding forever if
+	 * the language is infinite.
+	 * @param jump_mode Specifies how to interpret the jump transitions.
+	 * @return Generator lazily yielding each word in the language of the automaton whose length is <= @p max_length.
+	 */
+	std::generator<Word> get_words_lazy(
+		std::optional<size_t> max_length = std::nullopt, JumpMode jump_mode = JumpMode::RepeatSymbol
+	) const;
+#endif // MATA_HAS_GENERATOR_SUPPORT
 
 	/**
 	 * @brief Apply @p nfa to @c this.

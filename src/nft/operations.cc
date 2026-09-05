@@ -1634,3 +1634,63 @@ std::set<Word> Nft::get_words(const std::optional<size_t> max_length, const Jump
 	}
 	return result;
 }
+
+#if MATA_HAS_GENERATOR_SUPPORT
+namespace {
+/// Shared DFS traversal behind @c Nft::get_words_lazy(). Same shape as @c get_words_dfs_impl(), but written as a
+///  coroutine so it can yield each word as it is found instead of collecting them all before returning.
+std::generator<Word> get_words_lazy_impl(
+	const Nft& nft,
+	const State state,
+	const size_t depth,
+	const std::optional<size_t> max_length,
+	const JumpMode jump_mode,
+	Word& word
+) {
+	if (nft.final.contains(state)) { co_yield word; }
+	if (max_length.has_value() && depth >= max_length.value()) { co_return; }
+
+	const Level level_next{nft.levels.next_level_after(nft.levels[state])};
+	for (const SymbolPost& symbol_post : nft.delta[state]) {
+		const auto map_level_targets{nft.levels.map_levels_to(symbol_post.targets)};
+		for (size_t target_level{0}; target_level < map_level_targets.size(); ++target_level) {
+			const auto& targets_for_level{map_level_targets[target_level]};
+			if (targets_for_level.empty()) { continue; }
+
+			const size_t word_size_before{word.size()};
+			word.push_back(symbol_post.symbol);
+			if (target_level != level_next) {
+				for (Level level{level_next}; level != target_level; level = nft.levels.next_level_after(level)) {
+					switch (jump_mode) {
+						case JumpMode::AppendDontCares:
+							word.push_back(DONT_CARE);
+							break;
+						case JumpMode::RepeatSymbol:
+							word.push_back(symbol_post.symbol);
+							break;
+						default:
+							throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
+					}
+				}
+			}
+			for (const State target : targets_for_level) {
+				for (Word&& sub_word : get_words_lazy_impl(nft, target, depth + 1, max_length, jump_mode, word)) {
+					co_yield std::move(sub_word);
+				}
+			}
+			word.resize(word_size_before);
+		}
+	}
+}
+} // namespace
+
+std::generator<Word> Nft::get_words_lazy(const std::optional<size_t> max_length, const JumpMode jump_mode) const {
+	std::set<Word> seen;
+	Word word;
+	for (const State init_state : initial) {
+		for (Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, jump_mode, word)) {
+			if (seen.insert(w).second) { co_yield std::move(w); }
+		}
+	}
+}
+#endif // MATA_HAS_GENERATOR_SUPPORT

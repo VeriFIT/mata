@@ -4285,6 +4285,128 @@ TEST_CASE("mata::nfa::get_useful_states_tarjan") {
 	}
 }
 
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nfa::Nfa::get_words") {
+	// get_words_lazy() must agree with get_words() exactly for every (aut, max_length), just yielded one word at a
+	//  time instead of computed up front.
+	const auto CHECK_WORDS = [](const Nfa& aut, const size_t max_length, const std::set<mata::Word>& expected) {
+		CHECK(aut.get_words(max_length) == expected);
+		std::set<mata::Word> lazy_result;
+		for (mata::Word&& word : aut.get_words_lazy(max_length)) { lazy_result.insert(std::move(word)); }
+		CHECK(lazy_result == expected);
+	};
+
+	SECTION("empty") {
+		Nfa aut;
+		CHECK_WORDS(aut, 0, std::set<mata::Word>());
+		CHECK_WORDS(aut, 1, std::set<mata::Word>());
+		CHECK_WORDS(aut, 5, std::set<mata::Word>());
+	}
+
+	SECTION("empty word") {
+		Nfa aut(1, {0}, {0});
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{}});
+	}
+
+	SECTION("noodle - one final") {
+		Nfa aut(3, {0}, {2});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 2);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{0, 1}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{0, 1}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{0, 1}});
+	}
+
+	SECTION("noodle - two finals") {
+		Nfa aut(3, {0}, {1, 2});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 2);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{0}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{0}, {0, 1}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{0}, {0, 1}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{0}, {0, 1}});
+	}
+
+	SECTION("noodle - three finals") {
+		Nfa aut(3, {0}, {0, 1, 2});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 2);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}, {0}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{}, {0}, {0, 1}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{}, {0}, {0, 1}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{}, {0}, {0, 1}});
+	}
+
+	SECTION("more complex") {
+		Nfa aut(6, {0, 1}, {1, 3, 4, 5});
+		aut.delta.add(0, 0, 3);
+		aut.delta.add(3, 1, 4);
+		aut.delta.add(0, 2, 2);
+		aut.delta.add(3, 3, 2);
+		aut.delta.add(1, 4, 2);
+		aut.delta.add(2, 5, 5);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}, {0}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+		CHECK_WORDS(aut, 4, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+	}
+
+	SECTION("cycle") {
+		Nfa aut(6, {0, 1}, {0, 1});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 0);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}, {0}, {1}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}});
+		CHECK_WORDS(
+			aut, 4, std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}, {0, 1, 0, 1}, {1, 0, 1, 0}}
+		);
+		CHECK_WORDS(
+			aut, 5,
+			std::set<mata::Word>{
+				{},
+				{0},
+				{1},
+				{0, 1},
+				{1, 0},
+				{0, 1, 0},
+				{1, 0, 1},
+				{0, 1, 0, 1},
+				{1, 0, 1, 0},
+				{0, 1, 0, 1, 0},
+				{1, 0, 1, 0, 1}
+			}
+		);
+	}
+
+	// The cycle above makes the language infinite; get_words() with an unbounded max_length would never return,
+	//  but get_words_lazy() can still be iterated and stopped early.
+	SECTION("cycle - early exit on unbounded max_length") {
+		Nfa aut(6, {0, 1}, {0, 1});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 0);
+
+		// DFS descends fully into the first initial state (0) before ever trying the second (1); since 0's subtree
+		//  is an infinite cycle, the first words produced are 0's own ever-growing path, not an interleaving of both
+		//  initial states.
+		std::vector<mata::Word> first_words;
+		for (mata::Word&& word : aut.get_words_lazy()) {
+			first_words.push_back(std::move(word));
+			if (first_words.size() == 3) { break; }
+		}
+		CHECK(first_words == std::vector<mata::Word>{{}, {0}, {0, 1}});
+	}
+}
+#else
 TEST_CASE("mata::nfa::Nfa::get_words") {
 	SECTION("empty") {
 		Nfa aut;
@@ -4378,6 +4500,7 @@ TEST_CASE("mata::nfa::Nfa::get_words") {
 		);
 	}
 }
+#endif // MATA_HAS_GENERATOR_SUPPORT
 
 TEST_CASE("mata::nfa::Nfa::get_word()") {
 	SECTION("empty") {

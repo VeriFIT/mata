@@ -227,6 +227,28 @@ def test_nft_get_words():
     assert nft.get_words() == {(7, 8)}
 
 
+@pytest.mark.skipif(
+    not hasattr(mata_nft.Nft, "get_words_lazy"),
+    reason="get_words_lazy() is compiled out when the standard library lacks std::generator support",
+)
+def test_nft_get_words_lazy():
+    nft = _make_word_nft([7, 8])
+    assert set(nft.get_words_lazy()) == nft.get_words()
+
+    # get_words_lazy() must stay usable (not hang) on an infinite language with the default unbounded max_length,
+    #  unlike get_words().
+    cyclic = mata_nft.Nft(1, num_of_levels=1)
+    cyclic.make_initial_state(0)
+    cyclic.make_final_state(0)
+    cyclic.delta.add(0, 0, 0)
+    first_words = []
+    for word in cyclic.get_words_lazy():
+        first_words.append(word)
+        if len(first_words) == 3:
+            break
+    assert first_words == [(), (0,), (0, 0)]
+
+
 def test_nft_builder_functions():
     word_nft = mata_nft.create_single_word_nft([1, 2])
     assert word_nft.is_in_lang([1, 2])

@@ -12,6 +12,8 @@ from libc.stdint cimport uintptr_t, uint8_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol
+IF MATA_HAS_GENERATOR_SUPPORT:
+    from libmata.alphabets cimport CLazyWordGenerator
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -223,6 +225,8 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&)
     cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&)
     cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&)
+    IF MATA_HAS_GENERATOR_SUPPORT:
+        cdef CLazyWordGenerator* c_get_words_lazy_ptr "mata::nfa::plumbing::get_words_lazy_ptr" (CNfa&, size_t) except +
 
 
 

@@ -3822,6 +3822,161 @@ TEST_CASE("mata::nft::get_useful_states_tarjan") {
 	}
 }
 
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nft::Nft::get_words()") {
+	Nft nft{Nft::with_levels(3)};
+	std::set<Word> words_expected{};
+
+	const auto words_lazy_to_set = [&](size_t max_length) {
+		std::set<Word> result;
+		for (Word&& word : nft.get_words_lazy(max_length)) { result.insert(std::move(word)); }
+		return result;
+	};
+
+	const auto CHECK_SHARED = [&]() {
+		if (words_expected.empty()) {
+			CHECK(nft.get_words().empty());
+			CHECK(nft.get_words(0).empty());
+			CHECK(nft.get_words(5).empty());
+			CHECK(words_lazy_to_set(std::numeric_limits<size_t>::max()).empty());
+			CHECK(words_lazy_to_set(0).empty());
+			CHECK(words_lazy_to_set(5).empty());
+			return;
+		}
+
+		const size_t word_length_max = std::ranges::max_element(words_expected, [](const Word& a, const Word& b) {
+										   return a.size() < b.size();
+									   })->size();
+		const auto words_result{nft.get_words(word_length_max)};
+		CHECK(words_result.size() == words_expected.size());
+		for (const Word& word : words_expected) { CHECK(words_result.contains(word)); }
+
+		// get_words_lazy() must agree with get_words() exactly, just yielded one word at a time.
+		CHECK(words_lazy_to_set(word_length_max) == words_result);
+	};
+
+	SECTION("empty") {
+		CHECK(nft.get_words().empty());
+		CHECK(nft.get_words(0).empty());
+		CHECK(nft.get_words(5).empty());
+		CHECK(words_lazy_to_set(std::numeric_limits<size_t>::max()).empty());
+		CHECK(words_lazy_to_set(0).empty());
+		CHECK(words_lazy_to_set(5).empty());
+	}
+
+	SECTION("empty word") {
+		nft = Nft{1, {0}, {0}};
+		words_expected = {{}};
+		CHECK_SHARED();
+	}
+
+	SECTION("noodle - one final") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 2, 6);
+
+		words_expected = {{0, 1, 2, 0, 1, 2}};
+		CHECK_SHARED();
+	}
+
+	SECTION("noodle - two final") {
+		nft = Nft{7, {0}, {3, 6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 2, 6);
+
+		words_expected = {{0, 1, 2}, {0, 1, 2, 0, 1, 2}};
+		CHECK_SHARED();
+	}
+
+	SECTION("noodle - one final with multiple paths") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(2, 3, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(2, 4, 3);
+		nft.delta.add(5, 2, 6);
+
+		words_expected = {{0, 1, 2, 0, 1, 2}, {0, 1, 3, 0, 1, 2}, {0, 1, 4, 0, 1, 2}};
+		CHECK_SHARED();
+	}
+
+	SECTION("noodle - one final with multiple paths with epsilons") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, EPSILON, 3);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 3, 6);
+		nft.delta.add(5, EPSILON, 6);
+
+		words_expected = {
+			{0, 1, EPSILON, 0, 1, EPSILON},
+			{0, 1, 2, 0, 1, EPSILON},
+			{0, 1, EPSILON, 0, 1, 3},
+			{0, 1, 2, 0, 1, 3},
+		};
+		CHECK_SHARED();
+	}
+
+	SECTION("Loop") {
+		nft = Nft{4, {0}, {3}, {3, {0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 0, 1);
+
+		words_expected = {{0, 1, 2}, {0, 1, 2, 0, 1, 2}, {0, 1, 2, 0, 1, 2, 0, 1, 2}};
+		CHECK_SHARED();
+	}
+
+	SECTION("Jumps") {
+		nft = Nft{7, {0}, {6}, {3, {0, 1, 2, 0, 1, 2, 0}}};
+		nft.delta.add(0, 0, 1);
+		nft.delta.add(1, EPSILON, 3);
+		nft.delta.add(1, 1, 2);
+		nft.delta.add(2, 2, 3);
+		nft.delta.add(3, 3, 6);
+		nft.delta.add(3, 0, 4);
+		nft.delta.add(4, 1, 5);
+		nft.delta.add(5, 4, 6);
+
+		words_expected = {
+			{0, EPSILON, EPSILON, 3, 3, 3}, {0, 1, 2, 3, 3, 3}, {0, EPSILON, EPSILON, 0, 1, 4}, {0, 1, 2, 0, 1, 4}
+		};
+		CHECK_SHARED();
+	}
+}
+
+TEST_CASE("mata::nft::Nft::get_words_lazy() - infinite language stays lazy") {
+	// A single self-loop accepts an infinite language (all-zero words of every length). get_words() would never
+	//  return on this automaton with its default (unbounded) max_length; get_words_lazy() must still let the caller
+	//  stop after a handful of words.
+	Nft nft{1, {0}, {0}, {1, {0}}};
+	nft.delta.add(0, 0, 0);
+
+	std::vector<Word> first_words;
+	for (Word&& word : nft.get_words_lazy()) {
+		first_words.push_back(std::move(word));
+		if (first_words.size() == 5) { break; }
+	}
+
+	CHECK(first_words == std::vector<Word>{{}, {0}, {0, 0}, {0, 0, 0}, {0, 0, 0, 0}});
+}
+
+#else
 TEST_CASE("mata::nft::Nft::get_words()") {
 	Nft nft{Nft::with_levels(3)};
 	std::set<Word> words_expected{};
@@ -3943,6 +4098,8 @@ TEST_CASE("mata::nft::Nft::get_words()") {
 		CHECK_SHARED();
 	}
 }
+
+#endif // MATA_HAS_GENERATOR_SUPPORT
 
 TEST_CASE("mata::nft::Nft::unwind_jump") {
 #define REPLACE_DONT_CARE(delta, src, trg)                                                                             \

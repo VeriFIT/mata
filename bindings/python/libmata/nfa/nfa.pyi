@@ -511,6 +511,8 @@ class Nfa:
         """
     def get_words(self, max_length: int) -> set[tuple[Symbol, ...]]:
         """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
+    def get_words_lazy(self, max_length: int | None = None) -> Iterator[tuple[Symbol, ...]]:
+        """Lazily enumerate the words in the language of the automaton whose length is <= `max_length`."""
     def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> None:
         """Makes NFA complete.
 
