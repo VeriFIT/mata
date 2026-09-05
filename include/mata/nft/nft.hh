@@ -1286,6 +1286,61 @@ class Nft : public mata::Automaton {
 	std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
 	/**
+	 * @brief Read a @p run and return the set of (zero-level) states the transducer ends up in.
+	 *
+	 * The symbols of @p run.word are interpreted as a single flat word with the tapes interspersed, i.e. symbols
+	 * cycle through levels 0, 1, ..., @c levels.num_of_levels - 1, 0, 1, ... (see @c mk_level_word_from_word()).
+	 *
+	 * @param run The run to read.
+	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+	 * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+	 * sequence of @c DONT_CARE symbols.
+	 *
+	 * @return Set of all reachable zero-level states after reading @p run to the end on every level. Note: This
+	 *         returns all reachable states, not just final states. Use is_in_lang() if you need to check
+	 *         language membership, or intersect the result with final states manually if needed.
+	 *         Note: The returned set is empty if the run cannot be read to the end.
+	 */
+	StateSet read_word(const Run& run, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+	/**
+	 * @brief Read a @p word and return the set of (zero-level) states the transducer ends up in.
+	 *
+	 * The symbols of @p word are interpreted as a single flat word with the tapes interspersed, i.e. symbols cycle
+	 * through levels 0, 1, ..., @c levels.num_of_levels - 1, 0, 1, ... (see @c mk_level_word_from_word()).
+	 *
+	 * @param word The word to read.
+	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+	 * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+	 * sequence of @c DONT_CARE symbols.
+	 *
+	 * @return Set of all reachable zero-level states after reading @p word to the end on every level. Note: This
+	 *         returns all reachable states, not just final states. Use is_in_lang() if you need to check
+	 *         language membership, or intersect the result with final states manually if needed.
+	 *         Note: The returned set is empty if the word cannot be read to the end.
+	 */
+	StateSet read_word(const Word& word, const JumpMode jump_mode = JumpMode::RepeatSymbol) const {
+		return read_word(Run{word, {}}, jump_mode);
+	}
+
+	/**
+	 * @brief Read @p level_words (one word per level/tape) and return the set of (zero-level) states the transducer
+	 * ends up in.
+	 *
+	 * @param level_words The words to read, one per level (tape). Must have the same size as @c levels.num_of_levels.
+	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1) is
+	 * interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
+	 * sequence of @c DONT_CARE symbols.
+	 *
+	 * @return Set of all reachable zero-level states after reading every word in @p level_words to the end on its
+	 *         level. Note: This returns all reachable states, not just final states. Use is_in_lang_by_levels() if
+	 *         you need to check language membership, or intersect the result with final states manually if needed.
+	 *         Note: The returned set is empty if @p level_words cannot be read to the end.
+	 */
+	StateSet
+		read_word_by_levels(const std::vector<Word>& level_words, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
+	/**
 	 * @brief Convert a word to level words according to the levels of the automaton.
 	 *
 	 * @param word The word to convert.
@@ -1312,9 +1367,8 @@ class Nft : public mata::Automaton {
 	 * @param jump_mode Specifies how to interpret the jump transitions.
 	 * @return Set of all words in the language of the automaton whose length is <= @p max_length.
 	 */
-	std::set<Word> get_words(
-		size_t max_length = std::numeric_limits<size_t>::max(), JumpMode jump_mode = JumpMode::RepeatSymbol
-	) const;
+	std::set<Word>
+		get_words(std::optional<size_t> max_length = std::nullopt, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
 	/**
 	 * @brief Apply @p nfa to @c this.

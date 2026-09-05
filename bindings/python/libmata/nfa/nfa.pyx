@@ -1024,6 +1024,11 @@ cdef class Nfa:
         cdef pair[CRun, bool] result = self.thisptr.get().get_word_for_path(dereference(input.thisptr))
         return result.first.word, result.second
 
+    def get_words(self, max_length) -> set[tuple[int, ...]]:
+        """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
+        cdef cset[vector[Symbol]] result = self.thisptr.get().get_words(<size_t>max_length)
+        return {tuple(word) for word in result}
+
     def make_complete(self, State sink_state, alph.Alphabet alphabet):
         """Makes NFA complete.
 

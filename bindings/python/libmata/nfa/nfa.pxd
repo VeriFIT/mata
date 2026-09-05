@@ -190,6 +190,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         StateSet read_word(CRun&, bool)
         optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
+        cset[vector[Symbol]] get_words(size_t) except +
         void make_complete(CAlphabet*, optional[State]) except +
         shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
         COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +

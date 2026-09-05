@@ -1188,3 +1188,12 @@ def test_get_symbols_to_work_with():
 
     explicit_alphabet = alphabets.EnumAlphabet({5, 6, 7})
     assert nfa.get_symbols_to_work_with(explicit_alphabet) == {5, 6, 7}
+
+
+def test_get_words():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    assert nfa.get_words(5) == {(1, 2)}

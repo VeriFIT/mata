@@ -509,6 +509,8 @@ class Nfa:
         :param list path: list of states
         :return: pair of word (list of symbols) and true or false, whether the search was successful
         """
+    def get_words(self, max_length: int) -> set[tuple[Symbol, ...]]:
+        """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
     def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> None:
         """Makes NFA complete.
 
