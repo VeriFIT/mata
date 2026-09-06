@@ -5,16 +5,11 @@
 #include <algorithm>
 #include <deque>
 
-#include "mata/automaton.hh"
+#include "mata/core/automaton.hh"
 #include "mata/utils/sparse-set.hh"
 
 using namespace mata;
 using namespace mata::utils;
-
-using mata::nfa::Delta;
-using mata::nfa::State;
-using mata::nfa::StateSet;
-using mata::nfa::SuccessorCursor;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -140,7 +135,7 @@ StateSet Automaton::get_reachable_states(const std::function<bool(State)>& filte
 StateSet Automaton::get_terminating_states() const { return reverted().get_reachable_states(); }
 
 std::vector<State> Automaton::distances_from_initial() const {
-	std::vector<State> distances(num_of_states() + 1, nfa::Limits::max_state);
+	std::vector<State> distances(num_of_states() + 1, Limits::max_state);
 	BoolVector visited(num_of_states() + 1, false);
 	std::deque<State> que;
 

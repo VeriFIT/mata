@@ -106,7 +106,7 @@
 #include "mata/utils/utils.hh"
 #include "types.hh"
 
-#include "mata/automaton.hh"
+#include "mata/core/automaton.hh"
 #include "mata/nfa/nfa.hh"
 
 namespace mata::nft {

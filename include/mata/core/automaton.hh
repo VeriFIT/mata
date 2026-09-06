@@ -6,16 +6,16 @@
  *  and is therefore meaningful for any specialization of @c Automaton.
  */
 
-#ifndef MATA_AUTOMATON_HH_
-#define MATA_AUTOMATON_HH_
+#ifndef MATA_CORE_AUTOMATON_HH_
+#define MATA_CORE_AUTOMATON_HH_
 
 #include <cstddef>
 #include <functional>
 #include <optional>
 #include <vector>
 
-#include "mata/nfa/delta.hh"
-#include "mata/nfa/types.hh"
+#include "mata/core/delta.hh"
+#include "mata/core/types.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
@@ -27,9 +27,9 @@ namespace mata {
  */
 class Automaton {
   public:
-	nfa::Delta delta; ///< Transition relation of the automaton. delta[q] contains transitions from state q.
-	utils::SparseSet<nfa::State> initial{}; ///< Set of initial states of the automaton.
-	utils::SparseSet<nfa::State> final{}; ///< Set of final states of the automaton.
+	Delta delta; ///< Transition relation of the automaton. delta[q] contains transitions from state q.
+	utils::SparseSet<State> initial{}; ///< Set of initial states of the automaton.
+	utils::SparseSet<State> final{}; ///< Set of final states of the automaton.
 
   public:
 	/**
@@ -40,9 +40,9 @@ class Automaton {
 	 * @param[in] final_states Set of final states of the automaton.
 	 */
 	explicit Automaton(
-		nfa::Delta delta = {},
-		utils::SparseSet<nfa::State> initial_states = {},
-		utils::SparseSet<nfa::State> final_states = {}
+		Delta delta = {},
+		utils::SparseSet<State> initial_states = {},
+		utils::SparseSet<State> final_states = {}
 	)
 		: delta(std::move(delta)),
 		  initial(std::move(initial_states)),
@@ -58,8 +58,8 @@ class Automaton {
 	 */
 	explicit Automaton(
 		const size_t num_of_states,
-		utils::SparseSet<nfa::State> initial_states = {},
-		utils::SparseSet<nfa::State> final_states = {}
+		utils::SparseSet<State> initial_states = {},
+		utils::SparseSet<State> final_states = {}
 	)
 		: delta(num_of_states),
 		  initial(std::move(initial_states)),
@@ -89,7 +89,7 @@ class Automaton {
 	 * @param[in] state_to_check The state to check.
 	 * @return true if the state is valid, false otherwise.
 	 */
-	bool is_state(const nfa::State& state_to_check) const { return state_to_check < num_of_states(); }
+	bool is_state(const State& state_to_check) const { return state_to_check < num_of_states(); }
 
 	/**
 	 * @brief Get set of reachable states.
@@ -100,7 +100,7 @@ class Automaton {
 	 *  If provided, only states for which the filter returns true will be included in the result.
 	 * @return Set of reachable states.
 	 */
-	nfa::StateSet get_reachable_states(const std::function<bool(nfa::State)>& filter = nullptr) const;
+	StateSet get_reachable_states(const std::function<bool(State)>& filter = nullptr) const;
 
 	/**
 	 * @brief Get set of terminating states.
@@ -109,7 +109,7 @@ class Automaton {
 	 * @todo With the new get_useful_states, it might be useless now.
 	 * @return Set of terminating states.
 	 */
-	nfa::StateSet get_terminating_states() const;
+	StateSet get_terminating_states() const;
 
 	/**
 	 * @brief Get the useful states using a modified Tarjan's algorithm.
@@ -123,8 +123,8 @@ class Automaton {
 	 * @return BoolVector Bool vector whose `i`-th value is true iff the state `i` is useful.
 	 */
 	BoolVector get_useful_states(
-		std::optional<std::reference_wrapper<const utils::SparseSet<nfa::State>>> initial_states = std::nullopt,
-		std::optional<std::reference_wrapper<const utils::SparseSet<nfa::State>>> final_states = std::nullopt
+		std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt,
+		std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt
 	) const;
 
 	/**
@@ -133,13 +133,13 @@ class Automaton {
 	 */
 	struct TarjanDiscoverCallback {
 		// event handler for the first-time state discovery
-		std::function<bool(nfa::State)> state_discover;
+		std::function<bool(State)> state_discover;
 		// event handler for SCC discovery (together with the whole Tarjan stack)
-		std::function<bool(const std::vector<nfa::State>&, const std::vector<nfa::State>&)> scc_discover;
+		std::function<bool(const std::vector<State>&, const std::vector<State>&)> scc_discover;
 		// event handler for state in SCC discovery
-		std::function<void(nfa::State)> scc_state_discover;
+		std::function<void(State)> scc_state_discover;
 		// event handler for visiting of the state successors
-		std::function<void(nfa::State, nfa::State)> succ_state_discover;
+		std::function<void(State, State)> succ_state_discover;
 	};
 
 	/**
@@ -151,18 +151,18 @@ class Automaton {
 	 */
 	void tarjan_scc_discover(
 		const TarjanDiscoverCallback& callback,
-		std::optional<std::reference_wrapper<const utils::SparseSet<nfa::State>>> initial_states = std::nullopt
+		std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt
 	) const;
 
 	/**
 	 * @brief Returns vector ret where ret[q] is the length of the shortest path from any initial state to q
 	 */
-	std::vector<nfa::State> distances_from_initial() const;
+	std::vector<State> distances_from_initial() const;
 
 	/**
 	 * @brief Returns vector ret where ret[q] is the length of the shortest path from q to any final state
 	 */
-	std::vector<nfa::State> distances_to_final() const;
+	std::vector<State> distances_to_final() const;
 
 	/**
 	 * @brief Is no final state reachable from any initial state?
@@ -205,7 +205,7 @@ class Automaton {
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
-	template <typename Self> Self& trim(this Self& self, nfa::StateRenaming* state_renaming = nullptr);
+	template <typename Self> Self& trim(this Self& self, StateRenaming* state_renaming = nullptr);
 
 	/**
 	 * Check whether no accepting path exists, recording a witness in @p cex when one does.
@@ -214,7 +214,7 @@ class Automaton {
 	 *  accepting path exists.
 	 * @return true if no accepting path exists, false otherwise.
 	 */
-	template <typename Self> bool is_lang_empty(this const Self& self, nfa::Run* cex = nullptr);
+	template <typename Self> bool is_lang_empty(this const Self& self, Run* cex = nullptr);
 
   protected:
 	/**
@@ -224,7 +224,7 @@ class Automaton {
 	 *  Each leaf publishes its own @c add_state() that maintains its invariants.
 	 * @return The newly created state.
 	 */
-	nfa::State add_state();
+	State add_state();
 
 	/**
 	 * Add state @p state to @c delta if @p state is not in @c delta yet.
@@ -232,7 +232,7 @@ class Automaton {
 	 * @note Protected on purpose. See @c add_state().
 	 * @return The requested @p state.
 	 */
-	nfa::State add_state(nfa::State state);
+	State add_state(State state);
 
 	/**
 	 * @brief Clear @c delta, @c initial and @c final.
@@ -269,11 +269,11 @@ class Automaton {
 	 * @return @c self after trimming.
 	 */
 	template <typename Self>
-	Self& trim_impl(this Self& self, const BoolVector& useful_states, nfa::StateRenaming* state_renaming);
+	Self& trim_impl(this Self& self, const BoolVector& useful_states, StateRenaming* state_renaming);
 }; // class Automaton.
 
 } // namespace mata.
 
-#include "mata/automaton.tpp"
+#include "mata/core/automaton.tpp"
 
-#endif // MATA_AUTOMATON_HH_
+#endif // MATA_CORE_AUTOMATON_HH_

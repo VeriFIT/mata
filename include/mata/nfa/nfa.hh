@@ -83,7 +83,7 @@
 
 #include "delta.hh"
 #include "mata/alphabet.hh"
-#include "mata/automaton.hh"
+#include "mata/core/automaton.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
