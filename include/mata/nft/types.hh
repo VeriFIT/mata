@@ -69,7 +69,7 @@ enum class CompositionMode {
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON = mata::nfa::EPSILON;
+using mata::EPSILON;
 constexpr Symbol DONT_CARE = EPSILON - 1;
 
 constexpr Level DEFAULT_LEVEL{0};
