@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "mata/alphabet.hh"
-#include "mata/nfa/types.hh"
+#include "mata/core/types.hh"
 #include "mata/utils/sparse-set.hh"
 
 namespace mata::nft {
@@ -19,13 +19,14 @@ extern const std::string TYPE_NFT;
 
 using Level = mata::Level;
 
-using State = nfa::State;
-using StateSet = nfa::StateSet;
+// Types shared with the rest of Mata. Redefine any of these here to give NFTs their own.
+using State = mata::State;
+using StateSet = mata::StateSet;
 
-using Run = nfa::Run;
-using EpsilonClosureOpt = nfa::EpsilonClosureOpt;
+using Run = mata::Run;
+using EpsilonClosureOpt = mata::EpsilonClosureOpt;
 
-using StateRenaming = nfa::StateRenaming;
+using StateRenaming = mata::StateRenaming;
 
 /**
  * @brief Concept defining an iterable container of states.
@@ -48,9 +49,9 @@ concept StatesContainerIterable = requires(States states) {
  * }
  * ```
  */
-using ParameterMap = mata::nfa::ParameterMap;
+using ParameterMap = mata::ParameterMap;
 
-using Limits = mata::nfa::Limits;
+using Limits = mata::Limits;
 
 class Nft; ///< A non-deterministic finite transducer.
 
@@ -66,7 +67,7 @@ enum class CompositionMode {
 	Auto ///< Automatically select the best composition mode based on the parameters.
 };
 
-using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
+using ProductFinalStateCondition = mata::ProductFinalStateCondition;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 using mata::EPSILON;

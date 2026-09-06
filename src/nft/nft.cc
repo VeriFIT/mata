@@ -380,13 +380,13 @@ void Nft::print_to_mata(const std::string& filename) const {
 
 Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol abstract_symbol) const {
 	Nft one_symbol_transducer{with_levels(levels, num_of_states(), initial, final)};
-	for (nfa::State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
-		nfa::StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
+	for (State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
+		StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
 		if (levels_to_keep.contains(levels[source_state])) {
 			state_post_of_new_source_state = delta[source_state];
 		} else {
-			nfa::SymbolPost new_transition{abstract_symbol};
-			for (const nfa::SymbolPost& symbol_post : delta[source_state]) {
+			SymbolPost new_transition{abstract_symbol};
+			for (const SymbolPost& symbol_post : delta[source_state]) {
 				if (symbol_post.symbol == EPSILON) {
 					state_post_of_new_source_state.insert(symbol_post);
 				} else {
