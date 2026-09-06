@@ -32,9 +32,6 @@ cdef extern from "mata/nft/types.hh" namespace "mata::nft":
     cdef const Symbol CDONT_CARE "mata::nft::DONT_CARE"
     cdef const size_t CDEFAULT_NUM_OF_LEVELS "mata::nft::DEFAULT_NUM_OF_LEVELS"
 
-cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
-    cdef const State CLIMITS_MAX_STATE "mata::nfa::Limits::max_state"
-
     cdef cppclass CLevels "mata::nft::Levels":
         size_t num_of_levels
 
@@ -70,6 +67,9 @@ cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
 
         @staticmethod
         bool can_follow(Level, Level)
+
+cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
+    cdef const State CLIMITS_MAX_STATE "mata::nfa::Limits::max_state"
 
 
 cdef extern from "mata/nft/delta.hh" namespace "mata::nft":
