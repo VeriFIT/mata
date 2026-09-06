@@ -7,11 +7,13 @@
 #define MATA_CORE_DELTA_HH
 
 #include "mata/alphabet.hh"
+#include "mata/core/concepts.hh"
 #include "mata/core/types.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/synchronized-iterator.hh"
 
+#include <algorithm>
 #include <iterator>
 #include <span>
 
@@ -56,6 +58,20 @@ class SymbolPost {
   public:
 	Symbol symbol{};
 	StateSet targets{};
+
+	/// @name Post protocol
+	/// Identifies this as @c StatePost's entry type: one key with the post nested under it.
+	/// @see mata::PostEntryLike.
+	///@{
+	using Key = Symbol; ///< What this entry is keyed by.
+	using Nested = StateSet; ///< The post nested under this key.
+	/// What a successor walk yields, propagated up from the innermost post. An entry does not
+	///  decide what a target is, it only passes the answer along.
+	using Target = Nested::value_type;
+
+	const Key& key() const { return symbol; }
+	const Nested& nested() const { return targets; }
+	///@}
 
 	SymbolPost() = default;
 	explicit SymbolPost(const Symbol symbol) : symbol{symbol} {}
@@ -102,8 +118,8 @@ class SymbolPost {
 	/**
 	 * @brief Apply @p fn to every target state of this symbol post.
 	 *
-	 * The innermost level of the traversal that @c mata::Automaton is written against.
-	 *  Callers above this level never need to know how the targets are stored.
+	 * The innermost step of the traversal that @c mata::Automaton is written against.
+	 *  Callers above it never need to know how the targets are stored.
 	 */
 	template <typename Fn> void for_each_target(Fn&& fn) const {
 		for (const State target : targets) { fn(target); }
@@ -138,6 +154,24 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	using super = OrdVector<SymbolPost>;
 
   public:
+	/// @name Post protocol
+	/// Identifies this as one post of the relation: the ordered map `Symbol -> targets`.
+	/// @see mata::PostLike.
+	///@{
+	using Entry = SymbolPost; ///< What iterating this post yields.
+	using Key = SymbolPost::Key; /// < What this post is keyed by (the symbol).
+	using Nested = SymbolPost::Nested; ///< The post (or target set) under one key.
+	using Target = SymbolPost::Target; ///< What a successor walk yields, propagated up from the innermost post.
+	/// Number of keys from here down to a target. One (the symbol) for an NFA.
+	/// TODO(templating): becomes `Nested::key_arity + 1` once the leaf carries the protocol (T2.1).
+	static constexpr size_t key_arity{1};
+	/// @see @ref sortedness. Ordered by @c SymbolPost::symbol.
+	static constexpr bool sorted_by_key{true};
+	/// @c OrdVector keeps its own @c is_sorted() private as an assertion helper, so check the
+	///  range directly. @c SymbolPost orders by symbol, which is the invariant lookups rely on.
+	bool is_sorted() const { return std::ranges::is_sorted(*this); }
+	///@}
+
 	using super::begin, super::end, super::cbegin, super::cend;
 	using super::iterator, super::const_iterator;
 	using super::OrdVector;
@@ -298,7 +332,7 @@ class StatePost : utils::OrdVector<SymbolPost> {
  * @note Header-defined so it inlines. The inner range is loaded without a branch.
  *
  * @note Unlike @c for_each_target(), this deliberately knows the nesting depth.
- *  Composing a cursor out of per-level cursors is measurably slower,
+ *  Composing a cursor out of per-post cursors is measurably slower,
  *  and @c Delta is the one place entitled to know its own representation.
  */
 class SuccessorCursor {
@@ -438,6 +472,21 @@ class SynchronizedExistentialSymbolPostIterator
  */
 class Delta {
   public:
+	/// @name Post protocol
+	/// @see mata::DeltaLike -- the only way @c mata::Automaton reaches a successor.
+	///@{
+	using PostType = StatePost; ///< The post reached from one source state.
+	using Target = StatePost::Target; ///< What a successor walk yields.
+	/// What indexes this relation and the automaton's state sets. Derived from the target type
+	///  rather than propagated through the posts: which state a target denotes is a property of
+	///  the target, not of any post above it. @see mata::TargetTraits.
+	using State = TargetTraits<Target>::State;
+	using Key = StatePost::Key; ///< TODO(templating): becomes @c Key<I> once key_arity > 1.
+	static constexpr size_t key_arity{StatePost::key_arity};
+	/// @copydoc mata::TargetTraits::state_of
+	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }
+	///@}
+
 	inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
 	Delta() : state_posts_{} {}
@@ -813,6 +862,18 @@ class Delta::Transitions::const_iterator {
 
 	bool operator==(const const_iterator& other) const;
 }; // class Delta::Transitions::const_iterator.
+
+/// @name Contract checks
+/// The concrete relation must satisfy the contract the generic algorithms are written against.
+/// A failure here means @c mata/core/concepts.hh and this file have drifted apart.
+///@{
+static_assert(PostEntryLike<SymbolPost>, "SymbolPost must be StatePost's entry type.");
+static_assert(PostLike<StatePost>, "StatePost must be one post of the relation.");
+static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");
+// TODO(templating): assert TargetSetLike on the leaf once StateTargets<State> replaces StateSet
+//  as SymbolPost::Nested (T2.1); that is also what lets StatePost::key_arity be computed rather
+//  than hardcoded.
+///@}
 
 } // namespace mata.
 

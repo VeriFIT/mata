@@ -97,6 +97,8 @@ namespace mata::nfa {
  */
 class Nfa : public Automaton {
   public:
+	using Run = mata::Run;
+
 	std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
 	/// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
 	///  are up to the user.
@@ -440,19 +442,15 @@ class Nfa : public Automaton {
 	const StateSet& post(const State state, const Symbol symbol) const { return delta.get_successors(state, symbol); }
 
 	/**
-	 * Check whether the language of NFA is empty.
-	 * Currently, calls is_lang_empty_scc if cex is null
+	 * @brief Check whether the language of NFA is empty.
+	 *
+	 * @note Uses Tarjan's SCC discover algorithm when @p cex is null, a breadth-first search for a
+	 *  shortest counter-example otherwise.
 	 * @param[out] cex Counter-example path for a case the language is not empty.
 	 * @return True if the language is empty, false otherwise.
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
-	/**
-	 * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
-	 *
-	 * @return Language empty <-> True
-	 */
-	bool is_lang_empty_scc() const { return has_no_accepting_path(); }
 
 	/**
 	 * @brief Test whether an automaton is deterministic.

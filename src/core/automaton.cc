@@ -4,6 +4,10 @@
 
 #include <algorithm>
 #include <deque>
+#include <list>
+#include <map>
+#include <tuple>
+#include <unordered_set>
 
 #include "mata/core/automaton.hh"
 #include "mata/utils/sparse-set.hh"
@@ -37,7 +41,8 @@ StateBoolArray reachable_states(
 	while (!worklist.empty()) {
 		const State state{worklist.back()};
 		worklist.pop_back();
-		aut.delta.for_each_successor(state, [&](const State target_state) {
+		aut.delta.for_each_successor(state, [&](const Delta::Target& target) {
+			const State target_state{Delta::state_of(target)};
 			if (!reachable[target_state] &&
 				(!states_to_consider.has_value() || states_to_consider.value()[target_state])) {
 				worklist.push_back(target_state);
@@ -110,8 +115,10 @@ Automaton Automaton::reverted() const {
 	result.delta.allocate(num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		delta.for_each_move(source_state, [&](const Symbol symbol, const State target_state) {
-			result.delta.add(target_state, symbol, source_state);
+		// The key is only transported back into `add`, never inspected, so it is not named here:
+		//  a relation whose keys are not symbols works unchanged.
+		delta.for_each_move(source_state, [&](const auto& symbol, const Delta::Target& target) {
+			result.delta.add(Delta::state_of(target), symbol, source_state);
 		});
 	}
 
@@ -148,11 +155,12 @@ std::vector<State> Automaton::distances_from_initial() const {
 	while (!que.empty()) {
 		const State src = que.front();
 		que.pop_front();
-		delta.for_each_successor(src, [&](const State target) {
-			if (!visited[target]) {
-				visited[target] = true;
-				distances[target] = distances[src] + 1;
-				que.push_back(target);
+		delta.for_each_successor(src, [&](const Delta::Target& target) {
+			const State target_state{Delta::state_of(target)};
+			if (!visited[target_state]) {
+				visited[target_state] = true;
+				distances[target_state] = distances[src] + 1;
+				que.push_back(target_state);
 			}
 		});
 	}
@@ -227,7 +235,7 @@ void Automaton::tarjan_scc_discover(
 
 			if (callback.state_discover && callback.state_discover(act_state)) { return; }
 		} else { // return from the recursive call
-			const State act_succ = *act_state_data.current_successor_it;
+			const State act_succ = Delta::state_of(*act_state_data.current_successor_it);
 			act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
 			// act_succ is the state that caused the recursive call. Move on to the next successor.
 			++act_state_data.current_successor_it;
@@ -239,7 +247,7 @@ void Automaton::tarjan_scc_discover(
 		// multiple loops, we use rec_call to jump to the main loop
 		bool rec_call = false;
 		for (; act_state_data.current_successor_it != std::default_sentinel; ++act_state_data.current_successor_it) {
-			next_state = *act_state_data.current_successor_it;
+			next_state = Delta::state_of(*act_state_data.current_successor_it);
 			if (callback.succ_state_discover) { callback.succ_state_discover(act_state, next_state); }
 			if (!node_info[next_state].initilized) { // recursive call
 				program_stack.push_back(next_state);
@@ -310,7 +318,48 @@ BoolVector Automaton::get_useful_states(
 	return useful;
 }
 
-bool Automaton::has_no_accepting_path() const {
+bool Automaton::find_accepting_path_(std::vector<State>& path) const {
+	std::list<State> worklist(initial.begin(), initial.end());
+	std::unordered_set<State> processed(initial.begin(), initial.end());
+
+	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
+	// 'paths[s] == s' means that 's' is an initial state
+	std::map<State, State> paths;
+	for (const State s : worklist) { paths[s] = s; }
+
+	while (!worklist.empty()) {
+		State state{worklist.front()};
+		worklist.pop_front();
+
+		if (final[state]) {
+			path.clear();
+			path.push_back(state);
+			while (paths[state] != state) {
+				state = paths[state];
+				path.push_back(state);
+			}
+			std::ranges::reverse(path);
+			return true;
+		}
+
+		if (delta.empty()) { continue; }
+
+		delta.for_each_successor(state, [&](const Delta::Target& target) {
+			const State target_state{Delta::state_of(target)};
+			bool inserted;
+			std::tie(std::ignore, inserted) = processed.insert(target_state);
+			if (inserted) {
+				worklist.push_back(target_state);
+				paths[target_state] = state;
+			} else {
+				MATA_ASSERT(utils::haskey(paths, target_state)); /* Invariant. */
+			}
+		});
+	}
+	return false;
+}
+
+bool Automaton::has_no_accepting_path_scc_() const {
 	bool accepting_state = false;
 
 	TarjanDiscoverCallback callback{};

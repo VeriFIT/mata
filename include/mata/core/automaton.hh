@@ -164,16 +164,25 @@ class Automaton {
 	 */
 	std::vector<State> distances_to_final() const;
 
+
 	/**
-	 * @brief Is no final state reachable from any initial state?
+	 * @brief Is the accepted language (or relation) empty, optionally with a counter-example?
 	 *
-	 * Uses Tarjan's SCC discover algorithm. This is a pure graph property; whether it coincides with the emptiness
-	 *  of the accepted language (or relation) is a fact about the concrete automaton class, so the leaves expose it
-	 *  under their own names (e.g. @c mata::nfa::Nfa::is_lang_empty_scc()).
-	 *
-	 * @return true <-> no accepting path exists.
+	 * @note The run type comes from @p Self.
+	 * @note Unifying the two searches -- having the Tarjan walk emit a witness on demand -- would
+	 *  save a traversal on the counter-example path, which @c is_included() and @c is_universal()
+	 *  take whenever the caller wants one. It would also stop the witness being *shortest*, and
+	 *  callers do depend on which one comes back (see the exact-word check in the
+	 *  "mata::nfa::Nfa::get_word()" tests). Worth doing only together with a decision about that.
+	 * @param[out] cex Counter-example run, filled when an accepting path exists.
+	 * @return true iff no accepting path exists.
 	 */
-	bool has_no_accepting_path() const;
+	template <AutomatonWithRuns Self> bool is_lang_empty(this const Self& self, typename Self::Run* cex = nullptr) {
+		if (cex == nullptr) { return self.has_no_accepting_path_scc_(); }
+		if (!self.find_accepting_path_(cex->path)) { return true; }
+		cex->word = self.get_word_for_path(*cex).first.word;
+		return false;
+	}
 
 	/**
 	 * @brief Is the automaton graph acyclic?
@@ -207,14 +216,21 @@ class Automaton {
 	 */
 	template <typename Self> Self& trim(this Self& self, StateRenaming* state_renaming = nullptr);
 
+
+  private:
 	/**
-	 * Check whether no accepting path exists, recording a witness in @p cex when one does.
+	 * @brief Check if @c this has no accepting path using Tarjan's SCC discover algorithm.
 	 *
-	 * @param[out] cex Counter-example path (and, via the leaf's @c get_word_for_path(), word) for a case an
-	 *  accepting path exists.
-	 * @return true if no accepting path exists, false otherwise.
+	 * @return true iff no accepting path exists.
 	 */
-	template <typename Self> bool is_lang_empty(this const Self& self, Run* cex = nullptr);
+	bool has_no_accepting_path_scc_() const;
+
+	/**
+	 * @brief Check if @c this has no accepting path using BFS.
+	 *
+	 * @return true iff no accepting path exists.
+	 */
+	bool find_accepting_path_(std::vector<State>& path) const;
 
   protected:
 	/**

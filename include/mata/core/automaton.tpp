@@ -33,55 +33,6 @@ template <typename Self> Self& Automaton::trim(this Self& self, StateRenaming* s
 	return self.trim_impl(useful_states, state_renaming);
 }
 
-template <typename Self> bool Automaton::is_lang_empty(this const Self& self, Run* const cex) {
-	// TODO: hot fix for performance reasons for TACAS.
-	//  Perhaps make the get_useful_states return a witness on demand somehow.
-	if (!cex) { return self.has_no_accepting_path(); }
-
-	std::list<State> worklist(self.initial.begin(), self.initial.end());
-	std::unordered_set<State> processed(self.initial.begin(), self.initial.end());
-
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<State, State> paths;
-	// Initialize paths.
-	for (const State s : worklist) { paths[s] = s; }
-
-	while (!worklist.empty()) {
-		State state{worklist.front()};
-		worklist.pop_front();
-
-		if (self.final[state]) {
-			cex->path.clear();
-			cex->path.push_back(state);
-			while (paths[state] != state) {
-				state = paths[state];
-				cex->path.push_back(state);
-			}
-			std::ranges::reverse(cex->path);
-			// The structural search above only finds the path; reading it as a word is leaf-specific (flat for an
-			//  NFA, level-aware for an NFT). `self.get_word_for_path()` is not declared on `Automaton` at all --
-			//  it resolves once `Self` is known, at instantiation, so this always calls the leaf's own version.
-			cex->word = self.get_word_for_path(*cex).first.word;
-			return false;
-		}
-
-		if (self.delta.empty()) { continue; }
-
-		self.delta.for_each_successor(state, [&](const State target) {
-			bool inserted;
-			std::tie(std::ignore, inserted) = processed.insert(target);
-			if (inserted) {
-				worklist.push_back(target);
-				// Also set that tgt_state was accessed from state.
-				paths[target] = state;
-			} else {
-				MATA_ASSERT(utils::haskey(paths, target)); /* Invariant. */
-			}
-		});
-	} // while (!worklist.empty()).
-	return true;
-} // is_lang_empty().
 
 template <typename Self>
 Self& Automaton::trim_impl(this Self& self, const BoolVector& useful_states, StateRenaming* state_renaming) {

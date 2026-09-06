@@ -119,6 +119,8 @@ class Nft : public mata::Automaton {
 	using super = mata::Automaton;
 
   public:
+	using Run = mata::Run;
+
 	/**
 	 * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
 	 *
@@ -602,19 +604,15 @@ class Nft : public mata::Automaton {
 	Nft& unify_final(bool force_new_state = false);
 
 	/**
-	 * Check whether the relation of the NFT is empty.
-	 * Currently, calls is_lang_empty_scc if cex is null.
+	 * @brief Check whether the relation of the NFT is empty.
+	 *
+	 * @note Uses Tarjan's SCC discover algorithm when @p cex is null, a breadth-first search for a
+	 *  shortest counter-example otherwise.
 	 * @param[out] cex Counter-example path for a case the relation is not empty.
 	 * @return True if the relation is empty, false otherwise.
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
-	/**
-	 * @brief Check if the relation is empty using Tarjan's SCC discover algorithm.
-	 *
-	 * @return Relation empty <-> True
-	 */
-	bool is_lang_empty_scc() const { return has_no_accepting_path(); }
 
 	/**
 	 * @brief Test whether the transducer is deterministic.
