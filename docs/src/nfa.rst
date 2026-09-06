@@ -1,8 +1,10 @@
 Nondeterministic Finite automata
 ================================
 
-The structural members and graph-only operations inherited by ``mata::nfa::Nfa``
-are documented in :doc:`automaton`.
+An ``mata::nfa::Nfa`` holds the transition relation ``delta`` together with the ``initial`` and
+``final`` state sets (both ``mata::utils::SparseSet`` over states), all three inherited from
+``mata::Automaton``, plus an optional shared ``alphabet``. All of them appear among the members
+below. ``mata::nfa::Delta`` itself is documented in :doc:`core`.
 
 .. doxygenpage:: nfa
 
@@ -12,11 +14,13 @@ Types
 
 NFA
 ---
-.. doxygenfile:: nfa/nfa.hh
+.. doxygenclass:: mata::nfa::Nfa
+   :members:
 
-Delta
------
-.. doxygenfile:: nfa/delta.hh
+Functions
+---------
+.. doxygenfile:: nfa/nfa.hh
+   :sections: func var typedef enum define
 
 Builder
 -------

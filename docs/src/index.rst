@@ -14,7 +14,7 @@ Mata automata library
    benchmarking
    automata-format
    contributing
-   automaton
+   core
    nfa
    nft
    alphabet
