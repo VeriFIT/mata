@@ -1,14 +1,13 @@
 /** @file
- * @brief Implementation of the @c mata::nfa::Delta class and related functions.
+ * @brief Implementation of the @c mata::Delta class and related functions.
  *
- * This file contains the implementation of the Delta class, which represents the transition relation of
- *  a non-deterministic finite automaton (NFA). It includes methods for adding, removing, and querying transitions, as
+ * This file contains the implementation of the Delta class, which represents the transition relation shared
+ *  by every automaton in Mata. It includes methods for adding, removing, and querying transitions, as
  *  well as iterating over transitions.
  */
 
-#include "mata/nfa/delta.hh"
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/types.hh"
+#include "mata/core/delta.hh"
+#include "mata/core/types.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 
@@ -21,8 +20,7 @@
 #include <utility>
 
 using namespace mata::utils;
-using namespace mata::nfa;
-using mata::Symbol;
+using namespace mata;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -328,7 +326,7 @@ StatePost& Delta::mutable_state_post(const State q) {
 	return state_posts_[q];
 }
 
-Delta mata::nfa::defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming) {
+Delta mata::defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming) {
 	auto filter_rename_symbol_post = [&](const SymbolPost& symbol_post) {
 		SymbolPost new_symbol_post{symbol_post.symbol};
 		for (const State& target : symbol_post.targets) {
@@ -547,7 +545,7 @@ StatePost::Moves::Moves(
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
-	for (mata::nfa::State state{0}; state < aut_num_of_states; ++state) {
+	for (mata::State state{0}; state < aut_num_of_states; ++state) {
 		for (const SymbolPost& move : state_post(state)) {
 			target_alphabet.update_next_symbol_value(move.symbol);
 			target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
@@ -562,7 +560,7 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
 
 	// below are different variant, with different data structures for accumulating symbols,
 	// that then must be converted to an OrdVector
-	// measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of
+	// measured are times with "mata::get_used_symbols speed, harder", "[.profiling]" now on line 104 of
 	// nfa-profiling.cc
 
 	// WITH VECTOR (4.434 s)
