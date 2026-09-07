@@ -54,7 +54,13 @@ template <DeltaLike D> class AutomatonBase {
 	/// Spelled in terms of @c State rather than taken from @c mata::, so that a relation with a
 	///  divergent state type cannot leave these signatures behind. Both are the same type as
 	///  @c mata::StateSet and @c mata::StateRenaming for @c mata::Automaton.
-	using StateSet = utils::OrdVector<State>;
+	///
+	/// @note @c StateSet must be spelled as the *same template* @c mata::StateSet names, not merely
+	///  as something with the same shape. It is a member alias, so inside @c mata::nfa::Nfa it hides
+	///  the namespace-scope @c mata::nfa::StateSet; while both were @c utils::OrdVector<State> that
+	///  was harmless, and the moment T2.1 gave the leaf post its own type the two diverged and every
+	///  @c Nfa member declared with one and defined with the other stopped matching.
+	using StateSet = posts::StateTargets<State>;
 	using StateRenaming = std::unordered_map<State, State>;
 
 	/// Deliberately no key type at all, not even an alias. This class transports keys (in

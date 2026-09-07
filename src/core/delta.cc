@@ -24,30 +24,8 @@ using namespace mata;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-SymbolPost& SymbolPost::operator=(SymbolPost&& rhs) noexcept {
-	if (*this != rhs) {
-		symbol = rhs.symbol;
-		targets = std::move(rhs.targets);
-	}
-	return *this;
-}
-
-void SymbolPost::insert(const State s) {
-	if (targets.empty() || targets.back() < s) {
-		targets.push_back(s);
-		return;
-	}
-	// Find the place where to put the element (if not present).
-	// Insert to OrdVector without the searching of a proper position inside insert(const Key&x).
-	if (const auto it = std::ranges::lower_bound(targets, s); it == targets.end() || *it != s) {
-		targets.insert(it, s);
-	}
-}
-
-// TODO: slow! This should be doing merge, not inserting one by one.
-void SymbolPost::insert(const StateSet& states) {
-	for (const State s : states) { insert(s); }
-}
+template class mata::posts::SymbolPost<mata::Symbol, mata::StateSet>;
+template class mata::posts::StatePost<mata::SymbolPost>;
 
 StatePost::const_iterator Delta::epsilon_symbol_posts(const State state, const Symbol epsilon) const {
 	return epsilon_symbol_posts(state_post(state), epsilon);
@@ -62,21 +40,6 @@ StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_pos
 		}
 	}
 	return state_post.end();
-}
-
-StateSet StatePost::get_successors() const {
-	StateSet successors;
-	for (const SymbolPost& symbol_post : *this) { successors.insert(symbol_post.targets); }
-	return successors;
-}
-
-const StateSet& StatePost::get_successors(const Symbol symbol) const {
-	const auto symbol_post_it = find(symbol);
-	if (symbol_post_it == this->end()) {
-		static StateSet empty_set{};
-		return empty_set;
-	}
-	return symbol_post_it->targets;
 }
 
 StateSet Delta::get_successors(const State state) const { return state_post(state).get_successors(); }
@@ -395,153 +358,11 @@ bool Delta::operator==(const Delta& other) const {
 	return other_transitions_it == other_transitions_end;
 }
 
-/// Returns an iterator to the smallest epsilon, or end() if there is no epsilon
-/// Searches from the end of the vector of SymbolPosts, since epsilons are at the end and they are typically few,
-/// mostly 1.
-StatePost::const_iterator StatePost::first_epsilon_it(const Symbol first_epsilon) const {
-	const auto end_it = cend();
-	auto it = end_it;
-	while (it != begin()) {
-		--it;
-		if (it->symbol < first_epsilon) { // is it a normal symbol already?
-			return it + 1; // Return the previous position, the smallest epsilon or end().
-		}
-	}
-
-	if (it != end_it && it->symbol >= first_epsilon) {
-		// The special case when begin is the smallest epsilon (since the while loop ended before the step back)
-		return it;
-	}
-	return end_it;
-}
-
-StatePost::Moves::const_iterator::const_iterator(
-	const StatePost& state_post,
-	const StatePost::const_iterator symbol_post_it,
-	const StatePost::const_iterator symbol_post_end
-)
-	: state_post_{&state_post},
-	  symbol_post_it_{symbol_post_it},
-	  symbol_post_end_{symbol_post_end} {
-	if (symbol_post_it_ == symbol_post_end_) {
-		is_end_ = true;
-		return;
-	}
-
-	move_.symbol = symbol_post_it_->symbol;
-	target_it_ = symbol_post_it_->targets.cbegin();
-	move_.target = *target_it_;
-}
-
-StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
-	: state_post_{&state_post},
-	  symbol_post_it_{state_post.begin()},
-	  symbol_post_end_{state_post.end()} {
-	if (symbol_post_it_ == symbol_post_end_) {
-		is_end_ = true;
-		return;
-	}
-
-	move_.symbol = symbol_post_it_->symbol;
-	target_it_ = symbol_post_it_->targets.cbegin();
-	move_.target = *target_it_;
-}
-
-StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
-	++target_it_;
-	if (target_it_ != symbol_post_it_->targets.end()) {
-		move_.target = *target_it_;
-		return *this;
-	}
-
-	// Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
-	//  symbol <= symbol_post_end_.
-	++symbol_post_it_;
-	if (symbol_post_it_ == symbol_post_end_) {
-		is_end_ = true;
-		return *this;
-	}
-	// The current symbol post is valid (not equal symbol_post_end_).
-	move_.symbol = symbol_post_it_->symbol;
-	target_it_ = symbol_post_it_->targets.begin();
-	move_.target = *target_it_;
-	return *this;
-}
-
-StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(int) {
-	const StatePost::Moves::const_iterator tmp{*this};
-	++(*this);
-	return tmp;
-}
-
-bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_iterator& other) const {
-	if (is_end_ && other.is_end_) {
-		return true;
-	} else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
-		return false;
-	}
-	return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_ &&
-		   symbol_post_end_ == other.symbol_post_end_;
-}
-
-size_t StatePost::num_of_moves() const {
-	size_t counter{0};
-	for (const SymbolPost& symbol_post : *this) { counter += symbol_post.num_of_targets(); }
-	return counter;
-}
-
-StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept {
-	if (&other != this) {
-		state_post_ = other.state_post_;
-		symbol_post_it_ = other.symbol_post_it_;
-		symbol_post_end_ = other.symbol_post_end_;
-	}
-	return *this;
-}
-
-StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
-	if (&other != this) {
-		state_post_ = other.state_post_;
-		symbol_post_it_ = other.symbol_post_it_;
-		symbol_post_end_ = other.symbol_post_end_;
-	}
-	return *this;
-}
-
-StatePost::Moves StatePost::moves(
-	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
-) const {
-	return {*this, symbol_post_it, symbol_post_end};
-}
-
-StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
-	return {*this, first_epsilon_it(first_epsilon), cend()};
-}
-
-StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
-	if (last_symbol == EPSILON) { throw std::runtime_error("Using default epsilon as a last symbol to iterate over."); }
-	return {*this, cbegin(), first_epsilon_it(last_symbol + 1)};
-}
-
-StatePost::Moves::const_iterator StatePost::Moves::begin() const {
-	return {*state_post_, symbol_post_it_, symbol_post_end_};
-}
-
-StatePost::Moves::const_iterator StatePost::Moves::end() { return const_iterator{}; }
 
 Delta::Transitions Delta::transitions() const { return Transitions{this}; }
 
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{*delta_}; }
 Delta::Transitions::const_iterator Delta::Transitions::end() { return const_iterator{}; }
-
-StatePost::Moves::Moves(
-	const StatePost& state_post,
-	const StatePost::const_iterator symbol_post_it,
-	const StatePost::const_iterator symbol_post_end
-)
-	: state_post_{&state_post},
-	  symbol_post_it_{symbol_post_it},
-	  symbol_post_end_{symbol_post_end} {}
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};

@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <iterator>
 #include <span>
+#include <stdexcept>
 
 namespace mata {
 
@@ -38,45 +39,61 @@ struct Transition {
 	auto operator<=>(const Transition&) const = default;
 };
 
+namespace posts {
 /**
- * Move from a @c StatePost for a single source state, represented as a pair of @c symbol and target state @c target.
+ * @brief One step out of a post: a key together with one target it leads to.
+ *
+ * What iterating @c mata::StatePost::moves() yields. Templated only so that it follows the post it
+ *  comes from; it holds no logic of its own.
  */
-class Move {
+template <typename K, typename T> class Move {
   public:
-	Symbol symbol;
-	State target;
+	K symbol;
+	T target;
 
 	bool operator==(const Move&) const = default;
-}; // class Move.
+}; // class mata::posts::Move.
+} // namespace mata::posts.
+
+/// A move out of the depth-2 relation: a symbol and one target state.
+using Move = posts::Move<Symbol, State>;
+
+namespace posts {
 
 /**
- * Structure represents a post of a single @c symbol: a set of target states in transitions.
+ * @brief One entry of a post: a single key, and the post nested under it.
  *
- * A set of @c SymbolPost, called @c StatePost, is describing the automata transitions from a single source state.
+ * For an NFA that is a symbol and the set of target states it leads to; the name @c SymbolPost is
+ *  kept for the depth-2 alias because 260-odd call sites use it. At a higher @c key_arity the nested
+ *  type is another post rather than a target set, and nothing here changes for that — an entry never
+ *  decides what is below it, it only holds a key and passes the question down.
+ *
+ * @tparam K What this entry is keyed by.
+ * @tparam N The post nested under that key: another post, or a @c mata::TargetSetLike at the bottom.
+ * @see mata::PostEntryLike, and @ref nesting.
  */
-class SymbolPost {
+template <typename K, typename N> class SymbolPost {
   public:
-	Symbol symbol{};
-	StateSet targets{};
+	K symbol{};
+	N targets{};
 
 	/// @name Post protocol
-	/// Identifies this as @c StatePost's entry type: one key with the post nested under it.
 	/// @see mata::PostEntryLike.
 	///@{
-	using Key = Symbol; ///< What this entry is keyed by.
-	using Nested = StateSet; ///< The post nested under this key.
-	/// What a successor walk yields, propagated up from the innermost post. An entry does not
-	///  decide what a target is, it only passes the answer along.
-	using Target = Nested::value_type;
+	using Key = K; ///< What this entry is keyed by.
+	using Nested = N; ///< The post nested under this key.
+	/// What a successor walk yields, propagated up from the innermost post. An entry does not decide
+	///  what a target is, it only passes the answer along.
+	using Target = typename Nested::Target;
 
 	const Key& key() const { return symbol; }
 	const Nested& nested() const { return targets; }
 	///@}
 
 	SymbolPost() = default;
-	explicit SymbolPost(const Symbol symbol) : symbol{symbol} {}
-	SymbolPost(const Symbol symbol, const State state_to) : symbol{symbol}, targets{state_to} {}
-	SymbolPost(const Symbol symbol, StateSet states_to) : symbol{symbol}, targets{std::move(states_to)} {}
+	explicit SymbolPost(const Key symbol) : symbol{symbol} {}
+	SymbolPost(const Key symbol, const Target state_to) : symbol{symbol}, targets{state_to} {}
+	SymbolPost(const Key symbol, Nested states_to) : symbol{symbol}, targets{std::move(states_to)} {}
 
 	SymbolPost(SymbolPost&& rhs) noexcept : symbol{rhs.symbol}, targets{std::move(rhs.targets)} {}
 	SymbolPost(const SymbolPost& rhs) = default;
@@ -86,34 +103,34 @@ class SymbolPost {
 	std::weak_ordering operator<=>(const SymbolPost& other) const { return symbol <=> other.symbol; }
 	bool operator==(const SymbolPost& other) const { return symbol == other.symbol; }
 
-	StateSet::iterator begin() { return targets.begin(); }
-	StateSet::iterator end() { return targets.end(); }
+	typename Nested::iterator begin() { return targets.begin(); }
+	typename Nested::iterator end() { return targets.end(); }
 
-	StateSet::const_iterator cbegin() const { return targets.cbegin(); }
-	StateSet::const_iterator cend() const { return targets.cend(); }
+	typename Nested::const_iterator cbegin() const { return targets.cbegin(); }
+	typename Nested::const_iterator cend() const { return targets.cend(); }
 
-	size_t count(const State s) const { return targets.count(s); }
+	size_t count(const Target s) const { return targets.count(s); }
 	bool empty() const { return targets.empty(); }
 	size_t num_of_targets() const { return targets.size(); }
 
-	void insert(State s);
-	void insert(const StateSet& states);
+	void insert(Target s);
+	void insert(const Nested& states);
 
 	// THIS BREAKS THE SORTEDNESS INVARIANT,
 	// dangerous,
 	// but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a
 	// random order)
-	void push_back(const State s) { targets.push_back(s); }
+	void push_back(const Target s) { targets.push_back(s); }
 
-	template <typename... Args> StateSet& emplace_back(Args&&... args) {
+	template <typename... Args> Nested& emplace_back(Args&&... args) {
 		// Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
 		return targets.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void erase(const State s) { targets.erase(s); }
+	void erase(const Target s) { targets.erase(s); }
 
-	std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
-	std::vector<State>::iterator find(const State s) { return targets.find(s); }
+	typename std::vector<Target>::const_iterator find(const Target s) const { return targets.find(s); }
+	typename std::vector<Target>::iterator find(const Target s) { return targets.find(s); }
 
 	/**
 	 * @brief Apply @p fn to every target state of this symbol post.
@@ -122,7 +139,7 @@ class SymbolPost {
 	 *  Callers above it never need to know how the targets are stored.
 	 */
 	template <typename Fn> void for_each_target(Fn&& fn) const {
-		for (const State target : targets) { fn(target); }
+		for (const Target target : targets) { fn(target); }
 	}
 
 	/**
@@ -131,49 +148,64 @@ class SymbolPost {
 	 * @param[in] target Target state to check.
 	 * @return True if @p target is among the targets of this symbol post, false otherwise.
 	 */
-	bool has_target(const State target) const { return targets.find(target) != targets.end(); }
+	bool has_target(const Target target) const { return targets.find(target) != targets.end(); }
 
 	/**
 	 * @brief The targets as a contiguous range.
 	 *
 	 * Used to build a flat successor cursor without exposing storage.
 	 */
-	std::span<const State> target_span() const {
-		const std::vector<State>& v{targets.to_vector()};
+	std::span<const Target> target_span() const {
+		const std::vector<Target>& v{targets.to_vector()};
 		return {v.data(), v.size()};
 	}
-}; // class mata::SymbolPost.
+}; // class mata::posts::SymbolPost.
+
+} // namespace mata::posts.
+
+/// The depth-2 entry: a symbol keying a set of target states. Every existing call site names this.
+using SymbolPost = posts::SymbolPost<Symbol, StateSet>;
+
+namespace posts {
 
 /**
- * @brief A data structure representing possible transitions over different symbols from a source state.
+ * @brief One post of the relation: an ordered map from a key to the post nested under it.
  *
- * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
- * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
+ * For an NFA that is `symbol -> target states`, the transitions out of one source state. An ordered
+ *  vector of @p E kept sorted by key, which is what every lookup binary-searches on.
+ *
+ * @tparam E The entry type: one key plus what is nested under it. This post is parameterised on its
+ *  *entry* rather than on the nested post, per @ref nesting — one post class per level, each free to
+ *  be a different implementation.
+ * @see mata::PostLike.
  */
-class StatePost : utils::OrdVector<SymbolPost> {
-	using super = OrdVector<SymbolPost>;
+template <typename E> class StatePost : utils::OrdVector<E> {
+	using super = utils::OrdVector<E>;
+	/// Spelled once, and before first use, so the nested @c Moves classes can name the post's own
+	///  iterator: inside @c Moves::const_iterator the name @c const_iterator is that class itself.
+	using post_iterator = typename super::const_iterator;
 
   public:
 	/// @name Post protocol
-	/// Identifies this as one post of the relation: the ordered map `Symbol -> targets`.
 	/// @see mata::PostLike.
 	///@{
-	using Entry = SymbolPost; ///< What iterating this post yields.
-	using Key = SymbolPost::Key; /// < What this post is keyed by (the symbol).
-	using Nested = SymbolPost::Nested; ///< The post (or target set) under one key.
-	using Target = SymbolPost::Target; ///< What a successor walk yields, propagated up from the innermost post.
-	/// Number of keys from here down to a target. One (the symbol) for an NFA.
-	/// TODO(templating): becomes `Nested::key_arity + 1` once the leaf carries the protocol (T2.1).
-	static constexpr size_t key_arity{1};
-	/// @see @ref sortedness. Ordered by @c SymbolPost::symbol.
+	using Entry = E; ///< What iterating this post yields.
+	using Key = typename Entry::Key; ///< What this post is keyed by (the symbol, for an NFA).
+	using Nested = typename Entry::Nested; ///< The post (or target set) under one key.
+	using Target = typename Entry::Target; ///< What a successor walk yields, propagated up.
+	/// Number of keys from here down to a target. One (the symbol) for an NFA. Computed, not
+	///  hardcoded: one more than whatever is nested below.
+	static constexpr size_t key_arity{Nested::key_arity + 1};
+	/// @see @ref sortedness. Ordered by the key of the contained entries.
 	static constexpr bool sorted_by_key{true};
-	/// @c OrdVector keeps its own @c is_sorted() private as an assertion helper, so check the
-	///  range directly. @c SymbolPost orders by symbol, which is the invariant lookups rely on.
+	/// @c OrdVector keeps its own @c is_sorted() private as an assertion helper, so check the range
+	///  directly. Entries order by key, which is the invariant lookups rely on.
 	bool is_sorted() const { return std::ranges::is_sorted(*this); }
 	///@}
 
 	using super::begin, super::end, super::cbegin, super::cend;
-	using super::iterator, super::const_iterator;
+	using typename super::iterator;
+	using typename super::const_iterator;
 	using super::OrdVector;
 	using super::operator=;
 	using super::operator==;
@@ -198,25 +230,44 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	using super::erase;
 
 	using super::find;
-	iterator find(const Symbol symbol) {
-		static SymbolPost symbol_post{};
-		symbol_post.symbol = symbol;
-		return super::find(symbol_post);
+	iterator find(const Key symbol) {
+		static Entry entry{};
+		entry.symbol = symbol;
+		return super::find(entry);
 	}
-	const_iterator find(const Symbol symbol) const {
-		static SymbolPost symbol_post{};
-		symbol_post.symbol = symbol;
-		return super::find(symbol_post);
+	const_iterator find(const Key symbol) const {
+		static Entry entry{};
+		entry.symbol = symbol;
+		return super::find(entry);
 	}
 
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
-	const_iterator first_epsilon_it(Symbol first_epsilon) const;
+	const_iterator first_epsilon_it(const Key first_epsilon) const {
+		const auto end_it = cend();
+		auto it = end_it;
+		while (it != begin()) {
+			--it;
+			if (it->symbol < first_epsilon) { // is it a normal symbol already?
+				return it + 1; // Return the previous position, the smallest epsilon or end().
+			}
+		}
+
+		if (it != end_it && it->symbol >= first_epsilon) {
+			// The special case when begin is the smallest epsilon (since the while loop ended before the step back)
+			return it;
+		}
+		return end_it;
+	}
 
 	/**
 	 * @brief Get the set of all target states in the @c StatePost.
 	 * @return Set of all target states in the @c StatePost.
 	 */
-	StateSet get_successors() const;
+	Nested get_successors() const {
+		Nested successors;
+		for (const Entry& entry : *this) { successors.insert(entry.targets); }
+		return successors;
+	}
 
 	/**
 	 * @brief Returns a reference to target states for a given symbol in the @c StatePost.
@@ -226,7 +277,14 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @param symbol Symbol to get the successors for.
 	 * @return Set of target states for the given symbol.
 	 */
-	const StateSet& get_successors(Symbol symbol) const;
+	const Nested& get_successors(const Key symbol) const {
+		const auto entry_it = find(symbol);
+		if (entry_it == this->end()) {
+			static Nested empty_set{};
+			return empty_set;
+		}
+		return entry_it->targets;
+	}
 
 	/**
 	 * @brief Iterator over moves represented as @c Move instances.
@@ -235,7 +293,116 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 */
 	class Moves {
 	  public:
+		using MoveType = Move<Key, Target>; ///< One (key, target) pair, shaped by this post.
+
+		/**
+		 * Iterator over moves.
+		 *
+		 * @note Defined inside @c Moves rather than out of line. As a nested class of a nested class
+		 *  of a template, each out-of-line member definition would need three levels of
+		 *  qualification; inline is the same code and far harder to get wrong.
+		 */
+		class const_iterator {
+		  private:
+			const StatePost* state_post_{nullptr};
+			post_iterator symbol_post_it_{};
+			typename Nested::const_iterator target_it_{};
+			post_iterator symbol_post_end_{};
+			bool is_end_{false};
+			/// Internal allocated instance of @c Move which is set for the move currently iterated over and returned
+			///  as a reference with @c operator*().
+			MoveType move_{};
+
+		  public:
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = MoveType;
+			using difference_type = size_t;
+			using pointer = MoveType*;
+			using reference = MoveType&;
+
+			/// Construct end iterator.
+			const_iterator() : is_end_{true} {}
+
+			/// Const all moves iterator.
+			explicit const_iterator(const StatePost& state_post)
+				: state_post_{&state_post},
+				  symbol_post_it_{state_post.begin()},
+				  symbol_post_end_{state_post.end()} {
+				if (symbol_post_it_ == symbol_post_end_) {
+					is_end_ = true;
+					return;
+				}
+				move_.symbol = symbol_post_it_->symbol;
+				target_it_ = symbol_post_it_->targets.cbegin();
+				move_.target = *target_it_;
+			}
+
+			/// Construct iterator from @p symbol_post_it (including) to @p symbol_post_end (excluding).
+			const_iterator(
+				const StatePost& state_post, const post_iterator symbol_post_it, const post_iterator symbol_post_end
+			)
+				: state_post_{&state_post},
+				  symbol_post_it_{symbol_post_it},
+				  symbol_post_end_{symbol_post_end} {
+				if (symbol_post_it_ == symbol_post_end_) {
+					is_end_ = true;
+					return;
+				}
+				move_.symbol = symbol_post_it_->symbol;
+				target_it_ = symbol_post_it_->targets.cbegin();
+				move_.target = *target_it_;
+			}
+
+			const_iterator(const const_iterator& other) noexcept = default;
+			const_iterator(const_iterator&&) = default;
+
+			const MoveType& operator*() const { return move_; }
+			const MoveType* operator->() const { return &move_; }
+
+			const_iterator& operator++() {
+				++target_it_;
+				if (target_it_ != symbol_post_it_->targets.end()) {
+					move_.target = *target_it_;
+					return *this;
+				}
+
+				// Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
+				//  symbol <= symbol_post_end_.
+				++symbol_post_it_;
+				if (symbol_post_it_ == symbol_post_end_) {
+					is_end_ = true;
+					return *this;
+				}
+				// The current symbol post is valid (not equal symbol_post_end_).
+				move_.symbol = symbol_post_it_->symbol;
+				target_it_ = symbol_post_it_->targets.begin();
+				move_.target = *target_it_;
+				return *this;
+			}
+
+			// Postfix increment
+			const_iterator operator++(int) {
+				const const_iterator tmp{*this};
+				++(*this);
+				return tmp;
+			}
+
+			const_iterator& operator=(const const_iterator& other) noexcept = default;
+			const_iterator& operator=(const_iterator&&) = default;
+
+			bool operator==(const const_iterator& other) const {
+				if (is_end_ && other.is_end_) {
+					return true;
+				} else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+					return false;
+				}
+				return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_ &&
+					   symbol_post_end_ == other.symbol_post_end_;
+			}
+		}; // class const_iterator.
+
 		Moves() = default;
+
 		/**
 		 * @brief construct moves iterating over a range @p symbol_post_it (including) to @p symbol_post_end
 		 * (excluding).
@@ -245,27 +412,40 @@ class StatePost : utils::OrdVector<SymbolPost> {
 		 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel; is not iterated
 		 * over).
 		 */
-		Moves(
-			const StatePost& state_post,
-			StatePost::const_iterator symbol_post_it,
-			StatePost::const_iterator symbol_post_end
-		);
+		Moves(const StatePost& state_post, const post_iterator symbol_post_it, const post_iterator symbol_post_end)
+			: state_post_{&state_post},
+			  symbol_post_it_{symbol_post_it},
+			  symbol_post_end_{symbol_post_end} {}
+
 		Moves(Moves&&) = default;
 		Moves(Moves&) = default;
-		Moves& operator=(Moves&& other) noexcept;
-		Moves& operator=(const Moves& other) noexcept;
 
-		class const_iterator;
-		const_iterator begin() const;
+		Moves& operator=(Moves&& other) noexcept {
+			if (&other != this) {
+				state_post_ = other.state_post_;
+				symbol_post_it_ = other.symbol_post_it_;
+				symbol_post_end_ = other.symbol_post_end_;
+			}
+			return *this;
+		}
+		Moves& operator=(const Moves& other) noexcept {
+			if (&other != this) {
+				state_post_ = other.state_post_;
+				symbol_post_it_ = other.symbol_post_it_;
+				symbol_post_end_ = other.symbol_post_end_;
+			}
+			return *this;
+		}
 
-		static const_iterator end();
+		const_iterator begin() const { return {*state_post_, symbol_post_it_, symbol_post_end_}; }
+		static const_iterator end() { return const_iterator{}; }
 
 	  private:
 		const StatePost* state_post_{nullptr};
-		StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
+		post_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
 		/// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
 		///  end()).
-		StatePost::const_iterator symbol_post_end_{};
+		post_iterator symbol_post_end_{};
 	}; // class Moves.
 
 	/**
@@ -278,34 +458,47 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
 	 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
 	 */
-	Moves moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end) const;
+	Moves moves(const post_iterator symbol_post_it, const post_iterator symbol_post_end) const {
+		return {*this, symbol_post_it, symbol_post_end};
+	}
 	/**
 	 * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
 	 */
-	Moves moves_epsilons(Symbol first_epsilon = EPSILON) const;
+	Moves moves_epsilons(const Key first_epsilon = EPSILON) const {
+		return {*this, first_epsilon_it(first_epsilon), cend()};
+	}
 	/**
 	 * Iterator over alphabet (normal) symbols (not over epsilons) in @c StatePost represented as @c Move instances.
 	 */
-	Moves moves_symbols(Symbol last_symbol = EPSILON - 1) const;
+	Moves moves_symbols(const Key last_symbol = EPSILON - 1) const {
+		if (last_symbol == EPSILON) {
+			throw std::runtime_error("Using default epsilon as a last symbol to iterate over.");
+		}
+		return {*this, cbegin(), first_epsilon_it(last_symbol + 1)};
+	}
 
 	/**
 	 * Count the number of all moves in @c StatePost.
 	 */
-	size_t num_of_moves() const;
+	size_t num_of_moves() const {
+		size_t counter{0};
+		for (const Entry& entry : *this) { counter += entry.num_of_targets(); }
+		return counter;
+	}
 
 	/**
 	 * @brief Apply @p fn to every target state reachable from this state post, over any symbol.
 	 */
 	template <typename Fn> void for_each_target(Fn&& fn) const {
-		for (const SymbolPost& symbol_post : *this) { symbol_post.for_each_target(fn); }
+		for (const Entry& entry : *this) { entry.for_each_target(fn); }
 	}
 
 	/**
 	 * @brief Apply @p fn to every @c Move of this state post, as a (symbol, target) pair.
 	 */
 	template <typename Fn> void for_each_move(Fn&& fn) const {
-		for (const SymbolPost& symbol_post : *this) {
-			symbol_post.for_each_target([&](const State target) { fn(symbol_post.symbol, target); });
+		for (const Entry& entry : *this) {
+			entry.for_each_target([&](const Target target) { fn(entry.symbol, target); });
 		}
 	}
 
@@ -315,13 +508,18 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @param[in] target Target state to check.
 	 * @return True if @p target is reachable from this state post over any symbol, false otherwise.
 	 */
-	bool has_target(const State target) const {
-		for (const SymbolPost& symbol_post : *this) {
-			if (symbol_post.has_target(target)) { return true; }
+	bool has_target(const Target target) const {
+		for (const Entry& entry : *this) {
+			if (entry.has_target(target)) { return true; }
 		}
 		return false;
 	}
-}; // class StatePost.
+}; // class mata::posts::StatePost.
+
+} // namespace mata::posts.
+
+/// The depth-2 post: symbols keying sets of target states. Every existing call site names this.
+using StatePost = posts::StatePost<SymbolPost>;
 
 /**
  * @brief A resumable cursor over every target reachable from one state post.
@@ -382,52 +580,6 @@ class SuccessorCursor {
   private:
 	const StatePost* state_post_;
 };
-
-/**
- * Iterator over moves.
- */
-class StatePost::Moves::const_iterator {
-  private:
-	const StatePost* state_post_{nullptr};
-	StatePost::const_iterator symbol_post_it_{};
-	StateSet::const_iterator target_it_{};
-	StatePost::const_iterator symbol_post_end_{};
-	bool is_end_{false};
-	/// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
-	///  a reference with @c operator*().
-	Move move_{};
-
-  public:
-	using iterator_category = std::forward_iterator_tag;
-	using value_type = Move;
-	using difference_type = size_t;
-	using pointer = Move*;
-	using reference = Move&;
-
-	/// Construct end iterator.
-	const_iterator() : is_end_{true} {}
-	/// Const all moves iterator.
-	const_iterator(const StatePost& state_post);
-	/// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
-	const_iterator(
-		const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end
-	);
-	const_iterator(const const_iterator& other) noexcept = default;
-	const_iterator(const_iterator&&) = default;
-
-	const Move& operator*() const { return move_; }
-	const Move* operator->() const { return &move_; }
-
-	// Prefix increment
-	const_iterator& operator++();
-	// Postfix increment
-	const_iterator operator++(int);
-
-	const_iterator& operator=(const const_iterator& other) noexcept = default;
-	const_iterator& operator=(const_iterator&&) = default;
-
-	bool operator==(const const_iterator& other) const;
-}; // class const_iterator.
 
 /**
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
@@ -870,11 +1022,20 @@ class Delta::Transitions::const_iterator {
 static_assert(PostEntryLike<SymbolPost>, "SymbolPost must be StatePost's entry type.");
 static_assert(PostLike<StatePost>, "StatePost must be one post of the relation.");
 static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");
-// TODO(templating): assert TargetSetLike on the leaf once StateTargets<State> replaces StateSet
+static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
 //  as SymbolPost::Nested (T2.1); that is also what lets StatePost::key_arity be computed rather
 //  than hardcoded.
 ///@}
 
+} // namespace mata.
+
+#include "mata/core/delta.tpp"
+
+namespace mata {
+/// Instantiated once, in `src/core/delta.cc`. Without these, every translation unit including this
+///  header instantiates the whole post stack.
+extern template class posts::SymbolPost<Symbol, StateSet>;
+extern template class posts::StatePost<SymbolPost>;
 } // namespace mata.
 
 #endif // MATA_CORE_DELTA_HH
