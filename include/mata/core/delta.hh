@@ -20,24 +20,35 @@
 
 namespace mata {
 
-/// A single transition in Delta represented as a triple(source, symbol, target).
-struct Transition {
-	State source; ///< Source state.
-	Symbol symbol; ///< Transition symbol.
-	State target; ///< Target state.
+namespace posts {
+/**
+ * @brief A single transition in a relation: a source, one key, and one target.
+ *
+ * Templated so it follows the relation it comes out of, exactly as @c mata::posts::Move does. At a
+ *  @c key_arity above one a transition carries more than one key and this shape no longer fits;
+ *  that is Phase 3's problem, and until then this is the depth-2 triple.
+ */
+template <typename St, typename K, typename T> struct Transition {
+	St source; ///< Source state.
+	K symbol; ///< Transition symbol.
+	T target; ///< Target state.
 
 	Transition() : source(), symbol(), target() {}
 	Transition(const Transition&) = default;
 	Transition(Transition&&) = default;
 	Transition& operator=(const Transition&) = default;
 	Transition& operator=(Transition&&) = default;
-	Transition(const State source, const Symbol symbol, const State target)
+	Transition(const St source, const K symbol, const T target)
 		: source(source),
 		  symbol(symbol),
 		  target(target) {}
 
 	auto operator<=>(const Transition&) const = default;
 };
+} // namespace mata::posts.
+
+/// A transition of the depth-2 relation: (source, symbol, target).
+using Transition = posts::Transition<State, Symbol, State>;
 
 namespace posts {
 /**
@@ -521,27 +532,56 @@ template <typename E> class StatePost : utils::OrdVector<E> {
 /// The depth-2 post: symbols keying sets of target states. Every existing call site names this.
 using StatePost = posts::StatePost<SymbolPost>;
 
+namespace posts {
+
 /**
  * @brief A resumable cursor over every target reachable from one state post.
  *
- * Flattens the (symbol post -> targets) walk into a single pointer walk,
- *  so a traversal position can be stored and continued later
+ * Flattens the walk down the post chain into a single pointer walk, so a traversal position can be
+ *  stored and continued later. Tarjan's SCC discovery is the only thing that needs that, and it is
+ *  what @c mata::AutomatonBase drives @c get_useful_states(), @c is_acyclic(), @c is_lang_empty() and
+ *  @c trim() through.
+ *
+ * @tparam P The whole post chain, not one level of it. Deliberately: this is a *flat* cursor, holding
+ *  every level's position as its own member and carrying between them explicitly. It is hand-written
+ *  once per @c key_arity, with a specialisation below for each supported depth.
+ *
+ * @note Composing it out of per-post cursors instead — one cursor struct per level, each delegating
+ *  downwards — is tidier and measurably slower: **24.4% at arity 2 and 18.6% at arity 3**, against
+ *  hand-written nested loops on the same shapes, with the flat form holding at 0.79-0.85x. At arity 1
+ *  the two are within 1%, which is why the older note here claimed composition was slower without
+ *  saying where; the gap only opens once each level has real branching. See the Plan, T3.2.
  *
  * @note Header-defined so it inlines. The inner range is loaded without a branch.
- *
- * @note Unlike @c for_each_target(), this deliberately knows the nesting depth.
- *  Composing a cursor out of per-post cursors is measurably slower,
- *  and @c Delta is the one place entitled to know its own representation.
  */
-class SuccessorCursor {
+template <typename P> class SuccessorCursor {
+	static_assert(
+		sizeof(P) == 0,
+		"SuccessorCursor is hand-written per key arity, 1 to 3 (structure depth 2 to 4). A deeper "
+		"relation needs a new specialisation; see the Plan, T3.2. This is deliberately a hard error "
+		"rather than a fallback to a composed cursor, which would keep working and quietly lose "
+		"18-24%."
+	);
+};
+
+/**
+ * @brief The depth-2 cursor: symbol posts, then the targets under each.
+ *
+ * Byte-for-byte the implementation that shipped before the posts were templated. Invariant 4 says
+ *  `key_arity == 1` must not regress; keeping this specialisation means there is nothing to regress.
+ */
+template <typename Entry> class SuccessorCursor<StatePost<Entry>> {
   public:
+	using Post = StatePost<Entry>;
+	using Target = typename Post::Target;
+
 	class const_iterator {
 	  public:
-		StatePost::const_iterator symbol_post_it_{}, symbol_post_end_{};
-		const State *target_it_{nullptr}, *target_end_{nullptr};
+		typename Post::const_iterator symbol_post_it_{}, symbol_post_end_{};
+		const Target *target_it_{nullptr}, *target_end_{nullptr};
 
 		void load_targets() {
-			const std::span<const State> targets{symbol_post_it_->target_span()};
+			const std::span<const Target> targets{symbol_post_it_->target_span()};
 			target_it_ = targets.data();
 			target_end_ = target_it_ + targets.size();
 		}
@@ -555,7 +595,7 @@ class SuccessorCursor {
 				load_targets();
 			}
 		}
-		const State& operator*() const { return *target_it_; }
+		const Target& operator*() const { return *target_it_; }
 		const_iterator& operator++() {
 			if (++target_it_ == target_end_) { seek(); }
 			return *this;
@@ -564,7 +604,7 @@ class SuccessorCursor {
 		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
 	};
 
-	explicit SuccessorCursor(const StatePost& state_post) : state_post_{&state_post} {}
+	explicit SuccessorCursor(const Post& state_post) : state_post_{&state_post} {}
 
 	const_iterator begin() const {
 		const_iterator it;
@@ -578,8 +618,13 @@ class SuccessorCursor {
 	std::default_sentinel_t end() const { return std::default_sentinel; }
 
   private:
-	const StatePost* state_post_;
+	const Post* state_post_;
 };
+
+} // namespace mata::posts.
+
+/// The depth-2 successor cursor. Every existing call site names this.
+using SuccessorCursor = posts::SuccessorCursor<StatePost>;
 
 /**
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
@@ -609,37 +654,42 @@ class SynchronizedExistentialSymbolPostIterator
 	bool synchronize_with(Symbol sync_symbol);
 }; // class SynchronizedExistentialSymbolPostIterator.
 
+namespace posts {
+
 /**
  * @brief Delta is a data structure for representing transition relation.
  *
- * Transition is represented as a triple Transition(source state, symbol, target state). Move is the part (symbol,
- * target state), specified for a single source state. Its underlying data structure is vector of StatePost classes.
- * Each index to the vector corresponds to one source state, that is, a number for a certain state is an index to the
- * vector of state posts. Transition relation (delta) in Mata stores a set of transitions in a four-level hierarchical
- * structure: Delta, StatePost, SymbolPost, and a set of target states. A vector of 'StatePost's indexed by a source
- * states on top, where the StatePost for a state 'q' (whose number is 'q' and it is the index to the vector of
- * 'StatePost's) stores a set of 'Move's from the source state 'q'. Namely, 'StatePost' has a vector of 'SymbolPost's,
- * where each 'SymbolPost' stores a symbol 'a' and a vector of target states of 'a'-moves from state 'q'. 'SymbolPost's
- * are ordered by the symbol, target states are ordered by the state number.
+ * A vector of posts indexed by source state. For an NFA that is the four-level structure the docs
+ *  describe -- Delta, StatePost, SymbolPost, targets -- but the depth is not baked in here: @p P is
+ *  the whole post chain, and @c key_arity is read off it.
+ *
+ * @tparam P The post reached from one source state, itself parameterised down to the targets. See
+ *  @ref nesting.
+ * @see mata::DeltaLike.
  */
-class Delta {
+template <typename P> class Delta {
   public:
 	/// @name Post protocol
 	/// @see mata::DeltaLike -- the only way @c mata::Automaton reaches a successor.
 	///@{
-	using PostType = StatePost; ///< The post reached from one source state.
-	using Target = StatePost::Target; ///< What a successor walk yields.
+	using PostType = P; ///< The post reached from one source state.
+	using Target = typename PostType::Target; ///< What a successor walk yields.
 	/// What indexes this relation and the automaton's state sets. Derived from the target type
 	///  rather than propagated through the posts: which state a target denotes is a property of
 	///  the target, not of any post above it. @see mata::TargetTraits.
-	using State = TargetTraits<Target>::State;
-	using Key = StatePost::Key; ///< TODO(templating): becomes `Key<I>` once key_arity > 1.
-	static constexpr size_t key_arity{StatePost::key_arity};
+	using State = typename TargetTraits<Target>::State;
+	using Key = typename PostType::Key; ///< @todo becomes `Key<I>` once key_arity > 1; see S3.13.
+	static constexpr size_t key_arity{PostType::key_arity};
 	/// @copydoc mata::TargetTraits::state_of
 	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }
+	/// The targets under one fully-supplied key, and a transition of this relation.
+	using Entry = typename PostType::Entry;
+	using Nested = typename PostType::Nested;
+	using TransitionType = posts::Transition<State, Key, Target>;
+	using CursorType = posts::SuccessorCursor<PostType>;
 	///@}
 
-	inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
+	inline static const PostType empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
 	Delta() : state_posts_{} {}
 	Delta(const Delta& other) = default;
@@ -662,7 +712,7 @@ class Delta {
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
-	const StatePost& state_post(const State source) const {
+	const PostType& state_post(const State source) const {
 		if (source >= num_of_states()) { return empty_state_post; }
 		return state_posts_[source];
 	}
@@ -676,7 +726,7 @@ class Delta {
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
-	const StatePost& operator[](const State source) const { return state_post(source); }
+	const PostType& operator[](const State source) const { return state_post(source); }
 
 	/**
 	 * @brief Get mutable (non-constant) reference to the state post of @p source.
@@ -695,7 +745,7 @@ class Delta {
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
-	StatePost& mutable_state_post(State source);
+	PostType& mutable_state_post(State source);
 
 	/**
 	 * @brief Defragment the Delta.
@@ -708,9 +758,8 @@ class Delta {
 	 * @return Self with defragmented delta.
 	 */
 	Delta& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
-	friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
-	template <typename... Args> StatePost& emplace_back(Args&&... args) {
+	template <typename... Args> PostType& emplace_back(Args&&... args) {
 		// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
 		return state_posts_.emplace_back(std::forward<Args>(args)...);
 	}
@@ -718,7 +767,7 @@ class Delta {
 	void clear() { state_posts_.clear(); }
 
 	/**
-	 * @brief Allocate state posts up to @p num_of_states states, creating empty @c StatePost for yet unallocated state
+	 * @brief Allocate state posts up to @p num_of_states states, creating empty @c PostType for yet unallocated state
 	 *  posts.
 	 *
 	 * @param[in] num_of_states Number of states in @c Delta to allocate state posts for. Have to be at least
@@ -744,19 +793,19 @@ class Delta {
 	 */
 	size_t num_of_transitions() const;
 
-	void add(State source, Symbol symbol, State target);
-	void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
-	void remove(State source, Symbol symbol, State target);
-	void remove(const Transition& transition) { remove(transition.source, transition.symbol, transition.target); }
+	void add(State source, Key symbol, State target);
+	void add(const TransitionType& trans) { add(trans.source, trans.symbol, trans.target); }
+	void remove(State source, Key symbol, State target);
+	void remove(const TransitionType& transition) { remove(transition.source, transition.symbol, transition.target); }
 
 	/**
 	 * Check whether @c Delta contains a passed transition.
 	 */
-	bool contains(State source, Symbol symbol, State target) const;
+	bool contains(State source, Key symbol, State target) const;
 	/**
 	 * Check whether @c Delta contains a transition passed as a triple.
 	 */
-	bool contains(const Transition& transition) const;
+	bool contains(const TransitionType& transition) const;
 
 	/**
 	 * Check whether automaton contains no transitions.
@@ -769,8 +818,8 @@ class Delta {
 	 *
 	 * @param post_vector Vector of posts to be appended.
 	 */
-	void append(const std::vector<StatePost>& post_vector) {
-		for (const StatePost& pst : post_vector) { this->state_posts_.push_back(pst); }
+	void append(const std::vector<PostType>& post_vector) {
+		for (const PostType& pst : post_vector) { this->state_posts_.push_back(pst); }
 	}
 
 	/**
@@ -783,16 +832,16 @@ class Delta {
 	 * @param target_renumberer Monotonic lambda function mapping states to different states.
 	 * @return std::vector<Post> Copied posts.
 	 */
-	std::vector<StatePost> renumber_targets(const std::function<State(State)>& target_renumberer) const;
+	std::vector<PostType> renumber_targets(const std::function<State(State)>& target_renumberer) const;
 
 	/**
 	 * @brief Add transitions to multiple destinations
 	 *
 	 * @param source From
-	 * @param symbol Symbol
+	 * @param symbol Key
 	 * @param targets Set of states to
 	 */
-	void add(State source, Symbol symbol, const StateSet& targets);
+	void add(State source, Key symbol, const Nested& targets);
 
 	/**
 	 * @brief Apply @p fn to every target state reachable from @p source, over any symbol.
@@ -830,20 +879,168 @@ class Delta {
 	 * @param source Source state to get the successors of.
 	 * @return A resumable cursor over the successors of @p source.
 	 */
-	SuccessorCursor successor_cursor(const State source) const { return SuccessorCursor{state_post(source)}; }
+	CursorType successor_cursor(const State source) const { return CursorType{state_post(source)}; }
 
-	using const_iterator = std::vector<StatePost>::const_iterator;
+	using const_iterator = std::vector<PostType>::const_iterator;
 	const_iterator cbegin() const { return state_posts_.cbegin(); }
 	const_iterator cend() const { return state_posts_.cend(); }
 	const_iterator begin() const { return state_posts_.begin(); }
 	const_iterator end() const { return state_posts_.end(); }
 
-	class Transitions;
+	/**
+	 * @brief Iterator over transitions represented as @c Transition instances.
+	 *
+	 * It iterates over triples (source, key, target).
+	 */
+	class Transitions {
+	  public:
+		/**
+		 * Iterator over transitions.
+		 *
+		 * @note Inline, like @c StatePost::Moves::const_iterator and for the same reason: as a nested
+		 *  class of a nested class of a template, each out-of-line definition would need three levels
+		 *  of qualification.
+		 */
+		class const_iterator {
+		  private:
+			const Delta* delta_ = nullptr;
+			size_t current_state_{};
+			typename PostType::const_iterator state_post_it_{};
+			typename Nested::const_iterator symbol_post_it_{};
+			bool is_end_{false};
+			TransitionType transition_{};
+
+		  public:
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = TransitionType;
+			using difference_type = size_t;
+			using pointer = TransitionType*;
+			using reference = TransitionType&;
+
+			const_iterator() : is_end_{true} {}
+
+			explicit const_iterator(const Delta& delta) : delta_{&delta} {
+				const size_t post_size = delta_->num_of_states();
+				for (size_t i = 0; i < post_size; ++i) {
+					if (!(*delta_)[i].empty()) {
+						current_state_ = i;
+						state_post_it_ = (*delta_)[i].begin();
+						symbol_post_it_ = state_post_it_->targets.begin();
+						transition_.source = current_state_;
+						transition_.symbol = state_post_it_->symbol;
+						transition_.target = *symbol_post_it_;
+						return;
+					}
+				}
+
+				// No transition found, delta contains only empty state posts.
+				is_end_ = true;
+			}
+
+			const_iterator(const Delta& delta, const State current_state)
+				: delta_{&delta},
+				  current_state_{current_state} {
+				const size_t post_size = delta_->num_of_states();
+				for (State source{static_cast<State>(current_state_)}; source < post_size; ++source) {
+					if (const PostType& state_post{delta_->state_post(source)}; !state_post.empty()) {
+						current_state_ = source;
+						state_post_it_ = state_post.begin();
+						symbol_post_it_ = state_post_it_->targets.begin();
+						transition_.source = current_state_;
+						transition_.symbol = state_post_it_->symbol;
+						transition_.target = *symbol_post_it_;
+						return;
+					}
+				}
+
+				// No transition found, delta from the current state contains only empty state posts.
+				is_end_ = true;
+			}
+
+			const_iterator(const const_iterator& other) noexcept = default;
+			const_iterator(const_iterator&&) = default;
+
+			const TransitionType& operator*() const { return transition_; }
+			const TransitionType* operator->() const { return &transition_; }
+
+			// Prefix increment
+			const_iterator& operator++() {
+				MATA_ASSERT(delta_->begin() != delta_->end());
+
+				++symbol_post_it_;
+				if (symbol_post_it_ != state_post_it_->targets.end()) {
+					transition_.target = *symbol_post_it_;
+					return *this;
+				}
+
+				++state_post_it_;
+				if (state_post_it_ != (*delta_)[current_state_].cend()) {
+					symbol_post_it_ = state_post_it_->targets.begin();
+					transition_.symbol = state_post_it_->symbol;
+					transition_.target = *symbol_post_it_;
+					return *this;
+				}
+
+				const size_t state_posts_size{delta_->num_of_states()};
+				do { // Skip empty posts.
+					++current_state_;
+				} while (current_state_ < state_posts_size && (*delta_)[current_state_].empty());
+				if (current_state_ >= state_posts_size) {
+					is_end_ = true;
+					return *this;
+				}
+
+				const PostType& state_post{(*delta_)[current_state_]};
+				state_post_it_ = state_post.begin();
+				symbol_post_it_ = state_post_it_->targets.begin();
+
+				transition_.source = current_state_;
+				transition_.symbol = state_post_it_->symbol;
+				transition_.target = *symbol_post_it_;
+
+				return *this;
+			}
+
+			// Postfix increment
+			const_iterator operator++(int) {
+				const const_iterator tmp{*this};
+				++(*this);
+				return tmp;
+			}
+
+			const_iterator& operator=(const const_iterator& other) noexcept = default;
+			const_iterator& operator=(const_iterator&&) = default;
+
+			bool operator==(const const_iterator& other) const {
+				if (is_end_ && other.is_end_) {
+					return true;
+				} else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+					return false;
+				} else {
+					return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_ &&
+						   symbol_post_it_ == other.symbol_post_it_;
+				}
+			}
+		}; // class const_iterator.
+
+		Transitions() = default;
+		explicit Transitions(const Delta* delta) : delta_{delta} {}
+		Transitions(Transitions&&) = default;
+		Transitions(const Transitions&) = default;
+		Transitions& operator=(Transitions&&) = default;
+		Transitions& operator=(const Transitions&) = default;
+
+		const_iterator begin() const { return const_iterator{*delta_}; }
+		static const_iterator end() { return const_iterator{}; }
+
+	  private:
+		const Delta* delta_;
+	}; // class Transitions.
 
 	/**
 	 * Iterator over transitions represented as @c Transition instances.
 	 */
-	Transitions transitions() const;
+	Transitions transitions() const { return Transitions{this}; }
 
 	/**
 	 * Get transitions leading to @p state_to.
@@ -852,7 +1049,7 @@ class Delta {
 	 *
 	 * Operation is slow, traverses over all symbol posts.
 	 */
-	std::vector<Transition> get_transitions_to(State state_to) const;
+	std::vector<TransitionType> get_transitions_to(State state_to) const;
 
 	/**
 	 * Get transitions from @p state_from to @p state_to.
@@ -862,7 +1059,7 @@ class Delta {
 	 *
 	 * Operation is slow, traverses over all symbol posts.
 	 */
-	std::vector<Transition> get_transitions_between(State state_from, State state_to) const;
+	std::vector<TransitionType> get_transitions_between(State state_from, State state_to) const;
 
 	/**
 	 * @brief Resize the delta to fit the given @p states.
@@ -886,12 +1083,12 @@ class Delta {
 	 * @param[in] state State from which successors are checked.
 	 * @return Set of states that are successors of the given @p state.
 	 */
-	StateSet get_successors(State state) const;
+	Nested get_successors(State state) const;
 
-	const StateSet& get_successors(State state, Symbol symbol) const;
+	const Nested& get_successors(State state, Key symbol) const;
 
 	// TODO(nfa): Implement.
-	StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
+	Nested get_successors(State state, Key symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state.
@@ -899,7 +1096,7 @@ class Delta {
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
 	 */
-	StatePost::const_iterator epsilon_symbol_posts(State state, Symbol epsilon = EPSILON) const;
+	PostType::const_iterator epsilon_symbol_posts(State state, Key epsilon = EPSILON) const;
 
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state_post.
@@ -907,7 +1104,7 @@ class Delta {
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
 	 */
-	static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
+	static PostType::const_iterator epsilon_symbol_posts(const PostType& state_post, Key epsilon = EPSILON);
 
 	/**
 	 * @brief Expand @p target_alphabet by symbols from this delta.
@@ -922,98 +1119,49 @@ class Delta {
 	 * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
 	 * @return Set of symbols used on the transitions.
 	 */
-	utils::OrdVector<Symbol> get_used_symbols() const;
+	utils::OrdVector<Key> get_used_symbols() const;
 
-	utils::OrdVector<Symbol> get_used_symbols_vec() const;
-	std::set<Symbol> get_used_symbols_set() const;
-	utils::SparseSet<Symbol> get_used_symbols_sps() const;
+	utils::OrdVector<Key> get_used_symbols_vec() const;
+	std::set<Key> get_used_symbols_set() const;
+	utils::SparseSet<Key> get_used_symbols_sps() const;
 	std::vector<bool> get_used_symbols_bv() const;
 	BoolVector get_used_symbols_chv() const;
 
 	/**
 	 * @brief Get the maximum non-epsilon used symbol.
 	 */
-	Symbol get_max_symbol() const;
+	Key get_max_symbol() const;
 
   protected:
-	std::vector<StatePost> state_posts_;
-}; // class Delta.
+	std::vector<PostType> state_posts_;
+}; // class mata::posts::Delta.
 
+
+} // namespace mata::posts.
+
+/// The depth-2 relation: states, then symbols, then target states. Every call site names this.
+using Delta = posts::Delta<StatePost>;
+
+namespace posts {
 /**
  * @brief Defragment the Delta.
  *
- * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
- * according to @p renaming.
+ * Removes all state posts which are not in @p is_staying and renames the remaining ones according to
+ *  @p renaming. Uses only the public interface, so it needs no friendship.
  *
  * @param[in] delta Delta to defragment.
  * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
  * @param[in] renaming Vector of states to rename the remaining state posts to.
  * @return The defragmented Delta.
  */
-Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
+template <typename P>
+Delta<P> defragment(const Delta<P>& delta, const BoolVector& is_staying,
+                    const std::vector<typename Delta<P>::State>& renaming);
+} // namespace mata::posts.
 
-/**
- * @brief Iterator over transitions represented as @c Transition instances.
- *
- * It iterates over triples (State source, Symbol symbol, State target).
- */
-class Delta::Transitions {
-  public:
-	Transitions() = default;
-	explicit Transitions(const Delta* delta) : delta_{delta} {}
-	Transitions(Transitions&&) = default;
-	Transitions(const Transitions&) = default;
-	Transitions& operator=(Transitions&&) = default;
-	Transitions& operator=(const Transitions&) = default;
-
-	class const_iterator;
-	const_iterator begin() const;
-
-	static const_iterator end();
-
-  private:
-	const Delta* delta_;
-}; // class Transitions.
-
-/**
- * Iterator over transitions.
- */
-class Delta::Transitions::const_iterator {
-  private:
-	const Delta* delta_ = nullptr;
-	size_t current_state_{};
-	StatePost::const_iterator state_post_it_{};
-	StateSet::const_iterator symbol_post_it_{};
-	bool is_end_{false};
-	Transition transition_{};
-
-  public:
-	using iterator_category = std::forward_iterator_tag;
-	using value_type = Transition;
-	using difference_type = size_t;
-	using pointer = Transition*;
-	using reference = Transition&;
-
-	const_iterator() : is_end_{true} {}
-	explicit const_iterator(const Delta& delta);
-	const_iterator(const Delta& delta, State current_state);
-
-	const_iterator(const const_iterator& other) noexcept = default;
-	const_iterator(const_iterator&&) = default;
-
-	const Transition& operator*() const { return transition_; }
-	const Transition* operator->() const { return &transition_; }
-
-	// Prefix increment
-	const_iterator& operator++();
-	// Postfix increment
-	const_iterator operator++(int);
-
-	const_iterator& operator=(const const_iterator& other) noexcept = default;
-	const_iterator& operator=(const_iterator&&) = default;
-
-	bool operator==(const const_iterator& other) const;
-}; // class Delta::Transitions::const_iterator.
+/// Callers name this @c mata::defragment. Declared once, in @c posts, and re-exported here: having
+///  it in both namespaces makes every unqualified call ambiguous through ADL.
+using posts::defragment;
 
 /// @name Contract checks
 /// The concrete relation must satisfy the contract the generic algorithms are written against.
@@ -1023,6 +1171,12 @@ static_assert(PostEntryLike<SymbolPost>, "SymbolPost must be StatePost's entry t
 static_assert(PostLike<StatePost>, "StatePost must be one post of the relation.");
 static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");
 static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
+/// The cursor is hand-written per arity, 1 to 3. @see the Plan, T3.2 and §3.3b.
+static_assert(
+	Delta::key_arity <= 3,
+	"mata::Delta is capped at key_arity 3 (structure depth 4), because SuccessorCursor is "
+	"hand-written per arity and three is where that stops paying. Past it, add a specialisation."
+);
 //  as SymbolPost::Nested (T2.1); that is also what lets StatePost::key_arity be computed rather
 //  than hardcoded.
 ///@}
@@ -1036,6 +1190,7 @@ namespace mata {
 ///  header instantiates the whole post stack.
 extern template class posts::SymbolPost<Symbol, StateSet>;
 extern template class posts::StatePost<SymbolPost>;
+extern template class posts::Delta<StatePost>;
 } // namespace mata.
 
 #endif // MATA_CORE_DELTA_HH
