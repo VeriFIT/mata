@@ -51,6 +51,175 @@ template <typename St, typename K, typename T> struct Transition {
 using Transition = posts::Transition<State, Symbol, State>;
 
 namespace posts {
+
+/**
+ * @brief Apply @p fn to every target below @p post, at any nesting depth.
+ *
+ * Replaces the hand-unrolled descent the posts used to carry. `if constexpr` on @c key_arity turns
+ *  the recursion into the same nested loops a caller would write by hand — measured at 0.99-1.01x of
+ *  hand-written loops at every arity from 1 to 9, with no trend against depth, so depth genericity
+ *  here is free. @p Fn is a template parameter and never a @c std::function: routing the same walk
+ *  through one costs 1.08x to 2.18x. See the Plan, T3.1.
+ */
+template <typename Post, typename Fn> void walk_targets(const Post& post, Fn&& fn) {
+	if constexpr (Post::key_arity == 0) {
+		for (const typename Post::Target& target : post) { fn(target); }
+	} else {
+		for (const auto& entry : post) { walk_targets(entry.nested(), fn); }
+	}
+}
+
+/**
+ * @brief Does any target below @p post satisfy @p pred? Stops at the first that does.
+ *
+ * The short-circuiting counterpart to @c walk_targets. Needed rather than merely nice: @c has_target
+ *  feeds @c is_successor and @c has_self_loop, which @c mata::AutomatonBase::is_acyclic() calls once
+ *  per SCC. Expressing it as a full walk that sets a flag is a real regression on that path, and one
+ *  the delta-access benchmark does not cover.
+ */
+template <typename Post, typename Pred> bool any_target(const Post& post, Pred&& pred) {
+	if constexpr (Post::key_arity == 0) {
+		for (const typename Post::Target& target : post) {
+			if (pred(target)) { return true; }
+		}
+	} else {
+		for (const auto& entry : post) {
+			if (any_target(entry.nested(), pred)) { return true; }
+		}
+	}
+	return false;
+}
+
+/**
+ * @brief How many targets are below @p post?
+ *
+ * Recurses to the innermost post and takes its @c size() rather than counting targets one by one, so
+ *  it stays O(entries) instead of O(targets).
+ */
+template <typename Post> size_t count_targets(const Post& post) {
+	if constexpr (Post::key_arity == 0) {
+		return post.size();
+	} else {
+		size_t total{0};
+		for (const auto& entry : post) { total += count_targets(entry.nested()); }
+		return total;
+	}
+}
+
+/**
+ * @brief Apply @p fn to every move below @p post, as `fn(keys..., target)`.
+ *
+ * The keys accumulate down the nesting and arrive as a pack, so at @c key_arity 1 this expands to
+ *  exactly `fn(key, target)` — the signature every existing call site and lambda already binds. A
+ *  deeper relation simply passes more key arguments; nothing at depth 2 changes shape.
+ */
+template <typename Post, typename Fn, typename... Keys>
+void walk_moves(const Post& post, Fn&& fn, const Keys&... keys) {
+	if constexpr (Post::key_arity == 0) {
+		for (const typename Post::Target& target : post) { fn(keys..., target); }
+	} else {
+		for (const auto& entry : post) { walk_moves(entry.nested(), fn, keys..., entry.key()); }
+	}
+}
+
+/**
+ * @brief Insert @p target under the key path @p keys, creating posts along the way.
+ *
+ * The write-side counterpart to @c walk_moves, and the pair of them is all reverting needs: walk out
+ *  the moves of one relation, write each back into another with the source and target exchanged and
+ *  **the keys in the same order**.
+ *
+ * Declared as a free function with the keys *last* on purpose. A member `add(source, keys..., target)`
+ *  cannot be written — a parameter pack has to be last for deduction — which is what made reverting
+ *  look like it needed a variadic @c Delta::add and a shape change to every call site. It does not:
+ *  the target simply comes first here.
+ */
+template <typename Post> void insert_target(Post& post, const typename Post::Target& target) {
+	static_assert(Post::key_arity == 0, "the key path ran out before the innermost post");
+	post.insert(target);
+}
+
+template <typename Post, typename K0, typename... Rest>
+void insert_target(Post& post, const typename Post::Target& target, const K0& k0, const Rest&... rest) {
+	static_assert(Post::key_arity == sizeof...(Rest) + 1, "the key path must be one key per level");
+	auto entry_it{post.find(k0)};
+	if (entry_it == post.end()) {
+		post.insert(typename Post::Entry{k0, typename Post::Nested{}});
+		entry_it = post.find(k0); // insert may reallocate, so look the position up again
+	}
+	insert_target(entry_it->nested(), target, rest...);
+}
+
+/**
+ * @brief Are @p a and @p b structurally equal, keys and targets alike?
+ *
+ * @warning Not `a == b`. An entry's @c operator== compares **only its key** — deliberately, because
+ *  the post is an ordered map and @c OrdVector orders and searches by that key — so comparing posts
+ *  with @c operator== silently ignores every difference in their targets. This is why the older
+ *  @c Delta::operator== compared transition *sequences* rather than posts, and why the recursion here
+ *  has to descend into @c nested() explicitly.
+ */
+template <typename Post> bool posts_equal(const Post& a, const Post& b) {
+	if constexpr (Post::key_arity == 0) {
+		return std::ranges::equal(a, b);
+	} else {
+		if (a.size() != b.size()) { return false; }
+		auto it_a{a.begin()};
+		auto it_b{b.begin()};
+		for (; it_a != a.end(); ++it_a, ++it_b) {
+			if (!(it_a->key() == it_b->key())) { return false; }
+			if (!posts_equal(it_a->nested(), it_b->nested())) { return false; }
+		}
+		return true;
+	}
+}
+
+/**
+ * @brief Rebuild @p post with every target renamed by @p rename.
+ *
+ * Recurses to the innermost post and rebuilds by appending, so it works at any depth. @p rename must
+ *  be **monotonic** — the order of targets must not change — because appending is what preserves
+ *  sortedness. The callers (renumbering, trimming) both rename densely in ascending order.
+ */
+template <typename Post, typename Fn> Post renumbered(const Post& post, Fn&& rename) {
+	Post out{};
+	if constexpr (Post::key_arity == 0) {
+		for (const typename Post::Target& target : post) { out.push_back(rename(target)); }
+	} else {
+		for (const auto& entry : post) {
+			out.push_back(typename Post::Entry{entry.key(), renumbered(entry.nested(), rename)});
+		}
+	}
+	return out;
+}
+
+/**
+ * @brief Rebuild @p post keeping only the targets @p is_staying admits, renamed by @p renaming.
+ *
+ * The write-side mirror of @c walk_targets, and the reason it is written this way: each level knows
+ *  only its own job — the innermost post filters and renames, every level above drops the entries
+ *  whose nested post came back empty — so trimming generalises with the nesting instead of assuming
+ *  two levels of descent, which is what the hand-unrolled version did.
+ *
+ * Rebuilds rather than mutating, so an implementer owes only @c push_back and not a filter-and-rename
+ *  pair. @see @ref sortedness for why appending is safe here.
+ */
+template <typename Post, typename Renaming>
+Post defragmented(const Post& post, const BoolVector& is_staying, const Renaming& renaming) {
+	Post out{};
+	if constexpr (Post::key_arity == 0) {
+		for (const typename Post::Target& target : post) {
+			if (is_staying[target]) { out.push_back(renaming[target]); }
+		}
+	} else {
+		for (const auto& entry : post) {
+			typename Post::Nested nested{defragmented(entry.nested(), is_staying, renaming)};
+			if (!nested.empty()) { out.push_back(typename Post::Entry{entry.key(), std::move(nested)}); }
+		}
+	}
+	return out;
+}
+
 /**
  * @brief One step out of a post: a key together with one target it leads to.
  *
@@ -99,6 +268,9 @@ template <typename K, typename N> class SymbolPost {
 
 	const Key& key() const { return symbol; }
 	const Nested& nested() const { return targets; }
+	/// Writing a target down a key path has to descend into the nested post, so the entry offers a
+	///  mutable way in as well. @see mata::posts::insert_target.
+	Nested& nested() { return targets; }
 	///@}
 
 	SymbolPost() = default;
@@ -491,25 +663,38 @@ template <typename E> class StatePost : utils::OrdVector<E> {
 	/**
 	 * Count the number of all moves in @c StatePost.
 	 */
-	size_t num_of_moves() const {
-		size_t counter{0};
-		for (const Entry& entry : *this) { counter += entry.num_of_targets(); }
-		return counter;
-	}
+	size_t num_of_moves() const { return count_targets(*this); }
 
 	/**
 	 * @brief Apply @p fn to every target state reachable from this state post, over any symbol.
 	 */
 	template <typename Fn> void for_each_target(Fn&& fn) const {
-		for (const Entry& entry : *this) { entry.for_each_target(fn); }
+		if constexpr (key_arity == 1) {
+			// The shipping form, kept verbatim for the depth every NFA and NFT uses. Routing arity 1
+			//  through the generic recursion measured **+18-19%** on the real relation at 65 536 and
+			//  262 144 states -- interleaved against the pre-Phase-3 build, with the untouched
+			//  hand-written control rows flat at ~1%. The depth prototype had said the recursion was
+			//  free (0.99-1.01x), because its posts were plain structs over `std::vector`; the real
+			//  ones wrap `OrdVector` behind private inheritance and virtual `begin()`/`end()`, and
+			//  that difference is invisible to a prototype. Same remedy as the cursor: specialise the
+			//  arity everything actually runs on, stay generic beyond it.
+			for (const Entry& entry : *this) { entry.for_each_target(fn); }
+		} else {
+			walk_targets(*this, fn);
+		}
 	}
 
 	/**
 	 * @brief Apply @p fn to every @c Move of this state post, as a (symbol, target) pair.
 	 */
 	template <typename Fn> void for_each_move(Fn&& fn) const {
-		for (const Entry& entry : *this) {
-			entry.for_each_target([&](const Target target) { fn(entry.symbol, target); });
+		if constexpr (key_arity == 1) {
+			// See for_each_target: the generic recursion cost ~+19-20% here at every size measured.
+			for (const Entry& entry : *this) {
+				entry.for_each_target([&](const Target target) { fn(entry.symbol, target); });
+			}
+		} else {
+			walk_moves(*this, fn);
 		}
 	}
 
@@ -520,10 +705,7 @@ template <typename E> class StatePost : utils::OrdVector<E> {
 	 * @return True if @p target is reachable from this state post over any symbol, false otherwise.
 	 */
 	bool has_target(const Target target) const {
-		for (const Entry& entry : *this) {
-			if (entry.has_target(target)) { return true; }
-		}
-		return false;
+		return any_target(*this, [target](const Target& t) { return t == target; });
 	}
 }; // class mata::posts::StatePost.
 
@@ -554,13 +736,13 @@ namespace posts {
  *
  * @note Header-defined so it inlines. The inner range is loaded without a branch.
  */
-template <typename P> class SuccessorCursor {
+template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 	static_assert(
 		sizeof(P) == 0,
 		"SuccessorCursor is hand-written per key arity, 1 to 3 (structure depth 2 to 4). A deeper "
 		"relation needs a new specialisation; see the Plan, T3.2. This is deliberately a hard error "
-		"rather than a fallback to a composed cursor, which would keep working and quietly lose "
-		"18-24%."
+		"rather than a silent fallback to a composed cursor, which would keep working and quietly "
+		"lose 18-24%."
 	);
 };
 
@@ -570,14 +752,13 @@ template <typename P> class SuccessorCursor {
  * Byte-for-byte the implementation that shipped before the posts were templated. Invariant 4 says
  *  `key_arity == 1` must not regress; keeping this specialisation means there is nothing to regress.
  */
-template <typename Entry> class SuccessorCursor<StatePost<Entry>> {
+template <typename P> class SuccessorCursor<P, 1> {
   public:
-	using Post = StatePost<Entry>;
-	using Target = typename Post::Target;
+	using Target = typename P::Target;
 
 	class const_iterator {
 	  public:
-		typename Post::const_iterator symbol_post_it_{}, symbol_post_end_{};
+		typename P::const_iterator symbol_post_it_{}, symbol_post_end_{};
 		const Target *target_it_{nullptr}, *target_end_{nullptr};
 
 		void load_targets() {
@@ -604,7 +785,7 @@ template <typename Entry> class SuccessorCursor<StatePost<Entry>> {
 		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
 	};
 
-	explicit SuccessorCursor(const Post& state_post) : state_post_{&state_post} {}
+	explicit SuccessorCursor(const P& state_post) : state_post_{&state_post} {}
 
 	const_iterator begin() const {
 		const_iterator it;
@@ -618,7 +799,158 @@ template <typename Entry> class SuccessorCursor<StatePost<Entry>> {
 	std::default_sentinel_t end() const { return std::default_sentinel; }
 
   private:
-	const Post* state_post_;
+	const P* state_post_;
+};
+
+/**
+ * @brief The depth-3 cursor: two levels of keys, then the targets.
+ *
+ * Written flat, like the arity-1 case: every level's position is a named member and the carry between
+ *  them is explicit. Composing this out of per-level cursors instead measures **24.4% slower** on the
+ *  same shapes, so the duplication is bought deliberately. @c scan_b and @c scan_a are the carry: each
+ *  advances its own level and re-descends, returning false when its subtree holds no target.
+ *
+ * @warning A mistake in the carry silently *skips targets* -- no compile error, no crash, a wrong
+ *  answer. `tests/core/cursor.cc` cross-checks every specialisation against @c walk_targets.
+ */
+template <typename P> class SuccessorCursor<P, 2> {
+  public:
+	using Target = typename P::Target;
+	using LevelB = typename P::Entry::Nested; ///< The post nested under a level-A key.
+
+	class const_iterator {
+	  public:
+		typename P::const_iterator a_{}, a_end_{};
+		typename LevelB::const_iterator b_{}, b_end_{};
+		const Target *target_it_{nullptr}, *target_end_{nullptr};
+
+		/// Position on the first non-empty target run at or after @c b_.
+		bool scan_b() {
+			for (; b_ != b_end_; ++b_) {
+				const std::span<const Target> targets{b_->target_span()};
+				if (!targets.empty()) {
+					target_it_ = targets.data();
+					target_end_ = target_it_ + targets.size();
+					return true;
+				}
+			}
+			return false;
+		}
+		/// Descend into @c a_ and onwards until a target is found.
+		bool scan_a() {
+			for (; a_ != a_end_; ++a_) {
+				b_ = a_->nested().begin();
+				b_end_ = a_->nested().end();
+				if (scan_b()) { return true; }
+			}
+			return false;
+		}
+		void exhaust() { target_it_ = target_end_ = nullptr; }
+
+		const Target& operator*() const { return *target_it_; }
+		const_iterator& operator++() {
+			if (++target_it_ != target_end_) { return *this; }
+			++b_;
+			if (scan_b()) { return *this; }
+			++a_;
+			if (!scan_a()) { exhaust(); }
+			return *this;
+		}
+		bool operator==(std::default_sentinel_t) const { return a_ == a_end_; }
+	};
+
+	explicit SuccessorCursor(const P& post) : post_{&post} {}
+
+	const_iterator begin() const {
+		const_iterator it;
+		it.a_ = post_->begin();
+		it.a_end_ = post_->end();
+		if (!it.scan_a()) { it.exhaust(); }
+		return it;
+	}
+	std::default_sentinel_t end() const { return std::default_sentinel; }
+
+  private:
+	const P* post_;
+};
+
+/**
+ * @brief The depth-4 cursor: three levels of keys, then the targets. The cap.
+ *
+ * Same flat carry as arity 2, one level deeper. Composed costs 18.6% here. Past this arity the primary
+ *  template is a hard error rather than a fallback -- see the Plan, T3.2 and §3.3b.
+ *
+ * @warning As at arity 2: a wrong carry skips targets silently. Cross-checked in `tests/core/cursor.cc`.
+ */
+template <typename P> class SuccessorCursor<P, 3> {
+  public:
+	using Target = typename P::Target;
+	using LevelB = typename P::Entry::Nested;
+	using LevelC = typename LevelB::Entry::Nested;
+
+	class const_iterator {
+	  public:
+		typename P::const_iterator a_{}, a_end_{};
+		typename LevelB::const_iterator b_{}, b_end_{};
+		typename LevelC::const_iterator c_{}, c_end_{};
+		const Target *target_it_{nullptr}, *target_end_{nullptr};
+
+		bool scan_c() {
+			for (; c_ != c_end_; ++c_) {
+				const std::span<const Target> targets{c_->target_span()};
+				if (!targets.empty()) {
+					target_it_ = targets.data();
+					target_end_ = target_it_ + targets.size();
+					return true;
+				}
+			}
+			return false;
+		}
+		bool scan_b() {
+			for (; b_ != b_end_; ++b_) {
+				c_ = b_->nested().begin();
+				c_end_ = b_->nested().end();
+				if (scan_c()) { return true; }
+			}
+			return false;
+		}
+		bool scan_a() {
+			for (; a_ != a_end_; ++a_) {
+				b_ = a_->nested().begin();
+				b_end_ = a_->nested().end();
+				if (scan_b()) { return true; }
+			}
+			return false;
+		}
+		void exhaust() { target_it_ = target_end_ = nullptr; }
+
+		const Target& operator*() const { return *target_it_; }
+		const_iterator& operator++() {
+			if (++target_it_ != target_end_) { return *this; }
+			++c_;
+			if (scan_c()) { return *this; }
+			++b_;
+			if (scan_b()) { return *this; }
+			++a_;
+			if (!scan_a()) { exhaust(); }
+			return *this;
+		}
+		bool operator==(std::default_sentinel_t) const { return a_ == a_end_; }
+	};
+
+	explicit SuccessorCursor(const P& post) : post_{&post} {}
+
+	const_iterator begin() const {
+		const_iterator it;
+		it.a_ = post_->begin();
+		it.a_end_ = post_->end();
+		if (!it.scan_a()) { it.exhaust(); }
+		return it;
+	}
+	std::default_sentinel_t end() const { return std::default_sentinel; }
+
+  private:
+	const P* post_;
 };
 
 } // namespace mata::posts.

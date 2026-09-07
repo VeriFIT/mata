@@ -19,6 +19,7 @@
 #include <list>
 #include <map>
 #include <tuple>
+#include <utility>
 #include <unordered_set>
 
 #include "mata/utils/assert.hh"
@@ -57,17 +58,36 @@ template <DeltaLike D> void AutomatonBase<D>::clear() {
 	final.clear();
 }
 
-template <DeltaLike D> AutomatonBase<D> AutomatonBase<D>::reverted() const {
+namespace detail {
+/// Write one walked-out move back with its source and target exchanged, keys untouched.
+///
+/// The move arrives from @c for_each_move as `(keys..., target)`; @c insert_target wants the target
+///  first and the keys last, so the pack is re-ordered through a tuple. That is the whole of it —
+///  there is no shape change and no variadic @c add.
+template <typename Delta, typename State, typename Move, size_t... Keys>
+void insert_reversed(Delta& delta, const State source, const Move& move, std::index_sequence<Keys...>) {
+	const auto& target{std::get<sizeof...(Keys)>(move)};
+	posts::insert_target(delta.mutable_state_post(Delta::state_of(target)), source, std::get<Keys>(move)...);
+}
+} // namespace detail.
+
+template <DeltaLike D>
+AutomatonBase<D> AutomatonBase<D>::reverted() const {
 	AutomatonBase result{};
 
 	const size_t num_of_states{this->num_of_states()};
 	result.delta.allocate(num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		// The key is only transported back into `add`, never inspected, so it is not named here:
-		//  a relation whose keys are not symbols works unchanged.
-		delta.for_each_move(source_state, [&](const auto& symbol, const Target& target) {
-			result.delta.add(D::state_of(target), symbol, source_state);
+		// Every move arrives as `(keys..., target)`, at any arity. Reverting exchanges the source and
+		//  the target and leaves the keys in the same order, so nothing here inspects a key -- a
+		//  relation whose keys are not symbols, or which has more than one of them, works unchanged.
+		delta.for_each_move(source_state, [&](const auto&... move) {
+			static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per level, then a target");
+			detail::insert_reversed(
+				result.delta, source_state, std::forward_as_tuple(move...),
+				std::make_index_sequence<sizeof...(move) - 1>{}
+			);
 		});
 	}
 
@@ -117,7 +137,8 @@ AutomatonBase<D>::get_reachable_states(const std::function<bool(State)>& filter)
 	return reachable_states;
 }
 
-template <DeltaLike D> typename AutomatonBase<D>::StateSet AutomatonBase<D>::get_terminating_states() const {
+template <DeltaLike D>
+typename AutomatonBase<D>::StateSet AutomatonBase<D>::get_terminating_states() const {
 	return reverted().get_reachable_states();
 }
 
@@ -149,7 +170,8 @@ template <DeltaLike D> std::vector<typename AutomatonBase<D>::State> AutomatonBa
 	return distances;
 }
 
-template <DeltaLike D> std::vector<typename AutomatonBase<D>::State> AutomatonBase<D>::distances_to_final() const {
+template <DeltaLike D>
+std::vector<typename AutomatonBase<D>::State> AutomatonBase<D>::distances_to_final() const {
 	return reverted().distances_from_initial();
 }
 

@@ -186,9 +186,7 @@ bool Delta<P>::contains(const TransitionType& transition) const {
 template <typename P>
 size_t Delta<P>::num_of_transitions() const {
 	size_t number_of_transitions{0};
-	for (const PostType& state_post : state_posts_) {
-		for (const Entry& symbol_post : state_post) { number_of_transitions += symbol_post.num_of_targets(); }
-	}
+	for (const PostType& state_post : state_posts_) { number_of_transitions += count_targets(state_post); }
 	return number_of_transitions;
 }
 
@@ -203,15 +201,7 @@ std::vector<typename Delta<P>::PostType> Delta<P>::renumber_targets(const std::f
 	std::vector<PostType> copied_state_posts;
 	copied_state_posts.reserve(num_of_states());
 	for (const PostType& state_post : state_posts_) {
-		PostType copied_state_post;
-		copied_state_post.reserve(state_post.size());
-		for (const Entry& symbol_post : state_post) {
-			Nested copied_targets;
-			copied_targets.reserve(symbol_post.num_of_targets());
-			for (const State& state : symbol_post.targets) { copied_targets.push_back(target_renumberer(state)); }
-			copied_state_post.push_back(Entry(symbol_post.symbol, copied_targets));
-		}
-		copied_state_posts.emplace_back(copied_state_post);
+		copied_state_posts.emplace_back(renumbered(state_post, target_renumberer));
 	}
 	return copied_state_posts;
 }
@@ -230,75 +220,38 @@ typename Delta<P>::PostType& Delta<P>::mutable_state_post(const State q) {
 template <typename P>
 Delta<P> defragment(const Delta<P>& delta, const BoolVector& is_staying,
                     const std::vector<typename Delta<P>::State>& renaming) {
-	auto filter_rename_symbol_post = [&](const typename Delta<P>::Entry& symbol_post) {
-		typename Delta<P>::Entry new_symbol_post{symbol_post.symbol};
-		for (const State& target : symbol_post.targets) {
-			if (!is_staying[target]) { continue; }
-			new_symbol_post.push_back(renaming[target]);
-		}
-		return new_symbol_post;
-	};
-	auto filter_rename_state_post = [&](const typename Delta<P>::PostType& state_post,
-										const std::function<typename Delta<P>::Entry(
-											const typename Delta<P>::Entry&)>& transform_symbol_post) {
-		typename Delta<P>::PostType result{};
-		for (const typename Delta<P>::Entry& symbol_post : state_post) {
-			typename Delta<P>::Entry new_symbol_post = transform_symbol_post(symbol_post);
-			if (new_symbol_post.empty()) { continue; }
-			result.push_back(std::move(new_symbol_post));
-		}
-		return result;
-	};
-
-	Delta<P> delta_defragmented{};
-	for (typename Delta<P>::State source{0}; source < delta.num_of_states(); ++source) {
-		if (!is_staying[source]) { continue; }
-		delta_defragmented.emplace_back(filter_rename_state_post(delta[source], filter_rename_symbol_post));
-	}
-	return delta_defragmented;
+	// One implementation, not two: this used to be a second hand-unrolled copy of the member.
+	Delta<P> result{delta};
+	result.defragment(is_staying, renaming);
+	return result;
 }
 
 template <typename P>
 Delta<P>& Delta<P>::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+	// Each level's own job is in `defragmented()`; this one owns only the outer index -- drop the
+	//  sources that go, and compact the rest down.
 	size_t source_new{0};
 	for (size_t source_orig{0}, num_of_states{this->num_of_states()}; source_orig < num_of_states; ++source_orig) {
-		if (!is_staying[source_orig]) { continue; } // Skip source states not staying.
-		PostType& state_post = state_posts_[source_orig];
-		for (auto state_post_it{state_post.begin()}; state_post_it != state_post.end();) {
-			Nested& targets{state_post_it->targets};
-			targets.erase_if([&is_staying](const State& target) { return !is_staying[target]; });
-			targets.rename(renaming);
-			if (targets.empty()) {
-				state_post_it = state_post.erase(state_post_it);
-			} else {
-				++state_post_it;
-			}
-		}
-		// Move the filtered state post to the new position, if needed.
-		if (source_new != source_orig) { state_posts_[source_new] = std::move(state_post); }
+		if (!is_staying[source_orig]) { continue; }
+		state_posts_[source_new] = defragmented(state_posts_[source_orig], is_staying, renaming);
 		++source_new;
 	}
-	// Resize to remove filtered-out state posts.
 	state_posts_.resize(source_new);
 	return *this;
 }
 
 template <typename P>
 bool Delta<P>::operator==(const Delta& other) const {
-	const Transitions this_transitions{transitions()};
-	typename Transitions::const_iterator this_transitions_it{this_transitions.begin()};
-	const typename Transitions::const_iterator this_transitions_end{this_transitions.end()};
-	const Transitions other_transitions{other.transitions()};
-	typename Transitions::const_iterator other_transitions_it{other_transitions.begin()};
-	const typename Transitions::const_iterator other_transitions_end{other_transitions.end()};
-	while (this_transitions_it != this_transitions_end) {
-		if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
-			return false;
-		}
-		++this_transitions_it;
-		++other_transitions_it;
+	// Post by post, over the union of the two state spaces. `state_post()` yields the shared empty
+	//  post out of range, so a relation with trailing empty posts compares equal to one without --
+	//  the same meaning the old transition-by-transition comparison had, without needing a depth-2
+	//  transition iterator to express it. Note `posts_equal` and not `!=`: an entry's operator==
+	//  compares only its key, so `!=` would ignore differing targets entirely.
+	const size_t states{std::max(num_of_states(), other.num_of_states())};
+	for (size_t source{0}; source < states; ++source) {
+		if (!posts_equal(state_post(source), other.state_post(source))) { return false; }
 	}
-	return other_transitions_it == other_transitions_end;
+	return true;
 }
 
 

@@ -38,6 +38,14 @@ struct TinyTargets {
 	bool empty() const { return targets.empty(); }
 	size_t size() const { return targets.size(); }
 	bool is_sorted() const { return std::ranges::is_sorted(targets); }
+	/// Required by @c mata::TargetSetLike: trimming and renumbering rebuild a post by appending
+	///  rather than filtering it in place.
+	void push_back(const Target& target) { targets.push_back(target); }
+	/// Also required: reverting writes a target down a key path and lands at the innermost post.
+	void insert(const Target& target) {
+		const auto it{std::ranges::lower_bound(targets, target)};
+		if (it == targets.end() || *it != target) { targets.insert(it, target); }
+	}
 };
 
 /// One entry of a post: a single key, and the targets under it.
@@ -51,6 +59,8 @@ struct TinyEntry {
 	bool operator==(const TinyEntry& other) const = default;
 	Key key() const { return stored_key; }
 	const Nested& nested() const { return stored_nested; }
+	/// Required by @c mata::PostEntryLike: writing a key path descends through the entries.
+	Nested& nested() { return stored_nested; }
 };
 
 /// One post: the ordered map from a key to the targets under it.
@@ -71,6 +81,20 @@ struct TinyPost {
 	size_t size() const { return entries.size(); }
 	bool is_sorted() const {
 		return std::ranges::is_sorted(entries, {}, [](const Entry& e) { return e.key(); });
+	}
+	/// Required by @c mata::PostLike, for the same reason as the leaf's.
+	void push_back(const Entry& entry) { entries.push_back(entry); }
+	/// Also required: writing a key path looks up the level it needs and creates it when absent.
+	auto find(const Key& key) {
+		const auto it{std::ranges::lower_bound(entries, key, {}, [](const Entry& e) { return e.key(); })};
+		return (it != entries.end() && it->key() == key) ? it : entries.end();
+	}
+	auto begin() { return entries.begin(); }
+	auto end() { return entries.end(); }
+	void insert(const Entry& entry) {
+		entries.insert(
+			std::ranges::lower_bound(entries, entry.key(), {}, [](const Entry& e) { return e.key(); }), entry
+		);
 	}
 };
 
@@ -164,6 +188,12 @@ class TinyDelta {
 	}
 
 	TinyCursor successor_cursor(const State source) const { return TinyCursor{post_of(source)}; }
+
+	/// Required by @c mata::DeltaLike: reverting writes through this into a fresh relation.
+	TinyPost& mutable_state_post(const State source) {
+		allocate(source + 1);
+		return posts_[source];
+	}
 
 	bool has_self_loop(const State source) const {
 		bool found{false};

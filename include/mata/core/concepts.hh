@@ -56,6 +56,7 @@
 #include <concepts>
 #include <cstddef>
 #include <iterator>
+#include <utility>
 #include <vector>
 
 #include "mata/core/types.hh"
@@ -116,6 +117,13 @@ concept TargetSetLike = WalkableRange<T> && requires(const T t, const typename T
 	/// @see @ref sortedness. Sorted by target.
 	requires T::sorted_by_target;
 	{ t.is_sorted() } -> std::convertible_to<bool>;
+	/// Re-constructible by appending. Trimming and renumbering rebuild a post rather than mutating
+	///  it, which needs only this and not a filter-and-rename pair — one requirement on an
+	///  implementer instead of two. Both callers append in increasing order, so the sortedness
+	///  invariant @c push_back would otherwise break is preserved. @see @ref sortedness.
+	{ std::declval<T&>().push_back(std::declval<const typename T::Target&>()) };
+	/// Reverting writes a target down a key path and lands here. @see mata::posts::insert_target.
+	{ std::declval<T&>().insert(std::declval<const typename T::Target&>()) };
 };
 
 /**
@@ -131,6 +139,8 @@ concept PostEntryLike = requires(const E e) {
 	requires std::totally_ordered<typename E::Key>;
 	{ e.key() } -> std::convertible_to<typename E::Key>;
 	{ e.nested() } -> std::convertible_to<const typename E::Nested&>;
+	/// Mutable too: writing a target down a key path descends through the entries.
+	{ std::declval<E&>().nested() } -> std::same_as<typename E::Nested&>;
 };
 
 /**
@@ -151,6 +161,12 @@ concept PostLike = WalkableRange<L> && requires(const L l) {
 	/// @see @ref sortedness. Ordered by the key of the contained entries.
 	requires L::sorted_by_key;
 	{ l.is_sorted() } -> std::convertible_to<bool>;
+	/// Re-constructible by appending, for the same reason as @c TargetSetLike. Entries are appended
+	///  in increasing key order, so sortedness holds.
+	{ std::declval<L&>().push_back(std::declval<const typename L::Entry&>()) };
+	/// Writing a key path creates the levels it passes through. @see mata::posts::insert_target.
+	{ std::declval<L&>().find(std::declval<const typename L::Key&>()) };
+	{ std::declval<L&>().insert(std::declval<const typename L::Entry&>()) };
 };
 
 /**
@@ -214,21 +230,25 @@ concept DeltaLike = requires(
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
 
 	/**
-	 * @c mata::AutomatonBase is depth-2 only today, and this is the one place that says so.
+	 * The cap: structure depth 4. @see §3.3 for the depth/arity conversion and §3.3b for why 4.
 	 *
-	 * @c reverted() binds exactly one key per move and hands that one key back to @c add, so a
-	 *  deeper relation needs a different body, not a wider signature. Nothing else in this concept
-	 *  cares about the depth.
-	 * @todo Lifted by Phase 3 (T3.1, T3.2), which generalises the walks. Until then a deeper
-	 *  relation is turned away here rather than part-way through an instantiation.
+	 * Relaxed from `== 1` by T3.1-T3.3, which made every read generic — both walks, the cursor,
+	 *  trimming, renumbering, structural equality and the transition count. Enforced here rather
+	 *  than at the walks (the dropped T3.4) because @c mata::AutomatonBase needs the cursor
+	 *  unconditionally: Tarjan drives @c get_useful_states(), @c is_acyclic(), @c is_lang_empty() and
+	 *  @c trim() through it, so a relation past the cap would satisfy a walk-only concept and then
+	 *  fail somewhere inside Tarjan.
 	 */
-	requires D::key_arity == 1;
+	requires D::key_arity <= 3;
 
 	// Structure.
 	{ cd.num_of_states() } -> std::convertible_to<size_t>;
 	{ cd.empty() } -> std::convertible_to<bool>;
 	{ d.allocate(size_t{}) };
 	{ d.clear() };
+
+	/// Reverting writes into a fresh relation and needs a mutable post to write through.
+	{ d.mutable_state_post(s) } -> std::same_as<typename D::PostType&>;
 
 	// Traversal. These are the only ways the structural algorithms reach a successor.
 	{ cd.for_each_successor(s, [](const typename D::Target&) {}) };

@@ -150,7 +150,7 @@ template <DeltaLike D> class AutomatonBase {
 	 * @todo With the new get_useful_states, it might be useless now.
 	 * @return Set of terminating states.
 	 */
-	StateSet get_terminating_states() const;
+	StateSet get_terminating_states() const; ///< Answered by reverting. @see @c reverted().
 
 	/**
 	 * @brief Get the useful states using a modified Tarjan's algorithm.
@@ -203,7 +203,7 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Returns vector ret where ret[q] is the length of the shortest path from q to any final state
 	 */
-	std::vector<State> distances_to_final() const;
+	std::vector<State> distances_to_final() const; ///< Answered by reverting. @see @c reverted().
 
 
 	/**
@@ -351,6 +351,13 @@ template <DeltaLike D> class AutomatonBase {
 	 *  have to go through a leaf-specific `revert()` free function.
 	 * @note One of the two structural operations here that *write* to a relation (the other is
 	 *  @c trim_impl()), and the reason @c mata::DeltaLike asks for @c add and for one key.
+	 * @note **Arity 1 only, and visibly so.** Reverting is the one structural operation that binds a
+	 *  key and hands it back to @c add. `add(source, key, target)` takes exactly one key, and a
+	 *  variadic replacement cannot simply be dropped in: a parameter pack must be last to deduce, so
+	 *  `add(source, keys..., target)` is not declarable, and routing the arguments through a pack
+	 *  loses the implicit conversions that `delta.add(0, 0, 1)` relies on across the tests.
+	 *  Generalising this is the one piece of T3.5 left; until then a deeper relation is *missing* this
+	 *  member rather than silently getting a wrong answer out of it.
 	 * @return A new automaton with reversed transitions and swapped initial/final states.
 	 */
 	AutomatonBase reverted() const;
