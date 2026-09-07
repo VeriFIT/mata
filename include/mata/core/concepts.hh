@@ -59,6 +59,7 @@
 #include <vector>
 
 #include "mata/core/types.hh"
+#include "mata/utils/utils.hh"
 
 namespace mata {
 
@@ -157,8 +158,9 @@ concept PostLike = WalkableRange<L> && requires(const L l) {
  *
  * Two requirements, both otherwise invisible until a template instantiation fails deep inside:
  *
- *  - @c Run::path is exactly @c std::vector<State>, because the structural search writes into it
- *    directly. Something merely list-like will not do.
+ *  - @c Run::path is exactly @c std::vector of the automaton's own @c State, because the
+ *    structural search writes into it directly. Something merely list-like will not do, and
+ *    neither will a vector of some other state type.
  *  - the automaton can read one of its own runs as a word. What a path *reads* is not structural
  *    (flat for an NFA, interleaved by tape for an NFT, a tuple per step at higher key arities), so
  *    only the automaton itself can say.
@@ -169,25 +171,58 @@ concept PostLike = WalkableRange<L> && requires(const L l) {
 template <typename A>
 concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
 	typename A::Run;
-	{ r.path } -> std::same_as<std::vector<State>&>;
+	typename A::State;
+	{ r.path } -> std::same_as<std::vector<typename A::State>&>;
 	{ r.word = a.get_word_for_path(r).first.word };
 };
 
 /**
- * @brief A transition relation @c mata::Automaton can be built on.
+ * @brief A transition relation @c mata::AutomatonBase can be built on.
  *
- * The listed operations are exactly what the structural algorithms use; a relation providing them
- *  gets reachability, Tarjan's SCC walk, useful states, distances and trimming for free.
+ * One contract, deliberately whole. A relation either provides all of this and gets every
+ *  structural operation -- reachability, Tarjan's SCC walk, useful states, distances in both
+ *  directions, acyclicity, structural comparison and trimming -- or it does not satisfy the
+ *  concept, and @c mata::AutomatonBase<D> is then rejected where it is *named*.
+ *
+ * Splitting the write side out into opt-in concepts (`RevertibleDeltaLike`, `TrimmableDeltaLike`)
+ *  was tried and reverted; see the Plan, S3.11. It moved each failure from the instantiation to
+ *  the first call, and a call to a structural operation is usually made from inside somebody
+ *  else's template, which is the diagnostic S3.10 exists to avoid. It also bought nothing: no
+ *  relation, in the tree or planned, can read but not write.
+ *
+ * The requirements are grouped by what needs them, so that anything added to
+ *  @c mata::AutomatonBase which is not covered here is visible as a gap rather than as a
+ *  compile error from inside a member.
  */
 template <typename D>
-concept DeltaLike = requires(D d, const D cd, const typename D::State s, const typename D::Target t) {
+concept DeltaLike = requires(
+	D d,
+	const D cd,
+	const typename D::State s,
+	const typename D::Target t,
+	const typename D::Key k,
+	const BoolVector& is_staying,
+	const std::vector<typename D::State>& renaming
+) {
 	typename D::PostType;
 	requires PostLike<typename D::PostType>;
 	typename D::Target;
 	typename D::State;
+	typename D::Key;
 	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
 	{ D::key_arity } -> std::convertible_to<size_t>;
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
+
+	/**
+	 * @c mata::AutomatonBase is depth-2 only today, and this is the one place that says so.
+	 *
+	 * @c reverted() binds exactly one key per move and hands that one key back to @c add, so a
+	 *  deeper relation needs a different body, not a wider signature. Nothing else in this concept
+	 *  cares about the depth.
+	 * @todo Lifted by Phase 3 (T3.1, T3.2), which generalises the walks. Until then a deeper
+	 *  relation is turned away here rather than part-way through an instantiation.
+	 */
+	requires D::key_arity == 1;
 
 	// Structure.
 	{ cd.num_of_states() } -> std::convertible_to<size_t>;
@@ -200,6 +235,26 @@ concept DeltaLike = requires(D d, const D cd, const typename D::State s, const t
 	{ cd.for_each_move(s, [](auto&&...) {}) };
 	{ cd.successor_cursor(s) };
 	{ cd.has_self_loop(s) } -> std::convertible_to<bool>;
+
+	// Writing. @c reverted() rebuilds a relation one transition at a time; @c trim() works out
+	//  which states stay and what they are renamed to, then leaves applying both to the relation,
+	//  which is the only party that knows its own representation.
+	{ d.add(s, k, s) };
+	{ d.defragment(is_staying, renaming) };
+
+	// Comparison, for @c is_identical().
+	requires std::equality_comparable<D>;
+
+	// Value semantics. @c mata::AutomatonBase holds a @p D by value: it stores one, default
+	//  constructs one, moves them, and constructs one presized to a state count. The last is asked
+	//  for as a constructor rather than routed through @c allocate() so that a relation able to
+	//  build itself presized in one step may do so, and so that the postcondition does not rest on
+	//  what @c allocate() happens to do when starting from zero states. Copyability is deliberately
+	//  *not* required: a non-copyable relation merely leaves the defaulted copy constructor of
+	//  @c mata::AutomatonBase deleted, which is not an error.
+	requires std::default_initializable<D>;
+	requires std::movable<D>;
+	requires std::constructible_from<D, size_t>;
 };
 
 } // namespace mata.

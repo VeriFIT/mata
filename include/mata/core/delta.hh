@@ -481,7 +481,7 @@ class Delta {
 	///  rather than propagated through the posts: which state a target denotes is a property of
 	///  the target, not of any post above it. @see mata::TargetTraits.
 	using State = TargetTraits<Target>::State;
-	using Key = StatePost::Key; ///< TODO(templating): becomes @c Key<I> once key_arity > 1.
+	using Key = StatePost::Key; ///< TODO(templating): becomes `Key<I>` once key_arity > 1.
 	static constexpr size_t key_arity{StatePost::key_arity};
 	/// @copydoc mata::TargetTraits::state_of
 	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }

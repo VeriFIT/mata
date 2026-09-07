@@ -1,9 +1,13 @@
 /** @file
  * @brief The structural base class shared by all automata in Mata.
  *
- * @c mata::Automaton holds the parts of an automaton that carry no language semantics.
- *  Every operation defined here is a walk over @c delta, @c initial and @c final,
- *  and is therefore meaningful for any specialization of @c Automaton.
+ * @c mata::AutomatonBase holds the parts of an automaton that carry no language semantics.
+ *  Every operation defined here is a walk over @c delta, @c initial and @c final, and is therefore
+ *  meaningful for any transition relation satisfying @c mata::DeltaLike.
+ *
+ * @c mata::Automaton is the one specialization the in-tree automata are built on. It is a plain
+ *  alias, so @c mata::nfa::Nfa and @c mata::nft::Nft keep deriving from a name, not from a
+ *  template, and stay non-template classes themselves.
  */
 
 #ifndef MATA_CORE_AUTOMATON_HH_
@@ -11,11 +15,16 @@
 
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <optional>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
 #include "mata/core/types.hh"
+#include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
@@ -24,23 +33,49 @@ namespace mata {
 /**
  * @brief A class representing the structural part of an automaton.
  *  Every operation defined here is a walk over @c delta, @c initial and @c final.
+ *
+ * @tparam D The transition relation. Every other type is read off @p D rather than passed
+ *  alongside it, so the two cannot disagree; see @c mata::DeltaLike for what @p D must provide.
+ *
+ * @note A data-owning mixin, not a polymorphic base: it owns @c delta, @c initial and @c final, and
+ *  has no virtual functions. The members that need their most-derived type take an explicit object
+ *  parameter (`deducing this`) instead.
+ * @note @p D is not constrained to any particular @c key_arity. Only the generic walks care how
+ *  deep the relation nests, and they are constrained separately.
  */
-class Automaton {
+template <DeltaLike D> class AutomatonBase {
   public:
-	Delta delta; ///< Transition relation of the automaton. delta[q] contains transitions from state q.
+	using DeltaType = D; ///< The transition relation this automaton is built on.
+	using State = typename D::State; ///< What indexes the automaton: @c delta, @c initial, @c final.
+	using Target = typename D::Target; ///< The leaf payload a successor walk yields. @see @c State.
+	/// Number of keys between a source state and a target. @see @ref arity.
+	static constexpr size_t key_arity{D::key_arity};
+
+	/// Spelled in terms of @c State rather than taken from @c mata::, so that a relation with a
+	///  divergent state type cannot leave these signatures behind. Both are the same type as
+	///  @c mata::StateSet and @c mata::StateRenaming for @c mata::Automaton.
+	using StateSet = utils::OrdVector<State>;
+	using StateRenaming = std::unordered_map<State, State>;
+
+	/// Deliberately no key type at all, not even an alias. This class transports keys (in
+	///  @c reverted(), as `const auto&`) but never inspects, compares or stores one, and at a
+	///  @c key_arity above 1 there is no single "the key" to name anyway. Kept spelled this way so
+	///  that grepping this file for a key type stays a meaningful check.
+
+	D delta; ///< Transition relation of the automaton. delta[q] contains transitions from state q.
 	utils::SparseSet<State> initial{}; ///< Set of initial states of the automaton.
 	utils::SparseSet<State> final{}; ///< Set of final states of the automaton.
 
   public:
 	/**
-	 * @brief Construct a new Automaton with optional @p delta, @p initial_states and @p final_states.
+	 * @brief Construct a new AutomatonBase with optional @p delta, @p initial_states and @p final_states.
 	 *
 	 * @param[in] delta Transition relation of the automaton.
 	 * @param[in] initial_states Set of initial states of the automaton.
 	 * @param[in] final_states Set of final states of the automaton.
 	 */
-	explicit Automaton(
-		Delta delta = {},
+	explicit AutomatonBase(
+		D delta = {},
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {}
 	)
@@ -49,14 +84,14 @@ class Automaton {
 		  final(std::move(final_states)) {}
 
 	/**
-	 * @brief Construct a new Automaton with @p num_of_states states and optionally @p initial_states and @p
+	 * @brief Construct a new AutomatonBase with @p num_of_states states and optionally @p initial_states and @p
 	 * final_states.
 	 *
 	 * @param[in] num_of_states Number of states for which to preallocate Delta.
 	 * @param[in] initial_states Set of initial states of the automaton.
 	 * @param[in] final_states Set of final states of the automaton.
 	 */
-	explicit Automaton(
+	explicit AutomatonBase(
 		const size_t num_of_states,
 		utils::SparseSet<State> initial_states = {},
 		utils::SparseSet<State> final_states = {}
@@ -65,15 +100,15 @@ class Automaton {
 		  initial(std::move(initial_states)),
 		  final(std::move(final_states)) {}
 
-	Automaton(const Automaton& other) = default;
+	AutomatonBase(const AutomatonBase& other) = default;
 
-	Automaton(Automaton&& other) noexcept
+	AutomatonBase(AutomatonBase&& other) noexcept
 		: delta{std::move(other.delta)},
 		  initial{std::move(other.initial)},
 		  final{std::move(other.final)} {}
 
-	Automaton& operator=(const Automaton& other) = default;
-	Automaton& operator=(Automaton&& other) noexcept;
+	AutomatonBase& operator=(const AutomatonBase& other) = default;
+	AutomatonBase& operator=(AutomatonBase&& other) noexcept;
 
 	/**
 	 * @brief Get the current number of states in the whole automaton.
@@ -218,6 +253,51 @@ class Automaton {
 
 
   private:
+	/// Bool array indexed by state. Distinct from @c BoolVector, which is a @c std::vector<uint8_t>.
+	using StateBoolArray = std::vector<bool>;
+
+	/// The cursor @p D hands out over the successors of one state, and its iterator. Derived rather
+	///  than named, so that @c mata::DeltaLike does not have to require a particular spelling.
+	using SuccessorCursorType = decltype(std::declval<const D&>().successor_cursor(std::declval<State>()));
+	using SuccessorIterator = decltype(std::declval<const SuccessorCursorType&>().begin());
+
+	/**
+	 * @brief Metadata for one state during the computation of useful states.
+	 *
+	 * Tarjan's own per-node data, plus the position of the iteration through the state's successors,
+	 *  so that a simulated recursive call can be resumed where it left off.
+	 */
+	struct TarjanNodeData {
+		SuccessorIterator current_successor_it{};
+		// index of a node (corresponds to the time of discovery)
+		unsigned long index{0};
+		// index of a lower node in the same SCC
+		unsigned long lowlink{0};
+		// was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
+		bool initilized{false};
+		// is node on Tarjan's stack?
+		bool on_stack{false};
+
+		TarjanNodeData() = default;
+
+		TarjanNodeData(const State q, const D& delta, const unsigned long index)
+			: current_successor_it(delta.successor_cursor(q).begin()),
+			  index(index),
+			  lowlink(index),
+			  initilized(true),
+			  on_stack(true) {}
+	};
+
+	/**
+	 * @brief Compute reachability of states considering only specified states.
+	 *
+	 * @param[in] states_to_consider States to consider as potentially reachable. If @c std::nullopt is used, all
+	 *  states are considered as potentially reachable.
+	 * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+	 */
+	StateBoolArray reachable_states_(const std::optional<const StateBoolArray>& states_to_consider = std::nullopt
+	) const;
+
 	/**
 	 * @brief Check if @c this has no accepting path using Tarjan's SCC discover algorithm.
 	 *
@@ -263,9 +343,11 @@ class Automaton {
 	 *
 	 * @note Kept as a protected helper so that @c get_terminating_states() and @c distances_to_final() do not
 	 *  have to go through a leaf-specific `revert()` free function.
+	 * @note One of the two structural operations here that *write* to a relation (the other is
+	 *  @c trim_impl()), and the reason @c mata::DeltaLike asks for @c add and for one key.
 	 * @return A new automaton with reversed transitions and swapped initial/final states.
 	 */
-	Automaton reverted() const;
+	AutomatonBase reverted() const;
 
 	/**
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.
@@ -286,10 +368,26 @@ class Automaton {
 	 */
 	template <typename Self>
 	Self& trim_impl(this Self& self, const BoolVector& useful_states, StateRenaming* state_renaming);
-}; // class Automaton.
+}; // class AutomatonBase.
+
+/**
+ * @brief The structural base every automaton in the tree is built on: the depth-2 relation.
+ *
+ * An alias, deliberately. @c mata::nfa::Nfa and @c mata::nft::Nft name this as their base, so a
+ *  wrong argument to one of their members produces ordinary overload resolution rather than an
+ *  instantiation dump, and the Python bindings can keep naming `mata::Automaton` as a type.
+ */
+using Automaton = AutomatonBase<Delta>;
 
 } // namespace mata.
 
 #include "mata/core/automaton.tpp"
+
+namespace mata {
+/// Instantiated once, in `src/core/automaton.cc`. Without this, every translation unit that
+///  includes this header instantiates the whole class -- some 400 lines of template bodies on top
+///  of the ~90 members of @c Delta.
+extern template class AutomatonBase<Delta>;
+} // namespace mata.
 
 #endif // MATA_CORE_AUTOMATON_HH_
