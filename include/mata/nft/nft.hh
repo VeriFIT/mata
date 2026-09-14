@@ -90,6 +90,7 @@
 // #define _STATIC_STRUCTURES_
 
 #include <algorithm>
+#include <concepts>
 #include <cassert>
 #include <functional>
 #include <limits>
@@ -1366,7 +1367,11 @@ class Nft : public Automaton {
 	 * @note Prefer @c to_nfa_move() when @c this is no longer needed.
 	 * @return A newly created NFA with copied members from NFT.
 	 */
-	nfa::Nfa to_nfa_copy() const { return nfa::Nfa{delta, initial, final, nullptr}; }
+	template <typename D = Delta>
+		requires std::same_as<D, nfa::Delta>
+	nfa::Nfa to_nfa_copy() const {
+		return nfa::Nfa{delta, initial, final, nullptr};
+	}
 
 	/**
 	 * @brief Move NFT as NFA.
@@ -1376,7 +1381,74 @@ class Nft : public Automaton {
 	 *  as a flat word on a single tape.
 	 * @return A newly created NFA with moved members from NFT.
 	 */
-	nfa::Nfa to_nfa_move() { return nfa::Nfa{std::move(delta), std::move(initial), std::move(final), nullptr}; }
+	template <typename D = Delta>
+		requires std::same_as<D, nfa::Delta>
+	nfa::Nfa to_nfa_move() {
+		return nfa::Nfa{std::move(delta), std::move(initial), std::move(final), nullptr};
+	}
+
+	/**
+	 * @brief NFT as NFA, moving the relation where that is possible and rebuilding it where it is not.
+	 *
+	 * @c to_nfa_move() above is O(1) *only* because @c mata::nft::Delta and @c mata::nfa::Delta are
+	 *  the same type, so the relation can simply be handed over. That is a property of how the two
+	 *  modules are currently configured, not a law: give either its own reserved tail, its own key
+	 *  type or its own post, and the hand-over stops being available. This member decides which is
+	 *  possible **at compile time** and transcribes the relation one move at a time when it is not.
+	 *
+	 * The dispatch costs nothing: `if constexpr` discards the branch it does not take, so where the
+	 *  two agree this compiles to exactly the move that @c to_nfa_move() performs.
+	 *
+	 * @note Both members are deliberately kept. @c to_nfa_move() carries
+	 *  `requires std::same_as<D, nfa::Delta>`, so it *disappears* the day the two diverge and its
+	 *  three call sites (`nft/inclusion.cc`, `nft/nft.cc`) fail to compile — which is the point. A
+	 *  single adaptive member would instead make every inclusion and equivalence check quietly
+	 *  slower on its hot path, with nobody told. Callers that need the O(1) guarantee ask for it by
+	 *  name; callers that just want an NFA call this.
+	 *
+	 * @note Both are member *templates* over a defaulted @p D rather than plain members with a
+	 *  `requires` clause, and that is forced: @c Nft is not a class template, so a constraint on a
+	 *  plain member is ill-formed ("constraints on a non-templated function") and `if constexpr`
+	 *  there would **not** discard — the move branch would still have to compile after the types
+	 *  diverged, which is exactly when it cannot.
+	 *
+	 * @warning Lossy in the same way as @c to_nfa_move(): levels are dropped, so the result reads an
+	 *  NFT transition sequence as a flat word on a single tape.
+	 * @return A newly created NFA. The NFT is left empty either way.
+	 */
+	template <typename D = Delta>
+	nfa::Nfa to_nfa() {
+		if constexpr (std::same_as<D, nfa::Delta>) {
+			return nfa::Nfa{std::move(delta), std::move(initial), std::move(final), nullptr};
+		} else {
+			static_assert(
+				D::key_arity == nfa::Delta::key_arity,
+				"Rebuilding an NFT's relation as an NFA's is a transcription, one move at a time. A "
+				"different key arity is not a transcription: flattening a deeper relation onto a "
+				"single tape is a decision about how to interleave the levels, and only the "
+				"transducer's own semantics can make it."
+			);
+			static_assert(
+				std::same_as<typename D::State, typename nfa::Delta::State>
+					&& std::same_as<typename D::Target, typename nfa::Delta::Target>,
+				"An NFT whose states or targets are not an NFA's needs a mapping, not a copy."
+			);
+			nfa::Delta rebuilt{};
+			const size_t num_of_states{delta.num_of_states()};
+			rebuilt.allocate(num_of_states);
+			for (State source{0}; source < num_of_states; ++source) {
+				// `for_each_move` yields `(keys..., target)`, which is exactly what `add` takes at
+				//  every supported arity -- so the transcription is one line whatever the depth.
+				delta.for_each_move(source, [&rebuilt, source](const auto&... move) {
+					rebuilt.add(source, move...);
+				});
+			}
+			// Leave @c this in the same state the move branch leaves it in, so the postcondition
+			//  does not depend on which branch was taken.
+			delta.clear();
+			return nfa::Nfa{std::move(rebuilt), std::move(initial), std::move(final), nullptr};
+		}
+	}
 
 	/**
 	 * @brief Copy NFT as NFA updating the transitions to have one level only.
