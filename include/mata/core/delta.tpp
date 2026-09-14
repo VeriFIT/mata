@@ -72,7 +72,7 @@ typename Delta<P>::TargetSet Delta<P>::get_successors(const State state) const {
 }
 
 template <typename P>
-typename Delta<P>::Successors Delta<P>::get_successors(const State state, const Key<0> symbol) const {
+typename Delta<P>::KeyedSuccessors Delta<P>::get_successors(const State state, const Key<0> symbol) const {
 	return state_post(state).get_successors(symbol);
 }
 

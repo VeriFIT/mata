@@ -569,14 +569,25 @@ template <typename E> class Post : utils::OrdVector<E> {
 	}
 
 	/**
-	 * @brief What @c get_successors(Key) hands back.
+	 * @brief The result type of the *keyed* @c get_successors — a @c TargetSet, owned or borrowed.
 	 *
-	 * A *reference into* the post at @c key_arity 1, where the targets under one key are stored
-	 *  contiguously and there is nothing to gather — which callers rely on: @c mata::nfa::Nfa::post()
-	 *  returns `const StateSet&` straight through, so a by-value result there would dangle. Above
-	 *  arity 1 the targets sit under every remaining key and have to be collected, so a fresh set.
+	 * Not a new kind of set: it is @c TargetSet either way, and the alias exists only to say
+	 *  *how it is handed back*. Hence the name — the unkeyed @c get_successors() returns a plain
+	 *  @c TargetSet by value, because it aggregates across every key and must always build one;
+	 *  only the keyed overload has anything to borrow.
+	 *
+	 * At @c key_arity 1 the targets under one key are stored contiguously, so it is a **reference
+	 *  into the post**. Callers rely on that: @c mata::nfa::Nfa::post() passes it straight out as
+	 *  `const StateSet&`, and a by-value result there would dangle — the compiler says so, which is
+	 *  what keeps this honest. Above arity 1 the targets sit under every remaining key and have to
+	 *  be gathered, so a fresh set.
+	 *
+	 * @note Spelled once here and propagated as `using KeyedSuccessors = typename
+	 *  PostType::KeyedSuccessors;`, never re-derived. Writing the @c std::conditional_t out again at
+	 *  the relation would let the two drift, and a relation that decided "by value" while its post
+	 *  decided "by reference" would return a reference to the post's temporary.
 	 */
-	using Successors = std::conditional_t<key_arity == 1, const TargetSet&, TargetSet>;
+	using KeyedSuccessors = std::conditional_t<key_arity == 1, const TargetSet&, TargetSet>;
 
 	/**
 	 * @brief The target states reachable from this post over @p symbol.
@@ -589,10 +600,10 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 * If there is no such symbol, an empty set is returned.
 	 *
 	 * @param symbol Symbol to get the successors for.
-	 * @return Set of target states for the given symbol. @see Successors for why the return type
-	 *  follows the arity.
+	 * @return Set of target states for the given symbol. @see KeyedSuccessors for why the return
+	 *  type follows the arity.
 	 */
-	Successors get_successors(const Key symbol) const {
+	KeyedSuccessors get_successors(const Key symbol) const {
 		const auto entry_it = find(symbol);
 		if constexpr (key_arity == 1) {
 			if (entry_it == this->end()) {
@@ -1183,8 +1194,8 @@ template <typename P> class Delta {
 	/// The innermost post: what a successor walk collects into. @c PostAt<key_arity> spelled for the
 	///  one level that has a name of its own.
 	using TargetSet = PostAt<key_arity>;
-	/// @copydoc mata::posts::Post::Successors
-	using Successors = typename PostType::Successors;
+	/// @copydoc mata::posts::Post::KeyedSuccessors
+	using KeyedSuccessors = typename PostType::KeyedSuccessors;
 	/// @copydoc mata::TargetTraits::state_of
 	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }
 	/// The targets under one fully-supplied key, and a transition of this relation.
@@ -1694,10 +1705,10 @@ template <typename P> class Delta {
 	 *  walking the levels between is @c for_each_move()'s; this answers "which states can I reach
 	 *  over this key", which means the same thing however many keys are left below it.
 	 *
-	 * @see PostType::Successors for why the return type follows the arity — a reference into the
+	 * @see PostType::KeyedSuccessors for why the return type follows the arity — a reference into the
 	 *  relation at arity 1, a fresh set above it.
 	 */
-	Successors get_successors(State state, Key<0> symbol) const;
+	KeyedSuccessors get_successors(State state, Key<0> symbol) const;
 
 	/// @copydoc get_successors(State, Key<0>) const
 	/// @todo Never implemented — declared only, so a call is a link error rather than a compile one.

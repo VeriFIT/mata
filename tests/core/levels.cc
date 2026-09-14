@@ -150,8 +150,11 @@ static_assert(HasTransitionsBetween<D1> && !HasTransitionsBetween<D2>);
 ///  fresh set where they have to be gathered — because @c mata::nfa::Nfa::post() passes it straight
 ///  out as `const StateSet&` and a by-value result there would dangle.
 static_assert(HasKeyedSuccessors<D1> && HasKeyedSuccessors<D2> && HasKeyedSuccessors<D3>);
-static_assert(std::same_as<D1::Successors, const StateSet&>);
-static_assert(std::same_as<D2::Successors, StateSet> && std::same_as<D3::Successors, StateSet>);
+static_assert(std::same_as<D1::KeyedSuccessors, const StateSet&>);
+static_assert((std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>));
+/// …while the *unkeyed* overload always builds, so it is a plain TargetSet at every arity.
+static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(0)), StateSet>);
+static_assert(std::same_as<decltype(std::declval<const D3&>().get_successors(0)), StateSet>);
 
 /// The generic writer is the one that is there at every arity — and only with a full key path, since
 ///  @c KeyPath has exactly @c key_arity entries.
