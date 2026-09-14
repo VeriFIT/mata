@@ -45,6 +45,20 @@ static_assert(
 );
 
 /**
+ * The relation and the alphabet beside it must agree on what a symbol is.
+ *
+ * @c Nft holds both a @c Delta and a `shared_ptr<Alphabet>`, and nothing has ever checked that
+ *  the keys of the one denote the symbols of the other — because both are @c mata::Symbol by
+ *  construction and cannot disagree. This records the constraint while it is still free, so that
+ *  making either side configurable is a compile error rather than a silent truncation at whichever
+ *  symbol values happen not to fit. @see mata::SymbolTypeAgrees for the failure mode in full.
+ */
+static_assert(
+	SymbolTypeAgrees<Delta::Key<0>, Alphabet>,
+	"nft::Delta's keys and mata::Alphabet must denote the same symbol type."
+);
+
+/**
  * @note @c DONT_CARE is @c EPSILON-1 and is *not* currently reserved: @c Delta::Reserved<0> leaves
  *  @c max_ordinary at @c EPSILON-1, so @c StatePost::moves_symbols() still iterates over it, exactly
  *  as it did before there was a descriptor at all. Whether it should is an NFT semantics question

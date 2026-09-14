@@ -26,6 +26,7 @@
 #include <set>
 #include <vector>
 
+#include "mata/alphabet.hh"
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
 
@@ -143,6 +144,28 @@ static_assert(!KeyDenotesSymbols<Weight>);
 static_assert(HasSymbolMembers<Delta>);
 static_assert(HasSymbolMembers<IntervalDelta>);
 static_assert(!HasSymbolMembers<WeightDelta>);
+
+/// @name The relation and the alphabet must agree on what a symbol is
+///
+/// @c mata::SymbolTypeAgrees is asserted at both module seams, where it currently cannot fail: the
+///  relation's keys and @c mata::Alphabet are both @c mata::Symbol by construction. A check that
+///  cannot fail proves nothing on its own, so the cases below pin down what it would *catch* —
+///  otherwise the concept could be `true` unconditionally and every seam assertion would still pass.
+///@{
+static_assert(SymbolTypeAgrees<Delta::Key<0>, Alphabet>); ///< the shipping relation
+static_assert(SymbolTypeAgrees<Interval, Alphabet>); ///< an interval denotes ordinary Symbols
+
+/// A key whose symbols are *wider* than the alphabet's. This is the mismatch the seam assertions
+///  exist to catch: `translate_symb()` would hand back an @c Alphabet::Symbol that converts
+///  implicitly to this key's symbol type, truncating at whichever values do not fit.
+static_assert(!std::same_as<unsigned long long, Alphabet::Symbol>);
+static_assert(!SymbolTypeAgrees<unsigned long long, Alphabet>);
+
+/// …and vacuously true where there is no relationship to get wrong: a weight denotes no symbols, so
+///  it has no alphabet to disagree with. Without this branch the concept would reject every
+///  relation that simply has nothing to say about symbols.
+static_assert(!KeyDenotesSymbols<Weight> && SymbolTypeAgrees<Weight, Alphabet>);
+///@}
 
 /// The @c std::same_as half of @c mata::SymbolKeyOf pins the member's own parameter back to the
 ///  relation's key, so `d.get_used_symbols<Symbol>()` on a weight-keyed relation is rejected too.

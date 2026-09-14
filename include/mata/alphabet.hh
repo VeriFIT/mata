@@ -26,6 +26,22 @@ using WordName = std::vector<std::string>;
  */
 class Alphabet {
   public:
+	/**
+	 * @brief What this alphabet's symbols are.
+	 *
+	 * Named as a member so that a relation and the alphabet beside it can be *checked* to agree
+	 *  rather than assumed to. Both are @c mata::Symbol today and cannot disagree, because neither
+	 *  is configurable — which is exactly why the alias is worth adding now: the check it enables
+	 *  costs nothing while it cannot fail, and retrofitting it after either side becomes
+	 *  configurable means finding the bug first. Same reasoning as
+	 *  `static_assert(Delta::Reserved<0>::epsilon == EPSILON)`, which landed while NFA and NFT still
+	 *  shared one epsilon.
+	 *
+	 * @see mata::SymbolTypeAgrees, and the assertions in @c mata/nfa/delta.hh and
+	 *  @c mata/nft/delta.hh that consume it.
+	 */
+	using Symbol = mata::Symbol;
+
 	/// translates a string into a symbol
 	virtual Symbol translate_symb(const std::string& symb) = 0;
 

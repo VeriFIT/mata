@@ -79,6 +79,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -169,6 +170,42 @@ concept KeyDenotesSymbols = requires(const K key) {
 	{ KeyTraits<K>::admits(key, std::declval<typename KeyTraits<K>::SymbolType>()) }
 		-> std::convertible_to<bool>;
 };
+
+/**
+ * @brief Does @p A deal in the symbols that @p K's keys denote?
+ *
+ * An automaton holds two things that have to agree about what a symbol is: its relation, whose
+ *  level-0 keys *denote* symbols, and its alphabet, which hands them out. Nothing checks that today
+ *  because both are @c mata::Symbol by construction and cannot disagree. The moment either becomes
+ *  configurable they can, and the failure is the silent kind: `translate_symb()` returns the
+ *  alphabet's symbol type, which *implicitly converts* to the relation's key type, so mismatched
+ *  widths truncate at some values and not others. No diagnostic, wrong automaton.
+ *
+ * Note it compares the symbol a key **denotes**, not the key itself. For an interval-keyed relation
+ *  @c Key<0> is the interval while the symbol type is @c mata::Symbol, so
+ *  `same_as<Key<0>, A::Symbol>` would be the wrong question. @see KeyTraits.
+ *
+ * Vacuously true for a key that denotes no symbols — a weight-keyed relation has no alphabet
+ *  relationship to get wrong, and arguably no alphabet member either.
+ *
+ * @warning This is a check on the *type*, not on the *range*. An alphabet handing out @c EPSILON as
+ *  an ordinary symbol satisfies it and is still wrong; @c ReservedKeys::max_ordinary is the number
+ *  to validate values against, at runtime.
+ */
+namespace detail {
+/// Vacuous when @p K denotes no symbols; the real comparison otherwise. Spelled as a class template
+///  on a plain @c bool rather than as a disjunction, because `!KeyDenotesSymbols<K> || same_as<...>`
+///  would have to form `KeyTraits<K>::SymbolType` to be a valid expression even when the left side
+///  already settled it.
+template <typename K, typename A, bool = KeyDenotesSymbols<K>> struct SymbolTypeAgrees : std::true_type {};
+template <typename K, typename A>
+struct SymbolTypeAgrees<K, A, true>
+	: std::bool_constant<std::same_as<typename KeyTraits<K>::SymbolType, typename A::Symbol>> {};
+} // namespace mata::detail.
+
+/// @copydoc mata::detail::SymbolTypeAgrees
+template <typename K, typename A>
+concept SymbolTypeAgrees = detail::SymbolTypeAgrees<K, A>::value;
 
 /**
  * @brief The guard on a relation member that only means anything for a key denoting symbols.
