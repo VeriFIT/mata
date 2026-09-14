@@ -11,8 +11,7 @@
 #ifndef MATA_NFT_DELTA_HH
 #define MATA_NFT_DELTA_HH
 
-#include "mata/core/automaton.hh"
-#include "mata/core/delta.hh"
+#include "mata/relation.hh"
 #include "mata/nft/types.hh"
 
 namespace mata::nft {

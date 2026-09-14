@@ -10,8 +10,7 @@
 #ifndef MATA_NFA_DELTA_HH
 #define MATA_NFA_DELTA_HH
 
-#include "mata/core/automaton.hh"
-#include "mata/core/delta.hh"
+#include "mata/relation.hh"
 #include "mata/nfa/types.hh"
 
 namespace mata::nfa {

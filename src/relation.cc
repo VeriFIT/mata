@@ -1,13 +1,17 @@
 /** @file
- * @brief Implementation of the @c mata::Delta class and related functions.
+ * @brief The one place the shipped relation and automaton are instantiated.
  *
- * This file contains the implementation of the Delta class, which represents the transition relation shared
- *  by every automaton in Mata. It includes methods for adding, removing, and querying transitions, as
- *  well as iterating over transitions.
+ * Matches the @c extern template declarations at the bottom of `include/mata/relation.hh`. The
+ *  definitions themselves stay in `core/delta.tpp` and `core/automaton.tpp`, because a third party
+ *  instantiating the templates over their own relation needs them; this translation unit exists
+ *  only to emit the depth-2 specialisations *once* rather than in every TU that includes the header.
+ *
+ * Everything here is concrete by construction, which is why it is not in `src/core/` — that
+ *  directory would otherwise contain nothing but this, and `core` would be generic everywhere
+ *  except its own object files.
  */
 
-#include "mata/core/delta.hh"
-#include "mata/core/types.hh"
+#include "mata/relation.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 
@@ -21,8 +25,6 @@
 
 using namespace mata::utils;
 using namespace mata;
-
-using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 template class mata::posts::PostEntry<mata::Symbol, mata::StateSet>;
 template class mata::posts::Post<mata::SymbolPost>;
@@ -90,3 +92,5 @@ bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const Symbol sy
 bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const SymbolPost& sync) {
 	return synchronize_with(sync.symbol);
 }
+
+template class mata::AutomatonBase<mata::Delta>;

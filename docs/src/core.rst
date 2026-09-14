@@ -1,9 +1,13 @@
 Core
 ====
 
-The types, the transition relation, and the structural operations that belong to no particular
-automaton class. :doc:`nfa` and :doc:`nft` re-export the parts they use, so ``mata::nfa::Delta``
-and ``mata::Delta`` currently name the same type.
+The generic machinery: the post templates, the walks and the cursor, the concepts, and the
+structural operations that belong to no particular automaton class. Nothing here names a concrete
+relation — ``mata::Delta`` is not available from ``core/`` alone, deliberately, so that a third party
+building their own relation compiles all of this without inheriting the one this library ships.
+
+That one lives in :ref:`relation`, and :doc:`nfa` and :doc:`nft` re-export it through their own
+seams, so ``mata::nfa::Delta`` and ``mata::Delta`` currently name the same type.
 
 Types
 -----
@@ -17,12 +21,22 @@ Automaton
 ---------
 ``mata::AutomatonBase`` owns ``delta``, ``initial`` and ``final`` together with the graph-only
 operations over them. It is parameterised by the transition relation and reads ``State``, ``Target``
-and ``key_arity`` off it, so the two cannot disagree. ``mata::Automaton`` is the alias for the
-depth-2 relation that every automaton in the tree derives from. It is a base class rather than one
+and ``key_arity`` off it, so the two cannot disagree. It is a base class rather than one
 instantiated directly, and its members are documented as part of :doc:`nfa` and :doc:`nft`, which is
-where you will use them.
+where you will use them. The alias every automaton in the tree actually derives from,
+``mata::Automaton``, is in :ref:`relation` with the relation it is built on.
 
 .. doxygenfile:: core/automaton.hh
+
+.. _relation:
+
+The shipped relation
+--------------------
+Everything above is generic. This is the one instantiation the library ships — ``mata::Delta`` and
+the aliases around it, depth 2, symbols keying states — kept out of ``core/`` so that "does core
+name a concrete relation?" has an answer, and the answer is no.
+
+.. doxygenfile:: relation.hh
 
 Concepts
 --------

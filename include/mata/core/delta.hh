@@ -49,12 +49,6 @@ template <typename St, typename K, typename T> struct Transition {
 
 	auto operator<=>(const Transition&) const = default;
 };
-} // namespace mata::posts.
-
-/// A transition of the depth-2 relation: (source, symbol, target).
-using Transition = posts::Transition<State, Symbol, State>;
-
-namespace posts {
 
 /**
  * @brief The post @p I levels down a chain.
@@ -311,12 +305,6 @@ template <typename K, typename T> class Move {
 
 	bool operator==(const Move&) const = default;
 }; // class mata::posts::Move.
-} // namespace mata::posts.
-
-/// A move out of the depth-2 relation: a symbol and one target state.
-using Move = posts::Move<Symbol, State>;
-
-namespace posts {
 
 /**
  * @brief One entry of a post: a single key, and the post nested under it.
@@ -428,12 +416,6 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
 	}
 }; // class mata::posts::PostEntry.
 
-} // namespace mata::posts.
-
-/// The depth-2 entry: a symbol keying a set of target states. Every existing call site names this.
-using SymbolPost = posts::PostEntry<Symbol, StateSet>;
-
-namespace posts {
 
 /**
  * @brief One post of the relation: an ordered map from a key to the post nested under it.
@@ -866,12 +848,6 @@ template <typename E> class Post : utils::OrdVector<E> {
 	}
 }; // class mata::posts::Post.
 
-} // namespace mata::posts.
-
-/// The depth-2 post: symbols keying sets of target states. Every existing call site names this.
-using StatePost = posts::Post<SymbolPost>;
-
-namespace posts {
 
 /**
  * @brief A resumable cursor over every target reachable from one state post.
@@ -1110,40 +1086,6 @@ template <typename P> class SuccessorCursor<P, 3> {
 	const P* post_;
 };
 
-} // namespace mata::posts.
-
-/// The depth-2 successor cursor. Every existing call site names this.
-using SuccessorCursor = posts::SuccessorCursor<StatePost>;
-
-/**
- * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
- */
-class SynchronizedExistentialSymbolPostIterator
-	: public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
-  public:
-	/**
-	 * @brief Get union of all targets.
-	 */
-	StateSet unify_targets() const;
-
-	/**
-	 * @brief Synchronize with the given SymbolPost @p sync.
-	 *
-	 * Alignes the synchronized iterator to the same symbol as @p sync.
-	 * @return True iff the synchronized iterator points to the same symbol as @p sync.
-	 */
-	bool synchronize_with(const SymbolPost& sync);
-
-	/**
-	 * @brief Synchronize with the given symbol @p sync_symbol.
-	 *
-	 * Alignes the synchronized iterator to the same symbol as @p sync_symbol.
-	 * @return True iff the synchronized iterator points to the same symbol as @p sync.
-	 */
-	bool synchronize_with(Symbol sync_symbol);
-}; // class SynchronizedExistentialSymbolPostIterator.
-
-namespace posts {
 
 /**
  * @brief Delta is a data structure for representing transition relation.
@@ -1804,12 +1746,6 @@ template <typename P> class Delta {
 }; // class mata::posts::Delta.
 
 
-} // namespace mata::posts.
-
-/// The depth-2 relation: states, then symbols, then target states. Every call site names this.
-using Delta = posts::Delta<StatePost>;
-
-namespace posts {
 
 namespace detail {
 /// The recursion behind @c PostChain. A position holding a @c mata::ReservedKeysLike descriptor
@@ -1883,56 +1819,8 @@ Delta<P> defragment(const Delta<P>& delta, const BoolVector& is_staying,
 ///  it in both namespaces makes every unqualified call ambiguous through ADL.
 using posts::defragment;
 
-/// @name Contract checks
-/// The concrete relation must satisfy the contract the generic algorithms are written against.
-/// A failure here means @c mata/core/concepts.hh and this file have drifted apart.
-///@{
-static_assert(PostEntryLike<SymbolPost>, "SymbolPost must be StatePost's entry type.");
-static_assert(PostLike<StatePost>, "StatePost must be one post of the relation.");
-static_assert(
-	ReservedKeysAtTail<StatePost>,
-	"the epsilon lookups walk back from the end of a StatePost, which needs the reserved keys to be "
-	"the last ones."
-);
-static_assert(
-	KeyDenotesSymbols<Delta::Key<0>>,
-	"the depth-2 relation is keyed by symbols, so it must have the symbol members."
-);
-/**
- * The one place the relation's epsilon and the module constant meet.
- *
- * @c mata::EPSILON is what call sites write and @c Delta::Reserved<0>::epsilon is what the relation's
- *  own members default to; they are two spellings that have to denote one value. Give a relation a
- *  different reserved tail without updating the constant and every explicit `EPSILON` argument at a
- *  call site starts disagreeing with every defaulted one -- which is the silent wrong answer this
- *  whole descriptor exists to prevent, so it is a compile error instead. See the Plan, §3.8.
- */
-static_assert(
-	Delta::Reserved<0>::epsilon == EPSILON,
-	"mata::EPSILON and the relation's own epsilon must be the same value."
-);
-static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");
-static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
-/// The cursor is hand-written per arity, 1 to 3. @see the Plan, T3.2 and §3.3b.
-static_assert(
-	Delta::key_arity <= 3,
-	"mata::Delta is capped at key_arity 3 (structure depth 4), because SuccessorCursor is "
-	"hand-written per arity and three is where that stops paying. Past it, add a specialisation."
-);
-//  as SymbolPost::Nested (T2.1); that is also what lets StatePost::key_arity be computed rather
-//  than hardcoded.
-///@}
-
 } // namespace mata.
 
 #include "mata/core/delta.tpp"
-
-namespace mata {
-/// Instantiated once, in `src/core/delta.cc`. Without these, every translation unit including this
-///  header instantiates the whole post stack.
-extern template class posts::PostEntry<Symbol, StateSet>;
-extern template class posts::Post<SymbolPost>;
-extern template class posts::Delta<StatePost>;
-} // namespace mata.
 
 #endif // MATA_CORE_DELTA_HH

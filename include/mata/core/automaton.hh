@@ -382,25 +382,8 @@ template <DeltaLike D> class AutomatonBase {
 	template <typename Self>
 	Self& trim_impl(this Self& self, const BoolVector& useful_states, StateRenaming* state_renaming);
 }; // class AutomatonBase.
-
-/**
- * @brief The structural base every automaton in the tree is built on: the depth-2 relation.
- *
- * An alias, deliberately. @c mata::nfa::Nfa and @c mata::nft::Nft name this as their base, so a
- *  wrong argument to one of their members produces ordinary overload resolution rather than an
- *  instantiation dump, and the Python bindings can keep naming `mata::Automaton` as a type.
- */
-using Automaton = AutomatonBase<Delta>;
-
 } // namespace mata.
 
 #include "mata/core/automaton.tpp"
-
-namespace mata {
-/// Instantiated once, in `src/core/automaton.cc`. Without this, every translation unit that
-///  includes this header instantiates the whole class -- some 400 lines of template bodies on top
-///  of the ~90 members of @c Delta.
-extern template class AutomatonBase<Delta>;
-} // namespace mata.
 
 #endif // MATA_CORE_AUTOMATON_HH_

@@ -22,6 +22,7 @@
 
 #include "mata/core/automaton.hh"
 #include "mata/core/delta.hh"
+#include "mata/relation.hh"
 
 using namespace mata;
 

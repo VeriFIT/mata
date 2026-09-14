@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-#include "mata/core/delta.hh"
+#include "mata/relation.hh"
 
 using mata::Delta;
 using mata::State;
