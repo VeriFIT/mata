@@ -84,12 +84,21 @@ template <typename D> std::vector<State> all_targets(const D& delta) {
 /// @name A chain built from its keys is the chain spelled by hand
 ///
 /// The strongest statement available about @c RelationOf: not that it produces *a* working relation,
-///  but that it produces the **same type** the library already ships. If it did not, every other
-///  assertion in this file would be about something other than @c mata::Delta.
+///  but that it produces the **same chain** the library already ships. If it did not, every other
+///  assertion in this file would be about something other than the shipped relation.
 ///@{
 static_assert(std::same_as<posts::PostChain<Symbol, StateSet>, StatePost>);
-static_assert(std::same_as<D1, Delta>);
 static_assert(std::same_as<posts::PostChain<Symbol, StateSet>::Entry, SymbolPost>);
+
+/// @c mata::Delta is a *class* over that chain rather than an alias for it, so that compiler
+///  diagnostics can say `mata::Delta` instead of spelling the whole nesting out. So the equality is
+///  with what it derives from, and the second line is what makes the first line mean anything: a
+///  chain that matched `Delta::Base` while `Delta` derived from something else would satisfy the
+///  first assertion and still be the wrong relation.
+static_assert(std::same_as<D1, Delta::Base>);
+static_assert(std::derived_from<Delta, D1>);
+/// And the wrapper must stay empty, or the implicit base conversions it offers would slice.
+static_assert(sizeof(Delta) == sizeof(Delta::Base));
 
 /// A descriptor position contributes its key and keeps itself as that level's convention.
 static_assert(std::same_as<D2::Key<1>, Symbol> && std::same_as<Mixed2::Key<1>, Symbol>);

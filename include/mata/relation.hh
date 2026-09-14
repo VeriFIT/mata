@@ -25,6 +25,8 @@
 #ifndef MATA_RELATION_HH
 #define MATA_RELATION_HH
 
+#include <utility>
+
 #include "mata/alphabet.hh"
 #include "mata/core/automaton.hh"
 #include "mata/core/delta.hh"
@@ -46,8 +48,52 @@ using SymbolPost = posts::PostEntry<Symbol, StateSet>;
 /// The depth-2 post: symbols keying sets of target states. Every existing call site names this.
 using StatePost = posts::Post<SymbolPost>;
 
-/// The depth-2 relation: states, then symbols, then target states. Every call site names this.
-using Delta = posts::Delta<StatePost>;
+/**
+ * @brief The depth-2 relation: states, then symbols, then target states. Every call site names this.
+ *
+ * A **class**, not an alias, and the reason is diagnostics. An alias does not survive into compiler
+ *  messages — GCC prints the canonical type — so `delta.add_transition(...)` on the alias reported
+ *  `'class mata::posts::Delta<mata::posts::Post<mata::posts::PostEntry<unsigned int,
+ *  mata::posts::StateTargets<long unsigned int> > > >' has no member named 'add_transition'`:
+ *  124 characters of noun for a one-word mistake. Measured; the rest of the message was unchanged.
+ *
+ * It adds **nothing** — no members, no behaviour, no virtuals. That is what makes the conversions
+ *  below safe: there is nothing to slice, so a base and a derived object differ only in the name the
+ *  compiler prints. @c sizeof is asserted equal at the bottom of this file.
+ *
+ * @note The conversions from the base are not decoration. Generic code in @c core legitimately
+ *  produces a `posts::Delta<StatePost>` — `posts::defragment()` returns one, and
+ *  `src/nfa/nfa.cc` assigns it straight into an automaton's @c delta. Core cannot know about this
+ *  class and must not, so the class has to accept what core hands back.
+ * @see mata::Automaton, which is @c AutomatonBase over this.
+ */
+class Delta : public posts::Delta<StatePost> {
+  public:
+	using Base = posts::Delta<StatePost>;
+	using Base::Base; ///< including `explicit Delta(size_t)`, which @c mata::DeltaLike requires
+
+	Delta() = default;
+	Delta(const Delta&) = default;
+	Delta(Delta&&) = default;
+	Delta& operator=(const Delta&) = default;
+	Delta& operator=(Delta&&) = default;
+	~Delta() = default;
+
+	/// @name Accepting what core hands back
+	/// Implicit on purpose: a `posts::Delta<StatePost>` *is* this relation, spelled the long way.
+	///@{
+	Delta(const Base& other) : Base{other} {}
+	Delta(Base&& other) noexcept : Base{std::move(other)} {}
+	Delta& operator=(const Base& other) {
+		Base::operator=(other);
+		return *this;
+	}
+	Delta& operator=(Base&& other) noexcept {
+		Base::operator=(std::move(other));
+		return *this;
+	}
+	///@}
+};
 
 /// The depth-2 successor cursor. Every existing call site names this.
 using SuccessorCursor = posts::SuccessorCursor<StatePost>;
@@ -119,6 +165,13 @@ static_assert(
 	"mata::EPSILON and the relation's own epsilon must be the same value."
 );
 static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");
+/// Naming the relation must cost nothing. @c Delta adds no members, so the empty-base rules make it
+///  the same size as what it derives from; if that ever stops holding, the class has grown something
+///  and the conversions above have something to slice.
+static_assert(
+	sizeof(Delta) == sizeof(posts::Delta<StatePost>) && alignof(Delta) == alignof(posts::Delta<StatePost>),
+	"mata::Delta exists only to shorten a name in diagnostics; it must add nothing."
+);
 static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
 /// The cursor is hand-written per arity, 1 to 3. @see the Plan, T3.2 and §3.3b.
 static_assert(
