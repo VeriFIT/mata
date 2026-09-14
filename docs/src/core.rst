@@ -26,7 +26,9 @@ where you will use them.
 
 Concepts
 --------
-What a transition relation has to provide for ``mata::AutomatonBase`` to work over it.
+What a transition relation has to provide for ``mata::AutomatonBase`` to work over it, plus the key
+vocabulary the relation itself needs — which symbols a key admits, and where a level's reserved keys
+begin.
 
 .. doxygenfile:: core/concepts.hh
 
@@ -35,6 +37,10 @@ What a transition relation has to provide for ``mata::AutomatonBase`` to work ov
 .. doxygenconcept:: mata::WalkableRange
 .. doxygenconcept:: mata::TargetSetLike
 .. doxygenconcept:: mata::PostEntryLike
+.. doxygenconcept:: mata::ReservedKeysLike
+.. doxygenconcept:: mata::ReservedKeysAtTail
 .. doxygenconcept:: mata::PostLike
 .. doxygenconcept:: mata::DeltaLike
+.. doxygenconcept:: mata::KeyDenotesSymbols
+.. doxygenconcept:: mata::SymbolKeyOf
 .. doxygenconcept:: mata::AutomatonWithRuns

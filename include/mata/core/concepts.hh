@@ -10,36 +10,58 @@
  *    supply.
  *  - @c AutomatonWithRuns, for the automata that report a counter-example run.
  *
+ * Alongside them is the *key* vocabulary, which @c mata::Automaton itself never needs -- it
+ *  transports keys without inspecting one (see the Plan, §3.7) -- but which the relation does, for
+ *  the members that talk about epsilons and about symbols:
+ *
+ *  - @c KeyTraits, saying which symbols a key admits, and @c KeyDenotesSymbols for keys that admit
+ *    any. A property of the key *type*, hence a traits specialised on it.
+ *  - @c ReservedKeys, saying where a level's ordinary keys stop. A property of the *relation* --
+ *    an NFA and an NFT share the key type and differ here -- hence a template argument.
+ *  - @c ReservedKeysAtTail, the invariant that makes finding the epsilons by a backwards walk
+ *    sound. @c PostLike is defined in terms of it.
+ *
  * @section nesting Post structure
  *
  * A transition relation is @c Delta indexed by source state, over a chain of posts, ending in a
- *  set of targets:
+ *  set of targets. One post per key, so a relation with @c n keys is @c n posts deep:
  *
  * ```
- * Delta -> Post<Symbol, Post<Symbol, ... Targets>>
+ * Delta -> Post -> Post -> ... -> Targets
+ *            key 0   key 1         (a state, or a state with a payload)
  * ```
  *
- * A *post* (@c PostLike) is an ordered map from one key to the post nested under it: @c StatePost
- *  is exactly `Symbol -> targets`. One key adds one post, so a relation with @c n keys is @c n
- *  posts deep and the nesting reads off directly.
+ * A *post* (@c PostLike, @c mata::posts::Post) is an ordered map from one key to the post nested
+ *  under it. Iterating one yields its *entries* (@c PostEntryLike, @c mata::posts::PostEntry) --
+ *  one key paired with the post beneath it. An entry is a detail of the post it belongs to, not a
+ *  post in its own right.
  *
- * Iterating a post yields its *entries* (@c PostEntryLike) -- @c SymbolPost is @c StatePost's
- *  entry type, pairing one key with the post under it. An entry is a detail of the post it belongs
- *  to, not a post in its own right.
+ * The classes are named for what they *are*, not for what the depth-2 relation calls them, because
+ *  the same two classes are every level of the chain. @c mata::StatePost and @c mata::SymbolPost are
+ *  **aliases** for the depth-2 instantiation, in the same way @c mata::Delta and
+ *  @c mata::Transition are: they name the post a state maps to and its entry, which is what an NFA
+ *  has and all it has. Nothing nests a "state post" inside a "symbol post".
  *
  * @section arity Counting posts
  *
  * @c key_arity is the number of keys between a source state and a target: 1 for an NFA (the
- *  symbol), 2 for a two-tape relation, and so on. It deliberately avoids the word "level", which
- *  is taken twice over: @c mata::Level and @c mata::nft::Levels are an NFT's tape levels, wholly
- *  unrelated to how deep a relation nests, and the older documentation uses it for two different
- *  structural counts (@c mata/nfa/nfa.hh says "three-level", @c mata/core/delta.hh says
- *  "four-level", both counting containers rather than keys).
+ *  symbol), 2 for a two-tape relation, and so on. It deliberately avoids the word "level", which is
+ *  taken twice over. @c mata::Level and @c mata::nft::Levels are an NFT's tape levels, wholly
+ *  unrelated to how deep a relation nests. And counting *containers* rather than keys gives a number
+ *  that depends on where you start: the same structure was documented as "three-level" in
+ *  @c mata/nfa/nfa.hh and "four-level" in @c mata/core/delta.hh, both describing this one. Both
+ *  passages now count keys.
+ *
+ * Levels are named by key index throughout: `mata::posts::Delta::Key<I>` is level @p I's key,
+ *  `mata::posts::Delta::Reserved<I>` its reserved-key convention, and
+ *  `mata::posts::Delta::PostAt<I>` the post that far in. A *post* keeps the singular @c Key,
+ *  because a post has exactly one and there is nothing to disambiguate; a relation spans every
+ *  level, and there a singular name would have silently meant the outermost one.
  *
  * @section sortedness Sortedness
  *
  * Every post is sorted by key, and the innermost one by target. This is not an implementation
- *  detail that happens to hold -- lookups binary-search on it, and @c StatePost::first_epsilon_it()
+ *  detail that happens to hold -- lookups binary-search on it, and @c Post::first_epsilon_it()
  *  walks backwards relying on reserved keys forming a contiguous suffix. A post that does not
  *  maintain it will not fail to compile; it will silently return wrong iterators.
  *
@@ -56,6 +78,7 @@
 #include <concepts>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -87,6 +110,156 @@ template <typename T> struct TargetTraits {
 	using State = T; ///< The state a target denotes. Equal to @c T when a target *is* a state.
 	/// Identity for a plain target. Collapses to nothing at @c -O2.
 	static State state_of(const T& target) { return target; }
+};
+
+/**
+ * @brief Which symbols a key admits.
+ *
+ * A key is not always a symbol. It is for an NFA, where a key *is* the one symbol it stands for,
+ *  but a relation may key its transitions by an interval, a character class or a predicate, and
+ *  then "the symbols used on the transitions" is not the set of keys under another name -- it is
+ *  the union of their expansions. A different computation, so @c Delta::get_used_symbols() and its
+ *  siblings are written against this traits in order to stay *correct* for such a key rather than
+ *  merely compiling. See the Plan, §3.13.
+ *
+ * Unlike @c TargetTraits there is deliberately **no primary definition**: a key type has to say
+ *  that it denotes symbols, because plenty do not. A weight-keyed or probability-keyed level has no
+ *  answer to give and should get no member rather than a wrong one. The identity expansion is
+ *  supplied for integral keys, which is what @c mata::Symbol needs.
+ *
+ * Specialise it to key transitions by something that is not a symbol:
+ * ```cpp
+ * template <> struct mata::KeyTraits<Interval> {
+ *     using SymbolType = mata::Symbol;
+ *     template <typename Fn> static void for_each_symbol(const Interval& key, Fn&& fn) {
+ *         for (SymbolType s{key.lo}; s <= key.hi; ++s) { fn(s); }
+ *     }
+ *     static bool admits(const Interval& key, const SymbolType s) { return key.lo <= s && s <= key.hi; }
+ * };
+ * ```
+ */
+template <typename K> struct KeyTraits;
+
+/**
+ * @brief The identity expansion: an integral key *is* the single symbol it admits.
+ *
+ * @note An integral key that is *not* a symbol -- an integer weight, say -- satisfies
+ *  @c KeyDenotesSymbols through this specialisation, and would get the symbol members with the
+ *  weights answering as symbols. Distinguishing the two needs a distinct key type, which is the
+ *  right way to spell it anyway; there is nothing in the type `unsigned long` to tell them apart.
+ */
+template <std::integral K> struct KeyTraits<K> {
+	/// Spelled @c SymbolType, not @c Symbol, so that it cannot shadow @c mata::Symbol wherever a
+	///  post or a relation re-exports it.
+	using SymbolType = K;
+	template <typename Fn> static void for_each_symbol(const K key, Fn&& fn) { fn(key); }
+	static bool admits(const K key, const K symbol) { return key == symbol; }
+};
+
+/**
+ * @brief A key that stands for a set of symbols, so that "which symbols are used" is a question it
+ *  can answer.
+ *
+ * The guard on the symbol-specific members of @c mata::posts::Delta. @see KeyTraits.
+ */
+template <typename K>
+concept KeyDenotesSymbols = requires(const K key) {
+	typename KeyTraits<K>::SymbolType;
+	{ KeyTraits<K>::for_each_symbol(key, [](typename KeyTraits<K>::SymbolType) {}) };
+	{ KeyTraits<K>::admits(key, std::declval<typename KeyTraits<K>::SymbolType>()) }
+		-> std::convertible_to<bool>;
+};
+
+/**
+ * @brief The guard on a relation member that only means anything for a key denoting symbols.
+ *
+ * Written over a *defaulted member template parameter* -- `template <typename K = Key> requires
+ *  SymbolKeyOf<K, Key>` -- rather than as a plain `requires KeyDenotesSymbols<Key>` on the member,
+ *  and the reason is not style. The return types of those members mention
+ *  `KeyTraits<Key>::SymbolType`, and a member's declared type is formed when the *class* is
+ *  instantiated, before any constraint on it is looked at. An explicit return type naming
+ *  `KeyTraits<Key>` therefore makes @c mata::posts::Delta over a key that denotes no symbols fail
+ *  to instantiate at all, rather than merely lack the member -- checked, and it does exactly that.
+ *  Deferring the return type to the member's own parameter is what keeps it lazy.
+ *
+ * @c std::same_as pins that parameter back to the relation's own key, so it cannot be supplied by
+ *  hand to ask a relation about somebody else's key type.
+ */
+template <typename K, typename Expected>
+concept SymbolKeyOf = std::same_as<K, Expected> && KeyDenotesSymbols<K>;
+
+/**
+ * @brief Where one key level's ordinary keys stop and its reserved ones begin.
+ *
+ * Epsilon is not a property of the key *type*, which is why this is a descriptor passed as a
+ *  template argument and not a traits specialised on @c K like @c KeyTraits. An NFA and an NFT both
+ *  key by @c mata::Symbol and both call the largest value epsilon; what differs is that an NFT
+ *  reserves a *wider tail* (`DONT_CARE = EPSILON - 1`). A traits keyed on the key type could not
+ *  tell the two apart, because there is only one key type. The convention belongs to the relation.
+ *
+ * That is exactly what makes @c mata::posts::Post::moves_epsilons(),
+ *  @c mata::posts::Post::moves_symbols() and @c mata::posts::Delta::epsilon_symbol_posts()
+ *  resolve their defaults *per instantiation*, instead of each picking up whichever constant
+ *  happened to be in scope where the default argument was written. See the Plan, §3.8.
+ *
+ * @tparam K The key type.
+ * @tparam Epsilon The smallest reserved key: every key at or above it is an epsilon.
+ * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p Epsilon, which
+ *  is right whenever epsilon is the only reserved key -- and wrong for a wider reserved tail, which
+ *  is the whole reason it is a separate parameter rather than computed.
+ */
+template <typename K, K Epsilon = std::numeric_limits<K>::max(), K MaxOrdinary = Epsilon - 1>
+struct ReservedKeys {
+	using Key = K;
+	static constexpr K epsilon{Epsilon}; ///< The smallest reserved key.
+	static constexpr K max_ordinary{MaxOrdinary}; ///< The largest key that is not reserved.
+	/// True when no key can sort above @c epsilon, so at most one entry can carry it and that entry
+	///  is the last one. @c mata::posts::Delta::epsilon_symbol_posts() takes an O(1) path on it
+	///  instead of searching. Conservatively false for a key type without a known maximum.
+	static constexpr bool epsilon_is_greatest{Epsilon == std::numeric_limits<K>::max()};
+
+	static_assert(MaxOrdinary < Epsilon, "the ordinary keys must stop below the reserved tail");
+};
+
+/**
+ * @brief A reserved-key convention: @see ReservedKeys.
+ */
+template <typename R>
+concept ReservedKeysLike = requires {
+	typename R::Key;
+	requires std::totally_ordered<typename R::Key>;
+	{ R::epsilon } -> std::convertible_to<typename R::Key>;
+	{ R::max_ordinary } -> std::convertible_to<typename R::Key>;
+	{ R::epsilon_is_greatest } -> std::convertible_to<bool>;
+	/// The reserved keys are the *top* of the key order. @see ReservedKeysAtTail.
+	requires R::max_ordinary < R::epsilon;
+};
+
+/**
+ * @brief A post whose reserved keys form a contiguous suffix.
+ *
+ * @c mata::posts::Post::first_epsilon_it() finds the smallest epsilon by walking *backwards*
+ *  from the end until it drops below the threshold, and returns the position after that. This is
+ *  the right answer only if the keys at or above the threshold are exactly the last ones, which
+ *  takes two separate things -- and neither of them fails to compile on its own:
+ *
+ *  - the post is ordered by key (@c sorted_by_key, @ref sortedness), so a backwards walk sees keys
+ *    in decreasing order; and
+ *  - the reserved keys are the *top* of the key order (@c max_ordinary below @c epsilon), so that
+ *    "reserved" and "at the end" mean the same thing.
+ *
+ * A descriptor with the two the wrong way round would hand @c moves_epsilons() and
+ *  @c moves_symbols() each other's ranges, silently and with no diagnostic anywhere. Hence a
+ *  concept. @c PostLike is defined in terms of it, so every post of the relation is checked where
+ *  it is named.
+ */
+template <typename L>
+concept ReservedKeysAtTail = requires {
+	typename L::Key;
+	typename L::Reserved;
+	requires ReservedKeysLike<typename L::Reserved>;
+	requires std::same_as<typename L::Key, typename L::Reserved::Key>;
+	requires L::sorted_by_key;
 };
 
 
@@ -150,7 +323,7 @@ concept PostEntryLike = requires(const E e) {
  *  @c key_arity counts the keys from here down, so it is one more than the nested post's.
  */
 template <typename L>
-concept PostLike = WalkableRange<L> && requires(const L l) {
+concept PostLike = WalkableRange<L> && ReservedKeysAtTail<L> && requires(const L l) {
 	typename L::Entry;
 	requires PostEntryLike<typename L::Entry>;
 	typename L::Key;
@@ -158,8 +331,9 @@ concept PostLike = WalkableRange<L> && requires(const L l) {
 	typename L::Target;
 	{ L::key_arity } -> std::convertible_to<size_t>;
 	requires L::key_arity >= 1;
-	/// @see @ref sortedness. Ordered by the key of the contained entries.
-	requires L::sorted_by_key;
+	/// @c sorted_by_key and the reserved-key convention both come from @c ReservedKeysAtTail above:
+	///  separately they are two unrelated-looking requirements, and together they are the one
+	///  invariant that makes the epsilon lookups sound. @see @ref sortedness.
 	{ l.is_sorted() } -> std::convertible_to<bool>;
 	/// Re-constructible by appending, for the same reason as @c TargetSetLike. Entries are appended
 	///  in increasing key order, so sortedness holds.
@@ -216,7 +390,6 @@ concept DeltaLike = requires(
 	const D cd,
 	const typename D::State s,
 	const typename D::Target t,
-	const typename D::Key k,
 	const BoolVector& is_staying,
 	const std::vector<typename D::State>& renaming
 ) {
@@ -224,7 +397,11 @@ concept DeltaLike = requires(
 	requires PostLike<typename D::PostType>;
 	typename D::Target;
 	typename D::State;
-	typename D::Key;
+	/// **No key type is asked for.** @c mata::AutomatonBase transports keys — @c reverted() takes a
+	///  move apart and writes it back — but never inspects, compares or stores one, so requiring a
+	///  key here would be requiring something nothing uses. It would also have to pick a *level*,
+	///  and at a @c key_arity above one there is no "the key". See the Plan, §3.7, and
+	///  @c mata::posts::Delta::Key for the indexed spelling a relation offers its own users.
 	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
 	{ D::key_arity } -> std::convertible_to<size_t>;
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
@@ -259,7 +436,15 @@ concept DeltaLike = requires(
 	// Writing. @c reverted() rebuilds a relation one transition at a time; @c trim() works out
 	//  which states stay and what they are renamed to, then leaves applying both to the relation,
 	//  which is the only party that knows its own representation.
-	{ d.add(s, k, s) };
+	//
+	// @c add() is deliberately **not** required. It used to be, and it was wrong twice over: nothing
+	//  in @c mata::AutomatonBase calls it (@c reverted() writes through
+	//  @c mata::posts::insert_target and @c mutable_state_post above), and `add(source, key, target)`
+	//  names exactly one key, so requiring it here promised a member that a relation of arity 2 or 3
+	//  could satisfy in its *declaration* and then fail inside — the deep-instantiation diagnostic
+	//  §3.10 exists to avoid. Writing a key path is the post chain's job, and its requirements are
+	//  already above: @c PostLike's @c find and @c insert, @c PostEntryLike's mutable @c nested(),
+	//  and @c TargetSetLike's @c insert.
 	{ d.defragment(is_staying, renaming) };
 
 	// Comparison, for @c is_identical().

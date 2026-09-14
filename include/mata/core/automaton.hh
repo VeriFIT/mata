@@ -350,14 +350,14 @@ template <DeltaLike D> class AutomatonBase {
 	 * @note Kept as a protected helper so that @c get_terminating_states() and @c distances_to_final() do not
 	 *  have to go through a leaf-specific `revert()` free function.
 	 * @note One of the two structural operations here that *write* to a relation (the other is
-	 *  @c trim_impl()), and the reason @c mata::DeltaLike asks for @c add and for one key.
-	 * @note **Arity 1 only, and visibly so.** Reverting is the one structural operation that binds a
-	 *  key and hands it back to @c add. `add(source, key, target)` takes exactly one key, and a
-	 *  variadic replacement cannot simply be dropped in: a parameter pack must be last to deduce, so
-	 *  `add(source, keys..., target)` is not declarable, and routing the arguments through a pack
-	 *  loses the implicit conversions that `delta.add(0, 0, 1)` relies on across the tests.
-	 *  Generalising this is the one piece of T3.5 left; until then a deeper relation is *missing* this
-	 *  member rather than silently getting a wrong answer out of it.
+	 *  @c trim_impl()), and the only one that has to take a transition apart and put it back.
+	 * @note **Generic in the key arity.** It writes through @c mata::posts::insert_target rather than
+	 *  through @c Delta::add, which is what makes that possible: a pack has to come last to deduce,
+	 *  so `add(source, keys..., target)` is not declarable at all, and putting the target first
+	 *  instead — `insert_target(post, target, keys...)` — is. The keys are transported as a pack and
+	 *  never inspected, which is why @c mata::DeltaLike asks for no key type (§3.7). Reverting swaps
+	 *  source and target and leaves the key order alone, so a key path means the same thing in both
+	 *  directions at any arity.
 	 * @return A new automaton with reversed transitions and swapped initial/final states.
 	 */
 	AutomatonBase reverted() const;

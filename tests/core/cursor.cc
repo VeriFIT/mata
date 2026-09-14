@@ -29,12 +29,12 @@ namespace {
 
 /// Arity 2: state -> key -> key -> targets.
 using Targets = posts::StateTargets<State>;
-using Inner2 = posts::StatePost<posts::SymbolPost<Symbol, Targets>>;
-using Post2 = posts::StatePost<posts::SymbolPost<Symbol, Inner2>>;
+using Inner2 = posts::PostChain<Symbol, Targets>;
+using Post2 = posts::PostChain<Symbol, Symbol, Targets>;
 /// Arity 3: one level deeper. The cap.
-using Inner3a = posts::StatePost<posts::SymbolPost<Symbol, Targets>>;
-using Inner3b = posts::StatePost<posts::SymbolPost<Symbol, Inner3a>>;
-using Post3 = posts::StatePost<posts::SymbolPost<Symbol, Inner3b>>;
+using Inner3a = posts::PostChain<Symbol, Targets>;
+using Inner3b = posts::PostChain<Symbol, Symbol, Targets>;
+using Post3 = posts::PostChain<Symbol, Symbol, Symbol, Targets>;
 
 /// What the cursor should yield, derived independently by the recursive walk.
 template <typename Post> std::vector<State> expected(const Post& post) {
@@ -325,10 +325,12 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 		// A differing *target* under identical keys must not compare equal -- the entry's own
 		//  operator== only looks at the key, which is why posts_equal() exists.
 		//
-		// Reached through the public `targets` member rather than `nested()`, which is const-only:
-		//  there is no mutable accessor on an entry, and that is exactly what blocks the variadic
-		//  `add` that T3.5 still needs. Writing into a nested post generically is not yet possible.
-		same.delta.mutable_state_post(1).front().targets.front().targets.insert(99);
+		// Written through the generic key path rather than by reaching into `.targets` twice: an
+		//  entry does offer a mutable `nested()` (@c mata::PostEntryLike requires it), so
+		//  @c Delta::add_target places a target under a full key path at any arity. The keys here
+		//  are the ones the relation was built with above, so this deepens an existing path rather
+		//  than adding a new one.
+		same.delta.add_target(1, 99, {2, 2});
 		CHECK(!aut.is_identical(same));
 	}
 }

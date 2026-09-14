@@ -15,8 +15,8 @@
 
 namespace mata::posts {
 
-template <typename K, typename N>
-SymbolPost<K, N>& SymbolPost<K, N>::operator=(SymbolPost&& rhs) noexcept {
+template <typename K, typename N, typename R>
+PostEntry<K, N, R>& PostEntry<K, N, R>::operator=(PostEntry&& rhs) noexcept {
 	if (*this != rhs) {
 		symbol = rhs.symbol;
 		targets = std::move(rhs.targets);
@@ -24,7 +24,7 @@ SymbolPost<K, N>& SymbolPost<K, N>::operator=(SymbolPost&& rhs) noexcept {
 	return *this;
 }
 
-template <typename K, typename N> void SymbolPost<K, N>::insert(const Target s) {
+template <typename K, typename N, typename R> void PostEntry<K, N, R>::insert(const Target s) {
 	if (targets.empty() || targets.back() < s) {
 		targets.push_back(s);
 		return;
@@ -37,37 +37,49 @@ template <typename K, typename N> void SymbolPost<K, N>::insert(const Target s) 
 }
 
 // TODO: slow! This should be doing merge, not inserting one by one.
-template <typename K, typename N> void SymbolPost<K, N>::insert(const Nested& states) {
+template <typename K, typename N, typename R> void PostEntry<K, N, R>::insert(const Nested& states) {
 	for (const Target s : states) { insert(s); }
 }
 
 template <typename P>
-typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const State state, const Key epsilon) const {
+typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const State state, const Key<0> epsilon) const {
 	return epsilon_symbol_posts(state_post(state), epsilon);
 }
 
 template <typename P>
-typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const PostType& state_post, const Key epsilon) {
-	if (!state_post.empty()) {
-		if (epsilon == EPSILON) {
-			if (const auto& back = state_post.back(); back.symbol == epsilon) { return std::prev(state_post.end()); }
-		} else {
-			return state_post.find(Entry(epsilon));
+typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const PostType& state_post, const Key<0> epsilon) {
+	if (state_post.empty()) { return state_post.end(); }
+	// Fast path: when nothing can sort above the relation's own epsilon, an entry carrying it can
+	//  only be the last one, and it is also the *smallest* epsilon because it is the only possible
+	//  one. That makes the answer an O(1) look at the back instead of a search -- but only under
+	//  both conditions. With a reserved tail wider than one key, or an epsilon that is not the
+	//  greatest key, there can be entries above @p epsilon and the back is then the wrong entry;
+	//  hence the descriptor is asked rather than the constant assumed. @see mata::ReservedKeys.
+	if constexpr (Reserved<0>::epsilon_is_greatest) {
+		if (epsilon == Reserved<0>::epsilon) {
+			if (const auto& back = state_post.back(); back.key() == epsilon) {
+				return std::prev(state_post.end());
+			}
+			return state_post.end();
 		}
 	}
-	return state_post.end();
+	return state_post.find(epsilon);
 }
 
 template <typename P>
-typename Delta<P>::Nested Delta<P>::get_successors(const State state) const { return state_post(state).get_successors(); }
+typename Delta<P>::TargetSet Delta<P>::get_successors(const State state) const {
+	return state_post(state).get_successors();
+}
 
 template <typename P>
-const typename Delta<P>::Nested& Delta<P>::get_successors(const State state, const Key symbol) const {
+typename Delta<P>::Successors Delta<P>::get_successors(const State state, const Key<0> symbol) const {
 	return state_post(state).get_successors(symbol);
 }
 
 template <typename P>
-std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_to(const State state_to) const {
+std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_to(const State state_to) const
+	requires(P::key_arity == 1)
+{
 	std::vector<TransitionType> transitions_to_state{};
 	const size_t num_of_states{this->num_of_states()};
 	for (State state_from{0}; state_from < num_of_states; ++state_from) {
@@ -82,7 +94,10 @@ std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_to(cons
 }
 
 template <typename P>
-std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_between(const State state_from, const State state_to) const {
+std::vector<typename Delta<P>::TransitionType>
+Delta<P>::get_transitions_between(const State state_from, const State state_to) const
+	requires(P::key_arity == 1)
+{
 	std::vector<TransitionType> transitions_between{};
 	for (const Entry& symbol_post : state_post(state_from)) {
 		if (const auto state_to_find_it = symbol_post.targets.find(state_to);
@@ -94,7 +109,9 @@ std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_between
 }
 
 template <typename P>
-void Delta<P>::add(const State source, Key symbol, const State target) {
+void Delta<P>::add(const State source, Key<0> symbol, const State target)
+	requires(P::key_arity == 1)
+{
 	resize_for_states(source, target);
 
 	if (PostType& state_transitions{state_posts_[source]}; state_transitions.empty()) {
@@ -115,7 +132,9 @@ void Delta<P>::add(const State source, Key symbol, const State target) {
 }
 
 template <typename P>
-void Delta<P>::add(const State source, const Key symbol, const Nested& targets) {
+void Delta<P>::add(const State source, const Key<0> symbol, const Nested& targets)
+	requires(P::key_arity == 1)
+{
 	if (targets.empty()) { return; }
 	resize_for_states(source, targets.back());
 
@@ -138,7 +157,9 @@ void Delta<P>::add(const State source, const Key symbol, const Nested& targets) 
 }
 
 template <typename P>
-void Delta<P>::remove(const State source, const Key symbol, const State target) {
+void Delta<P>::remove(const State source, const Key<0> symbol, const State target)
+	requires(P::key_arity == 1)
+{
 	if (source >= state_posts_.size()) { return; }
 
 	if (PostType& state_transitions{state_posts_[source]}; state_transitions.empty()) {
@@ -166,7 +187,9 @@ void Delta<P>::remove(const State source, const Key symbol, const State target) 
 }
 
 template <typename P>
-bool Delta<P>::contains(const State source, const Key symbol, const State target) const { // {{{
+bool Delta<P>::contains(const State source, const Key<0> symbol, const State target) const
+	requires(P::key_arity == 1)
+{ // {{{
 	if (state_posts_.empty()) { return false; }
 	if (state_posts_.size() <= source) { return false; }
 
@@ -179,7 +202,9 @@ bool Delta<P>::contains(const State source, const Key symbol, const State target
 }
 
 template <typename P>
-bool Delta<P>::contains(const TransitionType& transition) const {
+bool Delta<P>::contains(const TransitionType& transition) const
+	requires(P::key_arity == 1)
+{
 	return contains(transition.source, transition.symbol, transition.target);
 }
 
@@ -257,18 +282,24 @@ bool Delta<P>::operator==(const Delta& other) const {
 
 
 template <typename P>
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
 void Delta<P>::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
 	for (mata::State state{0}; state < aut_num_of_states; ++state) {
 		for (const Entry& move : state_post(state)) {
-			target_alphabet.update_next_symbol_value(move.symbol);
-			target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
+			KeyTraits<K>::for_each_symbol(move.key(), [&target_alphabet](const auto symbol) {
+				target_alphabet.update_next_symbol_value(symbol);
+				target_alphabet.try_add_new_symbol(std::to_string(symbol), symbol);
+			});
 		}
 	}
 }
 
 template <typename P>
-utils::OrdVector<typename Delta<P>::Key> Delta<P>::get_used_symbols() const {
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
+utils::OrdVector<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols() const {
 	// TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
 	//  for instance figure out why NumberPredicate and OrdVector are slow,
 	//  try also with _STATIC_DATA_STRUCTURES_, it changes things.
@@ -329,35 +360,51 @@ utils::OrdVector<typename Delta<P>::Key> Delta<P>::get_used_symbols() const {
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
 template <typename P>
-utils::OrdVector<typename Delta<P>::Key> Delta<P>::get_used_symbols_vec() const {
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
+utils::OrdVector<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_vec() const {
+	using Symbols = typename KeyTraits<K>::SymbolType;
 #ifdef _STATIC_STRUCTURES_
-	static std::vector<Key> symbols{};
+	static std::vector<Symbols> symbols{};
 	symbols.clear();
 #else
-	std::vector<Key> symbols{};
+	std::vector<Symbols> symbols{};
 #endif
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			utils::reserve_on_insert(symbols);
-			symbols.push_back(symbol_post.symbol);
+			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const Symbols symbol) {
+				utils::reserve_on_insert(symbols);
+				symbols.push_back(symbol);
+			});
 		}
 	}
-	utils::OrdVector<Key> sorted_symbols(symbols);
+	utils::OrdVector<Symbols> sorted_symbols(symbols);
 	return sorted_symbols;
 }
 
 // returns symbols appearing in Delta, inserts to a std::set
 template <typename P>
-std::set<typename Delta<P>::Key> Delta<P>::get_used_symbols_set() const {
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
+std::set<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_set() const {
+	using Symbols = typename KeyTraits<K>::SymbolType;
 	// static should prevent reallocation, seems to speed things up a little
 #ifdef _STATIC_STRUCTURES_
-	static std::set<Key> symbols;
+	static std::set<Symbols> symbols;
 	symbols.clear();
 #else
-	static std::set<Key> symbols{};
+	static std::set<Symbols> symbols{};
 #endif
 	for (const PostType& state_post : state_posts_) {
-		for (const Entry& symbol_post : state_post) { symbols.insert(symbol_post.symbol); }
+		for (const Entry& symbol_post : state_post) {
+			// Not captured: @c symbols is @c static in *both* branches above -- which looks like a
+			//  slip (every sibling declares it automatic without @c _STATIC_STRUCTURES_, and a
+			//  static one accumulates across calls), but it is left exactly as it was rather than
+			//  quietly changing what a public member returns. Capturing it would warn.
+			KeyTraits<K>::for_each_symbol(symbol_post.key(), [](const Symbols symbol) {
+				symbols.insert(symbol);
+			});
+		}
 	}
 	return symbols;
 	// utils::OrdVector<Key>  sorted_symbols(symbols.begin(),symbols.end());
@@ -367,17 +414,24 @@ std::set<typename Delta<P>::Key> Delta<P>::get_used_symbols_set() const {
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
-utils::SparseSet<typename Delta<P>::Key> Delta<P>::get_used_symbols_sps() const {
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
+utils::SparseSet<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_sps() const {
+	using Symbols = typename KeyTraits<K>::SymbolType;
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
-	static utils::SparseSet<Key> symbols(64);
+	static utils::SparseSet<Symbols> symbols(64);
 	symbols.clear();
 #else
-	utils::SparseSet<Key> symbols(64);
+	utils::SparseSet<Symbols> symbols(64);
 #endif
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
-		for (const Entry& symbol_post : state_post) { symbols.insert(symbol_post.symbol); }
+		for (const Entry& symbol_post : state_post) {
+			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const Symbols symbol) {
+				symbols.insert(symbol);
+			});
+		}
 	}
 	// TODO: is it necessary to return ordered vector? Would the number predicate suffice?
 	return symbols;
@@ -386,6 +440,8 @@ utils::SparseSet<typename Delta<P>::Key> Delta<P>::get_used_symbols_sps() const 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
 std::vector<bool> Delta<P>::get_used_symbols_bv() const {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
@@ -397,14 +453,20 @@ std::vector<bool> Delta<P>::get_used_symbols_bv() const {
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			if (const size_t capacity{symbol_post.symbol + 1}; symbols.size() < capacity) { symbols.resize(capacity); }
-			symbols[symbol_post.symbol] = true;
+			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const auto symbol) {
+				if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
+					symbols.resize(capacity);
+				}
+				symbols[symbol] = true;
+			});
 		}
 	}
 	return symbols;
 }
 
 template <typename P>
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
 BoolVector Delta<P>::get_used_symbols_chv() const {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
@@ -416,10 +478,12 @@ BoolVector Delta<P>::get_used_symbols_chv() const {
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			if (const size_t capacity{symbol_post.symbol + 1}; symbols.size() < capacity) {
-				symbols.resize(capacity * 2);
-			}
-			symbols[symbol_post.symbol] = true;
+			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const auto symbol) {
+				if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
+					symbols.resize(capacity * 2);
+				}
+				symbols[symbol] = true;
+			});
 		}
 	}
 	// TODO: is it necessary to return ordered vector? Would the number predicate suffice?
@@ -427,11 +491,16 @@ BoolVector Delta<P>::get_used_symbols_chv() const {
 }
 
 template <typename P>
-typename Delta<P>::Key Delta<P>::get_max_symbol() const {
-	Key max{0};
+template <typename K>
+	requires SymbolKeyOf<K, typename P::Key>
+typename KeyTraits<K>::SymbolType Delta<P>::get_max_symbol() const {
+	using Symbols = typename KeyTraits<K>::SymbolType;
+	Symbols max{0};
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			if (symbol_post.symbol > max) { max = symbol_post.symbol; }
+			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&max](const Symbols symbol) {
+				if (symbol > max) { max = symbol; }
+			});
 		}
 	}
 	return max;

@@ -24,8 +24,8 @@ using namespace mata;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-template class mata::posts::SymbolPost<mata::Symbol, mata::StateSet>;
-template class mata::posts::StatePost<mata::SymbolPost>;
+template class mata::posts::PostEntry<mata::Symbol, mata::StateSet>;
+template class mata::posts::Post<mata::SymbolPost>;
 
 template class mata::posts::Delta<mata::StatePost>;
 

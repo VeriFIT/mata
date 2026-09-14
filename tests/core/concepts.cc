@@ -71,6 +71,11 @@ struct TinyPost {
 	using Target = TinyTargets::Target;
 	static constexpr size_t key_arity{Nested::key_arity + 1};
 	static constexpr bool sorted_by_key{true};
+	/// Required by @c mata::ReservedKeysAtTail, and through it by @c mata::PostLike: the epsilon
+	///  lookups walk back from the end, so a post has to say where its ordinary keys stop. Declared
+	///  on the post rather than on the entry -- @c mata::posts::PostEntry carries it because that
+	///  is where the key type is named, but that is mata's own arrangement and not the contract.
+	using Reserved = mata::ReservedKeys<Key>;
 
 	std::vector<Entry> entries{};
 
