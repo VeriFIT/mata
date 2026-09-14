@@ -79,6 +79,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -172,6 +173,38 @@ concept KeyDenotesSymbols = requires(const K key) {
 };
 
 /**
+ * @brief What an alphabet's symbols are.
+ *
+ * The counterpart of @c KeyTraits on the other side of the relationship: a key says which symbols it
+ *  *denotes*, an alphabet says which symbols it *hands out*, and @c SymbolTypeAgrees checks the two
+ *  answer the same. Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies.
+ *
+ * It is a traits rather than a template parameter because an alphabet cannot be specialised by
+ *  inheritance: @c mata::Alphabet is an abstract base whose whole virtual interface is stated in
+ *  @c Symbol, so a derived class that redefines the alias overrides nothing — checked, and the
+ *  compiler says *"conflicting return type specified for `virtual Symbol translate_symb(...)`"*.
+ *  The symbol type is baked into the vtable. A third party wanting different symbols therefore
+ *  brings their own alphabet class and specialises this, rather than deriving.
+ */
+template <typename A> struct AlphabetTraits {
+	using Symbol = typename A::Symbol;
+};
+
+/**
+ * @brief An alphabet that can be *extended* with symbols it has not seen.
+ *
+ * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet is defined by
+ *  being able to. @c mata::posts::Delta::add_symbols_to() needs the growing kind, and asks for the
+ *  two operations it actually performs rather than naming a concrete class — which is what lets
+ *  @c core stop knowing that @c OnTheFlyAlphabet exists.
+ */
+template <typename A>
+concept ExtensibleAlphabet = requires(A& alphabet, typename AlphabetTraits<A>::Symbol symbol) {
+	{ alphabet.update_next_symbol_value(symbol) };
+	{ alphabet.try_add_new_symbol(std::string{}, symbol) };
+};
+
+/**
  * @brief Does @p A deal in the symbols that @p K's keys denote?
  *
  * An automaton holds two things that have to agree about what a symbol is: its relation, whose
@@ -200,7 +233,8 @@ namespace detail {
 template <typename K, typename A, bool = KeyDenotesSymbols<K>> struct SymbolTypeAgrees : std::true_type {};
 template <typename K, typename A>
 struct SymbolTypeAgrees<K, A, true>
-	: std::bool_constant<std::same_as<typename KeyTraits<K>::SymbolType, typename A::Symbol>> {};
+	: std::bool_constant<
+		  std::same_as<typename KeyTraits<K>::SymbolType, typename AlphabetTraits<A>::Symbol>> {};
 } // namespace mata::detail.
 
 /// @copydoc mata::detail::SymbolTypeAgrees

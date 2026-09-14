@@ -57,4 +57,5 @@ begin.
 .. doxygenconcept:: mata::DeltaLike
 .. doxygenconcept:: mata::KeyDenotesSymbols
 .. doxygenconcept:: mata::SymbolKeyOf
+.. doxygenconcept:: mata::ExtensibleAlphabet
 .. doxygenconcept:: mata::AutomatonWithRuns

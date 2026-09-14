@@ -16,12 +16,25 @@
 #include <unordered_map>
 #include <vector>
 
-#include "mata/alphabet.hh"
 #include "mata/utils/ord-vector.hh"
 
 namespace mata {
 
 using State = unsigned long;
+
+/// @name The basic value types
+///
+/// Here rather than in @c mata/alphabet.hh, where they used to live, because they are what an
+///  alphabet is *made of* rather than something it provides: a symbol is a value, and the alphabet
+///  is the thing that translates names to and from it. With them here the dependency runs the way
+///  it reads — @c alphabet.hh includes this file — and @c core stops depending on the alphabet
+///  module for its own vocabulary.
+///@{
+using Symbol = unsigned;
+using Level = unsigned;
+using Word = std::vector<Symbol>; ///< A finite-length word over @c Symbol.
+using WordName = std::vector<std::string>; ///< The same word, spelled with symbol *names*.
+///@}
 
 namespace posts {
 

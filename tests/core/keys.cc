@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <limits>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "mata/alphabet.hh"
@@ -93,6 +94,18 @@ using IntervalDelta = posts::RelationOf<IntervalReserved, StateSet>;
 
 using WeightReserved = ReservedKeys<Weight, Weight{100}, Weight{99}>;
 using WeightDelta = posts::RelationOf<WeightReserved, StateSet>;
+
+/// An alphabet that is not @c mata::Alphabet: its own wider symbol type, and able to grow.
+struct WideAlphabet {
+	using Symbol = unsigned long long;
+	void update_next_symbol_value(Symbol) {}
+	void try_add_new_symbol(const std::string&, Symbol) {}
+};
+
+/// …and one that cannot grow, so @c ExtensibleAlphabet must reject it.
+struct FixedAlphabet {
+	using Symbol = mata::Symbol;
+};
 
 /// A descriptor with the two thresholds the wrong way round: it says the ordinary keys run *past*
 ///  where the reserved ones start. Hand-rolled rather than an instantiation of @c ReservedKeys,
@@ -166,6 +179,20 @@ static_assert(!SymbolTypeAgrees<unsigned long long, Alphabet>);
 ///  it has no alphabet to disagree with. Without this branch the concept would reject every
 ///  relation that simply has nothing to say about symbols.
 static_assert(!KeyDenotesSymbols<Weight> && SymbolTypeAgrees<Weight, Alphabet>);
+///@}
+
+/// @name An alphabet need not be mata's
+///
+/// @c mata::Alphabet cannot be specialised by inheritance — its symbol type is baked into its
+///  virtual signatures, so a derived class redefining the alias overrides nothing. A third party
+///  therefore brings their *own* class and specialises @c mata::AlphabetTraits, and everything that
+///  asks about symbols has to work against that with no @c mata::Alphabet involved.
+///@{
+static_assert(std::same_as<AlphabetTraits<WideAlphabet>::Symbol, unsigned long long>);
+static_assert(ExtensibleAlphabet<WideAlphabet>); ///< it can grow…
+static_assert(!ExtensibleAlphabet<FixedAlphabet>); ///< …and a fixed one cannot, which is not an error
+static_assert(!SymbolTypeAgrees<mata::Symbol, WideAlphabet>); ///< the T6.1 check, pointed elsewhere
+static_assert(SymbolTypeAgrees<unsigned long long, WideAlphabet>);
 ///@}
 
 /// The @c std::same_as half of @c mata::SymbolKeyOf pins the member's own parameter back to the

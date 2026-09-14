@@ -6,7 +6,6 @@
 #ifndef MATA_CORE_DELTA_HH
 #define MATA_CORE_DELTA_HH
 
-#include "mata/alphabet.hh"
 #include "mata/core/concepts.hh"
 #include "mata/core/types.hh"
 #include "mata/utils/assert.hh"
@@ -48,6 +47,38 @@ template <typename St, typename K, typename T> struct Transition {
 		  target(target) {}
 
 	auto operator<=>(const Transition&) const = default;
+};
+
+/**
+ * @brief What one transition of a relation looks like, and how to build one.
+ *
+ * @c Transition above is a fixed `{source, symbol, target}` triple with *fixed field names*, and
+ *  those names are wrong for anything that is not an NFA — a two-tape transducer wants `.input` and
+ *  `.output`, not `.symbol`. What the fields are called is not something @c core can choose, so it
+ *  asks.
+ *
+ * Specialise it on the **post chain**, not on the relation: a relation's member alias would have to
+ *  name a traits over itself, and the relation is incomplete at the point the alias is formed.
+ *
+ * ```cpp
+ * template <> struct mata::posts::TransitionTraits<nft::StatePost> {
+ *     using State = mata::State;
+ *     struct Type { State source; Symbol input, output; State target; };
+ *     static Type make(State s, Symbol in, Symbol out, State t) { return {s, in, out, t}; }
+ * };
+ * ```
+ *
+ * @note This buys a module its own **field names**, and that is all it buys today.
+ *  @c Delta::Transitions still walks exactly one key level and keeps its
+ *  `requires(P::key_arity == 1)`: making it generic needs a cursor that carries the whole key path
+ *  as it goes, and @c SuccessorCursor yields targets only. That is separate work. @see the Plan, T6.9.
+ */
+template <typename P> struct TransitionTraits {
+	using State = typename TargetTraits<typename P::Target>::State;
+	using Type = Transition<State, typename P::Key, typename P::Target>;
+	static Type make(const State source, const typename P::Key& key, const typename P::Target& target) {
+		return Type{source, key, target};
+	}
 };
 
 /**
@@ -1143,9 +1174,9 @@ template <typename P> class Delta {
 	/// The targets under one fully-supplied key, and a transition of this relation.
 	using Entry = typename PostType::Entry;
 	using Nested = typename PostType::Nested;
-	/// @note Arity 1 only, as @c Transitions is — a transition of a deeper relation carries one key
-	///  per level and this triple has room for one. @see transitions().
-	using TransitionType = posts::Transition<State, Key<0>, Target>;
+	/// @note Arity 1 only, as @c Transitions is. What the shape *is*, and what its fields are
+	///  called, comes from @c mata::posts::TransitionTraits so a module can name its own.
+	using TransitionType = typename posts::TransitionTraits<PostType>::Type;
 	using CursorType = posts::SuccessorCursor<PostType>;
 	///@}
 
@@ -1475,9 +1506,9 @@ template <typename P> class Delta {
 						current_state_ = i;
 						state_post_it_ = (*delta_)[i].begin();
 						symbol_post_it_ = state_post_it_->targets.begin();
-						transition_.source = current_state_;
-						transition_.symbol = state_post_it_->symbol;
-						transition_.target = *symbol_post_it_;
+						transition_ = posts::TransitionTraits<PostType>::make(
+							current_state_, state_post_it_->key(), *symbol_post_it_
+						);
 						return;
 					}
 				}
@@ -1495,9 +1526,9 @@ template <typename P> class Delta {
 						current_state_ = source;
 						state_post_it_ = state_post.begin();
 						symbol_post_it_ = state_post_it_->targets.begin();
-						transition_.source = current_state_;
-						transition_.symbol = state_post_it_->symbol;
-						transition_.target = *symbol_post_it_;
+						transition_ = posts::TransitionTraits<PostType>::make(
+							current_state_, state_post_it_->key(), *symbol_post_it_
+						);
 						return;
 					}
 				}
@@ -1518,15 +1549,18 @@ template <typename P> class Delta {
 
 				++symbol_post_it_;
 				if (symbol_post_it_ != state_post_it_->targets.end()) {
-					transition_.target = *symbol_post_it_;
+					transition_ = posts::TransitionTraits<PostType>::make(
+						current_state_, state_post_it_->key(), *symbol_post_it_
+					);
 					return *this;
 				}
 
 				++state_post_it_;
 				if (state_post_it_ != (*delta_)[current_state_].cend()) {
 					symbol_post_it_ = state_post_it_->targets.begin();
-					transition_.symbol = state_post_it_->symbol;
-					transition_.target = *symbol_post_it_;
+					transition_ = posts::TransitionTraits<PostType>::make(
+						current_state_, state_post_it_->key(), *symbol_post_it_
+					);
 					return *this;
 				}
 
@@ -1543,9 +1577,9 @@ template <typename P> class Delta {
 				state_post_it_ = state_post.begin();
 				symbol_post_it_ = state_post_it_->targets.begin();
 
-				transition_.source = current_state_;
-				transition_.symbol = state_post_it_->symbol;
-				transition_.target = *symbol_post_it_;
+				transition_ = posts::TransitionTraits<PostType>::make(
+					current_state_, state_post_it_->key(), *symbol_post_it_
+				);
 
 				return *this;
 			}
@@ -1693,9 +1727,9 @@ template <typename P> class Delta {
 	 *
 	 * The value of the already existing symbols will NOT be overwritten.
 	 */
-	template <typename K = Key<0>>
+	template <ExtensibleAlphabet A, typename K = Key<0>>
 		requires SymbolKeyOf<K, typename P::Key>
-	void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
+	void add_symbols_to(A& target_alphabet) const;
 
 	/**
 	 * @brief Get the set of symbols used on the transitions in the automaton.

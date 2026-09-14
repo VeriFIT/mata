@@ -81,6 +81,30 @@ template <typename D> std::vector<State> all_targets(const D& delta) {
 
 } // namespace.
 
+/// A relation standing in for a module that wants its own transition vocabulary. Its own reserved
+///  tail makes it a *distinct* chain type, so specialising the traits for it cannot collide with the
+///  one the shipping relation uses.
+namespace theirs {
+using Reserved = ReservedKeys<Symbol, EPSILON, EPSILON - 5>;
+using StatePost = posts::PostChain<Reserved, StateSet>;
+using Delta = posts::Delta<StatePost>;
+} // namespace theirs.
+
+/// …and here it names the fields. `source`/`symbol`/`target` is an NFA's vocabulary; nothing in
+///  @c core is entitled to impose it.
+template <> struct mata::posts::TransitionTraits<theirs::StatePost> {
+	using State = mata::State;
+	struct Type {
+		State from{};
+		Symbol letter{};
+		State to{};
+		bool operator==(const Type&) const = default;
+	};
+	static Type make(const State source, const Symbol key, const State target) {
+		return Type{source, key, target};
+	}
+};
+
 /// @name A chain built from its keys is the chain spelled by hand
 ///
 /// The strongest statement available about @c RelationOf: not that it produces *a* working relation,
@@ -269,6 +293,31 @@ TEST_CASE("mata::posts::Delta::add — writing a key path at any arity") {
 		CHECK(to_final[2] == 0);
 		CHECK(to_final[3] == mata::Limits::max_state); // The control: 3 reaches no final state.
 	}
+}
+
+TEST_CASE("mata::posts::TransitionTraits — a module names its own transition fields") {
+	using Theirs = posts::TransitionTraits<theirs::StatePost>::Type;
+	static_assert(std::same_as<theirs::Delta::TransitionType, Theirs>);
+	/// …and the shipping relation is untouched by their specialisation.
+	static_assert(std::same_as<Delta::TransitionType, Transition>);
+
+	theirs::Delta delta{};
+	delta.add(0, 1, 1);
+	delta.add(0, 2, 2);
+	delta.add(1, 3, 2);
+
+	// `transitions()` builds through the traits, so the iterator yields *their* type with *their*
+	// field names — there is no `.symbol` here at all.
+	std::vector<Theirs> seen{};
+	for (const auto& t : delta.transitions()) { seen.push_back(t); }
+	CHECK(seen == std::vector<Theirs>{{0, 1, 1}, {0, 2, 2}, {1, 3, 2}});
+	CHECK(seen.front().from == 0);
+	CHECK(seen.front().letter == 1);
+	CHECK(seen.front().to == 1);
+
+	// The other transition-shaped members agree, since they all go through TransitionType.
+	const std::vector<Theirs> to_two{delta.get_transitions_to(2)};
+	CHECK(to_two == std::vector<Theirs>{{0, 2, 2}, {1, 3, 2}});
 }
 
 TEST_CASE("mata::posts::Delta::remove / contains — a key path at any arity") {

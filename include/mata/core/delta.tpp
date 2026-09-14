@@ -282,9 +282,9 @@ bool Delta<P>::operator==(const Delta& other) const {
 
 
 template <typename P>
-template <typename K>
+template <ExtensibleAlphabet A, typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-void Delta<P>::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
+void Delta<P>::add_symbols_to(A& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
 	for (mata::State state{0}; state < aut_num_of_states; ++state) {
 		for (const Entry& move : state_post(state)) {

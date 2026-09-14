@@ -12,14 +12,10 @@
 #include <vector>
 
 #include "utils/ord-vector.hh"
+#include "mata/core/types.hh"
 #include "utils/utils.hh"
 
 namespace mata {
-
-using Symbol = unsigned;
-using Level = unsigned;
-using Word = std::vector<Symbol>;
-using WordName = std::vector<std::string>;
 
 /**
  * The abstract interface for NFA alphabets.
