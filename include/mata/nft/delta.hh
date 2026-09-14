@@ -11,6 +11,7 @@
 #ifndef MATA_NFT_DELTA_HH
 #define MATA_NFT_DELTA_HH
 
+#include "mata/core/automaton.hh"
 #include "mata/core/delta.hh"
 #include "mata/nft/types.hh"
 
@@ -23,6 +24,20 @@ using StatePost = mata::StatePost;
 using SuccessorCursor = mata::SuccessorCursor;
 using SynchronizedExistentialSymbolPostIterator = mata::SynchronizedExistentialSymbolPostIterator;
 using Delta = mata::Delta;
+
+/**
+ * @brief The base every NFT derives from.
+ *
+ * Re-exported here rather than named as @c mata::Automaton at the class, because it is a *function
+ *  of* @c Delta — `AutomatonBase<Delta>` — so substituting the relation on the line above has to
+ *  carry the base with it. Naming @c mata::Automaton directly at `class Nft` would leave the
+ *  base pointing at the depth-2 relation while @c Delta pointed somewhere else, which is the one
+ *  way the seam can be bypassed without any call site looking wrong.
+ *
+ * @note This was exactly the hole: the layering grep in §8 of the Plan did not list @c Automaton, so
+ *  `class Nft : public mata::Automaton` passed a check written to forbid it. The grep now lists it.
+ */
+using Automaton = mata::Automaton;
 
 /// @note A using-declaration rather than a wrapper, so that @c nft::defragment and
 ///  @c mata::defragment name the same function and overload resolution stays unambiguous.

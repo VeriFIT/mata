@@ -22,6 +22,7 @@
 
 #include <concepts>
 #include <cstddef>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 
@@ -48,15 +49,20 @@ using Mixed2 = posts::RelationOf<Symbol, ReservedKeys<Symbol, 100>, StateSet>;
 /// @name Probes
 /// Each asks only "does this relation offer the member at all". @see the file comment.
 ///@{
-template <typename D> concept HasAdd = requires(D d) { d.add(0, 1, 2); };
+/// One probe per *number of keys*, so each relation can be shown to accept exactly its own arity and
+///  reject the others. A single probe cannot do that — it would have to fix an argument count.
+template <typename D> concept Add1 = requires(D d) { d.add(0, 1, 2); };
+template <typename D> concept Add2 = requires(D d) { d.add(0, 1, 2, 3); };
+template <typename D> concept Add3 = requires(D d) { d.add(0, 1, 2, 3, 4); };
+template <typename D> concept Remove1 = requires(D d) { d.remove(0, 1, 2); };
+template <typename D> concept Remove2 = requires(D d) { d.remove(0, 1, 2, 3); };
+template <typename D> concept Contains1 = requires(const D d) { d.contains(0, 1, 2); };
+template <typename D> concept Contains2 = requires(const D d) { d.contains(0, 1, 2, 3); };
 template <typename D> concept HasAddTargets = requires(D d, const typename D::Nested& n) { d.add(0, 1, n); };
-template <typename D> concept HasRemove = requires(D d) { d.remove(0, 1, 2); };
-template <typename D> concept HasContains = requires(const D d) { d.contains(0, 1, 2); };
 template <typename D> concept HasTransitions = requires(const D d) { d.transitions(); };
 template <typename D> concept HasTransitionsTo = requires(const D d) { d.get_transitions_to(0); };
 template <typename D> concept HasTransitionsBetween = requires(const D d) { d.get_transitions_between(0, 1); };
 template <typename D> concept HasKeyedSuccessors = requires(const D d) { d.get_successors(0, 1); };
-template <typename D> concept HasAddTarget = requires(D d, const typename D::KeyPath& p) { d.add_target(0, 1, p); };
 ///@}
 
 /// Every target under @p delta, gathered the independent way — through the generic walk rather than
@@ -106,8 +112,6 @@ static_assert(std::same_as<D3::TargetSet, StateSet> && std::same_as<D1::TargetSe
 static_assert(std::same_as<D2::PostAt<1>, D1::PostType>); ///< An arity-2 chain nests an arity-1 one.
 
 static_assert(std::same_as<D3::Key<0>, Symbol> && std::same_as<D3::Key<2>, Symbol>);
-static_assert(std::same_as<D1::KeyPath, std::tuple<Symbol>>);
-static_assert(std::same_as<D3::KeyPath, std::tuple<Symbol, Symbol, Symbol>>);
 
 /// A *post* keeps the singular @c Key: it has exactly one, so there is nothing to disambiguate.
 ///  That asymmetry with @c Delta is deliberate, not an oversight. @see @ref arity.
@@ -135,10 +139,7 @@ static_assert(DeltaLike<D1> && DeltaLike<D2> && DeltaLike<D3> && DeltaLike<Mixed
 ///  exactly one. None can be generalised without changing what it means, so each is constrained
 ///  instead — and the constraint is what turns a deep instantiation failure into "no such member".
 ///@{
-static_assert(HasAdd<D1> && !HasAdd<D2> && !HasAdd<D3>);
-static_assert(HasAddTargets<D1> && !HasAddTargets<D2>);
-static_assert(HasRemove<D1> && !HasRemove<D2>);
-static_assert(HasContains<D1> && !HasContains<D2>);
+static_assert(HasAddTargets<D1> && !HasAddTargets<D2>); ///< the bulk-target overload; still arity 1
 static_assert(HasTransitions<D1> && !HasTransitions<D2>);
 static_assert(HasTransitionsTo<D1> && !HasTransitionsTo<D2>);
 static_assert(HasTransitionsBetween<D1> && !HasTransitionsBetween<D2>);
@@ -154,9 +155,15 @@ static_assert(std::same_as<D2::Successors, StateSet> && std::same_as<D3::Success
 
 /// The generic writer is the one that is there at every arity — and only with a full key path, since
 ///  @c KeyPath has exactly @c key_arity entries.
-static_assert(HasAddTarget<D1> && HasAddTarget<D2> && HasAddTarget<D3>);
-/// A partial key path cannot be passed at all: @c KeyPath has exactly @c key_arity entries, which is
-///  what the @c same_as assertions on it above pin down. There is no pack to get the length wrong.
+/// @c add, @c remove and @c contains are **not** in that list any more. Each is written once per
+///  supported arity, so every relation takes one key per level — and, just as importantly, refuses
+///  any other number. A wrong count is ordinary overload resolution at the call site, not a member
+///  that silently is not there.
+static_assert( Add1<D1> && !Add2<D1> && !Add3<D1>);
+static_assert(!Add1<D2> &&  Add2<D2> && !Add3<D2>);
+static_assert(!Add1<D3> && !Add2<D3> &&  Add3<D3>);
+static_assert( Remove1<D1> && !Remove2<D1> && !Remove1<D2> && Remove2<D2>);
+static_assert( Contains1<D1> && !Contains2<D1> && !Contains1<D2> && Contains2<D2>);
 ///@}
 
 /// @c AutomatonBase still instantiates over both deeper relations after the contract lost @c add:
@@ -164,14 +171,14 @@ static_assert(HasAddTarget<D1> && HasAddTarget<D2> && HasAddTarget<D3>);
 template class mata::AutomatonBase<D2>;
 template class mata::AutomatonBase<D3>;
 
-TEST_CASE("mata::posts::Delta::add_target — writing a key path at any arity") {
+TEST_CASE("mata::posts::Delta::add — writing a key path at any arity") {
 	SECTION("at arity 1 it agrees with add(), transition for transition") {
 		D1 by_add{};
 		D1 by_path{};
 		for (const auto& [source, symbol, target] :
 		     std::vector<std::tuple<State, Symbol, State>>{{0, 1, 1}, {0, 1, 2}, {0, 4, 3}, {2, 0, 0}, {5, 9, 5}}) {
 			by_add.add(source, symbol, target);
-			by_path.add_target(source, target, {symbol});
+			by_path.add(source, symbol, target);
 		}
 		// Not `==`: an entry's operator== compares only its key, so a post-wise comparison would
 		//  pass even with completely different targets. @see mata::posts::posts_equal.
@@ -186,17 +193,17 @@ TEST_CASE("mata::posts::Delta::add_target — writing a key path at any arity") 
 	SECTION("it presizes, exactly as add() does") {
 		D2 delta{};
 		REQUIRE(delta.num_of_states() == 0);
-		delta.add_target(3, 7, {1, 1}); // Neither state exists yet.
+		delta.add(3, 1, 1, 7); // Neither state exists yet.
 		CHECK(delta.num_of_states() == 8);
 		CHECK(delta.uses_state(7));
 	}
 
 	SECTION("at arity 2 it creates the levels the path passes through") {
 		D2 delta{};
-		delta.add_target(0, 10, {1, 1});
-		delta.add_target(0, 11, {1, 1}); // Same path, second target.
-		delta.add_target(0, 12, {1, 2}); // Same level-0 key, new level-1 key.
-		delta.add_target(0, 13, {2, 1}); // New level-0 key.
+		delta.add(0, 1, 1, 10);
+		delta.add(0, 1, 1, 11); // Same path, second target.
+		delta.add(0, 1, 2, 12); // Same level-0 key, new level-1 key.
+		delta.add(0, 2, 1, 13); // New level-0 key.
 
 		const auto& post{delta.state_post(0)};
 		REQUIRE(post.size() == 2); // Two level-0 keys.
@@ -210,9 +217,9 @@ TEST_CASE("mata::posts::Delta::add_target — writing a key path at any arity") 
 
 	SECTION("at arity 3 as well, and the walk agrees") {
 		D3 delta{};
-		delta.add_target(0, 5, {1, 2, 3});
-		delta.add_target(0, 6, {1, 2, 4});
-		delta.add_target(1, 7, {1, 2, 3});
+		delta.add(0, 1, 2, 3, 5);
+		delta.add(0, 1, 2, 4, 6);
+		delta.add(1, 1, 2, 3, 7);
 		CHECK(delta.num_of_transitions() == 3);
 		CHECK(all_targets(delta) == std::vector<State>{5, 6, 7});
 
@@ -226,9 +233,9 @@ TEST_CASE("mata::posts::Delta::add_target — writing a key path at any arity") 
 
 	SECTION("a deeper relation still reverts, which is what needs a generic write") {
 		mata::AutomatonBase<D2> aut{};
-		aut.delta.add_target(0, 1, {1, 2});
-		aut.delta.add_target(1, 2, {3, 4});
-		aut.delta.add_target(3, 3, {5, 6}); // A self-loop that never reaches a final state.
+		aut.delta.add(0, 1, 2, 1);
+		aut.delta.add(1, 3, 4, 2);
+		aut.delta.add(3, 5, 6, 3); // A self-loop that never reaches a final state.
 		aut.initial.insert(0);
 		aut.final.insert(2);
 
@@ -251,6 +258,94 @@ TEST_CASE("mata::posts::Delta::add_target — writing a key path at any arity") 
 	}
 }
 
+TEST_CASE("mata::posts::Delta::remove / contains — a key path at any arity") {
+	SECTION("contains answers about the whole path, not just the first key") {
+		D2 delta{};
+		delta.add(0, 1, 2, 7);
+		CHECK(delta.contains(0, 1, 2, 7));
+		CHECK_FALSE(delta.contains(0, 1, 2, 8)); // right path, wrong target
+		CHECK_FALSE(delta.contains(0, 1, 9, 7)); // right level-0 key, wrong level-1 key
+		CHECK_FALSE(delta.contains(0, 9, 2, 7)); // wrong level-0 key
+		CHECK_FALSE(delta.contains(5, 1, 2, 7)); // state that does not exist
+	}
+
+	SECTION("remove takes one target and leaves its siblings") {
+		D2 delta{};
+		delta.add(0, 1, 2, 7);
+		delta.add(0, 1, 2, 8);
+		delta.remove(0, 1, 2, 7);
+		CHECK_FALSE(delta.contains(0, 1, 2, 7));
+		CHECK(delta.contains(0, 1, 2, 8));
+		CHECK(delta.num_of_transitions() == 1);
+	}
+
+	SECTION("emptying a path prunes it, and the pruning cascades exactly as far as it should") {
+		D2 delta{};
+		delta.add(0, 1, 2, 7);
+		delta.add(0, 1, 5, 9); // same level-0 key, different level-1 key
+		delta.add(0, 3, 3, 3); // a different level-0 key entirely
+		REQUIRE(delta.state_post(0).size() == 2); // level-0 keys 1 and 3
+
+		// Emptying (1,2) must drop the level-1 entry for key 2 — but *not* the level-0 entry for
+		// key 1, because (1,5) still has a target under it. Pruning one level too far and pruning
+		// one level too little are both silent; only the sibling distinguishes them.
+		delta.remove(0, 1, 2, 7);
+		REQUIRE(delta.state_post(0).size() == 2);
+		CHECK(delta.state_post(0).front().nested().size() == 1); // only key 5 left under key 1
+		CHECK(delta.contains(0, 1, 5, 9));
+
+		// Now empty (1,5) as well: nothing is left under key 1, so the level-0 entry goes too.
+		delta.remove(0, 1, 5, 9);
+		CHECK(delta.state_post(0).size() == 1); // only key 3 survives
+		CHECK(delta.contains(0, 3, 3, 3));
+
+		// And emptying that empties the post itself.
+		delta.remove(0, 3, 3, 3);
+		CHECK(delta.state_post(0).empty());
+		CHECK(delta.num_of_transitions() == 0);
+	}
+
+	SECTION("removing a path that is not there throws, at every level") {
+		D2 delta{};
+		delta.add(0, 1, 2, 7);
+		CHECK_THROWS_AS(delta.remove(0, 9, 2, 7), std::invalid_argument); // missing level-0 key
+		CHECK_THROWS_AS(delta.remove(0, 1, 9, 7), std::invalid_argument); // missing level-1 key
+		CHECK_NOTHROW(delta.remove(0, 1, 2, 99)); // path exists, target does not
+
+		// The three state cases, matching arity 1 exactly: a source past the end is ignored, while
+		// one that exists but holds nothing throws like any other missing path. Cross-checked
+		// against the arity-1 member below, because "same as arity 1" is the actual requirement and
+		// it is easy to assume rather than verify.
+		REQUIRE(delta.num_of_states() == 8); // target 7 resized, so state 7 exists and is empty
+		CHECK_NOTHROW(delta.remove(99, 1, 2, 7)); // genuinely out of range
+		CHECK_THROWS_AS(delta.remove(7, 1, 2, 7), std::invalid_argument); // in range, empty
+
+		Delta arity1{};
+		arity1.add(0, 1, 7);
+		REQUIRE(arity1.num_of_states() == 8);
+		CHECK_NOTHROW(arity1.remove(99, 1, 7));
+		CHECK_THROWS_AS(arity1.remove(7, 1, 7), std::invalid_argument);
+
+		CHECK(delta.contains(0, 1, 2, 7)); // none of that disturbed the real transition
+	}
+
+	SECTION("arity 3 behaves the same, and the walk agrees throughout") {
+		D3 delta{};
+		delta.add(0, 1, 2, 3, 5);
+		delta.add(0, 1, 2, 4, 6);
+		CHECK((delta.contains(0, 1, 2, 3, 5) && delta.contains(0, 1, 2, 4, 6)));
+		CHECK(all_targets(delta) == std::vector<State>{5, 6});
+
+		delta.remove(0, 1, 2, 3, 5);
+		CHECK_FALSE(delta.contains(0, 1, 2, 3, 5));
+		CHECK(all_targets(delta) == std::vector<State>{6});
+
+		delta.remove(0, 1, 2, 4, 6);
+		CHECK(all_targets(delta).empty());
+		CHECK(delta.state_post(0).empty()); // pruned all three levels
+	}
+}
+
 TEST_CASE("mata::posts::Delta::get_successors — the target set, at any arity") {
 	SECTION("arity 1 is unchanged") {
 		Delta delta{};
@@ -263,9 +358,9 @@ TEST_CASE("mata::posts::Delta::get_successors — the target set, at any arity")
 
 	SECTION("arity 2 collects from under every remaining key") {
 		D2 delta{};
-		delta.add_target(0, 4, {1, 1});
-		delta.add_target(0, 2, {1, 5});
-		delta.add_target(0, 4, {9, 9}); // Duplicate target down a different path.
+		delta.add(0, 1, 1, 4);
+		delta.add(0, 1, 5, 2);
+		delta.add(0, 9, 9, 4); // Duplicate target down a different path.
 		// The successors are a set of *states*, not the inner post that used to be returned: before
 		//  Phase 5 this member's return type was `Nested`, which above arity 1 is the post one level
 		//  down rather than the targets at the bottom.
@@ -275,9 +370,9 @@ TEST_CASE("mata::posts::Delta::get_successors — the target set, at any arity")
 
 	SECTION("the keyed form gives targets at arity 2 as well, not the post below") {
 		D2 delta{};
-		delta.add_target(0, 4, {1, 1});
-		delta.add_target(0, 2, {1, 5}); // Same level-0 key, different level-1 key.
-		delta.add_target(0, 7, {9, 9}); // Different level-0 key: must not leak in.
+		delta.add(0, 1, 1, 4);
+		delta.add(0, 1, 5, 2); // Same level-0 key, different level-1 key.
+		delta.add(0, 9, 9, 7); // Different level-0 key: must not leak in.
 
 		// Everything under key 1, gathered across every level-1 key beneath it.
 		CHECK(delta.get_successors(0, 1) == StateSet{2, 4});

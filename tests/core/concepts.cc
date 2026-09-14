@@ -46,6 +46,15 @@ struct TinyTargets {
 		const auto it{std::ranges::lower_bound(targets, target)};
 		if (it == targets.end() || *it != target) { targets.insert(it, target); }
 	}
+	/// Required by @c mata::TargetSetLike: removing a transition bottoms out here, and the level
+	///  above needs @c empty() afterwards to decide whether to drop the key that led here.
+	///  @see mata::posts::erase_target.
+	void erase(const Target& target) {
+		const auto it{std::ranges::lower_bound(targets, target)};
+		if (it != targets.end() && *it == target) { targets.erase(it); }
+	}
+	/// Required by @c mata::TargetSetLike. @see mata::posts::has_target_at.
+	bool contains(const Target& target) const { return std::ranges::binary_search(targets, target); }
 };
 
 /// One entry of a post: a single key, and the targets under it.
@@ -90,6 +99,16 @@ struct TinyPost {
 	/// Required by @c mata::PostLike, for the same reason as the leaf's.
 	void push_back(const Entry& entry) { entries.push_back(entry); }
 	/// Also required: writing a key path looks up the level it needs and creates it when absent.
+	/// Required by @c mata::PostLike: a *query* must not need a mutable post.
+	///  @see mata::posts::has_target_at.
+	auto find(const Key& key) const {
+		return std::ranges::find_if(entries, [&key](const Entry& e) { return e.stored_key == key; });
+	}
+	/// Required by @c mata::PostLike: erasing the last target under a key drops the key too.
+	///  @see mata::posts::erase_target.
+	void erase(const Entry& entry) {
+		std::erase_if(entries, [&entry](const Entry& e) { return e.stored_key == entry.stored_key; });
+	}
 	auto find(const Key& key) {
 		const auto it{std::ranges::lower_bound(entries, key, {}, [](const Entry& e) { return e.key(); })};
 		return (it != entries.end() && it->key() == key) ? it : entries.end();

@@ -334,6 +334,11 @@ concept TargetSetLike = WalkableRange<T> && requires(const T t, const typename T
 	{ std::declval<T&>().push_back(std::declval<const typename T::Target&>()) };
 	/// Reverting writes a target down a key path and lands here. @see mata::posts::insert_target.
 	{ std::declval<T&>().insert(std::declval<const typename T::Target&>()) };
+	/// Removing a transition erases here and reports upward whether this post is now empty, so the
+	///  level above can drop the key that led to it. @see mata::posts::erase_target.
+	{ std::declval<T&>().erase(target) };
+	/// Asking whether a transition exists bottoms out here. @see mata::posts::has_target_at.
+	{ t.contains(target) } -> std::convertible_to<bool>;
 };
 
 /**
@@ -378,6 +383,13 @@ concept PostLike = WalkableRange<L> && ReservedKeysAtTail<L> && requires(const L
 	/// Writing a key path creates the levels it passes through. @see mata::posts::insert_target.
 	{ std::declval<L&>().find(std::declval<const typename L::Key&>()) };
 	{ std::declval<L&>().insert(std::declval<const typename L::Entry&>()) };
+	/// …and *reading* one only needs to look, so the const overload is required separately — a post
+	///  offering only the mutable @c find would force every query to take a mutable relation.
+	///  @see mata::posts::has_target_at.
+	{ l.find(std::declval<const typename L::Key&>()) };
+	/// Erasing the last target under a key drops the key as well, one level at a time.
+	///  @see mata::posts::erase_target.
+	{ std::declval<L&>().erase(std::declval<const typename L::Entry&>()) };
 };
 
 /**

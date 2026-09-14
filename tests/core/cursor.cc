@@ -325,12 +325,12 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 		// A differing *target* under identical keys must not compare equal -- the entry's own
 		//  operator== only looks at the key, which is why posts_equal() exists.
 		//
-		// Written through the generic key path rather than by reaching into `.targets` twice: an
-		//  entry does offer a mutable `nested()` (@c mata::PostEntryLike requires it), so
-		//  @c Delta::add_target places a target under a full key path at any arity. The keys here
-		//  are the ones the relation was built with above, so this deepens an existing path rather
-		//  than adding a new one.
-		same.delta.add_target(1, 99, {2, 2});
+		// Written through @c Delta::add rather than by reaching into `.targets` twice: @c add takes
+		//  one key per level at every arity the cap allows, so a two-key relation is written with
+		//  two keys and the natural `(source, keys..., target)` order. The keys here are the ones
+		//  the relation was built with above, so this deepens an existing path rather than adding a
+		//  new one.
+		same.delta.add(1, 2, 2, 99);
 		CHECK(!aut.is_identical(same));
 	}
 }

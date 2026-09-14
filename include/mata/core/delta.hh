@@ -74,15 +74,11 @@ template <typename P> struct PostAt<P, 0> {
 	using type = P;
 };
 
-namespace detail {
-/// The tuple type behind @c mata::posts::Delta::KeyPath: one key per level, at that level's own key
-///  type. Spelled over an index sequence because a pack of *types* would have to be deduced from
-///  the caller, which is exactly what @c add_target() must not do.
-template <typename P, typename Seq> struct KeyPathOf;
-template <typename P, size_t... Is> struct KeyPathOf<P, std::index_sequence<Is...>> {
-	using type = std::tuple<typename PostAt<P, Is>::type::Key...>;
-};
-} // namespace mata::posts::detail.
+/// Level @p I's key type, taken from the chain rather than from a relation. What
+///  @c mata::posts::Delta::Key is spelled in terms of, and what the per-arity keyed writes need in
+///  their *signatures* — a member of the relation would not do there, because the parameter types
+///  have to depend on the member's own template parameter to stay lazy at the wrong arity.
+template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
 
 /**
  * @brief Apply @p fn to every target below @p post, at any nesting depth.
@@ -180,6 +176,56 @@ void insert_target(P& post, const typename P::Target& target, const K0& k0, cons
 		entry_it = post.find(k0); // insert may reallocate, so look the position up again
 	}
 	insert_target(entry_it->nested(), target, rest...);
+}
+
+/**
+ * @brief Is @p target reachable from @p post down exactly the key path @p k0, @p rest?
+ *
+ * Pure descent, short-circuiting on the first key that is not there. The counterpart of
+ *  @c insert_target, and like it, the keys come *last* so the pack can be deduced.
+ */
+template <typename P> bool has_target_at(const P& post, const typename P::Target& target) {
+	static_assert(P::key_arity == 0, "the key path ran out before the innermost post");
+	return post.contains(target);
+}
+
+template <typename P, typename K0, typename... Rest>
+bool has_target_at(const P& post, const typename P::Target& target, const K0& k0, const Rest&... rest) {
+	static_assert(P::key_arity == sizeof...(Rest) + 1, "the key path must be one key per level");
+	const auto entry_it{post.find(k0)};
+	return entry_it != post.end() && has_target_at(entry_it->nested(), target, rest...);
+}
+
+/**
+ * @brief Erase @p target from under the key path @p k0, @p rest, pruning every level it empties.
+ *
+ * The only one of the three key-path walks that does its work on the way back *up*. It descends to
+ *  the innermost post, erases there, and then each level asks whether the post beneath it has just
+ *  become empty and drops its own entry if so — so a path that held the last target disappears
+ *  entirely rather than leaving a chain of empty posts behind. The return value **is** that
+ *  question ("am I now empty?"), which is why no extra state is needed to carry it back up.
+ *
+ * Generalises what the @c key_arity 1 @c mata::posts::Delta::remove does by hand at a single level.
+ *
+ * @throws std::invalid_argument if any key on the path is missing. The message does not name the
+ *  keys, unlike the arity-1 member's: `std::to_string` is only defined for arithmetic types, and a
+ *  key here may be an interval or anything else ordered. Formatting it would need @c KeyTraits and a
+ *  guard, for an error path.
+ * @return Whether @p post is empty once the erase and any pruning below it are done.
+ */
+template <typename P> bool erase_target(P& post, const typename P::Target& target) {
+	static_assert(P::key_arity == 0, "the key path ran out before the innermost post");
+	post.erase(target);
+	return post.empty();
+}
+
+template <typename P, typename K0, typename... Rest>
+bool erase_target(P& post, const typename P::Target& target, const K0& k0, const Rest&... rest) {
+	static_assert(P::key_arity == sizeof...(Rest) + 1, "the key path must be one key per level");
+	const auto entry_it{post.find(k0)};
+	if (entry_it == post.end()) { throw std::invalid_argument("The transition does not exist."); }
+	if (erase_target(entry_it->nested(), target, rest...)) { post.erase(*entry_it); }
+	return post.empty();
 }
 
 /**
@@ -1139,21 +1185,6 @@ template <typename P> class Delta {
 	using TargetSet = PostAt<key_arity>;
 	/// @copydoc mata::posts::Post::Successors
 	using Successors = typename PostType::Successors;
-	/**
-	 * @brief A full key path: one key per level, each at that level's own key type.
-	 *
-	 * What @c add_target() takes, and the reason it takes the path as *one value* rather than as a
-	 *  trailing pack. A pack is deduced from the caller's arguments, so `add_target(q, r, 2, 2)`
-	 *  would carry `int` down and convert it per level deep inside
-	 *  @c mata::posts::insert_target — a narrowing and sign-conversion warning each time, which
-	 *  `-Werror` rejects. Deducing indices instead of key types moves the conversion one step but
-	 *  not far enough: the literal has already become an `int` parameter and is no longer the
-	 *  in-range constant expression that keeps @c add(`0`, `0`, `1`) quiet. A declared tuple
-	 *  converts the braced arguments at the parameter, which is where @c add() converts them too.
-	 *
-	 * So `delta.add_target(0, 2, {1})` at arity 1, and `{1, 4}` at arity 2.
-	 */
-	using KeyPath = typename posts::detail::KeyPathOf<PostType, std::make_index_sequence<key_arity>>::type;
 	/// @copydoc mata::TargetTraits::state_of
 	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }
 	/// The targets under one fully-supplied key, and a transition of this relation.
@@ -1265,39 +1296,81 @@ template <typename P> class Delta {
 	bool uses_state(const State state) const { return state < num_of_states(); }
 
 	/**
-	 * @brief Write one transition, at any key arity: @p target under the key path @p keys.
-	 *
-	 * The generic counterpart of @c add(). `add(source, key, target)` names exactly one key, so it
-	 *  exists only at @c key_arity 1 — and it cannot simply be made variadic, because a parameter
-	 *  pack has to come last to deduce, so `add(source, keys..., target)` is not declarable at all.
-	 *  Hence the target ahead of the keys here, and hence a separate name rather than an overload:
-	 *  at arity 1 `add(0, 1, 2)` would match both and be ambiguous.
-	 *
-	 * Resizes for @p source and for the state @p target denotes, as @c add() does, so a relation
-	 *  need not be presized.
-	 *
-	 * @param[in] source Source state to write from.
-	 * @param[in] target The target to write, one per fully-supplied key path.
-	 * @param[in] keys One key per level, outermost first. Exactly @c key_arity of them.
-	 * @see mata::posts::insert_target, which this is a presizing convenience over.
-	 */
-	void add_target(const State source, const Target& target, const KeyPath& keys) {
-		resize_for_states(source, state_of(target));
-		std::apply(
-			[&](const auto&... unpacked) {
-				posts::insert_target(mutable_state_post(source), target, unpacked...);
-			},
-			keys
-		);
-	}
-
-	/**
 	 * @return Number of transitions in Delta.
 	 */
 	size_t num_of_transitions() const;
 
 	void add(State source, Key<0> symbol, State target)
 		requires(P::key_arity == 1);
+
+	/// @name Keyed writes above arity 1
+	///
+	/// One overload per supported arity rather than one variadic member, for the same reason the
+	/// cursor is hand-written per arity: it is the only shape that keeps *declared* parameter types.
+	/// A trailing pack would be deduced from the caller, so `add(0, 1, 2, 3)` would carry `int` down
+	/// and convert it to the key type once per level inside @c insert_target — a narrowing and a
+	/// sign-conversion warning each, which `-Werror` rejects. Declared parameters convert at the
+	/// call, exactly as the arity-1 overload above does. The cap is @c key_arity 3, so this is three
+	/// overloads, not an open-ended family.
+	///
+	/// Each is a member template so that its parameter types depend on its own @p Q: `KeyOf<P, 1>`
+	/// at @c key_arity 1 would name a level that does not exist, and a member's declared type is
+	/// formed when the *class* is instantiated, before any constraint on it is looked at.
+	///
+	/// The arity-1 overloads are deliberately **not** routed through these recursions. `add` there
+	/// has an append fast path (`back().key() < symbol`) that skips the search entirely when a
+	/// relation is built in sorted order, which is the common case; @c insert_target always searches
+	/// first, and searches twice on a miss.
+	///@{
+	template <typename Q = P>
+		requires(Q::key_arity == 2)
+	void add(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const Target& target) {
+		resize_for_states(source, state_of(target));
+		posts::insert_target(mutable_state_post(source), target, k0, k1);
+	}
+	template <typename Q = P>
+		requires(Q::key_arity == 3)
+	void add(
+		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
+		const Target& target
+	) {
+		resize_for_states(source, state_of(target));
+		posts::insert_target(mutable_state_post(source), target, k0, k1, k2);
+	}
+
+	/// @copydoc remove(State, Key<0>, State)
+	template <typename Q = P>
+		requires(Q::key_arity == 2)
+	void remove(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const Target& target) {
+		if (source >= state_posts_.size()) { return; }
+		posts::erase_target(state_posts_[source], target, k0, k1);
+	}
+	template <typename Q = P>
+		requires(Q::key_arity == 3)
+	void remove(
+		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
+		const Target& target
+	) {
+		if (source >= state_posts_.size()) { return; }
+		posts::erase_target(state_posts_[source], target, k0, k1, k2);
+	}
+
+	/// @copydoc contains(State, Key<0>, State) const
+	template <typename Q = P>
+		requires(Q::key_arity == 2)
+	bool contains(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const Target& target) const {
+		return source < state_posts_.size() && posts::has_target_at(state_posts_[source], target, k0, k1);
+	}
+	template <typename Q = P>
+		requires(Q::key_arity == 3)
+	bool contains(
+		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
+		const Target& target
+	) const {
+		return source < state_posts_.size() && posts::has_target_at(state_posts_[source], target, k0, k1, k2);
+	}
+	///@}
+
 	void add(const TransitionType& trans)
 		requires(P::key_arity == 1)
 	{

@@ -114,9 +114,9 @@ namespace mata::nft {
 /**
  * @brief A class representing an NFT.
  */
-class Nft : public mata::Automaton {
+class Nft : public Automaton {
   private:
-	using super = mata::Automaton;
+	using super = Automaton;
 
   public:
 	using Run = mata::Run;
