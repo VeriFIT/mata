@@ -25,6 +25,7 @@
 #ifndef MATA_RELATION_HH
 #define MATA_RELATION_HH
 
+#include <type_traits>
 #include <utility>
 
 #include "mata/alphabet.hh"
@@ -207,6 +208,13 @@ static_assert(
 	"mata::Delta exists only to shorten a name in diagnostics; it must add nothing."
 );
 static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
+/// A bare state crosses into the relation by value, in a register: the signature the keyed writes have
+///  always had. If this ever fails, @c TargetArg has drifted to the reference form and the hot arity-1
+///  @c add has grown a spill at every call site.
+static_assert(
+	std::is_same_v<Delta::TargetArg, const State>,
+	"the shipped relation must take its targets by value; see mata::posts::DeltaBase::TargetArg."
+);
 /// The cursor is hand-written per arity, 1 to 3. @see the Plan, T3.2 and §3.3b.
 static_assert(
 	Delta::key_arity <= 3,

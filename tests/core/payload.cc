@@ -15,6 +15,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <compare>
 #include <concepts>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -51,6 +52,23 @@ static_assert(WeightedDelta::key_arity == 1);
 /// The identity traits stay the identity: a bare state renamed is just the new state.
 static_assert(TargetTraits<State>::state_of(5) == 5);
 static_assert(TargetTraits<State>::with_state(5, 7) == 7);
+
+/// A small trivially copyable payload still crosses into the relation by value, in a register...
+static_assert(std::same_as<WeightedDelta::TargetArg, const Weighted>);
+
+/// ...and one that owns memory crosses by reference, so `contains` and `remove` do not copy it to
+///  look at it. Only the *type* is checked: nothing in the tree has such a payload to run.
+struct Heavy {
+	State to{};
+	std::string label{};
+	auto operator<=>(const Heavy&) const = default;
+};
+template <> struct mata::TargetTraits<Heavy> {
+	using State = mata::State;
+	static State state_of(const Heavy& target) { return target.to; }
+	static Heavy with_state(const Heavy& target, const State state) { return {state, target.label}; }
+};
+static_assert(std::same_as<posts::RelationOf<Symbol, posts::StateTargets<Heavy>>::TargetArg, const Heavy&>);
 
 struct WeightedAutomaton : AutomatonBase<WeightedDelta> {
 	using Run = mata::Run;

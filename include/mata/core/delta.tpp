@@ -109,7 +109,7 @@ DeltaBase<P>::get_transitions_between(const State state_from, const State state_
 }
 
 template <typename P>
-void DeltaBase<P>::add(const State source, Key<0> symbol, const Target target)
+void DeltaBase<P>::add(const State source, Key<0> symbol, TargetArg target)
 	requires(P::key_arity == 1)
 {
 	resize_for_states(source, state_of(target));
@@ -157,7 +157,7 @@ void DeltaBase<P>::add(const State source, const Key<0> symbol, const Nested& ta
 }
 
 template <typename P>
-void DeltaBase<P>::remove(const State source, const Key<0> symbol, const Target target)
+void DeltaBase<P>::remove(const State source, const Key<0> symbol, TargetArg target)
 	requires(P::key_arity == 1)
 {
 	if (source >= state_posts_.size()) { return; }
@@ -187,7 +187,7 @@ void DeltaBase<P>::remove(const State source, const Key<0> symbol, const Target 
 }
 
 template <typename P>
-bool DeltaBase<P>::contains(const State source, const Key<0> symbol, const Target target) const
+bool DeltaBase<P>::contains(const State source, const Key<0> symbol, TargetArg target) const
 	requires(P::key_arity == 1)
 { // {{{
 	if (state_posts_.empty()) { return false; }

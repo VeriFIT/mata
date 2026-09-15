@@ -1152,6 +1152,23 @@ template <typename P> class DeltaBase {
 	///@{
 	using PostType = P; ///< The post reached from one source state.
 	using Target = typename PostType::Target; ///< What a successor walk yields.
+	/**
+	 * @brief How a target crosses a call boundary into this relation.
+	 *
+	 * By value while a target is small and trivially copyable -- a bare state, or a state with a
+	 *  weight -- so it travels in a register and the body never reloads it after a store it makes.
+	 *  By reference otherwise, so a payload that owns memory is not copied to be looked at. Decided
+	 *  per instantiation: the shipped relation keeps the by-value signature it always had, and a
+	 *  heavy payload gets the reference without anyone spelling it. Every keyed member at every
+	 *  arity takes its target this way, so the arities cannot disagree.
+	 *
+	 * @note The copy *into* the relation, in @c add, happens either way: the containers underneath
+	 *  take `const&`. Moving a temporary payload all the way in would need an rvalue @c insert on
+	 *  them and a `std::move` at the sink, which is a container change to make when such a payload
+	 *  exists to measure it against.
+	 */
+	using TargetArg = std::conditional_t<
+		std::is_trivially_copyable_v<Target> && sizeof(Target) <= 2 * sizeof(void*), const Target, const Target&>;
 	/// What indexes this relation and the automaton's state sets. Derived from the target type
 	///  rather than propagated through the posts: which state a target denotes is a property of
 	///  the target, not of any post above it. @see mata::TargetTraits.
@@ -1296,7 +1313,7 @@ template <typename P> class DeltaBase {
 	 */
 	size_t num_of_transitions() const;
 
-	void add(State source, Key<0> symbol, Target target)
+	void add(State source, Key<0> symbol, TargetArg target)
 		requires(P::key_arity == 1);
 
 	/// @name Keyed writes above arity 1
@@ -1320,7 +1337,7 @@ template <typename P> class DeltaBase {
 	///@{
 	template <typename Q = P>
 		requires(Q::key_arity == 2)
-	void add(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const Target& target) {
+	void add(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, TargetArg target) {
 		resize_for_states(source, state_of(target));
 		posts::insert_target(mutable_state_post(source), target, k0, k1);
 	}
@@ -1328,7 +1345,7 @@ template <typename P> class DeltaBase {
 		requires(Q::key_arity == 3)
 	void add(
 		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		const Target& target
+		TargetArg target
 	) {
 		resize_for_states(source, state_of(target));
 		posts::insert_target(mutable_state_post(source), target, k0, k1, k2);
@@ -1337,7 +1354,7 @@ template <typename P> class DeltaBase {
 	/// @copydoc remove(State, Key<0>, State)
 	template <typename Q = P>
 		requires(Q::key_arity == 2)
-	void remove(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const Target& target) {
+	void remove(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, TargetArg target) {
 		if (source >= state_posts_.size()) { return; }
 		posts::erase_target(state_posts_[source], target, k0, k1);
 	}
@@ -1345,7 +1362,7 @@ template <typename P> class DeltaBase {
 		requires(Q::key_arity == 3)
 	void remove(
 		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		const Target& target
+		TargetArg target
 	) {
 		if (source >= state_posts_.size()) { return; }
 		posts::erase_target(state_posts_[source], target, k0, k1, k2);
@@ -1354,14 +1371,14 @@ template <typename P> class DeltaBase {
 	/// @copydoc contains(State, Key<0>, State) const
 	template <typename Q = P>
 		requires(Q::key_arity == 2)
-	bool contains(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const Target& target) const {
+	bool contains(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, TargetArg target) const {
 		return source < state_posts_.size() && posts::has_target_at(state_posts_[source], target, k0, k1);
 	}
 	template <typename Q = P>
 		requires(Q::key_arity == 3)
 	bool contains(
 		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		const Target& target
+		TargetArg target
 	) const {
 		return source < state_posts_.size() && posts::has_target_at(state_posts_[source], target, k0, k1, k2);
 	}
@@ -1372,7 +1389,7 @@ template <typename P> class DeltaBase {
 	{
 		add(trans.source, trans.symbol, trans.target);
 	}
-	void remove(State source, Key<0> symbol, Target target)
+	void remove(State source, Key<0> symbol, TargetArg target)
 		requires(P::key_arity == 1);
 	void remove(const TransitionType& transition)
 		requires(P::key_arity == 1)
@@ -1383,7 +1400,7 @@ template <typename P> class DeltaBase {
 	/**
 	 * Check whether the relation contains a passed transition.
 	 */
-	bool contains(State source, Key<0> symbol, Target target) const
+	bool contains(State source, Key<0> symbol, TargetArg target) const
 		requires(P::key_arity == 1);
 	/**
 	 * Check whether the relation contains a transition passed as a triple.
