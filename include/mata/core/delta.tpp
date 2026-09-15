@@ -109,10 +109,10 @@ DeltaBase<P>::get_transitions_between(const State state_from, const State state_
 }
 
 template <typename P>
-void DeltaBase<P>::add(const State source, Key<0> symbol, const State target)
+void DeltaBase<P>::add(const State source, Key<0> symbol, const Target target)
 	requires(P::key_arity == 1)
 {
-	resize_for_states(source, target);
+	resize_for_states(source, state_of(target));
 
 	if (PostType& state_transitions{state_posts_[source]}; state_transitions.empty()) {
 		state_transitions.insert({symbol, target});
@@ -157,19 +157,19 @@ void DeltaBase<P>::add(const State source, const Key<0> symbol, const Nested& ta
 }
 
 template <typename P>
-void DeltaBase<P>::remove(const State source, const Key<0> symbol, const State target)
+void DeltaBase<P>::remove(const State source, const Key<0> symbol, const Target target)
 	requires(P::key_arity == 1)
 {
 	if (source >= state_posts_.size()) { return; }
 
 	if (PostType& state_transitions{state_posts_[source]}; state_transitions.empty()) {
 		throw std::invalid_argument(
-			"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
+			"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(state_of(target)) +
 			"] does not exist."
 		);
 	} else if (state_transitions.back().symbol < symbol) {
 		throw std::invalid_argument(
-			"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
+			"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(state_of(target)) +
 			"] does not exist."
 		);
 	} else {
@@ -177,7 +177,7 @@ void DeltaBase<P>::remove(const State source, const Key<0> symbol, const State t
 			symbol_transitions == state_transitions.end()) {
 			throw std::invalid_argument(
 				"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " +
-				std::to_string(target) + "] does not exist."
+				std::to_string(state_of(target)) + "] does not exist."
 			);
 		} else {
 			symbol_transitions->erase(target);
@@ -187,7 +187,7 @@ void DeltaBase<P>::remove(const State source, const Key<0> symbol, const State t
 }
 
 template <typename P>
-bool DeltaBase<P>::contains(const State source, const Key<0> symbol, const State target) const
+bool DeltaBase<P>::contains(const State source, const Key<0> symbol, const Target target) const
 	requires(P::key_arity == 1)
 { // {{{
 	if (state_posts_.empty()) { return false; }

@@ -287,7 +287,11 @@ template <typename P> bool posts_equal(const P& a, const P& b) {
 template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 	P out{};
 	if constexpr (P::key_arity == 0) {
-		for (const typename P::Target& target : post) { out.push_back(rename(target)); }
+		for (const typename P::Target& target : post) {
+			// Rename the state a target denotes and keep whatever else it carries.
+			using Traits = TargetTraits<typename P::Target>;
+			out.push_back(Traits::with_state(target, rename(Traits::state_of(target))));
+		}
 	} else {
 		for (const auto& entry : post) {
 			out.push_back(typename P::Entry{entry.key(), renumbered(entry.nested(), rename)});
@@ -312,7 +316,9 @@ P defragmented(const P& post, const BoolVector& is_staying, const Renaming& rena
 	P out{};
 	if constexpr (P::key_arity == 0) {
 		for (const typename P::Target& target : post) {
-			if (is_staying[target]) { out.push_back(renaming[target]); }
+			using Traits = TargetTraits<typename P::Target>;
+			const auto state{Traits::state_of(target)};
+			if (is_staying[state]) { out.push_back(Traits::with_state(target, renaming[state])); }
 		}
 	} else {
 		for (const auto& entry : post) {
@@ -1290,7 +1296,7 @@ template <typename P> class DeltaBase {
 	 */
 	size_t num_of_transitions() const;
 
-	void add(State source, Key<0> symbol, State target)
+	void add(State source, Key<0> symbol, Target target)
 		requires(P::key_arity == 1);
 
 	/// @name Keyed writes above arity 1
@@ -1366,7 +1372,7 @@ template <typename P> class DeltaBase {
 	{
 		add(trans.source, trans.symbol, trans.target);
 	}
-	void remove(State source, Key<0> symbol, State target)
+	void remove(State source, Key<0> symbol, Target target)
 		requires(P::key_arity == 1);
 	void remove(const TransitionType& transition)
 		requires(P::key_arity == 1)
@@ -1377,7 +1383,7 @@ template <typename P> class DeltaBase {
 	/**
 	 * Check whether the relation contains a passed transition.
 	 */
-	bool contains(State source, Key<0> symbol, State target) const
+	bool contains(State source, Key<0> symbol, Target target) const
 		requires(P::key_arity == 1);
 	/**
 	 * Check whether the relation contains a transition passed as a triple.
@@ -1442,7 +1448,11 @@ template <typename P> class DeltaBase {
 	 * @param[in] source Source state to look from.
 	 * @param[in] target Target state to look for.
 	 */
-	bool is_successor(const State source, const State target) const { return state_post(source).has_target(target); }
+	bool is_successor(const State source, const State target) const {
+		// Compares the *state* a target denotes, not the target: a payload target is a successor of
+		//  @p source whatever it carries. Identical to `has_target(target)` for a bare state.
+		return any_target(state_post(source), [target](const Target& t) { return state_of(t) == target; });
+	}
 
 	/**
 	 * @brief Does @p state have a transition back to itself over any symbol?

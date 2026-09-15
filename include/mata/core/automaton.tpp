@@ -67,7 +67,12 @@ namespace detail {
 template <typename Delta, typename State, typename Move, size_t... Keys>
 void insert_reversed(Delta& delta, const State source, const Move& move, std::index_sequence<Keys...>) {
 	const auto& target{std::get<sizeof...(Keys)>(move)};
-	posts::insert_target(delta.mutable_state_post(Delta::state_of(target)), source, std::get<Keys>(move)...);
+	// The old source becomes the new target: the same target type, now denoting @p source, with
+	//  whatever payload the old target carried. Identity for a bare state.
+	posts::insert_target(
+		delta.mutable_state_post(Delta::state_of(target)),
+		TargetTraits<typename Delta::Target>::with_state(target, source), std::get<Keys>(move)...
+	);
 }
 } // namespace detail.
 

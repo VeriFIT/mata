@@ -459,6 +459,15 @@ class Nfa : public Automaton {
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
+	/**
+	 * @brief Check whether the language is empty using Tarjan's SCC discover algorithm.
+	 *
+	 * @deprecated @c is_lang_empty() without a counter-example takes exactly this path. Kept as a
+	 *  forwarder because it shipped in a release (v1.32.44); it will be removed in a later one.
+	 */
+	[[deprecated("use is_lang_empty() without a counter-example; it takes the SCC path")]]
+	bool is_lang_empty_scc() const { return is_lang_empty(); }
+
 
 	/**
 	 * @brief Test whether an automaton is deterministic.
