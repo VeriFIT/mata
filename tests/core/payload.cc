@@ -143,6 +143,18 @@ TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {
 		CHECK(gapped.final.contains(1));
 	}
 
+	SECTION("renumbering targets for union and concatenation keeps the weight") {
+		// What Nfa::uni and concatenate do to the other automaton's posts before appending them.
+		WeightedDelta shifted{};
+		shifted.append(aut.delta.renumber_targets([](const State q) { return q + 10; }));
+		CHECK(shifted.num_of_transitions() == 5);
+		CHECK(shifted.contains(0, 'a', Weighted{11, 5}));
+		CHECK(shifted.contains(1, 'b', Weighted{12, 7}));
+		CHECK(shifted.contains(1, 'b', Weighted{12, 9}));
+		CHECK(shifted.contains(2, 'd', Weighted{12, 0}));
+		CHECK(shifted.contains(3, 'c', Weighted{10, 1}));
+	}
+
 	SECTION("structural identity compares the payload too") {
 		WeightedAutomaton same{aut};
 		CHECK(aut.is_identical(same));

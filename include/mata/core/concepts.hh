@@ -274,12 +274,30 @@ concept SymbolKeyOf = std::same_as<K, Expected> && KeyDenotesSymbols<K>;
  *  happened to be in scope where the default argument was written. See the Plan, §3.8.
  *
  * @tparam K The key type.
- * @tparam Epsilon The smallest reserved key: every key at or above it is an epsilon.
+ * @tparam Epsilon The smallest reserved key: every key at or above it is an epsilon. Defaults to the
+ *  largest value of an integral key; a non-integral key has no default and must spell it.
  * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p Epsilon, which
  *  is right whenever epsilon is the only reserved key -- and wrong for a wider reserved tail, which
  *  is the whole reason it is a separate parameter rather than computed.
  */
-template <typename K, K Epsilon = std::numeric_limits<K>::max(), K MaxOrdinary = Epsilon - 1>
+namespace detail {
+/// The default reserved tail exists only for integral keys. Spelled as functions so that a
+///  non-integral key gets this message rather than a failed `operator-` inside a default argument.
+template <typename K> consteval K default_epsilon() {
+	static_assert(
+		std::integral<K>,
+		"ReservedKeys<K>: only an integral key has a default reserved tail (epsilon = max, "
+		"max_ordinary = epsilon - 1). For any other key spell all three arguments: "
+		"ReservedKeys<K, Epsilon, MaxOrdinary>."
+	);
+	if constexpr (std::integral<K>) { return std::numeric_limits<K>::max(); } else { return K{}; }
+}
+template <typename K> consteval K default_max_ordinary(const K epsilon) {
+	if constexpr (std::integral<K>) { return epsilon - 1; } else { return K{}; }
+}
+} // namespace mata::detail.
+
+template <typename K, K Epsilon = detail::default_epsilon<K>(), K MaxOrdinary = detail::default_max_ordinary<K>(Epsilon)>
 struct ReservedKeys {
 	using Key = K;
 	static constexpr K epsilon{Epsilon}; ///< The smallest reserved key.
