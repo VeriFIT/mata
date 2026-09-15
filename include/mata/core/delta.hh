@@ -13,6 +13,7 @@
 #include "mata/utils/synchronized-iterator.hh"
 
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
 #include <iterator>
 #include <span>
@@ -540,6 +541,33 @@ template <typename E> class Post : utils::OrdVector<E> {
 		static Entry entry{};
 		entry.symbol = symbol;
 		return super::find(entry);
+	}
+
+	/**
+	 * @brief Every entry whose key *admits* @p symbol.
+	 *
+	 * @c find() asks for the entry keyed by exactly one key; this asks which entries a symbol leads
+	 *  through, which is a different question as soon as a key is not a symbol. For a key that *is*
+	 *  the symbol the two coincide and this is `find(symbol)`: at most one entry, by binary search,
+	 *  exactly the lookup that always ran. For any other key it is a scan with
+	 *  @c mata::KeyTraits::admits, correct for overlapping keys and needing no invariant beyond
+	 *  sortedness. Linear on purpose: a post holds two entries at the corpus median and eleven at
+	 *  the 99th percentile, so a search would buy nothing and would cost a non-overlap invariant.
+	 *
+	 * Only a key that denotes symbols has this member; see @c mata::SymbolKeyOf for why the guard
+	 *  is spelled through a defaulted template parameter.
+	 * @see mata::posts::DeltaBase::successors_admitting for the union of the targets these lead to.
+	 */
+	template <typename K = Key, typename Fn>
+		requires SymbolKeyOf<K, Key>
+	void for_each_admitting(const typename KeyTraits<K>::SymbolType symbol, Fn&& fn) const {
+		if constexpr (std::same_as<K, typename KeyTraits<K>::SymbolType>) {
+			if (const auto entry_it{find(symbol)}; entry_it != this->end()) { fn(*entry_it); }
+		} else {
+			for (const Entry& entry : *this) {
+				if (KeyTraits<K>::admits(entry.key(), symbol)) { fn(entry); }
+			}
+		}
 	}
 
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
@@ -1722,6 +1750,53 @@ template <typename P> class DeltaBase {
 	/// @copydoc get_successors(State, Key<0>) const
 	/// @todo Never implemented — declared only, so a call is a link error rather than a compile one.
 	TargetSet get_successors(State state, Key<0> symbol, EpsilonClosureOpt epsilon_closure_opt) const;
+
+	/**
+	 * @brief The result type of @c successors_admitting: borrowed when the key is the symbol,
+	 *  owned otherwise.
+	 *
+	 * The same shape as @c KeyedSuccessors, following the key type instead of the arity. When the
+	 *  key *is* the symbol at most one entry admits it and its targets already sit together, so
+	 *  the answer is whatever @c get_successors(State, Key<0>) hands back -- a reference at arity 1.
+	 *  When several keys may admit one symbol their targets have to be gathered, so a fresh set.
+	 *  This is what lets the member exist for every symbol-denoting key without ever being a worse
+	 *  spelling of the specific one.
+	 */
+	template <typename K = Key<0>>
+	using AdmittedSuccessors =
+		std::conditional_t<std::same_as<K, typename KeyTraits<K>::SymbolType>, KeyedSuccessors, TargetSet>;
+
+	/**
+	 * @brief The states reachable from @p source over @p symbol: the union of the targets under
+	 *  every key that admits it.
+	 *
+	 * The one member that asks the relation a question in terms of a *symbol* rather than a *key*,
+	 *  which is the question an interval-keyed relation exists to answer and the one @c find()
+	 *  cannot: `find(Interval{5, 5})` does not find the entry `[0, 9]`. For a key that is the symbol
+	 *  this *is* `get_successors(source, symbol)`, the existing zero-copy path, not a copy of it.
+	 *
+	 * The union is the one semantic choice made here, and it is the choice @c mata::nfa::Nfa::post()
+	 *  already makes for symbol keys. An automaton that wants something else -- overlap as an
+	 *  error, a wildcard entry that wins -- uses @c mata::posts::Post::for_each_admitting and
+	 *  decides for itself. Only a symbol-denoting key has this member.
+	 *
+	 * @param source The state to look from.
+	 * @param symbol The symbol, not the key.
+	 * @return @see AdmittedSuccessors for why the return type follows the key.
+	 */
+	template <typename K = Key<0>>
+		requires SymbolKeyOf<K, typename P::Key>
+	AdmittedSuccessors<K> successors_admitting(const State source, const typename KeyTraits<K>::SymbolType symbol) const {
+		if constexpr (std::same_as<K, typename KeyTraits<K>::SymbolType>) {
+			return get_successors(source, symbol);
+		} else {
+			TargetSet successors{};
+			state_post(source).for_each_admitting(symbol, [&successors](const Entry& entry) {
+				walk_targets(entry.nested(), [&successors](const Target& target) { successors.insert(target); });
+			});
+			return successors;
+		}
+	}
 
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state.

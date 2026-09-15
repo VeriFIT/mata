@@ -125,6 +125,7 @@ template <typename D>
 concept HasSymbolMembers = requires(const D d) {
 	d.get_used_symbols();
 	d.get_max_symbol();
+	d.successors_admitting(0, 0);
 };
 
 /// Collect the keys a @c Moves range yields, so the epsilon/symbol split can be compared directly.
@@ -333,6 +334,59 @@ TEST_CASE("mata::KeyTraits — the used symbols are the union of the keys' expan
 		const IntervalDelta delta{};
 		CHECK(delta.get_used_symbols().empty());
 		CHECK(delta.get_max_symbol() == 0);
+	}
+}
+
+TEST_CASE("mata::KeyTraits::admits — asking the relation about a symbol, not a key") {
+	SECTION("an interval relation answers by union over every key that admits the symbol") {
+		IntervalDelta delta{};
+		delta.add(0, Interval{0, 4}, 1);
+		delta.add(0, Interval{3, 9}, 2); // Overlaps the first on 3 and 4.
+		delta.add(0, Interval{20, 20}, 3);
+		delta.add(1, Interval{0, 9}, 4);
+
+		// find() asks for a key and does not know that [0, 4] covers 3; the symbol question does.
+		CHECK(delta.state_post(0).find(Interval{3, 3}) == delta.state_post(0).end());
+		CHECK(delta.successors_admitting(0, 3) == StateSet{1, 2});
+		CHECK(delta.successors_admitting(0, 7) == StateSet{2});
+		CHECK(delta.successors_admitting(0, 20) == StateSet{3});
+		CHECK(delta.successors_admitting(0, 10).empty());
+		CHECK(delta.successors_admitting(1, 9) == StateSet{4});
+		CHECK(delta.successors_admitting(7, 0).empty()); // A state with no post at all.
+
+		// Several keys may admit one symbol, so the answer has to be gathered: a fresh set.
+		static_assert(std::same_as<decltype(delta.successors_admitting(0, 3)), StateSet>);
+
+		// The primitive underneath yields the entries themselves, for an automaton that wants a
+		//  different meaning than the union.
+		std::vector<Interval> admitting{};
+		delta.state_post(0).for_each_admitting(4, [&admitting](const auto& entry) { admitting.push_back(entry.key()); });
+		CHECK(admitting == std::vector<Interval>{Interval{0, 4}, Interval{3, 9}});
+	}
+
+	SECTION("for a symbol key it is the existing lookup, handed back by reference") {
+		Delta delta{};
+		delta.add(0, 'a', 1);
+		delta.add(0, 'a', 2);
+		delta.add(0, 'b', 3);
+
+		// Compares *addresses*: a copy would compare equal by value and pass for the wrong reason,
+		//  which is the same check tests/core/levels.cc makes for KeyedSuccessors.
+		static_assert(std::same_as<decltype(delta.successors_admitting(0, 'a')), const StateSet&>);
+		CHECK(&delta.successors_admitting(0, 'a') == &delta.get_successors(0, 'a'));
+		CHECK(delta.successors_admitting(0, 'a') == StateSet{1, 2});
+		CHECK(delta.successors_admitting(0, 'c').empty());
+
+		size_t entries{0};
+		delta.state_post(0).for_each_admitting('b', [&entries](const auto& entry) {
+			++entries;
+			CHECK(entry.key() == 'b');
+		});
+		CHECK(entries == 1);
+	}
+
+	SECTION("a key that denotes no symbols has no symbol question to answer") {
+		static_assert(!HasSymbolMembers<WeightDelta>); // includes successors_admitting; see the concept.
 	}
 }
 
