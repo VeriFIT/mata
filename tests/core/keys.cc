@@ -345,7 +345,7 @@ TEST_CASE("mata::KeyTraits::admits — asking the relation about a symbol, not a
 		delta.add(0, Interval{20, 20}, 3);
 		delta.add(1, Interval{0, 9}, 4);
 
-		// find() asks for a key and does not know that [0, 4] covers 3; the symbol question does.
+		// find() looks up a key; [0, 4] is not the key 3.
 		CHECK(delta.state_post(0).find(Interval{3, 3}) == delta.state_post(0).end());
 		CHECK(delta.successors_admitting(0, 3) == StateSet{1, 2});
 		CHECK(delta.successors_admitting(0, 7) == StateSet{2});
@@ -354,11 +354,10 @@ TEST_CASE("mata::KeyTraits::admits — asking the relation about a symbol, not a
 		CHECK(delta.successors_admitting(1, 9) == StateSet{4});
 		CHECK(delta.successors_admitting(7, 0).empty()); // A state with no post at all.
 
-		// Several keys may admit one symbol, so the answer has to be gathered: a fresh set.
+		// Several keys may admit one symbol, so a fresh set.
 		static_assert(std::same_as<decltype(delta.successors_admitting(0, 3)), StateSet>);
 
-		// The primitive underneath yields the entries themselves, for an automaton that wants a
-		//  different meaning than the union.
+		// The primitive yields the entries, for an automaton that wants another meaning than the union.
 		std::vector<Interval> admitting{};
 		delta.state_post(0).for_each_admitting(4, [&admitting](const auto& entry) { admitting.push_back(entry.key()); });
 		CHECK(admitting == std::vector<Interval>{Interval{0, 4}, Interval{3, 9}});
@@ -370,8 +369,7 @@ TEST_CASE("mata::KeyTraits::admits — asking the relation about a symbol, not a
 		delta.add(0, 'a', 2);
 		delta.add(0, 'b', 3);
 
-		// Compares *addresses*: a copy would compare equal by value and pass for the wrong reason,
-		//  which is the same check tests/core/levels.cc makes for KeyedSuccessors.
+		// By address: a copy would compare equal by value.
 		static_assert(std::same_as<decltype(delta.successors_admitting(0, 'a')), const StateSet&>);
 		CHECK(&delta.successors_admitting(0, 'a') == &delta.get_successors(0, 'a'));
 		CHECK(delta.successors_admitting(0, 'a') == StateSet{1, 2});

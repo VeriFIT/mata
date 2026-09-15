@@ -119,9 +119,7 @@ class Nft : public Automaton {
 	using super = Automaton;
 
   public:
-	/// Through the module seam, like every other shared type: redefine @c nft::Run in
-	///  @c mata/nft/types.hh and this follows.
-	using Run = nft::Run;
+	using Run = nft::Run; ///< Through the module seam, like every shared type.
 
 	/**
 	 * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.

@@ -1,15 +1,7 @@
 /** @file
- * @brief A relation whose targets carry a payload, run through every structural operation.
- *
- * @c mata::TargetTraits is the one thing a payload target has to supply, and the structural
- *  algorithms are written against it: @c state_of() where they *read* a target, @c with_state()
- *  where they *write* one with its state replaced (renumbering when trimming, turning a source
- *  into a target when reverting). Nothing in the tree ships a payload target, so without this file
- *  the write side is dead code that compiles for `Target == State` and for nothing else -- which
- *  is exactly how the arity-1 keyed writes came to take `State target` for years.
- *
- * The target here is a state plus an integer weight. Two targets to the same state with different
- *  weights are two targets, and every operation below has to keep the weight where it found it.
+ * @brief A relation whose targets carry a payload (a state plus a weight), through every structural
+ *  operation. Nothing in the tree ships one, so without this the @c with_state write paths are
+ *  dead code that compiles only for `Target == State`.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -25,9 +17,8 @@
 
 using namespace mata;
 
-/// Named rather than in an anonymous namespace: an explicit instantiation over an internal-linkage
-///  type is itself internal, and `-Werror=unused-function` then fires on every member the test does
-///  not happen to call -- which is the opposite of what instantiating them all is for.
+/// Not in an anonymous namespace: an explicit instantiation over an internal-linkage type trips
+///  `-Werror=unused-function` on every member the test does not call.
 struct Weighted {
 	State to{};
 	int weight{};
@@ -53,11 +44,8 @@ static_assert(WeightedDelta::key_arity == 1);
 static_assert(TargetTraits<State>::state_of(5) == 5);
 static_assert(TargetTraits<State>::with_state(5, 7) == 7);
 
-/// A small trivially copyable payload still crosses into the relation by value, in a register...
+/// A small payload is passed by value, one that owns memory by reference (type-level check only).
 static_assert(std::same_as<WeightedDelta::TargetArg, const Weighted>);
-
-/// ...and one that owns memory crosses by reference, so `contains` and `remove` do not copy it to
-///  look at it. Only the *type* is checked: nothing in the tree has such a payload to run.
 struct Heavy {
 	State to{};
 	std::string label{};
@@ -72,9 +60,7 @@ static_assert(std::same_as<posts::RelationOf<Symbol, posts::StateTargets<Heavy>>
 
 struct WeightedAutomaton : AutomatonBase<WeightedDelta> {
 	using Run = mata::Run;
-	/// Declared so that `WeightedAutomaton aut{}` is value-initialisation through the base's explicit
-	///  constructor rather than aggregate initialisation, which an explicit constructor rejects.
-	WeightedAutomaton() = default;
+	WeightedAutomaton() = default; ///< So `aut{}` is not aggregate-init through the explicit base ctor.
 	/// What a path reads is not structural; this automaton reads nothing.
 	std::pair<Run, bool> get_word_for_path(const Run& run) const { return {run, true}; }
 };

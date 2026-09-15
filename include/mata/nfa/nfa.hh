@@ -38,13 +38,11 @@
  *  start counting and collides with an NFT's tape @c mata::Level, which is unrelated. Count keys.
  *  @see @ref arity in @c mata/core/concepts.hh.
  *
- *  What *is* fixed is the symbol type. A relation may key its transitions by something other than a
- *  symbol -- an interval of symbols, say -- and still use the stock @c mata::Alphabet, because the
- *  alphabet deals in the symbols a key *denotes* (see @c mata::KeyTraits). Changing what a symbol
- *  is, to a wider integer or a non-integer, is not supported by @c mata::Alphabet: its virtual
- *  interface is stated in @c mata::Symbol and cannot be overridden with another type. A relation
- *  over different symbols needs its own alphabet class (see @c mata::AlphabetTraits), and none of
- *  the operations here that take an @c Alphabet apply to it.
+ *  The symbol *type* is fixed. Keys other than symbols (intervals, say) work with the stock
+ *  @c mata::Alphabet, which deals in the symbols a key denotes (@c mata::KeyTraits). A different
+ *  symbol type does not: @c mata::Alphabet's virtual interface is stated in @c mata::Symbol, so such
+ *  a relation needs its own alphabet class (@c mata::AlphabetTraits) and cannot use the operations
+ *  here that take an @c Alphabet.
  *
  *  The main idea behind @c mata::nfa::Nfa is that the members (@c mata::nfa::Nfa::delta, @c mata::nfa::Nfa::initial,
  *   @c mata::nfa::Nfa::alphabet, ...) do not depend on each other.
@@ -97,7 +95,7 @@
 #include <utility>
 #include <vector>
 
-#include "delta.hh" // Brings the relation and, with it, the base every NFA derives from.
+#include "delta.hh"
 #include "mata/alphabet.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/ord-vector.hh"
@@ -112,9 +110,7 @@ namespace mata::nfa {
  */
 class Nfa : public Automaton {
   public:
-	/// Through the module seam, like every other shared type: redefine @c nfa::Run in
-	///  @c mata/nfa/types.hh and this follows.
-	using Run = nfa::Run;
+	using Run = nfa::Run; ///< Through the module seam, like every shared type.
 
 	std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
 	/// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
@@ -468,12 +464,8 @@ class Nfa : public Automaton {
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
-	/**
-	 * @brief Check whether the language is empty using Tarjan's SCC discover algorithm.
-	 *
-	 * @deprecated @c is_lang_empty() without a counter-example takes exactly this path. Kept as a
-	 *  forwarder because it shipped in a release (v1.32.44); it will be removed in a later one.
-	 */
+	/// @deprecated Use @c is_lang_empty() without a counter-example; it takes the same SCC path.
+	///  Kept because it shipped in v1.32.44.
 	[[deprecated("use is_lang_empty() without a counter-example; it takes the SCC path")]]
 	bool is_lang_empty_scc() const { return is_lang_empty(); }
 

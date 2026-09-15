@@ -289,7 +289,6 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 	P out{};
 	if constexpr (P::key_arity == 0) {
 		for (const typename P::Target& target : post) {
-			// Rename the state a target denotes and keep whatever else it carries.
 			using Traits = TargetTraits<typename P::Target>;
 			out.push_back(Traits::with_state(target, rename(Traits::state_of(target))));
 		}
@@ -544,19 +543,12 @@ template <typename E> class Post : utils::OrdVector<E> {
 	}
 
 	/**
-	 * @brief Every entry whose key *admits* @p symbol.
+	 * @brief Call @p fn on every entry whose key admits @p symbol (@c mata::KeyTraits::admits).
 	 *
-	 * @c find() asks for the entry keyed by exactly one key; this asks which entries a symbol leads
-	 *  through, which is a different question as soon as a key is not a symbol. For a key that *is*
-	 *  the symbol the two coincide and this is `find(symbol)`: at most one entry, by binary search,
-	 *  exactly the lookup that always ran. For any other key it is a scan with
-	 *  @c mata::KeyTraits::admits, correct for overlapping keys and needing no invariant beyond
-	 *  sortedness. Linear on purpose: a post holds two entries at the corpus median and eleven at
-	 *  the 99th percentile, so a search would buy nothing and would cost a non-overlap invariant.
-	 *
-	 * Only a key that denotes symbols has this member; see @c mata::SymbolKeyOf for why the guard
-	 *  is spelled through a defaulted template parameter.
-	 * @see mata::posts::DeltaBase::successors_admitting for the union of the targets these lead to.
+	 * @c find() looks up a key; this looks up a symbol, which differs once a key is not a symbol.
+	 *  For a symbol key it is `find(symbol)`. Otherwise a linear scan: posts are a few entries long,
+	 *  and a search would need a non-overlap invariant. Present only for symbol-denoting keys.
+	 * @see mata::posts::DeltaBase::successors_admitting
 	 */
 	template <typename K = Key, typename Fn>
 		requires SymbolKeyOf<K, Key>
@@ -1155,11 +1147,8 @@ template <typename P> class SuccessorCursor<P, 3> {
 /**
  * @brief The generic transition relation: a vector of posts indexed by source state.
  *
- * Named by analogy with @c mata::AutomatonBase / @c mata::Automaton: this is the template, and the
- *  relation the library ships, @c mata::Delta, is a class deriving from `DeltaBase<StatePost>` in
- *  @c mata/relation.hh. The two names are deliberately different so that "Delta", unqualified, means
- *  one thing everywhere -- the shipped relation -- and a diagnostic mentioning @c DeltaBase is
- *  recognisably about the template underneath it.
+ * The template behind @c mata::Delta, as @c mata::AutomatonBase is behind @c mata::Automaton; the
+ *  shipped relation derives from `DeltaBase<StatePost>` in @c mata/relation.hh.
  *
  * A vector of posts indexed by source state, over a chain of posts ending in a set of targets. For
  *  an NFA that chain is one key deep — a symbol — so it is this class, one @c Post, targets, and the
@@ -1180,21 +1169,9 @@ template <typename P> class DeltaBase {
 	///@{
 	using PostType = P; ///< The post reached from one source state.
 	using Target = typename PostType::Target; ///< What a successor walk yields.
-	/**
-	 * @brief How a target crosses a call boundary into this relation.
-	 *
-	 * By value while a target is small and trivially copyable -- a bare state, or a state with a
-	 *  weight -- so it travels in a register and the body never reloads it after a store it makes.
-	 *  By reference otherwise, so a payload that owns memory is not copied to be looked at. Decided
-	 *  per instantiation: the shipped relation keeps the by-value signature it always had, and a
-	 *  heavy payload gets the reference without anyone spelling it. Every keyed member at every
-	 *  arity takes its target this way, so the arities cannot disagree.
-	 *
-	 * @note The copy *into* the relation, in @c add, happens either way: the containers underneath
-	 *  take `const&`. Moving a temporary payload all the way in would need an rvalue @c insert on
-	 *  them and a `std::move` at the sink, which is a container change to make when such a payload
-	 *  exists to measure it against.
-	 */
+	/// How the keyed members take a target: by value when it is small and trivially copyable (a bare
+	///  state stays in a register), by reference otherwise (a payload owning memory is not copied to
+	///  be looked at).
 	using TargetArg = std::conditional_t<
 		std::is_trivially_copyable_v<Target> && sizeof(Target) <= 2 * sizeof(void*), const Target, const Target&>;
 	/// What indexes this relation and the automaton's state sets. Derived from the target type
@@ -1494,8 +1471,7 @@ template <typename P> class DeltaBase {
 	 * @param[in] target Target state to look for.
 	 */
 	bool is_successor(const State source, const State target) const {
-		// Compares the *state* a target denotes, not the target: a payload target is a successor of
-		//  @p source whatever it carries. Identical to `has_target(target)` for a bare state.
+		// By the state a target denotes, so a payload target counts whatever it carries.
 		return any_target(state_post(source), [target](const Target& t) { return state_of(t) == target; });
 	}
 
@@ -1751,38 +1727,21 @@ template <typename P> class DeltaBase {
 	/// @todo Never implemented — declared only, so a call is a link error rather than a compile one.
 	TargetSet get_successors(State state, Key<0> symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
-	/**
-	 * @brief The result type of @c successors_admitting: borrowed when the key is the symbol,
-	 *  owned otherwise.
-	 *
-	 * The same shape as @c KeyedSuccessors, following the key type instead of the arity. When the
-	 *  key *is* the symbol at most one entry admits it and its targets already sit together, so
-	 *  the answer is whatever @c get_successors(State, Key<0>) hands back -- a reference at arity 1.
-	 *  When several keys may admit one symbol their targets have to be gathered, so a fresh set.
-	 *  This is what lets the member exist for every symbol-denoting key without ever being a worse
-	 *  spelling of the specific one.
-	 */
+	/// Result type of @c successors_admitting: what @c get_successors returns when the key is the
+	///  symbol (at most one entry admits it), a fresh set otherwise (several may). Same idea as
+	///  @c KeyedSuccessors, keyed on the key type rather than the arity.
 	template <typename K = Key<0>>
 	using AdmittedSuccessors =
 		std::conditional_t<std::same_as<K, typename KeyTraits<K>::SymbolType>, KeyedSuccessors, TargetSet>;
 
 	/**
-	 * @brief The states reachable from @p source over @p symbol: the union of the targets under
-	 *  every key that admits it.
+	 * @brief The targets reachable from @p source over @p symbol: the union under every key that
+	 *  admits it.
 	 *
-	 * The one member that asks the relation a question in terms of a *symbol* rather than a *key*,
-	 *  which is the question an interval-keyed relation exists to answer and the one @c find()
-	 *  cannot: `find(Interval{5, 5})` does not find the entry `[0, 9]`. For a key that is the symbol
-	 *  this *is* `get_successors(source, symbol)`, the existing zero-copy path, not a copy of it.
-	 *
-	 * The union is the one semantic choice made here, and it is the choice @c mata::nfa::Nfa::post()
-	 *  already makes for symbol keys. An automaton that wants something else -- overlap as an
-	 *  error, a wildcard entry that wins -- uses @c mata::posts::Post::for_each_admitting and
-	 *  decides for itself. Only a symbol-denoting key has this member.
-	 *
-	 * @param source The state to look from.
-	 * @param symbol The symbol, not the key.
-	 * @return @see AdmittedSuccessors for why the return type follows the key.
+	 * For a symbol key this is `get_successors(source, symbol)`. For another meaning of overlap use
+	 *  @c mata::posts::Post::for_each_admitting directly. Present only for symbol-denoting keys.
+	 * @param symbol A symbol, not a key.
+	 * @see AdmittedSuccessors
 	 */
 	template <typename K = Key<0>>
 		requires SymbolKeyOf<K, typename P::Key>

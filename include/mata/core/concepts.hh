@@ -92,26 +92,14 @@ namespace mata {
 /**
  * @brief What a target is, and which state it denotes.
  *
- * A target is whatever the innermost post stores. For a plain automaton that is just a state; for
- *  a relation carrying a payload it might be a state paired with an output symbol, a weight, or a
- *  probability. The structural algorithms only ever need to know which *state* a target denotes,
- *  and they get that from here.
+ * A target is whatever the innermost post stores: a state, or a state with a payload (an output
+ *  symbol, a weight). The structural algorithms need two things from it, and nothing else:
+ *  @c state_of(target), the state it denotes, for every read; and @c with_state(target, state), the
+ *  same target denoting another state, for trimming (renumbering) and reverting (source becomes
+ *  target). Both are the identity for a bare state.
  *
- * This is a property of the target type, not of any post, so it lives in one specialisable traits
- *  template rather than being threaded as a member through every post of the nesting.
- *
- * Two operations, and every structural algorithm is written against exactly these:
- *
- *  - @c state_of(target): which state the target denotes. Reachability, Tarjan's walk, distances
- *    and emptiness read targets and need nothing else.
- *  - @c with_state(target, state): the same target, denoting @p state instead. Trimming renumbers
- *    the states a relation points at and reverting turns a source into a target; both have to
- *    replace the state while keeping whatever else the target carries, and only the target type
- *    knows what that is.
- *
- * For a bare state both are the identity, and both collapse to nothing at @c -O2.
- *
- * Specialise it to introduce a payload target:
+ * A property of the target type, hence a traits rather than a member of every post. Specialise it
+ *  to introduce a payload target:
  * ```cpp
  * template <> struct mata::TargetTraits<MyPayload> {
  *     using State = mata::State;
@@ -122,9 +110,7 @@ namespace mata {
  */
 template <typename T> struct TargetTraits {
 	using State = T; ///< The state a target denotes. Equal to @c T when a target *is* a state.
-	/// Identity for a plain target.
 	static constexpr State state_of(const T& target) { return target; }
-	/// A bare state carries nothing but the state, so the answer is @p state.
 	static constexpr T with_state(const T& /* target */, const State state) { return state; }
 };
 

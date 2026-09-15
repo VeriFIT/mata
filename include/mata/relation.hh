@@ -96,14 +96,10 @@ class Delta : public posts::DeltaBase<StatePost> {
 	///@}
 
 	/// @name The depth-2 keyed members, spelled concretely
-	/// Plain members forwarding to the base, and the base's are still what runs. They exist for the
-	///  two audiences the Plan's §3.10 names: a wrong call is reported against three overloads in
-	///  @c mata::State and @c mata::Symbol instead of the base's five candidates across three
-	///  arities, and an IDE shows `add(State, Symbol, State)` rather than a member template. Name
-	///  hiding does the work -- redeclaring @c add here hides every base @c add -- so every depth-2
-	///  overload the base has must be listed, and a new one added to the base has to be added here
-	///  too. Spelled in @c mata::State / @c mata::Symbol, not the inherited aliases: GCC prints an
-	///  inherited alias in its canonical form, which is the long name this class exists to avoid.
+	/// Forwarders, so that diagnostics and IDEs show `add(State, Symbol, State)` rather than the
+	///  base's member templates. Redeclaring a name hides every base overload of it, so all depth-2
+	///  overloads are listed; a new one on the base must be added here. Spelled in @c mata::State /
+	///  @c mata::Symbol because GCC prints an inherited alias in its long canonical form.
 	///@{
 	/// @brief Add a transition from @p source over @p symbol to @p target.
 	void add(const mata::State source, const mata::Symbol symbol, const mata::State target) {
@@ -208,9 +204,8 @@ static_assert(
 	"mata::Delta exists only to shorten a name in diagnostics; it must add nothing."
 );
 static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
-/// A bare state crosses into the relation by value, in a register: the signature the keyed writes have
-///  always had. If this ever fails, @c TargetArg has drifted to the reference form and the hot arity-1
-///  @c add has grown a spill at every call site.
+/// The keyed writes take a bare state by value, as they always have; the reference form would spill
+///  at every call site of the out-of-line arity-1 @c add.
 static_assert(
 	std::is_same_v<Delta::TargetArg, const State>,
 	"the shipped relation must take its targets by value; see mata::posts::DeltaBase::TargetArg."
