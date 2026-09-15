@@ -52,9 +52,9 @@
  *  @c mata/nfa/nfa.hh and "four-level" in @c mata/core/delta.hh, both describing this one. Both
  *  passages now count keys.
  *
- * Levels are named by key index throughout: `mata::posts::Delta::Key<I>` is level @p I's key,
- *  `mata::posts::Delta::Reserved<I>` its reserved-key convention, and
- *  `mata::posts::Delta::PostAt<I>` the post that far in. A *post* keeps the singular @c Key,
+ * Levels are named by key index throughout: `mata::posts::DeltaBase::Key<I>` is level @p I's key,
+ *  `mata::posts::DeltaBase::Reserved<I>` its reserved-key convention, and
+ *  `mata::posts::DeltaBase::PostAt<I>` the post that far in. A *post* keeps the singular @c Key,
  *  because a post has exactly one and there is nothing to disambiguate; a relation spans every
  *  level, and there a singular name would have silently meant the outermost one.
  *
@@ -120,7 +120,7 @@ template <typename T> struct TargetTraits {
  * A key is not always a symbol. It is for an NFA, where a key *is* the one symbol it stands for,
  *  but a relation may key its transitions by an interval, a character class or a predicate, and
  *  then "the symbols used on the transitions" is not the set of keys under another name -- it is
- *  the union of their expansions. A different computation, so @c Delta::get_used_symbols() and its
+ *  the union of their expansions. A different computation, so @c mata::posts::DeltaBase::get_used_symbols() and its
  *  siblings are written against this traits in order to stay *correct* for such a key rather than
  *  merely compiling. See the Plan, §3.13.
  *
@@ -162,7 +162,7 @@ template <std::integral K> struct KeyTraits<K> {
  * @brief A key that stands for a set of symbols, so that "which symbols are used" is a question it
  *  can answer.
  *
- * The guard on the symbol-specific members of @c mata::posts::Delta. @see KeyTraits.
+ * The guard on the symbol-specific members of @c mata::posts::DeltaBase. @see KeyTraits.
  */
 template <typename K>
 concept KeyDenotesSymbols = requires(const K key) {
@@ -194,7 +194,7 @@ template <typename A> struct AlphabetTraits {
  * @brief An alphabet that can be *extended* with symbols it has not seen.
  *
  * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet is defined by
- *  being able to. @c mata::posts::Delta::add_symbols_to() needs the growing kind, and asks for the
+ *  being able to. @c mata::posts::DeltaBase::add_symbols_to() needs the growing kind, and asks for the
  *  two operations it actually performs rather than naming a concrete class — which is what lets
  *  @c core stop knowing that @c OnTheFlyAlphabet exists.
  */
@@ -249,7 +249,7 @@ concept SymbolTypeAgrees = detail::SymbolTypeAgrees<K, A>::value;
  *  and the reason is not style. The return types of those members mention
  *  `KeyTraits<Key>::SymbolType`, and a member's declared type is formed when the *class* is
  *  instantiated, before any constraint on it is looked at. An explicit return type naming
- *  `KeyTraits<Key>` therefore makes @c mata::posts::Delta over a key that denotes no symbols fail
+ *  `KeyTraits<Key>` therefore makes @c mata::posts::DeltaBase over a key that denotes no symbols fail
  *  to instantiate at all, rather than merely lack the member -- checked, and it does exactly that.
  *  Deferring the return type to the member's own parameter is what keeps it lazy.
  *
@@ -269,7 +269,7 @@ concept SymbolKeyOf = std::same_as<K, Expected> && KeyDenotesSymbols<K>;
  *  tell the two apart, because there is only one key type. The convention belongs to the relation.
  *
  * That is exactly what makes @c mata::posts::Post::moves_epsilons(),
- *  @c mata::posts::Post::moves_symbols() and @c mata::posts::Delta::epsilon_symbol_posts()
+ *  @c mata::posts::Post::moves_symbols() and @c mata::posts::DeltaBase::epsilon_symbol_posts()
  *  resolve their defaults *per instantiation*, instead of each picking up whichever constant
  *  happened to be in scope where the default argument was written. See the Plan, §3.8.
  *
@@ -285,7 +285,7 @@ struct ReservedKeys {
 	static constexpr K epsilon{Epsilon}; ///< The smallest reserved key.
 	static constexpr K max_ordinary{MaxOrdinary}; ///< The largest key that is not reserved.
 	/// True when no key can sort above @c epsilon, so at most one entry can carry it and that entry
-	///  is the last one. @c mata::posts::Delta::epsilon_symbol_posts() takes an O(1) path on it
+	///  is the last one. @c mata::posts::DeltaBase::epsilon_symbol_posts() takes an O(1) path on it
 	///  instead of searching. Conservatively false for a key type without a known maximum.
 	static constexpr bool epsilon_is_greatest{Epsilon == std::numeric_limits<K>::max()};
 
@@ -484,7 +484,7 @@ concept DeltaLike = requires(
 	///  move apart and writes it back — but never inspects, compares or stores one, so requiring a
 	///  key here would be requiring something nothing uses. It would also have to pick a *level*,
 	///  and at a @c key_arity above one there is no "the key". See the Plan, §3.7, and
-	///  @c mata::posts::Delta::Key for the indexed spelling a relation offers its own users.
+	///  @c mata::posts::DeltaBase::Key for the indexed spelling a relation offers its own users.
 	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
 	{ D::key_arity } -> std::convertible_to<size_t>;
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;

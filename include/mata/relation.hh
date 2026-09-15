@@ -53,23 +53,23 @@ using StatePost = posts::Post<SymbolPost>;
  *
  * A **class**, not an alias, and the reason is diagnostics. An alias does not survive into compiler
  *  messages — GCC prints the canonical type — so `delta.add_transition(...)` on the alias reported
- *  `'class mata::posts::Delta<mata::posts::Post<mata::posts::PostEntry<unsigned int,
+ *  `'class mata::posts::DeltaBase<mata::posts::Post<mata::posts::PostEntry<unsigned int,
  *  mata::posts::StateTargets<long unsigned int> > > >' has no member named 'add_transition'`:
- *  124 characters of noun for a one-word mistake. Measured; the rest of the message was unchanged.
+ *  well over a hundred characters of noun for a one-word mistake. Measured; the rest of the message was unchanged.
  *
  * It adds **nothing** — no members, no behaviour, no virtuals. That is what makes the conversions
  *  below safe: there is nothing to slice, so a base and a derived object differ only in the name the
  *  compiler prints. @c sizeof is asserted equal at the bottom of this file.
  *
  * @note The conversions from the base are not decoration. Generic code in @c core legitimately
- *  produces a `posts::Delta<StatePost>` — `posts::defragment()` returns one, and
+ *  produces a `posts::DeltaBase<StatePost>` — `posts::defragment()` returns one, and
  *  `src/nfa/nfa.cc` assigns it straight into an automaton's @c delta. Core cannot know about this
  *  class and must not, so the class has to accept what core hands back.
  * @see mata::Automaton, which is @c AutomatonBase over this.
  */
-class Delta : public posts::Delta<StatePost> {
+class Delta : public posts::DeltaBase<StatePost> {
   public:
-	using Base = posts::Delta<StatePost>;
+	using Base = posts::DeltaBase<StatePost>;
 	using Base::Base; ///< including `explicit Delta(size_t)`, which @c mata::DeltaLike requires
 
 	Delta() = default;
@@ -80,7 +80,7 @@ class Delta : public posts::Delta<StatePost> {
 	~Delta() = default;
 
 	/// @name Accepting what core hands back
-	/// Implicit on purpose: a `posts::Delta<StatePost>` *is* this relation, spelled the long way.
+	/// Implicit on purpose: a `posts::DeltaBase<StatePost>` *is* this relation, spelled the long way.
 	///@{
 	Delta(const Base& other) : Base{other} {}
 	Delta(Base&& other) noexcept : Base{std::move(other)} {}
@@ -169,7 +169,7 @@ static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton
 ///  the same size as what it derives from; if that ever stops holding, the class has grown something
 ///  and the conversions above have something to slice.
 static_assert(
-	sizeof(Delta) == sizeof(posts::Delta<StatePost>) && alignof(Delta) == alignof(posts::Delta<StatePost>),
+	sizeof(Delta) == sizeof(posts::DeltaBase<StatePost>) && alignof(Delta) == alignof(posts::DeltaBase<StatePost>),
 	"mata::Delta exists only to shorten a name in diagnostics; it must add nothing."
 );
 static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
@@ -190,7 +190,7 @@ namespace mata {
 ///  header instantiates the whole post stack and the automaton on top of it.
 extern template class posts::PostEntry<Symbol, StateSet>;
 extern template class posts::Post<SymbolPost>;
-extern template class posts::Delta<StatePost>;
+extern template class posts::DeltaBase<StatePost>;
 extern template class AutomatonBase<Delta>;
 } // namespace mata.
 

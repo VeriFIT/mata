@@ -218,8 +218,8 @@ TEST_CASE("mata::SuccessorCursor and the walks agree on counts") {
  */
 namespace {
 
-using Delta2 = posts::Delta<Post2>;
-using Delta3 = posts::Delta<Post3>;
+using Delta2 = posts::DeltaBase<Post2>;
+using Delta3 = posts::DeltaBase<Post3>;
 
 // Note: there is deliberately no concept probing `reverted()` itself. It is *protected*, so any
 //  such concept is unsatisfiable from outside the class and would report false whatever the arity —

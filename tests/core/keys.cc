@@ -83,7 +83,7 @@ using WideTail = ReservedKeys<Symbol, OUR_EPSILON, OUR_EPSILON - 11>;
 ///  form.
 template <typename Reserved>
 using PostOver = posts::Post<posts::PostEntry<Symbol, StateSet, Reserved>>;
-template <typename Reserved> using DeltaOver = posts::Delta<PostOver<Reserved>>;
+template <typename Reserved> using DeltaOver = posts::DeltaBase<PostOver<Reserved>>;
 
 using NarrowDelta = DeltaOver<NarrowTail>;
 using WideDelta = DeltaOver<WideTail>;

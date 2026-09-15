@@ -42,12 +42,12 @@ template <typename K, typename N, typename R> void PostEntry<K, N, R>::insert(co
 }
 
 template <typename P>
-typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const State state, const Key<0> epsilon) const {
+typename DeltaBase<P>::PostType::const_iterator DeltaBase<P>::epsilon_symbol_posts(const State state, const Key<0> epsilon) const {
 	return epsilon_symbol_posts(state_post(state), epsilon);
 }
 
 template <typename P>
-typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const PostType& state_post, const Key<0> epsilon) {
+typename DeltaBase<P>::PostType::const_iterator DeltaBase<P>::epsilon_symbol_posts(const PostType& state_post, const Key<0> epsilon) {
 	if (state_post.empty()) { return state_post.end(); }
 	// Fast path: when nothing can sort above the relation's own epsilon, an entry carrying it can
 	//  only be the last one, and it is also the *smallest* epsilon because it is the only possible
@@ -67,17 +67,17 @@ typename Delta<P>::PostType::const_iterator Delta<P>::epsilon_symbol_posts(const
 }
 
 template <typename P>
-typename Delta<P>::TargetSet Delta<P>::get_successors(const State state) const {
+typename DeltaBase<P>::TargetSet DeltaBase<P>::get_successors(const State state) const {
 	return state_post(state).get_successors();
 }
 
 template <typename P>
-typename Delta<P>::KeyedSuccessors Delta<P>::get_successors(const State state, const Key<0> symbol) const {
+typename DeltaBase<P>::KeyedSuccessors DeltaBase<P>::get_successors(const State state, const Key<0> symbol) const {
 	return state_post(state).get_successors(symbol);
 }
 
 template <typename P>
-std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_to(const State state_to) const
+std::vector<typename DeltaBase<P>::TransitionType> DeltaBase<P>::get_transitions_to(const State state_to) const
 	requires(P::key_arity == 1)
 {
 	std::vector<TransitionType> transitions_to_state{};
@@ -94,8 +94,8 @@ std::vector<typename Delta<P>::TransitionType> Delta<P>::get_transitions_to(cons
 }
 
 template <typename P>
-std::vector<typename Delta<P>::TransitionType>
-Delta<P>::get_transitions_between(const State state_from, const State state_to) const
+std::vector<typename DeltaBase<P>::TransitionType>
+DeltaBase<P>::get_transitions_between(const State state_from, const State state_to) const
 	requires(P::key_arity == 1)
 {
 	std::vector<TransitionType> transitions_between{};
@@ -109,7 +109,7 @@ Delta<P>::get_transitions_between(const State state_from, const State state_to) 
 }
 
 template <typename P>
-void Delta<P>::add(const State source, Key<0> symbol, const State target)
+void DeltaBase<P>::add(const State source, Key<0> symbol, const State target)
 	requires(P::key_arity == 1)
 {
 	resize_for_states(source, target);
@@ -132,7 +132,7 @@ void Delta<P>::add(const State source, Key<0> symbol, const State target)
 }
 
 template <typename P>
-void Delta<P>::add(const State source, const Key<0> symbol, const Nested& targets)
+void DeltaBase<P>::add(const State source, const Key<0> symbol, const Nested& targets)
 	requires(P::key_arity == 1)
 {
 	if (targets.empty()) { return; }
@@ -157,7 +157,7 @@ void Delta<P>::add(const State source, const Key<0> symbol, const Nested& target
 }
 
 template <typename P>
-void Delta<P>::remove(const State source, const Key<0> symbol, const State target)
+void DeltaBase<P>::remove(const State source, const Key<0> symbol, const State target)
 	requires(P::key_arity == 1)
 {
 	if (source >= state_posts_.size()) { return; }
@@ -187,7 +187,7 @@ void Delta<P>::remove(const State source, const Key<0> symbol, const State targe
 }
 
 template <typename P>
-bool Delta<P>::contains(const State source, const Key<0> symbol, const State target) const
+bool DeltaBase<P>::contains(const State source, const Key<0> symbol, const State target) const
 	requires(P::key_arity == 1)
 { // {{{
 	if (state_posts_.empty()) { return false; }
@@ -202,27 +202,27 @@ bool Delta<P>::contains(const State source, const Key<0> symbol, const State tar
 }
 
 template <typename P>
-bool Delta<P>::contains(const TransitionType& transition) const
+bool DeltaBase<P>::contains(const TransitionType& transition) const
 	requires(P::key_arity == 1)
 {
 	return contains(transition.source, transition.symbol, transition.target);
 }
 
 template <typename P>
-size_t Delta<P>::num_of_transitions() const {
+size_t DeltaBase<P>::num_of_transitions() const {
 	size_t number_of_transitions{0};
 	for (const PostType& state_post : state_posts_) { number_of_transitions += count_targets(state_post); }
 	return number_of_transitions;
 }
 
 template <typename P>
-bool Delta<P>::empty() const {
+bool DeltaBase<P>::empty() const {
 	return std::ranges::all_of(state_posts_, [](const PostType& state_post) { return state_post.empty(); });
 }
 
 
 template <typename P>
-std::vector<typename Delta<P>::PostType> Delta<P>::renumber_targets(const std::function<State(State)>& target_renumberer) const {
+std::vector<typename DeltaBase<P>::PostType> DeltaBase<P>::renumber_targets(const std::function<State(State)>& target_renumberer) const {
 	std::vector<PostType> copied_state_posts;
 	copied_state_posts.reserve(num_of_states());
 	for (const PostType& state_post : state_posts_) {
@@ -232,7 +232,7 @@ std::vector<typename Delta<P>::PostType> Delta<P>::renumber_targets(const std::f
 }
 
 template <typename P>
-typename Delta<P>::PostType& Delta<P>::mutable_state_post(const State q) {
+typename DeltaBase<P>::PostType& DeltaBase<P>::mutable_state_post(const State q) {
 	if (q >= state_posts_.size()) {
 		utils::reserve_on_insert(state_posts_, q);
 		const size_t new_size{q + 1};
@@ -243,16 +243,16 @@ typename Delta<P>::PostType& Delta<P>::mutable_state_post(const State q) {
 }
 
 template <typename P>
-Delta<P> defragment(const Delta<P>& delta, const BoolVector& is_staying,
-                    const std::vector<typename Delta<P>::State>& renaming) {
+DeltaBase<P> defragment(const DeltaBase<P>& delta, const BoolVector& is_staying,
+                    const std::vector<typename DeltaBase<P>::State>& renaming) {
 	// One implementation, not two: this used to be a second hand-unrolled copy of the member.
-	Delta<P> result{delta};
+	DeltaBase<P> result{delta};
 	result.defragment(is_staying, renaming);
 	return result;
 }
 
 template <typename P>
-Delta<P>& Delta<P>::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+DeltaBase<P>& DeltaBase<P>::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
 	// Each level's own job is in `defragmented()`; this one owns only the outer index -- drop the
 	//  sources that go, and compact the rest down.
 	size_t source_new{0};
@@ -266,7 +266,7 @@ Delta<P>& Delta<P>::defragment(const BoolVector& is_staying, const std::vector<S
 }
 
 template <typename P>
-bool Delta<P>::operator==(const Delta& other) const {
+bool DeltaBase<P>::operator==(const DeltaBase& other) const {
 	// Post by post, over the union of the two state spaces. `state_post()` yields the shared empty
 	//  post out of range, so a relation with trailing empty posts compares equal to one without --
 	//  the same meaning the old transition-by-transition comparison had, without needing a depth-2
@@ -284,7 +284,7 @@ bool Delta<P>::operator==(const Delta& other) const {
 template <typename P>
 template <ExtensibleAlphabet A, typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-void Delta<P>::add_symbols_to(A& target_alphabet) const {
+void DeltaBase<P>::add_symbols_to(A& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
 	for (mata::State state{0}; state < aut_num_of_states; ++state) {
 		for (const Entry& move : state_post(state)) {
@@ -299,7 +299,7 @@ void Delta<P>::add_symbols_to(A& target_alphabet) const {
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-utils::OrdVector<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols() const {
+utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols() const {
 	// TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
 	//  for instance figure out why NumberPredicate and OrdVector are slow,
 	//  try also with _STATIC_DATA_STRUCTURES_, it changes things.
@@ -358,11 +358,11 @@ utils::OrdVector<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols()
 }
 
 // Other versions, maybe an interesting experiment with speed of data structures.
-// Returns symbols appearing in Delta, pushes back to vector and then sorts
+// Returns symbols appearing in the relation, pushes back to vector and then sorts
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-utils::OrdVector<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_vec() const {
+utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_vec() const {
 	using Symbols = typename KeyTraits<K>::SymbolType;
 #ifdef _STATIC_STRUCTURES_
 	static std::vector<Symbols> symbols{};
@@ -382,11 +382,11 @@ utils::OrdVector<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_v
 	return sorted_symbols;
 }
 
-// returns symbols appearing in Delta, inserts to a std::set
+// returns symbols appearing in the relation, inserts to a std::set
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-std::set<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_set() const {
+std::set<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_set() const {
 	using Symbols = typename KeyTraits<K>::SymbolType;
 	// static should prevent reallocation, seems to speed things up a little
 #ifdef _STATIC_STRUCTURES_
@@ -411,12 +411,12 @@ std::set<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_set() con
 	// return sorted_symbols;
 }
 
-// returns symbols appearing in Delta, adds to NumberPredicate,
+// returns symbols appearing in the relation, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-utils::SparseSet<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_sps() const {
+utils::SparseSet<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_sps() const {
 	using Symbols = typename KeyTraits<K>::SymbolType;
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
@@ -437,12 +437,12 @@ utils::SparseSet<typename KeyTraits<K>::SymbolType> Delta<P>::get_used_symbols_s
 	return symbols;
 }
 
-// returns symbols appearing in Delta, adds to NumberPredicate,
+// returns symbols appearing in the relation, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-std::vector<bool> Delta<P>::get_used_symbols_bv() const {
+std::vector<bool> DeltaBase<P>::get_used_symbols_bv() const {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static std::vector<bool> symbols(64, false);
@@ -467,7 +467,7 @@ std::vector<bool> Delta<P>::get_used_symbols_bv() const {
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-BoolVector Delta<P>::get_used_symbols_chv() const {
+BoolVector DeltaBase<P>::get_used_symbols_chv() const {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static BoolVector symbols(64, false);
@@ -493,7 +493,7 @@ BoolVector Delta<P>::get_used_symbols_chv() const {
 template <typename P>
 template <typename K>
 	requires SymbolKeyOf<K, typename P::Key>
-typename KeyTraits<K>::SymbolType Delta<P>::get_max_symbol() const {
+typename KeyTraits<K>::SymbolType DeltaBase<P>::get_max_symbol() const {
 	using Symbols = typename KeyTraits<K>::SymbolType;
 	Symbols max{0};
 	for (const PostType& state_post : state_posts_) {

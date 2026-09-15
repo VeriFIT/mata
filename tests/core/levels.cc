@@ -87,7 +87,7 @@ template <typename D> std::vector<State> all_targets(const D& delta) {
 namespace theirs {
 using Reserved = ReservedKeys<Symbol, EPSILON, EPSILON - 5>;
 using StatePost = posts::PostChain<Reserved, StateSet>;
-using Delta = posts::Delta<StatePost>;
+using Delta = posts::DeltaBase<StatePost>;
 } // namespace theirs.
 
 /// …and here it names the fields. `source`/`symbol`/`target` is an NFA's vocabulary; nothing in
@@ -208,7 +208,7 @@ static_assert( Contains1<D1> && !Contains2<D1> && !Contains1<D2> && Contains2<D2
 template class mata::AutomatonBase<D2>;
 template class mata::AutomatonBase<D3>;
 
-TEST_CASE("mata::posts::Delta::add — writing a key path at any arity") {
+TEST_CASE("mata::posts::DeltaBase::add — writing a key path at any arity") {
 	SECTION("at arity 1 it agrees with add(), transition for transition") {
 		D1 by_add{};
 		D1 by_path{};
@@ -320,7 +320,7 @@ TEST_CASE("mata::posts::TransitionTraits — a module names its own transition f
 	CHECK(to_two == std::vector<Theirs>{{0, 2, 2}, {1, 3, 2}});
 }
 
-TEST_CASE("mata::posts::Delta::remove / contains — a key path at any arity") {
+TEST_CASE("mata::posts::DeltaBase::remove / contains — a key path at any arity") {
 	SECTION("contains answers about the whole path, not just the first key") {
 		D2 delta{};
 		delta.add(0, 1, 2, 7);
@@ -408,7 +408,7 @@ TEST_CASE("mata::posts::Delta::remove / contains — a key path at any arity") {
 	}
 }
 
-TEST_CASE("mata::posts::Delta::get_successors — the target set, at any arity") {
+TEST_CASE("mata::posts::DeltaBase::get_successors — the target set, at any arity") {
 	SECTION("arity 1 is unchanged") {
 		Delta delta{};
 		delta.add(0, 1, 1);

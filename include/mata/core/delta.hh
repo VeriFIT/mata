@@ -69,7 +69,7 @@ template <typename St, typename K, typename T> struct Transition {
  * ```
  *
  * @note This buys a module its own **field names**, and that is all it buys today.
- *  @c Delta::Transitions still walks exactly one key level and keeps its
+ *  @c DeltaBase::Transitions still walks exactly one key level and keeps its
  *  `requires(P::key_arity == 1)`: making it generic needs a cursor that carries the whole key path
  *  as it goes, and @c SuccessorCursor yields targets only. That is separate work. @see the Plan, T6.9.
  */
@@ -85,7 +85,7 @@ template <typename P> struct TransitionTraits {
  * @brief The post @p I levels down a chain.
  *
  * `PostAt<P, 0>::type` is @p P itself and `PostAt<P, P::key_arity>::type` is the innermost post,
- *  the set of targets. What @c mata::posts::Delta::Key and @c mata::posts::Delta::Reserved are
+ *  the set of targets. What @c mata::posts::DeltaBase::Key and @c mata::posts::DeltaBase::Reserved are
  *  spelled in terms of: a post has exactly one key so @c PostLike::Key is unambiguous and stays
  *  singular, but a *relation* spans every level, and there the same name would silently mean "the
  *  outermost one" — right at @c key_arity 1 and quietly wrong above it.
@@ -100,7 +100,7 @@ template <typename P> struct PostAt<P, 0> {
 };
 
 /// Level @p I's key type, taken from the chain rather than from a relation. What
-///  @c mata::posts::Delta::Key is spelled in terms of, and what the per-arity keyed writes need in
+///  @c mata::posts::DeltaBase::Key is spelled in terms of, and what the per-arity keyed writes need in
 ///  their *signatures* — a member of the relation would not do there, because the parameter types
 ///  have to depend on the member's own template parameter to stay lazy at the wrong arity.
 template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
@@ -184,7 +184,7 @@ void walk_moves(const P& post, Fn&& fn, const Keys&... keys) {
  *
  * Declared as a free function with the keys *last* on purpose. A member `add(source, keys..., target)`
  *  cannot be written — a parameter pack has to be last for deduction — which is what made reverting
- *  look like it needed a variadic @c Delta::add and a shape change to every call site. It does not:
+ *  look like it needed a variadic @c DeltaBase::add and a shape change to every call site. It does not:
  *  the target simply comes first here.
  */
 template <typename P> void insert_target(P& post, const typename P::Target& target) {
@@ -230,7 +230,7 @@ bool has_target_at(const P& post, const typename P::Target& target, const K0& k0
  *  entirely rather than leaving a chain of empty posts behind. The return value **is** that
  *  question ("am I now empty?"), which is why no extra state is needed to carry it back up.
  *
- * Generalises what the @c key_arity 1 @c mata::posts::Delta::remove does by hand at a single level.
+ * Generalises what the @c key_arity 1 @c mata::posts::DeltaBase::remove does by hand at a single level.
  *
  * @throws std::invalid_argument if any key on the path is missing. The message does not name the
  *  keys, unlike the arity-1 member's: `std::to_string` is only defined for arithmetic types, and a
@@ -259,7 +259,7 @@ bool erase_target(P& post, const typename P::Target& target, const K0& k0, const
  * @warning Not `a == b`. An entry's @c operator== compares **only its key** — deliberately, because
  *  the post is an ordered map and @c OrdVector orders and searches by that key — so comparing posts
  *  with @c operator== silently ignores every difference in their targets. This is why the older
- *  @c Delta::operator== compared transition *sequences* rather than posts, and why the recursion here
+ *  @c DeltaBase::operator== compared transition *sequences* rather than posts, and why the recursion here
  *  has to descend into @c nested() explicitly.
  */
 template <typename P> bool posts_equal(const P& a, const P& b) {
@@ -1119,10 +1119,16 @@ template <typename P> class SuccessorCursor<P, 3> {
 
 
 /**
- * @brief Delta is a data structure for representing transition relation.
+ * @brief The generic transition relation: a vector of posts indexed by source state.
+ *
+ * Named by analogy with @c mata::AutomatonBase / @c mata::Automaton: this is the template, and the
+ *  relation the library ships, @c mata::Delta, is a class deriving from `DeltaBase<StatePost>` in
+ *  @c mata/relation.hh. The two names are deliberately different so that "Delta", unqualified, means
+ *  one thing everywhere -- the shipped relation -- and a diagnostic mentioning @c DeltaBase is
+ *  recognisably about the template underneath it.
  *
  * A vector of posts indexed by source state, over a chain of posts ending in a set of targets. For
- *  an NFA that chain is one key deep — a symbol — so it is Delta, one @c Post, targets, and the
+ *  an NFA that chain is one key deep — a symbol — so it is this class, one @c Post, targets, and the
  *  aliases @c mata::StatePost and @c mata::SymbolPost name that one post and its entry. The depth is
  *  not baked in here: @p P is the whole chain, and @c key_arity is read off it rather than declared;
  *  going deeper adds another @c Post, not another kind of class. Levels are named by key index, not by container count:
@@ -1133,7 +1139,7 @@ template <typename P> class SuccessorCursor<P, 3> {
  *  @ref nesting.
  * @see mata::DeltaLike.
  */
-template <typename P> class Delta {
+template <typename P> class DeltaBase {
   public:
 	/// @name Post protocol
 	/// @see mata::DeltaLike -- the only way @c mata::Automaton reaches a successor.
@@ -1182,15 +1188,15 @@ template <typename P> class Delta {
 
 	inline static const PostType empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
-	Delta() : state_posts_{} {}
-	Delta(const Delta& other) = default;
-	Delta(Delta&& other) = default;
-	explicit Delta(const size_t n) : state_posts_{n} {}
+	DeltaBase() : state_posts_{} {}
+	DeltaBase(const DeltaBase& other) = default;
+	DeltaBase(DeltaBase&& other) = default;
+	explicit DeltaBase(const size_t n) : state_posts_{n} {}
 
-	Delta& operator=(const Delta& other) = default;
-	Delta& operator=(Delta&& other) = default;
+	DeltaBase& operator=(const DeltaBase& other) = default;
+	DeltaBase& operator=(DeltaBase&& other) = default;
 
-	bool operator==(const Delta& other) const;
+	bool operator==(const DeltaBase& other) const;
 
 	void reserve(const size_t n) { state_posts_.reserve(n); };
 
@@ -1198,7 +1204,7 @@ template <typename P> class Delta {
 	 * @brief Get constant reference to the state post of @p source.
 	 *
 	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
-	 *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
+	 *  yet does not have allocated space in the relation, an @c empty_post is returned. Hence, the function has no side
 	 *  effects (no allocation is performed; iterators remain valid).
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
@@ -1212,7 +1218,7 @@ template <typename P> class Delta {
 	 * @brief Get constant reference to the state post of @p source.
 	 *
 	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
-	 *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
+	 *  yet does not have allocated space in the relation, an @c empty_post is returned. Hence, the function has no side
 	 *  effects (no allocation is performed; iterators remain valid).
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
@@ -1227,28 +1233,28 @@ template <typename P> class Delta {
 	 * BEWARE, IT HAS A SIDE EFFECT.
 	 *
 	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
-	 *  yet does not have allocated space in @c Delta, a new state post for @p source will be allocated along with
+	 *  yet does not have allocated space in the relation, a new state post for @p source will be allocated along with
 	 *  all state posts for all previous states. This in turn may cause that the entire post data structure is
-	 *  re-allocated. Iterators to @c Delta will get invalidated.
+	 *  re-allocated. Iterators into the relation will get invalidated.
 	 * Use the constant 'state_post()' is possible. Or, to prevent the side effect from causing issues, one might want
 	 *  to make sure that posts of all states in the automaton are allocated, e.g., write an NFA method that allocate
-	 *  @c Delta for all states of the NFA.
+	 *  the relation for all states of the NFA.
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
 	PostType& mutable_state_post(State source);
 
 	/**
-	 * @brief Defragment the Delta.
+	 * @brief Defragment the relation.
 	 *
 	 * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
 	 * according to @p renaming.
 	 *
-	 * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+	 * @param[in] is_staying Boolean vector indicating which states are staying in the relation.
 	 * @param[in] renaming Vector of states to rename the remaining state posts to.
 	 * @return Self with defragmented delta.
 	 */
-	Delta& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+	DeltaBase& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
 	template <typename... Args> PostType& emplace_back(Args&&... args) {
 		// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
@@ -1261,7 +1267,7 @@ template <typename P> class Delta {
 	 * @brief Allocate state posts up to @p num_of_states states, creating empty @c PostType for yet unallocated state
 	 *  posts.
 	 *
-	 * @param[in] num_of_states Number of states in @c Delta to allocate state posts for. Have to be at least
+	 * @param[in] num_of_states Number of states in the relation to allocate state posts for. Have to be at least
 	 *  num_of_states() + 1.
 	 */
 	void allocate(const size_t num_of_states) {
@@ -1270,17 +1276,17 @@ template <typename P> class Delta {
 	}
 
 	/**
-	 * @return Number of states in the whole Delta, including both source and target states.
+	 * @return Number of states in the whole relation, including both source and target states.
 	 */
 	size_t num_of_states() const { return state_posts_.size(); }
 
 	/**
-	 * Check whether the @p state is used in @c Delta.
+	 * Check whether the @p state is used in the relation.
 	 */
 	bool uses_state(const State state) const { return state < num_of_states(); }
 
 	/**
-	 * @return Number of transitions in Delta.
+	 * @return Number of transitions in the relation.
 	 */
 	size_t num_of_transitions() const;
 
@@ -1369,12 +1375,12 @@ template <typename P> class Delta {
 	}
 
 	/**
-	 * Check whether @c Delta contains a passed transition.
+	 * Check whether the relation contains a passed transition.
 	 */
 	bool contains(State source, Key<0> symbol, State target) const
 		requires(P::key_arity == 1);
 	/**
-	 * Check whether @c Delta contains a transition passed as a triple.
+	 * Check whether the relation contains a transition passed as a triple.
 	 */
 	bool contains(const TransitionType& transition) const
 		requires(P::key_arity == 1);
@@ -1468,8 +1474,8 @@ template <typename P> class Delta {
 	class Transitions {
 		static_assert(
 			P::key_arity == 1,
-			"Delta::Transitions yields a (source, key, target) triple, which has room for exactly one "
-			"key. A deeper relation has one key per level; walk it with Delta::for_each_move() or "
+			"DeltaBase::Transitions yields a (source, key, target) triple, which has room for exactly one "
+			"key. A deeper relation has one key per level; walk it with DeltaBase::for_each_move() or "
 			"mata::posts::walk_moves(), which hand back the whole key path."
 		);
 
@@ -1483,7 +1489,7 @@ template <typename P> class Delta {
 		 */
 		class const_iterator {
 		  private:
-			const Delta* delta_ = nullptr;
+			const DeltaBase* delta_ = nullptr;
 			size_t current_state_{};
 			typename PostType::const_iterator state_post_it_{};
 			typename Nested::const_iterator symbol_post_it_{};
@@ -1499,7 +1505,7 @@ template <typename P> class Delta {
 
 			const_iterator() : is_end_{true} {}
 
-			explicit const_iterator(const Delta& delta) : delta_{&delta} {
+			explicit const_iterator(const DeltaBase& delta) : delta_{&delta} {
 				const size_t post_size = delta_->num_of_states();
 				for (size_t i = 0; i < post_size; ++i) {
 					if (!(*delta_)[i].empty()) {
@@ -1517,7 +1523,7 @@ template <typename P> class Delta {
 				is_end_ = true;
 			}
 
-			const_iterator(const Delta& delta, const State current_state)
+			const_iterator(const DeltaBase& delta, const State current_state)
 				: delta_{&delta},
 				  current_state_{current_state} {
 				const size_t post_size = delta_->num_of_states();
@@ -1607,7 +1613,7 @@ template <typename P> class Delta {
 		}; // class const_iterator.
 
 		Transitions() = default;
-		explicit Transitions(const Delta* delta) : delta_{delta} {}
+		explicit Transitions(const DeltaBase* delta) : delta_{delta} {}
 		Transitions(Transitions&&) = default;
 		Transitions(const Transitions&) = default;
 		Transitions& operator=(Transitions&&) = default;
@@ -1617,7 +1623,7 @@ template <typename P> class Delta {
 		static const_iterator end() { return const_iterator{}; }
 
 	  private:
-		const Delta* delta_;
+		const DeltaBase* delta_;
 	}; // class Transitions.
 
 	/**
@@ -1657,7 +1663,7 @@ template <typename P> class Delta {
 	 */
 	template <typename... States>
 		requires utils::AllOfType<State, States...>
-	Delta& resize_for_states(States... states) {
+	DeltaBase& resize_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
 				reserve_on_insert(state_posts_, max_state);
@@ -1777,7 +1783,7 @@ template <typename P> class Delta {
 
   protected:
 	std::vector<PostType> state_posts_;
-}; // class mata::posts::Delta.
+}; // class mata::posts::DeltaBase.
 
 
 
@@ -1828,25 +1834,25 @@ template <typename... Ts> using PostChain = typename detail::Chain<Ts...>::type;
 
 /// A whole relation from its keys, spelled in terms of @c PostChain:
 ///  `RelationOf<Symbol, StateSet>` is @c mata::Delta.
-template <typename... Ts> using RelationOf = Delta<PostChain<Ts...>>;
+template <typename... Ts> using RelationOf = DeltaBase<PostChain<Ts...>>;
 
 } // namespace mata::posts.
 
 namespace posts {
 /**
- * @brief Defragment the Delta.
+ * @brief Defragment the relation.
  *
  * Removes all state posts which are not in @p is_staying and renames the remaining ones according to
  *  @p renaming. Uses only the public interface, so it needs no friendship.
  *
- * @param[in] delta Delta to defragment.
- * @param[in] is_staying Boolean vector indicating which states are staying in the Delta.
+ * @param[in] delta Relation to defragment.
+ * @param[in] is_staying Boolean vector indicating which states are staying in the relation.
  * @param[in] renaming Vector of states to rename the remaining state posts to.
- * @return The defragmented Delta.
+ * @return The defragmented relation.
  */
 template <typename P>
-Delta<P> defragment(const Delta<P>& delta, const BoolVector& is_staying,
-                    const std::vector<typename Delta<P>::State>& renaming);
+DeltaBase<P> defragment(const DeltaBase<P>& delta, const BoolVector& is_staying,
+                    const std::vector<typename DeltaBase<P>::State>& renaming);
 } // namespace mata::posts.
 
 /// Callers name this @c mata::defragment. Declared once, in @c posts, and re-exported here: having
