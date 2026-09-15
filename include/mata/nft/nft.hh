@@ -107,7 +107,6 @@
 #include "mata/utils/utils.hh"
 #include "types.hh"
 
-#include "mata/core/automaton.hh"
 #include "mata/nfa/nfa.hh"
 
 namespace mata::nft {
@@ -120,7 +119,9 @@ class Nft : public Automaton {
 	using super = Automaton;
 
   public:
-	using Run = mata::Run;
+	/// Through the module seam, like every other shared type: redefine @c nft::Run in
+	///  @c mata/nft/types.hh and this follows.
+	using Run = nft::Run;
 
 	/**
 	 * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.

@@ -38,6 +38,14 @@
  *  start counting and collides with an NFT's tape @c mata::Level, which is unrelated. Count keys.
  *  @see @ref arity in @c mata/core/concepts.hh.
  *
+ *  What *is* fixed is the symbol type. A relation may key its transitions by something other than a
+ *  symbol -- an interval of symbols, say -- and still use the stock @c mata::Alphabet, because the
+ *  alphabet deals in the symbols a key *denotes* (see @c mata::KeyTraits). Changing what a symbol
+ *  is, to a wider integer or a non-integer, is not supported by @c mata::Alphabet: its virtual
+ *  interface is stated in @c mata::Symbol and cannot be overridden with another type. A relation
+ *  over different symbols needs its own alphabet class (see @c mata::AlphabetTraits), and none of
+ *  the operations here that take an @c Alphabet apply to it.
+ *
  *  The main idea behind @c mata::nfa::Nfa is that the members (@c mata::nfa::Nfa::delta, @c mata::nfa::Nfa::initial,
  *   @c mata::nfa::Nfa::alphabet, ...) do not depend on each other.
  *  This allows for some well-optimized implementations as well as easy replacement of individual members, or extensions
@@ -89,9 +97,8 @@
 #include <utility>
 #include <vector>
 
-#include "delta.hh"
+#include "delta.hh" // Brings the relation and, with it, the base every NFA derives from.
 #include "mata/alphabet.hh"
-#include "mata/core/automaton.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
@@ -105,7 +112,9 @@ namespace mata::nfa {
  */
 class Nfa : public Automaton {
   public:
-	using Run = mata::Run;
+	/// Through the module seam, like every other shared type: redefine @c nfa::Run in
+	///  @c mata/nfa/types.hh and this follows.
+	using Run = nfa::Run;
 
 	std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
 	/// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types

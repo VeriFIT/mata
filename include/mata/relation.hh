@@ -93,6 +93,40 @@ class Delta : public posts::DeltaBase<StatePost> {
 		return *this;
 	}
 	///@}
+
+	/// @name The depth-2 keyed members, spelled concretely
+	/// Plain members forwarding to the base, and the base's are still what runs. They exist for the
+	///  two audiences the Plan's §3.10 names: a wrong call is reported against three overloads in
+	///  @c mata::State and @c mata::Symbol instead of the base's five candidates across three
+	///  arities, and an IDE shows `add(State, Symbol, State)` rather than a member template. Name
+	///  hiding does the work -- redeclaring @c add here hides every base @c add -- so every depth-2
+	///  overload the base has must be listed, and a new one added to the base has to be added here
+	///  too. Spelled in @c mata::State / @c mata::Symbol, not the inherited aliases: GCC prints an
+	///  inherited alias in its canonical form, which is the long name this class exists to avoid.
+	///@{
+	/// @brief Add a transition from @p source over @p symbol to @p target.
+	void add(const mata::State source, const mata::Symbol symbol, const mata::State target) {
+		Base::add(source, symbol, target);
+	}
+	/// @brief Add transitions from @p source over @p symbol to every state in @p targets.
+	void add(const mata::State source, const mata::Symbol symbol, const mata::StateSet& targets) {
+		Base::add(source, symbol, targets);
+	}
+	/// @brief Add a transition given as a triple.
+	void add(const Transition& transition) { Base::add(transition); }
+	/// @brief Remove a transition; throws @c std::invalid_argument if it is not there.
+	void remove(const mata::State source, const mata::Symbol symbol, const mata::State target) {
+		Base::remove(source, symbol, target);
+	}
+	/// @brief Remove a transition given as a triple; throws @c std::invalid_argument if it is not there.
+	void remove(const Transition& transition) { Base::remove(transition); }
+	/// @brief Is the transition from @p source over @p symbol to @p target present?
+	bool contains(const mata::State source, const mata::Symbol symbol, const mata::State target) const {
+		return Base::contains(source, symbol, target);
+	}
+	/// @brief Is the transition given as a triple present?
+	bool contains(const Transition& transition) const { return Base::contains(transition); }
+	///@}
 };
 
 /// The depth-2 successor cursor. Every existing call site names this.
