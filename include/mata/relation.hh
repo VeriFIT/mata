@@ -26,6 +26,7 @@
 #define MATA_RELATION_HH
 
 #include <concepts>
+#include <set>
 #include <type_traits>
 #include <utility>
 
@@ -126,6 +127,28 @@ class Delta : public posts::DeltaBase<StatePost> {
 	/// @brief Is the transition given as a triple present?
 	bool contains(const Transition& transition) const { return Base::contains(transition); }
 	///@}
+
+	/// @name The key members, spelled as symbols
+	/// For this relation a key *is* a symbol (asserted below), so the base's protected key members
+	///  are re-exported under the names NFA and NFT code has always used.
+	///@{
+	/// @brief Expand @p target_alphabet by the symbols used on the transitions.
+	template <ExtensibleAlphabet A>
+		requires std::same_as<typename AlphabetTraits<A>::Symbol, mata::Symbol>
+	void add_symbols_to(A& target_alphabet) const {
+		Base::add_keys_to(target_alphabet);
+	}
+	/// @brief The symbols used on the transitions.
+	/// @copydetails mata::posts::DeltaBase::get_used_keys
+	utils::OrdVector<mata::Symbol> get_used_symbols() const { return Base::get_used_keys(); }
+	utils::OrdVector<mata::Symbol> get_used_symbols_vec() const { return Base::get_used_keys_vec(); }
+	std::set<mata::Symbol> get_used_symbols_set() const { return Base::get_used_keys_set(); }
+	utils::SparseSet<mata::Symbol> get_used_symbols_sps() const { return Base::get_used_keys_sps(); }
+	std::vector<bool> get_used_symbols_bv() const { return Base::get_used_keys_bv(); }
+	BoolVector get_used_symbols_chv() const { return Base::get_used_keys_chv(); }
+	/// @brief The greatest symbol used, epsilons included, or zero when there are no transitions.
+	mata::Symbol get_max_symbol() const { return Base::get_max_key().value_or(0); }
+	///@}
 };
 
 /// The depth-2 successor cursor. Every existing call site names this.
@@ -182,7 +205,7 @@ static_assert(
 );
 static_assert(
 	std::integral<Delta::Key<0>>,
-	"the depth-2 relation is keyed by symbols, so it must have the symbol members."
+	"the depth-2 relation is keyed by symbols, so the symbol forwarders and the indexed key members must exist."
 );
 /**
  * The one place the relation's epsilon and the module constant meet.

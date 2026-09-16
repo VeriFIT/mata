@@ -15,6 +15,7 @@
 #include <concepts>
 #include <cstddef>
 #include <iterator>
+#include <optional>
 #include <span>
 #include <format>
 #include <stdexcept>
@@ -46,13 +47,19 @@ namespace detail {
  * };
  * ```
  */
-template <typename T> std::string describe(const T& value) {
+template <Printable T> std::string name_of(const T& value) {
 	// Arithmetic first, and not merely as a shortcut: routing the shipped relation's states and
 	//  symbols through @c std::format instantiates its whole machinery, which measured +14130
 	//  instructions and +89 functions in `src/relation.cc` -- for a message on a throw path. This
 	//  branch keeps that translation unit exactly as it was.
 	if constexpr (std::is_arithmetic_v<T>) { return std::to_string(value); }
-	else if constexpr (std::formattable<T, char>) { return std::format("{}", value); }
+	else { return std::format("{}", value); }
+}
+/// @copydoc name_of
+/// With a placeholder for a value that has no printed form. For messages only: a *name* built here
+///  would silently be the same for every such value, which is why @c name_of exists.
+template <typename T> std::string describe(const T& value) {
+	if constexpr (Printable<T>) { return name_of(value); }
 	else { return "<unprintable>"; }
 }
 } // namespace mata::detail.
@@ -1752,65 +1759,63 @@ template <typename P> class DeltaBase {
 	static PostType::const_iterator
 	epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::epsilon);
 
-	/// @name Symbols on the transitions
+  protected:
+	/// @name Keys on the transitions
 	///
-	/// Present when @c Key<0> is an integral type, which is what a symbol is; they read the keys
-	///  directly. A relation keyed by anything else -- an interval, a weight, a predicate -- does not
-	///  have them, and says what its keys stand for in a derived class.
+	/// Which level-0 keys are in use. They ask nothing of a key beyond the ordering the posts already
+	///  rely on, so a relation keyed by an interval or a weight has them too; what those keys *stand
+	///  for* is that relation's business. Protected for the same reason: a relation re-exports the
+	///  ones it wants under the names that fit its keys, with a using-declaration or a forwarder.
+	///  @c mata::Delta does the latter, as symbols, since for the shipped relation a key is one.
 	///
-	/// @note The guard is on the *type*, not on the meaning. An integral key that is not a symbol
-	///  (an integer weight, say) gets these members too, with the weights answering as symbols;
-	///  nothing in `unsigned long` tells the two apart. A key that is not a symbol wants a distinct
-	///  key type, which is the right way to spell it anyway.
+	/// The three variants indexed *by* the key's value need an integer for it.
 	///@{
 
 	/**
-	 * @brief Expand @p target_alphabet by symbols from this delta.
+	 * @brief Expand @p target_alphabet by the keys of this relation, as the symbols it hands out.
 	 *
-	 * The value of the already existing symbols will NOT be overwritten.
+	 * Only for an alphabet dealing in this relation's key type, and only for a key that can print
+	 *  itself (@c mata::Printable): a new symbol is named by its printed form, and a key without one
+	 *  is refused here rather than every symbol getting the same placeholder. The value of the
+	 *  already existing symbols will NOT be overwritten.
 	 */
 	template <ExtensibleAlphabet A>
-	void add_symbols_to(A& target_alphabet) const
-		requires std::integral<typename P::Key>;
+		requires std::same_as<typename AlphabetTraits<A>::Symbol, typename P::Key> && Printable<typename P::Key>
+	void add_keys_to(A& target_alphabet) const;
 
 	/**
-	 * @brief Get the set of symbols used on the transitions in the automaton.
+	 * @brief Get the set of keys used on the transitions.
 	 *
 	 * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
-	 * @return Set of symbols used on the transitions.
 	 */
-	utils::OrdVector<typename P::Key> get_used_symbols() const
-		requires std::integral<typename P::Key>;
+	utils::OrdVector<typename P::Key> get_used_keys() const
+		requires std::totally_ordered<typename P::Key>;
 
-	utils::OrdVector<typename P::Key> get_used_symbols_vec() const
+	utils::OrdVector<typename P::Key> get_used_keys_vec() const
+		requires std::totally_ordered<typename P::Key>;
+	std::set<typename P::Key> get_used_keys_set() const
+		requires std::totally_ordered<typename P::Key>;
+	utils::SparseSet<typename P::Key> get_used_keys_sps() const
 		requires std::integral<typename P::Key>;
-	std::set<typename P::Key> get_used_symbols_set() const
+	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when
+	///  the automaton has epsilons.
+	std::vector<bool> get_used_keys_bv() const
 		requires std::integral<typename P::Key>;
-	utils::SparseSet<typename P::Key> get_used_symbols_sps() const
-		requires std::integral<typename P::Key>;
-	/// @note Indexed *by* symbol, so it allocates up to the largest symbol used. Already unusable
-	///  when the automaton has epsilons.
-	std::vector<bool> get_used_symbols_bv() const
-		requires std::integral<typename P::Key>;
-	/// @copydoc get_used_symbols_bv
-	BoolVector get_used_symbols_chv() const
+	/// @copydoc get_used_keys_bv
+	BoolVector get_used_keys_chv() const
 		requires std::integral<typename P::Key>;
 
 	/**
-	 * @brief Get the maximum used symbol.
+	 * @brief The greatest key used, or nothing when there are no transitions.
 	 *
-	 * Over *every* used symbol, epsilons included. That is what the one caller needs: NFT's
-	 *  simulation mints fresh symbols at `max + 1` and above, which has to clear the epsilons too or
-	 *  the fresh symbols collide with real transitions. (The doc comment here used to say
-	 *  "non-epsilon", which the code has never done.)
-	 *
-	 * @return The largest symbol used by any transition, or zero when the relation is empty.
+	 * Over *every* key, epsilons included. That is what the one caller needs: NFT's simulation mints
+	 *  fresh symbols at `max + 1` and above, which has to clear the epsilons too or the fresh
+	 *  symbols collide with real transitions.
 	 */
-	typename P::Key get_max_symbol() const
-		requires std::integral<typename P::Key>;
+	std::optional<typename P::Key> get_max_key() const
+		requires std::totally_ordered<typename P::Key>;
 	///@}
 
-  protected:
 	std::vector<PostType> state_posts_;
 }; // class mata::posts::DeltaBase.
 

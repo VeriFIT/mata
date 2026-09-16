@@ -1,5 +1,5 @@
 /** @file
- * @brief The key vocabulary: where a level's reserved keys start, and which keys get the symbol members.
+ * @brief The key vocabulary: where a level's reserved keys start, and how a relation reaches its key members.
  *
  * Both halves are here because both are **silent** when wrong, and in the same way: they decide
  *  what a *default argument* means and what a *member returns*, so a mistake in either produces a
@@ -14,18 +14,22 @@
  *  So the tests below are all built on relations whose descriptor **disagrees** with
  *  @c mata::EPSILON, which is the only way to tell a per-instantiation default from a baked-in one.
  *
- * The symbol members are the same problem one level along: they exist only for an integral key,
- *  and a relation keyed by an interval or a weight has to instantiate and work without them rather
- *  than get members that return the keys under another name. See the Plan, §3.8 and §3.13.
+ * The key members are the same problem one level along: they report the *keys* in use, for any
+ *  ordered key, and only @c mata::Delta calls them symbols. They are protected, so a relation
+ *  re-exports the ones it wants under names that fit its keys. See the Plan, §3.8 and §3.13.
  */
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
+#include <format>
 #include <limits>
+#include <optional>
+#include <ostream>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "mata/alphabet.hh"
@@ -38,12 +42,14 @@ using namespace mata;
 
 namespace {
 
-/// A key that is not a symbol: ordered, so the relation works, but with no symbol members.
+/// A key that is not a symbol: ordered, so the relation and its key members work.
 struct Interval {
 	Symbol lo{};
 	Symbol hi{};
 	auto operator<=>(const Interval& other) const = default;
 	bool operator==(const Interval& other) const = default;
+	/// So Catch2 can print a failed comparison.
+	friend std::ostream& operator<<(std::ostream& os, const Interval& i) { return os << '[' << i.lo << ',' << i.hi << ']'; }
 };
 
 /// Another non-integral key, for the same reason.
@@ -51,7 +57,20 @@ struct Weight {
 	unsigned centi{};
 	auto operator<=>(const Weight& other) const = default;
 	bool operator==(const Weight& other) const = default;
+	friend std::ostream& operator<<(std::ostream& os, const Weight& w) { return os << w.centi << "c"; }
 };
+
+} // namespace.
+
+/// A weight can print itself, so it can *name* symbols for an alphabet; an interval here cannot.
+template <> struct std::formatter<Weight> {
+	constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+	template <typename Ctx> auto format(const Weight& w, Ctx& ctx) const {
+		return std::format_to(ctx.out(), "{}c", w.centi);
+	}
+};
+
+namespace {
 
 /// The threshold this file's relations use. Deliberately nowhere near @c mata::EPSILON, so that a
 ///  default resolving to core's constant instead of the descriptor's cannot pass by coincidence.
@@ -95,6 +114,36 @@ struct FixedAlphabet {
 	using Symbol = mata::Symbol;
 };
 
+/// …one dealing in intervals, which no relation here can feed: an @c Interval has no printed form,
+///  so it cannot name the symbols it would add…
+struct IntervalAlphabet {
+	using Symbol = Interval;
+	void update_next_symbol_value(Symbol) {}
+	void try_add_new_symbol(const std::string&, Symbol) {}
+};
+
+/// …and one dealing in weights, which a weight relation can, recording what it is told.
+struct WeightAlphabet {
+	using Symbol = Weight;
+	std::vector<std::pair<std::string, Weight>> received{};
+	void update_next_symbol_value(Symbol) {}
+	void try_add_new_symbol(const std::string& name, const Symbol symbol) { received.emplace_back(name, symbol); }
+};
+
+/// The intended way to reach the protected key members: derive and re-export. A using-declaration
+///  of a constrained member is fine even where the constraint fails; the call is what is rejected.
+template <typename D> struct Exposing : D {
+	using D::D;
+	using D::add_keys_to;
+	using D::get_used_keys;
+	using D::get_used_keys_vec;
+	using D::get_used_keys_set;
+	using D::get_used_keys_sps;
+	using D::get_used_keys_bv;
+	using D::get_used_keys_chv;
+	using D::get_max_key;
+};
+
 /// A descriptor with the two thresholds the wrong way round: it says the ordinary keys run *past*
 ///  where the reserved ones start. Hand-rolled rather than an instantiation of @c ReservedKeys,
 ///  because @c ReservedKeys carries its own @c static_assert and would refuse to exist at all —
@@ -107,13 +156,31 @@ struct InvertedTail {
 	static constexpr bool epsilon_is_greatest{false};
 };
 
-/// Does this relation offer the symbol members at all? They are guarded on the key being integral,
-///  so the answer can be *no* without the relation failing to instantiate.
+/// The symbol-named members: only @c mata::Delta has them.
 template <typename D>
 concept HasSymbolMembers = requires(const D d) {
 	d.get_used_symbols();
 	d.get_max_symbol();
 };
+/// The key members any ordered key gets…
+template <typename D>
+concept HasKeyMembers = requires(const D d) {
+	d.get_used_keys();
+	d.get_used_keys_set();
+	d.get_max_key();
+};
+/// …and the three that index by the key's value, which only an integral key gets.
+template <typename D>
+concept HasIndexedKeyMembers = requires(const D d) {
+	d.get_used_keys_sps();
+	d.get_used_keys_bv();
+	d.get_used_keys_chv();
+};
+/// Can this relation feed that alphabet?
+template <typename D, typename A>
+concept CanAddKeysTo = requires(const D d, A& a) { d.add_keys_to(a); };
+template <typename D, typename A>
+concept CanAddSymbolsTo = requires(const D d, A& a) { d.add_symbols_to(a); };
 
 /// Collect the keys a @c Moves range yields, so the epsilon/symbol split can be compared directly.
 template <typename Moves> std::vector<Symbol> keys_of(const Moves& moves) {
@@ -137,11 +204,30 @@ static_assert(!ReservedKeysLike<InvertedTail>);
 static_assert(!ReservedKeysAtTail<PostOver<InvertedTail>>);
 static_assert(!PostLike<PostOver<InvertedTail>>);
 
-/// §3.13: the symbol members follow the key *type*. An integral key has them, anything else does
-///  not, and the relation instantiates either way.
+/// §3.13: the key members are protected on the base and reached by deriving; any ordered key has
+///  them, only an integral key has the indexed variants, and only @c mata::Delta calls them symbols.
+static_assert(!HasKeyMembers<IntervalDelta>); ///< protected: a bare relation does not expose them
+static_assert(HasKeyMembers<Exposing<IntervalDelta>>);
+static_assert(HasKeyMembers<Exposing<WeightDelta>>);
+static_assert(HasKeyMembers<Exposing<NarrowDelta>>);
+static_assert(HasIndexedKeyMembers<Exposing<NarrowDelta>>);
+static_assert(!HasIndexedKeyMembers<Exposing<IntervalDelta>>);
+static_assert(!HasIndexedKeyMembers<Exposing<WeightDelta>>);
 static_assert(HasSymbolMembers<Delta>);
-static_assert(!HasSymbolMembers<IntervalDelta>);
-static_assert(!HasSymbolMembers<WeightDelta>);
+static_assert(!HasSymbolMembers<Exposing<IntervalDelta>>);
+static_assert(std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_used_keys()), utils::OrdVector<Interval>>);
+static_assert(std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_max_key()), std::optional<Interval>>);
+
+/// An alphabet is fed only by a relation whose keys are its symbols *and can name them*. The name
+///  is a value the alphabet keeps, so an unprintable key is refused rather than every symbol being
+///  called "<unprintable>" -- unlike a message on a throw path, where the placeholder is fine.
+static_assert(Printable<Symbol> && Printable<Weight> && !Printable<Interval>);
+static_assert(CanAddKeysTo<Exposing<WeightDelta>, WeightAlphabet>);
+static_assert(!CanAddKeysTo<Exposing<IntervalDelta>, IntervalAlphabet>); ///< right type, no name
+static_assert(!CanAddKeysTo<Exposing<IntervalDelta>, WideAlphabet>);
+static_assert(!CanAddKeysTo<Exposing<WeightDelta>, WideAlphabet>);
+static_assert(!CanAddKeysTo<Exposing<NarrowDelta>, WideAlphabet>); ///< wider symbols would truncate
+static_assert(!CanAddSymbolsTo<Delta, WideAlphabet>);
 
 /// @name An alphabet need not be mata's
 ///
@@ -243,7 +329,7 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 	}
 }
 
-TEST_CASE("the symbol members of an integral-keyed relation read the keys directly") {
+TEST_CASE("mata::Delta's symbol members are the key members under the NFA's names") {
 	SECTION("the used symbols are the keys, once each, in every container") {
 		Delta delta{};
 		delta.add(0, 1, 1);
@@ -260,22 +346,59 @@ TEST_CASE("the symbol members of an integral-keyed relation read the keys direct
 		static_assert(std::same_as<decltype(delta.get_max_symbol()), Symbol>);
 	}
 
-	SECTION("an empty relation has no symbols") {
+	SECTION("an empty relation has no symbols, and its maximum is still zero") {
 		const Delta delta{};
 		CHECK(delta.get_used_symbols().empty());
 		CHECK(delta.get_max_symbol() == 0);
 	}
 }
 
+TEST_CASE("an interval-keyed relation reports the intervals it uses") {
+	Exposing<IntervalDelta> delta{};
+	delta.add(0, Interval{1, 3}, 1);
+	delta.add(0, Interval{7, 8}, 2);
+	delta.add(1, Interval{3, 4}, 2);
+
+	SECTION("as keys, in the key's own order") {
+		// Three keys, three intervals. What the intervals *stand for* is not the relation's business.
+		CHECK(delta.get_used_keys() == utils::OrdVector<Interval>{{1, 3}, {3, 4}, {7, 8}});
+		CHECK(delta.get_used_keys_set() == std::set<Interval>{{1, 3}, {3, 4}, {7, 8}});
+		CHECK(delta.get_max_key() == Interval{7, 8});
+	}
+
+	SECTION("an empty relation has no greatest key, rather than an invented one") {
+		const Exposing<IntervalDelta> empty{};
+		CHECK(empty.get_used_keys().empty());
+		CHECK_FALSE(empty.get_max_key().has_value());
+	}
+
+}
+
+TEST_CASE("a relation feeds an alphabet with its keys, named by their printed form") {
+	Exposing<WeightDelta> delta{};
+	delta.add(0, Weight{50}, 1);
+	delta.add(0, Weight{75}, 2);
+	delta.add(1, Weight{50}, 2);
+
+	WeightAlphabet alphabet{};
+	delta.add_keys_to(alphabet);
+	REQUIRE(alphabet.received.size() == 3); // Once per transition; deduplicating is the alphabet's job.
+	CHECK(alphabet.received[0] == std::pair<std::string, Weight>{"50c", Weight{50}});
+	CHECK(alphabet.received[1] == std::pair<std::string, Weight>{"75c", Weight{75}});
+	CHECK(alphabet.received[2] == std::pair<std::string, Weight>{"50c", Weight{50}});
+}
+
 TEST_CASE("a key that is not a symbol still gets a working relation") {
-	// The relation instantiates, stores transitions and walks them. Only the members that would
-	// have had to invent an answer are missing — see the static_asserts above.
-	WeightDelta delta{};
+	// The relation instantiates, stores transitions, walks them and reports its keys. Only the
+	// members that index by a key's value are missing — see the static_asserts above.
+	Exposing<WeightDelta> delta{};
 	delta.add(0, Weight{50}, 1);
 	delta.add(0, Weight{75}, 2);
 	delta.add(1, Weight{50}, 2);
 
 	CHECK(delta.num_of_transitions() == 3);
+	CHECK(delta.get_used_keys() == utils::OrdVector<Weight>{Weight{50}, Weight{75}});
+	CHECK(delta.get_max_key() == Weight{75});
 	std::vector<State> successors{};
 	delta.for_each_successor(0, [&successors](const State target) { successors.push_back(target); });
 	CHECK(successors == std::vector<State>{1, 2});

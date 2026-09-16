@@ -301,20 +301,20 @@ bool DeltaBase<P>::operator==(const DeltaBase& other) const {
 
 template <typename P>
 template <ExtensibleAlphabet A>
-void DeltaBase<P>::add_symbols_to(A& target_alphabet) const
-	requires std::integral<typename P::Key> {
+	requires std::same_as<typename AlphabetTraits<A>::Symbol, typename P::Key> && Printable<typename P::Key>
+void DeltaBase<P>::add_keys_to(A& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
 	for (State state{0}; state < aut_num_of_states; ++state) {
 		for (const Entry& move : state_post(state)) {
 			target_alphabet.update_next_symbol_value(move.key());
-			target_alphabet.try_add_new_symbol(std::to_string(move.key()), move.key());
+			target_alphabet.try_add_new_symbol(mata::detail::name_of(move.key()), move.key());
 		}
 	}
 }
 
 template <typename P>
-utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols() const
-	requires std::integral<typename P::Key> {
+utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_keys() const
+	requires std::totally_ordered<typename P::Key> {
 	// TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
 	//  for instance figure out why NumberPredicate and OrdVector are slow,
 	//  try also with _STATIC_DATA_STRUCTURES_, it changes things.
@@ -325,7 +325,7 @@ utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols() const
 	// nfa-profiling.cc
 
 	// WITH VECTOR (4.434 s)
-	return get_used_symbols_vec();
+	return get_used_keys_vec();
 
 	// WITH SET (26.5 s)
 	// auto from_set = get_used_symbols_set();
@@ -375,8 +375,8 @@ utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols() const
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in the relation, pushes back to vector and then sorts
 template <typename P>
-utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols_vec() const
-	requires std::integral<typename P::Key> {
+utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_keys_vec() const
+	requires std::totally_ordered<typename P::Key> {
 	using Symbols = typename P::Key;
 #ifdef _STATIC_STRUCTURES_
 	static std::vector<Symbols> symbols{};
@@ -396,8 +396,8 @@ utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols_vec() const
 
 // returns symbols appearing in the relation, inserts to a std::set
 template <typename P>
-std::set<typename P::Key> DeltaBase<P>::get_used_symbols_set() const
-	requires std::integral<typename P::Key> {
+std::set<typename P::Key> DeltaBase<P>::get_used_keys_set() const
+	requires std::totally_ordered<typename P::Key> {
 	using Symbols = typename P::Key;
 	// static should prevent reallocation, seems to speed things up a little
 #ifdef _STATIC_STRUCTURES_
@@ -423,7 +423,7 @@ std::set<typename P::Key> DeltaBase<P>::get_used_symbols_set() const
 // returns symbols appearing in the relation, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
-utils::SparseSet<typename P::Key> DeltaBase<P>::get_used_symbols_sps() const
+utils::SparseSet<typename P::Key> DeltaBase<P>::get_used_keys_sps() const
 	requires std::integral<typename P::Key> {
 	using Symbols = typename P::Key;
 #ifdef _STATIC_STRUCTURES_
@@ -446,7 +446,7 @@ utils::SparseSet<typename P::Key> DeltaBase<P>::get_used_symbols_sps() const
 // returns symbols appearing in the relation, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
-std::vector<bool> DeltaBase<P>::get_used_symbols_bv() const
+std::vector<bool> DeltaBase<P>::get_used_keys_bv() const
 	requires std::integral<typename P::Key> {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
@@ -469,7 +469,7 @@ std::vector<bool> DeltaBase<P>::get_used_symbols_bv() const
 }
 
 template <typename P>
-BoolVector DeltaBase<P>::get_used_symbols_chv() const
+BoolVector DeltaBase<P>::get_used_keys_chv() const
 	requires std::integral<typename P::Key> {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
@@ -493,13 +493,12 @@ BoolVector DeltaBase<P>::get_used_symbols_chv() const
 }
 
 template <typename P>
-typename P::Key DeltaBase<P>::get_max_symbol() const
-	requires std::integral<typename P::Key> {
-	using Symbols = typename P::Key;
-	Symbols max{0};
+std::optional<typename P::Key> DeltaBase<P>::get_max_key() const
+	requires std::totally_ordered<typename P::Key> {
+	std::optional<typename P::Key> max{};
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			if (symbol_post.key() > max) { max = symbol_post.key(); }
+			if (!max || symbol_post.key() > *max) { max = symbol_post.key(); }
 		}
 	}
 	return max;

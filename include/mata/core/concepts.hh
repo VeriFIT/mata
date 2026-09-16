@@ -76,6 +76,7 @@
 #include <algorithm>
 #include <concepts>
 #include <cstddef>
+#include <format>
 #include <iterator>
 #include <limits>
 #include <string>
@@ -134,7 +135,7 @@ template <typename A> struct AlphabetTraits {
  * @brief An alphabet that can be *extended* with symbols it has not seen.
  *
  * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet is defined by
- *  being able to. @c mata::posts::DeltaBase::add_symbols_to() needs the growing kind, and asks for the
+ *  being able to. @c mata::posts::DeltaBase::add_keys_to() needs the growing kind, and asks for the
  *  two operations it actually performs rather than naming a concrete class — which is what lets
  *  @c core stop knowing that @c OnTheFlyAlphabet exists.
  */
@@ -143,6 +144,17 @@ concept ExtensibleAlphabet = requires(A& alphabet, typename AlphabetTraits<A>::S
 	{ alphabet.update_next_symbol_value(symbol) };
 	{ alphabet.try_add_new_symbol(std::string{}, symbol) };
 };
+
+/**
+ * @brief A value with a printed form: arithmetic, or with a @c std::formatter.
+ *
+ * The guard on anything that turns a key into a *name* -- @c mata::posts::DeltaBase::add_keys_to()
+ *  hands the alphabet one per symbol. A message on a throw path may fall back to a placeholder
+ *  (@c mata::detail::describe does); a name may not, since every unprintable key would get the same
+ *  one, silently. So the name path requires this and the message path only prefers it.
+ */
+template <typename T>
+concept Printable = std::is_arithmetic_v<T> || std::formattable<T, char>;
 
 /**
  * @brief Where one key level's ordinary keys stop and its reserved ones begin.
