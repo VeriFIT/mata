@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <limits>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -406,4 +407,45 @@ TEST_CASE("a key that denotes no symbols still gets a working relation") {
 	size_t epsilon_moves{0};
 	for ([[maybe_unused]] const auto& move : delta.state_post(0).moves_epsilons()) { ++epsilon_moves; }
 	CHECK(epsilon_moves == 0);
+}
+
+TEST_CASE("a failed remove() names the transition, whatever the key type") {
+	// The message used to be built with std::to_string, which only exists for arithmetic types, so
+	// an interval-keyed relation could add and query but could not instantiate remove() at all.
+	SECTION("a key std::to_string cannot print is still removable") {
+		IntervalDelta delta{};
+		delta.add(0, Interval{1, 3}, 1);
+		delta.add(0, Interval{7, 8}, 2);
+
+		delta.remove(0, Interval{1, 3}, 1);
+		CHECK_FALSE(delta.contains(0, Interval{1, 3}, 1));
+		CHECK(delta.contains(0, Interval{7, 8}, 2));
+		CHECK(delta.num_of_transitions() == 1);
+	}
+
+	SECTION("a key that cannot print itself gets a placeholder, not a compile error") {
+		IntervalDelta delta{};
+		delta.add(0, Interval{1, 3}, 1);
+		try {
+			delta.remove(0, Interval{20, 20}, 1);
+			CHECK(false); // Unreachable: the transition is not there.
+		} catch (const std::invalid_argument& error) {
+			// Interval specialises no std::formatter, so the key reads as the placeholder. Specialising
+			// one would put "[20,20]" here instead, which is the whole opt-in.
+			CHECK(std::string{error.what()}.find("<unprintable>") != std::string::npos);
+		}
+	}
+
+	SECTION("an arithmetic key still prints its value") {
+		Delta delta{};
+		delta.add(0, 'a', 1);
+		try {
+			delta.remove(0, 'b', 1);
+			CHECK(false); // Unreachable.
+		} catch (const std::invalid_argument& error) {
+			const std::string message{error.what()};
+			CHECK(message.find("98") != std::string::npos); // 'b'
+			CHECK(message.find("<unprintable>") == std::string::npos);
+		}
+	}
 }

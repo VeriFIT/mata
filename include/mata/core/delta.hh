@@ -7,7 +7,6 @@
 #define MATA_CORE_DELTA_HH
 
 #include "mata/core/concepts.hh"
-#include "mata/core/types.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/synchronized-iterator.hh"
@@ -17,12 +16,46 @@
 #include <cstddef>
 #include <iterator>
 #include <span>
+#include <format>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 namespace mata {
+
+namespace detail {
+/**
+ * @brief Render a value for an exception message.
+ *
+ * Prints the value when its type says how -- every arithmetic type does, and a user type does by
+ *  specialising @c std::formatter -- and a placeholder otherwise, so that a member which reports a
+ *  failure by naming the offending transition compiles for *every* key and target type rather than
+ *  only for arithmetic ones. @c std::to_string alone cannot do this and cannot be extended: it is a
+ *  set of overloads, and adding one to namespace @c std is undefined behaviour.
+ *
+ * To get the value rather than the placeholder, specialise @c std::formatter for the key type. Note
+ *  its @c format must be a *template* on the context, or @c std::formattable stays false:
+ * ```cpp
+ * template <> struct std::formatter<Interval> {
+ *     constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+ *     template <typename Ctx> auto format(const Interval& i, Ctx& ctx) const {
+ *         return std::format_to(ctx.out(), "[{},{}]", i.lo, i.hi);
+ *     }
+ * };
+ * ```
+ */
+template <typename T> std::string describe(const T& value) {
+	// Arithmetic first, and not merely as a shortcut: routing the shipped relation's states and
+	//  symbols through @c std::format instantiates its whole machinery, which measured +14130
+	//  instructions and +89 functions in `src/relation.cc` -- for a message on a throw path. This
+	//  branch keeps that translation unit exactly as it was.
+	if constexpr (std::is_arithmetic_v<T>) { return std::to_string(value); }
+	else if constexpr (std::formattable<T, char>) { return std::format("{}", value); }
+	else { return "<unprintable>"; }
+}
+} // namespace mata::detail.
 
 namespace posts {
 /**
@@ -1723,9 +1756,6 @@ template <typename P> class DeltaBase {
 	 */
 	KeyedSuccessors get_successors(State state, Key<0> symbol) const;
 
-	/// @copydoc get_successors(State, Key<0>) const
-	/// @todo Never implemented — declared only, so a call is a link error rather than a compile one.
-	TargetSet get_successors(State state, Key<0> symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
 	/// Result type of @c successors_admitting: what @c get_successors returns when the key is the
 	///  symbol (at most one entry admits it), a fresh set otherwise (several may). Same idea as

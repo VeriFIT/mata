@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "mata/core/types.hh"
+#include "mata/types.hh"
 
 namespace mata::nfa {
 

@@ -1,40 +1,20 @@
 /** @file
- * @brief Basic types shared by every automaton in Mata.
+ * @brief The innermost post: the targets reachable once every key has been supplied.
  *
- * These types carry no language semantics and belong to no particular automaton class, so they live
- *  in @c mata rather than in one of the automaton modules. Each module (@c mata::nfa, @c mata::nft,
- *  ...) re-exports the ones it uses; see @c mata/nfa/types.hh for why the re-export matters.
+ * Generic, so it belongs in @c core: @c mata::AutomatonBase spells its own @c StateSet over this
+ *  template, and never over a concrete one. The concrete @c mata::StateSet alias lives in
+ *  @c mata/types.hh with the other value types.
  */
 
-#ifndef MATA_CORE_TYPES_HH
-#define MATA_CORE_TYPES_HH
+#ifndef MATA_CORE_TARGETS_HH
+#define MATA_CORE_TARGETS_HH
 
 #include <algorithm>
 #include <cstddef>
-#include <limits>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 #include "mata/utils/ord-vector.hh"
 
 namespace mata {
-
-using State = unsigned long;
-
-/// @name The basic value types
-///
-/// Here rather than in @c mata/alphabet.hh, where they used to live, because they are what an
-///  alphabet is *made of* rather than something it provides: a symbol is a value, and the alphabet
-///  is the thing that translates names to and from it. With them here the dependency runs the way
-///  it reads — @c alphabet.hh includes this file — and @c core stops depending on the alphabet
-///  module for its own vocabulary.
-///@{
-using Symbol = unsigned;
-using Level = unsigned;
-using Word = std::vector<Symbol>; ///< A finite-length word over @c Symbol.
-using WordName = std::vector<std::string>; ///< The same word, spelled with symbol *names*.
-///@}
 
 namespace posts {
 
@@ -81,50 +61,6 @@ template <typename S> class StateTargets : public utils::OrdVector<S> {
 
 } // namespace mata::posts.
 
-using StateSet = posts::StateTargets<State>;
-
-struct Run {
-	Word word{}; ///< A finite-length word.
-	std::vector<State> path{}; ///< A finite-length path through automaton.
-};
-
-enum class EpsilonClosureOpt : unsigned {
-	None = 1 << 0, ///< No epsilon closure.
-	Before = 1 << 1, ///< Epsilon closure before the transition.
-	After = 1 << 2, ///< Epsilon closure after the transition.
-	BeforeAndAfter = Before | After ///< Epsilon closure before and after the transition.
-};
-
-enum class ProductFinalStateCondition {
-	And, ///< Both original states have to be final.
-	Or, ///< At least one of the original states has to be final.
-};
-
-using StateRenaming = std::unordered_map<State, State>;
-
-/**
- * @brief Map of additional parameter name and value pairs.
- *
- * Used by certain functions for specifying some additional parameters in the following format:
- * ```cpp
- * ParameterMap {
- *     { "algorithm", "classical" },
- *     { "minimize", "true" }
- * }
- * ```
- */
-using ParameterMap = std::unordered_map<std::string, std::string>;
-
-struct Limits {
-	static constexpr State min_state = std::numeric_limits<State>::min();
-	static constexpr State max_state = std::numeric_limits<State>::max();
-	static constexpr Symbol min_symbol = std::numeric_limits<Symbol>::min();
-	static constexpr Symbol max_symbol = std::numeric_limits<Symbol>::max();
-};
-
-/// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON{Limits::max_symbol};
-
 } // namespace mata.
 
 /**
@@ -140,4 +76,4 @@ template <typename S> struct std::hash<mata::posts::StateTargets<S>> {
 	}
 };
 
-#endif // MATA_CORE_TYPES_HH
+#endif // MATA_CORE_TARGETS_HH

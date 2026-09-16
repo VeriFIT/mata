@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "utils/ord-vector.hh"
-#include "mata/core/types.hh"
+#include "mata/types.hh"
 #include "utils/utils.hh"
 
 namespace mata {

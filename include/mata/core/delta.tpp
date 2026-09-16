@@ -164,20 +164,20 @@ void DeltaBase<P>::remove(const State source, const Key<0> symbol, TargetArg tar
 
 	if (PostType& state_transitions{state_posts_[source]}; state_transitions.empty()) {
 		throw std::invalid_argument(
-			"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(state_of(target)) +
+			"TransitionType [" + mata::detail::describe(source) + ", " + mata::detail::describe(symbol) + ", " + mata::detail::describe(state_of(target)) +
 			"] does not exist."
 		);
 	} else if (state_transitions.back().symbol < symbol) {
 		throw std::invalid_argument(
-			"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(state_of(target)) +
+			"TransitionType [" + mata::detail::describe(source) + ", " + mata::detail::describe(symbol) + ", " + mata::detail::describe(state_of(target)) +
 			"] does not exist."
 		);
 	} else {
 		if (const auto symbol_transitions{state_transitions.find(symbol)};
 			symbol_transitions == state_transitions.end()) {
 			throw std::invalid_argument(
-				"TransitionType [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " +
-				std::to_string(state_of(target)) + "] does not exist."
+				"TransitionType [" + mata::detail::describe(source) + ", " + mata::detail::describe(symbol) + ", " +
+				mata::detail::describe(state_of(target)) + "] does not exist."
 			);
 		} else {
 			symbol_transitions->erase(target);
@@ -286,11 +286,11 @@ template <ExtensibleAlphabet A, typename K>
 	requires SymbolKeyOf<K, typename P::Key>
 void DeltaBase<P>::add_symbols_to(A& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
-	for (mata::State state{0}; state < aut_num_of_states; ++state) {
+	for (State state{0}; state < aut_num_of_states; ++state) {
 		for (const Entry& move : state_post(state)) {
 			KeyTraits<K>::for_each_symbol(move.key(), [&target_alphabet](const auto symbol) {
 				target_alphabet.update_next_symbol_value(symbol);
-				target_alphabet.try_add_new_symbol(std::to_string(symbol), symbol);
+				target_alphabet.try_add_new_symbol(mata::detail::describe(symbol), symbol);
 			});
 		}
 	}

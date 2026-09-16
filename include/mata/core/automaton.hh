@@ -23,7 +23,7 @@
 
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
-#include "mata/core/types.hh"
+#include "mata/core/targets.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"

@@ -31,7 +31,7 @@
 #include "mata/alphabet.hh"
 #include "mata/core/automaton.hh"
 #include "mata/core/delta.hh"
-#include "mata/core/types.hh"
+#include "mata/types.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/synchronized-iterator.hh"
 

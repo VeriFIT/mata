@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "mata/alphabet.hh"
-#include "mata/core/types.hh"
+#include "mata/types.hh"
 #include "mata/utils/sparse-set.hh"
 
 namespace mata::nft {

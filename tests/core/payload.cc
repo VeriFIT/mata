@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "mata/types.hh"
 #include "mata/core/automaton.hh"
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"

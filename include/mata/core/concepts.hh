@@ -84,7 +84,6 @@
 #include <utility>
 #include <vector>
 
-#include "mata/core/types.hh"
 #include "mata/utils/utils.hh"
 
 namespace mata {
