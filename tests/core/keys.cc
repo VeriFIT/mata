@@ -31,6 +31,7 @@
 #include "mata/alphabet.hh"
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
+#include "mata/utils/ord-vector.hh"
 #include "mata/relation.hh"
 
 using namespace mata;

@@ -43,7 +43,8 @@ using Transition = posts::Transition<State, Symbol, State>;
 /// A move out of the depth-2 relation: a symbol and one target state.
 using Move = posts::Move<Symbol, State>;
 
-/// The depth-2 entry: a symbol keying a set of target states. Every existing call site names this.
+/// The depth-2 entry: a symbol keying a set of target states. The targets are @c mata::StateSet
+///  itself: a target is a state, so the innermost post *is* a set of states, one type, no wrapper.
 using SymbolPost = posts::PostEntry<Symbol, StateSet>;
 
 /// The depth-2 post: symbols keying sets of target states. Every existing call site names this.
@@ -55,7 +56,7 @@ using StatePost = posts::Post<SymbolPost>;
  * A **class**, not an alias, and the reason is diagnostics. An alias does not survive into compiler
  *  messages — GCC prints the canonical type — so `delta.add_transition(...)` on the alias reported
  *  `'class mata::posts::DeltaBase<mata::posts::Post<mata::posts::PostEntry<unsigned int,
- *  mata::posts::StateTargets<long unsigned int> > > >' has no member named 'add_transition'`:
+ *  mata::utils::OrdVector<long unsigned int> > > >' has no member named 'add_transition'`:
  *  well over a hundred characters of noun for a one-word mistake. Measured; the rest of the message was unchanged.
  *
  * It adds **nothing** — no members, no behaviour, no virtuals. That is what makes the conversions

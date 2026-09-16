@@ -23,7 +23,6 @@
 
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
-#include "mata/core/targets.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
@@ -55,12 +54,12 @@ template <DeltaLike D> class AutomatonBase {
 	///  divergent state type cannot leave these signatures behind. Both are the same type as
 	///  @c mata::StateSet and @c mata::StateRenaming for @c mata::Automaton.
 	///
-	/// @note @c StateSet must be spelled as the *same template* @c mata::StateSet names, not merely
-	///  as something with the same shape. It is a member alias, so inside @c mata::nfa::Nfa it hides
-	///  the namespace-scope @c mata::nfa::StateSet; while both were @c utils::OrdVector<State> that
-	///  was harmless, and the moment T2.1 gave the leaf post its own type the two diverged and every
-	///  @c Nfa member declared with one and defined with the other stopped matching.
-	using StateSet = posts::StateTargets<State>;
+	/// @note A plain set of states, deliberately not the relation's innermost post type: the
+	///  structural operations return *states*, and a relation's targets may carry a payload. The
+	///  member alias hides the namespace-scope @c mata::nfa::StateSet inside @c mata::nfa::Nfa, so it
+	///  must be the same template that one names, or an @c Nfa member declared with one and defined
+	///  with the other stops matching.
+	using StateSet = utils::OrdVector<State>;
 	using StateRenaming = std::unordered_map<State, State>;
 
 	/// Deliberately no key type at all, not even an alias. This class transports keys (in

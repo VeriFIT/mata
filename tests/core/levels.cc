@@ -186,7 +186,7 @@ static_assert(HasTransitionsBetween<D1> && !HasTransitionsBetween<D2>);
 static_assert(HasKeyedSuccessors<D1> && HasKeyedSuccessors<D2> && HasKeyedSuccessors<D3>);
 static_assert(std::same_as<D1::KeyedSuccessors, const StateSet&>);
 static_assert((std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>));
-/// …while the *unkeyed* overload always builds, so it is a plain TargetSet at every arity.
+/// …while the *unkeyed* overload always builds, so it is a plain StateSet at every arity.
 static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(0)), StateSet>);
 static_assert(std::same_as<decltype(std::declval<const D3&>().get_successors(0)), StateSet>);
 

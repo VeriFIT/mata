@@ -125,7 +125,7 @@ template <typename P> struct TransitionTraits {
  *  outermost one" — right at @c key_arity 1 and quietly wrong above it.
  */
 template <typename P, size_t I> struct PostAt {
-	static_assert(I <= P::key_arity, "no level that deep in this chain");
+	static_assert(I <= arity_of<P>, "no level that deep in this chain");
 	using type = typename PostAt<typename P::Nested, I - 1>::type;
 };
 /// @copydoc PostAt
@@ -149,8 +149,8 @@ template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
  *  through one costs 1.08x to 2.18x. See the Plan, T3.1.
  */
 template <typename P, typename Fn> void walk_targets(const P& post, Fn&& fn) {
-	if constexpr (P::key_arity == 0) {
-		for (const typename P::Target& target : post) { fn(target); }
+	if constexpr (arity_of<P> == 0) {
+		for (const target_of<P>& target : post) { fn(target); }
 	} else {
 		for (const auto& entry : post) { walk_targets(entry.nested(), fn); }
 	}
@@ -165,8 +165,8 @@ template <typename P, typename Fn> void walk_targets(const P& post, Fn&& fn) {
  *  the delta-access benchmark does not cover.
  */
 template <typename P, typename Pred> bool any_target(const P& post, Pred&& pred) {
-	if constexpr (P::key_arity == 0) {
-		for (const typename P::Target& target : post) {
+	if constexpr (arity_of<P> == 0) {
+		for (const target_of<P>& target : post) {
 			if (pred(target)) { return true; }
 		}
 	} else {
@@ -184,7 +184,7 @@ template <typename P, typename Pred> bool any_target(const P& post, Pred&& pred)
  *  it stays O(entries) instead of O(targets).
  */
 template <typename P> size_t count_targets(const P& post) {
-	if constexpr (P::key_arity == 0) {
+	if constexpr (arity_of<P> == 0) {
 		return post.size();
 	} else {
 		size_t total{0};
@@ -202,8 +202,8 @@ template <typename P> size_t count_targets(const P& post) {
  */
 template <typename P, typename Fn, typename... Keys>
 void walk_moves(const P& post, Fn&& fn, const Keys&... keys) {
-	if constexpr (P::key_arity == 0) {
-		for (const typename P::Target& target : post) { fn(keys..., target); }
+	if constexpr (arity_of<P> == 0) {
+		for (const target_of<P>& target : post) { fn(keys..., target); }
 	} else {
 		for (const auto& entry : post) { walk_moves(entry.nested(), fn, keys..., entry.key()); }
 	}
@@ -221,14 +221,14 @@ void walk_moves(const P& post, Fn&& fn, const Keys&... keys) {
  *  look like it needed a variadic @c DeltaBase::add and a shape change to every call site. It does not:
  *  the target simply comes first here.
  */
-template <typename P> void insert_target(P& post, const typename P::Target& target) {
-	static_assert(P::key_arity == 0, "the key path ran out before the innermost post");
+template <typename P> void insert_target(P& post, const target_of<P>& target) {
+	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
 	post.insert(target);
 }
 
 template <typename P, typename K0, typename... Rest>
-void insert_target(P& post, const typename P::Target& target, const K0& k0, const Rest&... rest) {
-	static_assert(P::key_arity == sizeof...(Rest) + 1, "the key path must be one key per level");
+void insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
+	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per level");
 	auto entry_it{post.find(k0)};
 	if (entry_it == post.end()) {
 		post.insert(typename P::Entry{k0, typename P::Nested{}});
@@ -243,14 +243,14 @@ void insert_target(P& post, const typename P::Target& target, const K0& k0, cons
  * Pure descent, short-circuiting on the first key that is not there. The counterpart of
  *  @c insert_target, and like it, the keys come *last* so the pack can be deduced.
  */
-template <typename P> bool has_target_at(const P& post, const typename P::Target& target) {
-	static_assert(P::key_arity == 0, "the key path ran out before the innermost post");
+template <typename P> bool has_target_at(const P& post, const target_of<P>& target) {
+	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
 	return post.contains(target);
 }
 
 template <typename P, typename K0, typename... Rest>
-bool has_target_at(const P& post, const typename P::Target& target, const K0& k0, const Rest&... rest) {
-	static_assert(P::key_arity == sizeof...(Rest) + 1, "the key path must be one key per level");
+bool has_target_at(const P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
+	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per level");
 	const auto entry_it{post.find(k0)};
 	return entry_it != post.end() && has_target_at(entry_it->nested(), target, rest...);
 }
@@ -272,15 +272,15 @@ bool has_target_at(const P& post, const typename P::Target& target, const K0& k0
  *  guard, for an error path.
  * @return Whether @p post is empty once the erase and any pruning below it are done.
  */
-template <typename P> bool erase_target(P& post, const typename P::Target& target) {
-	static_assert(P::key_arity == 0, "the key path ran out before the innermost post");
+template <typename P> bool erase_target(P& post, const target_of<P>& target) {
+	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
 	post.erase(target);
 	return post.empty();
 }
 
 template <typename P, typename K0, typename... Rest>
-bool erase_target(P& post, const typename P::Target& target, const K0& k0, const Rest&... rest) {
-	static_assert(P::key_arity == sizeof...(Rest) + 1, "the key path must be one key per level");
+bool erase_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
+	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per level");
 	const auto entry_it{post.find(k0)};
 	if (entry_it == post.end()) { throw std::invalid_argument("The transition does not exist."); }
 	if (erase_target(entry_it->nested(), target, rest...)) { post.erase(*entry_it); }
@@ -297,7 +297,7 @@ bool erase_target(P& post, const typename P::Target& target, const K0& k0, const
  *  has to descend into @c nested() explicitly.
  */
 template <typename P> bool posts_equal(const P& a, const P& b) {
-	if constexpr (P::key_arity == 0) {
+	if constexpr (arity_of<P> == 0) {
 		return std::ranges::equal(a, b);
 	} else {
 		if (a.size() != b.size()) { return false; }
@@ -320,9 +320,9 @@ template <typename P> bool posts_equal(const P& a, const P& b) {
  */
 template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 	P out{};
-	if constexpr (P::key_arity == 0) {
-		for (const typename P::Target& target : post) {
-			using Traits = TargetTraits<typename P::Target>;
+	if constexpr (arity_of<P> == 0) {
+		for (const target_of<P>& target : post) {
+			using Traits = TargetTraits<target_of<P>>;
 			out.push_back(Traits::with_state(target, rename(Traits::state_of(target))));
 		}
 	} else {
@@ -347,9 +347,9 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 template <typename P, typename Renaming>
 P defragmented(const P& post, const BoolVector& is_staying, const Renaming& renaming) {
 	P out{};
-	if constexpr (P::key_arity == 0) {
-		for (const typename P::Target& target : post) {
-			using Traits = TargetTraits<typename P::Target>;
+	if constexpr (arity_of<P> == 0) {
+		for (const target_of<P>& target : post) {
+			using Traits = TargetTraits<target_of<P>>;
 			const auto state{Traits::state_of(target)};
 			if (is_staying[state]) { out.push_back(Traits::with_state(target, renaming[state])); }
 		}
@@ -406,7 +406,7 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
 	using Reserved = R;
 	/// What a successor walk yields, propagated up from the innermost post. An entry does not decide
 	///  what a target is, it only passes the answer along.
-	using Target = typename Nested::Target;
+	using Target = target_of<Nested>;
 
 	const Key& key() const { return symbol; }
 	const Nested& nested() const { return targets; }
@@ -526,10 +526,10 @@ template <typename E> class Post : utils::OrdVector<E> {
 	///  @c key_arity 1 and deeper than it above that, which is the difference @c get_successors()
 	///  turns on. Reached through @c Nested rather than through this post's own name, because the
 	///  injected class name is not a complete type where this alias is declared.
-	using TargetSet = typename posts::PostAt<Nested, Nested::key_arity>::type;
+	using TargetSet = typename posts::PostAt<Nested, arity_of<Nested>>::type;
 	/// Number of keys from here down to a target. One (the symbol) for an NFA. Computed, not
 	///  hardcoded: one more than whatever is nested below.
-	static constexpr size_t key_arity{Nested::key_arity + 1};
+	static constexpr size_t key_arity{arity_of<Nested> + 1};
 	/// @see @ref sortedness. Ordered by the key of the contained entries.
 	static constexpr bool sorted_by_key{true};
 	/// @c OrdVector keeps its own @c is_sorted() private as an assertion helper, so check the range

@@ -5,6 +5,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <algorithm>
 #include <compare>
 #include <concepts>
 #include <string>
@@ -15,6 +16,7 @@
 #include "mata/core/automaton.hh"
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
+#include "mata/utils/ord-vector.hh"
 
 using namespace mata;
 
@@ -33,7 +35,7 @@ template <> struct mata::TargetTraits<Weighted> {
 	static Weighted with_state(const Weighted& target, const State state) { return {state, target.weight}; }
 };
 
-using WeightedTargets = posts::StateTargets<Weighted>;
+using WeightedTargets = utils::OrdVector<Weighted>;
 using WeightedDelta = posts::RelationOf<Symbol, WeightedTargets>;
 
 static_assert(DeltaLike<WeightedDelta>, "a payload relation must satisfy the same contract as a plain one");
@@ -57,7 +59,7 @@ template <> struct mata::TargetTraits<Heavy> {
 	static State state_of(const Heavy& target) { return target.to; }
 	static Heavy with_state(const Heavy& target, const State state) { return {state, target.label}; }
 };
-static_assert(std::same_as<posts::RelationOf<Symbol, posts::StateTargets<Heavy>>::TargetArg, const Heavy&>);
+static_assert(std::same_as<posts::RelationOf<Symbol, utils::OrdVector<Heavy>>::TargetArg, const Heavy&>);
 
 struct WeightedAutomaton : AutomatonBase<WeightedDelta> {
 	using Run = mata::Run;
@@ -154,6 +156,22 @@ TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {
 		CHECK(shifted.contains(1, 'b', Weighted{12, 9}));
 		CHECK(shifted.contains(2, 'd', Weighted{12, 0}));
 		CHECK(shifted.contains(3, 'c', Weighted{10, 1}));
+	}
+
+	SECTION("the transition members return the target, payload included") {
+		// Two payload targets denote state 2 from state 1: two transitions, not one state name.
+		const auto to_two{aut.delta.get_transitions_to(2)};
+		CHECK(to_two.size() == 3); // 1 -b-> (2,7), 1 -b-> (2,9), 2 -d-> (2,0)
+		CHECK(std::ranges::count_if(to_two, [](const auto& t) { return t.source == 1 && t.target == Weighted{2, 7}; }) == 1);
+		CHECK(std::ranges::count_if(to_two, [](const auto& t) { return t.source == 1 && t.target == Weighted{2, 9}; }) == 1);
+
+		const auto between{aut.delta.get_transitions_between(1, 2)};
+		CHECK(between.size() == 2);
+		CHECK(between[0].target.weight + between[1].target.weight == 16);
+
+		size_t seen{0};
+		for (const auto& t : aut.delta.transitions()) { seen += static_cast<size_t>(t.target.weight); }
+		CHECK(seen == 5 + 7 + 9 + 0 + 1);
 	}
 
 	SECTION("structural identity compares the payload too") {

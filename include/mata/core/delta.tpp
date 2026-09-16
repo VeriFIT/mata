@@ -15,6 +15,7 @@
 
 namespace mata::posts {
 
+
 template <typename K, typename N, typename R>
 PostEntry<K, N, R>& PostEntry<K, N, R>::operator=(PostEntry&& rhs) noexcept {
 	if (*this != rhs) {
@@ -84,9 +85,20 @@ std::vector<typename DeltaBase<P>::TransitionType> DeltaBase<P>::get_transitions
 	const size_t num_of_states{this->num_of_states()};
 	for (State state_from{0}; state_from < num_of_states; ++state_from) {
 		for (const Entry& state_from_move : state_post(state_from)) {
-			if (const auto target_state{state_from_move.targets.find(state_to)};
-				target_state != state_from_move.targets.end()) {
-				transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to);
+			// The *target* comes back, payload included. For a bare state that is the state itself, found
+			//  by the set's own lookup exactly as before; for a payload several targets may denote one
+			//  state, and each is found by projecting through state_of and returned whole.
+			if constexpr (std::same_as<Target, State>) {
+				if (const auto target_state{state_from_move.targets.find(state_to)};
+					target_state != state_from_move.targets.end()) {
+					transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to);
+				}
+			} else {
+				for (const Target& target : state_from_move.targets) {
+					if (state_of(target) == state_to) {
+						transitions_to_state.emplace_back(state_from, state_from_move.symbol, target);
+					}
+				}
 			}
 		}
 	}
@@ -100,9 +112,15 @@ DeltaBase<P>::get_transitions_between(const State state_from, const State state_
 {
 	std::vector<TransitionType> transitions_between{};
 	for (const Entry& symbol_post : state_post(state_from)) {
-		if (const auto state_to_find_it = symbol_post.targets.find(state_to);
-			state_to_find_it != symbol_post.targets.end()) {
-			transitions_between.emplace_back(state_from, symbol_post.symbol, state_to);
+		if constexpr (std::same_as<Target, State>) {
+			if (const auto state_to_find_it = symbol_post.targets.find(state_to);
+				state_to_find_it != symbol_post.targets.end()) {
+				transitions_between.emplace_back(state_from, symbol_post.symbol, state_to);
+			}
+		} else {
+			for (const Target& target : symbol_post.targets) {
+				if (state_of(target) == state_to) { transitions_between.emplace_back(state_from, symbol_post.symbol, target); }
+			}
 		}
 	}
 	return transitions_between;

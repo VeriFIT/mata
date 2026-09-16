@@ -18,7 +18,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "mata/core/targets.hh"
 #include "mata/utils/ord-vector.hh"
 
 namespace mata {
@@ -39,7 +38,7 @@ using Word = std::vector<Symbol>; ///< A finite-length word over @c Symbol.
 using WordName = std::vector<std::string>; ///< The same word, spelled with symbol *names*.
 ///@}
 
-using StateSet = posts::StateTargets<State>;
+using StateSet = utils::OrdVector<State>; ///< A set of states: never defined through a target type.
 
 struct Run {
 	Word word{}; ///< A finite-length word.

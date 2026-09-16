@@ -22,6 +22,7 @@
 
 #include "mata/core/automaton.hh"
 #include "mata/core/delta.hh"
+#include "mata/utils/ord-vector.hh"
 #include "mata/relation.hh"
 
 using namespace mata;
@@ -29,7 +30,7 @@ using namespace mata;
 namespace {
 
 /// Arity 2: state -> key -> key -> targets.
-using Targets = posts::StateTargets<State>;
+using Targets = utils::OrdVector<State>;
 using Inner2 = posts::PostChain<Symbol, Targets>;
 using Post2 = posts::PostChain<Symbol, Symbol, Targets>;
 /// Arity 3: one level deeper. The cap.

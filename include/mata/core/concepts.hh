@@ -75,6 +75,7 @@
 #ifndef MATA_CORE_CONCEPTS_HH
 #define MATA_CORE_CONCEPTS_HH
 
+#include <algorithm>
 #include <concepts>
 #include <cstddef>
 #include <iterator>
@@ -351,6 +352,31 @@ concept ReservedKeysAtTail = requires {
 };
 
 
+namespace posts {
+/**
+ * @brief The post protocol of one level, *derived* rather than demanded.
+ *
+ * A post or an entry declares its own @c key_arity and @c Target. The innermost level need not: any
+ *  sorted container of targets is one, with arity zero and its @c value_type as the target. That is
+ *  what lets `utils::OrdVector<State>` -- @c mata::StateSet itself -- sit at the bottom of the shipped
+ *  relation, so that a set of states and the targets under a symbol are one type, and a second type
+ *  appears only when the element type differs (a payload). Read the protocol through these, never
+ *  off the type directly, wherever the type may be the innermost level.
+ */
+template <typename X> struct level_traits {
+	static constexpr size_t key_arity{0};
+	using Target = typename X::value_type;
+};
+template <typename X>
+	requires requires { X::key_arity; typename X::Target; }
+struct level_traits<X> {
+	static constexpr size_t key_arity{X::key_arity};
+	using Target = typename X::Target;
+};
+template <typename X> inline constexpr size_t arity_of = level_traits<X>::key_arity;
+template <typename X> using target_of = typename level_traits<X>::Target;
+} // namespace mata::posts.
+
 /**
  * @brief A range that can be walked and whose emptiness can be tested.
  */
@@ -371,20 +397,19 @@ concept WalkableRange = requires(const R r) {
  *  thing a payload target has to provide for every structural operation to keep working.
  */
 template <typename T>
-concept TargetSetLike = WalkableRange<T> && requires(const T t, const typename T::Target& target) {
-	typename T::Target;
-	{ T::key_arity } -> std::convertible_to<size_t>;
-	requires T::key_arity == 0;
-	/// @see @ref sortedness. Sorted by target.
-	requires T::sorted_by_target;
-	{ t.is_sorted() } -> std::convertible_to<bool>;
+concept TargetSetLike = WalkableRange<T> && requires(const T t, const posts::target_of<T>& target) {
+	typename posts::target_of<T>;
+	requires posts::arity_of<T> == 0;
+	/// @see @ref sortedness. Sorted by target: checked on the range itself, so a plain sorted
+	///  container qualifies without declaring anything.
+	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
 	/// Re-constructible by appending. Trimming and renumbering rebuild a post rather than mutating
 	///  it, which needs only this and not a filter-and-rename pair — one requirement on an
 	///  implementer instead of two. Both callers append in increasing order, so the sortedness
 	///  invariant @c push_back would otherwise break is preserved. @see @ref sortedness.
-	{ std::declval<T&>().push_back(std::declval<const typename T::Target&>()) };
+	{ std::declval<T&>().push_back(std::declval<const posts::target_of<T>&>()) };
 	/// Reverting writes a target down a key path and lands here. @see mata::posts::insert_target.
-	{ std::declval<T&>().insert(std::declval<const typename T::Target&>()) };
+	{ std::declval<T&>().insert(std::declval<const posts::target_of<T>&>()) };
 	/// Removing a transition erases here and reports upward whether this post is now empty, so the
 	///  level above can drop the key that led to it. @see mata::posts::erase_target.
 	{ std::declval<T&>().erase(target) };
