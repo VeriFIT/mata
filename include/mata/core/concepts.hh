@@ -1,73 +1,5 @@
 /** @file
  * @brief The contracts a new automaton is written against.
- *
- * Three things live here, and between them they are everything someone needs to satisfy in order
- *  to build an automaton on @c mata::Automaton and get its structural operations -- reachability,
- *  Tarjan's SCC walk, useful states, distances, trimming, emptiness -- unchanged:
- *
- *  - @c DeltaLike, the transition relation. @c mata::Automaton reaches successors only through it.
- *  - @c TargetTraits, saying which state a target denotes. The one thing a payload target must
- *    supply.
- *  - @c AutomatonWithRuns, for the automata that report a counter-example run.
- *
- * Alongside them is the *key* vocabulary, which @c mata::Automaton itself never needs -- it
- *  transports keys without inspecting one (see the Plan, §3.7) -- but which the relation does, for
- *  the members that talk about epsilons:
- *
- *  - @c ReservedKeys, saying where a level's ordinary keys stop. A property of the *relation* --
- *    an NFA and an NFT share the key type and differ here -- hence a template argument.
- *  - @c ReservedKeysAtTail, the invariant that makes finding the epsilons by a backwards walk
- *    sound. @c PostLike is defined in terms of it.
- *
- * @section nesting Post structure
- *
- * A transition relation is @c Delta indexed by source state, over a chain of posts, ending in a
- *  set of targets. One post per key, so a relation with @c n keys is @c n posts deep:
- *
- * ```
- * Delta -> Post -> Post -> ... -> Targets
- *            key 0   key 1         (a state, or a state with a payload)
- * ```
- *
- * A *post* (@c PostLike, @c mata::posts::Post) is an ordered map from one key to the post nested
- *  under it. Iterating one yields its *entries* (@c PostEntryLike, @c mata::posts::PostEntry) --
- *  one key paired with the post beneath it. An entry is a detail of the post it belongs to, not a
- *  post in its own right.
- *
- * The classes are named for what they *are*, not for what the depth-2 relation calls them, because
- *  the same two classes are every level of the chain. @c mata::StatePost and @c mata::SymbolPost are
- *  **aliases** for the depth-2 instantiation, in the same way @c mata::Delta and
- *  @c mata::Transition are: they name the post a state maps to and its entry, which is what an NFA
- *  has and all it has. Nothing nests a "state post" inside a "symbol post".
- *
- * @section arity Counting posts
- *
- * @c key_arity is the number of keys between a source state and a target: 1 for an NFA (the
- *  symbol), 2 for a two-tape relation, and so on. It deliberately avoids the word "level", which is
- *  taken twice over. @c mata::Level and @c mata::nft::Levels are an NFT's tape levels, wholly
- *  unrelated to how deep a relation nests. And counting *containers* rather than keys gives a number
- *  that depends on where you start: the same structure was documented as "three-level" in
- *  @c mata/nfa/nfa.hh and "four-level" in @c mata/core/delta.hh, both describing this one. Both
- *  passages now count keys.
- *
- * Levels are named by key index throughout: `mata::posts::DeltaBase::Key<I>` is level @p I's key,
- *  `mata::posts::DeltaBase::Reserved<I>` its reserved-key convention, and
- *  `mata::posts::DeltaBase::PostAt<I>` the post that far in. A *post* keeps the singular @c Key,
- *  because a post has exactly one and there is nothing to disambiguate; a relation spans every
- *  level, and there a singular name would have silently meant the outermost one.
- *
- * @section sortedness Sortedness
- *
- * Every post is sorted by key, and the innermost one by target. This is not an implementation
- *  detail that happens to hold -- lookups binary-search on it, and @c Post::first_epsilon_it()
- *  walks backwards relying on reserved keys forming a contiguous suffix. A post that does not
- *  maintain it will not fail to compile; it will silently return wrong iterators.
- *
- * Sortedness may be broken *temporarily*: @c push_back and @c emplace_back append without
- *  restoring order, which is faster when building a post from unordered input. The invariant has to
- *  be restored (by sorting) before any lookup, iteration order, or comparison is relied upon.
- *  A post advertises that it maintains the invariant with @c sorted_by_key / @c sorted_by_target,
- *  and exposes @c is_sorted() so debug builds can check it.
  */
 
 #ifndef MATA_CORE_CONCEPTS_HH
@@ -87,18 +19,15 @@
 #include "mata/utils/utils.hh"
 
 namespace mata {
-
 /**
- * @brief What a target is, and which state it denotes.
+ * @brief A traits specifying which state a target denotes.
  *
- * A target is whatever the innermost post stores: a state, or a state with a payload (an output
- *  symbol, a weight). The structural algorithms need two things from it, and nothing else:
- *  @c state_of(target), the state it denotes, for every read; and @c with_state(target, state), the
- *  same target denoting another state, for trimming (renumbering) and reverting (source becomes
- *  target). Both are the identity for a bare state.
+ * A target is whatever the innermost post stores: a state, or a state with a payload.
+ *  The structural algorithms need two things from it: @c state_of(target) to know the state it denotes,
+ *  and @c with_state(target, state) to rebuild a target with a new state when reverting, renumbering or
+ *  trimming. Both are the identity for a bare state.
  *
- * A property of the target type, hence a traits rather than a member of every post. Specialise it
- *  to introduce a payload target:
+ * Specialise it for a payload target:
  * ```cpp
  * template <> struct mata::TargetTraits<MyPayload> {
  *     using State = mata::State;
@@ -114,30 +43,21 @@ template <typename T> struct TargetTraits {
 };
 
 /**
- * @brief What an alphabet's symbols are.
+ * @brief A trait specifying what the alphabet elements are.
  *
- * Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies. The module seams
- *  assert that it is the relation's level-0 key type, since that is what an alphabet hands out and
- *  a relation stores.
- *
- * It is a traits rather than a template parameter because an alphabet cannot be specialised by
- *  inheritance: @c mata::Alphabet is an abstract base whose whole virtual interface is stated in
- *  @c Symbol, so a derived class that redefines the alias overrides nothing — checked, and the
- *  compiler says *"conflicting return type specified for `virtual Symbol translate_symb(...)`"*.
- *  The symbol type is baked into the vtable. A third party wanting different symbols therefore
- *  brings their own alphabet class and specialises this, rather than deriving.
+ * Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies.
+ *  The module seams assert that it is the relation's level-0 key type, since that
+ *  is what an alphabet hands out and a relation stores.
  */
 template <typename A> struct AlphabetTraits {
 	using Symbol = typename A::Symbol;
 };
 
 /**
- * @brief An alphabet that can be *extended* with symbols it has not seen.
+ * @brief A concept for an alphabet that can be *extended* with symbols it has not seen.
  *
- * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet is defined by
- *  being able to. @c mata::posts::DeltaBase::add_keys_to() needs the growing kind, and asks for the
- *  two operations it actually performs rather than naming a concrete class — which is what lets
- *  @c core stop knowing that @c OnTheFlyAlphabet exists.
+ * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet can.
+ *  @c mata::posts::DeltaBase::add_keys_to() needs the growing kind.
  */
 template <typename A>
 concept ExtensibleAlphabet = requires(A& alphabet, typename AlphabetTraits<A>::Symbol symbol) {
@@ -146,40 +66,13 @@ concept ExtensibleAlphabet = requires(A& alphabet, typename AlphabetTraits<A>::S
 };
 
 /**
- * @brief A value with a printed form: arithmetic, or with a @c std::formatter.
- *
- * The guard on anything that turns a key into a *name* -- @c mata::posts::DeltaBase::add_keys_to()
- *  hands the alphabet one per symbol. A message on a throw path may fall back to a placeholder
- *  (@c mata::detail::describe does); a name may not, since every unprintable key would get the same
- *  one, silently. So the name path requires this and the message path only prefers it.
+ * @brief A concept for a value with a printed form.
  */
 template <typename T>
 concept Printable = std::is_arithmetic_v<T> || std::formattable<T, char>;
 
-/**
- * @brief Where one key level's ordinary keys stop and its reserved ones begin.
- *
- * Epsilon is not a property of the key *type*, which is why this is a descriptor passed as a
- *  template argument and not a traits specialised on @c K like @c TargetTraits. An NFA and an NFT both
- *  key by @c mata::Symbol and both call the largest value epsilon; what differs is that an NFT
- *  reserves a *wider tail* (`DONT_CARE = EPSILON - 1`). A traits keyed on the key type could not
- *  tell the two apart, because there is only one key type. The convention belongs to the relation.
- *
- * That is exactly what makes @c mata::posts::Post::moves_epsilons(),
- *  @c mata::posts::Post::moves_symbols() and @c mata::posts::DeltaBase::epsilon_symbol_posts()
- *  resolve their defaults *per instantiation*, instead of each picking up whichever constant
- *  happened to be in scope where the default argument was written. See the Plan, §3.8.
- *
- * @tparam K The key type.
- * @tparam Epsilon The smallest reserved key: every key at or above it is an epsilon. Defaults to the
- *  largest value of an integral key; a non-integral key has no default and must spell it.
- * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p Epsilon, which
- *  is right whenever epsilon is the only reserved key -- and wrong for a wider reserved tail, which
- *  is the whole reason it is a separate parameter rather than computed.
- */
 namespace detail {
-/// The default reserved tail exists only for integral keys. Spelled as functions so that a
-///  non-integral key gets this message rather than a failed `operator-` inside a default argument.
+// The default epsilon reserved at the end of the key order can exit only for integral keys.
 template <typename K> consteval K default_epsilon() {
 	static_assert(
 		std::integral<K>,
@@ -187,28 +80,40 @@ template <typename K> consteval K default_epsilon() {
 		"max_ordinary = epsilon - 1). For any other key spell all three arguments: "
 		"ReservedKeys<K, Epsilon, MaxOrdinary>."
 	);
-	if constexpr (std::integral<K>) { return std::numeric_limits<K>::max(); } else { return K{}; }
+	if constexpr (std::integral<K>) { return std::numeric_limits<K>::max(); }
+	else { return K{}; }
 }
+
+// The default maximum ordinary key is just below the epsilon.
 template <typename K> consteval K default_max_ordinary(const K epsilon) {
-	if constexpr (std::integral<K>) { return epsilon - 1; } else { return K{}; }
+	if constexpr (std::integral<K>) { return epsilon - 1; }
+	else { return K{}; }
 }
 } // namespace mata::detail.
 
+/**
+ * @brief The structure defines where the ordinary keys stop and the reserved tail begins.
+ *
+ * @tparam K The key type.
+ * @tparam Epsilon The smallest reserved key: every key at or above it is an epsilon. Defaults to
+ *  the largest value. A non-integral key has no default and must be spelled explicitly.
+ * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p Epsilon.
+ *  Can be defined explicitly to a smaller value to create a gap between the ordinary keys and the reserved tail.
+ *  A non-integral key has no default and must be spelled explicitly.
+ */
 template <typename K, K Epsilon = detail::default_epsilon<K>(), K MaxOrdinary = detail::default_max_ordinary<K>(Epsilon)>
 struct ReservedKeys {
 	using Key = K;
 	static constexpr K epsilon{Epsilon}; ///< The smallest reserved key.
 	static constexpr K max_ordinary{MaxOrdinary}; ///< The largest key that is not reserved.
-	/// True when no key can sort above @c epsilon, so at most one entry can carry it and that entry
-	///  is the last one. @c mata::posts::DeltaBase::epsilon_symbol_posts() takes an O(1) path on it
-	///  instead of searching. Conservatively false for a key type without a known maximum.
+	/// When true, Epsilon will alway be at the end of any sorted containers (simplifying the search for it).
 	static constexpr bool epsilon_is_greatest{Epsilon == std::numeric_limits<K>::max()};
 
-	static_assert(MaxOrdinary < Epsilon, "the ordinary keys must stop below the reserved tail");
+	static_assert(MaxOrdinary < Epsilon, "The ordinary keys must stop below the reserved keys.");
 };
 
 /**
- * @brief A reserved-key convention: @see ReservedKeys.
+ * @brief A concept for a reserved-key convention (see @c ReservedKeys).
  */
 template <typename R>
 concept ReservedKeysLike = requires {
@@ -217,27 +122,15 @@ concept ReservedKeysLike = requires {
 	{ R::epsilon } -> std::convertible_to<typename R::Key>;
 	{ R::max_ordinary } -> std::convertible_to<typename R::Key>;
 	{ R::epsilon_is_greatest } -> std::convertible_to<bool>;
-	/// The reserved keys are the *top* of the key order. @see ReservedKeysAtTail.
+	typename std::bool_constant<R::epsilon_is_greatest>;
 	requires R::max_ordinary < R::epsilon;
 };
 
 /**
- * @brief A post whose reserved keys form a contiguous suffix.
+ * @brief A concept for a post whose reserved keys form a contiguous suffix.
  *
- * @c mata::posts::Post::first_epsilon_it() finds the smallest epsilon by walking *backwards*
- *  from the end until it drops below the threshold, and returns the position after that. This is
- *  the right answer only if the keys at or above the threshold are exactly the last ones, which
- *  takes two separate things -- and neither of them fails to compile on its own:
- *
- *  - the post is ordered by key (@c sorted_by_key, @ref sortedness), so a backwards walk sees keys
- *    in decreasing order; and
- *  - the reserved keys are the *top* of the key order (@c max_ordinary below @c epsilon), so that
- *    "reserved" and "at the end" mean the same thing.
- *
- * A descriptor with the two the wrong way round would hand @c moves_epsilons() and
- *  @c moves_symbols() each other's ranges, silently and with no diagnostic anywhere. Hence a
- *  concept. @c PostLike is defined in terms of it, so every post of the relation is checked where
- *  it is named.
+ * @c mata::posts::Post::first_epsilon_it() walks *backwards* from the end, which is right only
+ *  if (1) the post is ordered by key and (2) the reserved keys are the top of the key order.
  */
 template <typename L>
 concept ReservedKeysAtTail = requires {
@@ -248,18 +141,11 @@ concept ReservedKeysAtTail = requires {
 	requires L::sorted_by_key;
 };
 
-
 namespace posts {
 /**
- * @brief The post protocol of one level, *derived* rather than demanded.
- *
- * A post or an entry declares its own @c key_arity and @c Target. The innermost level need not: any
- *  sorted container of targets is one, with arity zero and its @c value_type as the target. That is
- *  what lets `utils::OrdVector<State>` -- @c mata::StateSet itself -- sit at the bottom of the shipped
- *  relation, so that a set of states and the targets under a symbol are one type, and a second type
- *  appears only when the element type differs (a payload). Read the protocol through these, never
- *  off the type directly, wherever the type may be the innermost level.
+ * @brief A traits specifying the key arity and target type of a post.
  */
+///@{
 template <typename X> struct level_traits {
 	static constexpr size_t key_arity{0};
 	using Target = typename X::value_type;
@@ -272,6 +158,7 @@ struct level_traits<X> {
 };
 template <typename X> inline constexpr size_t arity_of = level_traits<X>::key_arity;
 template <typename X> using target_of = typename level_traits<X>::Target;
+///@}
 } // namespace mata::posts.
 
 /**
@@ -286,39 +173,21 @@ concept WalkableRange = requires(const R r) {
 };
 
 /**
- * @brief The innermost post: the targets reachable once every key has been supplied.
- *
- * @c Target is what a successor walk yields; @c State is what indexes the automaton (its
- *  @c initial and @c final sets, and @c Delta itself). They coincide for a plain automaton, and
- *  differ as soon as a target carries a payload, which is why @c state_of() exists: it is the only
- *  thing a payload target has to provide for every structural operation to keep working.
+ * @brief A concept for a set of targets that can be walked, updated, and queried.
  */
 template <typename T>
 concept TargetSetLike = WalkableRange<T> && requires(const T t, const posts::target_of<T>& target) {
 	typename posts::target_of<T>;
 	requires posts::arity_of<T> == 0;
-	/// @see @ref sortedness. Sorted by target: checked on the range itself, so a plain sorted
-	///  container qualifies without declaring anything.
 	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
-	/// Re-constructible by appending. Trimming and renumbering rebuild a post rather than mutating
-	///  it, which needs only this and not a filter-and-rename pair — one requirement on an
-	///  implementer instead of two. Both callers append in increasing order, so the sortedness
-	///  invariant @c push_back would otherwise break is preserved. @see @ref sortedness.
 	{ std::declval<T&>().push_back(std::declval<const posts::target_of<T>&>()) };
-	/// Reverting writes a target down a key path and lands here. @see mata::posts::insert_target.
 	{ std::declval<T&>().insert(std::declval<const posts::target_of<T>&>()) };
-	/// Removing a transition erases here and reports upward whether this post is now empty, so the
-	///  level above can drop the key that led to it. @see mata::posts::erase_target.
 	{ std::declval<T&>().erase(target) };
-	/// Asking whether a transition exists bottoms out here. @see mata::posts::has_target_at.
 	{ t.contains(target) } -> std::convertible_to<bool>;
 };
 
 /**
- * @brief One entry of a post: a single key together with the post nested under it.
- *
- * What iterating a @c PostLike yields. Not a post itself -- it holds one key, where a post
- *  holds many.
+ * @brief A concept for a post entry, a cingle key and the post nested under it.
  */
 template <typename E>
 concept PostEntryLike = requires(const E e) {
@@ -327,15 +196,11 @@ concept PostEntryLike = requires(const E e) {
 	requires std::totally_ordered<typename E::Key>;
 	{ e.key() } -> std::convertible_to<typename E::Key>;
 	{ e.nested() } -> std::convertible_to<const typename E::Nested&>;
-	/// Mutable too: writing a target down a key path descends through the entries.
 	{ std::declval<E&>().nested() } -> std::same_as<typename E::Nested&>;
 };
 
 /**
- * @brief One post of the relation: an ordered map from a key to the post nested under it.
- *
- * Recursive: @c Nested is either another post or, at the innermost step, a @c TargetSetLike.
- *  @c key_arity counts the keys from here down, so it is one more than the nested post's.
+ * @brief A concept for a post, a range of entries that can be walked, updated, and queried.
  */
 template <typename L>
 concept PostLike = WalkableRange<L> && ReservedKeysAtTail<L> && requires(const L l) {
@@ -346,39 +211,16 @@ concept PostLike = WalkableRange<L> && ReservedKeysAtTail<L> && requires(const L
 	typename L::Target;
 	{ L::key_arity } -> std::convertible_to<size_t>;
 	requires L::key_arity >= 1;
-	/// @c sorted_by_key and the reserved-key convention both come from @c ReservedKeysAtTail above:
-	///  separately they are two unrelated-looking requirements, and together they are the one
-	///  invariant that makes the epsilon lookups sound. @see @ref sortedness.
 	{ l.is_sorted() } -> std::convertible_to<bool>;
-	/// Re-constructible by appending, for the same reason as @c TargetSetLike. Entries are appended
-	///  in increasing key order, so sortedness holds.
 	{ std::declval<L&>().push_back(std::declval<const typename L::Entry&>()) };
-	/// Writing a key path creates the levels it passes through. @see mata::posts::insert_target.
 	{ std::declval<L&>().find(std::declval<const typename L::Key&>()) };
 	{ std::declval<L&>().insert(std::declval<const typename L::Entry&>()) };
-	/// …and *reading* one only needs to look, so the const overload is required separately — a post
-	///  offering only the mutable @c find would force every query to take a mutable relation.
-	///  @see mata::posts::has_target_at.
 	{ l.find(std::declval<const typename L::Key&>()) };
-	/// Erasing the last target under a key drops the key as well, one level at a time.
-	///  @see mata::posts::erase_target.
 	{ std::declval<L&>().erase(std::declval<const typename L::Entry&>()) };
 };
 
 /**
- * @brief An automaton that can report a run, as @c mata::Automaton::is_lang_empty() needs.
- *
- * Two requirements, both otherwise invisible until a template instantiation fails deep inside:
- *
- *  - @c Run::path is exactly @c std::vector of the automaton's own @c State, because the
- *    structural search writes into it directly. Something merely list-like will not do, and
- *    neither will a vector of some other state type.
- *  - the automaton can read one of its own runs as a word. What a path *reads* is not structural
- *    (flat for an NFA, interleaved by tape for an NFT, a tuple per step at higher key arities), so
- *    only the automaton itself can say.
- *
- * @c Run is taken from the automaton rather than fixed here, so each one says what a run means for
- *  it.
+ * @brief A concept for an automaton that can report its runs.
  */
 template <typename A>
 concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
@@ -389,22 +231,10 @@ concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
 };
 
 /**
- * @brief A transition relation @c mata::AutomatonBase can be built on.
+ * @brief A concept for a transition relation an @c mata::AutomatonBase can be built on.
  *
- * One contract, deliberately whole. A relation either provides all of this and gets every
- *  structural operation -- reachability, Tarjan's SCC walk, useful states, distances in both
- *  directions, acyclicity, structural comparison and trimming -- or it does not satisfy the
- *  concept, and @c mata::AutomatonBase<D> is then rejected where it is *named*.
- *
- * Splitting the write side out into opt-in concepts (`RevertibleDeltaLike`, `TrimmableDeltaLike`)
- *  was tried and reverted; see the Plan, S3.11. It moved each failure from the instantiation to
- *  the first call, and a call to a structural operation is usually made from inside somebody
- *  else's template, which is the diagnostic S3.10 exists to avoid. It also bought nothing: no
- *  relation, in the tree or planned, can read but not write.
- *
- * The requirements are grouped by what needs them, so that anything added to
- *  @c mata::AutomatonBase which is not covered here is visible as a gap rather than as a
- *  compile error from inside a member.
+ * @note One contract, deliberately whole so the errors are reported immediately, rather
+ *  then at the calls inside functions that need them.
  */
 template <typename D>
 concept DeltaLike = requires(
@@ -419,25 +249,12 @@ concept DeltaLike = requires(
 	requires PostLike<typename D::PostType>;
 	typename D::Target;
 	typename D::State;
-	/// **No key type is asked for.** @c mata::AutomatonBase transports keys — @c reverted() takes a
-	///  move apart and writes it back — but never inspects, compares or stores one, so requiring a
-	///  key here would be requiring something nothing uses. It would also have to pick a *level*,
-	///  and at a @c key_arity above one there is no "the key". See the Plan, §3.7, and
-	///  @c mata::posts::DeltaBase::Key for the indexed spelling a relation offers its own users.
 	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
 	{ D::key_arity } -> std::convertible_to<size_t>;
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
 
-	/**
-	 * The cap: structure depth 4. @see §3.3 for the depth/arity conversion and §3.3b for why 4.
-	 *
-	 * Relaxed from `== 1` by T3.1-T3.3, which made every read generic — both walks, the cursor,
-	 *  trimming, renumbering, structural equality and the transition count. Enforced here rather
-	 *  than at the walks (the dropped T3.4) because @c mata::AutomatonBase needs the cursor
-	 *  unconditionally: Tarjan drives @c get_useful_states(), @c is_acyclic(), @c is_lang_empty() and
-	 *  @c trim() through it, so a relation past the cap would satisfy a walk-only concept and then
-	 *  fail somewhere inside Tarjan.
-	 */
+	// At most three keys between a source state and a target. (TODO: make this unbounded).
+	// Cursors are optimal until the arity 3, after that a different implementation would be needed.
 	requires D::key_arity <= 3;
 
 	// Structure.
@@ -449,36 +266,19 @@ concept DeltaLike = requires(
 	/// Reverting writes into a fresh relation and needs a mutable post to write through.
 	{ d.mutable_state_post(s) } -> std::same_as<typename D::PostType&>;
 
-	// Traversal. These are the only ways the structural algorithms reach a successor.
+	// Traversal.
 	{ cd.for_each_successor(s, [](const typename D::Target&) {}) };
 	{ cd.for_each_move(s, [](auto&&...) {}) };
 	{ cd.successor_cursor(s) };
 	{ cd.has_self_loop(s) } -> std::convertible_to<bool>;
 
-	// Writing. @c reverted() rebuilds a relation one transition at a time; @c trim() works out
-	//  which states stay and what they are renamed to, then leaves applying both to the relation,
-	//  which is the only party that knows its own representation.
-	//
-	// @c add() is deliberately **not** required. It used to be, and it was wrong twice over: nothing
-	//  in @c mata::AutomatonBase calls it (@c reverted() writes through
-	//  @c mata::posts::insert_target and @c mutable_state_post above), and `add(source, key, target)`
-	//  names exactly one key, so requiring it here promised a member that a relation of arity 2 or 3
-	//  could satisfy in its *declaration* and then fail inside — the deep-instantiation diagnostic
-	//  §3.10 exists to avoid. Writing a key path is the post chain's job, and its requirements are
-	//  already above: @c PostLike's @c find and @c insert, @c PostEntryLike's mutable @c nested(),
-	//  and @c TargetSetLike's @c insert.
+	// Defragmentation.
 	{ d.defragment(is_staying, renaming) };
 
 	// Comparison, for @c is_identical().
 	requires std::equality_comparable<D>;
 
-	// Value semantics. @c mata::AutomatonBase holds a @p D by value: it stores one, default
-	//  constructs one, moves them, and constructs one presized to a state count. The last is asked
-	//  for as a constructor rather than routed through @c allocate() so that a relation able to
-	//  build itself presized in one step may do so, and so that the postcondition does not rest on
-	//  what @c allocate() happens to do when starting from zero states. Copyability is deliberately
-	//  *not* required: a non-copyable relation merely leaves the defaulted copy constructor of
-	//  @c mata::AutomatonBase deleted, which is not an error.
+	// Value semantics.
 	requires std::default_initializable<D>;
 	requires std::movable<D>;
 	requires std::constructible_from<D, size_t>;
