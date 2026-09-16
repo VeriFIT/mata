@@ -210,14 +210,14 @@ static_assert(
 /**
  * The one place the relation's epsilon and the module constant meet.
  *
- * @c mata::EPSILON is what call sites write and @c Delta::Reserved<0>::epsilon is what the relation's
+ * @c mata::EPSILON is what call sites write and @c Delta::Reserved<0>::min_epsilon is what the relation's
  *  own members default to; they are two spellings that have to denote one value. Give a relation a
  *  different reserved tail without updating the constant and every explicit `EPSILON` argument at a
  *  call site starts disagreeing with every defaulted one -- which is the silent wrong answer this
  *  whole descriptor exists to prevent, so it is a compile error instead. See the Plan, §3.8.
  */
 static_assert(
-	Delta::Reserved<0>::epsilon == EPSILON,
+	Delta::Reserved<0>::min_epsilon == EPSILON,
 	"mata::EPSILON and the relation's own epsilon must be the same value."
 );
 static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");

@@ -324,7 +324,7 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 	}
 
 	SECTION("mata::Delta is unchanged: its descriptor says what it always did") {
-		static_assert(Delta::Reserved<0>::epsilon == EPSILON);
+		static_assert(Delta::Reserved<0>::min_epsilon == EPSILON);
 		static_assert(Delta::Reserved<0>::max_ordinary == EPSILON - 1);
 	}
 }

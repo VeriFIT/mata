@@ -129,7 +129,7 @@ static_assert(std::same_as<D2::Key<1>, Symbol> && std::same_as<Mixed2::Key<1>, S
 static_assert(std::same_as<Mixed2::Reserved<1>, ReservedKeys<Symbol, 100>>);
 static_assert(std::same_as<Mixed2::Reserved<0>, ReservedKeys<Symbol>>);
 /// …and only at its own position: level 0 keeps the default.
-static_assert(Mixed2::Reserved<0>::epsilon == EPSILON && Mixed2::Reserved<1>::epsilon == 100);
+static_assert(Mixed2::Reserved<0>::min_epsilon == EPSILON && Mixed2::Reserved<1>::min_epsilon == 100);
 ///@}
 
 /// @name Naming one level

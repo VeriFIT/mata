@@ -50,12 +50,12 @@ using mata::defragment;
  * The re-export must stay a using-declaration: `constexpr Symbol EPSILON{mata::EPSILON}` creates a
  *  *distinct object*, and any translation unit with both `using namespace mata` and a
  *  `using namespace` of a module that redefined it then has two candidates for the name (8 errors
- *  in `src/applications/strings/replace.cc`, measured on the NFT side). So @c Delta::Reserved<0>::epsilon does not
+ *  in `src/applications/strings/replace.cc`, measured on the NFT side). So @c Delta::Reserved<0>::min_epsilon does not
  *  *become* the module constant -- it is tied to it here instead, which gets the single source of
  *  truth without the ambiguity. See the Plan, §3.8.
  */
 static_assert(
-	Delta::Reserved<0>::epsilon == EPSILON,
+	Delta::Reserved<0>::min_epsilon == EPSILON,
 	"nfa::EPSILON must be the epsilon the relation's own members default to."
 );
 

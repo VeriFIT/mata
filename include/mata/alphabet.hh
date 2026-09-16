@@ -30,7 +30,7 @@ class Alphabet {
 	 *  is configurable — which is exactly why the alias is worth adding now: the check it enables
 	 *  costs nothing while it cannot fail, and retrofitting it after either side becomes
 	 *  configurable means finding the bug first. Same reasoning as
-	 *  `static_assert(Delta::Reserved<0>::epsilon == EPSILON)`, which landed while NFA and NFT still
+	 *  `static_assert(Delta::Reserved<0>::min_epsilon == EPSILON)`, which landed while NFA and NFT still
 	 *  shared one epsilon.
 	 *
 	 * @see the assertions in @c mata/nfa/delta.hh and @c mata/nft/delta.hh that compare it with the

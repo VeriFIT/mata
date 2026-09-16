@@ -858,7 +858,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	/**
 	 * Iterator over epsilon moves in @c Post represented as @c Move instances.
 	 */
-	Moves moves_epsilons(const Key first_epsilon = Reserved::epsilon) const {
+	Moves moves_epsilons(const Key first_epsilon = Reserved::min_epsilon) const {
 		return {*this, first_epsilon_it(first_epsilon), cend()};
 	}
 	/**
@@ -1748,7 +1748,7 @@ template <typename P> class DeltaBase {
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c PostEntry with epsilon symbol. End iterator when there are no epsilon transitions.
 	 */
-	PostType::const_iterator epsilon_symbol_posts(State state, Key<0> epsilon = Reserved<0>::epsilon) const;
+	PostType::const_iterator epsilon_symbol_posts(State state, Key<0> epsilon = Reserved<0>::min_epsilon) const;
 
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state_post.
@@ -1757,7 +1757,7 @@ template <typename P> class DeltaBase {
 	 * @return An iterator to @c PostEntry with epsilon symbol. End iterator when there are no epsilon transitions.
 	 */
 	static PostType::const_iterator
-	epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::epsilon);
+	epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
 
   protected:
 	/// @name Keys on the transitions

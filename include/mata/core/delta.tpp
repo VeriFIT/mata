@@ -57,7 +57,7 @@ typename DeltaBase<P>::PostType::const_iterator DeltaBase<P>::epsilon_symbol_pos
 	//  greatest key, there can be entries above @p epsilon and the back is then the wrong entry;
 	//  hence the descriptor is asked rather than the constant assumed. @see mata::ReservedKeys.
 	if constexpr (Reserved<0>::epsilon_is_greatest) {
-		if (epsilon == Reserved<0>::epsilon) {
+		if (epsilon == Reserved<0>::min_epsilon) {
 			if (const auto& back = state_post.back(); back.key() == epsilon) {
 				return std::prev(state_post.end());
 			}

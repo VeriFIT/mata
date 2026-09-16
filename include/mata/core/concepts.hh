@@ -46,8 +46,8 @@ template <typename T> struct TargetTraits {
  * @brief A trait specifying what the alphabet elements are.
  *
  * Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies.
- *  The module seams assert that it is the relation's level-0 key type, since that
- *  is what an alphabet hands out and a relation stores.
+ *  The module seams assert that it is the relation's outermost key type (the key at
+ *  index 0), since that is what an alphabet hands out and a relation stores.
  */
 template <typename A> struct AlphabetTraits {
 	using Symbol = typename A::Symbol;
@@ -72,21 +72,21 @@ template <typename T>
 concept Printable = std::is_arithmetic_v<T> || std::formattable<T, char>;
 
 namespace detail {
-// The default epsilon reserved at the end of the key order can exit only for integral keys.
-template <typename K> consteval K default_epsilon() {
+// The default smallest epsilon exists only for integral keys.
+template <typename K> consteval K default_min_epsilon() {
 	static_assert(
 		std::integral<K>,
-		"ReservedKeys<K>: only an integral key has a default reserved tail (epsilon = max, "
-		"max_ordinary = epsilon - 1). For any other key spell all three arguments: "
-		"ReservedKeys<K, Epsilon, MaxOrdinary>."
+		"ReservedKeys<K>: only an integral key has a default reserved tail (min_epsilon = max, "
+		"max_ordinary = min_epsilon - 1). For any other key spell all three arguments: "
+		"ReservedKeys<K, MinEpsilon, MaxOrdinary>."
 	);
 	if constexpr (std::integral<K>) { return std::numeric_limits<K>::max(); }
 	else { return K{}; }
 }
 
-// The default maximum ordinary key is just below the epsilon.
-template <typename K> consteval K default_max_ordinary(const K epsilon) {
-	if constexpr (std::integral<K>) { return epsilon - 1; }
+// The default maximum ordinary key is just below the smallest epsilon, leaving no gap.
+template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
+	if constexpr (std::integral<K>) { return min_epsilon - 1; }
 	else { return K{}; }
 }
 } // namespace mata::detail.
@@ -94,22 +94,35 @@ template <typename K> consteval K default_max_ordinary(const K epsilon) {
 /**
  * @brief The structure defines where the ordinary keys stop and the reserved tail begins.
  *
+ * The key order splits into three regions:
+ *  - **ordinary**, up to and including @c max_ordinary
+ *  - **reserved but not epsilon**, above @c max_ordinary and below @c min_epsilon
+ *  - **epsilon**, from @c min_epsilon upwards
+ *
+ * The middle region is empty by default, since @c MaxOrdinary defaults to one below @p MinEpsilon.
+ *  Widening the reserved tail opens it, which is how a key can be reserved.
+ *
  * @tparam K The key type.
- * @tparam Epsilon The smallest reserved key: every key at or above it is an epsilon. Defaults to
+ * @tparam MinEpsilon The smallest epsilon key: every key at or above it is an epsilon. Defaults to
  *  the largest value. A non-integral key has no default and must be spelled explicitly.
- * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p Epsilon.
- *  Can be defined explicitly to a smaller value to create a gap between the ordinary keys and the reserved tail.
+ * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p MinEpsilon.
+ *  Can be defined explicitly to a smaller value to open the reserved-but-not-epsilon region.
  *  A non-integral key has no default and must be spelled explicitly.
  */
-template <typename K, K Epsilon = detail::default_epsilon<K>(), K MaxOrdinary = detail::default_max_ordinary<K>(Epsilon)>
+template <
+	typename K,
+	K MinEpsilon = detail::default_min_epsilon<K>(),
+	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon)
+>
 struct ReservedKeys {
 	using Key = K;
-	static constexpr K epsilon{Epsilon}; ///< The smallest reserved key.
+	static constexpr K min_epsilon{MinEpsilon}; ///< The smallest epsilon key.
 	static constexpr K max_ordinary{MaxOrdinary}; ///< The largest key that is not reserved.
-	/// When true, Epsilon will alway be at the end of any sorted containers (simplifying the search for it).
-	static constexpr bool epsilon_is_greatest{Epsilon == std::numeric_limits<K>::max()};
+	/// When true, an epsilon will always be at the end of any sorted container (simplifying the
+	///  search for it).
+	static constexpr bool epsilon_is_greatest{MinEpsilon == std::numeric_limits<K>::max()};
 
-	static_assert(MaxOrdinary < Epsilon, "The ordinary keys must stop below the reserved keys.");
+	static_assert(MaxOrdinary < MinEpsilon, "The ordinary keys must stop below the epsilons.");
 };
 
 /**
@@ -119,11 +132,11 @@ template <typename R>
 concept ReservedKeysLike = requires {
 	typename R::Key;
 	requires std::totally_ordered<typename R::Key>;
-	{ R::epsilon } -> std::convertible_to<typename R::Key>;
+	{ R::min_epsilon } -> std::convertible_to<typename R::Key>;
 	{ R::max_ordinary } -> std::convertible_to<typename R::Key>;
 	{ R::epsilon_is_greatest } -> std::convertible_to<bool>;
 	typename std::bool_constant<R::epsilon_is_greatest>;
-	requires R::max_ordinary < R::epsilon;
+	requires R::max_ordinary < R::min_epsilon;
 };
 
 /**
@@ -141,25 +154,23 @@ concept ReservedKeysAtTail = requires {
 	requires L::sorted_by_key;
 };
 
-namespace posts {
 /**
  * @brief A traits specifying the key arity and target type of a post.
  */
 ///@{
-template <typename X> struct level_traits {
+template <typename X> struct PostTraits {
 	static constexpr size_t key_arity{0};
 	using Target = typename X::value_type;
 };
 template <typename X>
 	requires requires { X::key_arity; typename X::Target; }
-struct level_traits<X> {
+struct PostTraits<X> {
 	static constexpr size_t key_arity{X::key_arity};
 	using Target = typename X::Target;
 };
-template <typename X> inline constexpr size_t arity_of = level_traits<X>::key_arity;
-template <typename X> using target_of = typename level_traits<X>::Target;
+template <typename X> inline constexpr size_t arity_of = PostTraits<X>::key_arity;
+template <typename X> using target_of = typename PostTraits<X>::Target;
 ///@}
-} // namespace mata::posts.
 
 /**
  * @brief A range that can be walked and whose emptiness can be tested.
@@ -176,12 +187,12 @@ concept WalkableRange = requires(const R r) {
  * @brief A concept for a set of targets that can be walked, updated, and queried.
  */
 template <typename T>
-concept TargetSetLike = WalkableRange<T> && requires(const T t, const posts::target_of<T>& target) {
-	typename posts::target_of<T>;
-	requires posts::arity_of<T> == 0;
+concept TargetSetLike = WalkableRange<T> && requires(const T t, const target_of<T>& target) {
+	typename target_of<T>;
+	requires arity_of<T> == 0;
 	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
-	{ std::declval<T&>().push_back(std::declval<const posts::target_of<T>&>()) };
-	{ std::declval<T&>().insert(std::declval<const posts::target_of<T>&>()) };
+	{ std::declval<T&>().push_back(std::declval<const target_of<T>&>()) };
+	{ std::declval<T&>().insert(std::declval<const target_of<T>&>()) };
 	{ std::declval<T&>().erase(target) };
 	{ t.contains(target) } -> std::convertible_to<bool>;
 };
