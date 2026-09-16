@@ -41,7 +41,7 @@ name a concrete relation?" has an answer, and the answer is no.
 Concepts
 --------
 What a transition relation has to provide for ``mata::AutomatonBase`` to work over it, plus the key
-vocabulary the relation itself needs — which symbols a key admits, and where a level's reserved keys
+vocabulary the relation itself needs — which symbols a key denotes, and where a level's reserved keys
 begin.
 
 .. doxygenfile:: core/concepts.hh

@@ -14,7 +14,7 @@
  *  transports keys without inspecting one (see the Plan, §3.7) -- but which the relation does, for
  *  the members that talk about epsilons and about symbols:
  *
- *  - @c KeyTraits, saying which symbols a key admits, and @c KeyDenotesSymbols for keys that admit
+ *  - @c KeyTraits, saying which symbols a key denotes, and @c KeyDenotesSymbols for keys that denote
  *    any. A property of the key *type*, hence a traits specialised on it.
  *  - @c ReservedKeys, saying where a level's ordinary keys stop. A property of the *relation* --
  *    an NFA and an NFT share the key type and differ here -- hence a template argument.
@@ -115,7 +115,7 @@ template <typename T> struct TargetTraits {
 };
 
 /**
- * @brief Which symbols a key admits.
+ * @brief Which symbols a key denotes.
  *
  * A key is not always a symbol. It is for an NFA, where a key *is* the one symbol it stands for,
  *  but a relation may key its transitions by an interval, a character class or a predicate, and
@@ -136,14 +136,13 @@ template <typename T> struct TargetTraits {
  *     template <typename Fn> static void for_each_symbol(const Interval& key, Fn&& fn) {
  *         for (SymbolType s{key.lo}; s <= key.hi; ++s) { fn(s); }
  *     }
- *     static bool admits(const Interval& key, const SymbolType s) { return key.lo <= s && s <= key.hi; }
  * };
  * ```
  */
 template <typename K> struct KeyTraits;
 
 /**
- * @brief The identity expansion: an integral key *is* the single symbol it admits.
+ * @brief The identity expansion: an integral key *is* the single symbol it denotes.
  *
  * @note An integral key that is *not* a symbol -- an integer weight, say -- satisfies
  *  @c KeyDenotesSymbols through this specialisation, and would get the symbol members with the
@@ -155,7 +154,6 @@ template <std::integral K> struct KeyTraits<K> {
 	///  post or a relation re-exports it.
 	using SymbolType = K;
 	template <typename Fn> static void for_each_symbol(const K key, Fn&& fn) { fn(key); }
-	static bool admits(const K key, const K symbol) { return key == symbol; }
 };
 
 /**
@@ -168,8 +166,6 @@ template <typename K>
 concept KeyDenotesSymbols = requires(const K key) {
 	typename KeyTraits<K>::SymbolType;
 	{ KeyTraits<K>::for_each_symbol(key, [](typename KeyTraits<K>::SymbolType) {}) };
-	{ KeyTraits<K>::admits(key, std::declval<typename KeyTraits<K>::SymbolType>()) }
-		-> std::convertible_to<bool>;
 };
 
 /**

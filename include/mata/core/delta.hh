@@ -575,26 +575,6 @@ template <typename E> class Post : utils::OrdVector<E> {
 		return super::find(entry);
 	}
 
-	/**
-	 * @brief Call @p fn on every entry whose key admits @p symbol (@c mata::KeyTraits::admits).
-	 *
-	 * @c find() looks up a key; this looks up a symbol, which differs once a key is not a symbol.
-	 *  For a symbol key it is `find(symbol)`. Otherwise a linear scan: posts are a few entries long,
-	 *  and a search would need a non-overlap invariant. Present only for symbol-denoting keys.
-	 * @see mata::posts::DeltaBase::successors_admitting
-	 */
-	template <typename K = Key, typename Fn>
-		requires SymbolKeyOf<K, Key>
-	void for_each_admitting(const typename KeyTraits<K>::SymbolType symbol, Fn&& fn) const {
-		if constexpr (std::same_as<K, typename KeyTraits<K>::SymbolType>) {
-			if (const auto entry_it{find(symbol)}; entry_it != this->end()) { fn(*entry_it); }
-		} else {
-			for (const Entry& entry : *this) {
-				if (KeyTraits<K>::admits(entry.key(), symbol)) { fn(entry); }
-			}
-		}
-	}
-
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
 	const_iterator first_epsilon_it(const Key first_epsilon) const {
 		// The backwards walk below is only the right answer because the keys at or above the
@@ -1756,37 +1736,6 @@ template <typename P> class DeltaBase {
 	 */
 	KeyedSuccessors get_successors(State state, Key<0> symbol) const;
 
-
-	/// Result type of @c successors_admitting: what @c get_successors returns when the key is the
-	///  symbol (at most one entry admits it), a fresh set otherwise (several may). Same idea as
-	///  @c KeyedSuccessors, keyed on the key type rather than the arity.
-	template <typename K = Key<0>>
-	using AdmittedSuccessors =
-		std::conditional_t<std::same_as<K, typename KeyTraits<K>::SymbolType>, KeyedSuccessors, TargetSet>;
-
-	/**
-	 * @brief The targets reachable from @p source over @p symbol: the union under every key that
-	 *  admits it.
-	 *
-	 * For a symbol key this is `get_successors(source, symbol)`. For another meaning of overlap use
-	 *  @c mata::posts::Post::for_each_admitting directly. Present only for symbol-denoting keys.
-	 * @param symbol A symbol, not a key.
-	 * @see AdmittedSuccessors
-	 */
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	AdmittedSuccessors<K> successors_admitting(const State source, const typename KeyTraits<K>::SymbolType symbol) const {
-		if constexpr (std::same_as<K, typename KeyTraits<K>::SymbolType>) {
-			return get_successors(source, symbol);
-		} else {
-			TargetSet successors{};
-			state_post(source).for_each_admitting(symbol, [&successors](const Entry& entry) {
-				walk_targets(entry.nested(), [&successors](const Target& target) { successors.insert(target); });
-			});
-			return successors;
-		}
-	}
-
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state.
 	 * @param[in] state State from which epsilon transitions are checked.
@@ -1807,7 +1756,7 @@ template <typename P> class DeltaBase {
 	/// @name Symbols on the transitions
 	///
 	/// A key is not necessarily a symbol, so these do not ask the keys -- they ask each key which
-	///  symbols it admits, and take the union. For @c mata::Symbol keys that expansion is the
+	///  symbols it denotes, and take the union. For @c mata::Symbol keys that expansion is the
 	///  identity and the answer is the set of keys, which is why the distinction was invisible until
 	///  a key that denotes a *set* of symbols (an interval, a character class) came up. See the
 	///  Plan, §3.13.

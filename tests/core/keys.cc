@@ -1,5 +1,5 @@
 /** @file
- * @brief The key vocabulary: where a level's reserved keys start, and which symbols a key admits.
+ * @brief The key vocabulary: where a level's reserved keys start, and which symbols a key denotes.
  *
  * Both halves are here because both are **silent** when wrong, and in the same way: they decide
  *  what a *default argument* means and what a *member returns*, so a mistake in either produces a
@@ -59,9 +59,6 @@ template <> struct mata::KeyTraits<Interval> {
 	using SymbolType = Symbol;
 	template <typename Fn> static void for_each_symbol(const Interval& key, Fn&& fn) {
 		for (SymbolType s{key.lo}; s <= key.hi; ++s) { fn(s); }
-	}
-	static bool admits(const Interval& key, const SymbolType symbol) {
-		return key.lo <= symbol && symbol <= key.hi;
 	}
 };
 
@@ -127,7 +124,6 @@ template <typename D>
 concept HasSymbolMembers = requires(const D d) {
 	d.get_used_symbols();
 	d.get_max_symbol();
-	d.successors_admitting(0, 0);
 };
 
 /// Collect the keys a @c Moves range yields, so the epsilon/symbol split can be compared directly.
@@ -152,7 +148,7 @@ static_assert(!ReservedKeysLike<InvertedTail>);
 static_assert(!ReservedKeysAtTail<PostOver<InvertedTail>>);
 static_assert(!PostLike<PostOver<InvertedTail>>);
 
-/// §3.13: an interval admits many symbols, a weight admits none, and an integral key admits itself.
+/// §3.13: an interval denotes many symbols, a weight denotes none, and an integral key denotes itself.
 static_assert(KeyDenotesSymbols<Symbol>);
 static_assert(KeyDenotesSymbols<Interval>);
 static_assert(!KeyDenotesSymbols<Weight>);
@@ -324,69 +320,10 @@ TEST_CASE("mata::KeyTraits — the used symbols are the union of the keys' expan
 		CHECK(utils::OrdVector<Symbol>{delta.get_used_symbols_sps()} == delta.get_used_symbols());
 	}
 
-	SECTION("admits() answers containment, not equality") {
-		CHECK(KeyTraits<Interval>::admits(Interval{2, 5}, 2));
-		CHECK(KeyTraits<Interval>::admits(Interval{2, 5}, 5));
-		CHECK_FALSE(KeyTraits<Interval>::admits(Interval{2, 5}, 6));
-		CHECK(KeyTraits<Symbol>::admits(3, 3));
-		CHECK_FALSE(KeyTraits<Symbol>::admits(3, 4));
-	}
-
 	SECTION("an empty relation has no symbols") {
 		const IntervalDelta delta{};
 		CHECK(delta.get_used_symbols().empty());
 		CHECK(delta.get_max_symbol() == 0);
-	}
-}
-
-TEST_CASE("mata::KeyTraits::admits — asking the relation about a symbol, not a key") {
-	SECTION("an interval relation answers by union over every key that admits the symbol") {
-		IntervalDelta delta{};
-		delta.add(0, Interval{0, 4}, 1);
-		delta.add(0, Interval{3, 9}, 2); // Overlaps the first on 3 and 4.
-		delta.add(0, Interval{20, 20}, 3);
-		delta.add(1, Interval{0, 9}, 4);
-
-		// find() looks up a key; [0, 4] is not the key 3.
-		CHECK(delta.state_post(0).find(Interval{3, 3}) == delta.state_post(0).end());
-		CHECK(delta.successors_admitting(0, 3) == StateSet{1, 2});
-		CHECK(delta.successors_admitting(0, 7) == StateSet{2});
-		CHECK(delta.successors_admitting(0, 20) == StateSet{3});
-		CHECK(delta.successors_admitting(0, 10).empty());
-		CHECK(delta.successors_admitting(1, 9) == StateSet{4});
-		CHECK(delta.successors_admitting(7, 0).empty()); // A state with no post at all.
-
-		// Several keys may admit one symbol, so a fresh set.
-		static_assert(std::same_as<decltype(delta.successors_admitting(0, 3)), StateSet>);
-
-		// The primitive yields the entries, for an automaton that wants another meaning than the union.
-		std::vector<Interval> admitting{};
-		delta.state_post(0).for_each_admitting(4, [&admitting](const auto& entry) { admitting.push_back(entry.key()); });
-		CHECK(admitting == std::vector<Interval>{Interval{0, 4}, Interval{3, 9}});
-	}
-
-	SECTION("for a symbol key it is the existing lookup, handed back by reference") {
-		Delta delta{};
-		delta.add(0, 'a', 1);
-		delta.add(0, 'a', 2);
-		delta.add(0, 'b', 3);
-
-		// By address: a copy would compare equal by value.
-		static_assert(std::same_as<decltype(delta.successors_admitting(0, 'a')), const StateSet&>);
-		CHECK(&delta.successors_admitting(0, 'a') == &delta.get_successors(0, 'a'));
-		CHECK(delta.successors_admitting(0, 'a') == StateSet{1, 2});
-		CHECK(delta.successors_admitting(0, 'c').empty());
-
-		size_t entries{0};
-		delta.state_post(0).for_each_admitting('b', [&entries](const auto& entry) {
-			++entries;
-			CHECK(entry.key() == 'b');
-		});
-		CHECK(entries == 1);
-	}
-
-	SECTION("a key that denotes no symbols has no symbol question to answer") {
-		static_assert(!HasSymbolMembers<WeightDelta>); // includes successors_admitting; see the concept.
 	}
 }
 
