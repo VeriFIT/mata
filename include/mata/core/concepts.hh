@@ -264,8 +264,9 @@ concept DeltaLike = requires(
 	{ D::key_arity } -> std::convertible_to<size_t>;
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
 
-	// At most three keys between a source state and a target. (TODO: make this unbounded).
+	// At most three keys between a source state and a target.
 	// Cursors are optimal until the arity 3, after that a different implementation would be needed.
+	// TODO: Make this unbounded.
 	requires D::key_arity <= 3;
 
 	// Structure.

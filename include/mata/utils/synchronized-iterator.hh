@@ -5,6 +5,9 @@
 #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
 #define MATA_SYNCHRONIZED_ITERATOR_HH
 
+#include <stdexcept>
+#include <vector>
+
 namespace mata::utils {
 
 /** @page synchronized_iterator Synchronized Iterator
