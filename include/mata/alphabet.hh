@@ -33,8 +33,8 @@ class Alphabet {
 	 *  `static_assert(Delta::Reserved<0>::epsilon == EPSILON)`, which landed while NFA and NFT still
 	 *  shared one epsilon.
 	 *
-	 * @see mata::SymbolTypeAgrees, and the assertions in @c mata/nfa/delta.hh and
-	 *  @c mata/nft/delta.hh that consume it.
+	 * @see the assertions in @c mata/nfa/delta.hh and @c mata/nft/delta.hh that compare it with the
+	 *  relation's key type.
 	 */
 	using Symbol = mata::Symbol;
 

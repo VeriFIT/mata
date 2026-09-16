@@ -25,6 +25,7 @@
 #ifndef MATA_RELATION_HH
 #define MATA_RELATION_HH
 
+#include <concepts>
 #include <type_traits>
 #include <utility>
 
@@ -180,7 +181,7 @@ static_assert(
 	"the last ones."
 );
 static_assert(
-	KeyDenotesSymbols<Delta::Key<0>>,
+	std::integral<Delta::Key<0>>,
 	"the depth-2 relation is keyed by symbols, so it must have the symbol members."
 );
 /**

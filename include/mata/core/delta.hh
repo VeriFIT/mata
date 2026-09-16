@@ -267,9 +267,8 @@ bool has_target_at(const P& post, const target_of<P>& target, const K0& k0, cons
  * Generalises what the @c key_arity 1 @c mata::posts::DeltaBase::remove does by hand at a single level.
  *
  * @throws std::invalid_argument if any key on the path is missing. The message does not name the
- *  keys, unlike the arity-1 member's: `std::to_string` is only defined for arithmetic types, and a
- *  key here may be an interval or anything else ordered. Formatting it would need @c KeyTraits and a
- *  guard, for an error path.
+ *  keys, unlike the arity-1 member's: a key here may be an interval or anything else ordered, and
+ *  naming it would take @c mata::detail::describe at every level, for an error path.
  * @return Whether @p post is empty once the erase and any pruning below it are done.
  */
 template <typename P> bool erase_target(P& post, const target_of<P>& target) {
@@ -1755,17 +1754,14 @@ template <typename P> class DeltaBase {
 
 	/// @name Symbols on the transitions
 	///
-	/// A key is not necessarily a symbol, so these do not ask the keys -- they ask each key which
-	///  symbols it denotes, and take the union. For @c mata::Symbol keys that expansion is the
-	///  identity and the answer is the set of keys, which is why the distinction was invisible until
-	///  a key that denotes a *set* of symbols (an interval, a character class) came up. See the
-	///  Plan, §3.13.
+	/// Present when @c Key<0> is an integral type, which is what a symbol is; they read the keys
+	///  directly. A relation keyed by anything else -- an interval, a weight, a predicate -- does not
+	///  have them, and says what its keys stand for in a derived class.
 	///
-	/// Each is guarded on the key denoting symbols at all, so a relation keyed by something with no
-	///  symbols to give -- a weight, a probability -- simply does not have these members. The
-	///  guard's shape is not free choice; @c mata::SymbolKeyOf says why.
-	///
-	/// @see mata::KeyTraits.
+	/// @note The guard is on the *type*, not on the meaning. An integral key that is not a symbol
+	///  (an integer weight, say) gets these members too, with the weights answering as symbols;
+	///  nothing in `unsigned long` tells the two apart. A key that is not a symbol wants a distinct
+	///  key type, which is the right way to spell it anyway.
 	///@{
 
 	/**
@@ -1773,9 +1769,9 @@ template <typename P> class DeltaBase {
 	 *
 	 * The value of the already existing symbols will NOT be overwritten.
 	 */
-	template <ExtensibleAlphabet A, typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	void add_symbols_to(A& target_alphabet) const;
+	template <ExtensibleAlphabet A>
+	void add_symbols_to(A& target_alphabet) const
+		requires std::integral<typename P::Key>;
 
 	/**
 	 * @brief Get the set of symbols used on the transitions in the automaton.
@@ -1783,28 +1779,22 @@ template <typename P> class DeltaBase {
 	 * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
 	 * @return Set of symbols used on the transitions.
 	 */
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	utils::OrdVector<typename KeyTraits<K>::SymbolType> get_used_symbols() const;
+	utils::OrdVector<typename P::Key> get_used_symbols() const
+		requires std::integral<typename P::Key>;
 
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	utils::OrdVector<typename KeyTraits<K>::SymbolType> get_used_symbols_vec() const;
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	std::set<typename KeyTraits<K>::SymbolType> get_used_symbols_set() const;
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	utils::SparseSet<typename KeyTraits<K>::SymbolType> get_used_symbols_sps() const;
+	utils::OrdVector<typename P::Key> get_used_symbols_vec() const
+		requires std::integral<typename P::Key>;
+	std::set<typename P::Key> get_used_symbols_set() const
+		requires std::integral<typename P::Key>;
+	utils::SparseSet<typename P::Key> get_used_symbols_sps() const
+		requires std::integral<typename P::Key>;
 	/// @note Indexed *by* symbol, so it allocates up to the largest symbol used. Already unusable
-	///  when the automaton has epsilons; a key admitting a wide range of symbols makes that worse.
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	std::vector<bool> get_used_symbols_bv() const;
+	///  when the automaton has epsilons.
+	std::vector<bool> get_used_symbols_bv() const
+		requires std::integral<typename P::Key>;
 	/// @copydoc get_used_symbols_bv
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	BoolVector get_used_symbols_chv() const;
+	BoolVector get_used_symbols_chv() const
+		requires std::integral<typename P::Key>;
 
 	/**
 	 * @brief Get the maximum used symbol.
@@ -1814,11 +1804,10 @@ template <typename P> class DeltaBase {
 	 *  the fresh symbols collide with real transitions. (The doc comment here used to say
 	 *  "non-epsilon", which the code has never done.)
 	 *
-	 * @return The largest symbol admitted by any key of this relation, or zero when it is empty.
+	 * @return The largest symbol used by any transition, or zero when the relation is empty.
 	 */
-	template <typename K = Key<0>>
-		requires SymbolKeyOf<K, typename P::Key>
-	typename KeyTraits<K>::SymbolType get_max_symbol() const;
+	typename P::Key get_max_symbol() const
+		requires std::integral<typename P::Key>;
 	///@}
 
   protected:

@@ -1,5 +1,5 @@
 /** @file
- * @brief The key vocabulary: where a level's reserved keys start, and which symbols a key denotes.
+ * @brief The key vocabulary: where a level's reserved keys start, and which keys get the symbol members.
  *
  * Both halves are here because both are **silent** when wrong, and in the same way: they decide
  *  what a *default argument* means and what a *member returns*, so a mistake in either produces a
@@ -14,9 +14,9 @@
  *  So the tests below are all built on relations whose descriptor **disagrees** with
  *  @c mata::EPSILON, which is the only way to tell a per-instantiation default from a baked-in one.
  *
- * @c mata::KeyTraits is the same problem one level along: with an interval key, "the symbols used
- *  on the transitions" is not the set of keys under another name, and a version that returned the
- *  keys would still compile and still look like a set of symbols. See the Plan, §3.8 and §3.13.
+ * The symbol members are the same problem one level along: they exist only for an integral key,
+ *  and a relation keyed by an interval or a weight has to instantiate and work without them rather
+ *  than get members that return the keys under another name. See the Plan, §3.8 and §3.13.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -38,7 +38,7 @@ using namespace mata;
 
 namespace {
 
-/// A key admitting a *range* of symbols, so that the expansion is not the identity. @see §3.13.
+/// A key that is not a symbol: ordered, so the relation works, but with no symbol members.
 struct Interval {
 	Symbol lo{};
 	Symbol hi{};
@@ -46,23 +46,12 @@ struct Interval {
 	bool operator==(const Interval& other) const = default;
 };
 
-/// A key admitting no symbols at all: nothing to expand, so the symbol members must not exist.
+/// Another non-integral key, for the same reason.
 struct Weight {
 	unsigned centi{};
 	auto operator<=>(const Weight& other) const = default;
 	bool operator==(const Weight& other) const = default;
 };
-
-} // namespace.
-
-template <> struct mata::KeyTraits<Interval> {
-	using SymbolType = Symbol;
-	template <typename Fn> static void for_each_symbol(const Interval& key, Fn&& fn) {
-		for (SymbolType s{key.lo}; s <= key.hi; ++s) { fn(s); }
-	}
-};
-
-namespace {
 
 /// The threshold this file's relations use. Deliberately nowhere near @c mata::EPSILON, so that a
 ///  default resolving to core's constant instead of the descriptor's cannot pass by coincidence.
@@ -118,8 +107,8 @@ struct InvertedTail {
 	static constexpr bool epsilon_is_greatest{false};
 };
 
-/// Does this relation offer the symbol members at all? The point of @c mata::SymbolKeyOf is that
-///  the answer can be *no* without the relation failing to instantiate.
+/// Does this relation offer the symbol members at all? They are guarded on the key being integral,
+///  so the answer can be *no* without the relation failing to instantiate.
 template <typename D>
 concept HasSymbolMembers = requires(const D d) {
 	d.get_used_symbols();
@@ -148,37 +137,11 @@ static_assert(!ReservedKeysLike<InvertedTail>);
 static_assert(!ReservedKeysAtTail<PostOver<InvertedTail>>);
 static_assert(!PostLike<PostOver<InvertedTail>>);
 
-/// §3.13: an interval denotes many symbols, a weight denotes none, and an integral key denotes itself.
-static_assert(KeyDenotesSymbols<Symbol>);
-static_assert(KeyDenotesSymbols<Interval>);
-static_assert(!KeyDenotesSymbols<Weight>);
-
-/// The guard leaves the relation instantiable either way, and only the members conditional.
+/// §3.13: the symbol members follow the key *type*. An integral key has them, anything else does
+///  not, and the relation instantiates either way.
 static_assert(HasSymbolMembers<Delta>);
-static_assert(HasSymbolMembers<IntervalDelta>);
+static_assert(!HasSymbolMembers<IntervalDelta>);
 static_assert(!HasSymbolMembers<WeightDelta>);
-
-/// @name The relation and the alphabet must agree on what a symbol is
-///
-/// @c mata::SymbolTypeAgrees is asserted at both module seams, where it currently cannot fail: the
-///  relation's keys and @c mata::Alphabet are both @c mata::Symbol by construction. A check that
-///  cannot fail proves nothing on its own, so the cases below pin down what it would *catch* —
-///  otherwise the concept could be `true` unconditionally and every seam assertion would still pass.
-///@{
-static_assert(SymbolTypeAgrees<Delta::Key<0>, Alphabet>); ///< the shipping relation
-static_assert(SymbolTypeAgrees<Interval, Alphabet>); ///< an interval denotes ordinary Symbols
-
-/// A key whose symbols are *wider* than the alphabet's. This is the mismatch the seam assertions
-///  exist to catch: `translate_symb()` would hand back an @c Alphabet::Symbol that converts
-///  implicitly to this key's symbol type, truncating at whichever values do not fit.
-static_assert(!std::same_as<unsigned long long, Alphabet::Symbol>);
-static_assert(!SymbolTypeAgrees<unsigned long long, Alphabet>);
-
-/// …and vacuously true where there is no relationship to get wrong: a weight denotes no symbols, so
-///  it has no alphabet to disagree with. Without this branch the concept would reject every
-///  relation that simply has nothing to say about symbols.
-static_assert(!KeyDenotesSymbols<Weight> && SymbolTypeAgrees<Weight, Alphabet>);
-///@}
 
 /// @name An alphabet need not be mata's
 ///
@@ -190,16 +153,6 @@ static_assert(!KeyDenotesSymbols<Weight> && SymbolTypeAgrees<Weight, Alphabet>);
 static_assert(std::same_as<AlphabetTraits<WideAlphabet>::Symbol, unsigned long long>);
 static_assert(ExtensibleAlphabet<WideAlphabet>); ///< it can grow…
 static_assert(!ExtensibleAlphabet<FixedAlphabet>); ///< …and a fixed one cannot, which is not an error
-static_assert(!SymbolTypeAgrees<mata::Symbol, WideAlphabet>); ///< the T6.1 check, pointed elsewhere
-static_assert(SymbolTypeAgrees<unsigned long long, WideAlphabet>);
-///@}
-
-/// The @c std::same_as half of @c mata::SymbolKeyOf pins the member's own parameter back to the
-///  relation's key, so `d.get_used_symbols<Symbol>()` on a weight-keyed relation is rejected too.
-///  Not asserted here: GCC 15 reports a call with *explicit* template arguments inside a
-///  requires-expression as a hard error rather than as an unsatisfied requirement, so the check
-///  cannot be written as `!requires { ... }` — it fails the build instead of evaluating to false.
-///  Reproduced in isolation; nothing to do with this concept.
 ///@}
 
 TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's constant") {
@@ -290,44 +243,31 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 	}
 }
 
-TEST_CASE("mata::KeyTraits — the used symbols are the union of the keys' expansions") {
-	SECTION("an integral key admits exactly itself") {
+TEST_CASE("the symbol members of an integral-keyed relation read the keys directly") {
+	SECTION("the used symbols are the keys, once each, in every container") {
 		Delta delta{};
 		delta.add(0, 1, 1);
 		delta.add(0, 4, 1);
 		delta.add(1, 4, 2);
 		CHECK(delta.get_used_symbols() == utils::OrdVector<Symbol>{1, 4});
 		CHECK(delta.get_max_symbol() == 4);
-	}
-
-	SECTION("an interval key admits a range, and that is what is used") {
-		IntervalDelta delta{};
-		delta.add(0, Interval{1, 3}, 1);
-		delta.add(0, Interval{7, 8}, 2);
-		delta.add(1, Interval{3, 4}, 2); // Overlaps the first: the union, not the concatenation.
-
-		// Three keys, six symbols. Returning the keys under another name — which is what a rename
-		//  of this member would have done — would have given three of something else entirely.
-		CHECK(delta.get_used_symbols() == utils::OrdVector<Symbol>{1, 2, 3, 4, 7, 8});
-		CHECK(delta.get_max_symbol() == 8);
-
-		// The return type is the *symbol* type, not the key type. Nothing else would make the
-		//  comparison above even compile, which is the point.
+		CHECK(delta.get_used_symbols_set() == std::set<Symbol>{1, 4});
+		CHECK(utils::OrdVector<Symbol>{delta.get_used_symbols_sps()} == delta.get_used_symbols());
+		const std::vector<bool> bv{delta.get_used_symbols_bv()};
+		REQUIRE(bv.size() >= 5); // It starts at a fixed capacity, so only the bits are specified.
+		CHECK((!bv[0] && bv[1] && !bv[2] && !bv[3] && bv[4]));
 		static_assert(std::same_as<decltype(delta.get_used_symbols()), utils::OrdVector<Symbol>>);
 		static_assert(std::same_as<decltype(delta.get_max_symbol()), Symbol>);
-
-		CHECK(delta.get_used_symbols_set() == std::set<Symbol>{1, 2, 3, 4, 7, 8});
-		CHECK(utils::OrdVector<Symbol>{delta.get_used_symbols_sps()} == delta.get_used_symbols());
 	}
 
 	SECTION("an empty relation has no symbols") {
-		const IntervalDelta delta{};
+		const Delta delta{};
 		CHECK(delta.get_used_symbols().empty());
 		CHECK(delta.get_max_symbol() == 0);
 	}
 }
 
-TEST_CASE("a key that denotes no symbols still gets a working relation") {
+TEST_CASE("a key that is not a symbol still gets a working relation") {
 	// The relation instantiates, stores transitions and walks them. Only the members that would
 	// have had to invent an answer are missing — see the static_asserts above.
 	WeightDelta delta{};

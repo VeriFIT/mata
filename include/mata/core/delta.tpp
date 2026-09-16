@@ -300,24 +300,21 @@ bool DeltaBase<P>::operator==(const DeltaBase& other) const {
 
 
 template <typename P>
-template <ExtensibleAlphabet A, typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-void DeltaBase<P>::add_symbols_to(A& target_alphabet) const {
+template <ExtensibleAlphabet A>
+void DeltaBase<P>::add_symbols_to(A& target_alphabet) const
+	requires std::integral<typename P::Key> {
 	const size_t aut_num_of_states{num_of_states()};
 	for (State state{0}; state < aut_num_of_states; ++state) {
 		for (const Entry& move : state_post(state)) {
-			KeyTraits<K>::for_each_symbol(move.key(), [&target_alphabet](const auto symbol) {
-				target_alphabet.update_next_symbol_value(symbol);
-				target_alphabet.try_add_new_symbol(mata::detail::describe(symbol), symbol);
-			});
+			target_alphabet.update_next_symbol_value(move.key());
+			target_alphabet.try_add_new_symbol(std::to_string(move.key()), move.key());
 		}
 	}
 }
 
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols() const {
+utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols() const
+	requires std::integral<typename P::Key> {
 	// TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
 	//  for instance figure out why NumberPredicate and OrdVector are slow,
 	//  try also with _STATIC_DATA_STRUCTURES_, it changes things.
@@ -378,10 +375,9 @@ utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbo
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in the relation, pushes back to vector and then sorts
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_vec() const {
-	using Symbols = typename KeyTraits<K>::SymbolType;
+utils::OrdVector<typename P::Key> DeltaBase<P>::get_used_symbols_vec() const
+	requires std::integral<typename P::Key> {
+	using Symbols = typename P::Key;
 #ifdef _STATIC_STRUCTURES_
 	static std::vector<Symbols> symbols{};
 	symbols.clear();
@@ -390,10 +386,8 @@ utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbo
 #endif
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const Symbols symbol) {
-				utils::reserve_on_insert(symbols);
-				symbols.push_back(symbol);
-			});
+			utils::reserve_on_insert(symbols);
+			symbols.push_back(symbol_post.key());
 		}
 	}
 	utils::OrdVector<Symbols> sorted_symbols(symbols);
@@ -402,10 +396,9 @@ utils::OrdVector<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbo
 
 // returns symbols appearing in the relation, inserts to a std::set
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-std::set<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_set() const {
-	using Symbols = typename KeyTraits<K>::SymbolType;
+std::set<typename P::Key> DeltaBase<P>::get_used_symbols_set() const
+	requires std::integral<typename P::Key> {
+	using Symbols = typename P::Key;
 	// static should prevent reallocation, seems to speed things up a little
 #ifdef _STATIC_STRUCTURES_
 	static std::set<Symbols> symbols;
@@ -415,13 +408,11 @@ std::set<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_set()
 #endif
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			// Not captured: @c symbols is @c static in *both* branches above -- which looks like a
-			//  slip (every sibling declares it automatic without @c _STATIC_STRUCTURES_, and a
-			//  static one accumulates across calls), but it is left exactly as it was rather than
-			//  quietly changing what a public member returns. Capturing it would warn.
-			KeyTraits<K>::for_each_symbol(symbol_post.key(), [](const Symbols symbol) {
-				symbols.insert(symbol);
-			});
+			// @c symbols is @c static in *both* branches above -- which looks like a slip (every
+			//  sibling declares it automatic without @c _STATIC_STRUCTURES_, and a static one
+			//  accumulates across calls), but it is left exactly as it was rather than quietly
+			//  changing what a public member returns.
+			symbols.insert(symbol_post.key());
 		}
 	}
 	return symbols;
@@ -432,10 +423,9 @@ std::set<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_set()
 // returns symbols appearing in the relation, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-utils::SparseSet<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbols_sps() const {
-	using Symbols = typename KeyTraits<K>::SymbolType;
+utils::SparseSet<typename P::Key> DeltaBase<P>::get_used_symbols_sps() const
+	requires std::integral<typename P::Key> {
+	using Symbols = typename P::Key;
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static utils::SparseSet<Symbols> symbols(64);
@@ -446,9 +436,7 @@ utils::SparseSet<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbo
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const Symbols symbol) {
-				symbols.insert(symbol);
-			});
+			symbols.insert(symbol_post.key());
 		}
 	}
 	// TODO: is it necessary to return ordered vector? Would the number predicate suffice?
@@ -458,9 +446,8 @@ utils::SparseSet<typename KeyTraits<K>::SymbolType> DeltaBase<P>::get_used_symbo
 // returns symbols appearing in the relation, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-std::vector<bool> DeltaBase<P>::get_used_symbols_bv() const {
+std::vector<bool> DeltaBase<P>::get_used_symbols_bv() const
+	requires std::integral<typename P::Key> {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static std::vector<bool> symbols(64, false);
@@ -471,21 +458,19 @@ std::vector<bool> DeltaBase<P>::get_used_symbols_bv() const {
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const auto symbol) {
-				if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
-					symbols.resize(capacity);
-				}
-				symbols[symbol] = true;
-			});
+			const typename P::Key symbol{symbol_post.key()};
+			if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
+				symbols.resize(capacity);
+			}
+			symbols[symbol] = true;
 		}
 	}
 	return symbols;
 }
 
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-BoolVector DeltaBase<P>::get_used_symbols_chv() const {
+BoolVector DeltaBase<P>::get_used_symbols_chv() const
+	requires std::integral<typename P::Key> {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static BoolVector symbols(64, false);
@@ -496,12 +481,11 @@ BoolVector DeltaBase<P>::get_used_symbols_chv() const {
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&symbols](const auto symbol) {
-				if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
-					symbols.resize(capacity * 2);
-				}
-				symbols[symbol] = true;
-			});
+			const typename P::Key symbol{symbol_post.key()};
+			if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
+				symbols.resize(capacity * 2);
+			}
+			symbols[symbol] = true;
 		}
 	}
 	// TODO: is it necessary to return ordered vector? Would the number predicate suffice?
@@ -509,16 +493,13 @@ BoolVector DeltaBase<P>::get_used_symbols_chv() const {
 }
 
 template <typename P>
-template <typename K>
-	requires SymbolKeyOf<K, typename P::Key>
-typename KeyTraits<K>::SymbolType DeltaBase<P>::get_max_symbol() const {
-	using Symbols = typename KeyTraits<K>::SymbolType;
+typename P::Key DeltaBase<P>::get_max_symbol() const
+	requires std::integral<typename P::Key> {
+	using Symbols = typename P::Key;
 	Symbols max{0};
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			KeyTraits<K>::for_each_symbol(symbol_post.key(), [&max](const Symbols symbol) {
-				if (symbol > max) { max = symbol; }
-			});
+			if (symbol_post.key() > max) { max = symbol_post.key(); }
 		}
 	}
 	return max;

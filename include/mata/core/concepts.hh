@@ -12,10 +12,8 @@
  *
  * Alongside them is the *key* vocabulary, which @c mata::Automaton itself never needs -- it
  *  transports keys without inspecting one (see the Plan, §3.7) -- but which the relation does, for
- *  the members that talk about epsilons and about symbols:
+ *  the members that talk about epsilons:
  *
- *  - @c KeyTraits, saying which symbols a key denotes, and @c KeyDenotesSymbols for keys that denote
- *    any. A property of the key *type*, hence a traits specialised on it.
  *  - @c ReservedKeys, saying where a level's ordinary keys stop. A property of the *relation* --
  *    an NFA and an NFT share the key type and differ here -- hence a template argument.
  *  - @c ReservedKeysAtTail, the invariant that makes finding the epsilons by a backwards walk
@@ -115,65 +113,11 @@ template <typename T> struct TargetTraits {
 };
 
 /**
- * @brief Which symbols a key denotes.
- *
- * A key is not always a symbol. It is for an NFA, where a key *is* the one symbol it stands for,
- *  but a relation may key its transitions by an interval, a character class or a predicate, and
- *  then "the symbols used on the transitions" is not the set of keys under another name -- it is
- *  the union of their expansions. A different computation, so @c mata::posts::DeltaBase::get_used_symbols() and its
- *  siblings are written against this traits in order to stay *correct* for such a key rather than
- *  merely compiling. See the Plan, §3.13.
- *
- * Unlike @c TargetTraits there is deliberately **no primary definition**: a key type has to say
- *  that it denotes symbols, because plenty do not. A weight-keyed or probability-keyed level has no
- *  answer to give and should get no member rather than a wrong one. The identity expansion is
- *  supplied for integral keys, which is what @c mata::Symbol needs.
- *
- * Specialise it to key transitions by something that is not a symbol:
- * ```cpp
- * template <> struct mata::KeyTraits<Interval> {
- *     using SymbolType = mata::Symbol;
- *     template <typename Fn> static void for_each_symbol(const Interval& key, Fn&& fn) {
- *         for (SymbolType s{key.lo}; s <= key.hi; ++s) { fn(s); }
- *     }
- * };
- * ```
- */
-template <typename K> struct KeyTraits;
-
-/**
- * @brief The identity expansion: an integral key *is* the single symbol it denotes.
- *
- * @note An integral key that is *not* a symbol -- an integer weight, say -- satisfies
- *  @c KeyDenotesSymbols through this specialisation, and would get the symbol members with the
- *  weights answering as symbols. Distinguishing the two needs a distinct key type, which is the
- *  right way to spell it anyway; there is nothing in the type `unsigned long` to tell them apart.
- */
-template <std::integral K> struct KeyTraits<K> {
-	/// Spelled @c SymbolType, not @c Symbol, so that it cannot shadow @c mata::Symbol wherever a
-	///  post or a relation re-exports it.
-	using SymbolType = K;
-	template <typename Fn> static void for_each_symbol(const K key, Fn&& fn) { fn(key); }
-};
-
-/**
- * @brief A key that stands for a set of symbols, so that "which symbols are used" is a question it
- *  can answer.
- *
- * The guard on the symbol-specific members of @c mata::posts::DeltaBase. @see KeyTraits.
- */
-template <typename K>
-concept KeyDenotesSymbols = requires(const K key) {
-	typename KeyTraits<K>::SymbolType;
-	{ KeyTraits<K>::for_each_symbol(key, [](typename KeyTraits<K>::SymbolType) {}) };
-};
-
-/**
  * @brief What an alphabet's symbols are.
  *
- * The counterpart of @c KeyTraits on the other side of the relationship: a key says which symbols it
- *  *denotes*, an alphabet says which symbols it *hands out*, and @c SymbolTypeAgrees checks the two
- *  answer the same. Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies.
+ * Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies. The module seams
+ *  assert that it is the relation's level-0 key type, since that is what an alphabet hands out and
+ *  a relation stores.
  *
  * It is a traits rather than a template parameter because an alphabet cannot be specialised by
  *  inheritance: @c mata::Alphabet is an abstract base whose whole virtual interface is stated in
@@ -201,65 +145,10 @@ concept ExtensibleAlphabet = requires(A& alphabet, typename AlphabetTraits<A>::S
 };
 
 /**
- * @brief Does @p A deal in the symbols that @p K's keys denote?
- *
- * An automaton holds two things that have to agree about what a symbol is: its relation, whose
- *  level-0 keys *denote* symbols, and its alphabet, which hands them out. Nothing checks that today
- *  because both are @c mata::Symbol by construction and cannot disagree. The moment either becomes
- *  configurable they can, and the failure is the silent kind: `translate_symb()` returns the
- *  alphabet's symbol type, which *implicitly converts* to the relation's key type, so mismatched
- *  widths truncate at some values and not others. No diagnostic, wrong automaton.
- *
- * Note it compares the symbol a key **denotes**, not the key itself. For an interval-keyed relation
- *  @c Key<0> is the interval while the symbol type is @c mata::Symbol, so
- *  `same_as<Key<0>, A::Symbol>` would be the wrong question. @see KeyTraits.
- *
- * Vacuously true for a key that denotes no symbols — a weight-keyed relation has no alphabet
- *  relationship to get wrong, and arguably no alphabet member either.
- *
- * @warning This is a check on the *type*, not on the *range*. An alphabet handing out @c EPSILON as
- *  an ordinary symbol satisfies it and is still wrong; @c ReservedKeys::max_ordinary is the number
- *  to validate values against, at runtime.
- */
-namespace detail {
-/// Vacuous when @p K denotes no symbols; the real comparison otherwise. Spelled as a class template
-///  on a plain @c bool rather than as a disjunction, because `!KeyDenotesSymbols<K> || same_as<...>`
-///  would have to form `KeyTraits<K>::SymbolType` to be a valid expression even when the left side
-///  already settled it.
-template <typename K, typename A, bool = KeyDenotesSymbols<K>> struct SymbolTypeAgrees : std::true_type {};
-template <typename K, typename A>
-struct SymbolTypeAgrees<K, A, true>
-	: std::bool_constant<
-		  std::same_as<typename KeyTraits<K>::SymbolType, typename AlphabetTraits<A>::Symbol>> {};
-} // namespace mata::detail.
-
-/// @copydoc mata::detail::SymbolTypeAgrees
-template <typename K, typename A>
-concept SymbolTypeAgrees = detail::SymbolTypeAgrees<K, A>::value;
-
-/**
- * @brief The guard on a relation member that only means anything for a key denoting symbols.
- *
- * Written over a *defaulted member template parameter* -- `template <typename K = Key> requires
- *  SymbolKeyOf<K, Key>` -- rather than as a plain `requires KeyDenotesSymbols<Key>` on the member,
- *  and the reason is not style. The return types of those members mention
- *  `KeyTraits<Key>::SymbolType`, and a member's declared type is formed when the *class* is
- *  instantiated, before any constraint on it is looked at. An explicit return type naming
- *  `KeyTraits<Key>` therefore makes @c mata::posts::DeltaBase over a key that denotes no symbols fail
- *  to instantiate at all, rather than merely lack the member -- checked, and it does exactly that.
- *  Deferring the return type to the member's own parameter is what keeps it lazy.
- *
- * @c std::same_as pins that parameter back to the relation's own key, so it cannot be supplied by
- *  hand to ask a relation about somebody else's key type.
- */
-template <typename K, typename Expected>
-concept SymbolKeyOf = std::same_as<K, Expected> && KeyDenotesSymbols<K>;
-
-/**
  * @brief Where one key level's ordinary keys stop and its reserved ones begin.
  *
  * Epsilon is not a property of the key *type*, which is why this is a descriptor passed as a
- *  template argument and not a traits specialised on @c K like @c KeyTraits. An NFA and an NFT both
+ *  template argument and not a traits specialised on @c K like @c TargetTraits. An NFA and an NFT both
  *  key by @c mata::Symbol and both call the largest value epsilon; what differs is that an NFT
  *  reserves a *wider tail* (`DONT_CARE = EPSILON - 1`). A traits keyed on the key type could not
  *  tell the two apart, because there is only one key type. The convention belongs to the relation.

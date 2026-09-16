@@ -38,11 +38,9 @@
  *  start counting and collides with an NFT's tape @c mata::Level, which is unrelated. Count keys.
  *  @see @ref arity in @c mata/core/concepts.hh.
  *
- *  The symbol *type* is fixed. Keys other than symbols (intervals, say) work with the stock
- *  @c mata::Alphabet, which deals in the symbols a key denotes (@c mata::KeyTraits). A different
- *  symbol type does not: @c mata::Alphabet's virtual interface is stated in @c mata::Symbol, so such
- *  a relation needs its own alphabet class (@c mata::AlphabetTraits) and cannot use the operations
- *  here that take an @c Alphabet.
+ *  The symbol *type* is fixed: @c mata::Alphabet's virtual interface is stated in @c mata::Symbol,
+ *  so a relation keyed by anything else needs its own alphabet class (@c mata::AlphabetTraits) and
+ *  cannot use the operations here that take an @c Alphabet.
  *
  *  The main idea behind @c mata::nfa::Nfa is that the members (@c mata::nfa::Nfa::delta, @c mata::nfa::Nfa::initial,
  *   @c mata::nfa::Nfa::alphabet, ...) do not depend on each other.
