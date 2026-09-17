@@ -10,6 +10,8 @@ from libc.stdint cimport uintptr_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, Symbol, Level
+IF MATA_HAS_GENERATOR_SUPPORT:
+    from libmata.alphabets cimport CLazyWordGenerator
 
 from libmata.nfa.nfa cimport (
     State, StateSet, StateRenaming, ParameterMap,
@@ -242,6 +244,10 @@ cdef extern from "mata/nft/plumbing.hh" namespace "mata::nft::plumbing":
     cdef void c_nft_reduce "mata::nft::plumbing::reduce" (CNft*, CNft&, StateRenaming*, ParameterMap&)
     cdef void c_nft_revert "mata::nft::plumbing::revert" (CNft*, CNft&)
     cdef void c_nft_remove_epsilon "mata::nft::plumbing::remove_epsilon" (CNft*, CNft&, Symbol) except +
+    IF MATA_HAS_GENERATOR_SUPPORT:
+        cdef CLazyWordGenerator* c_nft_get_words_lazy_ptr "mata::nft::plumbing::get_words_lazy_ptr" (
+            CNft&, size_t, CJumpMode
+        ) except +
 
 cdef extern from "mata/nft/builder.hh" namespace "mata::nft::builder":
     cdef CNft c_create_single_word_nft "mata::nft::builder::create_single_word_nft" (vector[Symbol]&) except +

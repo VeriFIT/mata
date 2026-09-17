@@ -5,6 +5,10 @@ inputs:
     description: "Operating system to run on"
     required: false
     default: ubuntu-latest
+  compiler:
+    description: "Compiler family to build with (gcc or clang). Linux only: macOS always uses Homebrew LLVM Clang."
+    required: false
+    default: gcc
 runs:
   using: "composite"
   steps:
@@ -16,18 +20,37 @@ runs:
       if: ${{ inputs.os == 'ubuntu-latest' }}
       shell: sh
       run: sudo apt install -y build-essential lcov gcovr xdg-utils
-    # Mata uses C++23, which needs GCC >= 14 or Clang >= 18.
-    # The Ubuntu 24.04 runner image ships GCC 12/13/14, but *defaults* to 13.
-    - name: Select a C++23-capable compiler (Linux)
-      if: ${{ inputs.os == 'ubuntu-latest' }}
+    # Mata uses C++23. The distro's default gcc/g++ (unversioned) can lag behind, so pick the
+    #  newest versioned gcc-<N>/g++-<N> package available in apt instead of hardcoding a version.
+    - name: Select GCC (Linux)
+      if: ${{ inputs.os == 'ubuntu-latest' && inputs.compiler == 'gcc' }}
       shell: sh
       run: |
-        command -v g++-14 >/dev/null || sudo apt install -y g++-14 gcc-14
-        echo "CC=gcc-14" >> "$GITHUB_ENV"
-        echo "CXX=g++-14" >> "$GITHUB_ENV"
-        g++-14 --version
-    # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new enough.
-    - name: Select a C++23-capable compiler (macOS)
+        sudo apt update
+        GCC_VER="$(apt-cache search --names-only '^gcc-[0-9]+$' | awk '{print $1}' | sed 's/^gcc-//' | sort -n | tail -n 1)"
+        sudo apt install -y "gcc-$GCC_VER" "g++-$GCC_VER"
+        echo "CC=gcc-$GCC_VER" >> "$GITHUB_ENV"
+        echo "CXX=g++-$GCC_VER" >> "$GITHUB_ENV"
+        "g++-$GCC_VER" --version
+    # Also installs the latest g++ so its libstdc++ is on disk: Clang links against the newest GCC's
+    #  libstdc++ it can find, which is what actually ships recent C++23 library additions such as <generator>.
+    - name: Select Clang (Linux)
+      if: ${{ inputs.os == 'ubuntu-latest' && inputs.compiler == 'clang' }}
+      shell: sh
+      run: |
+        sudo apt update
+        CLANG_VER="$(apt-cache search --names-only '^clang-[0-9]+$' | awk '{print $1}' | sed 's/^clang-//' | sort -n | tail -n 1)"
+        GCC_VER="$(apt-cache search --names-only '^gcc-[0-9]+$' | awk '{print $1}' | sed 's/^gcc-//' | sort -n | tail -n 1)"
+        sudo apt install -y "clang-$CLANG_VER" "g++-$GCC_VER"
+        echo "CC=clang-$CLANG_VER" >> "$GITHUB_ENV"
+        echo "CXX=clang++-$CLANG_VER" >> "$GITHUB_ENV"
+        "clang++-$CLANG_VER" --version
+    # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new
+    #  enough for the C++23 features Mata uses, so macOS always builds against Homebrew's own "llvm" formula and
+    #  ignores the `compiler` input. Its bundled libc++ does not implement <generator> at all yet (libc++ hasn't
+    #  shipped P2502 in any release) -- code needing it must guard on __cpp_lib_generator (see
+    #  mata/utils/generator-support.hh) rather than assume C++23 support implies it.
+    - name: Select Clang (macOS)
       if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
       run: |

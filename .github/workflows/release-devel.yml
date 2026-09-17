@@ -37,8 +37,6 @@ jobs:
         with:
           os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
-        with:
-          build-log-output-file: "warnings-new"
       - name: Test the library
         run: make test
   run-tests-python:
