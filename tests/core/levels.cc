@@ -81,29 +81,27 @@ template <typename D> std::vector<State> all_targets(const D& delta) {
 
 } // namespace.
 
-/// A relation standing in for a module that wants its own transition vocabulary. Its own reserved
-///  tail makes it a *distinct* chain type, so specialising the traits for it cannot collide with the
-///  one the shipping relation uses.
+/// A relation standing in for a module that wants its own transition vocabulary. Built over the
+///  *same* chain as the shipping relation: the traits is a template argument, not a specialisation,
+///  so there is nothing to collide with and no distinct chain type has to be invented for it.
 namespace theirs {
-using Reserved = ReservedKeys<Symbol, EPSILON, EPSILON - 5>;
-using StatePost = posts::PostChain<Reserved, StateSet>;
-using Delta = posts::DeltaBase<StatePost>;
-} // namespace theirs.
-
-/// …and here it names the fields. `source`/`symbol`/`target` is an NFA's vocabulary; nothing in
-///  @c core is entitled to impose it.
-template <> struct mata::posts::TransitionTraits<theirs::StatePost> {
-	using State = mata::State;
-	struct Type {
-		State from{};
-		Symbol letter{};
-		State to{};
-		bool operator==(const Type&) const = default;
-	};
-	static Type make(const State source, const Symbol key, const State target) {
-		return Type{source, key, target};
+/// Here it names the fields. `source`/`symbol`/`target` is an NFA's vocabulary; nothing in @c core
+///  is entitled to impose it. The one thing the type owes is @c parts().
+struct Transition {
+	State from{};
+	Symbol letter{};
+	State to{};
+	bool operator==(const Transition&) const = default;
+	static auto parts(const Transition& t) {
+		return std::tuple<posts::ArgOf<State>, posts::ArgOf<Symbol>, posts::ArgOf<State>>{t.from, t.letter, t.to};
 	}
 };
+struct TransitionTraits {
+	using Type = Transition;
+	static Type make(const State source, const Symbol key, const State target) { return Type{source, key, target}; }
+};
+using Delta = posts::DeltaBase<StatePost, TransitionTraits>;
+} // namespace theirs.
 
 /// @name A chain built from its keys is the chain spelled by hand
 ///
@@ -295,10 +293,11 @@ TEST_CASE("mata::posts::DeltaBase::add — writing a key path at any arity") {
 	}
 }
 
-TEST_CASE("mata::posts::TransitionTraits — a module names its own transition fields") {
-	using Theirs = posts::TransitionTraits<theirs::StatePost>::Type;
+TEST_CASE("mata::posts::DeltaBase — a module names its own transition fields through the traits argument") {
+	using Theirs = theirs::TransitionTraits::Type;
 	static_assert(std::same_as<theirs::Delta::TransitionType, Theirs>);
-	/// …and the shipping relation is untouched by their specialisation.
+	/// …over the very same chain as the shipping relation, which is untouched: nothing was specialised.
+	static_assert(std::same_as<theirs::Delta::PostType, Delta::PostType>);
 	static_assert(std::same_as<Delta::TransitionType, Transition>);
 
 	theirs::Delta delta{};

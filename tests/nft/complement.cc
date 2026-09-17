@@ -9,7 +9,6 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/alphabet.hh"
-#include "mata/nfa/nfa.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/types.hh"

@@ -205,12 +205,6 @@ void residual_recurse_coverable(
 }
 } // namespace
 
-std::ostream& std::operator<<(std::ostream& os, const mata::nfa::Transition& trans) { // {{{
-	const std::string result = "(" + std::to_string(trans.source) + ", " + std::to_string(trans.symbol) + ", " +
-							   std::to_string(trans.target) + ")";
-	return os << result;
-}
-
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
 	return make_complete(get_symbols_to_work_with(alphabet), sink_state);
 }

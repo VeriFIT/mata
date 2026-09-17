@@ -71,9 +71,9 @@ using StatePost = posts::Post<SymbolPost>;
  *  class and must not, so the class has to accept what core hands back.
  * @see mata::Automaton, which is @c AutomatonBase over this.
  */
-class Delta : public posts::DeltaBase<StatePost> {
+class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>> {
   public:
-	using Base = posts::DeltaBase<StatePost>;
+	using Base = posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>>;
 	using Base::Base; ///< including `explicit Delta(size_t)`, which @c mata::DeltaLike requires
 
 	Delta() = default;

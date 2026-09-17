@@ -1180,17 +1180,9 @@ Nfa trim(
 );
 } // namespace mata::nfa
 
+// A Transition's std::hash, std::formatter and operator<< come from mata/core/delta.hh, for every
+//  instantiation of the shipped shapes at once.
 namespace std {
-template <> struct hash<mata::nfa::Transition> {
-	size_t operator()(const mata::nfa::Transition& trans) const noexcept {
-		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
-		accum = mata::utils::hash_combine(accum, trans.symbol);
-		accum = mata::utils::hash_combine(accum, trans.target);
-		return accum;
-	}
-};
-
-std::ostream& operator<<(std::ostream& os, const mata::nfa::Transition& trans);
 std::ostream& operator<<(std::ostream& os, const mata::nfa::Nfa& nfa);
 } // namespace std.
 
