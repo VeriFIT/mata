@@ -627,31 +627,38 @@ class AlphabetLevels {
 	/**
 	 * @brief Get the alphabet assigned to a specific level.
 	 *
-	 * Validated accessor for the internal vector of @c Alphabet*.
+	 * Validated accessor for the internal vector of @c std::shared_ptr<Alphabet>.
 	 *
 	 * - In @c Global mode, @c alphabets[0] is returned regardless of @p level.
 	 * - In @c MultiLevel mode, @p level must have a value and be a valid index; the corresponding entry must be
 	 *   non-null.
 	 *
+	 * The stored shared ownership token is handed out (never null on return; missing alphabets throw instead), so
+	 *  that callers which need to keep the alphabet alive beyond the lifetime of this @c AlphabetLevels (or beyond
+	 *  the next mutation of its slots) can simply copy the returned @c std::shared_ptr. Callers which only read the
+	 *  alphabet should dereference the returned reference directly (@c *levels.for_level(level)), which costs no
+	 *  reference-count update. The non-const overload additionally allows replacing the alphabet stored for
+	 *  @p level.
+	 *
 	 * @param[in] level Level whose alphabet should be returned (required in @c MultiLevel mode).
-	 * @return Alphabet assigned to @p level.
+	 * @return Non-null @c std::shared_ptr to the alphabet assigned to @p level.
 	 * @throws std::runtime_error If @p level is missing in @c MultiLevel mode, out of range, or the entry is null.
 	 */
-	const Alphabet& for_level(std::optional<Level> level = std::nullopt) const;
-	Alphabet& for_level(std::optional<Level> level = std::nullopt);
+	const std::shared_ptr<Alphabet>& for_level(std::optional<Level> level = std::nullopt) const;
+	std::shared_ptr<Alphabet>& for_level(std::optional<Level> level = std::nullopt);
 
 	/**
 	 * @brief Alias for @c for_level.
 	 *
 	 * @see @c for_level.
 	 */
-	const Alphabet& operator[](std::optional<Level> level) const { return for_level(level); }
+	const std::shared_ptr<Alphabet>& operator[](std::optional<Level> level) const { return for_level(level); }
 	/**
 	 * @brief Alias for @c for_level.
 	 *
 	 * @see @c for_level.
 	 */
-	Alphabet& operator[](std::optional<Level> level) { return for_level(level); }
+	std::shared_ptr<Alphabet>& operator[](std::optional<Level> level) { return for_level(level); }
 
 	/**
 	 * @name Raw slot access (mode-agnostic).

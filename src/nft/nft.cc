@@ -1097,7 +1097,7 @@ void Nft::add_transition(
 	//  AlphabetLevels::Mode::MultiLevel) may translate the same name to a different Symbol on different levels.
 	auto resolve_level_alphabet{[&](const Level level) -> Alphabet& {
 		if (alphabet != nullptr) { return *alphabet; }
-		if (this->alphabets != nullptr) { return this->alphabets->for_level(level); }
+		if (this->alphabets != nullptr) { return *this->alphabets->for_level(level); }
 		throw std::runtime_error(
 			"Nft::add_transition(): no alphabet available to translate symbol '" + symbol_name + "' for level " +
 			std::to_string(level)
@@ -1160,9 +1160,7 @@ std::shared_ptr<const mata::Alphabet>
 	if (alphabet != nullptr) {
 		return std::shared_ptr<const Alphabet>(alphabet, [](const Alphabet*) {});
 	}
-	if (this->alphabets != nullptr) {
-		return std::shared_ptr<const Alphabet>(this->alphabets, &this->alphabets->for_level(level));
-	}
+	if (this->alphabets != nullptr) { return this->alphabets->for_level(level); }
 	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
 }
 

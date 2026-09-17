@@ -102,6 +102,7 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
         bool empty(optional[Level]) except +
         void clear(optional[Level]) except +
 
+        shared_ptr[CAlphabet]& for_level(optional[Level]) except +
         shared_ptr[CAlphabet]& at(size_t) except +
         size_t size()
 
