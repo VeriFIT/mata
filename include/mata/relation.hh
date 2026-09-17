@@ -194,15 +194,11 @@ using Automaton = AutomatonBase<Delta>;
 
 /// @name Contract checks
 /// The concrete relation must satisfy the contract the generic algorithms are written against.
-/// A failure here means @c mata/core/concepts.hh and this file have drifted apart.
+/// A failure here means @c mata/core/concepts.hh and this file have drifted apart. What every
+/// relation owes is stated once, in @c mata::posts::relation_contract_holds; only what is specific
+/// to this relation is spelled here.
 ///@{
-static_assert(PostEntryLike<SymbolPost>, "SymbolPost must be StatePost's entry type.");
-static_assert(PostLike<StatePost>, "StatePost must be one post of the relation.");
-static_assert(
-	ReservedKeysAtTail<StatePost>,
-	"the epsilon lookups walk back from the end of a StatePost, which needs the reserved keys to be "
-	"the last ones."
-);
+static_assert(posts::relation_contract_holds<Delta>());
 static_assert(
 	std::integral<Delta::Key<0>>,
 	"the depth-2 relation is keyed by symbols, so the symbol forwarders and the indexed key members must exist."
@@ -214,35 +210,18 @@ static_assert(
  *  own members default to; they are two spellings that have to denote one value. Give a relation a
  *  different reserved tail without updating the constant and every explicit `EPSILON` argument at a
  *  call site starts disagreeing with every defaulted one -- which is the silent wrong answer this
- *  whole descriptor exists to prevent, so it is a compile error instead. See the Plan, §3.8.
+ *  whole descriptor exists to prevent, so it is a compile error instead.
  */
 static_assert(
 	Delta::Reserved<0>::min_epsilon == EPSILON,
 	"mata::EPSILON and the relation's own epsilon must be the same value."
 );
-static_assert(DeltaLike<Delta>, "Delta must satisfy the contract mata::Automaton is written against.");
-/// Naming the relation must cost nothing. @c Delta adds no members, so the empty-base rules make it
-///  the same size as what it derives from; if that ever stops holding, the class has grown something
-///  and the conversions above have something to slice.
-static_assert(
-	sizeof(Delta) == sizeof(posts::DeltaBase<StatePost>) && alignof(Delta) == alignof(posts::DeltaBase<StatePost>),
-	"mata::Delta exists only to shorten a name in diagnostics; it must add nothing."
-);
-static_assert(TargetSetLike<SymbolPost::Nested>, "The innermost post must be a set of targets.");
 /// The keyed writes take a bare state by value, as they always have; the reference form would spill
 ///  at every call site of the out-of-line arity-1 @c add.
 static_assert(
 	std::is_same_v<Delta::TargetArg, const State>,
-	"the shipped relation must take its targets by value; see mata::posts::DeltaBase::TargetArg."
+	"the shipped relation must take its targets by value; see mata::posts::ArgOf."
 );
-/// The cursor is hand-written per arity, 1 to 3. @see the Plan, T3.2 and §3.3b.
-static_assert(
-	Delta::key_arity <= 3,
-	"mata::Delta is capped at key_arity 3 (structure depth 4), because SuccessorCursor is "
-	"hand-written per arity and three is where that stops paying. Past it, add a specialisation."
-);
-//  as SymbolPost::Nested (T2.1); that is also what lets StatePost::key_arity be computed rather
-//  than hardcoded.
 ///@}
 
 } // namespace mata.

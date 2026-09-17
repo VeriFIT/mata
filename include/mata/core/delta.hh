@@ -1,15 +1,10 @@
 /** @file
- * @brief Data structures representing the delta (transition relation) shared by every automaton in Mata:
- *  a mapping from states and input symbols to sets of target states.
+ * @brief Data structures representing the transition relation:
+ *  a mapping from states and keys to target states.
  */
 
 #ifndef MATA_CORE_DELTA_HH
 #define MATA_CORE_DELTA_HH
-
-#include "mata/core/concepts.hh"
-#include "mata/utils/assert.hh"
-#include "mata/utils/sparse-set.hh"
-#include "mata/utils/synchronized-iterator.hh"
 
 #include <algorithm>
 #include <concepts>
@@ -24,20 +19,21 @@
 #include <type_traits>
 #include <utility>
 
+#include "mata/core/concepts.hh"
+#include "mata/utils/assert.hh"
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/synchronized-iterator.hh"
+
 namespace mata {
 
 namespace detail {
 /**
  * @brief Render a value for an exception message.
  *
- * Prints the value when its type says how -- every arithmetic type does, and a user type does by
- *  specialising @c std::formatter -- and a placeholder otherwise, so that a member which reports a
- *  failure by naming the offending transition compiles for *every* key and target type rather than
- *  only for arithmetic ones. @c std::to_string alone cannot do this and cannot be extended: it is a
- *  set of overloads, and adding one to namespace @c std is undefined behaviour.
+ * Prints the value when its type says how. Every arithmetic type does,
+ *  and a user type does by specialising @c std::formatter.
  *
- * To get the value rather than the placeholder, specialise @c std::formatter for the key type. Note
- *  its @c format must be a *template* on the context, or @c std::formattable stays false:
+ * An example for a user type @c Interval:
  * ```cpp
  * template <> struct std::formatter<Interval> {
  *     constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
@@ -48,16 +44,26 @@ namespace detail {
  * ```
  */
 template <Printable T> std::string name_of(const T& value) {
-	// Arithmetic first, and not merely as a shortcut: routing the shipped relation's states and
-	//  symbols through @c std::format instantiates its whole machinery, which measured +14130
-	//  instructions and +89 functions in `src/relation.cc` -- for a message on a throw path. This
-	//  branch keeps that translation unit exactly as it was.
+	// to_string is much faster than format.
 	if constexpr (std::is_arithmetic_v<T>) { return std::to_string(value); }
 	else { return std::format("{}", value); }
 }
-/// @copydoc name_of
-/// With a placeholder for a value that has no printed form. For messages only: a *name* built here
-///  would silently be the same for every such value, which is why @c name_of exists.
+
+/**
+ * @brief Render a value for an exception message, or "<unprintable>" if it cannot be printed.
+ *
+ * Prints the value when its type says how. Every arithmetic type does,
+ *  and a user type does by specialising @c std::formatter.
+ *
+ * An example for a user type @c Interval:
+ * ```cpp
+ * template <> struct std::formatter<Interval> {
+ *     constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+ *     template <typename Ctx> auto format(const Interval& i, Ctx& ctx) const {
+ *         return std::format_to(ctx.out(), "[{},{}]", i.lo, i.hi);
+ *     }
+ * };
+ */
 template <typename T> std::string describe(const T& value) {
 	if constexpr (Printable<T>) { return name_of(value); }
 	else { return "<unprintable>"; }
@@ -65,24 +71,26 @@ template <typename T> std::string describe(const T& value) {
 } // namespace mata::detail.
 
 namespace posts {
+/// How a parameter of type @p X is taken: by value when it is small and trivially copyable (a bare
+///  state stays in a register), by reference otherwise (a payload owning memory is not copied to be
+///  looked at). A reference to a small trivial value would force it into memory at every call that
+///  does not inline, since a reference needs something to point at.
+template <typename X>
+using ArgOf = std::conditional_t<std::is_trivially_copyable_v<X> && sizeof(X) <= 2 * sizeof(void*), const X, const X&>;
+
 /**
- * @brief A single transition in a relation: a source, one key, and one target.
+ * @brief One transition: a source state, a key, and a target.
  *
- * Templated so it follows the relation it comes out of, exactly as @c mata::posts::Move does. At a
- *  @c key_arity above one a transition carries more than one key and this shape no longer fits;
- *  that is Phase 3's problem, and until then this is the depth-2 triple.
+ * The key field is spelled @c symbol, which suits an NFA and is why @c TransitionTraits exists for
+ *  anything else.
  */
 template <typename St, typename K, typename T> struct Transition {
-	St source; ///< Source state.
-	K symbol; ///< Transition symbol.
-	T target; ///< Target state.
+	St source{}; ///< Source state.
+	K symbol{}; ///< Transition key, spelled for an NFA's sake.
+	T target{}; ///< Target.
 
-	Transition() : source(), symbol(), target() {}
-	Transition(const Transition&) = default;
-	Transition(Transition&&) = default;
-	Transition& operator=(const Transition&) = default;
-	Transition& operator=(Transition&&) = default;
-	Transition(const St source, const K symbol, const T target)
+	Transition() = default;
+	Transition(ArgOf<St> source, ArgOf<K> symbol, ArgOf<T> target)
 		: source(source),
 		  symbol(symbol),
 		  target(target) {}
@@ -91,16 +99,12 @@ template <typename St, typename K, typename T> struct Transition {
 };
 
 /**
- * @brief What one transition of a relation looks like, and how to build one.
+ * @brief A traits choosing what one transition of a relation looks like, and how to build one.
  *
- * @c Transition above is a fixed `{source, symbol, target}` triple with *fixed field names*, and
- *  those names are wrong for anything that is not an NFA — a two-tape transducer wants `.input` and
- *  `.output`, not `.symbol`. What the fields are called is not something @c core can choose, so it
- *  asks.
+ * @note Unspecialised, it yields @c posts::Transition, whose field names suit an NFA.
+ *  For your own transition type, specialise this template and provide a @c make().
  *
- * Specialise it on the **post chain**, not on the relation: a relation's member alias would have to
- *  name a traits over itself, and the relation is incomplete at the point the alias is formed.
- *
+ * For example, a transition of a two-tape transducer might look like:
  * ```cpp
  * template <> struct mata::posts::TransitionTraits<nft::StatePost> {
  *     using State = mata::State;
@@ -108,11 +112,6 @@ template <typename St, typename K, typename T> struct Transition {
  *     static Type make(State s, Symbol in, Symbol out, State t) { return {s, in, out, t}; }
  * };
  * ```
- *
- * @note This buys a module its own **field names**, and that is all it buys today.
- *  @c DeltaBase::Transitions still walks exactly one key level and keeps its
- *  `requires(P::key_arity == 1)`: making it generic needs a cursor that carries the whole key path
- *  as it goes, and @c SuccessorCursor yields targets only. That is separate work. @see the Plan, T6.9.
  */
 template <typename P> struct TransitionTraits {
 	using State = typename TargetTraits<typename P::Target>::State;
@@ -1188,11 +1187,8 @@ template <typename P> class DeltaBase {
 	///@{
 	using PostType = P; ///< The post reached from one source state.
 	using Target = typename PostType::Target; ///< What a successor walk yields.
-	/// How the keyed members take a target: by value when it is small and trivially copyable (a bare
-	///  state stays in a register), by reference otherwise (a payload owning memory is not copied to
-	///  be looked at).
-	using TargetArg = std::conditional_t<
-		std::is_trivially_copyable_v<Target> && sizeof(Target) <= 2 * sizeof(void*), const Target, const Target&>;
+	/// How the keyed members take a target. @see mata::posts::ArgOf.
+	using TargetArg = ArgOf<Target>;
 	/// What indexes this relation and the automaton's state sets. Derived from the target type
 	///  rather than propagated through the posts: which state a target denotes is a property of
 	///  the target, not of any post above it. @see mata::TargetTraits.
@@ -1869,6 +1865,42 @@ template <typename... Ts> using PostChain = typename detail::Chain<Ts...>::type;
 /// A whole relation from its keys, spelled in terms of @c PostChain:
 ///  `RelationOf<Symbol, StateSet>` is @c mata::Delta.
 template <typename... Ts> using RelationOf = DeltaBase<PostChain<Ts...>>;
+
+/**
+ * @brief The contract every concrete relation owes, stated once.
+ *
+ * Each check is its own @c static_assert rather than one concept, so that a failure names the check
+ *  that failed. A module asks for all of them with a single line,
+ *  `static_assert(posts::relation_contract_holds<Delta>());`, which may be repeated in every
+ *  translation unit that includes the module's header -- unlike an explicit instantiation
+ *  definition, which may appear only once in a program. Checks that belong to one module (its epsilon
+ *  constant, its argument-passing policy) stay beside that module's relation.
+ */
+template <typename D> constexpr bool relation_contract_holds() {
+	using P = typename D::PostType;
+	static_assert(PostLike<P>, "the relation's PostType must be one post of the relation.");
+	static_assert(PostEntryLike<typename D::Entry>, "the relation's Entry must be its PostType's entry type.");
+	static_assert(
+		ReservedKeysAtTail<P>,
+		"the epsilon lookups walk back from the end of a post, which needs the reserved keys to be the last ones."
+	);
+	static_assert(TargetSetLike<typename D::TargetSet>, "the innermost post must be a set of targets.");
+	static_assert(DeltaLike<D>, "the relation must satisfy the contract mata::Automaton is written against.");
+	// A relation class deriving from DeltaBase exists only to shorten a name in diagnostics and must
+	//  add nothing: the empty-base rules then make it the same size as its base, and a DeltaBase<P>
+	//  converts to it without slicing.
+	static_assert(
+		sizeof(D) == sizeof(DeltaBase<P>) && alignof(D) == alignof(DeltaBase<P>),
+		"a relation class must add no members to DeltaBase; it exists only to shorten a name in diagnostics."
+	);
+	// Already required by DeltaLike; repeated for the message. The cursor is hand-written per arity.
+	static_assert(
+		D::key_arity <= 3,
+		"a relation is capped at key_arity 3 (structure depth 4), because SuccessorCursor is hand-written "
+		"per arity and three is where that stops paying. Past it, add a specialisation."
+	);
+	return true;
+}
 
 } // namespace mata::posts.
 
