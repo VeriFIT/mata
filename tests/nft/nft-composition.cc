@@ -2977,8 +2977,8 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 			  algorithms::compose_general(lhs, rhs, {1}, {0}, true), compose(lhs, rhs, 1, 0, true)}) {
 			REQUIRE(result.alphabets != nullptr);
 			REQUIRE(result.alphabets->size() == 2);
-			CHECK(&result.alphabets->for_level(0) == lhs_alphabet.get());
-			CHECK(&result.alphabets->for_level(1) == rhs_alphabet.get());
+			CHECK(result.alphabets->for_level(0) == lhs_alphabet);
+			CHECK(result.alphabets->for_level(1) == rhs_alphabet);
 		}
 	}
 
@@ -2988,9 +2988,9 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 			  algorithms::compose_general(lhs, rhs, {1}, {0}, false), compose(lhs, rhs, 1, 0, false)}) {
 			REQUIRE(result.alphabets != nullptr);
 			REQUIRE(result.alphabets->size() == 3);
-			CHECK(&result.alphabets->for_level(0) == lhs_alphabet.get());
-			CHECK(&result.alphabets->for_level(1) == sync_alphabet.get());
-			CHECK(&result.alphabets->for_level(2) == rhs_alphabet.get());
+			CHECK(result.alphabets->for_level(0) == lhs_alphabet);
+			CHECK(result.alphabets->for_level(1) == sync_alphabet);
+			CHECK(result.alphabets->for_level(2) == rhs_alphabet);
 		}
 	}
 
@@ -3024,7 +3024,7 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 
 		const Nft result{compose(lhs_mut, rhs, 1, 0, true)};
 		REQUIRE(result.alphabets != nullptr);
-		CHECK(&result.alphabets->for_level(0) == mutable_alphabet.get());
+		CHECK(result.alphabets->for_level(0) == mutable_alphabet);
 
 		REQUIRE(mutable_alphabet->empty());
 		mutable_alphabet->add_new_symbol("x");

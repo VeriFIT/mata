@@ -62,16 +62,16 @@ TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correc
 		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, shared_alphabets};
 
 		REQUIRE(nft.alphabets == shared_alphabets);
-		CHECK(&nft.alphabets->for_level(0) == shared_alphabet.get());
-		CHECK(&nft.alphabets->for_level(7) == shared_alphabet.get());
+		CHECK(nft.alphabets->for_level(0) == shared_alphabet);
+		CHECK(nft.alphabets->for_level(7) == shared_alphabet);
 	}
 
 	SECTION("per-level alphabets are stored in the alphabets member") {
 		Nft nft{3, {0}, {2}, Levels{2, {0, 1, 0}}, split_alphabets};
 
 		REQUIRE(nft.alphabets == split_alphabets);
-		CHECK(&nft.alphabets->for_level(0) == input_alphabet.get());
-		CHECK(&nft.alphabets->for_level(1) == output_alphabet.get());
+		CHECK(nft.alphabets->for_level(0) == input_alphabet);
+		CHECK(nft.alphabets->for_level(1) == output_alphabet);
 	}
 
 	SECTION("level-aware translation routes to the right underlying alphabet") {
@@ -116,8 +116,8 @@ TEST_CASE("mata::AlphabetLevels single-element form treats every level uniformly
 	auto base = std::make_shared<IntAlphabet>();
 	AlphabetLevels uniform{base};
 
-	CHECK(&uniform.for_level(0) == base.get());
-	CHECK(&uniform.for_level(7) == base.get());
+	CHECK(uniform.for_level(0) == base);
+	CHECK(uniform.for_level(7) == base);
 	CHECK(uniform.translate_symb("3", 0) == 3);
 	CHECK(uniform.translate_symb("3", 5) == 3);
 	CHECK(uniform.reverse_translate_symbol(3, 5) == "3");
@@ -132,15 +132,15 @@ TEST_CASE("mata::AlphabetLevels::erase()") {
 		AlphabetLevels alphabets{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}};
 		alphabets.erase(alphabets.begin() + 1);
 		REQUIRE(alphabets.size() == 2);
-		CHECK(&alphabets.for_level(0) == a0.get());
-		CHECK(&alphabets.for_level(1) == a2.get());
+		CHECK(alphabets.for_level(0) == a0);
+		CHECK(alphabets.for_level(1) == a2);
 	}
 
 	SECTION("erase a range") {
 		AlphabetLevels alphabets{std::vector<std::shared_ptr<Alphabet>>{a0, a1, a2}};
 		alphabets.erase(alphabets.begin(), alphabets.begin() + 2);
 		REQUIRE(alphabets.size() == 1);
-		CHECK(&alphabets.for_level(0) == a2.get());
+		CHECK(alphabets.for_level(0) == a2);
 	}
 
 	SECTION("erasing the only alphabet in Global mode empties it") {
@@ -186,8 +186,8 @@ TEST_CASE("mata::nft::determinize preserves the per-level alphabets pointer") {
 	Nft determinized = determinize(nft);
 
 	REQUIRE(determinized.alphabets == alphabets);
-	CHECK(&determinized.alphabets->for_level(0) == input_alphabet.get());
-	CHECK(&determinized.alphabets->for_level(1) == output_alphabet.get());
+	CHECK(determinized.alphabets->for_level(0) == input_alphabet);
+	CHECK(determinized.alphabets->for_level(1) == output_alphabet);
 }
 
 TEST_CASE("mata::nft::size()") {
@@ -4841,12 +4841,12 @@ TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level a
 		Nft proj = project_out(nft, OrdVector<Level>{1}, JumpMode::AppendDontCares);
 		REQUIRE(proj.alphabets != nullptr);
 		REQUIRE(proj.alphabets->size() == 3);
-		CHECK(&proj.alphabets->for_level(0) == a0.get());
-		CHECK(&proj.alphabets->for_level(1) == a2.get());
-		CHECK(&proj.alphabets->for_level(2) == a3.get());
+		CHECK(proj.alphabets->for_level(0) == a0);
+		CHECK(proj.alphabets->for_level(1) == a2);
+		CHECK(proj.alphabets->for_level(2) == a3);
 		// The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
 		REQUIRE(nft.alphabets->size() == 4);
-		CHECK(&nft.alphabets->for_level(1) == a1.get());
+		CHECK(nft.alphabets->for_level(1) == a1);
 		// The AlphabetLevels *container* is legitimately a new object (its contents differ from nft.alphabets'),
 		//  but each surviving level's underlying Alphabet instance is still the exact same shared one.
 		CHECK(proj.alphabets != nft.alphabets);
@@ -4858,16 +4858,16 @@ TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level a
 		Nft proj = project_out(nft, OrdVector<Level>{0, 2}, JumpMode::AppendDontCares);
 		REQUIRE(proj.alphabets != nullptr);
 		REQUIRE(proj.alphabets->size() == 2);
-		CHECK(&proj.alphabets->for_level(0) == a1.get());
-		CHECK(&proj.alphabets->for_level(1) == a3.get());
+		CHECK(proj.alphabets->for_level(0) == a1);
+		CHECK(proj.alphabets->for_level(1) == a3);
 	}
 
 	SECTION("project_to keeps the alphabets of the retained levels") {
 		Nft proj = project_to(nft, OrdVector<Level>{1, 3});
 		REQUIRE(proj.alphabets != nullptr);
 		REQUIRE(proj.alphabets->size() == 2);
-		CHECK(&proj.alphabets->for_level(0) == a1.get());
-		CHECK(&proj.alphabets->for_level(1) == a3.get());
+		CHECK(proj.alphabets->for_level(0) == a1);
+		CHECK(proj.alphabets->for_level(1) == a3);
 	}
 
 	SECTION("Global mode alphabets pass through unchanged") {
@@ -4878,7 +4878,7 @@ TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level a
 		Nft proj = project_out(global_nft, OrdVector<Level>{1}, JumpMode::AppendDontCares);
 		REQUIRE(proj.alphabets != nullptr);
 		CHECK(proj.alphabets->mode() == AlphabetLevels::Mode::Global);
-		CHECK(&proj.alphabets->for_level(0) == shared_alphabet.get());
+		CHECK(proj.alphabets->for_level(0) == shared_alphabet);
 		// Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
 		//  is shared with global_nft, not just its underlying alphabet.
 		CHECK(proj.alphabets == global_nft.alphabets);
@@ -4902,10 +4902,10 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
 		Nft output_nft = insert_level(nft, 1, nullptr, JumpMode::AppendDontCares);
 		REQUIRE(output_nft.alphabets != nullptr);
 		REQUIRE(output_nft.alphabets->size() == 4);
-		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
+		CHECK(output_nft.alphabets->for_level(0) == a0);
 		CHECK(output_nft.alphabets->at(1) == nullptr);
-		CHECK(&output_nft.alphabets->for_level(2) == a1.get());
-		CHECK(&output_nft.alphabets->for_level(3) == a2.get());
+		CHECK(output_nft.alphabets->for_level(2) == a1);
+		CHECK(output_nft.alphabets->for_level(3) == a2);
 		// The original alphabets object must stay untouched (no aliasing corruption via the shared_ptr).
 		REQUIRE(nft.alphabets->size() == 3);
 		// The AlphabetLevels *container* is legitimately a new object, but each level's underlying Alphabet
@@ -4918,11 +4918,11 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
 		Nft output_nft = insert_levels(nft, {0, 0, 1, 1, 0, 1}, {}, JumpMode::AppendDontCares);
 		REQUIRE(output_nft.alphabets != nullptr);
 		REQUIRE(output_nft.alphabets->size() == 6);
-		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-		CHECK(&output_nft.alphabets->for_level(1) == a1.get());
+		CHECK(output_nft.alphabets->for_level(0) == a0);
+		CHECK(output_nft.alphabets->for_level(1) == a1);
 		CHECK(output_nft.alphabets->at(2) == nullptr);
 		CHECK(output_nft.alphabets->at(3) == nullptr);
-		CHECK(&output_nft.alphabets->for_level(4) == a2.get());
+		CHECK(output_nft.alphabets->for_level(4) == a2);
 		CHECK(output_nft.alphabets->at(5) == nullptr);
 	}
 
@@ -4934,7 +4934,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
 		Nft output_nft = insert_level(global_nft, 1, nullptr, JumpMode::AppendDontCares);
 		REQUIRE(output_nft.alphabets != nullptr);
 		CHECK(output_nft.alphabets->mode() == AlphabetLevels::Mode::Global);
-		CHECK(&output_nft.alphabets->for_level(0) == shared_alphabet.get());
+		CHECK(output_nft.alphabets->for_level(0) == shared_alphabet);
 		// Global mode is level-count-agnostic, so nothing needed to change: the AlphabetLevels *container* itself
 		//  is shared with global_nft, not just its underlying alphabet.
 		CHECK(output_nft.alphabets == global_nft.alphabets);
@@ -4945,10 +4945,10 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
 		Nft output_nft = insert_level(nft, 1, a3, JumpMode::AppendDontCares);
 		REQUIRE(output_nft.alphabets != nullptr);
 		REQUIRE(output_nft.alphabets->size() == 4);
-		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-		CHECK(&output_nft.alphabets->for_level(1) == a3.get());
-		CHECK(&output_nft.alphabets->for_level(2) == a1.get());
-		CHECK(&output_nft.alphabets->for_level(3) == a2.get());
+		CHECK(output_nft.alphabets->for_level(0) == a0);
+		CHECK(output_nft.alphabets->for_level(1) == a3);
+		CHECK(output_nft.alphabets->for_level(2) == a1);
+		CHECK(output_nft.alphabets->for_level(3) == a2);
 	}
 
 	SECTION("insert_levels fills every new slot with the given alphabets instead of null") {
@@ -4958,12 +4958,12 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
 		Nft output_nft = insert_levels(nft, {0, 0, 1, 1, 0, 1}, {a3, a4, a5}, JumpMode::AppendDontCares);
 		REQUIRE(output_nft.alphabets != nullptr);
 		REQUIRE(output_nft.alphabets->size() == 6);
-		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-		CHECK(&output_nft.alphabets->for_level(1) == a1.get());
-		CHECK(&output_nft.alphabets->for_level(2) == a3.get());
-		CHECK(&output_nft.alphabets->for_level(3) == a4.get());
-		CHECK(&output_nft.alphabets->for_level(4) == a2.get());
-		CHECK(&output_nft.alphabets->for_level(5) == a5.get());
+		CHECK(output_nft.alphabets->for_level(0) == a0);
+		CHECK(output_nft.alphabets->for_level(1) == a1);
+		CHECK(output_nft.alphabets->for_level(2) == a3);
+		CHECK(output_nft.alphabets->for_level(3) == a4);
+		CHECK(output_nft.alphabets->for_level(4) == a2);
+		CHECK(output_nft.alphabets->for_level(5) == a5);
 	}
 
 	SECTION("insert_levels rejects a mismatched number of new_level_alphabets") {
@@ -4977,11 +4977,11 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels() keep per-lev
 		Nft output_nft = insert_level(nft, 4, a3, JumpMode::AppendDontCares);
 		REQUIRE(output_nft.alphabets != nullptr);
 		REQUIRE(output_nft.alphabets->size() == 5);
-		CHECK(&output_nft.alphabets->for_level(0) == a0.get());
-		CHECK(&output_nft.alphabets->for_level(1) == a1.get());
-		CHECK(&output_nft.alphabets->for_level(2) == a2.get());
+		CHECK(output_nft.alphabets->for_level(0) == a0);
+		CHECK(output_nft.alphabets->for_level(1) == a1);
+		CHECK(output_nft.alphabets->for_level(2) == a2);
 		CHECK(output_nft.alphabets->at(3) == nullptr);
-		CHECK(&output_nft.alphabets->for_level(4) == a3.get());
+		CHECK(output_nft.alphabets->for_level(4) == a3);
 	}
 }
 
@@ -5002,7 +5002,7 @@ TEST_CASE("mata::nft::insert_level() regression test for #684") {
 	Nft inserted = insert_level(aut, 1, alph2_ptr, JumpMode::RepeatSymbol);
 	REQUIRE(inserted.alphabets != nullptr);
 	CHECK_NOTHROW(inserted.alphabets->for_level(1));
-	CHECK(&inserted.alphabets->for_level(1) == alph2_ptr.get());
+	CHECK(inserted.alphabets->for_level(1) == alph2_ptr);
 	// The newly-inserted level's transitions carry DONT_CARE (there is no original data to reuse for it), which
 	//  used to make print_to_dot() throw, since DONT_CARE was not special-cased like EPSILON is.
 	CHECK_NOTHROW(inserted.print_to_dot());

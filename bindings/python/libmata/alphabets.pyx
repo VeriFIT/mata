@@ -406,25 +406,7 @@ cdef class AlphabetLevels:
         In `Global` mode, the single shared alphabet is returned regardless of `level`. In `MultiLevel` mode,
         `level` is required and must index a non-null slot.
         """
-        cdef size_t size = self.thisptr.get().size()
-        cdef size_t idx
-        cdef shared_ptr[CAlphabet] slot
-        if self.thisptr.get().mode() == AlphabetLevelsModeGlobal:
-            if size == 0:
-                raise RuntimeError("AlphabetLevels (Global) has no underlying alphabet.")
-            slot = self.thisptr.get().at(0)
-            if slot.get() == NULL:
-                raise RuntimeError("AlphabetLevels (Global) has no underlying alphabet.")
-            return wrap_alphabet(slot)
-
-        if level is None:
-            raise RuntimeError("AlphabetLevels (MultiLevel) requires an explicit level.")
-        idx = <size_t><Level>level
-        if idx >= size:
-            raise RuntimeError(f"AlphabetLevels has no alphabet for level {level} (out of range).")
-        slot = self.thisptr.get().at(idx)
-        if slot.get() == NULL:
-            raise RuntimeError(f"AlphabetLevels has no alphabet for level {level} (entry is null).")
+        cdef shared_ptr[CAlphabet] slot = self.thisptr.get().for_level(self._c_level(level))
         return wrap_alphabet(slot)
 
     def __getitem__(self, level: int | None) -> Alphabet:

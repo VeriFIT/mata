@@ -187,22 +187,22 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 }
 
 Symbol AlphabetLevels::translate_symb(const std::string& symb, const std::optional<mata::Level> level) {
-	return for_level(level).translate_symb(symb);
+	return for_level(level)->translate_symb(symb);
 }
 
 std::string
 	AlphabetLevels::reverse_translate_symbol(const Symbol symbol, const std::optional<mata::Level> level) const {
-	return for_level(level).reverse_translate_symbol(symbol);
+	return for_level(level)->reverse_translate_symbol(symbol);
 }
 
 mata::utils::OrdVector<Symbol> AlphabetLevels::get_alphabet_symbols(const std::optional<mata::Level> level) const {
-	return for_level(level).get_alphabet_symbols();
+	return for_level(level)->get_alphabet_symbols();
 }
 
 mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
 	const mata::utils::OrdVector<Symbol>& symbols, const std::optional<mata::Level> level
 ) const {
-	return for_level(level).get_complement(symbols);
+	return for_level(level)->get_complement(symbols);
 }
 
 bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
@@ -213,7 +213,7 @@ bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
 		}
 		return true;
 	}
-	return for_level(level).empty();
+	return for_level(level)->empty();
 }
 
 void AlphabetLevels::clear(const std::optional<mata::Level> level) {
@@ -224,16 +224,16 @@ void AlphabetLevels::clear(const std::optional<mata::Level> level) {
 		}
 		return;
 	}
-	for_level(level).clear();
+	for_level(level)->clear();
 }
 
-const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) const {
+const std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::optional<mata::Level> level) const {
 	// Handle Mode::Global.
 	if (mode_ == Mode::Global) {
 		if (alphabets_.empty() || alphabets_[0] == nullptr) {
 			throw std::runtime_error("AlphabetLevels (Global) has no underlying alphabet.");
 		}
-		return *alphabets_[0];
+		return alphabets_[0];
 	}
 
 	// Handle Mode::MultiLevel.
@@ -252,11 +252,11 @@ const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level>
 		);
 	}
 
-	return *alphabets_[*level];
+	return alphabets_[*level];
 }
 
-mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
-	return const_cast<Alphabet&>(std::as_const(*this).for_level(level));
+std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
+	return const_cast<std::shared_ptr<Alphabet>&>(std::as_const(*this).for_level(level));
 }
 
 mata::Word mata::encode_word_utf8(const mata::Word& word) {
