@@ -64,7 +64,7 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 			function_name +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -75,7 +75,7 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 		algo = algorithms::is_included_antichains;
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 
@@ -93,7 +93,7 @@ bool mata::nft::is_included(
 	const ParameterMap& params
 ) { // {{{
 	// ReSharper disable once CppLocalVariableMayBeConst
-	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
+	AlgoType algo{set_algorithm(std::string{__func__}, params)};
 	return algo(smaller, bigger, alphabet, cex, jump_mode);
 }
 

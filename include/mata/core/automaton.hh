@@ -354,7 +354,7 @@ template <DeltaLike D> class AutomatonBase {
 	 *  through @c Delta::add, which is what makes that possible: a pack has to come last to deduce,
 	 *  so `add(source, keys..., target)` is not declarable at all, and putting the target first
 	 *  instead — `insert_target(post, target, keys...)` — is. The keys are transported as a pack and
-	 *  never inspected, which is why @c mata::DeltaLike asks for no key type (§3.7). Reverting swaps
+	 *  never inspected, which is why @c mata::DeltaLike asks for no key type. Reverting swaps
 	 *  source and target and leaves the key order alone, so a key path means the same thing in both
 	 *  directions at any arity.
 	 * @return A new automaton with reversed transitions and swapped initial/final states.

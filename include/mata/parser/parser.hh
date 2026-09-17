@@ -62,9 +62,9 @@ void init();
 
 } // namespace mata::parser
 
-namespace std {
+namespace mata::parser {
 /// Output stream operator
-std::ostream& operator<<(std::ostream& os, const mata::parser::ParsedSection& parsec);
-} // namespace std
+std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec);
+} // namespace mata::parser.
 
 #endif /* MATA_PARSER_HH_ */

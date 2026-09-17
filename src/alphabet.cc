@@ -91,8 +91,11 @@ void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
 	if (next_symbol_value_ <= value) { next_symbol_value_ = value + 1; }
 }
 
-std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) {
-	return os << std::to_string(alphabet);
+std::ostream& mata::operator<<(std::ostream& os, const Alphabet& alphabet) {
+	// Not `to_string(alphabet)`: with no overload for an Alphabet that reached the catch-all, which
+	//  streams its argument -- straight back into this operator. Print what an alphabet is: its symbols.
+	const auto symbols{alphabet.get_alphabet_symbols()};
+	return os << utils::to_string(std::vector<Symbol>(symbols.begin(), symbols.end()));
 }
 
 Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {

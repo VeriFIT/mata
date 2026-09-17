@@ -187,8 +187,8 @@ class SynchronizedExistentialSymbolPostIterator
  *
  * @c mata::AutomatonBase over the relation above. Never named as a type outside inheritance
  *  plumbing — no variable, parameter or return type anywhere — which is why it is an alias here
- *  rather than a class: it is a *data-owning mixin*, and the Plan's §3.9 says why that is not
- *  dissolvable into free functions.
+ *  rather than a class: it is a *data-owning mixin*, which cannot be dissolved into free
+ *  functions.
  */
 using Automaton = AutomatonBase<Delta>;
 

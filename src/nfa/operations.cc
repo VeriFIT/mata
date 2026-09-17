@@ -192,7 +192,7 @@ void residual_recurse_coverable(
 			if (covered[index] == 0) {
 				auto macrostate_ptr = subset_map->find(macrostate_vec[index]);
 				if (macrostate_ptr == subset_map->end()) { // should never happen
-					throw std::runtime_error(std::to_string(__func__) + " couldn't find expected element in a map.");
+					throw std::runtime_error(std::string{__func__} + " couldn't find expected element in a map.");
 				}
 
 				covering_set.insert(macrostate_ptr->second);
@@ -500,7 +500,7 @@ bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 				++n;
 				if (!haskey(symbols, symb_stateset.symbol)) {
 					throw std::runtime_error(
-						std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
+						std::string{__func__} + ": encountered a symbol that is not in the provided alphabet"
 					);
 				}
 
@@ -609,10 +609,10 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -621,7 +621,7 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 		algo = algorithms::minimize_hopcroft;
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 
@@ -1011,7 +1011,7 @@ Nfa mata::nfa::product(
 			return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
 		};
 	} else {
-		throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"final_condition\"");
+		throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"final_condition\"");
 	}
 
 	return algorithms::product(lhs, rhs, std::move(is_product_state_final_func), first_epsilon, prod_map);
@@ -1039,18 +1039,18 @@ Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
 	if (!haskey(params, "relation")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"relation\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 	if (!haskey(params, "direction")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"direction\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1059,7 +1059,7 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 		return compute_fw_direct_simulation(aut);
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
+			std::string{__func__} + " received an unknown value of the \"relation\" key: " + relation
 		);
 	}
 }
@@ -1067,10 +1067,10 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const ParameterMap& params) {
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1082,19 +1082,19 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		// reduce type either 'after' or 'with' creation of residual automaton
 		if (!haskey(params, "type")) {
 			throw std::runtime_error(
-				std::to_string(__func__) +
+				std::string{__func__} +
 				" requires setting the \"type\" key in the \"params\" argument; "
 				"received: " +
-				std::to_string(params)
+				mata::utils::to_string(params)
 			);
 		}
 		// forward or backward canonical residual automaton
 		if (!haskey(params, "direction")) {
 			throw std::runtime_error(
-				std::to_string(__func__) +
+				std::string{__func__} +
 				" requires setting the \"direction\" key in the \"params\" argument; "
 				"received: " +
-				std::to_string(params)
+				mata::utils::to_string(params)
 			);
 		}
 
@@ -1104,7 +1104,7 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		result = algorithms::reduce_residual(aut, reduced_state_map, residual_type, residual_direction);
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + algorithm
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + algorithm
 		);
 	}
 
@@ -1179,7 +1179,7 @@ Nfa mata::nfa::determinize(
 	return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
+std::ostream& mata::nfa::operator<<(std::ostream& os, const Nfa& nfa) {
 	nfa.print_to_mata(os);
 	return os;
 }
@@ -1710,7 +1710,7 @@ Nfa mata::nfa::algorithms::reduce_residual(
 
 	if (direction != "forward" && direction != "backward") {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"direction\" key: " + direction
+			std::string{__func__} + " received an unknown value of the \"direction\" key: " + direction
 		);
 	}
 
@@ -1735,7 +1735,7 @@ Nfa mata::nfa::algorithms::reduce_residual(
 	} else if (type == "after") {
 		result = reduce_residual_after(back_determinized);
 	} else {
-		throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"type\" key: " + type);
+		throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"type\" key: " + type);
 	}
 
 	if (direction == "backward") { result = revert(result); }
@@ -1907,7 +1907,7 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
 					auto macrostate_ptr = subset_map.find(macrostate_vec[index]);
 					if (macrostate_ptr == subset_map.end()) { // should never happen
 						throw std::runtime_error(
-							std::to_string(__func__) + " couldn't find expected element in a map."
+							std::string{__func__} + " couldn't find expected element in a map."
 						);
 					}
 

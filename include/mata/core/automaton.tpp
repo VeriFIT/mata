@@ -87,7 +87,7 @@ AutomatonBase<D> AutomatonBase<D>::reverted() const {
 		//  the target and leaves the keys in the same order, so nothing here inspects a key -- a
 		//  relation whose keys are not symbols, or which has more than one of them, works unchanged.
 		delta.for_each_move(source_state, [&](const auto&... move) {
-			static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per level, then a target");
+			static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per post, then a target");
 			detail::insert_reversed(
 				result.delta, source_state, std::forward_as_tuple(move...),
 				std::make_index_sequence<sizeof...(move) - 1>{}

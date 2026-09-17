@@ -2,7 +2,7 @@
  * @brief Every @c SuccessorCursor specialisation, cross-checked against the recursive walk.
  *
  * The cursors are hand-written per key arity, because a composed one costs 24.4% at arity 2 and
- *  18.6% at arity 3 (Plan, T3.2). The price of that duplication is that each carry is written by
+ *  18.6% at arity 3. The price of that duplication is that each carry is written by
  *  hand, and **a wrong carry skips targets silently** — no compile error, no crash, just a wrong
  *  answer from `get_useful_states()`, `is_acyclic()` or `is_lang_empty()`, all of which reach the
  *  relation through the cursor.
@@ -210,9 +210,9 @@ TEST_CASE("mata::SuccessorCursor and the walks agree on counts") {
 }
 
 /**
- * @brief The point of Phase 3: an automaton over a relation deeper than two.
+ * @brief An automaton over a relation deeper than two.
  *
- * `DeltaLike` was relaxed from `key_arity == 1` to `<= 3` once T3.1-T3.3 made every read generic.
+ * `DeltaLike` admits `key_arity <= 3`, because every read is generic up to there.
  *  This checks that claim rather than trusting it — a depth-3 relation must satisfy the contract and
  *  give the structural operations, and the three members that still cannot must be *absent* rather
  *  than wrong.

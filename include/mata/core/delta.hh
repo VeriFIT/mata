@@ -1,6 +1,37 @@
 /** @file
  * @brief Data structures representing the transition relation:
  *  a mapping from states and keys to target states.
+ *
+ * @section nesting Post structure
+ *
+ * A relation is @c DeltaBase indexed by source state, over a chain of posts ending in a set of
+ *  targets -- one post per key, so a relation with @c n keys is @c n posts deep:
+ * ```
+ * DeltaBase -> Post -> Post -> ... -> Targets
+ *               key 0   key 1         (a state, or a state with a payload)
+ * ```
+ * A @c Post is an ordered map from one key to the post nested under it; iterating one yields its
+ *  @c PostEntry objects, each one key paired with the post beneath it. The same two classes make up
+ *  every step of the chain; @c mata::StatePost and @c mata::SymbolPost are aliases for the depth-2
+ *  instantiation.
+ *
+ * @section arity Counting posts
+ *
+ * @c key_arity is the number of keys between a source state and a target: 1 for an NFA (the symbol),
+ *  2 for a two-tape relation, and so on. Keys, not containers -- counting containers gives a number
+ *  that depends on where you start. Unrelated to @c mata::Level and @c mata::nft::Levels, which are
+ *  an NFT's tape levels. Posts are named by key index: `DeltaBase::Key<I>` is key @p I's type,
+ *  `Reserved<I>` its reserved-key convention, and `PostAt<I>` the post that far in.
+ *
+ * @section sortedness Sortedness
+ *
+ * Every post is sorted by key, and the innermost one by target. Lookups binary-search on it, and
+ *  @c Post::first_epsilon_it() walks backwards relying on the reserved keys forming a contiguous
+ *  suffix. A post that does not maintain the order still compiles, and silently returns wrong
+ *  iterators. The order may be broken *temporarily*: @c push_back and @c emplace_back append without
+ *  restoring it, which is faster when building from unordered input; it has to be restored by sorting
+ *  before any lookup, iteration order or comparison is relied upon. A post advertises that it
+ *  maintains the invariant with @c sorted_by_key / @c sorted_by_target and exposes @c is_sorted().
  */
 
 #ifndef MATA_CORE_DELTA_HH
@@ -101,17 +132,19 @@ template <typename St, typename K, typename T> struct Transition {
 	static auto parts(const Transition& t) {
 		return std::tuple<ArgOf<St>, ArgOf<K>, ArgOf<T>>{t.source, t.symbol, t.target};
 	}
+	/// `"(source, symbol, target)"`, as the @c std::formatter below prints it.
+	std::string to_string() const { return std::format("{}", *this); }
 };
 
 /**
  * @brief One transition of a relation with any number of keys: a source, the keys as a tuple, a target.
  *
  * The default above arity 1, where a single named key field has no meaning. @c keys is
- *  `std::tuple<Key<0>, ..., Key<key_arity - 1>>`: one element per level, outermost first.
+ *  `std::tuple<Key<0>, ..., Key<key_arity - 1>>`: one element per key, outermost first.
  */
 template <typename St, typename Keys, typename T> struct KeyedTransition {
 	St source{}; ///< Source state.
-	Keys keys{}; ///< One key per level, outermost first.
+	Keys keys{}; ///< One key per post, outermost first.
 	T target{}; ///< Target.
 
 	auto operator<=>(const KeyedTransition&) const = default;
@@ -120,6 +153,8 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 	static auto parts(const KeyedTransition& t) {
 		return std::tuple_cat(std::tuple<ArgOf<St>>{t.source}, t.keys, std::tuple<ArgOf<T>>{t.target});
 	}
+	/// `"(source, keys..., target)"`, as the @c std::formatter below prints it.
+	std::string to_string() const { return std::format("{}", *this); }
 };
 
 namespace detail {
@@ -226,16 +261,16 @@ std::ostream& operator<<(std::ostream& os, const T& t) {
 }
 
 /**
- * @brief The post @p I levels down a chain.
+ * @brief The post @p I steps down a chain.
  *
  * `PostAt<P, 0>::type` is @p P itself and `PostAt<P, P::key_arity>::type` is the innermost post,
  *  the set of targets. What @c mata::posts::DeltaBase::Key and @c mata::posts::DeltaBase::Reserved are
  *  spelled in terms of: a post has exactly one key so @c PostLike::Key is unambiguous and stays
- *  singular, but a *relation* spans every level, and there the same name would silently mean "the
+ *  singular, but a *relation* spans every post, and there the same name would silently mean "the
  *  outermost one" — right at @c key_arity 1 and quietly wrong above it.
  */
 template <typename P, size_t I> struct PostAt {
-	static_assert(I <= arity_of<P>, "no level that deep in this chain");
+	static_assert(I <= arity_of<P>, "no post that deep in this chain");
 	using type = typename PostAt<typename P::Nested, I - 1>::type;
 };
 /// @copydoc PostAt
@@ -243,7 +278,7 @@ template <typename P> struct PostAt<P, 0> {
 	using type = P;
 };
 
-/// Level @p I's key type, taken from the chain rather than from a relation. What
+/// Key @p I's type, taken from the chain rather than from a relation. What
 ///  @c mata::posts::DeltaBase::Key is spelled in terms of, and what the per-arity keyed writes need in
 ///  their *signatures* — a member of the relation would not do there, because the parameter types
 ///  have to depend on the member's own template parameter to stay lazy at the wrong arity.
@@ -259,7 +294,7 @@ template <typename P> using KeysOf = decltype(detail::keys_of<P>(std::make_index
 /**
  * @brief What one transition of a relation looks like and how to build one: the traits @c DeltaBase takes.
  *
- * A traits names a @c Type and builds one with `make(source, keys..., target)`, one key per level.
+ * A traits names a @c Type and builds one with `make(source, keys..., target)`, one key per post.
  *  The type itself owes a static @c parts() (@see TransitionLike), which is what lets the hash, the
  *  formatter and the transition-shaped members of @c DeltaBase work for it without anything further.
  *
@@ -303,7 +338,7 @@ template <typename P> struct SymbolTransitionTraits {
 	}
 };
 
-/// The `{source, keys, target}` transition with one key per level. The default above arity 1.
+/// The `{source, keys, target}` transition with one key per post. The default above arity 1.
 template <typename P> struct KeyedTransitionTraits {
 	using State = typename TargetTraits<target_of<P>>::State;
 	using Type = KeyedTransition<State, KeysOf<P>, target_of<P>>;
@@ -341,7 +376,7 @@ template <typename P> using DefaultTransitionTraits = typename detail::DefaultTr
  *  the recursion into the same nested loops a caller would write by hand — measured at 0.99-1.01x of
  *  hand-written loops at every arity from 1 to 9, with no trend against depth, so depth genericity
  *  here is free. @p Fn is a template parameter and never a @c std::function: routing the same walk
- *  through one costs 1.08x to 2.18x. See the Plan, T3.1.
+ *  through one costs 1.08x to 2.18x.
  */
 template <typename P, typename Fn> void walk_targets(const P& post, Fn&& fn) {
 	if constexpr (arity_of<P> == 0) {
@@ -423,7 +458,7 @@ template <typename P> void insert_target(P& post, const target_of<P>& target) {
 
 template <typename P, typename K0, typename... Rest>
 void insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
-	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per level");
+	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
 	auto entry_it{post.find(k0)};
 	if (entry_it == post.end()) {
 		post.insert(typename P::Entry{k0, typename P::Nested{}});
@@ -445,25 +480,25 @@ template <typename P> bool has_target_at(const P& post, const target_of<P>& targ
 
 template <typename P, typename K0, typename... Rest>
 bool has_target_at(const P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
-	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per level");
+	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
 	const auto entry_it{post.find(k0)};
 	return entry_it != post.end() && has_target_at(entry_it->nested(), target, rest...);
 }
 
 /**
- * @brief Erase @p target from under the key path @p k0, @p rest, pruning every level it empties.
+ * @brief Erase @p target from under the key path @p k0, @p rest, pruning every post it empties.
  *
  * The only one of the three key-path walks that does its work on the way back *up*. It descends to
- *  the innermost post, erases there, and then each level asks whether the post beneath it has just
+ *  the innermost post, erases there, and then each post asks whether the post beneath it has just
  *  become empty and drops its own entry if so — so a path that held the last target disappears
  *  entirely rather than leaving a chain of empty posts behind. The return value **is** that
  *  question ("am I now empty?"), which is why no extra state is needed to carry it back up.
  *
- * Generalises what the @c key_arity 1 @c mata::posts::DeltaBase::remove does by hand at a single level.
+ * Generalises what the @c key_arity 1 @c mata::posts::DeltaBase::remove does by hand at a single post.
  *
  * @throws std::invalid_argument if any key on the path is missing. The message does not name the
  *  keys, unlike the arity-1 member's: a key here may be an interval or anything else ordered, and
- *  naming it would take @c mata::detail::describe at every level, for an error path.
+ *  naming it would take @c mata::detail::describe at every post, for an error path.
  * @return Whether @p post is empty once the erase and any pruning below it are done.
  */
 template <typename P> bool erase_target(P& post, const target_of<P>& target) {
@@ -474,7 +509,7 @@ template <typename P> bool erase_target(P& post, const target_of<P>& target) {
 
 template <typename P, typename K0, typename... Rest>
 bool erase_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
-	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per level");
+	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
 	const auto entry_it{post.find(k0)};
 	if (entry_it == post.end()) { throw std::invalid_argument("The transition does not exist."); }
 	if (erase_target(entry_it->nested(), target, rest...)) { post.erase(*entry_it); }
@@ -530,10 +565,10 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 /**
  * @brief Rebuild @p post keeping only the targets @p is_staying admits, renamed by @p renaming.
  *
- * The write-side mirror of @c walk_targets, and the reason it is written this way: each level knows
- *  only its own job — the innermost post filters and renames, every level above drops the entries
+ * The write-side mirror of @c walk_targets, and the reason it is written this way: each post knows
+ *  only its own job — the innermost one filters and renames, every post above drops the entries
  *  whose nested post came back empty — so trimming generalises with the nesting instead of assuming
- *  two levels of descent, which is what the hand-unrolled version did.
+ *  two steps of descent, which is what the hand-unrolled version did.
  *
  * Rebuilds rather than mutating, so an implementer owes only @c push_back and not a filter-and-rename
  *  pair. @see @ref sortedness for why appending is safe here.
@@ -577,12 +612,12 @@ template <typename K, typename T> class Move {
  *  @c mata::SymbolPost aliases. At a higher @c key_arity the nested type is another post rather than
  *  a target set, and nothing here changes for that — an entry never decides what is below it, it
  *  only holds a key and passes the question down. Which is why it is not called @c SymbolPost: the
- *  same class is every level's entry, and only the outermost one is keyed by a symbol.
+ *  same class is every post's entry, and only the outermost one is keyed by a symbol.
  *
  * @tparam K What this entry is keyed by.
  * @tparam N The post nested under that key: another post, or a @c mata::TargetSetLike at the bottom.
- * @tparam R Where this level's ordinary keys stop. Carried by the entry because the entry is where
- *  the key type is named, so at a higher @c key_arity each level gets its own convention from its
+ * @tparam R Where this post's ordinary keys stop. Carried by the entry because the entry is where
+ *  the key type is named, so at a higher @c key_arity each post gets its own convention from its
  *  own entry rather than sharing one. Defaulted, so no existing spelling of a post changes.
  * @see mata::PostEntryLike, mata::ReservedKeys, and @ref nesting.
  */
@@ -596,7 +631,7 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
 	///@{
 	using Key = K; ///< What this entry is keyed by.
 	using Nested = N; ///< The post nested under this key.
-	/// Where this level's ordinary keys stop. @see mata::ReservedKeys.
+	/// Where this post's ordinary keys stop. @see mata::ReservedKeys.
 	using Reserved = R;
 	/// What a successor walk yields, propagated up from the innermost post. An entry does not decide
 	///  what a target is, it only passes the answer along.
@@ -685,7 +720,7 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
  * @brief One post of the relation: an ordered map from a key to the post nested under it.
  *
  * An ordered vector of @p E kept sorted by key, which is what every lookup binary-searches on.
- *  Every level of a chain is one of these; a relation of @c key_arity @c n is @c n of them deep,
+ *  Every step of a chain is one of these; a relation of @c key_arity @c n is @c n of them deep,
  *  ending in a @c mata::TargetSetLike.
  *
  * Named @c Post and not @c StatePost because only the *outermost* one is the post of a state — the
@@ -694,7 +729,7 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
  *  site names. @see @ref nesting.
  *
  * @tparam E The entry type: one key plus what is nested under it. This post is parameterised on its
- *  *entry* rather than on the nested post, per @ref nesting — one post class per level, each free to
+ *  *entry* rather than on the nested post, per @ref nesting — one post class per step, each free to
  *  be a different implementation.
  * @see mata::PostLike.
  */
@@ -712,7 +747,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using Key = typename Entry::Key; ///< What this post is keyed by (the symbol, for an NFA).
 	using Nested = typename Entry::Nested; ///< The post (or target set) under one key.
 	using Target = typename Entry::Target; ///< What a successor walk yields, propagated up.
-	/// Where this level's ordinary keys stop, propagated up from the entry, which is where the key
+	/// Where this post's ordinary keys stop, propagated up from the entry, which is where the key
 	///  type is named. What makes @c moves_epsilons() and @c moves_symbols() default per
 	///  instantiation. @see mata::ReservedKeys, mata::ReservedKeysAtTail.
 	using Reserved = typename Entry::Reserved;
@@ -838,8 +873,8 @@ template <typename E> class Post : utils::OrdVector<E> {
 	/**
 	 * @brief The target states reachable from this post over @p symbol.
 	 *
-	 * The *targets*, at every arity — not the post one level down. Getting one level down is what
-	 *  @c find() is for, and walking the levels between is what @c moves() and @c for_each_move()
+	 * The *targets*, at every arity — not the post one step down. Getting one step down is what
+	 *  @c find() is for, and walking the posts between is what @c moves() and @c for_each_move()
 	 *  are for; this member answers "which states can I reach over this key", and that question has
 	 *  the same kind of answer however many keys are left below.
 	 *
@@ -881,7 +916,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 		 * Iterator over moves.
 		 *
 		 * @note Defined inside @c Moves rather than out of line. As a nested class of a nested class
-		 *  of a template, each out-of-line member definition would need three levels of
+		 *  of a template, each out-of-line member definition would need three layers of
 		 *  qualification; inline is the same code and far harder to get wrong.
 		 */
 		class const_iterator {
@@ -1121,15 +1156,15 @@ template <typename E> class Post : utils::OrdVector<E> {
  *  what @c mata::AutomatonBase drives @c get_useful_states(), @c is_acyclic(), @c is_lang_empty() and
  *  @c trim() through.
  *
- * @tparam P The whole post chain, not one level of it. Deliberately: this is a *flat* cursor, holding
- *  every level's position as its own member and carrying between them explicitly. It is hand-written
+ * @tparam P The whole post chain, not one post of it. Deliberately: this is a *flat* cursor, holding
+ *  every post's position as its own member and carrying between them explicitly. It is hand-written
  *  once per @c key_arity, with a specialisation below for each supported depth.
  *
- * @note Composing it out of per-post cursors instead — one cursor struct per level, each delegating
+ * @note Composing it out of per-post cursors instead — one cursor struct per post, each delegating
  *  downwards — is tidier and measurably slower: **24.4% at arity 2 and 18.6% at arity 3**, against
  *  hand-written nested loops on the same shapes, with the flat form holding at 0.79-0.85x. At arity 1
  *  the two are within 1%, which is why the older note here claimed composition was slower without
- *  saying where; the gap only opens once each level has real branching. See the Plan, T3.2.
+ *  saying where; the gap only opens once each post has real branching.
  *
  * @note Header-defined so it inlines. The inner range is loaded without a branch.
  */
@@ -1137,7 +1172,7 @@ template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 	static_assert(
 		sizeof(P) == 0,
 		"SuccessorCursor is hand-written per key arity, 1 to 3 (structure depth 2 to 4). A deeper "
-		"relation needs a new specialisation; see the Plan, T3.2. This is deliberately a hard error "
+		"relation needs a new specialisation. This is deliberately a hard error "
 		"rather than a silent fallback to a composed cursor, which would keep working and quietly "
 		"lose 18-24%."
 	);
@@ -1180,6 +1215,9 @@ template <typename P> class SuccessorCursor<P, 1> {
 		}
 		/// Compares against @c std::default_sentinel: the end is stateless, so no end iterator is stored.
 		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
+		bool operator==(const const_iterator&) const = default;
+		/// The key path to the current target: one key, at arity 1.
+		auto keys() const { return std::tuple<typename P::Key>{symbol_post_it_->key()}; }
 	};
 
 	explicit SuccessorCursor(const P& state_post) : state_post_{&state_post} {}
@@ -1200,12 +1238,12 @@ template <typename P> class SuccessorCursor<P, 1> {
 };
 
 /**
- * @brief The depth-3 cursor: two levels of keys, then the targets.
+ * @brief The depth-3 cursor: two keys, then the targets.
  *
- * Written flat, like the arity-1 case: every level's position is a named member and the carry between
- *  them is explicit. Composing this out of per-level cursors instead measures **24.4% slower** on the
+ * Written flat, like the arity-1 case: every post's position is a named member and the carry between
+ *  them is explicit. Composing this out of per-post cursors instead measures **24.4% slower** on the
  *  same shapes, so the duplication is bought deliberately. @c scan_b and @c scan_a are the carry: each
- *  advances its own level and re-descends, returning false when its subtree holds no target.
+ *  advances its own post and re-descends, returning false when its subtree holds no target.
  *
  * @warning A mistake in the carry silently *skips targets* -- no compile error, no crash, a wrong
  *  answer. `tests/core/cursor.cc` cross-checks every specialisation against @c walk_targets.
@@ -1213,12 +1251,12 @@ template <typename P> class SuccessorCursor<P, 1> {
 template <typename P> class SuccessorCursor<P, 2> {
   public:
 	using Target = typename P::Target;
-	using LevelB = typename P::Entry::Nested; ///< The post nested under a level-A key.
+	using PostB = typename P::Entry::Nested; ///< The post nested under an outermost key.
 
 	class const_iterator {
 	  public:
 		typename P::const_iterator a_{}, a_end_{};
-		typename LevelB::const_iterator b_{}, b_end_{};
+		typename PostB::const_iterator b_{}, b_end_{};
 		const Target *target_it_{nullptr}, *target_end_{nullptr};
 
 		/// Position on the first non-empty target run at or after @c b_.
@@ -1254,6 +1292,9 @@ template <typename P> class SuccessorCursor<P, 2> {
 			return *this;
 		}
 		bool operator==(std::default_sentinel_t) const { return a_ == a_end_; }
+		bool operator==(const const_iterator&) const = default;
+		/// The key path to the current target, outermost first.
+		auto keys() const { return std::tuple<typename P::Key, typename PostB::Key>{a_->key(), b_->key()}; }
 	};
 
 	explicit SuccessorCursor(const P& post) : post_{&post} {}
@@ -1272,24 +1313,24 @@ template <typename P> class SuccessorCursor<P, 2> {
 };
 
 /**
- * @brief The depth-4 cursor: three levels of keys, then the targets. The cap.
+ * @brief The depth-4 cursor: three keys, then the targets. The cap.
  *
- * Same flat carry as arity 2, one level deeper. Composed costs 18.6% here. Past this arity the primary
- *  template is a hard error rather than a fallback -- see the Plan, T3.2 and §3.3b.
+ * Same flat carry as arity 2, one post deeper. Composed costs 18.6% here. Past this arity the primary
+ *  template is a hard error rather than a fallback.
  *
  * @warning As at arity 2: a wrong carry skips targets silently. Cross-checked in `tests/core/cursor.cc`.
  */
 template <typename P> class SuccessorCursor<P, 3> {
   public:
 	using Target = typename P::Target;
-	using LevelB = typename P::Entry::Nested;
-	using LevelC = typename LevelB::Entry::Nested;
+	using PostB = typename P::Entry::Nested;
+	using PostC = typename PostB::Entry::Nested;
 
 	class const_iterator {
 	  public:
 		typename P::const_iterator a_{}, a_end_{};
-		typename LevelB::const_iterator b_{}, b_end_{};
-		typename LevelC::const_iterator c_{}, c_end_{};
+		typename PostB::const_iterator b_{}, b_end_{};
+		typename PostC::const_iterator c_{}, c_end_{};
 		const Target *target_it_{nullptr}, *target_end_{nullptr};
 
 		bool scan_c() {
@@ -1333,6 +1374,11 @@ template <typename P> class SuccessorCursor<P, 3> {
 			return *this;
 		}
 		bool operator==(std::default_sentinel_t) const { return a_ == a_end_; }
+		bool operator==(const const_iterator&) const = default;
+		/// The key path to the current target, outermost first.
+		auto keys() const {
+			return std::tuple<typename P::Key, typename PostB::Key, typename PostC::Key>{a_->key(), b_->key(), c_->key()};
+		}
 	};
 
 	explicit SuccessorCursor(const P& post) : post_{&post} {}
@@ -1361,9 +1407,9 @@ template <typename P> class SuccessorCursor<P, 3> {
  *  an NFA that chain is one key deep — a symbol — so it is this class, one @c Post, targets, and the
  *  aliases @c mata::StatePost and @c mata::SymbolPost name that one post and its entry. The depth is
  *  not baked in here: @p P is the whole chain, and @c key_arity is read off it rather than declared;
- *  going deeper adds another @c Post, not another kind of class. Levels are named by key index, not by container count:
+ *  going deeper adds another @c Post, not another kind of class. Posts are named by key index, not by container count:
  *  @c Key<0> is the symbol an NFA keys by, and @c PostAt<key_arity> is the innermost post.
- *  @see @ref arity in @c mata/core/concepts.hh for why counting keys and not containers.
+ *  @see @ref arity for why counting keys and not containers.
  *
  * @tparam P The post reached from one source state, itself parameterised down to the targets. See
  *  @ref nesting.
@@ -1387,26 +1433,26 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	using State = typename TargetTraits<Target>::State;
 	static constexpr size_t key_arity{PostType::key_arity};
 
-	/// The post @p I levels in: @c PostAt<0> is the whole chain and @c PostAt<key_arity> is the
+	/// The post @p I steps in: @c PostAt<0> is the whole chain and @c PostAt<key_arity> is the
 	///  innermost post, the set of targets.
 	template <size_t I> using PostAt = typename posts::PostAt<PostType, I>::type;
 	/**
-	 * @brief The key of level @p I, counted from the source state.
+	 * @brief The key at index @p I, counted from the source state.
 	 *
-	 * Indexed rather than singular because a relation spans every level: at @c key_arity 2 there is
+	 * Indexed rather than singular because a relation spans every post: at @c key_arity 2 there is
 	 *  no "the key", and a member named @c Key would have meant the outermost one — right at arity 1
-	 *  and quietly wrong above it. Level 0 is the one an NFA calls the symbol.
+	 *  and quietly wrong above it. Key 0 is the one an NFA calls the symbol.
 	 *
 	 * @c mata::AutomatonBase never names this. It transports keys (in @c reverted(), as
 	 *  `const auto&`) without inspecting one, which is why @c mata::DeltaLike does not ask for a key
-	 *  type at all. See the Plan, §3.7.
+	 *  type at all.
 	 */
 	template <size_t I> using Key = typename PostAt<I>::Key;
-	/// Where level @p I's ordinary keys stop. Indexed for the same reason as @c Key: each level
+	/// Where key @p I's ordinary keys stop. Indexed for the same reason as @c Key: each post
 	///  carries its own convention, on its own entry. @see mata::ReservedKeys.
 	template <size_t I> using Reserved = typename PostAt<I>::Reserved;
 	/// The innermost post: what a successor walk collects into. @c PostAt<key_arity> spelled for the
-	///  one level that has a name of its own.
+	///  one post that has a name of its own.
 	using TargetSet = PostAt<key_arity>;
 	/// @copydoc mata::posts::Post::KeyedSuccessors
 	using KeyedSuccessors = typename PostType::KeyedSuccessors;
@@ -1535,13 +1581,13 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	/// One overload per supported arity rather than one variadic member, for the same reason the
 	/// cursor is hand-written per arity: it is the only shape that keeps *declared* parameter types.
 	/// A trailing pack would be deduced from the caller, so `add(0, 1, 2, 3)` would carry `int` down
-	/// and convert it to the key type once per level inside @c insert_target — a narrowing and a
+	/// and convert it to the key type once per post inside @c insert_target — a narrowing and a
 	/// sign-conversion warning each, which `-Werror` rejects. Declared parameters convert at the
 	/// call, exactly as the arity-1 overload above does. The cap is @c key_arity 3, so this is three
 	/// overloads, not an open-ended family.
 	///
 	/// Each is a member template so that its parameter types depend on its own @p Q: `KeyOf<P, 1>`
-	/// at @c key_arity 1 would name a level that does not exist, and a member's declared type is
+	/// at @c key_arity 1 would name a post that does not exist, and a member's declared type is
 	/// formed when the *class* is instantiated, before any constraint on it is looked at.
 	///
 	/// The arity-1 overloads are deliberately **not** routed through these recursions. `add` there
@@ -1655,6 +1701,27 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 */
 	void add(State source, Key<0> symbol, const Nested& targets)
 		requires(P::key_arity == 1);
+	/// @copydoc add(State,Key<0>,const Nested&)
+	/// One key per post, then the whole set of targets, at arity 2 and 3.
+	template <typename Q = P>
+		requires(Q::key_arity == 2)
+	void add(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const TargetSet& targets) {
+		for (const Target& target : targets) {
+			resize_for_states(source, state_of(target));
+			posts::insert_target(mutable_state_post(source), target, k0, k1);
+		}
+	}
+	template <typename Q = P>
+		requires(Q::key_arity == 3)
+	void add(
+		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
+		const TargetSet& targets
+	) {
+		for (const Target& target : targets) {
+			resize_for_states(source, state_of(target));
+			posts::insert_target(mutable_state_post(source), target, k0, k1, k2);
+		}
+	}
 
 	/**
 	 * @brief Apply @p fn to every target state reachable from @p source, over any symbol.
@@ -1704,34 +1771,46 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	const_iterator end() const { return state_posts_.end(); }
 
 	/**
-	 * @brief Iterator over transitions represented as @c Transition instances.
+	 * @brief The transitions of this relation: one @c TransitionType per (source, key path, target).
 	 *
-	 * It iterates over triples (source, key, target).
+	 * Generic in the arity. The walk is @c CursorType -- the hand-written per-arity successor cursor,
+	 *  which also reports the key path it is standing on -- and every step is one @c TT::make. At
+	 *  arity 1 that is the same descent the previous arity-1-only iterator performed by hand.
 	 */
 	class Transitions {
-		static_assert(
-			P::key_arity == 1,
-			"DeltaBase::Transitions yields a (source, key, target) triple, which has room for exactly one "
-			"key. A deeper relation has one key per level; walk it with DeltaBase::for_each_move() or "
-			"mata::posts::walk_moves(), which hand back the whole key path."
-		);
-
 	  public:
 		/**
 		 * Iterator over transitions.
 		 *
 		 * @note Inline, like @c Post::Moves::const_iterator and for the same reason: as a nested
-		 *  class of a nested class of a template, each out-of-line definition would need three levels
-		 *  of qualification.
+		 *  class of a nested class of a template, each out-of-line definition would need three
+		 *  layers of qualification.
 		 */
 		class const_iterator {
 		  private:
-			const DeltaBase* delta_ = nullptr;
-			size_t current_state_{};
-			typename PostType::const_iterator state_post_it_{};
-			typename Nested::const_iterator symbol_post_it_{};
-			bool is_end_{false};
+			const DeltaBase* delta_{nullptr};
+			State source_{};
+			typename CursorType::const_iterator cursor_{};
+			bool is_end_{true};
 			TransitionType transition_{};
+
+			void load() {
+				transition_ = std::apply(
+					[&](const auto&... keys) { return TT::make(source_, keys..., *cursor_); }, cursor_.keys()
+				);
+			}
+			/// Position on the first transition leaving @c source_ or a later state, or become the end.
+			void seek() {
+				for (const size_t num_of_states{delta_->num_of_states()}; source_ < num_of_states; ++source_) {
+					cursor_ = CursorType{delta_->state_post(source_)}.begin();
+					if (cursor_ != std::default_sentinel) {
+						is_end_ = false;
+						load();
+						return;
+					}
+				}
+				is_end_ = true;
+			}
 
 		  public:
 			using iterator_category = std::forward_iterator_tag;
@@ -1740,137 +1819,50 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 			using pointer = TransitionType*;
 			using reference = TransitionType&;
 
-			const_iterator() : is_end_{true} {}
-
-			explicit const_iterator(const DeltaBase& delta) : delta_{&delta} {
-				const size_t post_size = delta_->num_of_states();
-				for (size_t i = 0; i < post_size; ++i) {
-					if (!(*delta_)[i].empty()) {
-						current_state_ = i;
-						state_post_it_ = (*delta_)[i].begin();
-						symbol_post_it_ = state_post_it_->targets.begin();
-						transition_ = TT::make(
-							current_state_, state_post_it_->key(), *symbol_post_it_
-						);
-						return;
-					}
-				}
-
-				// No transition found, delta contains only empty state posts.
-				is_end_ = true;
-			}
-
-			const_iterator(const DeltaBase& delta, const State current_state)
-				: delta_{&delta},
-				  current_state_{current_state} {
-				const size_t post_size = delta_->num_of_states();
-				for (State source{static_cast<State>(current_state_)}; source < post_size; ++source) {
-					if (const PostType& state_post{delta_->state_post(source)}; !state_post.empty()) {
-						current_state_ = source;
-						state_post_it_ = state_post.begin();
-						symbol_post_it_ = state_post_it_->targets.begin();
-						transition_ = TT::make(
-							current_state_, state_post_it_->key(), *symbol_post_it_
-						);
-						return;
-					}
-				}
-
-				// No transition found, delta from the current state contains only empty state posts.
-				is_end_ = true;
-			}
-
-			const_iterator(const const_iterator& other) noexcept = default;
-			const_iterator(const_iterator&&) = default;
+			const_iterator() = default; ///< The end.
+			explicit const_iterator(const DeltaBase& delta) : const_iterator{delta, 0} {}
+			/// The first transition leaving @p from or a later state.
+			const_iterator(const DeltaBase& delta, const State from) : delta_{&delta}, source_{from} { seek(); }
 
 			const TransitionType& operator*() const { return transition_; }
 			const TransitionType* operator->() const { return &transition_; }
 
-			// Prefix increment
 			const_iterator& operator++() {
-				MATA_ASSERT(delta_->begin() != delta_->end());
-
-				++symbol_post_it_;
-				if (symbol_post_it_ != state_post_it_->targets.end()) {
-					transition_ = TT::make(
-						current_state_, state_post_it_->key(), *symbol_post_it_
-					);
+				MATA_ASSERT(!is_end_);
+				if (++cursor_ != std::default_sentinel) {
+					load();
 					return *this;
 				}
-
-				++state_post_it_;
-				if (state_post_it_ != (*delta_)[current_state_].cend()) {
-					symbol_post_it_ = state_post_it_->targets.begin();
-					transition_ = TT::make(
-						current_state_, state_post_it_->key(), *symbol_post_it_
-					);
-					return *this;
-				}
-
-				const size_t state_posts_size{delta_->num_of_states()};
-				do { // Skip empty posts.
-					++current_state_;
-				} while (current_state_ < state_posts_size && (*delta_)[current_state_].empty());
-				if (current_state_ >= state_posts_size) {
-					is_end_ = true;
-					return *this;
-				}
-
-				const PostType& state_post{(*delta_)[current_state_]};
-				state_post_it_ = state_post.begin();
-				symbol_post_it_ = state_post_it_->targets.begin();
-
-				transition_ = TT::make(
-					current_state_, state_post_it_->key(), *symbol_post_it_
-				);
-
+				++source_;
+				seek();
 				return *this;
 			}
-
-			// Postfix increment
 			const_iterator operator++(int) {
 				const const_iterator tmp{*this};
 				++(*this);
 				return tmp;
 			}
 
-			const_iterator& operator=(const const_iterator& other) noexcept = default;
-			const_iterator& operator=(const_iterator&&) = default;
-
 			bool operator==(const const_iterator& other) const {
-				if (is_end_ && other.is_end_) {
-					return true;
-				} else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
-					return false;
-				} else {
-					return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_ &&
-						   symbol_post_it_ == other.symbol_post_it_;
-				}
+				if (is_end_ || other.is_end_) { return is_end_ == other.is_end_; }
+				return source_ == other.source_ && cursor_ == other.cursor_;
 			}
 		}; // class const_iterator.
 
 		Transitions() = default;
 		explicit Transitions(const DeltaBase* delta) : delta_{delta} {}
-		Transitions(Transitions&&) = default;
-		Transitions(const Transitions&) = default;
-		Transitions& operator=(Transitions&&) = default;
-		Transitions& operator=(const Transitions&) = default;
 
 		const_iterator begin() const { return const_iterator{*delta_}; }
 		static const_iterator end() { return const_iterator{}; }
 
 	  private:
-		const DeltaBase* delta_;
+		const DeltaBase* delta_{nullptr};
 	}; // class Transitions.
 
 	/**
 	 * Iterator over transitions represented as @c Transition instances.
 	 */
-	Transitions transitions() const
-		requires(P::key_arity == 1)
-	{
-		return Transitions{this};
-	}
+	Transitions transitions() const { return Transitions{this}; }
 
 	/**
 	 * Get transitions leading to @p state_to.
@@ -1879,8 +1871,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 *
 	 * Operation is slow, traverses over all symbol posts.
 	 */
-	std::vector<TransitionType> get_transitions_to(State state_to) const
-		requires(P::key_arity == 1);
+	std::vector<TransitionType> get_transitions_to(State state_to) const;
 
 	/**
 	 * Get transitions from @p state_from to @p state_to.
@@ -1890,8 +1881,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 *
 	 * Operation is slow, traverses over all symbol posts.
 	 */
-	std::vector<TransitionType> get_transitions_between(State state_from, State state_to) const
-		requires(P::key_arity == 1);
+	std::vector<TransitionType> get_transitions_between(State state_from, State state_to) const;
 
 	/**
 	 * @brief Resize the delta to fit the given @p states.
@@ -1920,8 +1910,8 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	/**
 	 * @brief The target states reachable from @p state over @p symbol.
 	 *
-	 * The *targets*, at every arity. Reaching one level down is @c PostType::find()'s job and
-	 *  walking the levels between is @c for_each_move()'s; this answers "which states can I reach
+	 * The *targets*, at every arity. Reaching one step down is @c PostType::find()'s job and
+	 *  walking the posts between is @c for_each_move()'s; this answers "which states can I reach
 	 *  over this key", which means the same thing however many keys are left below it.
 	 *
 	 * @see PostType::KeyedSuccessors for why the return type follows the arity — a reference into the
@@ -1949,7 +1939,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
   protected:
 	/// @name Keys on the transitions
 	///
-	/// Which level-0 keys are in use. They ask nothing of a key beyond the ordering the posts already
+	/// Which outermost keys are in use. They ask nothing of a key beyond the ordering the posts already
 	///  rely on, so a relation keyed by an interval or a weight has them too; what those keys *stand
 	///  for* is that relation's business. Protected for the same reason: a relation re-exports the
 	///  ones it wants under the names that fit its keys, with a using-declaration or a forwarder.
@@ -2003,6 +1993,22 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 		requires std::totally_ordered<typename P::Key>;
 	///@}
 
+	/// Append every transition from @p from to @p to. At arity 1 over bare states each entry's targets
+	///  are searched directly; otherwise the key paths are walked and the target checked at the bottom.
+	void collect_transitions_to_(const State from, const State to, std::vector<TransitionType>& out) const {
+		if constexpr (key_arity == 1 && std::same_as<Target, State>) {
+			for (const Entry& entry : state_post(from)) {
+				if (entry.targets.find(to) != entry.targets.end()) { out.push_back(TT::make(from, entry.key(), to)); }
+			}
+		} else {
+			state_post(from).for_each_move([&](const auto&... move) {
+				if (state_of(std::get<sizeof...(move) - 1>(std::forward_as_tuple(move...))) == to) {
+					out.push_back(TT::make(from, move...));
+				}
+			});
+		}
+	}
+
 	std::vector<PostType> state_posts_;
 }; // class mata::posts::DeltaBase.
 
@@ -2018,14 +2024,14 @@ template <typename Targets> struct Chain<Targets> {
 	using type = Targets;
 };
 
-/// A position holding a descriptor: the key comes from it, and it is kept as the level's own.
+/// A position holding a descriptor: the key comes from it, and it is kept as the post's own.
 template <typename R, typename... Rest>
 	requires(sizeof...(Rest) >= 1) && ReservedKeysLike<R>
 struct Chain<R, Rest...> {
 	using type = Post<PostEntry<typename R::Key, typename Chain<Rest...>::type, R>>;
 };
 
-/// A position holding a plain key type: the level takes the default reserved tail.
+/// A position holding a plain key type: the post takes the default reserved tail.
 template <typename K, typename... Rest>
 	requires(sizeof...(Rest) >= 1) && (!ReservedKeysLike<K>)
 struct Chain<K, Rest...> {
@@ -2039,16 +2045,16 @@ struct Chain<K, Rest...> {
  * `PostChain<Symbol, StateSet>` is `Post<PostEntry<Symbol, StateSet>>`, which is
  *  @c mata::Post; `PostChain<Symbol, Symbol, StateSet>` is the arity-2 chain over the same key
  *  type. It reads in the order the structure nests, which spelling a chain by hand does not:
- *  by-hand construction is inside-out, so every level has to be named before it can be referred to
+ *  by-hand construction is inside-out, so every post has to be named before it can be referred to
  *  and the arity is only countable by matching brackets.
  *
- * A position may be either a key type or a @c mata::ReservedKeysLike descriptor, so a level with a
+ * A position may be either a key type or a @c mata::ReservedKeysLike descriptor, so a post with a
  *  non-default reserved tail needs no change of spelling and no hand-written stack:
  * ```cpp
- * using Narrow = PostChain<ReservedKeys<Symbol, 100>, StateSet>;  // one level, epsilon at 100
+ * using Narrow = PostChain<ReservedKeys<Symbol, 100>, StateSet>;  // one key, epsilon at 100
  * ```
  *
- * @tparam Ts The key of each level from the outside in, then the innermost post. At least two, so a
+ * @tparam Ts The key of each post from the outside in, then the innermost post. At least two, so a
  *  chain always has a key and always ends in a set of targets.
  */
 template <typename... Ts> using PostChain = typename detail::Chain<Ts...>::type;

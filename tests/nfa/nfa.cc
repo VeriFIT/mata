@@ -57,7 +57,7 @@ TEST_CASE("StatePost::emplace_back()") {
 
 TEST_CASE("mata::nfa::Trans::operator<<") {
 	Transition trans(1, 2, 3);
-	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
+	REQUIRE(trans.to_string() == "(1, 2, 3)");
 }
 
 TEST_CASE("mata::nfa::create_alphabet()") {

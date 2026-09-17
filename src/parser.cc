@@ -64,7 +64,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
 					std::getline(input, aux);
 					return {};
 				} else if ('(' == ch || ')' == ch) {
-					return std::to_string(static_cast<char>(ch));
+					return std::string(1, static_cast<char>(ch));
 				} else {
 					result += static_cast<char>(ch);
 					state = TokenizerState::Unquoted;
@@ -89,7 +89,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
 					std::string context;
 					std::getline(input, context);
 					throw std::runtime_error(
-						std::to_string("misplaced character \'") + static_cast<char>(ch) + "\' in string \"" + result +
+						std::string("misplaced character \'") + static_cast<char>(ch) + "\' in string \"" + result +
 						static_cast<char>(ch) + context + "\""
 					);
 				} else {
@@ -348,7 +348,7 @@ bool mata::parser::ParsedSection::operator==(const ParsedSection& rhs) const {
 	return this->type == rhs.type && this->dict == rhs.dict && this->body == rhs.body;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const ParsedSection& parsec) {
+std::ostream& mata::parser::operator<<(std::ostream& os, const ParsedSection& parsec) {
 	os << "@" << parsec.type << "\n";
 	for (const auto& [string, strings] : parsec.dict) {
 		os << "%" << string;

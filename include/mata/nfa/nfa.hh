@@ -33,10 +33,10 @@
  *  The number of *keys* between a source state and a target is @c mata::nfa::Delta::key_arity, and
  *  it is one for every NFA and NFT in the library. It is not fixed at one by the data structure:
  *  the relation is templated on its post chain, so one may key transitions by more than one thing (a
- *  two-tape relation, say) and the chain simply has one more post in it. Counting *posts*
- *  instead — the "three levels" this passage used to describe — makes the depth depend on where you
- *  start counting and collides with an NFT's tape @c mata::Level, which is unrelated. Count keys.
- *  @see @ref arity in @c mata/core/concepts.hh.
+ *  two-tape relation, say) and the chain simply has one more post in it. Counting *posts* instead
+ *  makes the depth depend on where you start counting and collides with an NFT's tape
+ *  @c mata::Level, which is unrelated. Count keys.
+ *  @see @ref arity in @c mata/core/delta.hh.
  *
  *  The symbol *type* is fixed: @c mata::Alphabet's virtual interface is stated in @c mata::Symbol,
  *  so a relation keyed by anything else needs its own alphabet class (@c mata::AlphabetTraits) and
@@ -660,7 +660,7 @@ class Nfa : public Automaton {
 	/**
 	 * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
 	 *
-	 * If you have an automaton with finite language (can be checked using @ref is_acyclic),
+	 * If you have an automaton with finite language (can be checked using @c is_acyclic()),
 	 * you can get all words by calling
 	 *      get_words(aut.num_of_states())
 	 */
@@ -1182,8 +1182,8 @@ Nfa trim(
 
 // A Transition's std::hash, std::formatter and operator<< come from mata/core/delta.hh, for every
 //  instantiation of the shipped shapes at once.
-namespace std {
-std::ostream& operator<<(std::ostream& os, const mata::nfa::Nfa& nfa);
-} // namespace std.
+namespace mata::nfa {
+std::ostream& operator<<(std::ostream& os, const Nfa& nfa);
+} // namespace mata::nfa.
 
 #endif /* MATA_NFA_HH_ */

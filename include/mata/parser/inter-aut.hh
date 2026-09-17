@@ -242,8 +242,8 @@ class IntermediateAut {
 
 } // namespace mata.
 
-namespace std {
-std::ostream& operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut);
-}
+namespace mata {
+std::ostream& operator<<(std::ostream& os, const IntermediateAut& inter_aut);
+} // namespace mata.
 
 #endif // MATA_INTER_AUT_HH

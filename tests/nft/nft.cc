@@ -215,7 +215,7 @@ TEST_CASE("mata::nft::size()") {
 
 TEST_CASE("mata::nft::Trans::operator<<") {
 	Transition trans(1, 2, 3);
-	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
+	REQUIRE(trans.to_string() == "(1, 2, 3)");
 }
 
 TEST_CASE("mata::nft::create_alphabet()") {

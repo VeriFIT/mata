@@ -16,7 +16,7 @@
  *
  * The key members are the same problem one level along: they report the *keys* in use, for any
  *  ordered key, and only @c mata::Delta calls them symbols. They are protected, so a relation
- *  re-exports the ones it wants under names that fit its keys. See the Plan, §3.8 and §3.13.
+ *  re-exports the ones it wants under names that fit its keys.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -79,7 +79,7 @@ constexpr Symbol OUR_EPSILON{100};
 /// Epsilon alone is reserved, as for an NFA — but at 100 rather than at the top of the key range.
 using NarrowTail = ReservedKeys<Symbol, OUR_EPSILON>;
 /// A *wider* reserved tail, as an NFT's `DONT_CARE` would need: 90..99 are neither ordinary symbols
-///  nor epsilons. This is the shape §3.8 says a traits keyed on the key type could not express,
+///  nor epsilons. This is the shape a traits keyed on the key type could not express,
 ///  because the key type is @c Symbol either way.
 using WideTail = ReservedKeys<Symbol, OUR_EPSILON, OUR_EPSILON - 11>;
 
@@ -198,13 +198,13 @@ static_assert(ReservedKeysLike<WideTail>);
 static_assert(ReservedKeysAtTail<PostOver<NarrowTail>>);
 static_assert(PostLike<PostOver<WideTail>>);
 
-/// T4.2: a descriptor whose reserved keys are *not* the tail is rejected where the post is named,
+/// A descriptor whose reserved keys are *not* the tail is rejected where the post is named,
 ///  rather than making @c first_epsilon_it() walk back to the wrong place.
 static_assert(!ReservedKeysLike<InvertedTail>);
 static_assert(!ReservedKeysAtTail<PostOver<InvertedTail>>);
 static_assert(!PostLike<PostOver<InvertedTail>>);
 
-/// §3.13: the key members are protected on the base and reached by deriving; any ordered key has
+/// The key members are protected on the base and reached by deriving; any ordered key has
 ///  them, only an integral key has the indexed variants, and only @c mata::Delta calls them symbols.
 static_assert(!HasKeyMembers<IntervalDelta>); ///< protected: a bare relation does not expose them
 static_assert(HasKeyMembers<Exposing<IntervalDelta>>);

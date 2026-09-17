@@ -33,9 +33,6 @@ using Delta = mata::Delta;
  *  carry the base with it. Naming @c mata::Automaton directly at `class Nfa` would leave the
  *  base pointing at the depth-2 relation while @c Delta pointed somewhere else, which is the one
  *  way the seam can be bypassed without any call site looking wrong.
- *
- * @note This was exactly the hole: the layering grep in §8 of the Plan did not list @c Automaton, so
- *  `class Nft : public mata::Automaton` passed a check written to forbid it. The grep now lists it.
  */
 using Automaton = mata::Automaton;
 
@@ -52,7 +49,7 @@ using mata::defragment;
  *  `using namespace` of a module that redefined it then has two candidates for the name (8 errors
  *  in `src/applications/strings/replace.cc`, measured on the NFT side). So @c Delta::Reserved<0>::min_epsilon does not
  *  *become* the module constant -- it is tied to it here instead, which gets the single source of
- *  truth without the ambiguity. See the Plan, §3.8.
+ *  truth without the ambiguity.
  */
 static_assert(
 	Delta::Reserved<0>::min_epsilon == EPSILON,

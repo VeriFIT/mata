@@ -7,15 +7,15 @@
  *  quietly wrong above it. "Quietly" is the operative word for the last of the three: @c mata::DeltaLike
  *  *required* @c add, so an arity-2 relation satisfied the contract, matched the call in its
  *  declaration, and then failed several template instantiations deep inside @c SymbolPost::insert.
- *  That is the diagnostic the Plan's §3.10 exists to avoid, promised by the very concept meant to
- *  prevent it.
+ *  That is exactly the diagnostic the contract concepts exist to avoid, produced by the very
+ *  concept meant to prevent it.
  *
  * So the checks below come in two kinds, and the second kind matters as much as the first: that the
  *  indexed names give the right types, *and* that the members which genuinely cannot be generalised
  *  are now **absent** above arity 1 rather than present-and-broken. A `requires`-probe returning
  *  false is the whole point; there is no runtime behaviour to observe.
  *
- * See the Plan, Phase 5, and @ref arity in @c mata/core/concepts.hh.
+ * @see @ref arity in @c mata/core/delta.hh.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -60,6 +60,7 @@ template <typename D> concept Remove2 = requires(D d) { d.remove(0, 1, 2, 3); };
 template <typename D> concept Contains1 = requires(const D d) { d.contains(0, 1, 2); };
 template <typename D> concept Contains2 = requires(const D d) { d.contains(0, 1, 2, 3); };
 template <typename D> concept HasAddTargets = requires(D d, const typename D::Nested& n) { d.add(0, 1, n); };
+template <typename D> concept HasAddTargets2 = requires(D d, const typename D::TargetSet& n) { d.add(0, 1, 2, n); };
 template <typename D> concept HasTransitions = requires(const D d) { d.transitions(); };
 template <typename D> concept HasTransitionsTo = requires(const D d) { d.get_transitions_to(0); };
 template <typename D> concept HasTransitionsBetween = requires(const D d) { d.get_transitions_between(0, 1); };
@@ -153,8 +154,8 @@ static_assert(std::same_as<StatePost::Key, Symbol> && std::same_as<SymbolPost::K
 /// @name The contract asks for no key type
 ///
 /// @c mata::AutomatonBase transports keys without inspecting one, so @c DeltaLike requires neither a
-///  key nor @c add. Both used to be required, and requiring @c add is what let an arity-2 relation
-///  pass the contract and then fail inside the member. See the Plan, §3.7 and Phase 5.
+///  key nor @c add: requiring @c add would let an arity-2 relation pass the contract and then fail
+///  inside the member.
 ///@{
 static_assert(DeltaLike<D1> && DeltaLike<D2> && DeltaLike<D3> && DeltaLike<Mixed2>);
 
@@ -165,16 +166,17 @@ static_assert(DeltaLike<D1> && DeltaLike<D2> && DeltaLike<D3> && DeltaLike<Mixed
 ///  above are the positive form of the same statement.
 ///@}
 
-/// @name Arity-1-shaped members are absent above arity 1, not broken
+/// @name The transition-shaped members are generic; the bulk writer is spelled per arity
 ///
-/// Each of these names exactly one key, or hands back a `(source, key, target)` triple with room for
-///  exactly one. None can be generalised without changing what it means, so each is constrained
-///  instead — and the constraint is what turns a deep instantiation failure into "no such member".
+/// A transition is whatever the traits says, so @c transitions(), @c get_transitions_to() and
+///  @c get_transitions_between() exist at every arity. The bulk @c add names one key per level and is
+///  written once per supported arity, like the keyed writes below.
 ///@{
-static_assert(HasAddTargets<D1> && !HasAddTargets<D2>); ///< the bulk-target overload; still arity 1
-static_assert(HasTransitions<D1> && !HasTransitions<D2>);
-static_assert(HasTransitionsTo<D1> && !HasTransitionsTo<D2>);
-static_assert(HasTransitionsBetween<D1> && !HasTransitionsBetween<D2>);
+static_assert(HasAddTargets<D1> && !HasAddTargets<D2>); ///< the arity-1 spelling
+static_assert(HasAddTargets2<D2> && !HasAddTargets2<D1>); ///< …and the arity-2 one
+static_assert(HasTransitions<D1> && HasTransitions<D2> && HasTransitions<D3>);
+static_assert(HasTransitionsTo<D1> && HasTransitionsTo<D2>);
+static_assert(HasTransitionsBetween<D1> && HasTransitionsBetween<D2>);
 
 /// Not in that list: @c get_successors(). Both overloads answer "which states can I reach", which
 ///  means the same thing at every arity, so both are generic. The return type of the keyed one
@@ -319,6 +321,33 @@ TEST_CASE("mata::posts::DeltaBase — a module names its own transition fields t
 	CHECK(to_two == std::vector<Theirs>{{0, 2, 2}, {1, 3, 2}});
 }
 
+TEST_CASE("mata::posts::DeltaBase::transitions — generic in the arity") {
+	using T2 = D2::TransitionType;
+	D2 delta{};
+	delta.add(0, 1, 2, 7);
+	delta.add(0, 1, 3, 8);
+	delta.add(1, 4, 5, 0);
+
+	// The iterator rides the arity-2 cursor and builds through the tuple-keyed traits.
+	std::vector<T2> seen{};
+	for (const auto& t : delta.transitions()) { seen.push_back(t); }
+	CHECK(seen == std::vector<T2>{{0, {1, 2}, 7}, {0, {1, 3}, 8}, {1, {4, 5}, 0}});
+	CHECK(std::get<1>(seen.front().keys) == 2);
+
+	// The searches walk the key path and check the target at the bottom.
+	CHECK(delta.get_transitions_to(8) == std::vector<T2>{{0, {1, 3}, 8}});
+	CHECK(delta.get_transitions_between(1, 0) == std::vector<T2>{{1, {4, 5}, 0}});
+	CHECK(delta.get_transitions_between(1, 7).empty());
+
+	// The bulk writer at arity 2, and the transition-shaped members over what it wrote.
+	delta.add(2, 6, 6, StateSet{1, 2, 3});
+	CHECK(delta.contains(2, 6, 6, 2));
+	CHECK(delta.contains(T2{2, {6, 6}, 3}));
+	CHECK(delta.get_transitions_between(2, 3) == std::vector<T2>{{2, {6, 6}, 3}});
+	delta.remove(T2{2, {6, 6}, 2});
+	CHECK_FALSE(delta.contains(2, 6, 6, 2));
+}
+
 TEST_CASE("mata::posts::DeltaBase::remove / contains — a key path at any arity") {
 	SECTION("contains answers about the whole path, not just the first key") {
 		D2 delta{};
@@ -422,9 +451,8 @@ TEST_CASE("mata::posts::DeltaBase::get_successors — the target set, at any ari
 		delta.add(0, 1, 1, 4);
 		delta.add(0, 1, 5, 2);
 		delta.add(0, 9, 9, 4); // Duplicate target down a different path.
-		// The successors are a set of *states*, not the inner post that used to be returned: before
-		//  Phase 5 this member's return type was `Nested`, which above arity 1 is the post one level
-		//  down rather than the targets at the bottom.
+		// The successors are a set of *states*, not the inner post: above arity 1, `Nested` is the post
+		//  one step down rather than the targets at the bottom.
 		static_assert(std::same_as<decltype(delta.get_successors(0)), StateSet>);
 		CHECK(delta.get_successors(0) == StateSet{2, 4});
 	}

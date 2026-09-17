@@ -78,51 +78,19 @@ typename DeltaBase<P, TT>::KeyedSuccessors DeltaBase<P, TT>::get_successors(cons
 }
 
 template <typename P, typename TT>
-std::vector<typename DeltaBase<P, TT>::TransitionType> DeltaBase<P, TT>::get_transitions_to(const State state_to) const
-	requires(P::key_arity == 1)
-{
+std::vector<typename DeltaBase<P, TT>::TransitionType> DeltaBase<P, TT>::get_transitions_to(const State state_to) const {
 	std::vector<TransitionType> transitions_to_state{};
-	const size_t num_of_states{this->num_of_states()};
-	for (State state_from{0}; state_from < num_of_states; ++state_from) {
-		for (const Entry& state_from_move : state_post(state_from)) {
-			// The *target* comes back, payload included. For a bare state that is the state itself, found
-			//  by the set's own lookup exactly as before; for a payload several targets may denote one
-			//  state, and each is found by projecting through state_of and returned whole.
-			if constexpr (std::same_as<Target, State>) {
-				if (const auto target_state{state_from_move.targets.find(state_to)};
-					target_state != state_from_move.targets.end()) {
-					transitions_to_state.push_back(TT::make(state_from, state_from_move.symbol, state_to));
-				}
-			} else {
-				for (const Target& target : state_from_move.targets) {
-					if (state_of(target) == state_to) {
-						transitions_to_state.push_back(TT::make(state_from, state_from_move.symbol, target));
-					}
-				}
-			}
-		}
+	for (State state_from{0}, num_of_states{this->num_of_states()}; state_from < num_of_states; ++state_from) {
+		collect_transitions_to_(state_from, state_to, transitions_to_state);
 	}
 	return transitions_to_state;
 }
 
 template <typename P, typename TT>
 std::vector<typename DeltaBase<P, TT>::TransitionType>
-DeltaBase<P, TT>::get_transitions_between(const State state_from, const State state_to) const
-	requires(P::key_arity == 1)
-{
+DeltaBase<P, TT>::get_transitions_between(const State state_from, const State state_to) const {
 	std::vector<TransitionType> transitions_between{};
-	for (const Entry& symbol_post : state_post(state_from)) {
-		if constexpr (std::same_as<Target, State>) {
-			if (const auto state_to_find_it = symbol_post.targets.find(state_to);
-				state_to_find_it != symbol_post.targets.end()) {
-				transitions_between.push_back(TT::make(state_from, symbol_post.symbol, state_to));
-			}
-		} else {
-			for (const Target& target : symbol_post.targets) {
-				if (state_of(target) == state_to) { transitions_between.push_back(TT::make(state_from, symbol_post.symbol, target)); }
-			}
-		}
-	}
+	collect_transitions_to_(state_from, state_to, transitions_between);
 	return transitions_between;
 }
 
@@ -256,7 +224,7 @@ typename DeltaBase<P, TT>::PostType& DeltaBase<P, TT>::mutable_state_post(const 
 template <typename P, typename TT>
 DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_staying,
                     const std::vector<typename DeltaBase<P, TT>::State>& renaming) {
-	// One implementation, not two: this used to be a second hand-unrolled copy of the member.
+	// One implementation, not two: the free function is the member applied to a copy.
 	DeltaBase<P, TT> result{delta};
 	result.defragment(is_staying, renaming);
 	return result;
@@ -264,7 +232,7 @@ DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_
 
 template <typename P, typename TT>
 DeltaBase<P, TT>& DeltaBase<P, TT>::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
-	// Each level's own job is in `defragmented()`; this one owns only the outer index -- drop the
+	// Each post's own job is in `defragmented()`; this one owns only the outer index -- drop the
 	//  sources that go, and compact the rest down.
 	size_t source_new{0};
 	for (size_t source_orig{0}, num_of_states{this->num_of_states()}; source_orig < num_of_states; ++source_orig) {

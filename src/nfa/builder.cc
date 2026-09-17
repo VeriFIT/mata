@@ -62,9 +62,9 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 			clean_up();
 
 			if (body_line.size() == 2) {
-				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
+				throw std::runtime_error("Epsilon transitions not supported: " + mata::utils::to_string(body_line));
 			} else {
-				throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
+				throw std::runtime_error("Invalid transition: " + mata::utils::to_string(body_line));
 			}
 		}
 

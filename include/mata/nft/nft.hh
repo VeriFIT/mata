@@ -76,7 +76,7 @@
  * Words may contain @c DONT_CARE (representing wildcards on the respective level, but not @c EPSILON) and @c EPSILON
  *  (representing reading an empty string on the respective level ).
  *
- * @see @ref examples/nft.cc example.
+ * @see `examples/nft.cc` for a worked example.
  *
  * @note If you find some expected NFT operation or utility function missing, do not hesitate to let us know and we will
  *  implement it. The interface for NFTs is not stable yet, so we are open to any and all feedback.
@@ -1302,7 +1302,7 @@ class Nft : public Automaton {
 	/**
 	 * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
 	 *
-	 * If you have an automaton with finite language (can be checked using @ref is_acyclic),
+	 * If you have an automaton with finite language (can be checked using @c is_acyclic()),
 	 * you can get all words by calling
 	 *      aut.get_words(aut.num_of_states())
 	 * @param max_length Maximum length of words to be returned. Default: "no limit"; will infinitely loop if the
@@ -2162,8 +2162,8 @@ bool has_epsilon_cycle(const Nft& fnt);
 
 } // namespace mata::nft
 
-namespace std {
-std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);
-} // namespace std.
+namespace mata::nft {
+std::ostream& operator<<(std::ostream& os, const Nft& nft);
+} // namespace mata::nft.
 
 #endif /* MATA_NFT_HH_ */

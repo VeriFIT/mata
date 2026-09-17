@@ -14,7 +14,7 @@
  *
  * So the tests below force the branch by naming a *different* relation type explicitly —
  *  `to_nfa<Other>()` — and then check the transcription against the hand-over it replaces. Without
- *  this file, T6.5 would be a feature that compiles for the first time on the day somebody needs it.
+ *  this file, the rebuild branch would compile for the first time on the day somebody needs it.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -30,8 +30,7 @@ namespace {
 
 /// A relation that is a *distinct type* from @c mata::nfa::Delta while agreeing with it on
 ///  everything a transcription needs: same key type, same arity, same state, same target. Only the
-///  reserved tail differs, which is enough to make it a different type and is exactly the kind of
-///  divergence §3.8 says a module may want (an NFT reserving `DONT_CARE`).
+///  reserved tail differs, which is enough to make it a different type.
 using OtherDelta = posts::RelationOf<ReservedKeys<Symbol, EPSILON, EPSILON - 2>, StateSet>;
 
 static_assert(!std::same_as<OtherDelta, nfa::Delta>, "or it would not force the rebuild branch");

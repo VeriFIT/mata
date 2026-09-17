@@ -1273,7 +1273,7 @@ bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
 			if (symbol_post.symbol < DONT_CARE) {
 				if (!haskey(symbols, symbol_post.symbol)) {
 					throw std::runtime_error(
-						std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
+						std::string{__func__} + ": encountered a symbol that is not in the provided alphabet"
 					);
 				}
 				++num_of_exact_symbols;

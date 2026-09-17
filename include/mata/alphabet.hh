@@ -774,7 +774,7 @@ Word decode_word_utf8(const Word& word);
 
 } // namespace mata
 
-namespace std { // {{{
-std::ostream& operator<<(std::ostream& os, const mata::Alphabet& alphabet);
-}
+namespace mata {
+std::ostream& operator<<(std::ostream& os, const Alphabet& alphabet);
+} // namespace mata.
 #endif // MATA_ALPHABET_HH

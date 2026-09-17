@@ -96,9 +96,9 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 	for (const auto& body_line : parsec.body) {
 		if (body_line.size() != 3) {
 			if (body_line.size() == 2) {
-				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
+				throw std::runtime_error("Epsilon transitions not supported: " + mata::utils::to_string(body_line));
 			} else {
-				throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
+				throw std::runtime_error("Invalid transition: " + mata::utils::to_string(body_line));
 			}
 		}
 
