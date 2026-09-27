@@ -22,14 +22,14 @@ using State = unsigned long; ///< A state of an automaton.
 using StateSet = utils::OrdVector<State>; ///< A set of automaton states/targets.
 using Level = unsigned; ///< A level of a state in an automaton with a level structure (e.g. NFA, BDD, etc.).
 using Symbol = unsigned; ///< A symbol used by an automaton.
-using Word = std::vector<Symbol>; ///< A finite-length word over @ Symbol.
-using WordName = std::vector<std::string>; ///< The same word, spelled with symbol *names*.
+using Word = std::vector<Symbol>; ///< A finite-length word over Symbol.
+using WordName = std::vector<std::string>; ///< A word, spelled with symbol *names*.
 
 /**
  * @brief A finite length run of an automaton, consisting of states and a word.
  */
 struct Run {
-	Word word{}; ///< A finite-length word.
+	Word word{}; ///< A finite-length word constructed along the run.
 	std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 ///@}
@@ -52,9 +52,9 @@ constexpr Symbol EPSILON{Limits::max_symbol};
 ///@{
 enum class EpsilonClosureOpt : unsigned {
 	None = 1 << 0, ///< No epsilon closure.
-	Before = 1 << 1, ///< Epsilon closure before the transition.
-	After = 1 << 2, ///< Epsilon closure after the transition.
-	BeforeAndAfter = Before | After ///< Epsilon closure before and after the transition.
+	Before = 1 << 1, ///< Do the epsilon closure before the transition.
+	After = 1 << 2, ///< Do the epsilon closure after the transition.
+	BeforeAndAfter = Before | After ///< Do the epsilon closure before and after the transition.
 };
 
 enum class ProductFinalStateCondition {
