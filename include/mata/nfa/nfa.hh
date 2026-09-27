@@ -39,8 +39,8 @@
  *  @see @ref arity in @c mata/core/delta.hh.
  *
  *  The symbol *type* is fixed: @c mata::Alphabet's virtual interface is stated in @c mata::Symbol,
- *  so a relation keyed by anything else needs its own alphabet class (@c mata::AlphabetTraits) and
- *  cannot use the operations here that take an @c Alphabet.
+ *  so a relation keyed by anything else needs its own alphabet class, declaring its own @c Symbol,
+ *  and cannot use the operations here that take an @c Alphabet.
  *
  *  The main idea behind @c mata::nfa::Nfa is that the members (@c mata::nfa::Nfa::delta, @c mata::nfa::Nfa::initial,
  *   @c mata::nfa::Nfa::alphabet, ...) do not depend on each other.

@@ -28,8 +28,10 @@ using namespace mata;
 
 template class mata::posts::PostEntry<mata::Symbol, mata::StateSet>;
 template class mata::posts::Post<mata::SymbolPost>;
+template class mata::posts::PostMoves<mata::StatePost>;
 
 template class mata::posts::DeltaBase<mata::StatePost>;
+template class mata::posts::DeltaTransitions<mata::posts::DeltaBase<mata::StatePost>>;
 
 
 StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {

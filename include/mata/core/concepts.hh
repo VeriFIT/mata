@@ -10,120 +10,39 @@
 #include <cstddef>
 #include <format>
 #include <iterator>
-#include <limits>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "mata/core/traits.hh"
 #include "mata/utils/utils.hh"
 
 namespace mata {
-/**
- * @brief A traits specifying which state a target denotes.
- *
- * A target is whatever the innermost post stores: a state, or a state with a payload.
- *  The structural algorithms need two things from it: @c state_of(target) to know the state it denotes,
- *  and @c with_state(target, state) to rebuild a target with a new state when reverting, renumbering or
- *  trimming. Both are the identity for a bare state.
- *
- * Specialise it for a payload target:
- * ```cpp
- * template <> struct mata::TargetTraits<MyPayload> {
- *     using State = mata::State;
- *     static State state_of(const MyPayload& t) { return t.state; }
- *     static MyPayload with_state(const MyPayload& t, State s) { return {s, t.payload}; }
- * };
- * ```
- */
-template <typename T> struct TargetTraits {
-	using State = T; ///< The state a target denotes. Equal to @c T when a target *is* a state.
-	static constexpr State state_of(const T& target) { return target; }
-	static constexpr T with_state(const T& /* target */, const State state) { return state; }
-};
-
-/**
- * @brief A trait specifying what the alphabet elements are.
- *
- * Defaults to the alphabet's own member alias, which @c mata::Alphabet supplies.
- *  The module seams assert that it is the relation's outermost key type (the key at
- *  index 0), since that is what an alphabet hands out and a relation stores.
- */
-template <typename A> struct AlphabetTraits {
-	using Symbol = typename A::Symbol;
-};
 
 /**
  * @brief A concept for an alphabet that can be *extended* with symbols it has not seen.
  *
  * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet can.
  *  @c mata::posts::DeltaBase::add_keys_to() needs the growing kind.
+ *
+ * The symbol type is the alphabet's own @c Symbol alias, which @c mata::Alphabet supplies. An
+ *  alphabet that is not mata's declares one too: it has to name its members the way this concept
+ *  does anyway, so it is written for mata and has nothing to adapt from outside.
  */
 template <typename A>
-concept ExtensibleAlphabet = requires(A& alphabet, typename AlphabetTraits<A>::Symbol symbol) {
+concept ExtensibleAlphabet = requires(A& alphabet, typename A::Symbol symbol) {
 	{ alphabet.update_next_symbol_value(symbol) };
 	{ alphabet.try_add_new_symbol(std::string{}, symbol) };
 };
 
 /**
- * @brief A concept for a value with a printed form.
+ * @brief A concept for a value with a printed form: one @c std::format can print.
+ *
+ * A user type gets one by specialising @c std::formatter. @see mata::utils::format_or_unprintable.
  */
 template <typename T>
-concept Printable = std::is_arithmetic_v<T> || std::formattable<T, char>;
-
-namespace detail {
-// The default smallest epsilon exists only for integral keys.
-template <typename K> consteval K default_min_epsilon() {
-	static_assert(
-		std::integral<K>,
-		"ReservedKeys<K>: only an integral key has a default reserved tail (min_epsilon = max, "
-		"max_ordinary = min_epsilon - 1). For any other key spell all three arguments: "
-		"ReservedKeys<K, MinEpsilon, MaxOrdinary>."
-	);
-	if constexpr (std::integral<K>) { return std::numeric_limits<K>::max(); }
-	else { return K{}; }
-}
-
-// The default maximum ordinary key is just below the smallest epsilon, leaving no gap.
-template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
-	if constexpr (std::integral<K>) { return min_epsilon - 1; }
-	else { return K{}; }
-}
-} // namespace mata::detail.
-
-/**
- * @brief The structure defines where the ordinary keys stop and the reserved tail begins.
- *
- * The key order splits into three regions:
- *  - **ordinary**, up to and including @c max_ordinary
- *  - **reserved but not epsilon**, above @c max_ordinary and below @c min_epsilon
- *  - **epsilon**, from @c min_epsilon upwards
- *
- * The middle region is empty by default, since @c MaxOrdinary defaults to one below @p MinEpsilon.
- *  Widening the reserved tail opens it, which is how a key can be reserved.
- *
- * @tparam K The key type.
- * @tparam MinEpsilon The smallest epsilon key: every key at or above it is an epsilon. Defaults to
- *  the largest value. A non-integral key has no default and must be spelled explicitly.
- * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p MinEpsilon.
- *  Can be defined explicitly to a smaller value to open the reserved-but-not-epsilon region.
- *  A non-integral key has no default and must be spelled explicitly.
- */
-template <
-	typename K,
-	K MinEpsilon = detail::default_min_epsilon<K>(),
-	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon)
->
-struct ReservedKeys {
-	using Key = K;
-	static constexpr K min_epsilon{MinEpsilon}; ///< The smallest epsilon key.
-	static constexpr K max_ordinary{MaxOrdinary}; ///< The largest key that is not reserved.
-	/// When true, an epsilon will always be at the end of any sorted container (simplifying the
-	///  search for it).
-	static constexpr bool epsilon_is_greatest{MinEpsilon == std::numeric_limits<K>::max()};
-
-	static_assert(MaxOrdinary < MinEpsilon, "The ordinary keys must stop below the epsilons.");
-};
+concept Printable = std::formattable<T, char>;
 
 /**
  * @brief A concept for a reserved-key convention (see @c ReservedKeys).
@@ -153,24 +72,6 @@ concept ReservedKeysAtTail = requires {
 	requires std::same_as<typename L::Key, typename L::Reserved::Key>;
 	requires L::sorted_by_key;
 };
-
-/**
- * @brief A traits specifying the key arity and target type of a post.
- */
-///@{
-template <typename X> struct PostTraits {
-	static constexpr size_t key_arity{0};
-	using Target = typename X::value_type;
-};
-template <typename X>
-	requires requires { X::key_arity; typename X::Target; }
-struct PostTraits<X> {
-	static constexpr size_t key_arity{X::key_arity};
-	using Target = typename X::Target;
-};
-template <typename X> inline constexpr size_t arity_of = PostTraits<X>::key_arity;
-template <typename X> using target_of = typename PostTraits<X>::Target;
-///@}
 
 /**
  * @brief A range that can be walked and whose emptiness can be tested.

@@ -25,6 +25,40 @@ TEST_CASE("mata::nfa::SymbolPost") {
 	CHECK(SymbolPost{1, StateSet{0}} >= SymbolPost{0, StateSet{1}});
 }
 
+TEST_CASE("mata::nfa::SymbolPost move assignment") {
+	SECTION("replaces the targets of an entry with the same symbol") {
+		SymbolPost symbol_post{1, StateSet{10, 11}};
+		symbol_post = SymbolPost{1, StateSet{99}};
+		CHECK(symbol_post.targets == StateSet{99});
+	}
+
+	SECTION("keeps the targets when an entry is moved onto itself") {
+		SymbolPost symbol_post{1, StateSet{10, 11}};
+		SymbolPost& same{symbol_post};
+		symbol_post = std::move(same);
+		CHECK(symbol_post.symbol == 1);
+		CHECK(symbol_post.targets == StateSet{10, 11});
+	}
+
+	SECTION("a state post built from its entries keeps every entry's targets") {
+		// Building a post sorts the entries, and sorting moves each one back into its own slot.
+		const StatePost in_order{SymbolPost{1, StateSet{10}}, SymbolPost{2, StateSet{20}}, SymbolPost{3, StateSet{30}}};
+		const std::vector<SymbolPost>& in_order_entries{in_order.to_vector()};
+		REQUIRE(in_order_entries.size() == 3);
+		CHECK(in_order_entries[0].targets == StateSet{10});
+		CHECK(in_order_entries[1].targets == StateSet{20});
+		CHECK(in_order_entries[2].targets == StateSet{30});
+
+		const StatePost reversed(std::vector<SymbolPost>{{3, StateSet{30}}, {2, StateSet{20}}, {1, StateSet{10}}});
+		const std::vector<SymbolPost>& reversed_entries{reversed.to_vector()};
+		REQUIRE(reversed_entries.size() == 3);
+		CHECK(reversed_entries[0].symbol == 1);
+		CHECK(reversed_entries[0].targets == StateSet{10});
+		CHECK(reversed_entries[2].symbol == 3);
+		CHECK(reversed_entries[2].targets == StateSet{30});
+	}
+}
+
 TEST_CASE("mata::nfa::Delta::state_post()") {
 	Nfa aut{};
 

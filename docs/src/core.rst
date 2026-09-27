@@ -15,6 +15,15 @@ Types
 
 Delta
 -----
+The relation is split into one header per layer, and ``core/delta.hh`` includes them all, so
+including it is enough.
+
+.. doxygenfile:: core/traits.hh
+.. doxygenfile:: core/transition.hh
+.. doxygenfile:: core/walks.hh
+.. doxygenfile:: core/moves.hh
+.. doxygenfile:: core/post.hh
+.. doxygenfile:: core/cursor.hh
 .. doxygenfile:: core/delta.hh
 
 Automaton

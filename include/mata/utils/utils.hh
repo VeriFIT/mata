@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <iostream>
 #include <list>
@@ -360,6 +361,12 @@ inline std::string to_string(const char ch) { // {{{
 	return str;
 } // to_string(char) }}}
 
+/// A byte-sized integer to its number. Without these two the catch-all streams it, and a stream prints
+///  @c signed and @c unsigned char as a character: `uint8_t{0}` came out as a NUL byte.
+inline std::string to_string(const signed char value) { return std::to_string(static_cast<int>(value)); }
+/// @copydoc to_string(signed char)
+inline std::string to_string(const unsigned char value) { return std::to_string(static_cast<unsigned>(value)); }
+
 /** String to string */
 inline std::string to_string(const std::string& str) { return str; }
 
@@ -502,6 +509,25 @@ template <class A> std::string to_string(const A& value) { // {{{
 } // to_string(T) }}}
 
 // }}}
+
+/**
+ * @brief Render a value for an exception message, or "<unprintable>" if its type cannot be printed.
+ *
+ * Prints through @c std::format, so a user type becomes printable by specialising @c std::formatter:
+ * ```cpp
+ * template <> struct std::formatter<Interval> {
+ *     constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+ *     template <typename Ctx> auto format(const Interval& i, Ctx& ctx) const {
+ *         return std::format_to(ctx.out(), "[{},{}]", i.lo, i.hi);
+ *     }
+ * };
+ * ```
+ * @see mata::Printable, which is the same condition as a concept.
+ */
+template <typename T> std::string format_or_unprintable(const T& value) {
+	if constexpr (std::formattable<T, char>) { return std::format("{}", value); }
+	else { return "<unprintable>"; }
+}
 
 } // namespace mata::utils.
 

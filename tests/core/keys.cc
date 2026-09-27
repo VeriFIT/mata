@@ -233,10 +233,10 @@ static_assert(!CanAddSymbolsTo<Delta, WideAlphabet>);
 ///
 /// @c mata::Alphabet cannot be specialised by inheritance — its symbol type is baked into its
 ///  virtual signatures, so a derived class redefining the alias overrides nothing. A third party
-///  therefore brings their *own* class and specialises @c mata::AlphabetTraits, and everything that
-///  asks about symbols has to work against that with no @c mata::Alphabet involved.
+///  therefore brings their *own* class declaring its own @c Symbol, and everything that asks about
+///  symbols has to work against that with no @c mata::Alphabet involved.
 ///@{
-static_assert(std::same_as<AlphabetTraits<WideAlphabet>::Symbol, unsigned long long>);
+static_assert(std::same_as<WideAlphabet::Symbol, unsigned long long>);
 static_assert(ExtensibleAlphabet<WideAlphabet>); ///< it can grow…
 static_assert(!ExtensibleAlphabet<FixedAlphabet>); ///< …and a fixed one cannot, which is not an error
 ///@}

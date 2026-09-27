@@ -134,7 +134,7 @@ class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<S
 	///@{
 	/// @brief Expand @p target_alphabet by the symbols used on the transitions.
 	template <ExtensibleAlphabet A>
-		requires std::same_as<typename AlphabetTraits<A>::Symbol, mata::Symbol>
+		requires std::same_as<typename A::Symbol, mata::Symbol>
 	void add_symbols_to(A& target_alphabet) const {
 		Base::add_keys_to(target_alphabet);
 	}
@@ -231,7 +231,9 @@ namespace mata {
 ///  header instantiates the whole post stack and the automaton on top of it.
 extern template class posts::PostEntry<Symbol, StateSet>;
 extern template class posts::Post<SymbolPost>;
+extern template class posts::PostMoves<StatePost>;
 extern template class posts::DeltaBase<StatePost>;
+extern template class posts::DeltaTransitions<posts::DeltaBase<StatePost>>;
 extern template class AutomatonBase<Delta>;
 } // namespace mata.
 
