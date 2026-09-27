@@ -6,7 +6,6 @@ from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.utility cimport pair
-from libc.stdint cimport uintptr_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, Symbol, Level

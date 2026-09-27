@@ -1,4 +1,3 @@
-from libc.stdint cimport uintptr_t
 from libcpp cimport bool
 from libcpp.map cimport map as cmap
 from libcpp.memory cimport shared_ptr

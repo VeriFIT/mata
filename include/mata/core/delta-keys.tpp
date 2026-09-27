@@ -120,14 +120,10 @@ std::set<typename P::Key> DeltaBase<P, TT>::get_used_keys_set() const
 	static std::set<Symbols> symbols;
 	symbols.clear();
 #else
-	static std::set<Symbols> symbols{};
+	std::set<Symbols> symbols{};
 #endif
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			// @c symbols is @c static in *both* branches above -- which looks like a slip (every
-			//  sibling declares it automatic without @c _STATIC_STRUCTURES_, and a static one
-			//  accumulates across calls), but it is left exactly as it was rather than quietly
-			//  changing what a public member returns.
 			symbols.insert(symbol_post.key());
 		}
 	}

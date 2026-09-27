@@ -1,4 +1,3 @@
-from libc.stdint cimport uintptr_t
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -9,8 +8,8 @@ from libmata.utils cimport COrdVector
 
 
 cdef extern from "mata/alphabet.hh" namespace "mata":
-    ctypedef uintptr_t Symbol
-    ctypedef uintptr_t Level
+    ctypedef unsigned Symbol
+    ctypedef unsigned Level
 
     cdef cppclass CConstAlphabet "const mata::Alphabet"
 

@@ -233,16 +233,10 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using super::erase;
 
 	using super::find;
-	iterator find(const Key symbol) {
-		static Entry entry{};
-		entry.symbol = symbol;
-		return super::find(entry);
-	}
-	const_iterator find(const Key symbol) const {
-		static Entry entry{};
-		entry.symbol = symbol;
-		return super::find(entry);
-	}
+
+
+	iterator find(const ArgOf<Key> key) { return find_(this->begin(), this->end(), key); }
+	const_iterator find(const ArgOf<Key> key) const { return find_(this->begin(), this->end(), key); }
 
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
 	const_iterator first_epsilon_it(const Key first_epsilon) const {
@@ -328,7 +322,8 @@ template <typename E> class Post : utils::OrdVector<E> {
 		const auto entry_it = find(symbol);
 		if constexpr (key_arity == 1) {
 			if (entry_it == this->end()) {
-				static TargetSet empty_set{};
+				// Returned by const reference, so it outlives the call and no caller can touch it.
+				static const TargetSet empty_set{};
 				return empty_set;
 			}
 			return entry_it->targets;
@@ -425,6 +420,14 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 */
 	bool has_target(const Target target) const {
 		return any_target(*this, [target](const Target& t) { return t == target; });
+	}
+
+  private:
+	template <typename It> static It find_(It begin, It end, const ArgOf<Key> key) {
+		const auto it = std::lower_bound(begin, end, key, [](const Entry& entry, const ArgOf<Key> k) {
+			return entry.key() < k;
+		});
+		return (it == end || it->key() != key) ? end : it;
 	}
 }; // class mata::posts::Post.
 

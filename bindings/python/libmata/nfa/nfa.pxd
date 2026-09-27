@@ -8,7 +8,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
-from libc.stdint cimport uintptr_t, uint8_t
+from libc.stdint cimport uint8_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol
@@ -28,7 +28,7 @@ cdef extern from "<sstream>" namespace "std":
 
 cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     # Typedefs
-    ctypedef uintptr_t State
+    ctypedef unsigned long State
     ctypedef COrdVector[State] StateSet
     ctypedef uset[State] UnorderedStateSet
     ctypedef umap[Symbol, StateSet] PostSymb

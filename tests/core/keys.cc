@@ -329,6 +329,26 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 	}
 }
 
+TEST_CASE("mata::Delta's used-key queries do not carry state between calls") {
+	Delta first{};
+	first.add(0, 1, 1);
+	Delta second{};
+	second.add(0, 2, 1);
+
+	(void)first.get_used_symbols();
+	(void)first.get_used_symbols_vec();
+	(void)first.get_used_symbols_set();
+	(void)first.get_used_symbols_sps();
+	(void)first.get_used_symbols_bv();
+
+	CHECK(second.get_used_symbols() == utils::OrdVector<Symbol>{2});
+	CHECK(second.get_used_symbols_vec() == utils::OrdVector<Symbol>{2});
+	CHECK(second.get_used_symbols_set() == std::set<Symbol>{2});
+	CHECK(utils::OrdVector<Symbol>{second.get_used_symbols_sps()} == utils::OrdVector<Symbol>{2});
+	const std::vector<bool> bv{second.get_used_symbols_bv()};
+	CHECK((!bv[0] && !bv[1] && bv[2]));
+}
+
 TEST_CASE("mata::Delta's symbol members are the key members under the NFA's names") {
 	SECTION("the used symbols are the keys, once each, in every container") {
 		Delta delta{};
