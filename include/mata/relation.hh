@@ -220,7 +220,7 @@ static_assert(
 ///  at every call site of the out-of-line arity-1 @c add.
 static_assert(
 	std::is_same_v<Delta::TargetArg, const State>,
-	"the shipped relation must take its targets by value; see mata::posts::ArgOf."
+	"the shipped relation must take its targets by value; see mata::utils::ArgOf."
 );
 ///@}
 

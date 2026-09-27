@@ -127,7 +127,7 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
 	typename std::vector<Target>::iterator find(const Target s) { return targets.find(s); }
 
 	/**
-	 * @brief Apply @p fn to every target state of this symbol post.
+	 * @brief Apply @p fn to every target of this entry.
 	 *
 	 * The innermost step of the traversal that @c mata::Automaton is written against.
 	 *  Callers above it never need to know how the targets are stored.
@@ -137,10 +137,10 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
 	}
 
 	/**
-	 * @brief Is @p target among the targets of this symbol post?
+	 * @brief Is @p target among the targets of this entry?
 	 *
 	 * @param[in] target Target state to check.
-	 * @return True if @p target is among the targets of this symbol post, false otherwise.
+	 * @return True if @p target is among the targets of this entry, false otherwise.
 	 */
 	bool has_target(const Target target) const { return targets.find(target) != targets.end(); }
 
@@ -235,8 +235,8 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using super::find;
 
 
-	iterator find(const ArgOf<Key> key) { return find_(this->begin(), this->end(), key); }
-	const_iterator find(const ArgOf<Key> key) const { return find_(this->begin(), this->end(), key); }
+	iterator find(const utils::ArgOf<Key> key) { return find_(this->begin(), this->end(), key); }
+	const_iterator find(const utils::ArgOf<Key> key) const { return find_(this->begin(), this->end(), key); }
 
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
 	const_iterator first_epsilon_it(const Key first_epsilon) const {
@@ -305,17 +305,17 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using KeyedSuccessors = std::conditional_t<key_arity == 1, const TargetSet&, TargetSet>;
 
 	/**
-	 * @brief The target states reachable from this post over @p symbol.
+	 * @brief The targets reachable from this post under @p key.
 	 *
 	 * The *targets*, at every arity — not the post one step down. Getting one step down is what
 	 *  @c find() is for, and walking the posts between is what @c moves() and @c for_each_move()
 	 *  are for; this member answers "which states can I reach over this key", and that question has
 	 *  the same kind of answer however many keys are left below.
 	 *
-	 * If there is no such symbol, an empty set is returned.
+	 * If there is no such key, an empty set is returned.
 	 *
-	 * @param symbol Symbol to get the successors for.
-	 * @return Set of target states for the given symbol. @see KeyedSuccessors for why the return
+	 * @param symbol The key to get the successors for. Named for an NFA's sake, like the field.
+	 * @return The targets under the given key. @see KeyedSuccessors for why the return
 	 *  type follows the arity.
 	 */
 	KeyedSuccessors get_successors(const Key symbol) const {
@@ -380,7 +380,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	size_t num_of_moves() const { return count_targets(*this); }
 
 	/**
-	 * @brief Apply @p fn to every target state reachable from this state post, over any symbol.
+	 * @brief Apply @p fn to every target reachable from this post, under any key.
 	 */
 	template <typename Fn> void for_each_target(Fn&& fn) const {
 		if constexpr (key_arity == 1) {
@@ -399,7 +399,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	}
 
 	/**
-	 * @brief Apply @p fn to every @c Move of this state post, as a (symbol, target) pair.
+	 * @brief Apply @p fn to every @c Move of this post, as a (key, target) pair.
 	 */
 	template <typename Fn> void for_each_move(Fn&& fn) const {
 		if constexpr (key_arity == 1) {
@@ -413,18 +413,18 @@ template <typename E> class Post : utils::OrdVector<E> {
 	}
 
 	/**
-	 * @brief Is @p target reachable from this state post over any symbol?
+	 * @brief Is @p target reachable from this post under any key?
 	 *
 	 * @param[in] target Target state to check.
-	 * @return True if @p target is reachable from this state post over any symbol, false otherwise.
+	 * @return True if @p target is reachable from this post under any key, false otherwise.
 	 */
 	bool has_target(const Target target) const {
 		return any_target(*this, [target](const Target& t) { return t == target; });
 	}
 
   private:
-	template <typename It> static It find_(It begin, It end, const ArgOf<Key> key) {
-		const auto it = std::lower_bound(begin, end, key, [](const Entry& entry, const ArgOf<Key> k) {
+	template <typename It> static It find_(It begin, It end, const utils::ArgOf<Key> key) {
+		const auto it = std::lower_bound(begin, end, key, [](const Entry& entry, const utils::ArgOf<Key> k) {
 			return entry.key() < k;
 		});
 		return (it == end || it->key() != key) ? end : it;

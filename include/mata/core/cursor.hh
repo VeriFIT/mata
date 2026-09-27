@@ -43,7 +43,7 @@ template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 };
 
 /**
- * @brief The depth-2 cursor: symbol posts, then the targets under each.
+ * @brief The one-key cursor: the entries of a post, then the targets under each.
  *
  * Byte-for-byte the implementation that shipped before the posts were templated. Invariant 4 says
  *  `key_arity == 1` must not regress; keeping this specialisation means there is nothing to regress.

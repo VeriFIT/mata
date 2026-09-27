@@ -1,16 +1,8 @@
 /** @file
- * @brief The traits a relation is described by: what a target denotes, where the reserved keys begin,
- *  and how deep a chain of posts is.
+ * @brief Traits for relation and post types.
  *
- * The bottom of @c mata/core/. Every other core header reads these; this one reads none of them.
- *
- * @section arity Counting posts
- *
- * @c key_arity is the number of keys between a source state and a target: 1 for an NFA (the symbol),
- *  2 for a two-tape relation, and so on. Keys, not containers -- counting containers gives a number
- *  that depends on where you start. Unrelated to @c mata::Level and @c mata::nft::Levels, which are
- *  an NFT's tape levels. Posts are named by key index: `DeltaBase::Key<I>` is key @p I's type,
- *  `Reserved<I>` its reserved-key convention, and `PostAt<I>` the post that far in.
+ * A relation is described by three traits: what a target denotes,
+ *  where the reserved keys begin, and how deep a chain of posts is.
  */
 
 #ifndef MATA_CORE_TRAITS_HH
@@ -23,24 +15,20 @@
 #include <type_traits>
 #include <utility>
 
+#include "mata/utils/arg-of.hh"
+
 namespace mata {
 namespace detail {
-// The default smallest epsilon exists only for integral keys.
-template <typename K> consteval K default_min_epsilon() {
+// Returns the default largest ordinary key for an integral key type, given the smallest epsilon key.
+template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
 	static_assert(
 		std::integral<K>,
 		"ReservedKeys<K>: only an integral key has a default reserved tail (min_epsilon = max, "
 		"max_ordinary = min_epsilon - 1). For any other key spell all three arguments: "
 		"ReservedKeys<K, MinEpsilon, MaxOrdinary>."
 	);
-	if constexpr (std::integral<K>) { return std::numeric_limits<K>::max(); }
-	else { return K{}; }
-}
-
-// The default maximum ordinary key is just below the smallest epsilon, leaving no gap.
-template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
 	if constexpr (std::integral<K>) { return min_epsilon - 1; }
-	else { return K{}; }
+	else { return K{}; } // K{} is never used (just to satisfy the compiler)
 }
 } // namespace mata::detail.
 
@@ -54,7 +42,9 @@ template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
  *
  * The default covers only a bare state, an integral type. Any other target has to specialise this,
  *  and one that does not is stopped here, rather than being taken for a state and failing deep inside
- *  an algorithm that indexes by it. An example of specialization for a target with MyPayload is:
+ *  an algorithm that indexes by it.
+ *
+ * An example of specialization for a target with MyPayload is:
  * ```cpp
  * template <> struct mata::TargetTraits<MyPayload> {
  *     using State = mata::State;
@@ -69,8 +59,11 @@ template <typename T> struct TargetTraits {
 		"TargetTraits<T>: a target that is not a bare state has to say which state it denotes. "
 		"Specialise mata::TargetTraits<T> with State, state_of() and with_state()."
 	);
-	using State = T; ///< The state a target denotes. Equal to @c T when a target *is* a state.
+	using State = T; ///< The state a target denotes.
+
+	// Returns the state a target denotes.
 	static constexpr State state_of(const T& target) { return target; }
+	// Returns a target with a new state name.
 	static constexpr T with_state(const T& /* target */, const State state) { return state; }
 };
 
@@ -94,22 +87,29 @@ template <typename T> struct TargetTraits {
  */
 template <
 	typename K,
-	K MinEpsilon = detail::default_min_epsilon<K>(),
-	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon)
+	K MinEpsilon = std::numeric_limits<K>::max(),
+	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon),
+	bool EpsilonIsGreatest = (MinEpsilon == std::numeric_limits<K>::max())
 >
 struct ReservedKeys {
 	using Key = K;
 	static constexpr K min_epsilon{MinEpsilon}; ///< The smallest epsilon key.
 	static constexpr K max_ordinary{MaxOrdinary}; ///< The largest key that is not reserved.
+
 	// When true, an epsilon will always be at the end of any sorted container (simplifying the search for it).
-	static constexpr bool epsilon_is_greatest{MinEpsilon == std::numeric_limits<K>::max()};
+	static constexpr bool epsilon_is_greatest{EpsilonIsGreatest};
 
 	static_assert(MaxOrdinary < MinEpsilon, "The ordinary keys must stop below the epsilons.");
+	static_assert(
+		!(std::integral<K> && EpsilonIsGreatest) || MinEpsilon == std::numeric_limits<K>::max(),
+		"ReservedKeys<K, ..., EpsilonIsGreatest>: an integral key cannot claim its epsilon is the "
+		"greatest key unless min_epsilon is that key. Claiming it wrongly makes epsilon_symbol_posts() "
+		"break the algorithms that rely on it."
+	);
 };
 
-/**
- * @brief A traits specifying the key arity and target type of a post.
- */
+namespace posts {
+/// @brief A traits specifying the key arity and target type of a post, and the aliases reading them.
 ///@{
 template <typename X> struct PostTraits {
 	static constexpr size_t key_arity{0};
@@ -125,44 +125,39 @@ template <typename X> inline constexpr size_t arity_of = PostTraits<X>::key_arit
 template <typename X> using target_of = typename PostTraits<X>::Target;
 ///@}
 
-namespace posts {
-/// How a parameter of type @p X is taken: by value when it is small and trivially copyable (a bare
-///  state stays in a register), by reference otherwise (a payload owning memory is not copied to be
-///  looked at). A reference to a small trivial value would force it into memory at every call that
-///  does not inline, since a reference needs something to point at.
-template <typename X>
-using ArgOf = std::conditional_t<std::is_trivially_copyable_v<X> && sizeof(X) <= 2 * sizeof(void*), const X, const X&>;
-
-/**
- * @brief The post @p I steps down a chain.
- *
- * `PostAt<P, 0>::type` is @p P itself and `PostAt<P, P::key_arity>::type` is the innermost post,
- *  the set of targets. What @c mata::posts::DeltaBase::Key and @c mata::posts::DeltaBase::Reserved are
- *  spelled in terms of: a post has exactly one key so @c PostLike::Key is unambiguous and stays
- *  singular, but a *relation* spans every post, and there the same name would silently mean "the
- *  outermost one" — right at @c key_arity 1 and quietly wrong above it.
- */
+/// @brief The post at depth @p I in a chain of posts, outermost first.
+///@{
 template <typename P, size_t I> struct PostAt {
 	static_assert(I <= arity_of<P>, "no post that deep in this chain");
 	using type = typename PostAt<typename P::Nested, I - 1>::type;
 };
-/// @copydoc PostAt
 template <typename P> struct PostAt<P, 0> {
 	using type = P;
 };
+///@}
 
-/// Key @p I's type, taken from the chain rather than from a relation. What
-///  @c mata::posts::DeltaBase::Key is spelled in terms of, and what the per-arity keyed writes need in
-///  their *signatures* — a member of the relation would not do there, because the parameter types
-///  have to depend on the member's own template parameter to stay lazy at the wrong arity.
+/// @brief Defines the key type of a post at depth @p I and the tuple of all key types in a chain of posts.
+///@{
+/**
+ * @brief Key @p I's type, taken from the chain of posts @p P, outermost first.
+ *
+ * @tparam P The chain of posts.
+ * @tparam I The index of the key, outermost first.
+ * @note @p I must be < the arity of the chain.
+ */
 template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
 
 namespace detail {
 template <typename P, size_t... Is>
 auto keys_of(std::index_sequence<Is...>) -> std::tuple<KeyOf<P, Is>...>;
 } // namespace mata::posts::detail.
-/// The keys of a chain as one tuple type, outermost first: `std::tuple<KeyOf<P, 0>, ..., KeyOf<P, arity - 1>>`.
+
+/**
+ * @brief The tuple of all key types in a chain of posts @p P, outermost first.
+ * For example `std::tuple<KeyOf<P, 0>, ..., KeyOf<P, arity - 1>>`.
+ */
 template <typename P> using KeysOf = decltype(detail::keys_of<P>(std::make_index_sequence<arity_of<P>>{}));
+///@}
 } // namespace mata::posts.
 
 } // namespace mata.

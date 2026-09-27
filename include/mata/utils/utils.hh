@@ -513,16 +513,8 @@ template <class A> std::string to_string(const A& value) { // {{{
 /**
  * @brief Render a value for an exception message, or "<unprintable>" if its type cannot be printed.
  *
- * Prints through @c std::format, so a user type becomes printable by specialising @c std::formatter:
- * ```cpp
- * template <> struct std::formatter<Interval> {
- *     constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
- *     template <typename Ctx> auto format(const Interval& i, Ctx& ctx) const {
- *         return std::format_to(ctx.out(), "[{},{}]", i.lo, i.hi);
- *     }
- * };
- * ```
- * @see mata::Printable, which is the same condition as a concept.
+ * @param value The value to render.
+ * @return A string representation of the value, or "<unprintable>" if it cannot be printed.
  */
 template <typename T> std::string format_or_unprintable(const T& value) {
 	if constexpr (std::formattable<T, char>) { return std::format("{}", value); }

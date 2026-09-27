@@ -42,9 +42,9 @@ template <typename St, typename K, typename T> struct Transition {
 
 	auto operator<=>(const Transition&) const = default;
 
-	/// `(source, symbol, target)`, each by value or by reference as @c ArgOf decides.
+	/// `(source, symbol, target)`, each by value or by reference as @c mata::utils::ArgOf decides.
 	static auto parts(const Transition& t) {
-		return std::tuple<ArgOf<St>, ArgOf<K>, ArgOf<T>>{t.source, t.symbol, t.target};
+		return std::tuple<utils::ArgOf<St>, utils::ArgOf<K>, utils::ArgOf<T>>{t.source, t.symbol, t.target};
 	}
 	/// `"(source, symbol, target)"`, as the @c std::formatter below prints it.
 	std::string to_string() const { return std::format("{}", *this); }
@@ -65,7 +65,7 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 
 	/// `(source, keys..., target)` with the keys spread out, so it forwards straight to a keyed overload.
 	static auto parts(const KeyedTransition& t) {
-		return std::tuple_cat(std::tuple<ArgOf<St>>{t.source}, t.keys, std::tuple<ArgOf<T>>{t.target});
+		return std::tuple_cat(std::tuple<utils::ArgOf<St>>{t.source}, t.keys, std::tuple<utils::ArgOf<T>>{t.target});
 	}
 	/// `"(source, keys..., target)"`, as the @c std::formatter below prints it.
 	std::string to_string() const { return std::format("{}", *this); }
@@ -192,7 +192,7 @@ std::ostream& operator<<(std::ostream& os, const T& t) {
  *     State source{}; Symbol input{}, output{}; State target{};
  *     bool operator==(const Transition&) const = default;
  *     static auto parts(const Transition& t) {
- *         return std::tuple<ArgOf<State>, ArgOf<Symbol>, ArgOf<Symbol>, ArgOf<State>>{t.source, t.input, t.output, t.target};
+ *         return std::tuple<utils::ArgOf<State>, utils::ArgOf<Symbol>, utils::ArgOf<Symbol>, utils::ArgOf<State>>{t.source, t.input, t.output, t.target};
  *     }
  * };
  * struct TransitionTraits {
@@ -214,7 +214,7 @@ template <typename P> struct SymbolTransitionTraits {
 	static_assert(arity_of<P> == 1, "a symbol-named transition has room for exactly one key");
 	using State = typename TargetTraits<target_of<P>>::State;
 	using Type = Transition<State, KeyOf<P, 0>, target_of<P>>;
-	static Type make(ArgOf<State> source, ArgOf<KeyOf<P, 0>> key, ArgOf<target_of<P>> target) {
+	static Type make(utils::ArgOf<State> source, utils::ArgOf<KeyOf<P, 0>> key, utils::ArgOf<target_of<P>> target) {
 		return Type{source, key, target};
 	}
 };
@@ -227,13 +227,13 @@ template <typename P> struct KeyedTransitionTraits {
 	///  are peeled off the front of the pack.
 	template <typename... Rest>
 		requires(sizeof...(Rest) == arity_of<P> + 1)
-	static Type make(ArgOf<State> source, const Rest&... rest) {
+	static Type make(utils::ArgOf<State> source, const Rest&... rest) {
 		return make_(source, std::forward_as_tuple(rest...), std::make_index_sequence<arity_of<P>>{});
 	}
 
   private:
 	template <typename Tup, size_t... Is>
-	static Type make_(ArgOf<State> source, const Tup& rest, std::index_sequence<Is...>) {
+	static Type make_(utils::ArgOf<State> source, const Tup& rest, std::index_sequence<Is...>) {
 		return Type{source, KeysOf<P>{std::get<Is>(rest)...}, std::get<sizeof...(Is)>(rest)};
 	}
 };

@@ -74,8 +74,8 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	///@{
 	using PostType = P; ///< The post reached from one source state.
 	using Target = typename PostType::Target; ///< What a successor walk yields.
-	/// How the keyed members take a target. @see mata::posts::ArgOf.
-	using TargetArg = ArgOf<Target>;
+	/// How the keyed members take a target. @see mata::utils::ArgOf.
+	using TargetArg = utils::ArgOf<Target>;
 	/// What indexes this relation and the automaton's state sets. Derived from the target type
 	///  rather than propagated through the posts: which state a target denotes is a property of
 	///  the target, not of any post above it. @see mata::TargetTraits.
@@ -345,7 +345,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 * @brief Add transitions to multiple destinations
 	 *
 	 * @param source From
-	 * @param symbol Key
+	 * @param symbol The key of the transition. Named for an NFA's sake, like the field.
 	 * @param targets Set of states to
 	 */
 	void add(State source, Key<0> symbol, const Nested& targets)
@@ -373,21 +373,21 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	}
 
 	/**
-	 * @brief Apply @p fn to every target state reachable from @p source, over any symbol.
+	 * @brief Apply @p fn to every target reachable from @p source, under any key.
 	 */
 	template <typename Fn> void for_each_successor(const State source, Fn&& fn) const {
 		state_post(source).for_each_target(fn);
 	}
 
 	/**
-	 * @brief Apply @p fn to every @c Move leaving @p source, as a (symbol, target) pair.
+	 * @brief Apply @p fn to every @c Move leaving @p source, as a (key, target) pair.
 	 */
 	template <typename Fn> void for_each_move(const State source, Fn&& fn) const {
 		state_post(source).for_each_move(fn);
 	}
 
 	/**
-	 * @brief Does @p source have @p target among its successors, over any symbol?
+	 * @brief Does @p source have @p target among its successors, under any key?
 	 *
 	 * @param[in] source Source state to look from.
 	 * @param[in] target Target state to look for.
@@ -398,10 +398,10 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	}
 
 	/**
-	 * @brief Does @p state have a transition back to itself over any symbol?
+	 * @brief Does @p state have a transition back to itself under any key?
 	 *
 	 * @param[in] state State to check for self-loop.
-	 * @return True if @p state has a transition back to itself over any symbol, false otherwise.
+	 * @return True if @p state has a transition back to itself under any key, false otherwise.
 	 */
 	bool has_self_loop(const State state) const { return is_successor(state, state); }
 
@@ -433,7 +433,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 * @param state_to[in] Target state for transitions to get.
 	 * @return Transitions leading to @p state_to.
 	 *
-	 * Operation is slow, traverses over all symbol posts.
+	 * Operation is slow, traverses over every entry of every post.
 	 */
 	std::vector<TransitionType> get_transitions_to(State state_to) const;
 
@@ -443,7 +443,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 * @param state_from[in] Target state.
 	 * @return Transitions from @p source to @p state_to.
 	 *
-	 * Operation is slow, traverses over all symbol posts.
+	 * Operation is slow, traverses over every entry of every post.
 	 */
 	std::vector<TransitionType> get_transitions_between(State state_from, State state_to) const;
 
@@ -472,7 +472,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	TargetSet get_successors(State state) const;
 
 	/**
-	 * @brief The target states reachable from @p state over @p symbol.
+	 * @brief The targets reachable from @p state under @p key.
 	 *
 	 * The *targets*, at every arity. Reaching one step down is @c PostType::find()'s job and
 	 *  walking the posts between is @c for_each_move()'s; this answers "which states can I reach

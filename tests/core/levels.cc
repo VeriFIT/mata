@@ -94,7 +94,7 @@ struct Transition {
 	State to{};
 	bool operator==(const Transition&) const = default;
 	static auto parts(const Transition& t) {
-		return std::tuple<posts::ArgOf<State>, posts::ArgOf<Symbol>, posts::ArgOf<State>>{t.from, t.letter, t.to};
+		return std::tuple<utils::ArgOf<State>, utils::ArgOf<Symbol>, utils::ArgOf<State>>{t.from, t.letter, t.to};
 	}
 };
 struct TransitionTraits {
