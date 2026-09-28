@@ -1,7 +1,7 @@
 /** @file
  * @brief The transition relation and automaton this library ships: depth 2, symbols keying states.
  *
- * @c mata/core/ is generic. It has the post templates, the walks, the cursor, the concepts and
+ * @c mata/core/ is generic. It has the post templates, the visits, the cursor, the concepts and
  *  @c mata::AutomatonBase, and it names no particular relation anywhere — deliberately, because a
  *  third party building their own relation compiles all of it and should not be paying for, or
  *  tripping over, the one this library happens to ship.

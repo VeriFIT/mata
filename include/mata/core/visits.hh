@@ -1,13 +1,13 @@
 /** @file
- * @brief The walks over a chain of posts: reading, writing and rebuilding at any nesting depth.
+ * @brief The visits over a chain of posts: reading, writing and rebuilding at any nesting depth.
  *
  * Free functions over a post @p P, each recursing on @c mata::arity_of until it reaches the targets.
  *  They are what @c mata::posts::Post, @c mata::posts::DeltaBase and @c mata::AutomatonBase share, so
  *  the depth is handled once, here, and not again in every class that holds a post.
  */
 
-#ifndef MATA_CORE_WALKS_HH
-#define MATA_CORE_WALKS_HH
+#ifndef MATA_CORE_VISITS_HH
+#define MATA_CORE_VISITS_HH
 
 #include <algorithm>
 #include <cstddef>
@@ -25,23 +25,23 @@ namespace mata::posts {
  * Replaces the hand-unrolled descent the posts used to carry. `if constexpr` on @c key_arity turns
  *  the recursion into the same nested loops a caller would write by hand — measured at 0.99-1.01x of
  *  hand-written loops at every arity from 1 to 9, with no trend against depth, so depth genericity
- *  here is free. @p Fn is a template parameter and never a @c std::function: routing the same walk
+ *  here is free. @p Fn is a template parameter and never a @c std::function: routing the same visit
  *  through one costs 1.08x to 2.18x.
  */
-template <typename P, typename Fn> void walk_targets(const P& post, Fn&& fn) {
+template <typename P, typename Fn> void visit_targets(const P& post, Fn&& fn) {
 	if constexpr (arity_of<P> == 0) {
 		for (const target_of<P>& target : post) { fn(target); }
 	} else {
-		for (const auto& entry : post) { walk_targets(entry.nested(), fn); }
+		for (const auto& entry : post) { visit_targets(entry.nested(), fn); }
 	}
 }
 
 /**
  * @brief Does any target below @p post satisfy @p pred? Stops at the first that does.
  *
- * The short-circuiting counterpart to @c walk_targets. Needed rather than merely nice: @c has_target
+ * The short-circuiting counterpart to @c visit_targets. Needed rather than merely nice: @c has_target
  *  feeds @c is_successor and @c has_self_loop, which @c mata::AutomatonBase::is_acyclic() calls once
- *  per SCC. Expressing it as a full walk that sets a flag is a real regression on that path, and one
+ *  per SCC. Expressing it as a full visit that sets a flag is a real regression on that path, and one
  *  the delta-access benchmark does not cover.
  */
 template <typename P, typename Pred> bool any_target(const P& post, Pred&& pred) {
@@ -81,18 +81,18 @@ template <typename P> size_t count_targets(const P& post) {
  *  deeper relation simply passes more key arguments; nothing at depth 2 changes shape.
  */
 template <typename P, typename Fn, typename... Keys>
-void walk_moves(const P& post, Fn&& fn, const Keys&... keys) {
+void visit_moves(const P& post, Fn&& fn, const Keys&... keys) {
 	if constexpr (arity_of<P> == 0) {
 		for (const target_of<P>& target : post) { fn(keys..., target); }
 	} else {
-		for (const auto& entry : post) { walk_moves(entry.nested(), fn, keys..., entry.key()); }
+		for (const auto& entry : post) { visit_moves(entry.nested(), fn, keys..., entry.key()); }
 	}
 }
 
 /**
  * @brief Insert @p target under the key path @p keys, creating posts along the way.
  *
- * The write-side counterpart to @c walk_moves, and the pair of them is all reverting needs: walk out
+ * The write-side counterpart to @c visit_moves, and the pair of them is all reverting needs: visit out
  *  the moves of one relation, write each back into another with the source and target exchanged and
  *  **the keys in the same order**.
  *
@@ -138,7 +138,7 @@ bool has_target_at(const P& post, const target_of<P>& target, const K0& k0, cons
 /**
  * @brief Erase @p target from under the key path @p k0, @p rest, pruning every post it empties.
  *
- * The only one of the three key-path walks that does its work on the way back *up*. It descends to
+ * The only one of the three key-path visits that does its work on the way back *up*. It descends to
  *  the innermost post, erases there, and then each post asks whether the post beneath it has just
  *  become empty and drops its own entry if so — so a path that held the last target disappears
  *  entirely rather than leaving a chain of empty posts behind. The return value **is** that
@@ -215,7 +215,7 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 /**
  * @brief Rebuild @p post keeping only the targets @p is_staying admits, renamed by @p renaming.
  *
- * The write-side mirror of @c walk_targets, and the reason it is written this way: each post knows
+ * The write-side mirror of @c visit_targets, and the reason it is written this way: each post knows
  *  only its own job — the innermost one filters and renames, every post above drops the entries
  *  whose nested post came back empty — so trimming generalises with the nesting instead of assuming
  *  two steps of descent, which is what the hand-unrolled version did.
@@ -243,4 +243,4 @@ P defragmented(const P& post, const BoolVector& is_staying, const Renaming& rena
 
 } // namespace mata::posts.
 
-#endif // MATA_CORE_WALKS_HH
+#endif // MATA_CORE_VISITS_HH

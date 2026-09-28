@@ -15,7 +15,7 @@ namespace mata::posts {
 /**
  * @brief A resumable cursor over every target reachable from one state post.
  *
- * Flattens the walk down the post chain into a single pointer walk, so a traversal position can be
+ * Flattens the descent down the post chain into a single pointer sweep, so a position can be
  *  stored and continued later. Tarjan's SCC discovery is the only thing that needs that, and it is
  *  what @c mata::AutomatonBase drives @c get_useful_states(), @c is_acyclic(), @c is_lang_empty() and
  *  @c trim() through.
@@ -110,7 +110,7 @@ template <typename P> class SuccessorCursor<P, 1> {
  *  advances its own post and re-descends, returning false when its subtree holds no target.
  *
  * @warning A mistake in the carry silently *skips targets* -- no compile error, no crash, a wrong
- *  answer. `tests/core/cursor.cc` cross-checks every specialisation against @c walk_targets.
+ *  answer. `tests/core/cursor.cc` cross-checks every specialisation against @c visit_targets.
  */
 template <typename P> class SuccessorCursor<P, 2> {
   public:

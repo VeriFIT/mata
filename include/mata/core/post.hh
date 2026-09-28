@@ -17,11 +17,12 @@
  * @section sortedness Sortedness
  *
  * Every post is sorted by key, and the innermost one by target. Lookups binary-search on it, and
- *  @c Post::first_epsilon_it() walks backwards relying on the reserved keys forming a contiguous
- *  suffix. A post that does not maintain the order still compiles, and silently returns wrong
- *  iterators. The order may be broken *temporarily*: @c push_back and @c emplace_back append without
- *  restoring it, which is faster when building from unordered input; it has to be restored by sorting
- *  before any lookup, iteration order or comparison is relied upon. A post advertises that it
+ *  @c Post::first_epsilon_it() scans backwards relying on that order alone: a sorted range
+ *  splits at any threshold into "below" then "at or above". A post that does not maintain the
+ *  order still compiles, and silently returns wrong iterators. The order may be broken
+ *  *temporarily*: @c push_back and @c emplace_back append without restoring it, which is faster
+ *  when building from unordered input; it has to be restored by sorting before any lookup,
+ *  iteration order or comparison is relied upon. A post advertises that it
  *  maintains the invariant with @c sorted_by_key / @c sorted_by_target and exposes @c is_sorted().
  */
 
@@ -40,7 +41,7 @@
 #include "mata/core/concepts.hh"
 #include "mata/core/moves.hh"
 #include "mata/core/traits.hh"
-#include "mata/core/walks.hh"
+#include "mata/core/visits.hh"
 #include "mata/utils/ord-vector.hh"
 
 namespace mata::posts {
@@ -73,7 +74,7 @@ template <typename K, typename N, typename R = ReservedKeys<K>> class PostEntry 
 	using Nested = N; ///< The post nested under this key.
 	/// Where this post's ordinary keys stop. @see mata::ReservedKeys.
 	using Reserved = R;
-	/// What a successor walk yields, propagated up from the innermost post. An entry does not decide
+	/// What visiting the successors yields, propagated up from the innermost post. An entry does not decide
 	///  what a target is, it only passes the answer along.
 	using Target = target_of<Nested>;
 
@@ -186,10 +187,10 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using Entry = E; ///< What iterating this post yields.
 	using Key = typename Entry::Key; ///< What this post is keyed by (the symbol, for an NFA).
 	using Nested = typename Entry::Nested; ///< The post (or target set) under one key.
-	using Target = typename Entry::Target; ///< What a successor walk yields, propagated up.
+	using Target = typename Entry::Target; ///< What visiting the successors yields, propagated up.
 	/// Where this post's ordinary keys stop, propagated up from the entry, which is where the key
 	///  type is named. What makes @c moves_epsilons() and @c moves_symbols() default per
-	///  instantiation. @see mata::ReservedKeys, mata::ReservedKeysAtTail.
+	///  instantiation. @see mata::ReservedKeys, mata::SortedWithReservedKeys.
 	using Reserved = typename Entry::Reserved;
 	/// The innermost post: what is left once every key has been supplied. Equal to @c Nested at
 	///  @c key_arity 1 and deeper than it above that, which is the difference @c get_successors()
@@ -240,13 +241,13 @@ template <typename E> class Post : utils::OrdVector<E> {
 
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
 	const_iterator first_epsilon_it(const Key first_epsilon) const {
-		// The backwards walk below is only the right answer because the keys at or above the
-		//  threshold are exactly the last ones. Two independent facts, neither of which fails to
-		//  compile on its own, so they are asserted rather than assumed. @see the concept's docs.
+		// The backwards scan below is the right answer because the post is ordered by key: a sorted
+		//  range splits at any threshold into "below" then "at or above", so the first entry not
+		//  below @p first_epsilon is the one wanted. Asserted rather than assumed, because an
+		//  unsorted post compiles perfectly well and simply returns the wrong iterator.
 		static_assert(
-			ReservedKeysAtTail<Post>,
-			"finding the epsilons by walking back from the end needs the reserved keys to be the "
-			"last ones: the post ordered by key, and the reserved keys the top of the key order"
+			SortedWithReservedKeys<Post>,
+			"finding the epsilons by scanning back from the end needs the post ordered by key"
 		);
 		const auto end_it = cend();
 		auto it = end_it;
@@ -272,13 +273,13 @@ template <typename E> class Post : utils::OrdVector<E> {
 		TargetSet successors;
 		if constexpr (key_arity == 1) {
 			// The shipping form, kept verbatim: one bulk insert per entry, which @c OrdVector does
-			//  as a merge. Routing arity 1 through the generic walk below would insert one target
+			//  as a merge. Routing arity 1 through the generic visit below would insert one target
 			//  at a time instead — see @c for_each_target for what that costs on the real relation.
 			for (const Entry& entry : *this) { successors.insert(entry.targets); }
 		} else {
 			// Above arity 1 the entries hold posts, not targets, so there is nothing to merge and
-			//  the targets have to be walked out from under every remaining key.
-			walk_targets(*this, [&successors](const Target& target) { successors.insert(target); });
+			//  the targets have to be gathered from under every remaining key.
+			visit_targets(*this, [&successors](const Target& target) { successors.insert(target); });
 		}
 		return successors;
 	}
@@ -308,7 +309,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 * @brief The targets reachable from this post under @p key.
 	 *
 	 * The *targets*, at every arity — not the post one step down. Getting one step down is what
-	 *  @c find() is for, and walking the posts between is what @c moves() and @c for_each_move()
+	 *  @c find() is for, and visiting the posts between is what @c moves() and @c for_each_move()
 	 *  are for; this member answers "which states can I reach over this key", and that question has
 	 *  the same kind of answer however many keys are left below.
 	 *
@@ -330,7 +331,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 		} else {
 			TargetSet successors{};
 			if (entry_it != this->end()) {
-				walk_targets(entry_it->nested(), [&successors](const Target& target) {
+				visit_targets(entry_it->nested(), [&successors](const Target& target) {
 					successors.insert(target);
 				});
 			}
@@ -394,7 +395,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 			//  arity everything actually runs on, stay generic beyond it.
 			for (const Entry& entry : *this) { entry.for_each_target(fn); }
 		} else {
-			walk_targets(*this, fn);
+			visit_targets(*this, fn);
 		}
 	}
 
@@ -408,7 +409,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 				entry.for_each_target([&](const Target target) { fn(entry.symbol, target); });
 			}
 		} else {
-			walk_moves(*this, fn);
+			visit_moves(*this, fn);
 		}
 	}
 

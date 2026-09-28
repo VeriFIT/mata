@@ -1,5 +1,5 @@
 /** @file
- * @brief One transition of a relation: what it is, how one is built, and how a relation's are walked.
+ * @brief One transition of a relation: what it is, how one is built, and how a relation's are visited.
  *
  * A transition type owes one thing, a static @c parts() that takes it apart into
  *  `(source, keys..., target)`. The hash, the formatter and the transition-shaped members of
@@ -192,7 +192,9 @@ std::ostream& operator<<(std::ostream& os, const T& t) {
  *     State source{}; Symbol input{}, output{}; State target{};
  *     bool operator==(const Transition&) const = default;
  *     static auto parts(const Transition& t) {
- *         return std::tuple<utils::ArgOf<State>, utils::ArgOf<Symbol>, utils::ArgOf<Symbol>, utils::ArgOf<State>>{t.source, t.input, t.output, t.target};
+ *         using utils::ArgOf;
+ *         return std::tuple<ArgOf<State>, ArgOf<Symbol>, ArgOf<Symbol>, ArgOf<State>>{
+ *             t.source, t.input, t.output, t.target};
  *     }
  * };
  * struct TransitionTraits {
@@ -253,12 +255,12 @@ template <typename P> using DefaultTransitionTraits = typename detail::DefaultTr
 /**
  * @brief The transitions of a relation: one @c TransitionType per (source, key path, target).
  *
- * Generic in the arity. The walk is the relation's @c CursorType -- the hand-written per-arity
+ * Generic in the arity. The visit is the relation's @c CursorType -- the hand-written per-arity
  *  successor cursor, which also reports the key path it is standing on -- and every step is one
  *  `TransitionTraits::make`. What @c mata::posts::DeltaBase::transitions() returns, named there
  *  @c DeltaBase::Transitions.
  *
- * @tparam D The relation walked. Asked for @c State, @c CursorType, @c TransitionType,
+ * @tparam D The relation visited. Asked for @c State, @c CursorType, @c TransitionType,
  *  @c TransitionTraits, @c num_of_states() and @c state_post(), and nothing else.
  */
 template <typename D> class DeltaTransitions {

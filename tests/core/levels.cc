@@ -73,7 +73,7 @@ template <typename D> std::vector<State> all_targets(const D& delta) {
 	std::vector<State> targets{};
 	const size_t states{delta.num_of_states()};
 	for (State source{0}; source < states; ++source) {
-		posts::walk_targets(delta.state_post(source), [&targets](const State target) {
+		posts::visit_targets(delta.state_post(source), [&targets](const State target) {
 			targets.push_back(target);
 		});
 	}

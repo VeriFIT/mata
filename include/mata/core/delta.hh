@@ -6,7 +6,7 @@
  *  - @c mata/core/traits.hh -- what a target denotes, the reserved keys, how deep a chain is (@ref arity)
  *  - @c mata/core/concepts.hh -- the contracts, @c DeltaLike among them
  *  - @c mata/core/transition.hh -- one transition, its traits, and @c DeltaTransitions
- *  - @c mata/core/walks.hh -- the free functions walking a chain of posts at any depth
+ *  - @c mata/core/visits.hh -- the free functions visiting a chain of posts at any depth
  *  - @c mata/core/moves.hh -- @c Move and @c PostMoves
  *  - @c mata/core/post.hh -- @c PostEntry, @c Post and @c PostChain (@ref nesting, @ref sortedness)
  *  - @c mata/core/cursor.hh -- @c SuccessorCursor, hand-written per arity
@@ -38,7 +38,7 @@
 #include "mata/core/post.hh"
 #include "mata/core/traits.hh"
 #include "mata/core/transition.hh"
-#include "mata/core/walks.hh"
+#include "mata/core/visits.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
@@ -73,7 +73,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	/// @see mata::DeltaLike -- the only way @c mata::Automaton reaches a successor.
 	///@{
 	using PostType = P; ///< The post reached from one source state.
-	using Target = typename PostType::Target; ///< What a successor walk yields.
+	using Target = typename PostType::Target; ///< What visiting the successors yields.
 	/// How the keyed members take a target. @see mata::utils::ArgOf.
 	using TargetArg = utils::ArgOf<Target>;
 	/// What indexes this relation and the automaton's state sets. Derived from the target type
@@ -100,7 +100,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	/// Where key @p I's ordinary keys stop. Indexed for the same reason as @c Key: each post
 	///  carries its own convention, on its own entry. @see mata::ReservedKeys.
 	template <size_t I> using Reserved = typename PostAt<I>::Reserved;
-	/// The innermost post: what a successor walk collects into. @c PostAt<key_arity> spelled for the
+	/// The innermost post: what visiting the successors collects into. @c PostAt<key_arity> spelled for the
 	///  one post that has a name of its own.
 	using TargetSet = PostAt<key_arity>;
 	/// @copydoc mata::posts::Post::KeyedSuccessors
@@ -296,7 +296,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	/// @name Transition-shaped members
 	/// Generic in the arity: a transition is taken apart with its type's @c parts() and the pieces
 	///  are forwarded to the keyed overload of the matching arity. What a transition *is* comes from
-	///  the traits; only @c Transitions, which has to walk the keys, is still arity 1.
+	///  the traits; only @c Transitions, which has to carry the keys, is still arity 1.
 	///@{
 	void add(const TransitionType& transition) {
 		std::apply([this](const auto&... p) { add(p...); }, TransitionType::parts(transition));
@@ -475,7 +475,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 * @brief The targets reachable from @p state under @p key.
 	 *
 	 * The *targets*, at every arity. Reaching one step down is @c PostType::find()'s job and
-	 *  walking the posts between is @c for_each_move()'s; this answers "which states can I reach
+	 *  visiting the posts between is @c for_each_move()'s; this answers "which states can I reach
 	 *  over this key", which means the same thing however many keys are left below it.
 	 *
 	 * @see PostType::KeyedSuccessors for why the return type follows the arity — a reference into the
@@ -558,7 +558,7 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	///@}
 
 	/// Append every transition from @p from to @p to. At arity 1 over bare states each entry's targets
-	///  are searched directly; otherwise the key paths are walked and the target checked at the bottom.
+	///  are searched directly; otherwise the key paths are followed and the target checked at the bottom.
 	void collect_transitions_to_(const State from, const State to, std::vector<TransitionType>& out) const {
 		if constexpr (key_arity == 1 && std::same_as<Target, State>) {
 			for (const Entry& entry : state_post(from)) {
@@ -594,10 +594,6 @@ template <typename D> constexpr bool relation_contract_holds() {
 	using P = typename D::PostType;
 	static_assert(PostLike<P>, "the relation's PostType must be one post of the relation.");
 	static_assert(PostEntryLike<typename D::Entry>, "the relation's Entry must be its PostType's entry type.");
-	static_assert(
-		ReservedKeysAtTail<P>,
-		"the epsilon lookups walk back from the end of a post, which needs the reserved keys to be the last ones."
-	);
 	static_assert(TargetSetLike<typename D::TargetSet>, "the innermost post must be a set of targets.");
 	static_assert(DeltaLike<D>, "the relation must satisfy the contract mata::Automaton is written against.");
 	// A relation class deriving from DeltaBase exists only to shorten a name in diagnostics and must

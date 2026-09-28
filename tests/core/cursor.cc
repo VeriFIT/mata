@@ -7,7 +7,7 @@
  *  answer from `get_useful_states()`, `is_acyclic()` or `is_lang_empty()`, all of which reach the
  *  relation through the cursor.
  *
- * So every specialisation is checked against @c walk_targets, which is independently recursive and
+ * So every specialisation is checked against @c visit_targets, which is independently recursive and
  *  has no carry to get wrong. The relations here are built to hit the cases a carry actually breaks
  *  on: empty posts at every level, empty target sets, a single target, and several levels exhausting
  *  at once so the carry has to cascade.
@@ -41,7 +41,7 @@ using Post3 = posts::PostChain<Symbol, Symbol, Symbol, Targets>;
 /// What the cursor should yield, derived independently by the recursive walk.
 template <typename Post> std::vector<State> expected(const Post& post) {
 	std::vector<State> out;
-	posts::walk_targets(post, [&out](const State t) { out.push_back(t); });
+	posts::visit_targets(post, [&out](const State t) { out.push_back(t); });
 	return out;
 }
 

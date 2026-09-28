@@ -37,7 +37,7 @@ concept ExtensibleAlphabet = requires(A& alphabet, typename A::Symbol symbol) {
 };
 
 /**
- * @brief A concept for a value with a printed form: one @c std::format can print.
+ * @brief A concept for a value with a printed form.
  *
  * A user type gets one by specialising @c std::formatter. @see mata::utils::format_or_unprintable.
  */
@@ -59,13 +59,16 @@ concept ReservedKeysLike = requires {
 };
 
 /**
- * @brief A concept for a post whose reserved keys form a contiguous suffix.
+ * @brief A concept for a post ordered by key, whose reserved keys are described over that same key.
  *
- * @c mata::posts::Post::first_epsilon_it() walks *backwards* from the end, which is right only
- *  if (1) the post is ordered by key and (2) the reserved keys are the top of the key order.
+ * Three requirements:
+ *  - the post declares @c sorted_by_key, so a lookup may binary-search it and
+ *    @c mata::posts::Post::first_epsilon_it() may scan back from its end
+ *  - it names a @c Reserved satisfying @c ReservedKeysLike;
+ *  - that @c Reserved is over the post's own @c Key.
  */
 template <typename L>
-concept ReservedKeysAtTail = requires {
+concept SortedWithReservedKeys = requires {
 	typename L::Key;
 	typename L::Reserved;
 	requires ReservedKeysLike<typename L::Reserved>;
@@ -74,10 +77,10 @@ concept ReservedKeysAtTail = requires {
 };
 
 /**
- * @brief A range that can be walked and whose emptiness can be tested.
+ * @brief A range that can be iterated and whose emptiness can be tested.
  */
 template <typename R>
-concept WalkableRange = requires(const R r) {
+concept IterableRange = requires(const R r) {
 	{ r.begin() } -> std::input_or_output_iterator;
 	{ r.end() } -> std::sentinel_for<decltype(r.begin())>;
 	{ r.empty() } -> std::convertible_to<bool>;
@@ -85,10 +88,10 @@ concept WalkableRange = requires(const R r) {
 };
 
 /**
- * @brief A concept for a set of targets that can be walked, updated, and queried.
+ * @brief A concept for a set of targets that can be iterated, updated, and queried.
  */
 template <typename T>
-concept TargetSetLike = WalkableRange<T> && requires(const T t, const posts::target_of<T>& target) {
+concept TargetSetLike = IterableRange<T> && requires(const T t, const posts::target_of<T>& target) {
 	typename posts::target_of<T>;
 	requires posts::arity_of<T> == 0;
 	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
@@ -99,7 +102,7 @@ concept TargetSetLike = WalkableRange<T> && requires(const T t, const posts::tar
 };
 
 /**
- * @brief A concept for a post entry, a cingle key and the post nested under it.
+ * @brief A concept for a post entry, a single key and the post nested under it.
  */
 template <typename E>
 concept PostEntryLike = requires(const E e) {
@@ -112,10 +115,10 @@ concept PostEntryLike = requires(const E e) {
 };
 
 /**
- * @brief A concept for a post, a range of entries that can be walked, updated, and queried.
+ * @brief A concept for a post, a range of entries that can be iterated, updated, and queried.
  */
 template <typename L>
-concept PostLike = WalkableRange<L> && ReservedKeysAtTail<L> && requires(const L l) {
+concept PostLike = IterableRange<L> && SortedWithReservedKeys<L> && requires(const L l) {
 	typename L::Entry;
 	requires PostEntryLike<typename L::Entry>;
 	typename L::Key;

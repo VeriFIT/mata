@@ -1,7 +1,7 @@
 /** @file
  * @brief Member definitions for @c mata::AutomatonBase.
  *
- * Included at the end of @c mata/core/automaton.hh. Every definition here is a walk over @c delta,
+ * Included at the end of @c mata/core/automaton.hh. Every definition here is a pass over @c delta,
  *  @c initial and @c final, reaching successors only through the @c mata::DeltaLike interface.
  *
  * @note The bodies live in a header, rather than in `src/core/automaton.cc`, because a third party
@@ -59,7 +59,7 @@ template <DeltaLike D> void AutomatonBase<D>::clear() {
 }
 
 namespace detail {
-/// Write one walked-out move back with its source and target exchanged, keys untouched.
+/// Write one visited move back with its source and target exchanged, keys untouched.
 ///
 /// The move arrives from @c for_each_move as `(keys..., target)`; @c insert_target wants the target
 ///  first and the keys last, so the pack is re-ordered through a tuple. That is the whole of it —

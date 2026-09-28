@@ -195,13 +195,13 @@ template <typename Moves> std::vector<Symbol> keys_of(const Moves& moves) {
 ///@{
 static_assert(ReservedKeysLike<NarrowTail>);
 static_assert(ReservedKeysLike<WideTail>);
-static_assert(ReservedKeysAtTail<PostOver<NarrowTail>>);
+static_assert(SortedWithReservedKeys<PostOver<NarrowTail>>);
 static_assert(PostLike<PostOver<WideTail>>);
 
-/// A descriptor whose reserved keys are *not* the tail is rejected where the post is named,
-///  rather than making @c first_epsilon_it() walk back to the wrong place.
+/// A descriptor whose bands are inverted is rejected by @c ReservedKeysLike itself -- that is where
+///  `max_ordinary < min_epsilon` is required -- and so by everything built on it.
 static_assert(!ReservedKeysLike<InvertedTail>);
-static_assert(!ReservedKeysAtTail<PostOver<InvertedTail>>);
+static_assert(!SortedWithReservedKeys<PostOver<InvertedTail>>);
 static_assert(!PostLike<PostOver<InvertedTail>>);
 
 /// The key members are protected on the base and reached by deriving; any ordered key has

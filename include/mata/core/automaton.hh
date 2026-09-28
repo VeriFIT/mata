@@ -2,7 +2,7 @@
  * @brief The structural base class shared by all automata in Mata.
  *
  * @c mata::AutomatonBase holds the parts of an automaton that carry no language semantics.
- *  Every operation defined here is a walk over @c delta, @c initial and @c final, and is therefore
+ *  Every operation defined here is a pass over @c delta, @c initial and @c final, and is therefore
  *  meaningful for any transition relation satisfying @c mata::DeltaLike.
  *
  * @c mata::Automaton is the one specialization the in-tree automata are built on. It is a plain
@@ -31,7 +31,7 @@ namespace mata {
 
 /**
  * @brief A class representing the structural part of an automaton.
- *  Every operation defined here is a walk over @c delta, @c initial and @c final.
+ *  Every operation defined here is a pass over @c delta, @c initial and @c final.
  *
  * @tparam D The transition relation. Every other type is read off @p D rather than passed
  *  alongside it, so the two cannot disagree; see @c mata::DeltaLike for what @p D must provide.
@@ -39,14 +39,14 @@ namespace mata {
  * @note A data-owning mixin, not a polymorphic base: it owns @c delta, @c initial and @c final, and
  *  has no virtual functions. The members that need their most-derived type take an explicit object
  *  parameter (`deducing this`) instead.
- * @note @p D is not constrained to any particular @c key_arity. Only the generic walks care how
+ * @note @p D is not constrained to any particular @c key_arity. Only the generic visits care how
  *  deep the relation nests, and they are constrained separately.
  */
 template <DeltaLike D> class AutomatonBase {
   public:
 	using DeltaType = D; ///< The transition relation this automaton is built on.
 	using State = typename D::State; ///< What indexes the automaton: @c delta, @c initial, @c final.
-	using Target = typename D::Target; ///< The leaf payload a successor walk yields. @see @c State.
+	using Target = typename D::Target; ///< The leaf payload visiting the successors yields. @see @c State.
 	/// Number of keys between a source state and a target. @see @ref arity.
 	static constexpr size_t key_arity{D::key_arity};
 
@@ -209,7 +209,7 @@ template <DeltaLike D> class AutomatonBase {
 	 * @brief Is the accepted language (or relation) empty, optionally with a counter-example?
 	 *
 	 * @note The run type comes from @p Self.
-	 * @note Unifying the two searches -- having the Tarjan walk emit a witness on demand -- would
+	 * @note Unifying the two searches -- having the Tarjan search emit a witness on demand -- would
 	 *  save a traversal on the counter-example path, which @c is_included() and @c is_universal()
 	 *  take whenever the caller wants one. It would also stop the witness being *shortest*, and
 	 *  callers do depend on which one comes back (see the exact-word check in the

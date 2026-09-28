@@ -27,14 +27,14 @@ template <typename K, typename T> class Move {
 /**
  * @brief The moves of a post as @c Move instances: every (symbol, target) pair, or a range of them.
  *
- * What @c mata::posts::Post::moves() returns, named there @c Post::Moves. Walks the targets of each
+ * What @c mata::posts::Post::moves() returns, named there @c Post::Moves. Visits the targets of each
  *  entry directly, so it is for a post whose entries hold targets: @c key_arity 1.
  *
- * @tparam P The post walked. Asked for @c Key, @c Target, @c Nested, @c const_iterator, and the
+ * @tparam P The post visited. Asked for @c Key, @c Target, @c Nested, @c const_iterator, and the
  *  entries' @c symbol and @c targets.
  */
 template <typename P> class PostMoves {
-	/// The iterator over the post's entries, which this walks.
+	/// The iterator over the post's entries, which this visits.
 	using post_iterator = typename P::const_iterator;
 
   public:

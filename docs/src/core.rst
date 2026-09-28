@@ -1,7 +1,7 @@
 Core
 ====
 
-The generic machinery: the post templates, the walks and the cursor, the concepts, and the
+The generic machinery: the post templates, the visits and the cursor, the concepts, and the
 structural operations that belong to no particular automaton class. Nothing here names a concrete
 relation — ``mata::Delta`` is not available from ``core/`` alone, deliberately, so that a third party
 building their own relation compiles all of this without inheriting the one this library ships.
@@ -20,7 +20,7 @@ including it is enough.
 
 .. doxygenfile:: core/traits.hh
 .. doxygenfile:: core/transition.hh
-.. doxygenfile:: core/walks.hh
+.. doxygenfile:: core/visits.hh
 .. doxygenfile:: core/moves.hh
 .. doxygenfile:: core/post.hh
 .. doxygenfile:: core/cursor.hh
@@ -56,7 +56,7 @@ vocabulary the relation itself needs: where a level's reserved keys begin.
 
 ``doxygenfile`` does not render concept declarations, so each one is named explicitly below.
 
-.. doxygenconcept:: mata::WalkableRange
+.. doxygenconcept:: mata::IterableRange
 .. doxygenconcept:: mata::TargetSetLike
 .. doxygenconcept:: mata::PostEntryLike
 .. doxygenconcept:: mata::ReservedKeysLike
