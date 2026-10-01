@@ -1,24 +1,19 @@
 name: Claude Code Review
-
 # Reviews pull requests with Claude Code, using the Anthropic-compatible LLM service of CERIT-SC
 # (https://docs.cerit.io/en/docs/ai-as-a-service/llm-integration) instead of the Anthropic API.
 # Requires the `CERIT_API_KEY` repository secret.
-
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-
 concurrency:
   group: claude-code-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
 jobs:
   review:
     # Secrets are not available to workflows triggered by pull requests from forks, so only PRs from branches of this
     #  repository are reviewed. Drafts are skipped until they are marked as ready for review.
     if: >-
-      !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -75,5 +70,4 @@ jobs:
               Keep it short: an overall assessment and a list of the main issues. If you found nothing significant,
               say so in one sentence.
           claude_args: >-
-            --model agentic
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*)"
+            --model agentic --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*)"
