@@ -92,10 +92,13 @@ test-coverage:
 	gcovr --config gcovr.cfg -j $(JOBS) --html-details --output "$(BUILD_DIR)/coverage.html" \
 		"$(BUILD_DIR)/src" "$(BUILD_DIR)/tests"
 
+# The job and input files are generated into `$(BUILD_DIR)/tests-integration`, so the benchmarks that
+#  run here are always the ones built in `$(BUILD_DIR)`.
+BENCH_DIR = $(BUILD_DIR)/tests-integration
 test-performance:
-	./tests-integration/pycobench -c ./tests-integration/jobs/corr-single-param-jobs.yaml < ./tests-integration/inputs/single-automata.input -o ./tests-integration/results/corr-single-param-jobs.out
+	./tests-integration/pycobench -c "$(BENCH_DIR)/jobs/corr-single-param-jobs.yaml" < "$(BENCH_DIR)/inputs/single-automata.input" -o ./tests-integration/results/corr-single-param-jobs.out
 	./tests-integration/pyco_proc --csv ./tests-integration/results/corr-single-param-jobs.out > ./tests-integration/results/corr-single-param-jobs.csv
-	./tests-integration/pycobench -c ./tests-integration/jobs/corr-double-param-jobs.yaml < ./tests-integration/inputs/double-automata.input -o ./tests-integration/results/corr-double-param-jobs.out
+	./tests-integration/pycobench -c "$(BENCH_DIR)/jobs/corr-double-param-jobs.yaml" < "$(BENCH_DIR)/inputs/double-automata.input" -o ./tests-integration/results/corr-double-param-jobs.out
 	./tests-integration/pyco_proc --csv --param-no 2 ./tests-integration/results/corr-double-param-jobs.out > ./tests-integration/results/corr-double-param-jobs.csv
 
 # Runs cppcheck over the compilation database of an already configured build directory. Mata always
