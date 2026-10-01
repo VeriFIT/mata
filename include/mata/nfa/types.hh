@@ -6,11 +6,9 @@
 #define MATA_TYPES_HH
 
 #include "mata/alphabet.hh"
-#include "mata/parser/parser.hh"
 
+#include <cstdint>
 #include <limits>
-
-#include "types.hh"
 
 namespace mata::nfa {
 
@@ -24,14 +22,14 @@ struct Run {
 	std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
-enum class EpsilonClosureOpt : unsigned {
+enum class EpsilonClosureOpt : std::uint8_t {
 	None = 1 << 0, ///< No epsilon closure.
 	Before = 1 << 1, ///< Epsilon closure before the transition.
 	After = 1 << 2, ///< Epsilon closure after the transition.
 	BeforeAndAfter = Before | After ///< Epsilon closure before and after the transition.
 };
 
-enum class ProductFinalStateCondition {
+enum class ProductFinalStateCondition : std::uint8_t {
 	And, ///< Both original states have to be final.
 	Or, ///< At least one of the original states has to be final.
 };

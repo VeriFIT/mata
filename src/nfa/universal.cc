@@ -43,7 +43,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 	// initialize
 	WorklistType worklist = {StateSet(aut.initial)};
 	ProcessedType processed = {StateSet(aut.initial)};
-	mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
+	const mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state

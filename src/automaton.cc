@@ -63,7 +63,7 @@ struct TarjanNodeData {
 	// index of a lower node in the same SCC
 	unsigned long lowlink{0};
 	// was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
-	bool initilized{false};
+	bool initialized{false};
 	// is node on Tarjan's stack?
 	bool on_stack{false};
 
@@ -73,7 +73,7 @@ struct TarjanNodeData {
 		: current_successor_it(delta.successor_cursor(q).begin()),
 		  index(index),
 		  lowlink(index),
-		  initilized(true),
+		  initialized(true),
 		  on_stack(true) {}
 };
 } // anonymous namespace
@@ -219,13 +219,13 @@ void Automaton::tarjan_scc_discover(
 
 		// if a node is initialized and is not on stack --> skip it; this state was
 		// already processed (=this state is initial and was reachable from another initial).
-		if (act_state_data.initilized && !act_state_data.on_stack) {
+		if (act_state_data.initialized && !act_state_data.on_stack) {
 			program_stack.pop_back();
 			continue;
 		}
 
 		// node has not been initialized yet --> corresponds to the first call of strongconnect(act_state)
-		if (!act_state_data.initilized) {
+		if (!act_state_data.initialized) {
 			// initialize node
 			act_state_data = TarjanNodeData(act_state, this->delta, index_cnt++);
 			tarjan_stack.push_back(act_state);
@@ -238,19 +238,21 @@ void Automaton::tarjan_scc_discover(
 			++act_state_data.current_successor_it;
 		}
 
-		// iterate through outgoing edges
-		State next_state;
 		// rec_call simulates call of the strongconnect. Since c++ cannot do continue over
 		// multiple loops, we use rec_call to jump to the main loop
 		bool rec_call = false;
 		for (; act_state_data.current_successor_it != std::default_sentinel; ++act_state_data.current_successor_it) {
-			next_state = *act_state_data.current_successor_it;
+			// iterate through outgoing edges
+			const State next_state{*act_state_data.current_successor_it};
 			if (callback.succ_state_discover) { callback.succ_state_discover(act_state, next_state); }
-			if (!node_info[next_state].initilized) { // recursive call
+
+			if (not node_info[next_state].initialized) { // recursive call
 				program_stack.push_back(next_state);
 				rec_call = true;
 				break;
-			} else if (node_info[next_state].on_stack) {
+			}
+
+			if (node_info[next_state].on_stack) {
 				act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
 			}
 		}
@@ -340,12 +342,13 @@ bool Automaton::is_acyclic() const {
 		if (scc.size() > 1) {
 			acyclic = false;
 			return true;
-		} else { // check for self-loops
+		} else { // check for self-loops.
 			if (delta.has_self_loop(scc[0])) {
 				acyclic = false;
 				return true;
 			}
 		}
+
 		return false;
 	};
 

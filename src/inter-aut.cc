@@ -24,22 +24,14 @@ mata::IntermediateAut::Naming get_naming_type(const std::string& key) {
 	const size_t found = key.find('-');
 	MATA_ASSERT(found != std::string::npos);
 
-	if (const std::string& type = key.substr(found + 1, std::string::npos); type == "auto") {
-		return mata::IntermediateAut::Naming::Auto;
-	} else if (type == "enum") {
-		return mata::IntermediateAut::Naming::Enum;
-	} else if (type == "marked") {
-		return mata::IntermediateAut::Naming::Marked;
-	} else if (type == "chars") {
-		return mata::IntermediateAut::Naming::Chars;
-	} else if (type == "utf") {
-		return mata::IntermediateAut::Naming::Utf;
-	}
+	const std::string& type = key.substr(found + 1, std::string::npos);
+	if (type == "auto") { return mata::IntermediateAut::Naming::Auto; }
+	if (type == "enum") { return mata::IntermediateAut::Naming::Enum; }
+	if (type == "marked") { return mata::IntermediateAut::Naming::Marked; }
+	if (type == "chars") { return mata::IntermediateAut::Naming::Chars; }
+	if (type == "utf") { return mata::IntermediateAut::Naming::Utf; }
 
-	MATA_ASSERT(
-		false, "Unknown naming type - a naming type should be always defined correctly otherwise it is "
-			   "impossible to parse automaton correctly"
-	);
+	MATA_ASSERT(false, "Unknown naming type for the automaton");
 	return {};
 }
 

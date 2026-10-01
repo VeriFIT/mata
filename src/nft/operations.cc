@@ -150,7 +150,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 		track_words_begins[track] = level_words[track].begin();
 	}
 
-	const std::vector track_words_ends{[&]() {
+	const std::vector track_words_ends{[&] {
 		std::vector<Word::const_iterator> val(aut.levels.num_of_levels);
 		for (size_t track{0}; track < aut.levels.num_of_levels; ++track) { val[track] = level_words[track].end(); }
 		return val;
@@ -694,8 +694,8 @@ Nft mata::nft::insert_levels(
 	MATA_ASSERT(nft.levels.num_of_levels <= new_levels_mask.size());
 	MATA_ASSERT(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
 
-	const auto num_of_new_levels = static_cast<size_t>(std::ranges::count(new_levels_mask, true));
-	if (!new_level_alphabets.empty() && new_level_alphabets.size() != num_of_new_levels) {
+	if (const auto num_of_new_levels = static_cast<size_t>(std::ranges::count(new_levels_mask, true));
+		!new_level_alphabets.empty() && new_level_alphabets.size() != num_of_new_levels) {
 		throw std::invalid_argument(
 			"insert_levels(): new_level_alphabets must either be empty or have exactly one alphabet per "
 			"newly-inserted level (expected " +

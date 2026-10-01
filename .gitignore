@@ -32,9 +32,6 @@
 *.exe~
 *.out
 *.app
-*.dll
-*.so
-*.dylib
 
 # the build directory
 build/

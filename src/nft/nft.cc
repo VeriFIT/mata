@@ -248,12 +248,12 @@ void Nft::print_to_dot(
 	};
 
 	BoolVector is_state_drawn(num_of_states(), false);
-	output << "digraph finiteAutomaton {" << std::endl << "node [shape=circle];" << std::endl;
+	output << "digraph finiteAutomaton {\n" << "node [shape=circle];\n";
 
 	// Double circle for final states
 	for (const State final_state : final) {
 		is_state_drawn[final_state] = true;
-		output << final_state << " [shape=doublecircle];" << std::endl;
+		output << final_state << " [shape=doublecircle];\n";
 	}
 
 	// Print transitions
@@ -269,7 +269,7 @@ void Nft::print_to_dot(
 		}
 		for (const auto& [target, symbols] : tgt_symbols_map) {
 			if (max_label_length == 0) {
-				output << source << " -> " << target << ";" << std::endl;
+				output << source << " -> " << target << ";\n";
 				continue;
 			}
 
@@ -285,9 +285,9 @@ void Nft::print_to_dot(
 
 			if (is_shortened) {
 				output << source << " -> " << target << " [label=\"" << label << "\", tooltip=\"" << on_hover_label
-					   << "\"];" << std::endl;
+					   << "\"];\n";
 			} else {
-				output << source << " -> " << target << " [label=\"" << label << "\"];" << std::endl;
+				output << source << " -> " << target << " [label=\"" << label << "\"];\n";
 			}
 		}
 	}
@@ -528,7 +528,7 @@ StateSet Nft::post(
 	const EpsilonClosureOpt epsilon_closure_opt,
 	const JumpMode jump_mode
 ) const {
-	MATA_ASSERT(std::all_of(states.begin(), states.end(), [&](State state) { return levels[state] == 0; }));
+	MATA_ASSERT(std::ranges::all_of(states, [&](const State state) { return levels[state] == 0; }));
 
 	// Computes the epsilon closure of a set of states.
 	auto get_epsilon_closure = [&](const StateSet& states) {
@@ -589,7 +589,7 @@ StateSet Nft::post(
 			const bool is_symbol_match =
 				(transition_symbol == symbol || (is_one_of_symbols_dont_care && !is_one_of_symbols_epsilon));
 			if (current_level > symbol_level) {
-				// The transiton is behind us. Just go forward until next zero level state.
+				// The transition is behind us. Just go forward until next zero level state.
 				add_to_result_or_enqueue(symbol_post.targets);
 			} else if (current_level == symbol_level && is_symbol_match) {
 				// We are exactly at the symbol_level and the symbol matches. Proceed.
@@ -641,12 +641,12 @@ StateSet Nft::post(
 	const JumpMode jump_mode,
 	const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config
 ) const {
-	MATA_ASSERT(std::all_of(states.begin(), states.end(), [&](State state) { return levels[state] == 0; }));
+	MATA_ASSERT(std::ranges::all_of(states, [&](const State state) { return levels[state] == 0; }));
 	if (delta.empty()) {
 		// With no transitions the only reachable configurations are the initial states with their reading heads
 		// still at the start, so the input is fully consumed iff every word is empty.
 		const bool all_input_consumed =
-			std::all_of(tape_symbols.begin(), tape_symbols.end(), [](const Word& word) { return word.empty(); });
+			std::ranges::all_of(tape_symbols, [](const Word& word) { return word.empty(); });
 		if (is_early_exit_config) {
 			// Honor the stop condition here too: with no transitions the only reachable configurations are the
 			// initial states with their reading heads still at the start.
@@ -657,7 +657,7 @@ StateSet Nft::post(
 		}
 		if (visited_zero_level_states != nullptr) {
 			// Keep track of visited zero level states.
-			// This is usefull for is_prefix_in_lang function.
+			// This is useful for is_prefix_in_lang function.
 			visited_zero_level_states->insert(states);
 		}
 		// If all tape symbols are empty (all words are epsilon), we can return existing zero level states.
@@ -686,7 +686,7 @@ StateSet Nft::post(
 	// one uint64 and membership is a scalar hash/compare -- no per-config vector work.
 	MATA_ASSERT(num_of_states() <= std::numeric_limits<uint32_t>::max());
 	const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
-		return (static_cast<uint64_t>(positions_id) << 32) | static_cast<uint32_t>(state);
+		return (static_cast<uint64_t>(positions_id) << 32U) | static_cast<uint32_t>(state);
 	};
 	std::unordered_set<uint64_t> visited;
 
@@ -1012,7 +1012,7 @@ State Nft::add_transition_with_length(
 	if (length == 0) { return source; }
 
 	MATA_ASSERT(levels[source] + length <= levels.num_of_levels);
-	const Level target_level = static_cast<Level>((levels[source] + length) % levels.num_of_levels);
+	const auto target_level = static_cast<Level>((levels[source] + length) % levels.num_of_levels);
 	const State target = add_state_with_level(target_level);
 
 	if (length == 1 || jump_mode == JumpMode::RepeatSymbol) {
@@ -1037,15 +1037,13 @@ State Nft::add_transition_with_length(
 void Nft::add_transition_with_same_level_targets(
 	State source, Symbol symbol, const StateSet& targets, JumpMode jump_mode
 ) {
-	MATA_ASSERT(targets.size() > 0);
+	MATA_ASSERT(not targets.empty());
 	MATA_ASSERT(source < num_of_states());
-	MATA_ASSERT(std::all_of(targets.begin(), targets.end(), [&](State target) { return target < num_of_states(); }));
+	MATA_ASSERT(std::ranges::all_of(targets, [&](const State target) { return target < num_of_states(); }));
 
 	const Level target_level = levels[targets.front()];
 	const size_t trans_len = (target_level == 0 ? levels.num_of_levels : target_level) - levels[source];
-	MATA_ASSERT(std::all_of(targets.begin(), targets.end(), [&](State target) {
-		return levels[target] == target_level;
-	}));
+	MATA_ASSERT(std::ranges::all_of(targets, [&](const State target) { return levels[target] == target_level; }));
 	MATA_ASSERT(target_level == 0 || target_level > levels[source]);
 	MATA_ASSERT(trans_len > 0);
 
@@ -1077,7 +1075,7 @@ void Nft::add_transition_with_same_level_targets(
 	MATA_ASSERT(inner_level == levels[source] + trans_len);
 	StatePost& mutable_inner_state_post = delta.mutable_state_post(inner_src);
 	MATA_ASSERT(mutable_inner_state_post.find(symbol) == mutable_inner_state_post.end());
-	mutable_inner_state_post.insert(std::move(SymbolPost(symbol, targets)));
+	mutable_inner_state_post.insert(SymbolPost(symbol, targets));
 }
 
 void Nft::add_transition(
@@ -1158,7 +1156,7 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
 std::shared_ptr<const mata::Alphabet>
 	Nft::resolve_alphabet(const Alphabet* const alphabet, const std::optional<Level> level) const {
 	if (alphabet != nullptr) {
-		return std::shared_ptr<const Alphabet>(alphabet, [](const Alphabet*) {});
+		return {alphabet, [](const Alphabet*) {}};
 	}
 	if (this->alphabets != nullptr) { return this->alphabets->for_level(level); }
 	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
@@ -1387,8 +1385,7 @@ bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<st
 				}
 				return true;
 			}(),
-			"Nft::make_complete: sink_states must have correct levels and exist in the NFT."
-		);
+			"Nft::make_complete: sink_states must have correct levels and exist in the NFT.");
 		return sinks_val;
 	}()};
 

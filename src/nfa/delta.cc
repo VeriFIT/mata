@@ -15,9 +15,7 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
-#include <list>
 #include <queue>
-#include <ranges>
 #include <utility>
 
 using namespace mata::utils;
@@ -157,28 +155,28 @@ void Delta::add(const State source, const Symbol symbol, const StateSet& targets
 void Delta::remove(const State source, const Symbol symbol, const State target) {
 	if (source >= state_posts_.size()) { return; }
 
-	if (StatePost& state_transitions{state_posts_[source]}; state_transitions.empty()) {
+	StatePost& state_transitions{state_posts_[source]};
+	if (state_transitions.empty()) {
 		throw std::invalid_argument(
 			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
 			"] does not exist."
 		);
-	} else if (state_transitions.back().symbol < symbol) {
-		throw std::invalid_argument(
-			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
-			"] does not exist."
-		);
-	} else {
-		if (const auto symbol_transitions{state_transitions.find(symbol)};
-			symbol_transitions == state_transitions.end()) {
-			throw std::invalid_argument(
-				"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " +
-				std::to_string(target) + "] does not exist."
-			);
-		} else {
-			symbol_transitions->erase(target);
-			if (symbol_transitions->empty()) { state_posts_[source].erase(*symbol_transitions); }
-		}
 	}
+	if (state_transitions.back().symbol < symbol) {
+		throw std::invalid_argument(
+			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
+			"] does not exist."
+		);
+	}
+	const auto symbol_transitions{state_transitions.find(symbol)};
+	if (symbol_transitions == state_transitions.end()) {
+		throw std::invalid_argument(
+			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
+			"] does not exist."
+		);
+	}
+	symbol_transitions->erase(target);
+	if (symbol_transitions->empty()) { state_posts_[source].erase(*symbol_transitions); }
 }
 
 bool Delta::contains(const State source, const Symbol symbol, const State target) const { // {{{
@@ -190,7 +188,7 @@ bool Delta::contains(const State source, const Symbol symbol, const State target
 	const auto symbol_transitions{tl.find(SymbolPost{symbol})};
 	if (symbol_transitions == tl.cend()) { return false; }
 
-	return symbol_transitions->targets.find(target) != symbol_transitions->targets.end();
+	return symbol_transitions->targets.contains(target);
 }
 
 bool Delta::contains(const Transition& transition) const {
@@ -291,14 +289,10 @@ Delta::Transitions::const_iterator Delta::Transitions::const_iterator::operator+
 }
 
 bool Delta::Transitions::const_iterator::operator==(const Delta::Transitions::const_iterator& other) const {
-	if (is_end_ && other.is_end_) {
-		return true;
-	} else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
-		return false;
-	} else {
-		return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_ &&
-			   symbol_post_it_ == other.symbol_post_it_;
-	}
+	if (is_end_ && other.is_end_) { return true; }
+	if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) { return false; }
+	return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_ &&
+		   symbol_post_it_ == other.symbol_post_it_;
 }
 
 std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>& target_renumberer) const {
@@ -318,14 +312,14 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 	return copied_state_posts;
 }
 
-StatePost& Delta::mutable_state_post(const State q) {
-	if (q >= state_posts_.size()) {
-		utils::reserve_on_insert(state_posts_, q);
-		const size_t new_size{q + 1};
+StatePost& Delta::mutable_state_post(const State source) {
+	if (source >= state_posts_.size()) {
+		utils::reserve_on_insert(state_posts_, source);
+		const size_t new_size{source + 1};
 		state_posts_.resize(new_size);
 	}
 
-	return state_posts_[q];
+	return state_posts_[source];
 }
 
 Delta mata::nfa::defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming) {
@@ -383,10 +377,10 @@ Delta& Delta::defragment(const BoolVector& is_staying, const std::vector<State>&
 bool Delta::operator==(const Delta& other) const {
 	const Delta::Transitions this_transitions{transitions()};
 	Delta::Transitions::const_iterator this_transitions_it{this_transitions.begin()};
-	const Delta::Transitions::const_iterator this_transitions_end{this_transitions.end()};
+	const Delta::Transitions::const_iterator this_transitions_end{mata::nfa::Delta::Transitions::end()};
 	const Delta::Transitions other_transitions{other.transitions()};
 	Delta::Transitions::const_iterator other_transitions_it{other_transitions.begin()};
-	const Delta::Transitions::const_iterator other_transitions_end{other_transitions.end()};
+	const Delta::Transitions::const_iterator other_transitions_end{mata::nfa::Delta::Transitions::end()};
 	while (this_transitions_it != this_transitions_end) {
 		if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
 			return false;
@@ -477,11 +471,8 @@ StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(in
 }
 
 bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_iterator& other) const {
-	if (is_end_ && other.is_end_) {
-		return true;
-	} else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
-		return false;
-	}
+	if (is_end_ && other.is_end_) { return true; }
+	if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) { return false; }
 	return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_ &&
 		   symbol_post_end_ == other.symbol_post_end_;
 }
@@ -711,9 +702,7 @@ mata::BoolVector Delta::get_used_symbols_chv() const {
 Symbol Delta::get_max_symbol() const {
 	Symbol max{0};
 	for (const StatePost& state_post : state_posts_) {
-		for (const SymbolPost& symbol_post : state_post) {
-			if (symbol_post.symbol > max) { max = symbol_post.symbol; }
-		}
+		for (const SymbolPost& symbol_post : state_post) { max = std::max(symbol_post.symbol, max); }
 	}
 	return max;
 }

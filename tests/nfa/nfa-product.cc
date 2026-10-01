@@ -10,7 +10,6 @@
 
 using namespace mata::nfa;
 using namespace mata::utils;
-using namespace mata::parser;
 
 // Some common automata {{{
 

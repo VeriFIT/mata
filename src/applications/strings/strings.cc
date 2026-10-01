@@ -165,12 +165,12 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 	return ret;
 }
 
-bool mata::applications::strings::is_lang_eps(const Nfa& aut) {
-	Nfa tr_aut = Nfa{aut}.trim();
-	if (tr_aut.initial.size() == 0) { return false; }
+bool mata::applications::strings::is_lang_eps(const Nfa& nfa) {
+	const Nfa tr_aut = Nfa{nfa}.trim();
+	if (tr_aut.initial.empty()) { return false; }
 	for (const auto& ini : tr_aut.initial) {
 		if (!tr_aut.final[ini]) { return false; }
-		if (tr_aut.delta[ini].size() > 0) { return false; }
+		if (!tr_aut.delta[ini].empty()) { return false; }
 	}
 	return true;
 }

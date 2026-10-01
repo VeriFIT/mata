@@ -72,8 +72,8 @@
 //  fragile_revert).
 // #define _STATIC_STRUCTURES_
 
-#include <algorithm>
 #include <cassert>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <set>
@@ -337,6 +337,7 @@ class Nfa : public Automaton {
 	 * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
 	 * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
 	 * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
 	 * @return automaton in DOT format
 	 */
 	std::string print_to_dot(
@@ -353,6 +354,7 @@ class Nfa : public Automaton {
 	 * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
 	 * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
 	 * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+	 * @param alphabet[in] If specified, translates the symbols to their symbol names in the @p alphabet.
 	 */
 	void print_to_dot(
 		std::ostream& output,
@@ -368,6 +370,7 @@ class Nfa : public Automaton {
 	 * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
 	 * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
 	 * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+	 * @param alphabet[in] If specified, translates the symbols to their symbol names in the @p alphabet.
 	 */
 	void print_to_dot(
 		const std::string& filename,
@@ -570,7 +573,7 @@ class Nfa : public Automaton {
 	 * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
 	 */
 	bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const {
-		return is_in_lang(Run{word, {}}, use_epsilon, match_prefix);
+		return is_in_lang(Run{.word = word, .path = {}}, use_epsilon, match_prefix);
 	}
 
 	/**
@@ -598,7 +601,7 @@ class Nfa : public Automaton {
 	 *         Note: The returned set is empty if the word cannot be read.
 	 */
 	StateSet read_word(const Word& word, const bool use_epsilon = false) const {
-		return read_word(Run{word, {}}, use_epsilon);
+		return read_word(Run{.word = word, .path = {}}, use_epsilon);
 	}
 
 	/**
@@ -621,7 +624,7 @@ class Nfa : public Automaton {
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
-	std::optional<State> read_word_det(const Word& word) const { return read_word_det(Run{word, {}}); }
+	std::optional<State> read_word_det(const Word& word) const { return read_word_det(Run{.word = word, .path = {}}); }
 
 	/**
 	 * @brief Check whether a prefix of a run is in the language of an automaton.
@@ -644,7 +647,7 @@ class Nfa : public Automaton {
 	 * @return True if the prefix of the word is in the language of the automaton, false otherwise.
 	 */
 	bool is_in_lang_prefix(const Word& word, const bool use_epsilon = false) const {
-		return is_in_lang_prefix(Run{word, {}}, use_epsilon);
+		return is_in_lang_prefix(Run{.word = word, .path = {}}, use_epsilon);
 	}
 
 	std::pair<Run, bool> get_word_for_path(const Run& run) const;
@@ -700,7 +703,7 @@ class Nfa : public Automaton {
 	 * the returned word.
 	 * @return std::optional<Word> Some shortest word from the language. If the language is empty, returns std::nullopt.
 	 */
-	std::optional<mata::Word> get_shortest_word(const std::optional<Symbol> first_epsilon = EPSILON) const;
+	std::optional<mata::Word> get_shortest_word(std::optional<Symbol> first_epsilon = EPSILON) const;
 
 	/**
 	 * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
@@ -827,7 +830,7 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 Nfa union_nondet(const Nfa& lhs, const Nfa& rhs);
 
 /**
- * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
+ * @brief Compute union of two complete deterministic NFAs. Preserves determinism.
  *
  * The union is computed by product construction with OR condition on the final states.
  * @param lhs First complete deterministic automaton.

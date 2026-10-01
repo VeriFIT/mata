@@ -13,7 +13,6 @@ using namespace mata;
 using namespace mata::nfa::algorithms;
 using namespace mata::nfa;
 using namespace mata::utils;
-using namespace mata::parser;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 

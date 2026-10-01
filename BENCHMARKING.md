@@ -135,7 +135,7 @@ To run the benchmarks, we use our own benchmarking tool `pycobench`, from the ma
 
 We suggest using the benchmarks from `VeriFIT/nfa-bench` (added as a submodule to the main repository `VeriFIT/mata` inside `./tests-integration/` directory). The description of the benchmarks can be found in the repository README, and additional information in our [paper from TACAS'24 introducing Mata](https://doi.org/10.1007/978-3-031-57249-4_7).
 
-You can find the exact instances and operations used in the paper in the mata-comparison repository. There, we use a simple automata program format `.emp` (encoding automata operations) that is interpreted by each of the measured libraries on the automata instances passed (`.mata` files) as interpreter arguments. To find the exact instances used in the paper, see, e.g.,:
+You can find the exact instances and operations used in the paper in the mata-comparison repository. There, we use a simple automata program format `.emp` (encoding automata operations) that is interpreted by each of the measured libraries on the automata instances passed (`.mata` files) as interpreter arguments. To find the exact instances used in the paper, see, e.g.:
 
 - `/programs/email-filter.emp` and `/programs/automata-inclusion.emp`
   - `email-filter.emp` loads the automata in the order they were passed as the command line arguments, performs an intersection on the first 4, and checks inclusion of the resulting intersection automaton in the last loaded automaton from the command line.
@@ -221,7 +221,7 @@ For additional details, see tests-integration README and our replication package
 
 ## Profiling
 
-We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using MacOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
+We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using macOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
 
 ### Heap and stack space profiling
 
@@ -241,7 +241,7 @@ We provide the following profiling infrastructure. The following instructions as
 
 ### Callgraph
 
-- Install `valgrind` and optionally a visualizer for its output files, e.g., `kcachegrind` for Linux, `qachegrind` for MacOS.
+- Install `valgrind` and optionally a visualizer for its output files, e.g., `kcachegrind` for Linux, `qachegrind` for macOS.
 - Run `valgrind`'s `callgrind` tool:
 
   ```sh

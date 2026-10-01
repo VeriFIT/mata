@@ -9,7 +9,6 @@
 #ifndef MATA_AUTOMATON_HH_
 #define MATA_AUTOMATON_HH_
 
-#include <cstddef>
 #include <functional>
 #include <optional>
 #include <vector>

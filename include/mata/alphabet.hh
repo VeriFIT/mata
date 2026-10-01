@@ -4,7 +4,6 @@
 #ifndef MATA_ALPHABET_HH
 #define MATA_ALPHABET_HH
 
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>

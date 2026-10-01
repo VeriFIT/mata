@@ -4,7 +4,7 @@
  * This is a separation of the implementation from the interface defined in @c mata::nfa.
  * @note In @c mata::nfa interface, there are particular dispatch functions calling these function according to
  *  parameters provided by a user. E.g., we can call the following function:
- * `is_universal(aut, alph, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based
+ * `is_universal(nfa, alphabet, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based
  * algorithm.
  */
 

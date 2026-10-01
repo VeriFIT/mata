@@ -59,7 +59,7 @@ class RegexParser {
 		);
 		if (parsed_regex == nullptr) {
 			if (options.log_errors()) { LOG(ERROR) << "Error parsing '" << regex_string << "': " << status.Text(); }
-			exit(EXIT_FAILURE);
+			throw std::invalid_argument("Error parsing '" + regex_string + "': " + status.Text());
 		}
 		return parsed_regex;
 	}
@@ -297,15 +297,15 @@ class RegexParser {
 		const std::vector<bool> default_false_vec(static_cast<size_t>(prog->size()), false);
 		this->state_cache = {
 			// state_mapping holds states that map to each state (index) due to epsilon transitions
-			{},
+			.state_mapping = {},
 			// is_final_state holds true for states that are final, false for the rest
-			default_false_vec,
+			.is_final_state = default_false_vec,
 			// is_state_nop_or_cap holds true for states that have type nop or cap, false for the rest
-			default_false_vec,
+			.is_state_nop_or_cap = default_false_vec,
 			// is_last holds true for states that are last, false for the rest
-			default_false_vec,
+			.is_last = default_false_vec,
 			// has_state_incoming_edge holds true for states with an incoming edge, false for the rest
-			default_false_vec,
+			.has_state_incoming_edge = default_false_vec,
 		};
 		const auto start_state = static_cast<size_t>(prog->start());
 		const auto prog_size = static_cast<size_t>(prog->size());
@@ -384,11 +384,12 @@ class RegexParser {
 		const std::vector<bool> default_false_vec(static_cast<size_t>(prog->size()), false);
 		const std::vector<bool> default_true_vec(static_cast<size_t>(prog->size()), true);
 		this->state_cache = {
-			{}, // stateMapping all states are mapped to itself when using epsilon transitions
-			default_false_vec, // is_final_state holds true for states that are final, false for the rest
-			default_false_vec, // is_state_nop_or_cap not used when using epsilon transition
-			default_false_vec, // is_last holds true for states that are last, false for the rest
-			default_true_vec, // has_state_incoming_edge holds true all states
+			.state_mapping = {}, // stateMapping all states are mapped to itself when using epsilon transitions
+			.is_final_state =
+				default_false_vec, // is_final_state holds true for states that are final, false for the rest
+			.is_state_nop_or_cap = default_false_vec, // is_state_nop_or_cap not used when using epsilon transition
+			.is_last = default_false_vec, // is_last holds true for states that are last, false for the rest
+			.has_state_incoming_edge = default_true_vec, // has_state_incoming_edge holds true all states
 		};
 		const auto prog_size = static_cast<size_t>(prog->size());
 

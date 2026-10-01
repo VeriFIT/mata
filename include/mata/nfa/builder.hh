@@ -3,6 +3,7 @@
 #ifndef LIBMATA_BUILDER_HH
 #define LIBMATA_BUILDER_HH
 
+#include "mata/parser/inter-aut.hh"
 #include "nfa.hh"
 
 #include <filesystem>
@@ -118,7 +119,7 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
  * details and options.
  *
  * At https://github.com/google/re2/wiki/Syntax, you can find the syntax
- * of @p regex with following futher limitations:
+ * of @p regex with following further limitations:
  *  1) The allowed characters are the first 256 characters of Unicode,
  *     i.e., Latin1 encoding (ASCII + 128 more characters). For the
  *     full Unicode, check mata/parser/re2praser.hh.
