@@ -1,5 +1,18 @@
 @PACKAGE_INIT@
 
+include(CMakeFindDependencyMacro)
+# `find_dependency` forwards QUIET/REQUIRED from the caller's `find_package(mata ...)` and reports a
+# missing dependency through `mata_FOUND` instead of aborting the consumer's configure.
+find_dependency(Threads)
+
 # Include the exported targets
 include("${CMAKE_CURRENT_LIST_DIR}/mataTargets.cmake")
-find_package(Threads REQUIRED)
+
+# The exported targets are namespaced (`mata::libmata`). Keep `target_link_libraries(... libmata)`
+# working for consumers written against the older, unnamespaced export.
+if(NOT TARGET libmata)
+	add_library(libmata INTERFACE IMPORTED)
+	set_target_properties(libmata PROPERTIES INTERFACE_LINK_LIBRARIES mata::libmata)
+endif()
+
+check_required_components(mata)
