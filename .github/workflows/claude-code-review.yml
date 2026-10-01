@@ -1,0 +1,79 @@
+name: Claude Code Review
+
+# Reviews pull requests with Claude Code, using the Anthropic-compatible LLM service of CERIT-SC
+# (https://docs.cerit.io/en/docs/ai-as-a-service/llm-integration) instead of the Anthropic API.
+# Requires the `CERIT_API_KEY` repository secret.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: claude-code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Secrets are not available to workflows triggered by pull requests from forks, so only PRs from branches of this
+    #  repository are reviewed. Drafts are skipped until they are marked as ready for review.
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Review the pull request
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_BASE_URL: https://llm.ai.e-infra.cz/
+          ANTHROPIC_DEFAULT_OPUS_MODEL: thinker
+          ANTHROPIC_DEFAULT_SONNET_MODEL: agentic
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: mini
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+        with:
+          # The CERIT-SC gateway (LiteLLM) accepts the key in the `x-api-key` header that this input sets.
+          anthropic_api_key: ${{ secrets.CERIT_API_KEY }}
+          # Use the workflow token instead of the Claude GitHub App, which is not installed for this repository.
+          github_token: ${{ github.token }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            You are reviewing a pull request to Mata, a C++20 library for finite automata and transducers (NFAs, NFTs)
+            with Cython bindings for Python in `bindings/python`. Mata is used in performance-critical settings, such as
+            the Z3-Noodler string solver.
+
+            Review the changes in this pull request (`gh pr diff`), reading the surrounding code as needed. Focus on, in
+            this order:
+            1. Correctness: wrong results, undefined behaviour, broken invariants (e.g., sorted contents of `OrdVector`
+               and `StatePost`, handling of `EPSILON` and `DONT_CARE` symbols, levels of NFTs), memory and lifetime
+               bugs, and exception safety.
+            2. Performance on hot paths: asymptotic blow-ups, needless copies of automata or `Delta`, and avoidable
+               allocations in inner loops.
+            3. API consistency: changes to the public headers in `include/mata` should be reflected in the Python
+               bindings and in the documentation comments.
+            4. Tests: missing tests for new behaviour or fixed bugs (`tests/` uses Catch2, `bindings/python/tests`
+               uses pytest).
+            Follow the conventions in `CONTRIBUTING.md`. Do not comment on formatting, which clang-format handles, or
+            on style nits. Only report issues you are confident about.
+
+            Before commenting, read the existing discussion and do not repeat points that were already raised:
+            - `gh pr view ${{ github.event.pull_request.number }} --comments`
+            - `gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments`
+
+            Report your findings as follows:
+            - Use inline comments (`mcp__github_inline_comment__create_inline_comment`) for specific, actionable issues
+              on the changed lines. Say why it is a problem and suggest a fix.
+            - Post one summary comment with the following command, which replaces your previous summary after later
+              pushes: `gh pr comment ${{ github.event.pull_request.number }} --edit-last --create-if-none --body "..."`.
+              Keep it short: an overall assessment and a list of the main issues. If you found nothing significant,
+              say so in one sentence.
+          claude_args: >-
+            --model agentic
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*)"
