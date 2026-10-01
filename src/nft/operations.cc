@@ -549,12 +549,6 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		return true;
 	};
 
-	// Determines the transition length between two states based on their levels.
-	auto get_trans_len = [&](const State src, const State tgt) {
-		return (nft.levels[src] == 0) ? (nft.levels.num_of_levels - nft.levels[src])
-									  : (nft.levels[tgt] - nft.levels[src]);
-	};
-
 	if (nft.levels.num_of_levels == levels_to_project.size()) {
 		throw std::invalid_argument("Cannot project out all levels of the NFT.");
 		// TODO: Returning an empty NFT with 0 levels as a boolean automaton, equivalent to a bool flag?
@@ -637,10 +631,6 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 				for (const State tgt_state : move.targets) {
 					const bool is_loop_on_target = cls_state == tgt_state;
 					if (is_projected_along_path(cls_state, tgt_state)) { continue; }
-					if (is_projected_out(cls_state) && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) {
-						continue;
-					}
-
 					if (is_projected_out(cls_state)) {
 						// If there are remaining levels between cls_state and tgt_state
 						// on a transition with a length greater than 1, then these levels must be preserved.
@@ -887,41 +877,6 @@ Nft mata::nft::fragile_revert(const Nft& aut) {
 	// size of the "used alphabet", i.e. max symbol+1 or 0
 	const Symbol alphasize = (symbols.empty()) ? 0 : (symbols.back() + 1);
 
-#ifdef _STATIC_STRUCTURES_
-	// STATIC DATA STRUCTURES:
-	//  Not sure that it works ideally, whether the space for the inner vectors stays there.
-	static std::vector<std::vector<State>> sources;
-	static std::vector<std::vector<State>> targets;
-	static std::vector<State> e_sources;
-	static std::vector<State> e_targets;
-	if (alphasize > sources.size()) {
-		sources.resize(alphasize);
-		targets.resize(alphasize);
-	}
-
-	e_sources.clear();
-	e_targets.clear();
-
-	// WHEN ONLY MAX SYMBOL IS COMPUTED
-	//  for (int i = 0;i<alphasize;i++) {
-	//      for (int i = 0;i<alphasize;i++) {
-	//          if (!sources[i].empty())
-	//          {
-	//              sources[i].resize(0);
-	//              targets[i].resize(0);
-	//          }
-	//      }
-	//  }
-
-	// WHEN ALL SYMBOLS ARE COMPUTED
-	for (Symbol symbol : symbols) {
-		if (!sources[symbol].empty()) {
-			sources[symbol].clear();
-			targets[symbol].clear();
-		}
-	}
-#else
-	// NORMAL, NON-STATIC DATA STRUCTURES:
 	// All transition of delta are to be copied here, into two arrays of transition sources and targets indexed by the
 	// transition symbol.
 	// There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in
@@ -931,7 +886,6 @@ Nft mata::nft::fragile_revert(const Nft& aut) {
 	std::vector<std::vector<State>> targets(alphasize);
 	std::vector<State> e_sources;
 	std::vector<State> e_targets;
-#endif
 
 	// Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
 	// Targets and sources of e-transitions go to the special place.
@@ -1013,45 +967,9 @@ Nft mata::nft::simple_revert(const Nft& aut) {
 	return result;
 }
 
-// not so great, can be removed
-Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
-	const size_t num_of_states{aut.num_of_states()};
-	Nft result(num_of_states);
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-	result.levels = revert_levels_(aut.levels, num_of_states);
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : aut.delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				StatePost& post = result.delta.mutable_state_post(target_state);
-				// auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
-				if (auto move = post.find(SymbolPost(transition.symbol)); move == post.end()) {
-					// post.push_back(Move(transition.symbol,sourceState));
-					post.insert(SymbolPost(transition.symbol, source_state));
-				} else {
-					move->push_back(source_state);
-				}
-				// move->insert(sourceState);
-			}
-		}
-	}
-
-	// sorting the targets
-	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
-		// Post & post = result.delta.get_mutable_post(q);
-		// utils::sort_and_rmdupl(post);
-		for (SymbolPost& m : result.delta.mutable_state_post(q)) { sort_and_rmdupl(m.targets); }
-	}
-
-	return result;
-}
-
 Nft nft::revert(const Nft& aut) {
 	return simple_revert(aut);
 	// return fragile_revert(aut);
-	// return somewhat_simple_revert(aut);
 }
 
 Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {

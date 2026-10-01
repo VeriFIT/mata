@@ -1865,10 +1865,9 @@ TEST_CASE("mata::nft::revert()") { // {{{
 		CHECK(result.levels[q1] == 0);
 		CHECK(result.levels[inner_level_1] == 2);
 		CHECK(result.levels[inner_level_2] == 1);
-		// All three revert variants agree on the levels.
+		// Both remaining revert variants agree on the levels.
 		CHECK(simple_revert(nft).levels == result.levels);
 		CHECK(fragile_revert(nft).levels == result.levels);
-		CHECK(somewhat_simple_revert(nft).levels == result.levels);
 	}
 
 	SECTION("minimize_brzozowski does not crash on a multi-level NFT - issue #763") {

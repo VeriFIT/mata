@@ -541,3 +541,23 @@ TEST_CASE("mata::nfa types should not be polymorphic - #746") {
 	// StateSet should be same size as std::vector<State>
 	CHECK(sizeof(StateSet) == sizeof(std::vector<State>));
 }
+
+TEST_CASE("mata::nfa::Delta::get_used_symbols()") {
+	Delta delta{};
+	CHECK(delta.get_used_symbols().empty());
+
+	delta.add(0, 3, 1);
+	delta.add(1, 1, 2);
+	delta.add(2, 3, 0);
+	CHECK(delta.get_used_symbols() == mata::utils::OrdVector<Symbol>{1, 3});
+
+	// `EPSILON` is the maximal symbol: a bit-vector indexed by the symbol would have to allocate the whole symbol
+	//  range, and `EPSILON + 1` wraps around to 0 in 32-bit arithmetic.
+	delta.add(0, EPSILON, 2);
+	CHECK(delta.get_used_symbols() == mata::utils::OrdVector<Symbol>{1, 3, EPSILON});
+
+	// Repeated calls must not accumulate the symbols of previous calls.
+	const Delta other{delta};
+	CHECK(other.get_used_symbols() == mata::utils::OrdVector<Symbol>{1, 3, EPSILON});
+	CHECK(Delta{}.get_used_symbols().empty());
+}
