@@ -714,12 +714,6 @@ class Delta {
 	 */
 	utils::OrdVector<Symbol> get_used_symbols() const;
 
-	utils::OrdVector<Symbol> get_used_symbols_vec() const;
-	std::set<Symbol> get_used_symbols_set() const;
-	utils::SparseSet<Symbol> get_used_symbols_sps() const;
-	std::vector<bool> get_used_symbols_bv() const;
-	BoolVector get_used_symbols_chv() const;
-
 	/**
 	 * @brief Get the maximum non-epsilon used symbol.
 	 */

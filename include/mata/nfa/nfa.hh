@@ -68,10 +68,6 @@
 #ifndef MATA_NFA_HH_
 #define MATA_NFA_HH_
 
-// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
-//  fragile_revert).
-// #define _STATIC_STRUCTURES_
-
 #include <cassert>
 #include <functional>
 #include <memory>
@@ -1121,12 +1117,6 @@ Nfa fragile_revert(const Nfa& aut);
 /// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
 /// Much affected by pre-reserving vectors.
 Nfa simple_revert(const Nfa& aut);
-
-/// Reverting the automaton by a modification of the simple algorithm.
-/// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all,
-///  except on dense automata, where it is almost as slow as simple_revert.
-/// Candidate for removal.
-Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
