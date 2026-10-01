@@ -38,12 +38,5 @@ target_include_directories (libmata
 		$<TARGET_PROPERTY:re2,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
-# Add common compile warnings.
-target_compile_options (libmata PRIVATE "$<$<CONFIG:DEBUG>:${MATA_COMMON_WARNINGS}>")
-target_compile_options (libmata PRIVATE "$<$<CONFIG:RELEASE>:${MATA_COMMON_WARNINGS}>")
-
-# Optionally, also add Clang-specific warnings.
-if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") # Using regular Clang or AppleClang.
-	target_compile_options (libmata PRIVATE "$<$<CONFIG:DEBUG>:${MATA_CLANG_WARNINGS}>")
-	target_compile_options (libmata PRIVATE "$<$<CONFIG:RELEASE>:${MATA_CLANG_WARNINGS}>")
-endif ()
+# Add Mata's compile warnings.
+mata_add_warnings (libmata)

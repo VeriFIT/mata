@@ -27,7 +27,6 @@ constexpr Symbol c{2};
 constexpr Symbol d{3};
 constexpr Symbol x{10};
 constexpr Symbol y{11};
-constexpr Symbol z{12};
 
 // A 2-level NFT accepting exactly the relation { ("ab", "c") }.
 // Path: 0 --a(lvl0)--> 2 --c(lvl1)--> 3 --b(lvl0)--> 4 --eps(lvl1)--> 1(final).

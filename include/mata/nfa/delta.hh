@@ -206,16 +206,11 @@ class StatePost : utils::OrdVector<SymbolPost> {
 		 * @brief construct moves iterating over a range @p symbol_post_it (including) to @p symbol_post_end
 		 * (excluding).
 		 *
-		 * @param[in] state_post State post to iterate over.
 		 * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
 		 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel; is not iterated
 		 * over).
 		 */
-		Moves(
-			const StatePost& state_post,
-			StatePost::const_iterator symbol_post_it,
-			StatePost::const_iterator symbol_post_end
-		);
+		Moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
 		Moves(Moves&&) = default;
 		Moves(Moves&) = default;
 		Moves& operator=(Moves&& other) noexcept;
@@ -227,7 +222,6 @@ class StatePost : utils::OrdVector<SymbolPost> {
 		static const_iterator end();
 
 	  private:
-		const StatePost* state_post_{nullptr};
 		StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
 		/// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
 		///  end()).
@@ -237,7 +231,7 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	/**
 	 * Iterator over all moves (over all labels) in @c StatePost represented as @c Move instances.
 	 */
-	Moves moves() const { return {*this, this->cbegin(), this->cend()}; }
+	Moves moves() const { return {this->cbegin(), this->cend()}; }
 	/**
 	 * Iterator over specified moves in @c StatePost represented as @c Move instances.
 	 *
@@ -354,7 +348,6 @@ class SuccessorCursor {
  */
 class StatePost::Moves::const_iterator {
   private:
-	const StatePost* state_post_{nullptr};
 	StatePost::const_iterator symbol_post_it_{};
 	StateSet::const_iterator target_it_{};
 	StatePost::const_iterator symbol_post_end_{};
@@ -374,10 +367,8 @@ class StatePost::Moves::const_iterator {
 	const_iterator() : is_end_{true} {}
 	/// Const all moves iterator.
 	const_iterator(const StatePost& state_post);
-	/// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
-	const_iterator(
-		const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end
-	);
+	/// Construct iterator from @p symbol_post_it (including) to @p symbol_post_end (excluding).
+	const_iterator(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
 	const_iterator(const const_iterator& other) noexcept = default;
 	const_iterator(const_iterator&&) = default;
 

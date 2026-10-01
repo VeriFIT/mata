@@ -412,12 +412,9 @@ StatePost::const_iterator StatePost::first_epsilon_it(const Symbol first_epsilon
 }
 
 StatePost::Moves::const_iterator::const_iterator(
-	const StatePost& state_post,
-	const StatePost::const_iterator symbol_post_it,
-	const StatePost::const_iterator symbol_post_end
+	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
 )
-	: state_post_{&state_post},
-	  symbol_post_it_{symbol_post_it},
+	: symbol_post_it_{symbol_post_it},
 	  symbol_post_end_{symbol_post_end} {
 	if (symbol_post_it_ == symbol_post_end_) {
 		is_end_ = true;
@@ -430,8 +427,7 @@ StatePost::Moves::const_iterator::const_iterator(
 }
 
 StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
-	: state_post_{&state_post},
-	  symbol_post_it_{state_post.begin()},
+	: symbol_post_it_{state_post.begin()},
 	  symbol_post_end_{state_post.end()} {
 	if (symbol_post_it_ == symbol_post_end_) {
 		is_end_ = true;
@@ -485,7 +481,6 @@ size_t StatePost::num_of_moves() const {
 
 StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept {
 	if (&other != this) {
-		state_post_ = other.state_post_;
 		symbol_post_it_ = other.symbol_post_it_;
 		symbol_post_end_ = other.symbol_post_end_;
 	}
@@ -494,7 +489,6 @@ StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept
 
 StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
 	if (&other != this) {
-		state_post_ = other.state_post_;
 		symbol_post_it_ = other.symbol_post_it_;
 		symbol_post_end_ = other.symbol_post_end_;
 	}
@@ -504,21 +498,19 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
 StatePost::Moves StatePost::moves(
 	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
 ) const {
-	return {*this, symbol_post_it, symbol_post_end};
+	return {symbol_post_it, symbol_post_end};
 }
 
 StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
-	return {*this, first_epsilon_it(first_epsilon), cend()};
+	return {first_epsilon_it(first_epsilon), cend()};
 }
 
 StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
 	if (last_symbol == EPSILON) { throw std::runtime_error("Using default epsilon as a last symbol to iterate over."); }
-	return {*this, cbegin(), first_epsilon_it(last_symbol + 1)};
+	return {cbegin(), first_epsilon_it(last_symbol + 1)};
 }
 
-StatePost::Moves::const_iterator StatePost::Moves::begin() const {
-	return {*state_post_, symbol_post_it_, symbol_post_end_};
-}
+StatePost::Moves::const_iterator StatePost::Moves::begin() const { return {symbol_post_it_, symbol_post_end_}; }
 
 StatePost::Moves::const_iterator StatePost::Moves::end() { return const_iterator{}; }
 
@@ -527,13 +519,8 @@ Delta::Transitions Delta::transitions() const { return Transitions{this}; }
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{*delta_}; }
 Delta::Transitions::const_iterator Delta::Transitions::end() { return const_iterator{}; }
 
-StatePost::Moves::Moves(
-	const StatePost& state_post,
-	const StatePost::const_iterator symbol_post_it,
-	const StatePost::const_iterator symbol_post_end
-)
-	: state_post_{&state_post},
-	  symbol_post_it_{symbol_post_it},
+StatePost::Moves::Moves(const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end)
+	: symbol_post_it_{symbol_post_it},
 	  symbol_post_end_{symbol_post_end} {}
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {

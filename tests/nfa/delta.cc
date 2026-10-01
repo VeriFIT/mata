@@ -272,12 +272,12 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
 
 		// Create custom moves iterator.
 		state_post = nfa.delta[0];
-		moves = {state_post, state_post.cbegin(), state_post.cbegin() + 2};
+		moves = {state_post.cbegin(), state_post.cbegin() + 2};
 		iterated_moves = {moves.begin(), moves.end()};
 		CHECK(iterated_moves == std::vector<Move>{{1, 1}, {2, 1}});
 
 		state_post = nfa.delta[20];
-		moves = {state_post, state_post.cbegin(), state_post.cend()};
+		moves = {state_post.cbegin(), state_post.cend()};
 		iterated_moves = {moves.begin(), moves.end()};
 		CHECK(iterated_moves.empty());
 	}
