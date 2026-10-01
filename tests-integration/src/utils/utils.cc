@@ -47,9 +47,9 @@ int load_automata(
 	TIME_END(parsing);
 	try {
 		if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
-			// This is not foolproof and assumes, that everything is BITVECTOR
+			// This branch is taken whenever mintermization is off *or* the alphabet is not Bitvector, so the
+			//  alphabet type cannot be asserted here: an explicit-alphabet input is expected to land here.
 			for (mata::IntermediateAut& inter_aut : inter_auts) {
-				assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector);
 				auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
 			}
 		} else {

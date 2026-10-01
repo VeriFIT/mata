@@ -1,6 +1,6 @@
 // TODO: Modify when copying to target `/mata/tests-integration/src/utils/`.
-#include "../utils/config.hh"
 #include "../utils/utils.hh"
+#include "utils/config.hh"
 
 #include "mata/nfa/nfa.hh"
 

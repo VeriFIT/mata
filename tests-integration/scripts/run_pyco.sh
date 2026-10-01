@@ -7,10 +7,10 @@
 # The result of the script is in form of `;` delimited .csv file for set of outputs of benchmarks.
 
 usage() { {
-        [ $# -gt 0 ] && echo "error: $1"
         echo "usage: ./run_pyco.sh [OPTION]... [BENCHMARK]..."
         echo "options:"
-        echo "  -c|--config <conf.yaml>     configuration file in yaml format [default=jobs/bench-cade-23.yaml]"
+        echo "  -c|--config <conf.yaml>     configuration file in yaml format"
+        echo "                              [default=<MATA_BUILD_DIR>/tests-integration/jobs/bench-cade-23.yaml]"
         echo "  -t|--timeout <int>         timeout for each benchmark in seconds [default=60s]"
         echo "  -m|--methods                will measure only selected tools"
         echo "  -j|--jobs                   number of paralel jobs"
@@ -27,13 +27,18 @@ die() {
 # behaviour), it deletes temporary files, runs no warmups, and measures once with timeout 60s.
 # In our experience, 60s timeout is enough.
 timeout=60
-config=../jobs/bench-cade-23.yaml
 benchmarks=()
 jobs=6
 methods=
+# `methods` is only the tag embedded in the result file name; the actual arguments are passed as an array.
+methods_args=()
 suffix=""
-basedir=$(realpath $(dirname "$0"))
+basedir=$(realpath "$(dirname "$0")")
 rootdir=$(realpath "$basedir/..")
+# The `.yaml` job files are generated into the build directory, so that each build directory refers
+# to the binaries it has built. Override `MATA_BUILD_DIR` for an out-of-tree build directory.
+build_dir=${MATA_BUILD_DIR:-"$rootdir/../build"}
+config=$build_dir/tests-integration/jobs/bench-cade-23.yaml
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -54,9 +59,10 @@ while [ $# -gt 0 ]; do
             shift 2;;
         -m|--methods)
             methods="-m $2"
+            methods_args=( -m "$2" )
             shift 2;;
         *)
-            benchmarks+=( $1 )
+            benchmarks+=( "$1" )
             shift 1;;
     esac
 done
@@ -105,7 +111,7 @@ mkdir -p "$result_dir"
 [ ${#benchmarks[@]} -gt 0 ] 2>/dev/null || die "error: you must specify some *.input file with benchmarks"
 
 start_time=$SECONDS
-for benchmark in ${benchmarks[@]}
+for benchmark in "${benchmarks[@]}"
 do
     # Script takes .input files with list of benchmarks
     benchmark_file=$(escape_extension "$benchmark" "input")
@@ -119,17 +125,17 @@ do
     intermediate=()
     echo "[!] Performing benchmarks"
     sub_result_file="$result_file.output"
-    intermediate+=( $sub_result_file )
-    "$rootdir/"pycobench $methods -j "$jobs" -c "$config" -t "$timeout" -o "$sub_result_file" < "$benchmark_file"
+    intermediate+=( "$sub_result_file" )
+    "$rootdir/"pycobench "${methods_args[@]}" -j "$jobs" -c "$config" -t "$timeout" -o "$sub_result_file" < "$benchmark_file"
 
     number_of_params=$(($(head -1 < "$benchmark_file"  | tr -cd ';' | wc -c) + 1))
 
-    echo "[$i] Benchmark measured"
-    "$basedir"/process_pyco.sh -o "$result_file.csv" -p $number_of_params ${intermediate[@]}
-    echo "[$i] Benchmark processed"
+    echo "[!] Benchmark measured"
+    "$basedir"/process_pyco.sh -o "$result_file.csv" -p "$number_of_params" "${intermediate[@]}"
+    echo "[!] Benchmark processed"
 
     # All intermediate files are deleted
-    rm ${intermediate[@]}
+    rm "${intermediate[@]}"
 done
 
 python3 "$basedir"/compare_profiles.py "$result_file.csv"
