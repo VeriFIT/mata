@@ -31,13 +31,6 @@ foreach (SOURCE ${SOURCES})
 	set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_PATH})
 	target_link_libraries (${TARGET} libmata)
 
-	# Add common compile warnings.
-	target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:DEBUG>:${MATA_COMMON_WARNINGS}>")
-	target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:RELEASE>:${MATA_COMMON_WARNINGS}>")
-
-	# Optionally, also add Clang-specific warnings.
-	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") # Using regular Clang or AppleClang.
-		target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:DEBUG>:${MATA_CLANG_WARNINGS}>")
-		target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:RELEASE>:${MATA_CLANG_WARNINGS}>")
-	endif ()
+	# Add Mata's compile warnings.
+	mata_add_warnings (${TARGET})
 endforeach ()

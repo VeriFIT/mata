@@ -1,8 +1,14 @@
-name: Setup environment
-description: Setup environment for running workflows.
+name: Compile Mata
+description: Build the Mata library, unit tests, benchmarks and examples, keeping the diagnostics in `build_log`.
 runs:
   using: "composite"
   steps:
-    - name: Compile base version of the static and shared libraries
+    - name: Compile the static and shared libraries, tests, benchmarks and examples
       shell: sh
-      run: make release > build_log
+      # `2>&1` is load-bearing: GCC and Clang print diagnostics to stderr, so plain `> build_log`
+      #  stored a log without a single warning in it and the warning comparison below always found
+      #  nothing to report, no matter how many warnings the build produced.
+      run: make release > build_log 2>&1 || { cat build_log; exit 1; }
+    - name: Print the build log
+      shell: sh
+      run: cat build_log

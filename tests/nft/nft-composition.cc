@@ -563,7 +563,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 		expected_full.delta.add(3, 'c', 4);
 		expected_full.delta.add(4, 'd', 5);
 		expected_full.delta.add(5, 'f', 6);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		Nft lhs(5, {0}, {4}, Levels({0, 1, 0, 1, 0}));
 		lhs.delta.add(0, 'a', 1);
@@ -626,7 +626,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 		expected_full.delta.add(1, 'b', 2);
 		expected_full.delta.add(2, 'c', 3);
 		expected_full.delta.add(3, 'd', 4);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		Nft lhs(5, {0}, {4}, Levels({0, 1, 0, 1, 0}));
 		lhs.delta.add(0, 'a', 1);
@@ -731,7 +731,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'd', 4);
 			expected_full.delta.add(4, 'e', 5);
 			expected_full.delta.add(5, 'f', 6);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -761,7 +761,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'd', 4);
 			expected_full.delta.add(4, 'f', 5);
 			expected_full.delta.add(5, 'e', 6);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -822,7 +822,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(10, 'j', 12);
 			expected_full.delta.add(11, 'y', 12);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -862,7 +862,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(4, 'y', 13);
 			expected_full.delta.add(13, 'b', 14);
 			expected_full.delta.add(14, 'z', 12);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -924,7 +924,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 		expected_full.delta.add(2, 'a', 14);
 		expected_full.delta.add(14, 'b', 13);
 		expected_full.delta.add(13, 'z', 12);
-		Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump).trim();
@@ -1009,7 +1009,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(2, 'w', 13);
 			expected_full.delta.add(13, 'g', 14);
 			expected_full.delta.add(14, 'x', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1048,7 +1048,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'y', 11);
 			expected_full.delta.add(3, 'x', 12);
 			expected_full.delta.add(12, 'w', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1109,7 +1109,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'x', 12);
 			expected_full.delta.add(12, 'w', 0);
 			expected_full.delta.add(3, 'z', 11);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1147,7 +1147,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'y', 11);
 			expected_full.delta.add(3, 'w', 12);
 			expected_full.delta.add(12, 'x', 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1208,7 +1208,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'b', 11);
 			expected_full.delta.add(11, 'z', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1246,7 +1246,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'b', 11);
 			expected_full.delta.add(11, 'z', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1308,7 +1308,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 		expected_full.delta.add(2, 'c', 12);
 		expected_full.delta.add(12, 'g', 11);
 		expected_full.delta.add(11, 'y', 10);
-		Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump).trim();
@@ -1391,7 +1391,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, 'y', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1429,7 +1429,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, 'y', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 2, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1602,7 +1602,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(2, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 12);
 			expected_full.delta.add(12, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1637,7 +1637,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1690,7 +1690,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1725,7 +1725,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1776,7 +1776,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 		expected_full.delta.add(8, 'e', 9);
 		expected_full.delta.add(9, 'f', 10);
 		expected_full.delta.add(4, 'c', 0);
-		Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump);
@@ -1852,7 +1852,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(2, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 12);
 			expected_full.delta.add(12, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1887,7 +1887,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'h', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1940,7 +1940,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1975,7 +1975,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'h', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2027,7 +2027,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2062,7 +2062,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2114,7 +2114,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'g', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2150,7 +2150,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'g', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2202,7 +2202,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'f', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2237,7 +2237,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'f', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2289,7 +2289,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'h', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {4}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 4, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2324,7 +2324,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {4}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 4, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 2, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2395,7 +2395,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 			expected_full.delta.add(25, 'a', 26);
 			expected_full.delta.add(26, 'b', 27);
 			expected_full.delta.add(27, EPSILON, 10);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::RepeatSymbol);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::RepeatSymbol);
 
 			Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump);
 
@@ -2453,7 +2453,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 			expected_full.delta.add(25, EPSILON, 26);
 			expected_full.delta.add(26, 'a', 27);
 			expected_full.delta.add(27, 'b', 10);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
 			CHECK(result_full.final.size() == expected_full.final.size());
@@ -2504,7 +2504,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 		expected_full.delta.add(11, EPSILON, 12);
 		expected_full.delta.add(12, EPSILON, 13);
 		expected_full.delta.add(13, EPSILON, 3);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
@@ -2598,7 +2598,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 		expected_full.delta.add(21, EPSILON, 22);
 		expected_full.delta.add(22, EPSILON, 23);
 		expected_full.delta.add(23, EPSILON, 6);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
@@ -2762,7 +2762,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
 		expected_full.delta.add(60, 'y', 61);
 		expected_full.delta.add(61, 'r', 62);
 		expected_full.delta.add(62, 'b', 63);
-		Nft expected_proj = project_out(expected_full, {6}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 6, JumpMode::NoJump);
 
 		Nft result_full = compose(lhs, rhs, 3, 3, false, JumpMode::NoJump);
 		CHECK(result_full.final.size() == expected_full.final.size());
@@ -2868,7 +2868,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
 		expected_full.delta.add(73, 'y', 74);
 		expected_full.delta.add(74, 'b', 75);
 		expected_full.delta.add(75, 'r', 76);
-		Nft expected_proj = project_out(expected_full, {6}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 6, JumpMode::NoJump);
 
 		Nft result_full = compose(rhs, lhs, 3, 3, false, JumpMode::NoJump);
 		CHECK(result_full.final.size() == expected_full.final.size());

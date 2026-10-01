@@ -227,6 +227,9 @@ jobs:
   #       run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
   #     - name: LOOK HERE for Comparison of operations accepting two automata as parameters
   #       run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
+  # Fails only on warnings this pull request introduces. Warnings the repository already has stay
+  #  the maintainers' business, and `-Werror` is never turned on here: it lives behind the
+  #  `*-werror` make targets for local use.
   compare-versions:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -241,28 +244,46 @@ jobs:
         with:
           path: ./build_log
           key: build-log-warnings-new-${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
-      - run: mv build_log new_warnings
+      - run: mv build_log new_build_log
       - name: Restore base cache
         uses: actions/cache/restore@v5
         with:
           path: ./build_log
           key: build-log-warnings-base-${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
-      - run: mv build_log base_warnings
-      - name: Print base warnings
-        run: cat base_warnings
-      - name: Print new warnings
-        run: cat new_warnings
-      - name: Create comparison diff file
+      - run: mv build_log base_build_log
+      # A plain `diff` of the two logs reports every warning whose line number moved, and misses a
+      #  new warning that happens to land on the line an old one left. Compare sets of
+      #  `<file>: warning: <message>` instead: line and column numbers are dropped, the checkout
+      #  path is stripped so the two runners' absolute paths cannot differ, warnings from the
+      #  vendored `3rdparty/` sources are not this repository's to fix, and parallel builds may
+      #  order the logs differently, so both sides are sorted.
+      - name: Collect the warnings of both versions
         run: |
-          diff base_warnings new_warnings | grep "^> *" | sed "s/^> //g" > comparison
-          cat comparison
-      - name: Count number of warnings
+          collect() {
+            grep -E 'warning:' "$1" \
+              | sed -E 's/:[0-9]+:[0-9]+:/:/' \
+              | sed -E "s#^$PWD/##; s#^.*/mata/mata/##" \
+              | grep -v '^3rdparty/' \
+              | sort -u
+          }
+          collect base_build_log > base_warnings
+          collect new_build_log > new_warnings
+          echo "::group::Warnings on the base branch ($(wc -l < base_warnings))"
+          cat base_warnings
+          echo "::endgroup::"
+          echo "::group::Warnings on this branch ($(wc -l < new_warnings))"
+          cat new_warnings
+          echo "::endgroup::"
+      - name: Report warnings introduced by this pull request
         run: |
-          number_of_warnings=`cat comparison | grep "warning:" | wc -l`
-          echo $number_of_warnings
-          if [ $number_of_warnings -gt 0 ]; then
+          comm -13 base_warnings new_warnings > introduced_warnings
+          number_of_warnings=$(wc -l < introduced_warnings)
+          if [ "$number_of_warnings" -gt 0 ]; then
+            echo "This pull request introduces $number_of_warnings new warning(s):"
+            cat introduced_warnings
             exit 1
           fi
+          echo "This pull request introduces no new warnings."
   format-check:
     runs-on: ubuntu-latest
     permissions:

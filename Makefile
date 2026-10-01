@@ -16,7 +16,7 @@ debug:
 
 # Builds everything (library, unit tests, integration tests, examples) in debug mode with warnings turned into errors
 debug-werror:
-	cmake -B $(BUILD_DIR) -S . -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
+	cmake -B $(BUILD_DIR) -S . -DMATA_WERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
 	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds only library in debug mode
@@ -29,9 +29,9 @@ release:
 	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
-# Builds everything (library, unit tests, integration tests, examples) in debreleaseug mode with warnings turned into errors
+# Builds everything (library, unit tests, integration tests, examples) in release mode with warnings turned into errors
 release-werror:
-	cmake -B $(BUILD_DIR) -S . -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release
+	cmake -B $(BUILD_DIR) -S . -DMATA_WERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds only library in release mode

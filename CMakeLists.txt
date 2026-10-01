@@ -94,7 +94,6 @@ set (MATA_COMMON_WARNINGS
 	-Wold-style-cast
 	-Wunused-parameter
 	-Wsign-compare
-	-Wunused-parameter
 	-Wpedantic
 	-Wconversion
 	-Wsign-conversion
@@ -111,8 +110,18 @@ set (MATA_CLANG_WARNINGS
 # Set whether to treat warnings as errors.
 if (MATA_WERROR)
 	message ("-- Treating warnings in mata as errors")
-	set (MATA_COMMON_WARNINGS "${MATA_COMMON_WARNINGS}" -Werror)
+	list (APPEND MATA_COMMON_WARNINGS -Werror)
 endif ()
+
+# Attach Mata's warning flags to a target in every build configuration.
+# Do not guard these with `$<CONFIG:DEBUG>`/`$<CONFIG:RELEASE>`: that silently drops the warnings
+#  (and `-Werror`) from `RelWithDebInfo`, `MinSizeRel` and from builds with no configuration set.
+function (mata_add_warnings TARGET)
+	target_compile_options (${TARGET} PRIVATE
+		${MATA_COMMON_WARNINGS}
+		"$<$<CXX_COMPILER_ID:Clang,AppleClang>:${MATA_CLANG_WARNINGS}>"
+	)
+endfunction ()
 
 # if DEBUG, also test coverage
 if (MATA_ENABLE_COVERAGE)
