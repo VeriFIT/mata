@@ -1251,29 +1251,29 @@ std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {
 	for (size_t i = 1; i < run.path.size(); ++i) {
 		const State state_next = run.path[i];
 		bool found = false;
-		if (!delta.empty()) {
-			for (const auto& symbol_map : delta[state_curr]) {
-				for (const State target : symbol_map.targets) {
-					const Level level_next{levels[target]};
-					if (target == state_next) {
-						if (level_curr == 0 && level_next == 0) {
-							for (Level level_loop{0}; level_loop < levels.num_of_levels; ++level_loop) {
-								word.word.push_back(symbol_map.symbol);
-							}
-							found = true;
-							break;
-						}
-						for (Level level_loop = level_curr; level_loop != level_next;
-							 level_loop = levels.next_level_after(level_loop)) {
+		// `delta[state_curr]` already yields nothing for an empty or unallocated state post, while
+		//  `Delta::empty()` walks state posts until it finds a nonempty one.
+		for (const auto& symbol_map : delta[state_curr]) {
+			for (const State target : symbol_map.targets) {
+				const Level level_next{levels[target]};
+				if (target == state_next) {
+					if (level_curr == 0 && level_next == 0) {
+						for (Level level_loop{0}; level_loop < levels.num_of_levels; ++level_loop) {
 							word.word.push_back(symbol_map.symbol);
 						}
-						word.word.push_back(symbol_map.symbol);
 						found = true;
 						break;
 					}
+					for (Level level_loop = level_curr; level_loop != level_next;
+						 level_loop = levels.next_level_after(level_loop)) {
+						word.word.push_back(symbol_map.symbol);
+					}
+					word.word.push_back(symbol_map.symbol);
+					found = true;
+					break;
 				}
-				if (found) { break; }
 			}
+			if (found) { break; }
 		}
 		if (!found) { return {{}, false}; }
 

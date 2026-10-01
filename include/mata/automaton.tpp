@@ -66,8 +66,8 @@ template <typename Self> bool Automaton::is_lang_empty(this const Self& self, nf
 			return false;
 		}
 
-		if (self.delta.empty()) { continue; }
-
+		// No `delta.empty()` guard: `for_each_successor()` of an empty or unallocated state post already
+		//  does nothing, while `Delta::empty()` walks state posts until it finds a nonempty one.
 		self.delta.for_each_successor(state, [&](const nfa::State target) {
 			bool inserted;
 			std::tie(std::ignore, inserted) = processed.insert(target);

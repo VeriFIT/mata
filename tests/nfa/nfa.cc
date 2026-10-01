@@ -425,6 +425,44 @@ TEST_CASE("mata::nfa::is_lang_empty_cex()") {
 	}
 }
 
+// `is_lang_empty()`, `get_word_for_path()` and `is_complete()` used to guard their inner loop with
+//  `delta.empty()`, which walks state posts until it finds a nonempty one. The guard was redundant:
+//  a state post that is empty, or not allocated at all, already yields nothing. Pin the answers on
+//  deltas whose low-numbered states carry no transitions.
+TEST_CASE("mata::nfa::Nfa queries on a delta with an empty prefix") {
+	SECTION("transitions only between the highest states") {
+		Nfa aut{10};
+		aut.initial = {7};
+		aut.final = {9};
+		aut.delta.add(7, 'a', 8);
+		aut.delta.add(8, 'b', 9);
+
+		Run cex;
+		CHECK(!aut.is_lang_empty(&cex));
+		CHECK(cex.word == Word{'a', 'b'});
+
+		const auto [word, found]{aut.get_word_for_path(Run{{}, {7, 8, 9}})};
+		CHECK(found);
+		CHECK(word.word == Word{'a', 'b'});
+		CHECK(!aut.get_word_for_path(Run{{}, {7, 9}}).second);
+
+		CHECK(!aut.is_complete(OrdVector<Symbol>{'a', 'b'}));
+	}
+
+	SECTION("no state post holds a transition") {
+		Nfa aut{5};
+		aut.initial = {0};
+		aut.final = {0};
+
+		Run cex;
+		CHECK(!aut.is_lang_empty(&cex));
+		CHECK(cex.word.empty());
+		CHECK(aut.get_word_for_path(Run{{}, {0}}).second);
+		CHECK(!aut.get_word_for_path(Run{{}, {0, 1}}).second);
+		CHECK(!aut.is_complete(OrdVector<Symbol>{'a'}));
+	}
+}
+
 TEST_CASE("mata::nfa::determinize()") {
 	Nfa aut(3);
 	Nfa result;
