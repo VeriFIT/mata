@@ -24,11 +24,8 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFA + "\"");
 	}
 
-	bool remove_state_map = false;
-	if (nullptr == state_map) {
-		state_map = new NameStateMap();
-		remove_state_map = true;
-	}
+	NameStateMap tmp_state_map;
+	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
@@ -39,11 +36,6 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		} else {
 			return (*state_map)[str];
 		}
-	};
-
-	// a lambda for cleanup
-	auto clean_up = [&]() {
-		if (remove_state_map) { delete state_map; }
 	};
 
 	auto it = parsec.dict.find("Initial");
@@ -58,9 +50,6 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 
 	for (const auto& body_line : parsec.body) {
 		if (body_line.size() != 3) {
-			// clean up
-			clean_up();
-
 			if (body_line.size() == 2) {
 				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
 			} else {
@@ -72,9 +61,6 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 			get_state_name(body_line[0]), alphabet->translate_symb(body_line[1]), get_state_name(body_line[2])
 		);
 	}
-
-	// do the dishes and take out garbage
-	clean_up();
 
 	return aut;
 }
