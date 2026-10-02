@@ -418,7 +418,7 @@ inline std::string to_string(const std::string& str) { return str; }
 template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 	std::string result = "[";
 	bool first = true;
-	for (auto elem : vec) {
+	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(elem);
@@ -432,7 +432,7 @@ template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 	std::string result = "[";
 	bool first = true;
-	for (auto elem : vec) {
+	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(elem);
@@ -448,7 +448,7 @@ template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : unmap) {
+	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
@@ -462,7 +462,7 @@ template <class A, class B> std::string to_string(const std::unordered_map<A, B>
 template <class A, class B> std::string to_string(const std::map<A, B>& mp) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : mp) {
+	for (const auto& key_val_pair : mp) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
@@ -476,7 +476,7 @@ template <class A, class B> std::string to_string(const std::map<A, B>& mp) { //
 template <class A, class B> std::string to_string(const std::unordered_multimap<A, B>& unmap) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : unmap) {
+	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
@@ -490,7 +490,7 @@ template <class A, class B> std::string to_string(const std::unordered_multimap<
 template <class A> std::string to_string(const std::set<A>& st) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto elem : st) {
+	for (const auto& elem : st) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(elem);
