@@ -246,7 +246,7 @@ Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
 }
 
 std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) const {
-	if (symbols_.find(symbol) == symbols_.end()) {
+	if (!symbols_.contains(symbol)) {
 		throw std::runtime_error("Symbol '" + std::to_string(symbol) + "' is out of range of enumeration.");
 	}
 	return std::to_string(symbol);
@@ -259,7 +259,7 @@ Symbol mata::EnumAlphabet::translate_symb(const std::string& str) {
 	if (stream.fail() || !stream.eof()) {
 		throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
 	}
-	if (symbols_.find(symbol) == symbols_.end()) {
+	if (!symbols_.contains(symbol)) {
 		throw std::runtime_error("Unknown symbol'" + str + "' to be translated to Symbol.");
 	}
 
@@ -275,9 +275,7 @@ mata::Word mata::EnumAlphabet::translate_word(const mata::WordName& word_name) c
 	for (const auto& str_symbol : word_name) {
 		stream << str_symbol;
 		stream >> symbol;
-		if (symbols_.find(symbol) == symbols_.end()) {
-			throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'");
-		}
+		if (!symbols_.contains(symbol)) { throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'"); }
 		word.push_back(symbol);
 	}
 	return word;

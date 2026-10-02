@@ -668,7 +668,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	Level lvl_sub{0};
 	for (Level lvl_old{0}; lvl_old < seq_start_idx; lvl_old++) {
 		new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
-		if (levels_to_project.find(lvl_old) != levels_to_project.end()) { lvl_sub++; }
+		if (levels_to_project.contains(lvl_old)) { lvl_sub++; }
 	}
 
 	// The closure of a projected state: the states reachable from it over transitions all of whose levels are
