@@ -365,14 +365,26 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 Nfa& Nfa::unify_initial(const bool force_new_state) {
 	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
 
+	const bool unified_state_is_final{initial.intersects_with(final)};
+	// Allocates the delta for the new state, hence 'mutable_state_post()' below cannot reallocate the delta.
 	const State new_initial_state{add_state()};
+
+	// Merge the state posts of all the original initial states symbol by symbol. The synchronized iterator yields
+	//  the symbols in an increasing order, therefore the new state post stays sorted when appending to it.
+	SynchronizedExistentialSymbolPostIterator sync_iterator{};
+	sync_iterator.reserve(initial.size());
 	for (const State orig_initial_state : initial) {
-		for (const StatePost& state_post{delta.state_post(orig_initial_state)}; const auto& symbol_post : state_post) {
-			for (const State target : symbol_post.targets) { delta.add(new_initial_state, symbol_post.symbol, target); }
-		}
-		if (final[orig_initial_state]) { final.insert(new_initial_state); }
+		const StatePost& state_post{delta.state_post(orig_initial_state)};
+		sync_iterator.push_back(state_post.cbegin(), state_post.cend());
+	}
+	StatePost& new_state_post{delta.mutable_state_post(new_initial_state)};
+	while (sync_iterator.advance()) {
+		new_state_post.push_back(
+			SymbolPost{sync_iterator.get_current_minimum()->symbol, sync_iterator.unify_targets()}
+		);
 	}
 
+	if (unified_state_is_final) { final.insert(new_initial_state); }
 	initial.clear();
 	initial.insert(new_initial_state);
 	return *this;
@@ -381,15 +393,21 @@ Nfa& Nfa::unify_initial(const bool force_new_state) {
 Nfa& Nfa::unify_final(const bool force_new_state) {
 	if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
 
+	const bool unified_state_is_initial{final.intersects_with(initial)};
+	// Allocates the delta for the new state, hence 'mutable_state_post()' below cannot reallocate the delta.
 	const State new_final_state{add_state()};
-	for (const auto& orig_final_state : final) {
-		for (const auto transitions_to{delta.get_transitions_to(orig_final_state)};
-			 const auto& transition : transitions_to) {
-			delta.add(transition.source, transition.symbol, new_final_state);
+
+	// A single pass over the delta: redirect every transition leading to a final state to the new final state, too.
+	for (State source{0}; source < delta.num_of_states(); ++source) {
+		for (SymbolPost& symbol_post : delta.mutable_state_post(source)) {
+			if (std::ranges::any_of(symbol_post.targets, [&](const State target) { return final[target]; })) {
+				// The new state is greater than any state in the delta, hence the targets remain sorted.
+				symbol_post.targets.push_back(new_final_state);
+			}
 		}
-		if (initial[orig_final_state]) { initial.insert(new_final_state); }
 	}
 
+	if (unified_state_is_initial) { initial.insert(new_final_state); }
 	final.clear();
 	final.insert(new_final_state);
 	return *this;

@@ -2,6 +2,7 @@
  * @brief Tests for Nondeterministic Finite Automata (NFAs).
  */
 
+#include <random>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -4113,6 +4114,153 @@ TEST_CASE("mata::nfa::Nfa::unify_(initial/final)()") {
 		CHECK(nfa.delta.contains(3, 'a', 0));
 		CHECK(nfa.delta.contains(4, 'b', 1));
 		CHECK(nfa.delta.contains(1, 'c', 1));
+	}
+
+	SECTION("Initial states sharing symbols") {
+		nfa.initial.insert(0);
+		nfa.initial.insert(1);
+		nfa.initial.insert(2);
+		nfa.delta.add(0, 'b', 5);
+		nfa.delta.add(0, 'a', 4);
+		nfa.delta.add(1, 'a', 3);
+		nfa.delta.add(1, 'a', 4);
+		nfa.delta.add(2, 'c', 2);
+		nfa.unify_initial();
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.initial.size() == 1);
+		CHECK(nfa.initial[10]);
+		const StatePost& new_state_post{nfa.delta[10]};
+		REQUIRE(new_state_post.size() == 3);
+		std::vector<Symbol> new_state_symbols{};
+		for (const SymbolPost& symbol_post : new_state_post) { new_state_symbols.push_back(symbol_post.symbol); }
+		CHECK(new_state_symbols == std::vector<Symbol>{'a', 'b', 'c'});
+		CHECK(new_state_post.get_successors('a') == StateSet{3, 4});
+		CHECK(new_state_post.get_successors('b') == StateSet{5});
+		CHECK(new_state_post.get_successors('c') == StateSet{2});
+	}
+
+	SECTION("Forced new initial state with a single initial state") {
+		nfa.initial.insert(1);
+		nfa.delta.add(1, 'a', 2);
+		nfa.unify_initial(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.initial.size() == 1);
+		CHECK(nfa.initial[10]);
+		CHECK(nfa.delta[10].get_successors('a') == StateSet{2});
+		CHECK(nfa.delta[1].get_successors('a') == StateSet{2});
+	}
+
+	SECTION("Forced new initial state without any initial state") {
+		nfa.delta.add(1, 'a', 2);
+		nfa.unify_initial(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.initial.size() == 1);
+		CHECK(nfa.initial[10]);
+		CHECK(nfa.delta[10].empty());
+	}
+
+	SECTION("Multiple final targets in a single symbol post") {
+		nfa.final.insert(0);
+		nfa.final.insert(1);
+		nfa.delta.add(3, 'a', 0);
+		nfa.delta.add(3, 'a', 1);
+		nfa.delta.add(3, 'a', 2);
+		nfa.delta.add(3, 'b', 2);
+		nfa.unify_final();
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[3].get_successors('a') == StateSet{0, 1, 2, 10});
+		CHECK(nfa.delta[3].get_successors('b') == StateSet{2});
+	}
+
+	SECTION("Final state with a self-loop") {
+		nfa.final.insert(1);
+		nfa.final.insert(2);
+		nfa.delta.add(1, 'a', 1);
+		nfa.unify_final();
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[1].get_successors('a') == StateSet{1, 10});
+		CHECK(nfa.delta[10].empty());
+	}
+
+	SECTION("Forced new final state with a single final state") {
+		nfa.final.insert(1);
+		nfa.delta.add(0, 'a', 1);
+		nfa.unify_final(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[0].get_successors('a') == StateSet{1, 10});
+	}
+
+	SECTION("Forced new final state without any final state") {
+		nfa.delta.add(0, 'a', 1);
+		nfa.unify_final(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[0].get_successors('a') == StateSet{1});
+	}
+
+	SECTION("Random automata unified as by the naive one-state-at-a-time construction") {
+		// The naive constructions below define the semantics of the unification: every transition leading to an
+		//  original final state leads to the new final state as well, and the new initial state takes over the moves
+		//  of all the original initial states.
+		auto naive_unify_initial = [](Nfa aut) {
+			const State new_initial_state{aut.add_state()};
+			for (const State orig_initial_state : aut.initial) {
+				for (const auto& [symbol, target] : aut.delta.state_post(orig_initial_state).moves()) {
+					aut.delta.add(new_initial_state, symbol, target);
+				}
+				if (aut.final[orig_initial_state]) { aut.final.insert(new_initial_state); }
+			}
+			aut.initial.clear();
+			aut.initial.insert(new_initial_state);
+			return aut;
+		};
+		auto naive_unify_final = [](Nfa aut) {
+			const State new_final_state{aut.add_state()};
+			for (const State orig_final_state : aut.final) {
+				for (const Transition& transition : aut.delta.get_transitions_to(orig_final_state)) {
+					aut.delta.add(transition.source, transition.symbol, new_final_state);
+				}
+				if (aut.initial[orig_final_state]) { aut.initial.insert(new_final_state); }
+			}
+			aut.final.clear();
+			aut.final.insert(new_final_state);
+			return aut;
+		};
+
+		std::mt19937 random_generator{42};
+		constexpr size_t num_of_automata{100};
+		constexpr size_t num_of_states{12};
+		constexpr Symbol num_of_symbols{4};
+		std::uniform_int_distribution<State> state_distribution{0, num_of_states - 1};
+		std::uniform_int_distribution<Symbol> symbol_distribution{0, num_of_symbols - 1};
+		std::bernoulli_distribution coin_flip{0.4};
+		for (size_t automaton_idx{0}; automaton_idx < num_of_automata; ++automaton_idx) {
+			Nfa random_nfa{num_of_states};
+			for (State source{0}; source < num_of_states; ++source) {
+				if (coin_flip(random_generator)) { random_nfa.initial.insert(source); }
+				if (coin_flip(random_generator)) { random_nfa.final.insert(source); }
+				for (size_t move_idx{0}; move_idx < 5; ++move_idx) {
+					random_nfa.delta.add(
+						source, symbol_distribution(random_generator), state_distribution(random_generator)
+					);
+				}
+			}
+
+			Nfa unified_initial{random_nfa};
+			unified_initial.unify_initial(true);
+			CHECK(unified_initial.is_identical(naive_unify_initial(random_nfa)));
+
+			Nfa unified_final{random_nfa};
+			unified_final.unify_final(true);
+			CHECK(unified_final.is_identical(naive_unify_final(random_nfa)));
+		}
 	}
 
 	SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
