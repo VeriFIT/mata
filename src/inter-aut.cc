@@ -614,7 +614,14 @@ bool mata::IntermediateAut::is_graph_conjunction_of_negations(const mata::Formul
 }
 
 std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut) {
-	const std::string type = inter_aut.is_nfa() ? "NFA" : (inter_aut.is_afa() ? "AFA" : "Unknown");
+	std::string type;
+	if (inter_aut.is_nfa()) {
+		type = "NFA";
+	} else if (inter_aut.is_afa()) {
+		type = "AFA";
+	} else {
+		type = "Unknown";
+	}
 	os << "Intermediate automaton type " << type << '\n';
 	os << "Naming - state: " << static_cast<size_t>(inter_aut.state_naming)
 	   << " symbol: " << static_cast<size_t>(inter_aut.symbol_naming)

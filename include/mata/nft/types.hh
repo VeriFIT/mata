@@ -123,7 +123,11 @@ class Levels : std::vector<Level> {
 		 * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the
 		 * next lowest level of the next state.
 		 */
-		static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
+		static bool Next(const Level lhs, const Level rhs) {
+			if (lhs == 0) { return false; }
+			if (rhs == 0) { return true; }
+			return lhs < rhs;
+		}
 	};
 
 	/**
