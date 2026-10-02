@@ -192,6 +192,8 @@ void Nft::print_to_dot(
 			case '\\':
 				return "\\\\";
 			default:
+				// Not a braced initializer list: '{1, c}' would build the two-character string "\x01c".
+				// NOLINTNEXTLINE(modernize-return-braced-init-list)
 				return std::string(1, static_cast<char>(symbol));
 		}
 	};

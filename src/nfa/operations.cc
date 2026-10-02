@@ -1933,7 +1933,7 @@ std::shared_ptr<const mata::Alphabet> mata::nfa::Nfa::resolve_alphabet(const Alp
 		// Non-owning: `alphabet` is borrowed from the caller (e.g., a stack-local object), so wrap it with a
 		//  no-op deleter instead of an owning shared_ptr, which would erroneously delete it once this shared_ptr's
 		//  refcount reaches zero.
-		return std::shared_ptr<const Alphabet>(alphabet, [](const Alphabet*) {});
+		return {alphabet, [](const Alphabet*) {}};
 	}
 	if (this->alphabet != nullptr) { return this->alphabet; }
 	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
