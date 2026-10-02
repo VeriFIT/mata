@@ -433,6 +433,7 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<IntermediateAut>& auts) {
 	std::vector<const IntermediateAut*> auts_pointers;
+	auts_pointers.reserve(auts.size());
 	for (const IntermediateAut& aut : auts) { auts_pointers.push_back(&aut); }
 	return mintermize(auts_pointers);
 }
