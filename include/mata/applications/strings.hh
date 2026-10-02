@@ -664,14 +664,14 @@ enum class ReplaceMode : std::uint8_t {
 /**
  * Create identity transducer over the @p alphabet with @p num_of_levels levels.
  */
-Nft create_identity(const Alphabet* const alphabet, size_t num_of_levels = 2);
+Nft create_identity(const Alphabet* alphabet, size_t num_of_levels = 2);
 
 /**
  * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
  *  symbol @p from_symbol replaced with @to_symbol.
  */
 Nft create_identity_with_single_symbol_replace(
-	const Alphabet* const alphabet, Symbol from_symbol, Symbol replacement, ReplaceMode replace_mode = ReplaceMode::All
+	const Alphabet* alphabet, Symbol from_symbol, Symbol replacement, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -679,7 +679,7 @@ Nft create_identity_with_single_symbol_replace(
  *  symbol @p from_symbol replaced with word @p replacement.
  */
 Nft create_identity_with_single_symbol_replace(
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	Symbol from_symbol,
 	const Word& replacement,
 	ReplaceMode replace_mode = ReplaceMode::All
@@ -699,7 +699,7 @@ Nft create_identity_with_single_symbol_replace(
 Nft replace_reluctant_regex(
 	const std::string& regex,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All,
 	Symbol begin_marker = BEGIN_MARKER
 );
@@ -719,7 +719,7 @@ Nft replace_reluctant_regex(
 Nft replace_reluctant_regex(
 	nfa::Nfa aut,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All,
 	Symbol begin_marker = BEGIN_MARKER
 );
@@ -736,7 +736,7 @@ Nft replace_reluctant_regex(
 Nft replace_reluctant_literal(
 	const Word& literal,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All,
 	Symbol end_marker = END_MARKER
 );
@@ -750,7 +750,7 @@ Nft replace_reluctant_literal(
  * @return The reluctant leftmost replace NFT.
  */
 Nft replace_reluctant_single_symbol(
-	Symbol from_symbol, Symbol replacement, const Alphabet* const alphabet, ReplaceMode replace_mode = ReplaceMode::All
+	Symbol from_symbol, Symbol replacement, const Alphabet* alphabet, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -764,7 +764,7 @@ Nft replace_reluctant_single_symbol(
 Nft replace_reluctant_single_symbol(
 	Symbol from_symbol,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All
 );
 
@@ -788,7 +788,7 @@ class ReluctantReplace {
 	static Nft replace_regex(
 		nfa::Nfa aut,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All,
 		Symbol begin_marker = BEGIN_MARKER
 	);
@@ -804,7 +804,7 @@ class ReluctantReplace {
 	static Nft replace_literal(
 		const Word& literal,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All,
 		Symbol end_marker = END_MARKER
 	);
@@ -819,7 +819,7 @@ class ReluctantReplace {
 	static Nft replace_symbol(
 		Symbol from_symbol,
 		Symbol replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All
 	);
 	/**
@@ -833,7 +833,7 @@ class ReluctantReplace {
 	static Nft replace_symbol(
 		Symbol from_symbol,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All
 	);
 
@@ -842,23 +842,23 @@ class ReluctantReplace {
 
 	static Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
 
-	static nfa::Nfa generic_marker_dfa(const std::string& regex, const Alphabet* const alphabet);
+	static nfa::Nfa generic_marker_dfa(const std::string& regex, const Alphabet* alphabet);
 
-	static nfa::Nfa generic_marker_dfa(nfa::Nfa regex, const Alphabet* const alphabet);
+	static nfa::Nfa generic_marker_dfa(nfa::Nfa regex, const Alphabet* alphabet);
 
-	static nfa::Nfa begin_marker_nfa(const std::string& regex, const Alphabet* const alphabet);
+	static nfa::Nfa begin_marker_nfa(const std::string& regex, const Alphabet* alphabet);
 
-	static nfa::Nfa begin_marker_nfa(nfa::Nfa regex, const Alphabet* const alphabet);
+	static nfa::Nfa begin_marker_nfa(nfa::Nfa regex, const Alphabet* alphabet);
 
 	static Nft begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker);
 
 	static Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 
-	static nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, const Alphabet* const alphabet);
+	static nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, const Alphabet* alphabet);
 
 	static Nft reluctant_leftmost_nft(
 		const std::string& regex,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		Symbol begin_marker,
 		const Word& replacement,
 		ReplaceMode replace_mode
@@ -866,7 +866,7 @@ class ReluctantReplace {
 
 	static Nft reluctant_leftmost_nft(
 		nfa::Nfa nfa,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		Symbol begin_marker,
 		const Word& replacement,
 		ReplaceMode replace_mode
@@ -875,7 +875,7 @@ class ReluctantReplace {
 	static Nft replace_literal_nft(
 		const Word& literal,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		Symbol end_marker,
 		ReplaceMode replace_mode = ReplaceMode::All
 	);
