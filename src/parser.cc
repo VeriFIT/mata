@@ -17,6 +17,8 @@ using mata::parser::ParsedSection;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
+// Argument must stay unevaluated; mirrors DEBUG_PRINT_LN() which forwards to debug machinery.
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define PARSER_DEBUG_PRINT_LN(x)                                                                                       \
 	{}
 

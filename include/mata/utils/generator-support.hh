@@ -7,9 +7,12 @@
 ///  standard libraries -- notably Apple's system libc++ shipped with Xcode on macOS -- do not implement it at all,
 ///  regardless of `-std=c++23`, so code that depends on it must be guarded by this macro instead of assuming C++23
 ///  support implies it.
+// A macro, not a 'constexpr' constant: it guards '#if' blocks around the declarations that need 'std::generator'.
 #ifdef __cpp_lib_generator
+	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_HAS_GENERATOR_SUPPORT 1
 #else
+	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_HAS_GENERATOR_SUPPORT 0
 #endif
 
