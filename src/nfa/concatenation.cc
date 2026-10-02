@@ -278,7 +278,7 @@ Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power) {
 	// Then square `base` for the next bit.
 	while (power > 0) {
 		// If current least-significant bit is set, append `base` to `result`.
-		if (power & 1u) { result.concatenate(base); }
+		if (power & 1U) { result.concatenate(base); }
 
 		// Shift to the next bit.
 		power >>= 1;
