@@ -159,6 +159,7 @@ class Levels : std::vector<Level> {
 	Levels(Levels&& other) = default;
 	Levels& operator=(const Levels& other) = default;
 	Levels& operator=(Levels&& other) = default;
+	~Levels() = default;
 	/**
 	 * @brief Assign levels from @p other to @c this.
 	 *

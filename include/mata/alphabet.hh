@@ -87,6 +87,12 @@ class Alphabet {
 	 */
 	virtual std::ostream& print(std::ostream& /*os*/) const { throw std::runtime_error("Unimplemented"); }
 
+	Alphabet() = default;
+	Alphabet(const Alphabet&) = default;
+	Alphabet(Alphabet&&) = default;
+	Alphabet& operator=(const Alphabet&) = default;
+	Alphabet& operator=(Alphabet&&) = default;
+	/// Virtual: alphabets are owned and deleted through 'Alphabet*' (see 'Nfa::alphabet').
 	virtual ~Alphabet() = default;
 
 	/**
@@ -149,8 +155,12 @@ class IntAlphabet : public Alphabet {
 	}
 
 	IntAlphabet(const IntAlphabet&) = default;
+	IntAlphabet(IntAlphabet&&) = default;
 
 	IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+	IntAlphabet& operator=(IntAlphabet&&) = delete;
+
+	~IntAlphabet() override = default;
 
 	bool empty() const override { return false; }
 
@@ -229,6 +239,8 @@ class EnumAlphabet : public Alphabet {
 
 	EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
 	EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
+
+	~EnumAlphabet() override = default;
 
 	/**
 	 * @brief Expand alphabet by symbols from the passed @p symbols.
@@ -374,6 +386,8 @@ class OnTheFlyAlphabet : public Alphabet {
   public:
 	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 	OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
+
+	~OnTheFlyAlphabet() override = default;
 
 	/**
 	 * @brief Expand alphabet by symbols from the passed @p symbol_names.
@@ -588,6 +602,8 @@ class AlphabetLevels {
 	AlphabetLevels(AlphabetLevels&& other) noexcept = default;
 	AlphabetLevels& operator=(const AlphabetLevels& other) = default;
 	AlphabetLevels& operator=(AlphabetLevels&& other) noexcept = default;
+
+	~AlphabetLevels() = default;
 
 	/**
 	 * @brief Equality of two @c AlphabetLevels instances.

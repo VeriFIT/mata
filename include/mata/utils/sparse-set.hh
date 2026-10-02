@@ -187,6 +187,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 		return *this;
 	}
+	~SparseSet() = default;
 
 	// TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
 	//  comparing contained elements should be enough?

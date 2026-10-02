@@ -1234,6 +1234,8 @@ class RefinablePartition {
 		return *this;
 	}
 
+	~RefinablePartition() = default;
+
 	/**
 	 * @brief Get the number of elements across all sets.
 	 *

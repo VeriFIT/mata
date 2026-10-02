@@ -31,6 +31,8 @@ struct Transition {
 	Transition(Transition&&) = default;
 	Transition& operator=(const Transition&) = default;
 	Transition& operator=(Transition&&) = default;
+
+	~Transition() = default;
 	Transition(const State source, const Symbol symbol, const State target)
 		: source(source),
 		  symbol(symbol),
@@ -74,6 +76,8 @@ class SymbolPost {
 	SymbolPost(const SymbolPost& rhs) = default;
 	SymbolPost& operator=(SymbolPost&& rhs) noexcept = default;
 	SymbolPost& operator=(const SymbolPost& rhs) = default;
+
+	~SymbolPost() = default;
 
 	// Symbol-only, deliberately: a `StatePost` identifies a post by its symbol, so `find()`,
 	//  `erase(const Key&)` and the `std::unique()` of `sort_and_rmdupl()` all depend on it.
@@ -186,6 +190,8 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	StatePost(StatePost&&) = default;
 	StatePost& operator=(const StatePost&) = default;
 	StatePost& operator=(StatePost&&) = default;
+
+	~StatePost() = default;
 	/**
 	 * @brief Two posts are equal when they hold the same symbols with the same targets.
 	 *
@@ -265,6 +271,8 @@ class StatePost : utils::OrdVector<SymbolPost> {
 		Moves(Moves&) = default;
 		Moves& operator=(Moves&& other) noexcept;
 		Moves& operator=(const Moves& other) noexcept;
+
+		~Moves() = default;
 
 		class const_iterator;
 		const_iterator begin() const;
@@ -438,6 +446,8 @@ class StatePost::Moves::const_iterator {
 	const_iterator& operator=(const const_iterator& other) noexcept = default;
 	const_iterator& operator=(const_iterator&&) = default;
 
+	~const_iterator() = default;
+
 	bool operator==(const const_iterator& other) const;
 }; // class const_iterator.
 
@@ -547,6 +557,8 @@ class Delta {
 		other.clear();
 		return *this;
 	}
+
+	~Delta() = default;
 
 	bool operator==(const Delta& other) const;
 
@@ -1149,6 +1161,8 @@ class Delta::Transitions {
 	Transitions& operator=(Transitions&&) = default;
 	Transitions& operator=(const Transitions&) = default;
 
+	~Transitions() = default;
+
 	class const_iterator;
 	const_iterator begin() const;
 
@@ -1194,6 +1208,8 @@ class Delta::Transitions::const_iterator {
 
 	const_iterator& operator=(const const_iterator& other) noexcept = default;
 	const_iterator& operator=(const_iterator&&) = default;
+
+	~const_iterator() = default;
 
 	bool operator==(const const_iterator& other) const;
 }; // class Delta::Transitions::const_iterator.

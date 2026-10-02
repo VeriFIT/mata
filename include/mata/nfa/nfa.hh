@@ -156,6 +156,8 @@ class Nfa : public Automaton {
 	Nfa& operator=(const Nfa& other) = default;
 	Nfa& operator=(Nfa&& other) noexcept;
 
+	~Nfa() = default;
+
 	/**
 	 * Add a new (fresh) state to the automaton.
 	 * @return The newly created state.

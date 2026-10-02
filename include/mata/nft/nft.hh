@@ -302,6 +302,7 @@ class Nft : public mata::Automaton {
 		return delta.get_successors(state, symbol);
 	}
 	Nft& operator=(Nft&& other) noexcept;
+	~Nft() = default;
 
 	/**
 	 * @brief Construct a new NFT with @p num_of_levels levels from NFA.

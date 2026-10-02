@@ -95,6 +95,7 @@ class FormulaNode {
 
 	FormulaNode& operator=(const FormulaNode& other) = default;
 	FormulaNode& operator=(FormulaNode&& other) noexcept = default;
+	~FormulaNode() = default;
 };
 
 /**
@@ -123,6 +124,7 @@ class FormulaGraph {
 
 	FormulaGraph& operator=(const FormulaGraph&) = default;
 	FormulaGraph& operator=(FormulaGraph&&) noexcept = default;
+	~FormulaGraph() = default;
 
 	std::unordered_set<std::string> collect_node_names() const;
 	void print_tree(std::ostream& os) const;

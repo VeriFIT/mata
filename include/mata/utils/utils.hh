@@ -80,7 +80,7 @@ class BoolVector : public std::vector<uint8_t> {
 
 	BoolVector& operator=(const BoolVector&) = default;
 	BoolVector& operator=(BoolVector&&) noexcept = default;
-
+	~BoolVector() = default;
 	/// Count the number of set elements.
 	size_t count() const {
 		size_t cnt{0};
