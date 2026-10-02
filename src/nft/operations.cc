@@ -400,6 +400,9 @@ std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const st
 			const auto state_post_end{state_post.end()};
 			const auto add_targets{[&](const SymbolPost& symbol_post) -> bool {
 				for (const State target : symbol_post.targets) {
+					// 'next_level_after()' only reads 'Levels::num_of_levels'; the analyzer loses track of the
+					//  'nft' reference captured by the lambda and reports its member access as a null dereference.
+					// NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
 					if (nft.levels[target] != nft.levels.next_level_after(level)) { return false; }
 					next.insert(target);
 				}
