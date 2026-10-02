@@ -16,7 +16,7 @@ const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 
 	std::vector<const mata::FormulaGraph*> worklist{node};
 	while (!worklist.empty()) {
-		const auto act_node = worklist.back();
+		const auto* const act_node = worklist.back();
 		MATA_ASSERT(act_node != nullptr);
 		worklist.pop_back();
 		if (act_node->children.size() != 2) { continue; }

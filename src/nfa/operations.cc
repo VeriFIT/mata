@@ -2320,7 +2320,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 	const auto symbols_end{symbols.end()};
 	bool continue_complementation{true};
 	while (continue_complementation && !worklist.empty()) {
-		const auto curr_state_set_it{worklist.back()};
+		const auto* const curr_state_set_it{worklist.back()};
 		const State macrostate{curr_state_set_it->second};
 		const StateSet& curr_state_set{curr_state_set_it->first};
 		worklist.pop_back();
@@ -2402,7 +2402,7 @@ Nfa mata::nfa::lang_difference(
 	std::vector<SubsetMacrostateMap::const_pointer> worklist{};
 
 	// '{}' represents a sink state that is always final in the complement.
-	const auto subset_set_excluded_sink_ptr{subset_set_excluded.insert(StateSet{}).first.operator->()};
+	const auto* const subset_set_excluded_sink_ptr{subset_set_excluded.insert(StateSet{}).first.operator->()};
 
 	Nfa nfa_lang_difference{};
 	const State new_initial{nfa_lang_difference.add_state()};
@@ -2411,9 +2411,9 @@ Nfa mata::nfa::lang_difference(
 		!nfa_excluded.final.intersects_with(nfa_excluded.initial)) {
 		nfa_lang_difference.final.insert(new_initial);
 	}
-	auto subset_set_included_ptr{subset_set_included.emplace(nfa_included.initial).first.operator->()};
-	auto subset_set_excluded_ptr{subset_set_excluded.emplace(nfa_excluded.initial).first.operator->()};
-	auto subset_macrostate_map_ptr{
+	const auto* subset_set_included_ptr{subset_set_included.emplace(nfa_included.initial).first.operator->()};
+	const auto* subset_set_excluded_ptr{subset_set_excluded.emplace(nfa_excluded.initial).first.operator->()};
+	auto* subset_macrostate_map_ptr{
 		subset_macrostate_map.emplace(std::make_pair(subset_set_included_ptr, subset_set_excluded_ptr), new_initial)
 			.first.operator->()
 	};
@@ -2430,10 +2430,10 @@ Nfa mata::nfa::lang_difference(
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator_excluded{};
 
 	while (!worklist.empty()) {
-		const auto curr_macrostate_ptr{worklist.back()};
+		const auto* const curr_macrostate_ptr{worklist.back()};
 		worklist.pop_back();
-		const auto curr_state_set_included_ptr{curr_macrostate_ptr->first.first};
-		const auto curr_state_set_excluded_ptr{curr_macrostate_ptr->first.second};
+		const auto* const curr_state_set_included_ptr{curr_macrostate_ptr->first.first};
+		const auto* const curr_state_set_excluded_ptr{curr_macrostate_ptr->first.second};
 		const StateSet& curr_state_set_included{*curr_state_set_included_ptr};
 		const StateSet& curr_state_set_excluded{*curr_state_set_excluded_ptr};
 		const State macrostate{curr_macrostate_ptr->second};

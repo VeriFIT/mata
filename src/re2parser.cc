@@ -39,7 +39,7 @@ class RegexParser {
 	re2::Regexp* parse_regex_string(const std::string& regex_string, const Encoding encoding = Encoding::Latin1) const {
 		re2::RegexpStatus status;
 
-		const auto parsed_regex = re2::Regexp::Parse(
+		auto* const parsed_regex = re2::Regexp::Parse(
 			regex_string, static_cast<re2::Regexp::ParseFlags>(options.ParseFlags() | static_cast<int>(encoding)),
 			&status
 		);
