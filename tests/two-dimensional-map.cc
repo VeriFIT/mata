@@ -61,6 +61,49 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == false") {
 			for (unsigned j = 0; j < 1'000; ++j) { CHECK(map.get(i, j) == i + j); }
 		}
 	}
+
+	SECTION("missing values in an allocated row") {
+		TwoDimensionalMap<unsigned> map(10, 10);
+		map.insert(1, 2, 3);
+
+		// The row of the first key 1 is allocated, the row of the first key 0 is not.
+		CHECK(map.get(1, 0) == std::numeric_limits<unsigned>::max());
+		CHECK(map.get(1, 9) == std::numeric_limits<unsigned>::max());
+		CHECK(map.get(0, 2) == std::numeric_limits<unsigned>::max());
+	}
+
+	SECTION("zero is a regular value") {
+		TwoDimensionalMap<unsigned> map(10, 10);
+		map.insert(3, 4, 0);
+
+		CHECK(map.get(3, 4) == 0);
+		CHECK(map.get(3, 5) == std::numeric_limits<unsigned>::max());
+		CHECK(map.get_first_inverted(0) == 3);
+		CHECK(map.get_second_inverted(0) == 4);
+	}
+
+	SECTION("inserting a smaller value keeps the larger inverted entries") {
+		TwoDimensionalMap<unsigned> map(10, 10);
+		map.insert(1, 2, 5);
+		map.insert(3, 4, 3);
+
+		CHECK(map.get_first_inverted(5) == 1);
+		CHECK(map.get_second_inverted(5) == 2);
+		CHECK(map.get_first_inverted(3) == 3);
+		CHECK(map.get_second_inverted(3) == 4);
+		CHECK(map.get(1, 2) == 5);
+		CHECK(map.get(3, 4) == 3);
+	}
+
+	SECTION("overwriting a value") {
+		TwoDimensionalMap<unsigned> map(10, 10);
+		map.insert(1, 2, 3);
+		map.insert(1, 2, 4);
+
+		CHECK(map.get(1, 2) == 4);
+		CHECK(map.get_first_inverted(4) == 1);
+		CHECK(map.get_second_inverted(4) == 2);
+	}
 }
 
 TEST_CASE("mata::utils::TwoDimensionalMap::large_map == true") {
@@ -114,5 +157,28 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == true") {
 		for (unsigned i = 0; i < 1'000; ++i) {
 			for (unsigned j = 0; j < 1'000; ++j) { CHECK(map.get(i, j) == i + j); }
 		}
+	}
+
+	SECTION("zero is a regular value") {
+		TwoDimensionalMap<unsigned, true, 10> map(10, 10);
+		map.insert(3, 4, 0);
+
+		CHECK(map.get(3, 4) == 0);
+		CHECK(map.get(3, 5) == std::numeric_limits<unsigned>::max());
+		CHECK(map.get_first_inverted(0) == 3);
+		CHECK(map.get_second_inverted(0) == 4);
+	}
+
+	SECTION("inserting a smaller value keeps the larger inverted entries") {
+		TwoDimensionalMap<unsigned, true, 10> map(10, 10);
+		map.insert(1, 2, 5);
+		map.insert(3, 4, 3);
+
+		CHECK(map.get_first_inverted(5) == 1);
+		CHECK(map.get_second_inverted(5) == 2);
+		CHECK(map.get_first_inverted(3) == 3);
+		CHECK(map.get_second_inverted(3) == 4);
+		CHECK(map.get(1, 2) == 5);
+		CHECK(map.get(3, 4) == 3);
 	}
 }
