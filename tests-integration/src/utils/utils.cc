@@ -1,7 +1,26 @@
 #include "utils.hh"
 #include "mata/nfa/types.hh"
 #include "mata/parser/inter-aut.hh"
+#include <algorithm>
 #include <string>
+
+namespace {
+bool has_bitvector_alphabet(const std::vector<mata::IntermediateAut>& inter_auts) {
+	return std::ranges::any_of(inter_auts, [](const mata::IntermediateAut& inter_aut) {
+		return inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector;
+	});
+}
+
+/// `builder::construct()` reads the operands of a transition as literal symbol names, so a bitvector
+///  automaton has to be mintermized before it is constructed. Without mintermization the benchmark
+///  would silently measure a different automaton, hence this combination is rejected.
+bool reject_unmintermized_bitvector(const std::vector<mata::IntermediateAut>& inter_auts, const bool mintermize) {
+	if (mintermize or !has_bitvector_alphabet(inter_auts)) { return false; }
+	std::cerr << "error: the input uses a bitvector alphabet, which cannot be constructed without "
+				 "mintermization; set `MINTERMIZE_AUTOMATA` to `true` for such inputs\n";
+	return true;
+}
+} // namespace
 
 int load_automaton(
 	const std::string& filename, Nfa& aut, mata::OnTheFlyAlphabet& alphabet, const bool mintermize_automata
@@ -13,8 +32,9 @@ int load_automaton(
 		return EXIT_FAILURE;
 	}
 	TIME_END(parsing);
+	if (reject_unmintermized_bitvector(inter_auts, mintermize_automata)) { return EXIT_FAILURE; }
 	try {
-		if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
+		if (!has_bitvector_alphabet(inter_auts)) {
 			aut = mata::nfa::builder::construct(inter_auts[0], &alphabet);
 		} else {
 			mata::Mintermization mintermization;
@@ -45,11 +65,12 @@ int load_automata(
 		}
 	}
 	TIME_END(parsing);
+	if (reject_unmintermized_bitvector(inter_auts, mintermize_automata)) { return EXIT_FAILURE; }
 	try {
-		if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
-			// This is not foolproof and assumes, that everything is BITVECTOR
+		// Decided for the whole batch, not from `inter_auts[0]`: an explicit-alphabet input may come
+		//  first and a bitvector input after it.
+		if (!has_bitvector_alphabet(inter_auts)) {
 			for (mata::IntermediateAut& inter_aut : inter_auts) {
-				assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector);
 				auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
 			}
 		} else {

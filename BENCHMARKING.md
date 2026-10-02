@@ -72,6 +72,10 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
   - `./tests-integration/scripts/run_massif.sh` prints the memory peak of the program in `[B]`
 - `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench -c job.yaml`.
 - `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench < input.input`.
+- Both directories hold only the `*.in` templates. `cmake` expands them into
+  `<BUILD_DIR>/tests-integration/jobs/` and `<BUILD_DIR>/tests-integration/inputs/`, so that the generated job files always
+  refer to the binaries of the build directory they belong to. Use the generated copies when invoking `pycobench`
+  directly.
 
 ### Creating new benchmarking tests
 
@@ -167,22 +171,26 @@ The binaries take files with NFAs written in the `.mata` automata format as a co
 To run a set of benchmark instances on a set of operations through `pycobench`, use the utility script `run_pyco.sh` under `./tests-integration/scripts/`:
 
 ```sh
-./tests-integration/scripts/run_pyco.sh --config <./tests-integration/jobs/JOBS>.yaml --methods <method1;method2;...;methodn> --timeout <timeout_in_seconds> --jobs <number_of_parallel_jobs> [--suffix "<string_depicting_the_benchmarking_test>"] [<path/to/input_file>.input...]
+./tests-integration/scripts/run_pyco.sh --config <BUILD_DIR>/tests-integration/jobs/<JOBS>.yaml --methods <method1;method2;...;methodn> --timeout <timeout_in_seconds> --jobs <number_of_parallel_jobs> [--suffix "<string_depicting_the_benchmarking_test>"] [<path/to/input_file>.input...]
 ```
+
+`<BUILD_DIR>` defaults to `build/`; set `MATA_BUILD_DIR` to point the script at another build directory.
+The `just bench::pyco` recipe sets it to `build/<BUILD_MODE>/<CXX>`, the directory `just cpp::build`
+builds into, and `just bench::performance <MODE>` passes the same directory to `make test-performance`.
 
 You can specify the following parameters:
 
-1. `--config <jobs/JOBS.yaml>`: picks `YAML` file, where commands for measured binaries are specified.
+1. `--config <BUILD_DIR>/tests-integration/jobs/<JOBS>.yaml`: picks `YAML` file, where commands for measured binaries are specified.
 1. (optional) `--methods <method1;method2;...;methodn>`: list of commands specified in the `YAML` file, which will only be measured; by default, everything is measured.
 1. (optional) `--timeout <TIMEOUT>`: timeout in seconds for each binary run; (default = 60s).
 1. (optional) `--jobs <JOBS>`: number of parallel jobs that are run; (default = 6 jobs).
 1. (optional) ` --suffix <SUFFIX_TAG>`: adds suffix to the generated `.csv` file, for better organization; (default = empty).
-1. `<inputs/INPUT.input>`: any number of input files, where the list of automata that are fed into the binaries are listed.
+1. `<BUILD_DIR>/tests-integration/inputs/<INPUT>.input`: any number of input files, where the list of automata that are fed into the binaries are listed.
 
 E.g.:
 
 ```sh
-./tests-integration/scripts/run_pyco.sh --config ./tests-integration/jobs/corr-double-param-jobs.yaml --methods binary --timeout 15 --jobs 12 --suffix "-with_optimized_inclusion_checking" ./tests-integration/inputs/bench-double-automata-inclusion.input
+./tests-integration/scripts/run_pyco.sh --config build/tests-integration/jobs/corr-double-param-jobs.yaml --methods binary --timeout 15 --jobs 12 --suffix "-with_optimized_inclusion_checking" build/tests-integration/inputs/bench-double-automata-inclusion.input
 ```
 
 <!-- The results are saved in `results` directory in `csv` format. In addition, a short summary is printed at the end of the benchmarking process. -->
@@ -199,7 +207,7 @@ For additional details, see tests-integration README and our replication package
   1. Run `./tests-integration/pycobench`:
 
      ```sh
-     ./tests-integration/pycobench -c ./tests-integration/jobs/JOB.yaml -o some.output < tests-integration/inputs/INPUT.input
+     ./tests-integration/pycobench -c build/tests-integration/jobs/<JOB>.yaml -o some.output < build/tests-integration/inputs/<INPUT>.input
      ```
 
      - Note, one can pass any shell command that returns list of automata, e.g. `< ls -1 ./automata/**/aut1.mata`
@@ -209,9 +217,9 @@ For additional details, see tests-integration README and our replication package
 
 - Alternatively, run `make test-performance` from the project root directory
 
-- this will run selected jobs registered in `jobs/corr-single-param-jobs.yaml` (for binaries accepting single argument) and `jobs/corr-double-param-jobs.yaml` (for binaries accepting two arguments).
+- this will run selected jobs registered in `<BUILD_DIR>/tests-integration/jobs/corr-single-param-jobs.yaml` (for binaries accepting single argument) and `.../corr-double-param-jobs.yaml` (for binaries accepting two arguments).
 
-- This will generate CSV report of the measurement of binaries registered in `./tests-integration/jobs/*.yaml` files on automata listed in the `./tests-integration/input/*.input` files.
+- This will generate CSV report of the measurement of binaries registered in `<BUILD_DIR>/tests-integration/jobs/*.yaml` files on automata listed in the `<BUILD_DIR>/tests-integration/inputs/*.input` files.
 
 ### Additional benchmarking options
 
