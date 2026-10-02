@@ -104,12 +104,12 @@ Nfa nfa_with_three_state_minimum() {
 }
 
 #ifdef MATA_TESTS_FAKE_SOLVERS
-/// A shell script standing in for a solver, in a temporary directory removed on destruction.
+/// A shell script standing in for a solver, in a temporary directory (with a space in its name) removed on destruction.
 class FakeSolver {
   public:
-	explicit FakeSolver(const std::string& script)
-		: directory_{std::filesystem::temp_directory_path() / ("mata-fake-solver-" + std::to_string(::getpid()) + "-" + std::to_string(counter_++))},
-		  path_{directory_ / "solver"} {
+	explicit FakeSolver(const std::string& script, const std::string& name = "solver")
+		: directory_{std::filesystem::temp_directory_path() / ("mata fake solver-" + std::to_string(::getpid()) + "-" + std::to_string(counter_++))},
+		  path_{directory_ / name} {
 		std::filesystem::create_directories(directory_);
 		std::ofstream{path_} << "#!/bin/sh\n" << script << '\n';
 		std::filesystem::permissions(path_, std::filesystem::perms::owner_all);
@@ -121,7 +121,11 @@ class FakeSolver {
 		std::filesystem::remove_all(directory_, error);
 	}
 
-	std::string command() const { return path_.string(); }
+	/// The command running the solver, with its path quoted.
+	std::string command() const { return "'" + path_.string() + "'"; }
+
+	const std::filesystem::path& path() const { return path_; }
+	const std::filesystem::path& directory() const { return directory_; }
 
   private:
 	static inline unsigned counter_{0};
@@ -129,12 +133,18 @@ class FakeSolver {
 	std::filesystem::path path_;
 };
 
-/// Set an environment variable for the lifetime of the object.
+/// Set (or unset, if @p value is empty) an environment variable for the lifetime of the object.
 class EnvironmentVariable {
   public:
-	EnvironmentVariable(std::string name, const std::string& value) : name_{std::move(name)}, previous_{} {
+	EnvironmentVariable(std::string name, const std::optional<std::string>& value)
+		: name_{std::move(name)},
+		  previous_{} {
 		if (const char* const previous{std::getenv(name_.c_str())}) { previous_ = previous; }
-		::setenv(name_.c_str(), value.c_str(), 1);
+		if (value.has_value()) {
+			::setenv(name_.c_str(), value->c_str(), 1);
+		} else {
+			::unsetenv(name_.c_str());
+		}
 	}
 	EnvironmentVariable(const EnvironmentVariable&) = delete;
 	EnvironmentVariable& operator=(const EnvironmentVariable&) = delete;
@@ -224,6 +234,42 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 		CHECK_THROWS_WITH(
 			reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", qbf_without_certificate.command()}}),
 			ContainsSubstring("--qdo")
+		);
+	}
+
+	SECTION("DepQBF is run with --no-dynamic-nenofex only if it supports the option") {
+		// Both versions abort when given wrong options, as DepQBF does.
+		const FakeSolver with_nenofex{
+			"case \"$1\" in --help) echo '  --no-dynamic-nenofex  disable dynamic nenofex'; exit 0;; esac\n"
+			"case \"$*\" in *--qdo*--no-dynamic-nenofex*) echo 's cnf 0 10 20'; exit 20;; esac\n"
+			"echo 'Must configure solver with --no-dynamic-nenofex'; kill -6 $$",
+			"depqbf"
+		};
+		const FakeSolver without_nenofex{
+			"case \"$1\" in --help) echo '  --qdo  QDIMACS output'; exit 0;; esac\n"
+			"case \"$*\" in *--no-dynamic-nenofex*) echo 'unknown option'; kill -6 $$;; esac\n"
+			"case \"$*\" in *--qdo*) echo 's cnf 0 10 20'; exit 20;; esac\n"
+			"kill -6 $$",
+			"depqbf"
+		};
+		const EnvironmentVariable no_qbf_solver{"MATA_QBF_SOLVER", std::nullopt};
+		for (const FakeSolver* const depqbf : {&with_nenofex, &without_nenofex}) {
+			const EnvironmentVariable path{"PATH", depqbf->directory().string()};
+			const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}})};
+			CHECK(are_equivalent(nfa, input));
+		}
+	}
+
+	SECTION("Solver commands with quotes") {
+		const FakeSolver unsat{"echo 's UNSATISFIABLE'\nexit 20"};
+		const Nfa nfa{reduce(
+			input, nullptr,
+			{{"algorithm", "sat"}, {"solver", "\"" + unsat.path().string() + "\" --unused 'an argument'"}}
+		)};
+		CHECK(are_equivalent(nfa, input));
+		CHECK_THROWS_WITH(
+			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", "'/path/to/solver"}}),
+			ContainsSubstring("unterminated quote")
 		);
 	}
 

@@ -219,10 +219,11 @@ class ExternalSolverNotFound : public std::runtime_error {
  *  - "nfa": an NFA with the minimum number of states. It never has more states than @p nfa reduced by simulation.
  *  - "dfa": a deterministic (not necessarily complete) automaton with the minimum number of states.
  * @param[in] solver Command running a SAT solver, as the solver's executable followed by its arguments separated by
- *  spaces (it is not interpreted by a shell). The solver is given a DIMACS CNF file as its last argument and has to
- *  print the result in the format of the SAT competitions, that is, an "s SATISFIABLE" or "s UNSATISFIABLE" line and
- *  the model on "v" lines. If empty, the value of the environment variable @c MATA_SAT_SOLVER is used and, if that is
- *  not set, the first of @c cadical, @c kissat, @c cryptominisat5 and @c picosat found in @c PATH.
+ *  spaces. Parts containing spaces can be enclosed in single or double quotes; the command is not interpreted by a
+ *  shell otherwise. The solver is given a DIMACS CNF file as its last argument and has to print the result in the
+ *  format of the SAT competitions, that is, an "s SATISFIABLE" or "s UNSATISFIABLE" line and the model on "v" lines.
+ *  If empty, the value of the environment variable @c MATA_SAT_SOLVER is used and, if that is not set, the first of
+ *  @c cadical, @c kissat, @c cryptominisat5 and @c picosat found in @c PATH.
  * @return An automaton equivalent to @p nfa with the minimum number of states of the given @p type.
  * @throws ExternalSolverNotFound If no SAT solver can be found or run.
  * @throws std::runtime_error If the solver fails or its output cannot be understood.
@@ -240,7 +241,7 @@ Nfa reduce_sat(const Nfa& nfa, const std::string& type = "nfa", const std::strin
  *  its last argument and has to print the result and the values of the outermost existential variables in the QDIMACS
  *  output format ("s cnf 1 ..." or "s cnf 0 ..." and "V" lines). If empty, the value of the environment variable
  *  @c MATA_QBF_SOLVER is used and, if that is not set, the first of @c depqbf and @c caqe found in @c PATH (run with
- *  @c --qdo).
+ *  @c --qdo, and DepQBF also with @c --no-dynamic-nenofex if it supports the option).
  * @return An NFA equivalent to @p nfa with the minimum number of states.
  * @throws ExternalSolverNotFound If no QBF solver can be found or run.
  * @throws std::runtime_error If the solver fails or its output cannot be understood.

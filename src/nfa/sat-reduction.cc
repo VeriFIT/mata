@@ -12,11 +12,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cerrno>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -33,8 +35,8 @@
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 	#define MATA_EXTERNAL_SOLVERS_SUPPORTED
 	#include <fcntl.h>
-	#include <signal.h>
 	#include <spawn.h>
+	#include <sys/stat.h>
 	#include <sys/wait.h>
 	#include <unistd.h>
 	#if defined(__APPLE__)
@@ -424,11 +426,36 @@ struct SolverAnswer {
 	std::vector<bool> model{}; ///< The values of the variables, indexed by the variable number.
 };
 
-/// Split a solver command into its executable and arguments, separated by whitespace.
+#ifdef MATA_EXTERNAL_SOLVERS_SUPPORTED
+
+/// Split a solver command into its executable and arguments, separated by whitespace. Single or double quotes enclose
+///  parts containing whitespace. No other shell syntax is interpreted.
 std::vector<std::string> split_command(const std::string& command) {
 	std::vector<std::string> arguments{};
-	std::istringstream stream{command};
-	for (std::string argument; stream >> argument;) { arguments.push_back(std::move(argument)); }
+	std::optional<std::string> argument{};
+	char quote{'\0'};
+	for (const char character : command) {
+		if (quote != '\0') {
+			if (character == quote) {
+				quote = '\0';
+			} else {
+				argument->push_back(character);
+			}
+		} else if (character == '\'' || character == '"') {
+			quote = character;
+			if (!argument.has_value()) { argument.emplace(); }
+		} else if (std::isspace(static_cast<unsigned char>(character)) != 0) {
+			if (argument.has_value()) { arguments.push_back(std::move(*argument)); }
+			argument.reset();
+		} else {
+			if (!argument.has_value()) { argument.emplace(); }
+			argument->push_back(character);
+		}
+	}
+	if (quote != '\0') {
+		throw ExternalSolverNotFound("The solver command '" + command + "' has an unterminated quote.");
+	}
+	if (argument.has_value()) { arguments.push_back(std::move(*argument)); }
 	return arguments;
 }
 
@@ -510,39 +537,10 @@ SolverAnswer parse_solver_output(
 	return answer;
 }
 
-#ifdef MATA_EXTERNAL_SOLVERS_SUPPORTED
-
-/// A file descriptor closed on destruction.
-class FileDescriptor {
-  public:
-	explicit FileDescriptor(const int descriptor) : descriptor_{descriptor} {}
-	FileDescriptor(const FileDescriptor&) = delete;
-	FileDescriptor& operator=(const FileDescriptor&) = delete;
-	~FileDescriptor() { close(); }
-
-	int get() const { return descriptor_; }
-
-	void close() {
-		if (descriptor_ >= 0) { ::close(descriptor_); }
-		descriptor_ = -1;
-	}
-
-  private:
-	int descriptor_;
-};
-
 /// A temporary directory removed with its contents on destruction.
 class TemporaryDirectory {
   public:
-	TemporaryDirectory() : path_{} {
-		std::string name{(std::filesystem::temp_directory_path() / "mata-solver-XXXXXX").string()};
-		if (::mkdtemp(name.data()) == nullptr) {
-			throw std::system_error(
-				errno, std::generic_category(), "cannot create a temporary directory for the solver"
-			);
-		}
-		path_ = name;
-	}
+	TemporaryDirectory() : path_{create()} {}
 	TemporaryDirectory(const TemporaryDirectory&) = delete;
 	TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
 	~TemporaryDirectory() {
@@ -554,6 +552,16 @@ class TemporaryDirectory {
 
   private:
 	std::filesystem::path path_;
+
+	static std::filesystem::path create() {
+		std::string name{(std::filesystem::temp_directory_path() / "mata-solver-XXXXXX").string()};
+		if (::mkdtemp(name.data()) == nullptr) {
+			throw std::system_error(
+				errno, std::generic_category(), "cannot create a temporary directory for the solver"
+			);
+		}
+		return name;
+	}
 };
 
 char** environment() {
@@ -587,17 +595,9 @@ std::optional<std::filesystem::path> find_executable(const std::string& name) {
 	}
 }
 
-/// Run a process with @p arguments and return its exit code and its standard and error output.
-std::pair<int, std::string> run_process(std::vector<std::string> arguments) {
-	std::array<int, 2> pipe_descriptors{};
-	if (::pipe(pipe_descriptors.data()) != 0) {
-		throw std::system_error(errno, std::generic_category(), "cannot create a pipe for the solver output");
-	}
-	FileDescriptor read_end{pipe_descriptors[0]};
-	FileDescriptor write_end{pipe_descriptors[1]};
-	::fcntl(read_end.get(), F_SETFD, FD_CLOEXEC);
-	::fcntl(write_end.get(), F_SETFD, FD_CLOEXEC);
-
+/// Run a process with @p arguments, its standard and error output redirected to @p output_file, and return its exit
+///  code and output.
+std::pair<int, std::string> run_process(std::vector<std::string> arguments, const std::filesystem::path& output_file) {
 	posix_spawn_file_actions_t actions{};
 	if (const int error{::posix_spawn_file_actions_init(&actions)}; error != 0) {
 		throw std::system_error(error, std::generic_category(), "cannot prepare running the solver");
@@ -605,9 +605,12 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments) {
 	const std::unique_ptr<posix_spawn_file_actions_t, int (*)(posix_spawn_file_actions_t*)> actions_guard{
 		&actions, ::posix_spawn_file_actions_destroy
 	};
+	const std::string output_path{output_file.string()};
 	::posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0);
-	::posix_spawn_file_actions_adddup2(&actions, write_end.get(), STDOUT_FILENO);
-	::posix_spawn_file_actions_adddup2(&actions, write_end.get(), STDERR_FILENO);
+	::posix_spawn_file_actions_addopen(
+		&actions, STDOUT_FILENO, output_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR
+	);
+	::posix_spawn_file_actions_adddup2(&actions, STDOUT_FILENO, STDERR_FILENO);
 
 	std::vector<char*> argv{};
 	for (std::string& argument : arguments) { argv.push_back(argument.data()); }
@@ -619,32 +622,14 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments) {
 			"Cannot run the solver '" + arguments.front() + "': " + std::generic_category().message(error) + "."
 		);
 	}
-	write_end.close();
-
-	std::string output{};
-	std::array<char, 4'096> buffer{};
-	int read_error{0};
-	while (true) {
-		const ssize_t count{::read(read_end.get(), buffer.data(), buffer.size())};
-		if (count > 0) {
-			output.append(buffer.data(), static_cast<size_t>(count));
-		} else if (count == 0) {
-			break;
-		} else if (errno != EINTR) {
-			read_error = errno;
-			::kill(process, SIGKILL);
-			break;
-		}
-	}
 	int status{0};
 	while (::waitpid(process, &status, 0) == -1) {
 		if (errno != EINTR) {
 			throw std::system_error(errno, std::generic_category(), "cannot wait for the solver to finish");
 		}
 	}
-	if (read_error != 0) {
-		throw std::system_error(read_error, std::generic_category(), "cannot read the output of the solver");
-	}
+	std::ifstream stream{output_file};
+	std::string output{std::istreambuf_iterator<char>{stream}, std::istreambuf_iterator<char>{}};
 	if (WIFSIGNALED(status)) {
 		throw std::runtime_error(
 			"The solver '" + arguments.front() + "' was terminated by signal " + std::to_string(WTERMSIG(status)) +
@@ -654,92 +639,103 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments) {
 	return {WIFEXITED(status) ? WEXITSTATUS(status) : -1, std::move(output)};
 }
 
-#endif
+/// The command running a SAT or QBF solver: @p command, or the value of the environment variable, or the first default
+///  solver found in PATH. The output of solvers run to check their options is written to @p directory.
+std::vector<std::string>
+	find_solver(const bool quantified, const std::string& command, const std::filesystem::path& directory) {
+	const std::string kind{quantified ? "QBF" : "SAT"};
+	const std::string variable{"MATA_" + kind + "_SOLVER"};
+	const auto resolve{[&](const std::string& given, const std::string& origin) {
+		std::vector<std::string> arguments{split_command(given)};
+		if (arguments.empty()) { throw ExternalSolverNotFound("The " + kind + " solver " + origin + " is empty."); }
+		const std::optional<std::filesystem::path> executable{find_executable(arguments.front())};
+		if (!executable.has_value()) {
+			throw ExternalSolverNotFound(
+				"The " + kind + " solver '" + arguments.front() + "' " + origin +
+				" cannot be found or is not executable."
+			);
+		}
+		arguments.front() = executable->string();
+		return arguments;
+	}};
+	if (!command.empty()) { return resolve(command, "given by the \"solver\" parameter"); }
+	if (const char* const value{std::getenv(variable.c_str())}; value != nullptr && *value != '\0') {
+		return resolve(value, "given by the environment variable " + variable);
+	}
+
+	const std::vector<std::vector<std::string>> defaults{
+		quantified ? std::vector<std::vector<std::string>>{{"depqbf", "--qdo"}, {"caqe", "--qdo"}}
+				   : std::vector<std::vector<std::string>>{
+						 {"cadical", "-q"}, {"kissat", "-q"}, {"cryptominisat5", "--verb", "0"}, {"picosat"}
+					 }
+	};
+	std::string names{};
+	for (std::vector<std::string> solver : defaults) {
+		if (const std::optional<std::filesystem::path> executable{find_executable(solver.front())}) {
+			const bool is_depqbf{solver.front() == "depqbf"};
+			solver.front() = executable->string();
+			// DepQBF built with Nenofex (e.g., version 6 from Homebrew) prints the values of variables only with
+			//  --no-dynamic-nenofex, which older versions reject.
+			if (is_depqbf &&
+				run_process({solver.front(), "--help"}, directory / "help.txt").second.find("--no-dynamic-nenofex") !=
+					std::string::npos) {
+				solver.emplace_back("--no-dynamic-nenofex");
+			}
+			return solver;
+		}
+		names += (names.empty() ? "" : ", ") + solver.front();
+	}
+	throw ExternalSolverNotFound(
+		"No " + kind + " solver found. Install one of " + names +
+		", or give the command running a solver by the environment variable " + variable +
+		" or by the \"solver\" parameter."
+	);
+}
 
 /// An external SAT or QBF solver run on formulae written to temporary files.
 class ExternalSolver {
   public:
 	/// Find the solver given by @p command, or by the environment, or the first available default solver.
-	ExternalSolver(const bool quantified, const std::string& command) : quantified_{quantified}, arguments_{} {
-		const std::string kind{quantified ? "QBF" : "SAT"};
-#ifdef MATA_EXTERNAL_SOLVERS_SUPPORTED
-		const std::string variable{"MATA_" + kind + "_SOLVER"};
-		const auto use{[&](const std::string& given, const std::string& origin) {
-			arguments_ = split_command(given);
-			if (arguments_.empty()) {
-				throw ExternalSolverNotFound("The " + kind + " solver " + origin + " is empty.");
-			}
-			const std::optional<std::filesystem::path> executable{find_executable(arguments_.front())};
-			if (!executable.has_value()) {
-				throw ExternalSolverNotFound(
-					"The " + kind + " solver '" + arguments_.front() + "' " + origin +
-					" cannot be found or is not "
-					"executable."
-				);
-			}
-			arguments_.front() = executable->string();
-		}};
-		if (!command.empty()) {
-			use(command, "given by the \"solver\" parameter");
-			return;
-		}
-		if (const char* const value{std::getenv(variable.c_str())}; value != nullptr && *value != '\0') {
-			use(value, "given by the environment variable " + variable);
-			return;
-		}
-		const std::vector<std::vector<std::string>> defaults{
-			quantified ? std::vector<std::vector<std::string>>{{"depqbf", "--qdo"}, {"caqe", "--qdo"}}
-					   : std::vector<std::vector<std::string>>{
-							 {"cadical", "-q"}, {"kissat", "-q"}, {"cryptominisat5", "--verb", "0"}, {"picosat"}
-						 }
-		};
-		std::string names{};
-		for (const std::vector<std::string>& solver : defaults) {
-			if (const std::optional<std::filesystem::path> executable{find_executable(solver.front())}) {
-				arguments_ = solver;
-				arguments_.front() = executable->string();
-				return;
-			}
-			names += (names.empty() ? "" : ", ") + solver.front();
-		}
-		throw ExternalSolverNotFound(
-			"No " + kind + " solver found. Install one of " + names +
-			", or give the command running a solver by the "
-			"environment variable " +
-			variable + " or by the \"solver\" parameter."
-		);
-#else
-		(void) command;
-		throw ExternalSolverNotFound("Running an external " + kind + " solver is not supported on this platform.");
-#endif
-	}
+	ExternalSolver(const bool quantified, const std::string& command)
+		: quantified_{quantified},
+		  directory_{},
+		  arguments_{find_solver(quantified, command, directory_.path())} {}
 
 	/// Decide @p formula and return the values of its (outermost existential) variables if it is satisfiable.
 	SolverAnswer solve(const Formula& formula) {
-#ifdef MATA_EXTERNAL_SOLVERS_SUPPORTED
-		if (!directory_.has_value()) { directory_.emplace(); }
-		const std::filesystem::path file{directory_->path() / (quantified_ ? "formula.qdimacs" : "formula.cnf")};
+		const std::filesystem::path file{directory_.path() / (quantified_ ? "formula.qdimacs" : "formula.cnf")};
 		std::ofstream stream{file};
 		formula.write(stream, quantified_);
 		stream.close();
 		if (!stream) { throw std::runtime_error("Cannot write the formula for the solver to " + file.string() + "."); }
 		std::vector<std::string> arguments{arguments_};
 		arguments.push_back(file.string());
-		const auto [exit_code, output]{run_process(std::move(arguments))};
+		const auto [exit_code, output]{run_process(std::move(arguments), directory_.path() / "output.txt")};
 		return parse_solver_output(output, exit_code, quantified_, formula.num_of_variables(), arguments_.front());
-#else
-		(void) formula;
-		return {};
-#endif
 	}
 
   private:
 	bool quantified_;
+	TemporaryDirectory directory_; ///< Initialized before @c arguments_, which may need it.
 	std::vector<std::string> arguments_;
-#ifdef MATA_EXTERNAL_SOLVERS_SUPPORTED
-	std::optional<TemporaryDirectory> directory_{};
-#endif
 };
+
+#else
+
+/// External solvers cannot be run on this platform.
+class ExternalSolver {
+  public:
+	ExternalSolver(const bool quantified, const std::string& /* command */) {
+		throw ExternalSolverNotFound(
+			std::string{"Running an external "} + (quantified ? "QBF" : "SAT") +
+			" solver is not supported on this platform."
+		);
+	}
+
+	SolverAnswer solve(const Formula& /* formula */) { return {}; }
+};
+
+#endif
 
 /// Copy of @p aut with the symbols of transitions changed by @p rename.
 template <class Rename>
