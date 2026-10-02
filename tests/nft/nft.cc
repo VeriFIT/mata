@@ -3598,6 +3598,59 @@ TEST_CASE("mata::nft::Nft::unify_(initial/final)()") {
 		CHECK(nft.delta.contains(1, 'c', 1));
 	}
 
+	SECTION("Initial states sharing symbols") {
+		nft.initial.insert(0);
+		nft.initial.insert(1);
+		nft.delta.add(0, 'b', 5);
+		nft.delta.add(0, 'a', 4);
+		nft.delta.add(1, 'a', 3);
+		nft.delta.add(1, 'a', 4);
+		nft.unify_initial();
+		REQUIRE(nft.num_of_states() == 11);
+		CHECK(nft.initial.size() == 1);
+		CHECK(nft.initial[10]);
+		const StatePost& new_state_post{nft.delta[10]};
+		REQUIRE(new_state_post.size() == 2);
+		std::vector<Symbol> new_state_symbols{};
+		for (const SymbolPost& symbol_post : new_state_post) { new_state_symbols.push_back(symbol_post.symbol); }
+		CHECK(new_state_symbols == std::vector<Symbol>{'a', 'b'});
+		CHECK(new_state_post.get_successors('a') == StateSet{3, 4});
+		CHECK(new_state_post.get_successors('b') == StateSet{5});
+		CHECK(nft.levels.size() == nft.num_of_states());
+		CHECK(nft.levels[10] == 0);
+	}
+
+	SECTION("Multiple final targets in a single symbol post") {
+		nft.final.insert(0);
+		nft.final.insert(1);
+		nft.delta.add(3, 'a', 0);
+		nft.delta.add(3, 'a', 1);
+		nft.delta.add(3, 'a', 2);
+		nft.delta.add(1, 'b', 1);
+		nft.unify_final();
+		REQUIRE(nft.num_of_states() == 11);
+		CHECK(nft.final.size() == 1);
+		CHECK(nft.final[10]);
+		CHECK(nft.delta[3].get_successors('a') == StateSet{0, 1, 2, 10});
+		CHECK(nft.delta[1].get_successors('b') == StateSet{1, 10});
+		CHECK(nft.levels.size() == nft.num_of_states());
+		CHECK(nft.levels[10] == 0);
+	}
+
+	SECTION("Forced new states without any initial and final state") {
+		nft.delta.add(0, 'a', 1);
+		nft.unify_initial(true);
+		nft.unify_final(true);
+		REQUIRE(nft.num_of_states() == 12);
+		CHECK(nft.initial.size() == 1);
+		CHECK(nft.initial[10]);
+		CHECK(nft.final.size() == 1);
+		CHECK(nft.final[11]);
+		CHECK(nft.delta[10].empty());
+		CHECK(nft.delta[0].get_successors('a') == StateSet{1});
+		CHECK(nft.levels.size() == nft.num_of_states());
+	}
+
 	SECTION("Bug: NFT with empty string unifying initial/final repeatedly") {
 		Nft aut{nfa::builder::create_from_regex("a*b*")};
 		for (size_t i{0}; i < 8; ++i) {
