@@ -770,7 +770,7 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
 
 StatePost::Moves StatePost::moves(
 	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
-) const {
+) {
 	return {symbol_post_it, symbol_post_end};
 }
 

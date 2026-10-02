@@ -288,7 +288,7 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
 	 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
 	 */
-	Moves moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end) const;
+	static Moves moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
 	/**
 	 * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
 	 */
@@ -390,7 +390,7 @@ class SuccessorCursor {
 		it.seek();
 		return it;
 	}
-	std::default_sentinel_t end() const { return std::default_sentinel; }
+	static std::default_sentinel_t end() { return std::default_sentinel; }
 
   private:
 	const StatePost* state_post_;
