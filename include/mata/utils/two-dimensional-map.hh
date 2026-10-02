@@ -49,6 +49,9 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 	using Map = std::unordered_map<std::pair<T, T>, T, PairHash<T, T>>;
 	/// A matrix cell stores the value incremented by one; zero denotes a missing value.
 	using Cell = std::conditional_t<(sizeof(T) < sizeof(uint32_t)), T, uint32_t>;
+	/// A row is a dynamically sized array: its length is a runtime value, so 'std::array' does not apply, and
+	///  'std::vector' would add a second size and capacity per row.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): runtime-sized array, see above.
 	using Row = std::unique_ptr<Cell[]>;
 	using MatrixStorage = std::vector<Row>;
 	/// A slot of the hash table used for large dimensions: the packed pair of keys and its value.
@@ -122,6 +125,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 			MATA_ASSERT(value <= max_value, "value {} does not fit into a matrix cell", value);
 			Row& row{matrix_storage_[first]};
 			// std::make_unique<Cell[]>() value-initialises the cells, marking the whole row as empty.
+			// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): see 'Row' above.
 			if (row == nullptr) { row = std::make_unique<Cell[]>(second_dim_size_); }
 			row[second] = static_cast<Cell>(value + 1);
 		} else {
