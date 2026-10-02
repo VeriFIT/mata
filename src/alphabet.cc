@@ -392,6 +392,9 @@ const std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::opti
 }
 
 std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
+	// The const overload above does the lookup; '*this' is known to be non-const here, so casting its constness
+	//  away is safe.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
 	return const_cast<std::shared_ptr<Alphabet>&>(std::as_const(*this).for_level(level));
 }
 
