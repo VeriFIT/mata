@@ -301,7 +301,7 @@ Nft builder::parse_from_mata(std::istream& nft_stream) {
 			"The number of sections in the input file is '" + std::to_string(parsed.size()) + "'. Required is '1'.\n"
 		);
 	}
-	if (const std::string automaton_type{parsed[0].type}; automaton_type.compare(0, nft_str.length(), nft_str) != 0) {
+	if (const std::string automaton_type{parsed[0].type}; !automaton_type.starts_with(nft_str)) {
 		throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFT'\n");
 	}
 	IntAlphabet alphabet;

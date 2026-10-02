@@ -273,7 +273,7 @@ Nfa builder::parse_from_mata(std::istream& nfa_stream) {
 			"The number of sections in the input file is '" + std::to_string(parsed.size()) + "'. Required is '1'.\n"
 		);
 	}
-	if (const std::string automaton_type{parsed[0].type}; automaton_type.compare(0, nfa_str.length(), nfa_str) != 0) {
+	if (const std::string automaton_type{parsed[0].type}; !automaton_type.starts_with(nfa_str)) {
 		throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFA'\n");
 	}
 	IntAlphabet alphabet;
