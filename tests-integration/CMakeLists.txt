@@ -3,8 +3,8 @@
 #  the `.gcda` files every run writes at exit were useless to gcov and only littered the build tree.
 option (MATA_BENCH_PROFILING "Instrument the integration benchmarks for gcov" OFF)
 
-file (GLOB JOBS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.yaml.in")
-file (GLOB INPUTS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.in")
+file (GLOB JOBS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.yaml.in")
+file (GLOB INPUTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.in")
 
 # Generate into the build directory. These files embed `CMAKE_CURRENT_BINARY_DIR`, so writing them
 #  into the source tree made every configured build directory overwrite the other's job files: after
@@ -33,7 +33,7 @@ list (APPEND STALE_IN_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config
 #  `*.in` templates are what the repository tracks.
 file (REMOVE ${STALE_IN_SOURCE_FILES})
 
-file (GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
+file (GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 
 list (FILTER SOURCES EXCLUDE REGEX ".*/tests-integration/src/utils/.*")
 foreach (SOURCE ${SOURCES})

@@ -2,7 +2,7 @@
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
 
 # create glob all source files with .cc and .hh extensions
-file (GLOB_RECURSE MATA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+file (GLOB_RECURSE MATA_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
 # add_library(libmata SHARED
 add_library (libmata STATIC
