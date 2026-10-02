@@ -341,7 +341,7 @@ class SynchronizationProperties {
 			}
 		}
 
-		MATA_ASSERT(std::all_of(sync_types_v.begin(), sync_types_v.end(), [](SynchronizationType type) {
+		MATA_ASSERT(std::ranges::all_of(sync_types_v, [](SynchronizationType type) {
 			return type != SynchronizationType::UnderComputation;
 		}));
 	}

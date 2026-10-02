@@ -354,7 +354,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 /// @warning Correct only when it succeeds (returns a value). A @c std::nullopt result carries no information about
 /// whether @p level_words is readable. The caller must fall back to the general algorithm to find out.
 std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const std::vector<Word>& level_words) {
-	MATA_ASSERT(std::all_of(nft.initial.begin(), nft.initial.end(), [&](const State s) { return nft.levels[s] == 0; }));
+	MATA_ASSERT(std::ranges::all_of(nft.initial, [&](const State s) { return nft.levels[s] == 0; }));
 	const size_t num_of_levels{level_words.size()};
 	std::vector<size_t> position(num_of_levels, 0);
 	StateSet current{nft.initial.begin(), nft.initial.end()};

@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <numeric>
 #include <random>
 #include <unordered_set>
 
@@ -211,6 +212,9 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 
 	// Unique final state generator
 	std::vector<State> states(num_of_states);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(states.begin(), states.end(), 0);
 	std::shuffle(states.begin() + 1, states.end(), gen); // Starting from 1, because 0 is allways final state.
 
