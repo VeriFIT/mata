@@ -2274,7 +2274,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 				if (dist[target_state] != -1) { continue; }
 
 				dist[target_state] = next_dist; // Mark state as visited
-				pred[target_state] = {curr_state, transition_sym}; // Store made transition
+				pred[target_state] = {.prev = curr_state, .sym = transition_sym}; // Store made transition
 
 				// Check if the newly reached state is an accepting state
 				if (this->final.contains(target_state)) {
