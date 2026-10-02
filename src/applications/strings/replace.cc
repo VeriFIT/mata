@@ -457,7 +457,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(
 	Nft nft_reluctant_leftmost{nft::builder::from_nfa_with_levels_zero(nfa, 2, true, {EPSILON})};
 	const size_t regex_num_of_states{nft_reluctant_leftmost.num_of_states()};
 	const utils::OrdVector<Symbol> alphabet_symbols{alphabet->get_alphabet_symbols()};
-	nft_reluctant_leftmost.levels.resize(regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
+	nft_reluctant_leftmost.levels.resize(regex_num_of_states + (replacement.size() * 2) + alphabet_symbols.size() + 4);
 
 	// Create self-loop on the new initial state.
 	const State initial{nft_reluctant_leftmost.add_state_with_level(0)};
