@@ -133,13 +133,7 @@ bool Levels::can_follow_for_states(const State source, const State target) const
 size_t Nft::num_of_states_with_level(const Level level) const { return levels.count(level); }
 
 Nft& Nft::trim(StateRenaming* state_renaming) {
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{get_useful_states()};
-	useful_states.clear();
-	useful_states = get_useful_states();
-#else
 	const BoolVector useful_states{get_useful_states()};
-#endif
 
 	// Drop the levels of the states that are about to be removed.
 	// Independent of the structural renaming below, which does not touch `levels`.
