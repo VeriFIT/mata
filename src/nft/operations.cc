@@ -800,7 +800,7 @@ Nft mata::nft::insert_levels(
 ) {
 	MATA_ASSERT(0 < nft.levels.num_of_levels);
 	MATA_ASSERT(nft.levels.num_of_levels <= new_levels_mask.size());
-	MATA_ASSERT(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
+	MATA_ASSERT(std::cmp_equal(std::ranges::count(new_levels_mask, false), nft.levels.num_of_levels));
 
 	if (const auto num_of_new_levels = static_cast<size_t>(std::ranges::count(new_levels_mask, true));
 		!new_level_alphabets.empty() && new_level_alphabets.size() != num_of_new_levels) {
