@@ -125,8 +125,6 @@ bool mata::nft::algorithms::is_universal_antichains(const Nft& aut, const Alphab
 // The dispatching method that calls the correct one based on parameters.
 bool mata::nft::Nft::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// TODO(nft): Revert back to the naive algorithm when implemented for NFTs?
-	// Setting the default algorithm.
-	decltype(algorithms::is_universal_antichains)* algo = algorithms::is_universal_antichains;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
 			std::to_string(__func__) +
@@ -136,10 +134,12 @@ bool mata::nft::Nft::is_universal(const Alphabet& alphabet, Run* cex, const Para
 		);
 	}
 
-	if (const std::string& str_algo = params.at("algorithm"); "naive" == str_algo) {
-		/* default */
+	const std::string& str_algo = params.at("algorithm");
+	decltype(algorithms::is_universal_antichains)* algo;
+	if ("naive" == str_algo) {
 		throw std::runtime_error(std::to_string(__func__) + " naive algorithm is not implemented for NFTs");
-	} else if ("antichains" == str_algo) {
+	}
+	if ("antichains" == str_algo) {
 		algo = algorithms::is_universal_antichains;
 	} else {
 		throw std::runtime_error(

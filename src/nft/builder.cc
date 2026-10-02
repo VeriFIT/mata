@@ -48,12 +48,11 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 	// a lambda for translating state names to identifiers
 	auto get_state_name = [&](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
-		} else {
-			return (*state_map)[str];
 		}
+		return (*state_map)[str];
 	};
 
 	auto it = parsec.dict.find("Initial");
@@ -119,9 +118,8 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		if (body_line.size() != 3) {
 			if (body_line.size() == 2) {
 				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
-			} else {
-				throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 			}
+			throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 		}
 
 		const State source = get_state_name(body_line[0]);
@@ -147,12 +145,11 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	// a lambda for translating state names to identifiers
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
-		} else {
-			return (*state_map)[str];
 		}
+		return (*state_map)[str];
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -162,11 +159,8 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) {
-				throw std::runtime_error("Epsilon transitions not supported");
-			} else {
-				throw std::runtime_error("Invalid transition");
-			}
+			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+			throw std::runtime_error("Invalid transition");
 		}
 
 		const State source = get_state_name(formula_node.name);

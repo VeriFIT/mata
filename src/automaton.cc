@@ -482,11 +482,10 @@ bool Automaton::is_acyclic() const {
 		if (scc.size() > 1) {
 			acyclic = false;
 			return true;
-		} else { // check for self-loops.
-			if (delta.has_self_loop(scc[0])) {
-				acyclic = false;
-				return true;
-			}
+		} // check for self-loops.
+		if (delta.has_self_loop(scc[0])) {
+			acyclic = false;
+			return true;
 		}
 
 		return false;

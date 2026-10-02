@@ -1307,15 +1307,13 @@ class RefinablePartition {
 		if (mid_[s] == first_[s]) {
 			// If all or no elements were marked, there is no need to split the set.
 			return no_split;
-		} else {
-			// Split the set according to the mid.
-			first_[num_of_sets] = first_[s];
-			mid_[num_of_sets] = first_[s];
-			end_[num_of_sets] = mid_[s];
-			first_[s] = mid_[s];
-			for (size_t l = first_[num_of_sets]; l < end_[num_of_sets]; ++l) { set_idx[elems_[l]] = num_of_sets; }
-			return num_of_sets++;
-		}
+		} // Split the set according to the mid.
+		first_[num_of_sets] = first_[s];
+		mid_[num_of_sets] = first_[s];
+		end_[num_of_sets] = mid_[s];
+		first_[s] = mid_[s];
+		for (size_t l = first_[num_of_sets]; l < end_[num_of_sets]; ++l) { set_idx[elems_[l]] = num_of_sets; }
+		return num_of_sets++;
 	}
 };
 
@@ -1708,9 +1706,8 @@ Relation compute_relation_as(const Nfa& aut, const ParameterMap& params, const s
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
 		return compute_fw_direct_simulation<Relation>(aut);
-	} else {
-		throw std::runtime_error(caller + " received an unknown value of the \"relation\" key: " + relation);
 	}
+	throw std::runtime_error(caller + " received an unknown value of the \"relation\" key: " + relation);
 }
 } // namespace
 

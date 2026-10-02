@@ -549,11 +549,8 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 						}
 					}
 				}
-				if (new_state_safe_epsilon_runs.empty()) {
-					break;
-				} else {
-					state_safe_epsilon_runs = std::move(new_state_safe_epsilon_runs);
-				}
+				if (new_state_safe_epsilon_runs.empty()) { break; }
+				state_safe_epsilon_runs = std::move(new_state_safe_epsilon_runs);
 			}
 		}
 	}
@@ -1722,11 +1719,10 @@ Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& 
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
 		return compute_fw_direct_simulation<Simlib::Util::BinaryRelation>(aut);
-	} else {
-		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
-		);
 	}
+	throw std::runtime_error(
+		std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
+	);
 }
 
 Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const ParameterMap& params) {

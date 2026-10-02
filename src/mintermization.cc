@@ -23,19 +23,23 @@ const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 
 		if (act_node->children.front().node.is_and() && act_node->children[1].node.is_state()) {
 			return act_node; // ... & a1 & q1 ... & qn
-		} else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_and()) {
-			return act_node; // ... & a1 & q1 ... & qn
-		} else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state()) {
-			return act_node; // ... & a1 & q1 & q2
-		} else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state()) {
-			return act_node; // ... & a1 & q1 & q2
-		} else if (act_node->node.is_operator() && act_node->children[1].node.is_state()) {
-			return &act_node->children[1]; // a1 & q1
-		} else if (act_node->children.front().node.is_state() && act_node->node.is_operator()) {
-			return &act_node->children.front(); // a1 & q1
-		} else {
-			for (const mata::FormulaGraph& child : act_node->children) { worklist.push_back(&child); }
 		}
+		if (act_node->children.front().node.is_state() && act_node->children[1].node.is_and()) {
+			return act_node; // ... & a1 & q1 ... & qn
+		}
+		if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state()) {
+			return act_node; // ... & a1 & q1 & q2
+		}
+		if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state()) {
+			return act_node; // ... & a1 & q1 & q2
+		}
+		if (act_node->node.is_operator() && act_node->children[1].node.is_state()) {
+			return &act_node->children[1]; // a1 & q1
+		}
+		if (act_node->children.front().node.is_state() && act_node->node.is_operator()) {
+			return &act_node->children.front(); // a1 & q1
+		}
+		for (const mata::FormulaGraph& child : act_node->children) { worklist.push_back(&child); }
 	}
 
 	return nullptr;
@@ -208,34 +212,40 @@ mata::Mintermization::MintermPartition
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const FormulaGraph& graph) {
-	if (const FormulaNode& node = graph.node; node.is_operand()) {
+	const FormulaNode& node = graph.node;
+	if (node.is_operand()) {
 		if (node.is_state()) { return OptionalBdd(OptionalBdd::Type::NothingE); }
 		if (symbol_to_bddvar_.contains(node.name)) {
 			return OptionalBdd(symbol_to_bddvar_.at(node.name));
-		} else {
-			const BDD res =
-				(node.is_true()) ? bdd_mng_.bddOne() : (node.is_false() ? bdd_mng_.bddZero() : bdd_mng_.bddVar());
-			symbol_to_bddvar_[node.name] = res;
-			return OptionalBdd(res);
 		}
-	} else if (node.is_operator()) {
+		const BDD res = [this, &node] {
+			if (node.is_true()) { return bdd_mng_.bddOne(); }
+			if (node.is_false()) { return bdd_mng_.bddZero(); }
+			return bdd_mng_.bddVar();
+		}();
+		symbol_to_bddvar_[node.name] = res;
+		return OptionalBdd(res);
+	}
+
+	if (node.is_operator()) {
 		if (node.operator_type == FormulaNode::OperatorType::And) {
 			MATA_ASSERT(graph.children.size() == 2);
 			const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
 			const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
 			return op1 * op2;
-		} else if (node.operator_type == FormulaNode::OperatorType::Or) {
+		}
+		if (node.operator_type == FormulaNode::OperatorType::Or) {
 			MATA_ASSERT(graph.children.size() == 2);
 			const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
 			const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
 			return op1 + op2;
-		} else if (node.operator_type == FormulaNode::OperatorType::Neg) {
+		}
+		if (node.operator_type == FormulaNode::OperatorType::Neg) {
 			MATA_ASSERT(graph.children.size() == 1);
 			const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
 			return !op1;
-		} else {
-			MATA_ASSERT(false, "Unknown type of operation. It should conjunction, disjunction, or negation.");
 		}
+		MATA_ASSERT(false, "Unknown type of operation. It should conjunction, disjunction, or negation.");
 	}
 
 	MATA_ASSERT(false);
@@ -243,32 +253,39 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 }
 
 BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
-	if (const FormulaNode& node = graph.node; node.is_operand()) {
+	const FormulaNode& node = graph.node;
+	if (node.is_operand()) {
 		if (symbol_to_bddvar_.contains(node.name)) {
 			return symbol_to_bddvar_.at(node.name);
-		} else {
-			BDD res = (node.is_true()) ? bdd_mng_.bddOne() : (node.is_false() ? bdd_mng_.bddZero() : bdd_mng_.bddVar());
-			symbol_to_bddvar_[node.name] = res;
-			return res;
 		}
-	} else if (node.is_operator()) {
+		const BDD res = [this, &node] {
+			if (node.is_true()) { return bdd_mng_.bddOne(); }
+			if (node.is_false()) { return bdd_mng_.bddZero(); }
+			return bdd_mng_.bddVar();
+		}();
+		symbol_to_bddvar_[node.name] = res;
+		return res;
+	}
+
+	if (node.is_operator()) {
 		if (node.operator_type == FormulaNode::OperatorType::And) {
 			MATA_ASSERT(graph.children.size() == 2);
 			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
 			const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
 			return op1 * op2;
-		} else if (node.operator_type == FormulaNode::OperatorType::Or) {
+		}
+		if (node.operator_type == FormulaNode::OperatorType::Or) {
 			MATA_ASSERT(graph.children.size() == 2);
 			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
 			const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
 			return op1 + op2;
-		} else if (node.operator_type == FormulaNode::OperatorType::Neg) {
+		}
+		if (node.operator_type == FormulaNode::OperatorType::Neg) {
 			MATA_ASSERT(graph.children.size() == 1);
 			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
 			return !op1;
-		} else {
-			MATA_ASSERT(false);
 		}
+		MATA_ASSERT(false);
 	}
 
 	MATA_ASSERT(false);
@@ -423,27 +440,26 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator*(const OptionalBdd& b) const {
 	if (this->type == Type::NothingE) {
 		return b;
-	} else if (b.type == Type::NothingE) {
-		return *this;
-	} else {
-		return OptionalBdd{Type::BddE, this->val * b.val};
 	}
+	if (b.type == Type::NothingE) {
+		return *this;
+	}
+	return OptionalBdd{Type::BddE, this->val * b.val};
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator+(const OptionalBdd& b) const {
 	if (this->type == Type::NothingE) {
 		return b;
-	} else if (b.type == Type::NothingE) {
-		return *this;
-	} else {
-		return OptionalBdd{Type::BddE, this->val + b.val};
 	}
+	if (b.type == Type::NothingE) {
+		return *this;
+	}
+	return OptionalBdd{Type::BddE, this->val + b.val};
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator!() const {
 	if (this->type == Type::NothingE) {
 		return OptionalBdd(Type::NothingE);
-	} else {
-		return OptionalBdd{Type::BddE, !this->val};
 	}
+	return OptionalBdd{Type::BddE, !this->val};
 }

@@ -182,9 +182,8 @@ void Nfa::print_to_dot(
 			// Reverse lookups may scan the whole alphabet; translate each symbol once.
 			if (const auto it{symbol_names.find(symbol)}; it != symbol_names.end()) { return it->second; }
 			return symbol_names.emplace(symbol, used_alphabet->reverse_translate_symbol(symbol)).first->second;
-		} else {
-			return std::to_string(symbol);
 		}
+		return std::to_string(symbol);
 	};
 
 	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {

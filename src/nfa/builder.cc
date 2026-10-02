@@ -41,12 +41,11 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 	//  a new name never gets its identifier while the transitions are only gathered
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
-		} else {
-			return aut.add_state((*state_map)[str]);
 		}
+		return aut.add_state((*state_map)[str]);
 	};
 
 	auto it = parsec.dict.find("Initial");
@@ -67,9 +66,8 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		if (body_line.size() != 3) {
 			if (body_line.size() == 2) {
 				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
-			} else {
-				throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 			}
+			throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 		}
 
 		// Sequenced, so that a mapped source is allocated before a new target gets an identifier.
@@ -97,12 +95,11 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	// a lambda for translating state names to identifiers, see the ParsedSection overload above
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
-		} else {
-			return aut.add_state((*state_map)[str]);
 		}
+		return aut.add_state((*state_map)[str]);
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -115,11 +112,8 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	transitions.reserve(inter_aut.transitions.size());
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) {
-				throw std::runtime_error("Epsilon transitions not supported");
-			} else {
-				throw std::runtime_error("Invalid transition");
-			}
+			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+			throw std::runtime_error("Invalid transition");
 		}
 
 		const State src_state{get_state_name(formula_node.name)};

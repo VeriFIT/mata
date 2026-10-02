@@ -22,7 +22,8 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 	while (it_lhs != lhs.end() && it_rhs != rhs.end()) {
 		if (*it_lhs == *it_rhs) {
 			return false;
-		} else if (*it_lhs < *it_rhs) {
+		}
+		if (*it_lhs < *it_rhs) {
 			++it_lhs;
 		} else {
 			++it_rhs;
@@ -276,9 +277,8 @@ template <class Key> class OrdVector {
 		for (auto v : this->vec_) {
 			if (v == key) {
 				return 1;
-			} else if (v > key) {
-				return 0;
 			}
+			if (v > key) { return 0; }
 		}
 		return 0;
 	}
@@ -298,9 +298,8 @@ template <class Key> class OrdVector {
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
 		if (it == vec_.end() || *it != key) {
 			return vec_.end();
-		} else {
-			return it;
 		}
+		return it;
 	}
 
 	iterator find(const Key& key) {
@@ -309,9 +308,8 @@ template <class Key> class OrdVector {
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
 		if (it == vec_.end() || *it != key) {
 			return vec_.end();
-		} else {
-			return it;
 		}
+		return it;
 	}
 
 	const Key& front() const { return vec_[0]; }
@@ -444,7 +442,8 @@ template <class Key> class OrdVector {
 			   (it_rhs != rhs.end())) { // until we drop out of the array (or find a common element)
 			if (*it_lhs == *it_rhs) { // in case there exists a common element
 				return false;
-			} else if (*it_lhs < *it_rhs) { // in case the element in lhs is smaller
+			}
+			if (*it_lhs < *it_rhs) { // in case the element in lhs is smaller
 				++it_lhs;
 			} else { // in case the element in rhs is smaller
 				MATA_ASSERT(*it_lhs > *it_rhs);

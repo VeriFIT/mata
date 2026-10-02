@@ -311,10 +311,6 @@ template <typename Number> class SparseSet {
 	friend bool are_disjoint(const SparseSet& a, const SparseSet& b) {
 		if (a.size() > b.size()) {
 			return are_disjoint(b, a);
-		} else {
-			for (auto i : a) {
-				if (b.contains(i)) { return false; }
-			}
 		}
 		return !std::ranges::any_of(a, [&b](auto i) { return b.contains(i); });
 	}

@@ -68,9 +68,11 @@ mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string& type) {
 	const std::string alph_type = type.substr(found + 1, std::string::npos);
 	if (alph_type == "bits") {
 		return mata::IntermediateAut::AlphabetType::Bitvector;
-	} else if (alph_type == "explicit") {
+	}
+	if (alph_type == "explicit") {
 		return mata::IntermediateAut::AlphabetType::Explicit;
-	} else if (alph_type == "intervals") {
+	}
+	if (alph_type == "intervals") {
 		return mata::IntermediateAut::AlphabetType::Intervals;
 	}
 
