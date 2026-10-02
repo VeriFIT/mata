@@ -501,20 +501,21 @@ bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 		worklist.pop_front();
 
 		size_t n = 0; // counter of symbols
-		if (!delta.empty()) {
-			for (const auto& symb_stateset : delta[state]) {
-				++n;
-				if (!haskey(symbols, symb_stateset.symbol)) {
-					throw std::runtime_error(
-						std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
-					);
-				}
+		// No `delta.empty()` guard: `delta[state]` of an empty or unallocated state post already yields
+		//  nothing, while `Delta::empty()` walks state posts until it finds a nonempty one and so costs
+		//  O(|Q|) per worklist item.
+		for (const auto& symb_stateset : delta[state]) {
+			++n;
+			if (!haskey(symbols, symb_stateset.symbol)) {
+				throw std::runtime_error(
+					std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
+				);
+			}
 
-				for (const auto& tgt_state : symb_stateset.targets) {
-					bool inserted;
-					tie(std::ignore, inserted) = processed.insert(tgt_state);
-					if (inserted) { worklist.push_back(tgt_state); }
-				}
+			for (const auto& tgt_state : symb_stateset.targets) {
+				bool inserted;
+				tie(std::ignore, inserted) = processed.insert(tgt_state);
+				if (inserted) { worklist.push_back(tgt_state); }
 			}
 		}
 
@@ -532,17 +533,16 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 	for (size_t i = 1; i < run.path.size(); ++i) {
 		const State new_st = run.path[i];
 		bool found = false;
-		if (!this->delta.empty()) {
-			for (const auto& symbol_map : this->delta[cur]) {
-				for (const State st : symbol_map.targets) {
-					if (st == new_st) {
-						word.word.push_back(symbol_map.symbol);
-						found = true;
-						break;
-					}
+		// `delta[cur]` already yields nothing for an empty or unallocated state post, see `is_complete()`.
+		for (const auto& symbol_map : this->delta[cur]) {
+			for (const State st : symbol_map.targets) {
+				if (st == new_st) {
+					word.word.push_back(symbol_map.symbol);
+					found = true;
+					break;
 				}
-				if (found) { break; }
 			}
+			if (found) { break; }
 		}
 		if (!found) { return {{}, false}; }
 		cur = new_st; // update current state
