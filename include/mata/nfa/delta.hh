@@ -376,7 +376,7 @@ class SuccessorCursor {
 			return *this;
 		}
 		/// Compares against @c std::default_sentinel: the end is stateless, so no end iterator is stored.
-		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
+		bool operator==(std::default_sentinel_t /*sentinel*/) const { return symbol_post_it_ == symbol_post_end_; }
 	};
 
 	explicit SuccessorCursor(const StatePost& state_post) : state_post_{&state_post} {}

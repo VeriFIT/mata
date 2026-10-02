@@ -239,7 +239,7 @@ class IntermediateAut {
 	static void parse_transition(IntermediateAut& aut, const std::vector<std::string>& tokens);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
-	void print_transitions_trees(std::ostream&) const;
+	void print_transitions_trees(std::ostream& os) const;
 }; // class IntermediateAut.
 
 } // namespace mata.
