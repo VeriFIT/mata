@@ -39,31 +39,31 @@ using namespace mata::nft;
  * This is a part of the optimization to avoid creating redundant EPSILON transitions.
  * For more details, see https://cs.nyu.edu/~mohri/pub/nway.pdf Figure 3.
  *                       ||                   RHS sync type
- *    LHS sync type      || ONLY_ON_SYMBOL | ONLY_ON_EPSILON | ON_EPSILON_AND_SYMBOL
+ *    LHS sync type      ||  OnlyOnSymbol  |  OnlyOnEpsilon  |  OnEpsilonAndSymbol
  * ======================||================|=================|======================
  *                       ||   synchronize  |                 |      synchronize
- *    ONLY_ON_SYMBOL     ||                |   wait on LHS   |      wait on LHS
+ *      OnlyOnSymbol     ||                |   wait on LHS   |      wait on LHS
  *                       ||                |                 |
  * ----------------------||----------------|-----------------|----------------------
  *                       ||                |                 |
- *   ONLY_ON_EPSILON     ||                |   wait on LHS   |      wait on LHS
+ *     OnlyOnEpsilon     ||                |   wait on LHS   |      wait on LHS
  *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
  * ----------------------||----------------|-----------------|----------------------
  *                       ||   synchronize  |                 |      synchronize
- * ON_EPSILON_AND_SYMBOL ||                |   wait on LHS   |      wait on LHS
+ *  OnEpsilonAndSymbol   ||                |   wait on LHS   |      wait on LHS
  *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
  * =================================================================================
  *
- * A state with the type UNDEFINED neither synchronizes nor makes the other one wait.
+ * A state with the type Undefined neither synchronizes nor makes the other one wait.
  */
 enum class SynchronizationType : uint8_t {
 	/// No synchronization can be reached from the state: it has passed its synchronization level, or it is on or before
 	///  it but cannot reach one (a dead end). Only the level of the state tells the two apart.
-	UNDEFINED = 0b0000'0000,
-	ONLY_ON_SYMBOL = 0b0000'0001, ///< Synchronization on symbol.
-	ONLY_ON_EPSILON = 0b0000'0010, ///< Synchronization on EPSILON.
-	ON_EPSILON_AND_SYMBOL = 0b0000'0011, ///< Synchronization on EPSILON and symbol.
-	UNDER_COMPUTATION = 0b0000'0100 ///< The synchronization is being computed (only a helper value).
+	Undefined = 0b0000'0000,
+	OnlyOnSymbol = 0b0000'0001, ///< Synchronization on symbol.
+	OnlyOnEpsilon = 0b0000'0010, ///< Synchronization on EPSILON.
+	OnEpsilonAndSymbol = 0b0000'0011, ///< Synchronization on EPSILON and symbol.
+	UnderComputation = 0b0000'0100 ///< The synchronization is being computed (only a helper value).
 };
 inline SynchronizationType operator|(SynchronizationType lhs, SynchronizationType rhs) {
 	return static_cast<SynchronizationType>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
@@ -77,8 +77,8 @@ inline bool exist_intersection(SynchronizationType lhs, SynchronizationType rhs)
 }
 /// Whether a state of each type can reach a synchronization on a symbol, see the table above.
 inline bool exist_synchronization(SynchronizationType lhs, SynchronizationType rhs) {
-	return exist_intersection(lhs, SynchronizationType::ONLY_ON_SYMBOL) &&
-		   exist_intersection(rhs, SynchronizationType::ONLY_ON_SYMBOL);
+	return exist_intersection(lhs, SynchronizationType::OnlyOnSymbol) &&
+		   exist_intersection(rhs, SynchronizationType::OnlyOnSymbol);
 }
 
 /**
@@ -237,7 +237,7 @@ class SynchronizationProperties {
 		  sync_level(sync_level),
 		  num_of_levels_before_sync(sync_level),
 		  num_of_levels_after_sync(nft.levels.num_of_levels - sync_level - 1),
-		  sync_types_v(nft.num_of_states(), SynchronizationType::UNDEFINED) {
+		  sync_types_v(nft.num_of_states(), SynchronizationType::Undefined) {
 		get_synchronization_types();
 	}
 
@@ -258,7 +258,7 @@ class SynchronizationProperties {
 
 			// To perform the computation, which is a post-order traversal, we do not
 			// use recursion but a stack for better performance. To determine if a parent state
-			// has already been visited, we use the helper value SynchronizationType::UNDER_COMPUTATION.
+			// has already been visited, we use the helper value SynchronizationType::UnderComputation.
 			std::stack<State> stack;
 			stack.push(root);
 			while (!stack.empty()) {
@@ -267,8 +267,8 @@ class SynchronizationProperties {
 				const Level state_level = nft.levels[state];
 				const StatePost& state_post = nft.delta[state];
 				SynchronizationType current_sync_type = sync_types_v[state];
-				if (current_sync_type != SynchronizationType::UNDEFINED &&
-					current_sync_type != SynchronizationType::UNDER_COMPUTATION) {
+				if (current_sync_type != SynchronizationType::Undefined &&
+					current_sync_type != SynchronizationType::UnderComputation) {
 					// We already computed the synchronization type for this state, so we can skip it.
 					// It can happen that when a transducer has a state that has multiple transitions to the same
 					//  target, the target can be, in some cases, added to the stack multiple times before the first
@@ -277,14 +277,14 @@ class SynchronizationProperties {
 					continue;
 				}
 				MATA_ASSERT(
-					current_sync_type == SynchronizationType::UNDEFINED ||
-					current_sync_type == SynchronizationType::UNDER_COMPUTATION
+					current_sync_type == SynchronizationType::Undefined ||
+					current_sync_type == SynchronizationType::UnderComputation
 				);
 
 				// If it has been visited, then we know that it has already been computed for its children.
-				if (current_sync_type == SynchronizationType::UNDER_COMPUTATION) {
+				if (current_sync_type == SynchronizationType::UnderComputation) {
 					// Combine the synchronization types of its children.
-					current_sync_type = SynchronizationType::UNDEFINED;
+					current_sync_type = SynchronizationType::Undefined;
 					for (const SymbolPost& symbol_post : state_post) {
 						for (const State target : symbol_post.targets) {
 							// Skip fast EPSILON transitions.
@@ -310,17 +310,17 @@ class SynchronizationProperties {
 							 std::ranges::any_of(epsilon_post_it->targets, [this](const State target) {
 								 return nft.levels[target] != 0;
 							 }));
-						if (has_not_only_fast_epsilon) { current_sync_type = SynchronizationType::ONLY_ON_EPSILON; }
-						if (state_post.size() > 1) { current_sync_type |= SynchronizationType::ONLY_ON_SYMBOL; }
+						if (has_not_only_fast_epsilon) { current_sync_type = SynchronizationType::OnlyOnEpsilon; }
+						if (state_post.size() > 1) { current_sync_type |= SynchronizationType::OnlyOnSymbol; }
 					} else if (!state_post.empty()) {
-						current_sync_type = SynchronizationType::ONLY_ON_SYMBOL;
+						current_sync_type = SynchronizationType::OnlyOnSymbol;
 					}
 					sync_types_v[state] = current_sync_type;
 					continue; // No need to visit its children.
 				}
 
 				// We need to visit its children.
-				sync_types_v[state] = SynchronizationType::UNDER_COMPUTATION; // Mark this state as under computation.
+				sync_types_v[state] = SynchronizationType::UnderComputation; // Mark this state as under computation.
 				stack.push(state); // Push it back to the stack to compute it later.
 				for (const SymbolPost& symbol_post : state_post) {
 					for (const State target : symbol_post.targets) {
@@ -330,8 +330,8 @@ class SynchronizationProperties {
 							continue;
 						}
 						MATA_ASSERT(nft.levels[target] > nft.levels[state]);
-						MATA_ASSERT(sync_types_v[target] != SynchronizationType::UNDER_COMPUTATION);
-						if (sync_types_v[target] != SynchronizationType::UNDEFINED) {
+						MATA_ASSERT(sync_types_v[target] != SynchronizationType::UnderComputation);
+						if (sync_types_v[target] != SynchronizationType::Undefined) {
 							current_sync_type |= sync_types_v[target];
 						} else {
 							stack.push(target); // Push the target state onto the stack to visit it.
@@ -342,7 +342,7 @@ class SynchronizationProperties {
 		}
 
 		MATA_ASSERT(std::all_of(sync_types_v.begin(), sync_types_v.end(), [](SynchronizationType type) {
-			return type != SynchronizationType::UNDER_COMPUTATION;
+			return type != SynchronizationType::UnderComputation;
 		}));
 	}
 };
@@ -1334,13 +1334,13 @@ Nft compose_fast_no_jump_with(
 				// It makes sense to continue only if we believe that we will not get stuck
 				// later due to an inability to synchronize. When this function is called
 				// from the waiting simulation, we are interested in only synchronizations on EPSILON.
-				// UNDEFINED marks both a target past its synchronization level (or ending the round), which always
+				// Undefined marks both a target past its synchronization level (or ending the round), which always
 				// continues, and a dead end on or before it, which never synchronizes; only the level tells them apart.
 				// Until the copied side passes its synchronization level, neither has the stationary one.
 				const bool can_synchronize_in_the_future =
 					target_level == 0 || target_level > copy_sync_level ||
 					(waiting_worklist != nullptr
-						 ? exist_intersection(copy_target_sync_type, SynchronizationType::ONLY_ON_EPSILON)
+						 ? exist_intersection(copy_target_sync_type, SynchronizationType::OnlyOnEpsilon)
 						 : exist_synchronization(stationar_state_sync_type, copy_target_sync_type));
 				if (!can_synchronize_in_the_future) {
 					// There is no way we would be able to synchronize in the future.
@@ -1774,8 +1774,8 @@ Nft compose_fast_no_jump_with(
 			// TODO: Optimize/reduce the number of similar combination of waiting simulations.
 			// You can see the table defining operations for pair of synchronization types
 			// in the documentation of the SynchronizationType enum class.
-			const bool perform_wait_on_lhs = exist_intersection(rhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
-			const bool perform_wait_on_rhs = exist_intersection(lhs_sync_type, SynchronizationType::ONLY_ON_EPSILON);
+			const bool perform_wait_on_lhs = exist_intersection(rhs_sync_type, SynchronizationType::OnlyOnEpsilon);
+			const bool perform_wait_on_rhs = exist_intersection(lhs_sync_type, SynchronizationType::OnlyOnEpsilon);
 			const bool can_synchronize_in_the_future = exist_synchronization(lhs_sync_type, rhs_sync_type);
 
 			// The inputs of the EPSILON-composition filter. A silent LHS-only move is a fast EPSILON
@@ -1832,13 +1832,13 @@ Nft compose_fast_no_jump_with(
 
 		// It makes sense to continue only if we believe that synchronization is possible,
 		// or if we have already passed the synchronization level (i.e., lhs_sync_type ==
-		// SynchronizationType::UNDEFINED or rhs_sync_type == SynchronizationType::UNDEFINED).
+		// SynchronizationType::Undefined or rhs_sync_type == SynchronizationType::Undefined).
 		MATA_ASSERT(
 			exist_synchronization(lhs_sync_type, rhs_sync_type) ||
-			(lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::UNDEFINED) ||
-			(rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::UNDEFINED) ||
+			(lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::Undefined) ||
+			(rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::Undefined) ||
 			(lhs_level > lhs_sync_level && rhs_level > rhs_sync_level &&
-			 lhs_sync_type == SynchronizationType::UNDEFINED && rhs_sync_type == SynchronizationType::UNDEFINED)
+			 lhs_sync_type == SynchronizationType::Undefined && rhs_sync_type == SynchronizationType::Undefined)
 		);
 
 		// Both LHS and RHS can take a step if they are not at the synchronization level.
