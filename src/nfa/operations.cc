@@ -1237,7 +1237,7 @@ class RefinablePartition {
 	 *
 	 * @return The number of elements.
 	 */
-	inline size_t size() const { return elems_.size(); }
+	size_t size() const { return elems_.size(); }
 
 	/**
 	 * @brief Get the size of the set.
@@ -1245,7 +1245,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The size of the set.
 	 */
-	inline size_t size_of_set(const size_t s) const { return end_[s] - first_[s]; }
+	size_t size_of_set(const size_t s) const { return end_[s] - first_[s]; }
 
 	/**
 	 * @brief Get the first element of the set.
@@ -1253,7 +1253,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The first element of the set.
 	 */
-	inline T get_first(const size_t s) const { return elems_[first_[s]]; }
+	T get_first(const size_t s) const { return elems_[first_[s]]; }
 
 	/**
 	 * @brief Get the next element of the set.
@@ -1261,7 +1261,7 @@ class RefinablePartition {
 	 * @param e The element.
 	 * @return The next element of the set or NO_MORE_ELEMENTS if there is no next element.
 	 */
-	inline T get_next(const T e) const {
+	T get_next(const T e) const {
 		if (location_[e] + 1 >= end_[set_idx[e]]) { return no_more_elements; }
 		return elems_[location_[e] + 1];
 	}
@@ -1290,7 +1290,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return True if the set has no marked elements, false otherwise.
 	 */
-	inline bool has_no_marks(const size_t s) const { return mid_[s] == first_[s]; }
+	bool has_no_marks(const size_t s) const { return mid_[s] == first_[s]; }
 
 	/**
 	 * @brief Split the set into two sets according to the marked elements (the mid).

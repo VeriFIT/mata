@@ -268,11 +268,11 @@ template <class Key> class OrdVector {
 		return inserted;
 	}
 
-	inline void clear() { vec_.clear(); }
+	void clear() { vec_.clear(); }
 
-	inline size_t size() const { return vec_.size(); }
+	size_t size() const { return vec_.size(); }
 
-	inline size_t count(const Key& key) const {
+	size_t count(const Key& key) const {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 		for (auto v : this->vec_) {
 			if (v == key) {
@@ -348,7 +348,7 @@ template <class Key> class OrdVector {
 	 *
 	 * This function expects the vector to be sorted.
 	 */
-	inline size_t erase(const Key& k) {
+	size_t erase(const Key& k) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 		auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
 		if (found_value_it != vec_.end()) {
@@ -362,7 +362,7 @@ template <class Key> class OrdVector {
 		return 0;
 	}
 
-	inline bool empty() const { return vec_.empty(); }
+	bool empty() const { return vec_.empty(); }
 
 	// Indexes which ar staying are shifted left to take place of those that are not staying.
 	template <typename Fun> void filter_indexes(Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
@@ -370,25 +370,25 @@ template <class Key> class OrdVector {
 	// Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
 	template <typename Fun> void filter(Fun&& is_staying) { utils::filter(vec_, is_staying); }
 
-	inline const_reference back() const { return vec_.back(); }
+	const_reference back() const { return vec_.back(); }
 
 	/**
 	 * @brief Get reference to the last element in the vector.
 	 *
 	 * Modifying the underlying value in the reference could break sortedness.
 	 */
-	inline reference back() { return vec_.back(); }
+	reference back() { return vec_.back(); }
 
-	inline void pop_back() { return vec_.pop_back(); }
+	void pop_back() { return vec_.pop_back(); }
 
-	inline const_iterator begin() const { return vec_.begin(); }
-	inline const_iterator end() const { return vec_.end(); }
+	const_iterator begin() const { return vec_.begin(); }
+	const_iterator end() const { return vec_.end(); }
 
-	inline iterator begin() { return vec_.begin(); }
-	inline iterator end() { return vec_.end(); }
+	iterator begin() { return vec_.begin(); }
+	iterator end() { return vec_.end(); }
 
-	inline const_iterator cbegin() const { return begin(); }
-	inline const_iterator cend() const { return end(); }
+	const_iterator cbegin() const { return begin(); }
+	const_iterator cend() const { return end(); }
 
 	/**
 	 * @brief  Overloaded << operator
