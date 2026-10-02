@@ -102,7 +102,7 @@ class BoolVector : public std::vector<uint8_t> {
 
 }; // class BoolVector.
 
-/// log verbosity
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables): the log level is global state by design.
 extern unsigned LOG_VERBOSITY;
 
 /// git sha
