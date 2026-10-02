@@ -16,6 +16,7 @@
 #ifndef LIBMATA_SPARSE_SET_HH
 #define LIBMATA_SPARSE_SET_HH
 
+#include <algorithm>
 #include <concepts>
 #include <iterator>
 #include <type_traits>
@@ -134,11 +135,7 @@ template <typename Number> class SparseSet {
 
 	SparseSet() = default;
 	/// Basic constructor where you may reserve a domain size.
-	explicit SparseSet(Number domain_size)
-		: dense_(domain_size),
-		  sparse_(domain_size, 0),
-		  size_(0),
-		  domain_size_(domain_size) {
+	explicit SparseSet(Number domain_size) : dense_(domain_size), sparse_(domain_size, 0), domain_size_(domain_size) {
 		MATA_ASSERT(consistent());
 	};
 
@@ -306,9 +303,7 @@ template <typename Number> class SparseSet {
 
 	// This could be a template with types of A and B both as parameters, in utils?
 	friend bool are_disjoint(const SparseSet& a, const SparseSet& b) {
-		if (a.size() > b.size()) {
-			return are_disjoint(b, a);
-		}
+		if (a.size() > b.size()) { return are_disjoint(b, a); }
 		return !std::ranges::any_of(a, [&b](auto i) { return b.contains(i); });
 	}
 };
