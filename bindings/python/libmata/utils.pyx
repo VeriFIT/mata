@@ -2,7 +2,11 @@ import tabulate
 
 from cython.operator import dereference
 
-from libmata.utils cimport CBinaryRelation
+from libmata.utils cimport CBinaryRelation, C_HAS_GENERATOR_SUPPORT
+
+#: Whether mata was built against a standard library implementing `std::generator`. When false, the lazy word
+#:  enumerators (`Nfa.get_words_lazy()`, `Nft.get_words_lazy()`) raise `RuntimeError` instead of yielding words.
+HAS_GENERATOR_SUPPORT = C_HAS_GENERATOR_SUPPORT
 
 cdef class BinaryRelation:
     """Wrapper for binary relation."""

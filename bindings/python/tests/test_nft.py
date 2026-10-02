@@ -1,5 +1,6 @@
 import libmata.nfa.nfa as mata_nfa
 import libmata.nft.nft as mata_nft
+import libmata.utils as mata_utils
 import pytest
 from libmata import alphabets
 
@@ -228,8 +229,8 @@ def test_nft_get_words():
 
 
 @pytest.mark.skipif(
-    not hasattr(mata_nft.Nft, "get_words_lazy"),
-    reason="get_words_lazy() is compiled out when the standard library lacks std::generator support",
+    not mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() needs a standard library implementing std::generator",
 )
 def test_nft_get_words_lazy():
     nft = _make_word_nft([7, 8])
@@ -247,6 +248,16 @@ def test_nft_get_words_lazy():
         if len(first_words) == 3:
             break
     assert first_words == [(), (0,), (0, 0)]
+
+
+@pytest.mark.skipif(
+    mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() only fails without a standard library implementing std::generator",
+)
+def test_nft_get_words_lazy_without_generator_support():
+    nft = _make_word_nft([7, 8])
+    with pytest.raises(RuntimeError):
+        next(iter(nft.get_words_lazy()))
 
 
 def test_nft_builder_functions():

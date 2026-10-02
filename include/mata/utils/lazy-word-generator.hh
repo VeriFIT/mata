@@ -45,6 +45,35 @@ class LazyWordGenerator {
 
 } // namespace mata::utils
 
+#else // MATA_HAS_GENERATOR_SUPPORT
+
+	#include <stdexcept>
+
+	#include "mata/alphabet.hh"
+
+namespace mata::utils {
+
+/// Fallback declaration used when the standard library does not implement @c std::generator (notably Apple's system
+///  libc++, even under `-std=c++23`). The type stays declared so that the bindings-facing API
+///  (nfa::plumbing/nft::plumbing get_words_lazy_ptr()) has the same signature on every platform; it is never
+///  instantiated, because those functions throw instead of constructing one.
+class LazyWordGenerator {
+  public:
+	LazyWordGenerator(const LazyWordGenerator&) = delete;
+	LazyWordGenerator& operator=(const LazyWordGenerator&) = delete;
+	LazyWordGenerator(LazyWordGenerator&&) = delete;
+	LazyWordGenerator& operator=(LazyWordGenerator&&) = delete;
+
+	bool done() const { return true; }
+
+	Word next() { throw std::runtime_error("mata was built without std::generator support"); }
+
+  private:
+	LazyWordGenerator() = default;
+};
+
+} // namespace mata::utils
+
 #endif // MATA_HAS_GENERATOR_SUPPORT
 
 #endif // MATA_LAZY_WORD_GENERATOR_HH_

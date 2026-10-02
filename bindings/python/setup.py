@@ -5,7 +5,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import tempfile
 
 from Cython.Build import cythonize
 from setuptools import Extension, setup
@@ -55,35 +54,6 @@ if platform.system() == "Darwin":
     extra_compile_args.append("-mmacosx-version-min=10.15")
 
 
-def _compiler_has_generator_support():
-    """Probe whether the compiler that will actually build the extensions implements `std::generator` (C++23
-    `<generator>`, P2502). Some standard libraries -- notably Apple's system libc++ shipped with Xcode on macOS --
-    do not, regardless of `-std=c++23`, and get_words_lazy() (and everything built on it) is compiled out of the
-    C++ library in that case (see mata/utils/generator-support.hh) -- so the Cython bindings must not reference it
-    either, or the extension will fail to link.
-    """
-    cxx = os.environ.get("CXX", "c++")
-    probe_source = (
-        "#include <version>\n#ifndef __cpp_lib_generator\n#error no generator support\n#endif\nint main() {}\n"
-    )
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        src_path = os.path.join(tmp_dir, "probe.cc")
-        bin_path = os.path.join(tmp_dir, "probe")
-        with open(src_path, "w") as src_file:
-            src_file.write(probe_source)
-        try:
-            subprocess.run(
-                [cxx, *extra_compile_args, src_path, "-o", bin_path],
-                check=True,
-                capture_output=True,
-            )
-        except (subprocess.CalledProcessError, OSError):
-            return False
-    return True
-
-
-MATA_HAS_GENERATOR_SUPPORT = _compiler_has_generator_support()
-
 extensions = [
     Extension(
         f"libmata.{pkg}",
@@ -94,7 +64,15 @@ extensions = [
         language="c++",
         extra_compile_args=extra_compile_args,
     )
-    for pkg in ("nfa.nfa", "nft.nft", "alphabets", "utils", "parser", "nfa.strings", "plotting")
+    for pkg in (
+        "nfa.nfa",
+        "nft.nft",
+        "alphabets",
+        "utils",
+        "parser",
+        "nfa.strings",
+        "plotting",
+    )
 ]
 
 
@@ -273,10 +251,6 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
 setup(
     version=get_version(),
-    ext_modules=cythonize(
-        extensions,
-        compiler_directives={"language_level": "3"},
-        compile_time_env={"MATA_HAS_GENERATOR_SUPPORT": MATA_HAS_GENERATOR_SUPPORT},
-    ),
+    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
     cmdclass={"sdist": sdist, "build_ext": build_ext},
 )
