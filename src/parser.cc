@@ -89,24 +89,33 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
 					std::string aux;
 					std::getline(input, aux);
 					return result;
-				} else if ('"' == ch) {
+				}
+				if ('"' == ch) {
 					std::string context;
 					std::getline(input, context);
-					throw std::runtime_error("misplaced quotes: " + result + "_\"_" + context);
-				} else if ('(' == ch || ')' == ch) {
+					std::string msg = "misplaced quotes: ";
+					msg += result;
+					msg += "_\"_";
+					msg += context;
+					throw std::runtime_error(msg);
+				}
+				if ('(' == ch || ')' == ch) {
 					input.unget();
 					return result;
 				}
 				if ('@' == ch || '%' == ch) {
 					std::string context;
 					std::getline(input, context);
-					throw std::runtime_error(
-						std::to_string("misplaced character \'") + static_cast<char>(ch) + "\' in string \"" + result +
-						static_cast<char>(ch) + context + "\""
-					);
-				} else {
-					result += static_cast<char>(ch);
+					std::string msg = "misplaced character '";
+					msg += static_cast<char>(ch);
+					msg += "' in string \"";
+					msg += result;
+					msg += static_cast<char>(ch);
+					msg += context;
+					msg += "\"";
+					throw std::runtime_error(msg);
 				}
+				result += static_cast<char>(ch);
 				break;
 			}
 			case TokenizerState::Quoted: {
@@ -278,9 +287,12 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 					break;
 				} else {
 					const std::string trailing(line, i);
-					throw std::runtime_error(
-						"invalid trailing characters \"" + trailing + "\" on the line \"" + line + "\""
-					);
+					std::string msg = "invalid trailing characters \"";
+					msg += trailing;
+					msg += "\" on the line \"";
+					msg += line;
+					msg += "\"";
+					throw std::runtime_error(msg);
 				}
 			}
 
