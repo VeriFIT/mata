@@ -261,6 +261,9 @@ template <class A, class B> struct PairHash {
 };
 
 /// checks whether a container with @p find contains a key
+// The decay warning fires for instantiations with a string-literal key, where decaying to 'const char*' is what the
+//  container lookup expects.
+// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 template <class T, class K> inline bool haskey(const T& cont, const K& key) { return cont.find(key) != cont.cend(); }
 
 /// inverts a map (should work for std::map and std::unordered_map)
@@ -533,6 +536,8 @@ template <class A, class B> std::string to_string(const std::pair<A, B>& p) { //
 /** arbitrary type with the << operator */
 template <class A> std::string to_string(const A& value) { // {{{
 	std::ostringstream os;
+	// Streaming a string literal decays it to 'const char*'; that is the only overload 'operator<<' offers for it.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 	os << value;
 	return os.str();
 } // to_string(T) }}}
