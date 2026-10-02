@@ -486,6 +486,9 @@ std::unordered_set<std::string> mata::FormulaGraph::collect_node_names() const {
 	std::unordered_set<std::string> res;
 	std::vector<const mata::FormulaGraph*> stack;
 
+	// FormulaGraph contains a node member, but we alias it as a FormulaGraph for tree traversal.
+	// This is intentional type punning required by the algorithm.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 	stack.emplace_back(reinterpret_cast<const FormulaGraph*>(&(this->node)));
 	while (!stack.empty()) {
 		const FormulaGraph* g = stack.back();
