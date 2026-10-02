@@ -770,8 +770,8 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	//  new level numbers. In Global mode result.alphabets (== nft.alphabets) is already correct as-is.
 	if (nft.alphabets != nullptr && nft.alphabets->mode() == AlphabetLevels::Mode::MultiLevel) {
 		auto new_alphabets = std::make_shared<AlphabetLevels>(*nft.alphabets);
-		for (auto it = levels_to_proj_v.rbegin(); it != levels_to_proj_v.rend(); ++it) {
-			new_alphabets->erase(new_alphabets->begin() + *it);
+		for (const auto level : std::views::reverse(levels_to_proj_v)) {
+			new_alphabets->erase(new_alphabets->begin() + level);
 		}
 		result.alphabets = std::move(new_alphabets);
 	}
