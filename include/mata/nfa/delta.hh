@@ -358,7 +358,7 @@ class SuccessorCursor {
 		void load_targets() {
 			const std::span<const State> targets{symbol_post_it_->target_span()};
 			target_it_ = targets.data();
-			target_end_ = target_it_ + targets.size();
+			target_end_ = std::next(target_it_, static_cast<ptrdiff_t>(targets.size()));
 		}
 		/// Restore the invariant "positioned on a target, or exhausted".
 		void seek() {
@@ -372,6 +372,8 @@ class SuccessorCursor {
 		}
 		const State& operator*() const { return *target_it_; }
 		const_iterator& operator++() {
+			// The cursor walks one contiguous target span; advancing the pointer is the point of the flattened walk.
+			// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 			if (++target_it_ == target_end_) { seek(); }
 			return *this;
 		}
