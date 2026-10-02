@@ -679,10 +679,7 @@ Nft create_identity_with_single_symbol_replace(
  *  symbol @p from_symbol replaced with word @p replacement.
  */
 Nft create_identity_with_single_symbol_replace(
-	const Alphabet* alphabet,
-	Symbol from_symbol,
-	const Word& replacement,
-	ReplaceMode replace_mode = ReplaceMode::All
+	const Alphabet* alphabet, Symbol from_symbol, const Word& replacement, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -762,10 +759,7 @@ Nft replace_reluctant_single_symbol(
  * @return The reluctant leftmost replace NFT.
  */
 Nft replace_reluctant_single_symbol(
-	Symbol from_symbol,
-	const Word& replacement,
-	const Alphabet* alphabet,
-	ReplaceMode replace_mode = ReplaceMode::All
+	Symbol from_symbol, const Word& replacement, const Alphabet* alphabet, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -817,10 +811,7 @@ class ReluctantReplace {
 	 * @return The reluctant leftmost replace NFT.
 	 */
 	static Nft replace_symbol(
-		Symbol from_symbol,
-		Symbol replacement,
-		const Alphabet* alphabet,
-		ReplaceMode replace_mode = ReplaceMode::All
+		Symbol from_symbol, Symbol replacement, const Alphabet* alphabet, ReplaceMode replace_mode = ReplaceMode::All
 	);
 	/**
 	 * Create NFT modelling a reluctant leftmost replace of symbol @p from_symbol to @p replacement.
@@ -865,11 +856,7 @@ class ReluctantReplace {
 	);
 
 	static Nft reluctant_leftmost_nft(
-		nfa::Nfa nfa,
-		const Alphabet* alphabet,
-		Symbol begin_marker,
-		const Word& replacement,
-		ReplaceMode replace_mode
+		nfa::Nfa nfa, const Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode
 	);
 
 	static Nft replace_literal_nft(

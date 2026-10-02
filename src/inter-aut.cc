@@ -66,15 +66,9 @@ mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string& type) {
 	}
 
 	const std::string alph_type = type.substr(found + 1, std::string::npos);
-	if (alph_type == "bits") {
-		return mata::IntermediateAut::AlphabetType::Bitvector;
-	}
-	if (alph_type == "explicit") {
-		return mata::IntermediateAut::AlphabetType::Explicit;
-	}
-	if (alph_type == "intervals") {
-		return mata::IntermediateAut::AlphabetType::Intervals;
-	}
+	if (alph_type == "bits") { return mata::IntermediateAut::AlphabetType::Bitvector; }
+	if (alph_type == "explicit") { return mata::IntermediateAut::AlphabetType::Explicit; }
+	if (alph_type == "intervals") { return mata::IntermediateAut::AlphabetType::Intervals; }
 
 	throw std::runtime_error("Unknown alphabet type '" + alph_type + "'; expected one of: bits, explicit, intervals");
 	return {};

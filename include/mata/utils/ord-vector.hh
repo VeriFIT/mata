@@ -20,9 +20,7 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 	auto it_lhs = lhs.begin();
 	auto it_rhs = rhs.begin();
 	while (it_lhs != lhs.end() && it_rhs != rhs.end()) {
-		if (*it_lhs == *it_rhs) {
-			return false;
-		}
+		if (*it_lhs == *it_rhs) { return false; }
 		if (*it_lhs < *it_rhs) {
 			++it_lhs;
 		} else {
@@ -275,9 +273,7 @@ template <class Key> class OrdVector {
 	size_t count(const Key& key) const {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 		for (auto v : this->vec_) {
-			if (v == key) {
-				return 1;
-			}
+			if (v == key) { return 1; }
 			if (v > key) { return 0; }
 		}
 		return 0;
@@ -296,9 +292,7 @@ template <class Key> class OrdVector {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) {
-			return vec_.end();
-		}
+		if (it == vec_.end() || *it != key) { return vec_.end(); }
 		return it;
 	}
 
@@ -306,9 +300,7 @@ template <class Key> class OrdVector {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) {
-			return vec_.end();
-		}
+		if (it == vec_.end() || *it != key) { return vec_.end(); }
 		return it;
 	}
 

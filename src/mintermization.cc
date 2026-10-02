@@ -215,9 +215,7 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
 		if (node.is_state()) { return OptionalBdd(OptionalBdd::Type::NothingE); }
-		if (symbol_to_bddvar_.contains(node.name)) {
-			return OptionalBdd(symbol_to_bddvar_.at(node.name));
-		}
+		if (symbol_to_bddvar_.contains(node.name)) { return OptionalBdd(symbol_to_bddvar_.at(node.name)); }
 		const BDD res = [this, &node] {
 			if (node.is_true()) { return bdd_mng_.bddOne(); }
 			if (node.is_false()) { return bdd_mng_.bddZero(); }
@@ -255,9 +253,7 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
-		if (symbol_to_bddvar_.contains(node.name)) {
-			return symbol_to_bddvar_.at(node.name);
-		}
+		if (symbol_to_bddvar_.contains(node.name)) { return symbol_to_bddvar_.at(node.name); }
 		const BDD res = [this, &node] {
 			if (node.is_true()) { return bdd_mng_.bddOne(); }
 			if (node.is_false()) { return bdd_mng_.bddZero(); }
@@ -439,28 +435,18 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator*(const OptionalBdd& b) const {
-	if (this->type == Type::NothingE) {
-		return b;
-	}
-	if (b.type == Type::NothingE) {
-		return *this;
-	}
+	if (this->type == Type::NothingE) { return b; }
+	if (b.type == Type::NothingE) { return *this; }
 	return OptionalBdd{Type::BddE, this->val * b.val};
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator+(const OptionalBdd& b) const {
-	if (this->type == Type::NothingE) {
-		return b;
-	}
-	if (b.type == Type::NothingE) {
-		return *this;
-	}
+	if (this->type == Type::NothingE) { return b; }
+	if (b.type == Type::NothingE) { return *this; }
 	return OptionalBdd{Type::BddE, this->val + b.val};
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator!() const {
-	if (this->type == Type::NothingE) {
-		return OptionalBdd(Type::NothingE);
-	}
+	if (this->type == Type::NothingE) { return OptionalBdd(Type::NothingE); }
 	return OptionalBdd{Type::BddE, !this->val};
 }

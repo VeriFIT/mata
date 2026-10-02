@@ -768,9 +768,8 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
 	return *this;
 }
 
-StatePost::Moves StatePost::moves(
-	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
-) {
+StatePost::Moves
+	StatePost::moves(const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end) {
 	return {symbol_post_it, symbol_post_end};
 }
 
