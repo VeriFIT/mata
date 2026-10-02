@@ -209,10 +209,7 @@ template <typename Number> class SparseSet {
 	bool operator[](Number q) const { return contains(q); }
 
 	template <class InputIterator> void insert(InputIterator first, InputIterator last) {
-		while (first != last) {
-			insert(*first);
-			++first;
-		}
+		std::for_each(first, last, [this](const Number element) { insert(element); });
 		MATA_ASSERT(consistent());
 	}
 

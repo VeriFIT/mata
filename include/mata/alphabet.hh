@@ -244,7 +244,7 @@ class EnumAlphabet : public Alphabet {
 
 	EnumAlphabet(const std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
 	template <class InputIt> EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
-		for (; first != last; ++first) { add_new_symbol(*first); }
+		std::for_each(first, last, [&](const auto& symbol) { add_new_symbol(symbol); });
 	}
 	EnumAlphabet(const std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
@@ -353,7 +353,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
-		for (; first != last; ++first) { add_new_symbol(*first, next_symbol_value_); }
+		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name, next_symbol_value_); });
 	}
 	OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map_{} {
 		for (auto&& [name, symbol] : name_symbol_map) { add_new_symbol(name, symbol); }
