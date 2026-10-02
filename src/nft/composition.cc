@@ -1178,7 +1178,7 @@ Nft compose_fast_no_jump_with(
 	auto synchronize = [&](const State composition_state, const State lhs_state, const State rhs_state,
 						   const bool reconnect = false, const Symbol reconnection_symbol = Limits::max_symbol) {
 		const Level composition_state_level = result.levels[composition_state];
-		const Level composition_target_level =
+		const auto composition_target_level =
 			static_cast<Level>((composition_state_level + 1) % result.levels.num_of_levels);
 		// When projecting out the synchronization levels, and we do not want to connect their
 		// predecessors to their successors, we simply perform the synchronization, note the reached targets,
@@ -1390,7 +1390,7 @@ Nft compose_fast_no_jump_with(
 				} else {
 					// We are not at a synchronization point.
 					// We just need to copy the transition.
-					const Level new_composition_state_level =
+					const auto new_composition_state_level =
 						static_cast<Level>((composition_state_level + trans_len) % result.levels.num_of_levels);
 					if (waiting_worklist != nullptr && new_composition_state_level != 0) {
 						// We are not connecting to the zero-level state, and we were
