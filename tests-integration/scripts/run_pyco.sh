@@ -117,9 +117,12 @@ do
     benchmark_file=$(escape_extension "$benchmark" "input")
     # The result contains information about date, timeout, number of jobs and measured subset of tools (if specified)
     # Run the script with -s|--suffix to append other information to your benchmarks
+    # Spaces in the result file name confuse the downstream tools that consume it, so collapse them
+    #  into dashes. Only the name is sanitised: `$result_dir` is a path we are given, and rewriting
+    #  it would point the run at a directory that does not exist.
     benchmark_name=$(basename "$benchmark")
-    result_file=$result_dir/${benchmark_name%.*}-$(date +%Y-%m-%d-%H-%M-%S)-timeout-$timeout-jobs-$jobs$methods$suffix
-    result_file=$(echo -e "${result_file// /-}")
+    result_name=${benchmark_name%.*}-$(date +%Y-%m-%d-%H-%M-%S)-timeout-$timeout-jobs-$jobs$methods$suffix
+    result_file=$result_dir/${result_name// /-}
 
     # Perform actual runs
     intermediate=()

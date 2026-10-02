@@ -175,6 +175,8 @@ To run a set of benchmark instances on a set of operations through `pycobench`, 
 ```
 
 `<BUILD_DIR>` defaults to `build/`; set `MATA_BUILD_DIR` to point the script at another build directory.
+The `just bench::pyco` recipe sets it to `build/<BUILD_MODE>/<CXX>`, the directory `just cpp::build`
+builds into, and `just bench::performance <MODE>` passes the same directory to `make test-performance`.
 
 You can specify the following parameters:
 

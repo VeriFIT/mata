@@ -2,22 +2,22 @@
 
 import '../just/common.just'
 
+# The job and input files are generated into the build directory and refer to the binaries built
+# there, so every recipe below has to point at the same build directory as `cpp::build`.
+BENCH_DIR := BUILD_ROOT / BUILD_MODE / CXX
+
 # Run the correctness benchmarking jobs and process their results into CSV files.
 [default]
-performance:
-	make -C '{{ ROOT }}' test-performance
+performance MODE=BUILD_MODE:
+	make -C '{{ ROOT }}' test-performance BUILD_DIR='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}'
 
 # Run a single benchmark binary built in BUILD_MODE, e.g. 'just bench run bench-automata-inclusion aut1.mata aut2.mata'.
 run BENCH *ARGS:
-	'{{ BUILD_ROOT }}/{{ BUILD_MODE }}/{{ CXX }}/tests-integration/{{ BENCH }}' {{ ARGS }}
+	'{{ BENCH_DIR }}/tests-integration/{{ BENCH }}' {{ ARGS }}
 
 # Run benchmarks through pycobench, e.g. 'just bench pyco --config jobs/JOB.yaml INPUT'.
 pyco *ARGS:
-	./scripts/run_pyco.sh {{ ARGS }}
-
-# Process raw pycobench outputs into CSV files.
-process *ARGS:
-	./scripts/process_pyco.sh {{ ARGS }}
+	MATA_BUILD_DIR='{{ BENCH_DIR }}' ./scripts/run_pyco.sh {{ ARGS }}
 
 # Compare CSV profiles of several benchmark runs.
 compare +PROFILES:

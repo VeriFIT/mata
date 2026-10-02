@@ -11,7 +11,6 @@
 # WARNING: The results expects that the header will be the same for all processed benchmarks !!!
 
 usage() { {
-        [ $# -gt 0 ] && echo "error: $1"
         echo "usage: ./process_pyco.sh [opt1, ..., optn] [bench1, ..., benchm]"
         echo "options:"
         echo "  -o|--output-file<result.csv>>     target output file[default=result.csv]"
@@ -21,7 +20,7 @@ usage() { {
 
 output_file=result.csv
 benchmarks=()
-basedir=$(realpath $(dirname "$0"))
+basedir=$(realpath "$(dirname "$0")")
 rootdir=$(realpath "$basedir/..")
 number_of_params=1
 
@@ -38,7 +37,7 @@ while [ $# -gt 0 ]; do
             number_of_params=$2
             shift 2;;
         *)
-            benchmarks+=( $1 )
+            benchmarks+=( "$1" )
             shift 1;;
     esac
 done
@@ -69,7 +68,7 @@ processed_header=false
 
 
 # For each benchmark
-for benchmark in ${benchmarks[@]}
+for benchmark in "${benchmarks[@]}"
 do
     # We ensure that the results are in results/data directory
     result_file=$(basename "$benchmark")
@@ -77,7 +76,7 @@ do
 
     # Each partial result is transformed using `pyco_proc` to csv representation
     echo "Processing $benchmark_file"
-    $rootdir/pyco_proc --csv --param-no "$number_of_params" > "$result_file.csv" < "$benchmark_file"
+    "$rootdir/pyco_proc" --csv --param-no "$number_of_params" > "$result_file.csv" < "$benchmark_file"
     if [ $processed_header = false ];
     then
       # For first result we ensure that the header will be there

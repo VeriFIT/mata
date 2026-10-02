@@ -69,7 +69,8 @@ profile.cov
 
 # Performance and profiling tests
 # The generated `jobs/*.yaml`, `inputs/*.input` and `src/utils/config.hh` now land in the build
-#  directory, so they no longer need an ignore rule here.
+#  directory, so they no longer need an ignore rule here. In-source copies left by an older checkout
+#  are deleted by `tests-integration/CMakeLists.txt` at configure time.
 tests-integration/pycobench.tasks
 tests-integration/results/*.csv
 tests-integration/results/*.out
