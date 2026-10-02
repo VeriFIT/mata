@@ -44,9 +44,20 @@ void SymbolPost::insert(const State s) {
 	}
 }
 
-// TODO: slow! This should be doing merge, not inserting one by one.
 void SymbolPost::insert(const StateSet& states) {
-	for (const State s : states) { insert(s); }
+	if (states.empty()) { return; }
+	if (targets.empty()) {
+		targets = states;
+		return;
+	}
+	if (targets.back() < states.front()) { // The sets are disjoint and in order: append without any comparison.
+		targets.reserve(targets.size() + states.size());
+		for (const State s : states) { targets.push_back(s); }
+		return;
+	}
+	StateSet merged{};
+	StateSet::set_union(targets, states, merged);
+	targets = std::move(merged);
 }
 
 StatePost::const_iterator Delta::epsilon_symbol_posts(const State state, const Symbol epsilon) const {
