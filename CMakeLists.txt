@@ -1,9 +1,47 @@
 cmake_minimum_required (VERSION 3.15.0)
+
+# The source of truth for the version is the `VERSION` file that CI (and the Python sdist) writes.
+#  Outside a release checkout, fall back to the latest git tag, and to 0.0.0 when there is neither.
+#  Tags look like `v1.32.45-dev.25`, while `project(VERSION)` accepts numeric components only, so
+#  keep just `<major>.<minor>.<patch>`.
+set (MATA_VERSION_RAW "")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+	file (READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" MATA_VERSION_RAW)
+else ()
+	find_program (MATA_GIT_EXECUTABLE git)
+	if (MATA_GIT_EXECUTABLE)
+		execute_process (
+			COMMAND "${MATA_GIT_EXECUTABLE}" describe --tags --abbrev=0
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			OUTPUT_VARIABLE MATA_VERSION_RAW
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_QUIET
+		)
+	endif ()
+endif ()
+if (MATA_VERSION_RAW MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+	set (MATA_VERSION "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
+else ()
+	set (MATA_VERSION "0.0.0")
+endif ()
+
 project (
 	libMATA
-	#VERSION ???? TODO: set the version automatically during merging
+	VERSION ${MATA_VERSION}
 	DESCRIPTION "A fast and simple automata library"
 	LANGUAGES C CXX) # C is needed for CUDD
+
+if (EXISTS "${PROJECT_SOURCE_DIR}/VERSION")
+	set_property (DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/VERSION")
+endif ()
+
+# Without this, a plain `cmake -B build && cmake --build build` compiles libmata with no
+#  optimisation and with asserts enabled. The Makefile always passes a type, so this only affects
+#  generic CMake workflows; `add_subdirectory()` consumers keep their own type.
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+	message (STATUS "No build type selected, defaulting to Release")
+	set (CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif ()
 
 # Mata uses C++23. Setting CMAKE_CXX_STANDARD to 23 is not enough. The compiler has to actually
 # implement the feature. Fail here with a readable message instead of letting it surface during compilation.
@@ -22,6 +60,15 @@ set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option (MATA_WERROR "Warnings should be handled as errors" OFF)
 option (MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
+
+# Registering the install rules unconditionally means a `FetchContent`/`add_subdirectory()` consumer
+#  installs libmata.a and the Mata, CUDD and simlib headers along with its own artefacts.
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+	set (MATA_INSTALL_DEFAULT ON)
+else ()
+	set (MATA_INSTALL_DEFAULT OFF)
+endif ()
+option (MATA_INSTALL "Generate install rules for Mata" ${MATA_INSTALL_DEFAULT})
 
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -156,34 +203,46 @@ endif ()
 
 
 ##### INSTALLING AND UNINSTALLING #####
-install (
-	TARGETS libmata cudd_headers simlib_headers
-	EXPORT mataTargets
-	ARCHIVE DESTINATION lib
-)
-# TODO: should headers be installed in some nicer way? there is something called FILE_SET in cmake, but I do not feel it will make it better
-install(
-	DIRECTORY
-		${PROJECT_SOURCE_DIR}/include/
-		${PROJECT_SOURCE_DIR}/3rdparty/cudd/include/ # TODO remove this after we remove PUBLIC dependency on CUDD
-		${PROJECT_SOURCE_DIR}/3rdparty/simlib/include/ # TODO remove this after we remove PUBLIC dependency on simlib
-	DESTINATION include
-)
-install(
-	EXPORT mataTargets
-	# NAMESPACE mata:: # for modern cmake, commented out because I am not sure what could break with it
-	DESTINATION lib/cmake/mata
-)
+if (MATA_INSTALL)
+	include (GNUInstallDirs)
+	include (CMakePackageConfigHelpers)
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file(cmake/mataConfig.cmake.in
-	"${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
-	INSTALL_DESTINATION lib/cmake/mata
-)
-install(
-	FILES "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
-	DESTINATION lib/cmake/mata
-)
+	install (
+		TARGETS libmata cudd_headers simlib_headers
+		EXPORT mataTargets
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	)
+	# TODO: should headers be installed in some nicer way? there is something called FILE_SET in cmake, but I do not feel it will make it better
+	install (
+		DIRECTORY
+			${PROJECT_SOURCE_DIR}/include/
+			${PROJECT_SOURCE_DIR}/3rdparty/cudd/include/ # TODO remove this after we remove PUBLIC dependency on CUDD
+			${PROJECT_SOURCE_DIR}/3rdparty/simlib/include/ # TODO remove this after we remove PUBLIC dependency on simlib
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+	)
+	install (
+		EXPORT mataTargets
+		NAMESPACE mata::
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
+	)
+
+	configure_package_config_file (cmake/mataConfig.cmake.in
+		"${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
+		INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
+	)
+	# Without this file `find_package(mata 1 REQUIRED)` reports the installed package as
+	#  "version: unknown" and rejects it.
+	write_basic_package_version_file (
+		"${CMAKE_CURRENT_BINARY_DIR}/mataConfigVersion.cmake"
+		COMPATIBILITY SameMajorVersion
+	)
+	install (
+		FILES
+			"${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
+			"${CMAKE_CURRENT_BINARY_DIR}/mataConfigVersion.cmake"
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
+	)
+endif ()
 
 
 # Uninstall target from https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#can-i-do-make-uninstall-with-cmake

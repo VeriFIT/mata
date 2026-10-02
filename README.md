@@ -230,7 +230,7 @@ endif()
 
 add_executable(my-project
     my-project-source.cc)
-target_link_libraries(my-project PUBLIC libmata)
+target_link_libraries(my-project PUBLIC mata::libmata)
 ```
 
 ### Using the Python binding

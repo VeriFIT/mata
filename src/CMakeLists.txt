@@ -14,6 +14,9 @@ add_library (libmata STATIC
 	$<TARGET_OBJECTS:re2>
 )
 
+# Same spelling for `add_subdirectory()`/`FetchContent` consumers and for `find_package(mata)` ones.
+add_library (mata::libmata ALIAS libmata)
+
 target_compile_features (libmata PUBLIC cxx_std_23)
 
 set_target_properties (libmata PROPERTIES
