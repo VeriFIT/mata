@@ -998,7 +998,7 @@ class Nft : public mata::Automaton {
 	 * It is a general post method that is used by all of its overloads.
 	 *
 	 * @param states Set of states to compute the post set from.
-	 * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+	 * @param level_words Vector of words (w_1, w_2, ..., w_num_of_levels), one per level, to compute the post set for.
 	 * The index of the word in the vector corresponds to the level (tape) on which the word is used.
 	 * The length of the vector must be equal to the number of levels in the NFT.
 	 * @param use_level Bitmask indicating which levels and their corresponding words to use.
@@ -1017,7 +1017,7 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const StateSet& states,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		const BoolVector& use_level,
 		StateSet* visited_zero_level_states = nullptr,
 		bool epsilon_closure_after = true,
@@ -1032,7 +1032,7 @@ class Nft : public mata::Automaton {
 	 * This post uses all words on all levels.
 	 *
 	 * @param states Set of zero-level states to compute the post set from.
-	 * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+	 * @param level_words Vector of words (w_1, w_2, ..., w_num_of_levels), one per level, to compute the post set for.
 	 * The index of the word in the vector corresponds to the level (tape) on which the word is used.
 	 * The length of the vector must be equal to the number of levels in the NFT.
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
@@ -1045,15 +1045,15 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const StateSet& states,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		StateSet* visited_zero_level_states = nullptr,
 		const bool epsilon_closure_after = true,
 		const JumpMode jump_mode = JumpMode::RepeatSymbol,
 		const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config = {}
 	) const {
 		return post(
-			states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode,
-			is_early_exit_config
+			states, level_words, BoolVector(level_words.size(), true), visited_zero_level_states, epsilon_closure_after,
+			jump_mode, is_early_exit_config
 		);
 	}
 
@@ -1064,7 +1064,7 @@ class Nft : public mata::Automaton {
 	 * This post uses all words on all levels.
 	 *
 	 * @param state Zero-level state to compute the post set from.
-	 * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+	 * @param level_words Vector of words (w_1, w_2, ..., w_num_of_levels), one per level, to compute the post set for.
 	 * The index of the word in the vector corresponds to the level (tape) on which the word is used.
 	 * The length of the vector must be equal to the number of levels in the NFT.
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
@@ -1077,14 +1077,14 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const State state,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		StateSet* visited_zero_level_states = nullptr,
 		const bool epsilon_closure_after = true,
 		const JumpMode jump_mode = JumpMode::RepeatSymbol
 	) const {
 		return post(
-			StateSet{state}, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after,
-			jump_mode
+			StateSet{state}, level_words, BoolVector(level_words.size(), true), visited_zero_level_states,
+			epsilon_closure_after, jump_mode
 		);
 	}
 
@@ -1098,7 +1098,7 @@ class Nft : public mata::Automaton {
 	 * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
 	 *
 	 * @param states Set of zero-level states to compute the post set from.
-	 * @param words Vector of words to compute the post set for.
+	 * @param level_words Vector of words to compute the post set for.
 	 * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
 	 * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
@@ -1111,7 +1111,7 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const StateSet& states,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		const std::vector<Level>& word_levels,
 		StateSet* visited_zero_level_states = nullptr,
 		bool epsilon_closure_after = true,
@@ -1128,7 +1128,7 @@ class Nft : public mata::Automaton {
 	 * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
 	 *
 	 * @param state Zero-level state to compute the post set from.
-	 * @param words Vector of words to compute the post set for.
+	 * @param level_words Vector of words to compute the post set for.
 	 * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
 	 * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
@@ -1141,13 +1141,15 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const State state,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		const std::vector<Level>& word_levels,
 		StateSet* visited_zero_level_states = nullptr,
 		const bool epsilon_closure_after = true,
 		JumpMode jump_mode = JumpMode::RepeatSymbol
 	) const {
-		return post(StateSet{state}, words, word_levels, visited_zero_level_states, epsilon_closure_after, jump_mode);
+		return post(
+			StateSet{state}, level_words, word_levels, visited_zero_level_states, epsilon_closure_after, jump_mode
+		);
 	}
 
 	/// Is the language of the automaton universal?

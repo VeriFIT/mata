@@ -657,7 +657,7 @@ class Nfa : public Automaton {
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
-	std::optional<State> read_word_det(const Run& word) const;
+	std::optional<State> read_word_det(const Run& run) const;
 
 	/**
 	 * @brief Read a word and return the state the deterministic automaton ends up in.
