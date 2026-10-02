@@ -1011,12 +1011,18 @@ Nfa determinize(
  * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
- * @param[out] state_renaming Mapping of original states to reduced states.
+ * @param[out] state_renaming Mapping of original states to reduced states. Left empty by "sat" and "qbf", whose
+ *  result is constructed anew.
  * @param[in] params Optional parameters to control the reduction algorithm:
- * - "algorithm": "simulation", "residual",
+ * - "algorithm": "simulation", "residual", "sat", "qbf",
  *      and options to parametrize residual reduction, not utilized in simulation
  * - "type": "after", "with",
  * - "direction": "forward", "backward".
+ *   "sat" and "qbf" compute an automaton with the minimum number of states using an external SAT or QBF solver; see
+ *    @c algorithms::reduce_sat() and @c algorithms::reduce_qbf(). They are experimental and practical only for small
+ *    automata. Their options are:
+ * - "type": "nfa" (default), "dfa" (only for "sat"): the kind of the resulting automaton,
+ * - "solver": the command running the solver (default: found automatically).
  * @return Reduced automaton.
  */
 Nfa reduce(

@@ -1319,7 +1319,16 @@ def reduce(Nfa aut, params = None):
         - "direction":
           - "forward": (Only for "algorithm": "residual") Forward residual construction.
           - "backward": (Only for "algorithm": "residual") Backward residual construction.
+        Experimental, for small automata: "algorithm": "sat" or "qbf" computes an automaton with the minimum number of
+        states using an external SAT or QBF solver, optionally with:
+        - "type":
+          - "nfa": (Only for "algorithm": "sat" or "qbf", default) Minimal NFA.
+          - "dfa": (Only for "algorithm": "sat") Minimal deterministic automaton.
+        - "solver": (Only for "algorithm": "sat" or "qbf") Command running the solver. Defaults to the environment
+          variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
+          cryptominisat5, picosat; depqbf, caqe).
     :return: Reduced automaton.
+    :raises RuntimeError: If the reduction fails, e.g., when no solver is found for "algorithm": "sat" or "qbf".
     """
     params = params or {"algorithm": "simulation"}
     result = Nfa()

@@ -1054,6 +1054,47 @@ def test_reduce():
     assert result.has_transition(state_map[2], ord("a"), state_map[2])
 
 
+def test_reduce_errors():
+    """Errors of the reduction raise exceptions."""
+    nfa = mata_nfa.Nfa(2)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+    nfa.add_transition(0, 0, 1)
+    with pytest.raises(RuntimeError, match="unknown value"):
+        mata_nfa.reduce(nfa, {"algorithm": "unknown"})
+    with pytest.raises(RuntimeError, match="cannot be found"):
+        mata_nfa.reduce(nfa, {"algorithm": "sat", "solver": "/nonexistent/sat-solver"})
+
+
+def test_reduce_sat():
+    """Test reducing the automaton to a minimal one with a SAT solver."""
+    # The second last symbol is 1, determinized to 4 states. The minimal NFA has 3 states.
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 0, 0)
+    nfa.add_transition(0, 1, 0)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 0, 2)
+    nfa.add_transition(1, 1, 2)
+    nfa = mata_nfa.determinize(nfa)
+    assert nfa.num_of_states() == 4
+
+    try:
+        result = mata_nfa.reduce(nfa, {"algorithm": "sat"})
+    except RuntimeError as error:
+        if "No SAT solver found" in str(error) and "MATA_TESTS_REQUIRE_SOLVERS" not in os.environ:
+            pytest.skip(str(error))
+        raise
+    assert result.num_of_states() == 3
+    assert mata_nfa.equivalence_check(result, nfa)
+
+    result = mata_nfa.reduce(nfa, {"algorithm": "sat", "type": "dfa"})
+    assert result.num_of_states() == 4
+    assert result.is_deterministic()
+    assert mata_nfa.equivalence_check(result, nfa)
+
+
 def test_noodlify():
     """Test noodlification."""
     left1 = mata_nfa.Nfa(3)

@@ -47,6 +47,11 @@ The Mata library further depends on the following libraries, included in the `./
 - `re2` for regular expression parsing and the corresponding automata construction, and
 - `simlib` for a simulation computation.
 
+The experimental reduction of automata to automata with the minimum number of states (`reduce()` with the `"sat"` or `"qbf"` algorithm) runs an external SAT or QBF solver.
+Mata finds the solver in `PATH` (CaDiCaL, Kissat, CryptoMiniSat, or PicoSAT; DepQBF or CAQE), or uses the command in the environment variable `MATA_SAT_SOLVER` or `MATA_QBF_SOLVER`.
+For example, run `apt install cadical depqbf` or `brew install cadical depqbf`.
+The solvers are needed only for this reduction, not for building or using the rest of Mata.
+
 To build the library, run the following:
 
 ```shell

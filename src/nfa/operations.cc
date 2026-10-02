@@ -1108,6 +1108,13 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		const std::string& residual_direction = params.at("direction");
 
 		result = algorithms::reduce_residual(aut, reduced_state_map, residual_type, residual_direction);
+	} else if ("sat" == algorithm) {
+		// The result is constructed anew, its states do not correspond to the states of the original automaton.
+		result = algorithms::reduce_sat(
+			aut, haskey(params, "type") ? params.at("type") : "nfa", haskey(params, "solver") ? params.at("solver") : ""
+		);
+	} else if ("qbf" == algorithm) {
+		result = algorithms::reduce_qbf(aut, haskey(params, "solver") ? params.at("solver") : "");
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + algorithm

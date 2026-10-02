@@ -220,7 +220,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&)
     cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
     cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&)
-    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&)
+    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&) except +
     cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&)
     cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&)
     cdef CLazyWordGenerator* c_get_words_lazy_ptr "mata::nfa::plumbing::get_words_lazy_ptr" (CNfa&, size_t) except +

@@ -70,6 +70,9 @@ jobs:
         with:
           os: ${{ matrix.os }}
           compiler: ${{ matrix.compiler }}
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ${{ matrix.os }}
       - uses: ./.github/workflows/actions/compile
       - name: Test the library
         run: make test
@@ -88,6 +91,9 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/install-solvers
         with:
           os: ${{ matrix.os }}
       - name: Set up Python and its dependencies ${{ inputs.python-version }}

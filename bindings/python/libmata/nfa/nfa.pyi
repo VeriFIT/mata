@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Iterator
-from typing import Any, Literal, Self, TypedDict, overload
+from typing import Any, Literal, Required, Self, TypedDict, overload
 
 import networkx
 import pandas
@@ -686,7 +686,24 @@ class _ResidualReduceParams(TypedDict):
     type: Literal["after", "with"]
     direction: Literal["forward", "backward"]
 
-def reduce(aut: Nfa, params: dict[Literal["algorithm"], Literal["simulation"]] | _ResidualReduceParams = None) -> Nfa:
+class _SatReduceParams(TypedDict, total=False):
+    algorithm: Required[Literal["sat"]]
+    type: Literal["nfa", "dfa"]
+    solver: str
+
+class _QbfReduceParams(TypedDict, total=False):
+    algorithm: Required[Literal["qbf"]]
+    type: Literal["nfa"]
+    solver: str
+
+def reduce(
+    aut: Nfa,
+    params: dict[Literal["algorithm"], Literal["simulation"]]
+    | _ResidualReduceParams
+    | _SatReduceParams
+    | _QbfReduceParams
+    | None = None,
+) -> Nfa:
     """Reduce the automaton.
 
     :param Nfa aut: Original automaton to reduce.
@@ -700,7 +717,16 @@ def reduce(aut: Nfa, params: dict[Literal["algorithm"], Literal["simulation"]] |
         - "direction":
           - "forward": (Only for "algorithm": "residual") Forward residual construction.
           - "backward": (Only for "algorithm": "residual") Backward residual construction.
+        Experimental, for small automata: "algorithm": "sat" or "qbf" computes an automaton with the minimum number of
+        states using an external SAT or QBF solver, optionally with:
+        - "type":
+          - "nfa": (Only for "algorithm": "sat" or "qbf", default) Minimal NFA.
+          - "dfa": (Only for "algorithm": "sat") Minimal deterministic automaton.
+        - "solver": (Only for "algorithm": "sat" or "qbf") Command running the solver. Defaults to the environment
+          variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
+          cryptominisat5, picosat; depqbf, caqe).
     :return: Reduced automaton.
+    :raises RuntimeError: If the reduction fails, e.g., when no solver is found for "algorithm": "sat" or "qbf".
     """
 
 def reduce_residual_after(aut: Nfa) -> Nfa:
