@@ -11,6 +11,9 @@
 #ifndef MATA_NFA_INTERNALS_HH_
 #define MATA_NFA_INTERNALS_HH_
 
+#include <stdexcept>
+#include <string>
+
 #include "mata/simlib/util/binary_relation.hh"
 #include "nfa.hh"
 
@@ -192,6 +195,57 @@ Nfa reduce_residual_with(const Nfa& nfa);
  *  types.
  */
 Nfa reduce_residual_after(const Nfa& nfa);
+
+/**
+ * @brief Exception thrown by @c reduce_sat() and @c reduce_qbf() when no external solver can be run.
+ */
+class ExternalSolverNotFound : public std::runtime_error {
+  public:
+	using std::runtime_error::runtime_error;
+};
+
+/**
+ * @brief Reduce NFA to an automaton with the minimum number of states using an external SAT solver.
+ *
+ * Experimental. A counterexample-guided search: for k = 1, 2, ..., a SAT solver looks for an automaton with k states
+ *  consistent with a set of sample words, the candidate is checked for equivalence with @p nfa, and a distinguishing
+ *  word is added to the samples until the candidate is equivalent or no k-state automaton exists. The search is
+ *  exponential in the worst case and is practical only for languages whose minimal automata have about ten states.
+ *
+ * Epsilon transitions over @c EPSILON are removed first. The result uses the symbols and the alphabet of @p nfa.
+ *
+ * @param[in] nfa NFA to reduce.
+ * @param[in] type Kind of the resulting automaton (values: "nfa", "dfa"):
+ *  - "nfa": an NFA with the minimum number of states. It never has more states than @p nfa reduced by simulation.
+ *  - "dfa": a deterministic (not necessarily complete) automaton with the minimum number of states.
+ * @param[in] solver Command running a SAT solver, as the solver's executable followed by its arguments separated by
+ *  spaces (it is not interpreted by a shell). The solver is given a DIMACS CNF file as its last argument and has to
+ *  print the result in the format of the SAT competitions, that is, an "s SATISFIABLE" or "s UNSATISFIABLE" line and
+ *  the model on "v" lines. If empty, the value of the environment variable @c MATA_SAT_SOLVER is used and, if that is
+ *  not set, the first of @c cadical, @c kissat, @c cryptominisat5 and @c picosat found in @c PATH.
+ * @return An automaton equivalent to @p nfa with the minimum number of states of the given @p type.
+ * @throws ExternalSolverNotFound If no SAT solver can be found or run.
+ * @throws std::runtime_error If the solver fails or its output cannot be understood.
+ */
+Nfa reduce_sat(const Nfa& nfa, const std::string& type = "nfa", const std::string& solver = "");
+
+/**
+ * @brief Reduce NFA to an NFA with the minimum number of states using an external QBF solver.
+ *
+ * Experimental. The same search as @c reduce_sat() with @c type "nfa", but the sample words that the NFA has to
+ *  reject are encoded with universally quantified runs instead of the reachable states of their prefixes.
+ *
+ * @param[in] nfa NFA to reduce.
+ * @param[in] solver Command running a QBF solver, given as for @c reduce_sat(). The solver is given a QDIMACS file as
+ *  its last argument and has to print the result and the values of the outermost existential variables in the QDIMACS
+ *  output format ("s cnf 1 ..." or "s cnf 0 ..." and "V" lines). If empty, the value of the environment variable
+ *  @c MATA_QBF_SOLVER is used and, if that is not set, the first of @c depqbf and @c caqe found in @c PATH (run with
+ *  @c --qdo).
+ * @return An NFA equivalent to @p nfa with the minimum number of states.
+ * @throws ExternalSolverNotFound If no QBF solver can be found or run.
+ * @throws std::runtime_error If the solver fails or its output cannot be understood.
+ */
+Nfa reduce_qbf(const Nfa& nfa, const std::string& solver = "");
 
 } // Namespace mata::nfa::algorithms.
 
