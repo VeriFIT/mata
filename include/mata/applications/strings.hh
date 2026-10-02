@@ -68,7 +68,7 @@ class ShortestWordsMap {
 	std::unordered_map<State, LengthWordsPair> shortest_words_map_{};
 	std::set<State> processed_{}; ///< Set of already processed states.
 	std::deque<State> fifo_queue_{}; ///< FIFO queue for states to process.
-	const Nfa reversed_automaton_; ///< Reversed input automaton.
+	Nfa reversed_automaton_; ///< Reversed input automaton.
 
 	/**
 	 * @brief Inserts initial lengths into the shortest words map.
@@ -274,8 +274,11 @@ class Segmentation {
 	const VisitedEpsMap& get_visited_eps() const { return this->visited_eps_; }
 
   private:
-	const std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
+	std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
 	/// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
+	// A one-shot, stack-allocated algorithm helper which only borrows the input automaton for its lifetime; it is
+	//  never copied nor assigned.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
 	const SegNfa& automaton_;
 	/// ε-transitions indexed by their depth; each ε-transition is stored once.
 	std::vector<std::vector<Transition>> epsilon_transitions_by_depth_{};

@@ -184,6 +184,9 @@ class IntAlphabet : public Alphabet {
 		IntAlphabetSingleton() = default;
 	}; // class IntAlphabetSingleton.
 
+	// A reference to the process-wide singleton: it blocks assignment of 'IntAlphabet', which is intended -- every
+	//  instance denotes the same alphabet.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
 	IntAlphabetSingleton& alphabet_instance_;
 }; // class IntAlphabet.
 

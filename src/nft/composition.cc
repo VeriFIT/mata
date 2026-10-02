@@ -226,10 +226,16 @@ template <> struct CompositionKey<false> {
  */
 class SynchronizationProperties {
   public:
+	// A stack-allocated helper that borrows the composed transducer for its lifetime; it is never copied nor
+	//  assigned. A pointer member would instead make '-Weffc++' demand a copy constructor and a copy assignment.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
 	const Nft& nft;
-	const Level sync_level;
-	const size_t num_of_levels_before_sync;
-	const size_t num_of_levels_after_sync;
+	Level sync_level;
+	size_t num_of_levels_before_sync;
+	// Computed from the constructor arguments, not a constant: the check is confused by the constructor parameters
+	//  deliberately shadowing the members.
+	// NOLINTNEXTLINE(cppcoreguidelines-use-default-member-init,modernize-use-default-member-init)
+	size_t num_of_levels_after_sync;
 	std::vector<SynchronizationType> sync_types_v;
 
 	SynchronizationProperties(const Nft& nft, const Level sync_level)

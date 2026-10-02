@@ -210,9 +210,9 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 		}
 	}
 
-	const bool is_large_;
-	const size_t first_dim_size_;
-	const size_t second_dim_size_;
+	bool is_large_;
+	size_t first_dim_size_;
+	size_t second_dim_size_;
 	MatrixStorage matrix_storage_{};
 	HashStorage hash_storage_{};
 	/// Number of pairs stored in the hash table.
