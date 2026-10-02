@@ -348,7 +348,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, const Alphabet* co
 
 	std::vector<State> worklist{0};
 	while (!worklist.empty()) {
-		State source{worklist.back()};
+		const State source{worklist.back()};
 		worklist.pop_back();
 
 		if (StateSet& source_label{labeling[source]}; regex.final.intersects_with(source_label)) {

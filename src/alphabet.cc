@@ -426,7 +426,7 @@ mata::Word mata::encode_word_utf8(const mata::Word& word) {
 mata::Word mata::decode_word_utf8(const mata::Word& word) {
 	mata::Word decoded_word;
 	for (size_t i = 0; i < word.size(); i++) {
-		if (Symbol symbol = word[i]; (symbol & 0x80) == 0) {
+		if (const Symbol symbol = word[i]; (symbol & 0x80) == 0) {
 			// U+0000   to U+007F  : 0xxxxxxx
 			decoded_word.push_back(symbol);
 		} else if ((symbol & 0xE0) == 0xC0) {

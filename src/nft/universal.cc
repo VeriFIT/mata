@@ -46,7 +46,7 @@ bool mata::nft::algorithms::is_universal_antichains(const Nft& aut, const Alphab
 	// initialize
 	WorklistType worklist = {StateSet(aut.initial)};
 	ProcessedType processed = {StateSet(aut.initial)};
-	mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
+	const mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
@@ -68,8 +68,8 @@ bool mata::nft::algorithms::is_universal_antichains(const Nft& aut, const Alphab
 		}
 
 		// process it
-		for (Symbol symb : alph_symbols) {
-			StateSet succ = aut.post(state, symb);
+		for (const Symbol symb : alph_symbols) {
+			const StateSet succ = aut.post(state, symb);
 			if (!aut.final.intersects_with(succ)) {
 				if (nullptr != cex) {
 					cex->word.clear();

@@ -123,8 +123,8 @@ std::unordered_set<BDD> mata::Mintermization::compute_minterms(const std::unorde
 		 * in copy of this function and this one keep clean and straightforward.
 		 */
 		for (const auto& minterm : stack) {
-			if (BDD b1 = minterm * b; !b1.IsZero()) { next.insert(b1); }
-			if (BDD b0 = minterm * !b; !b0.IsZero()) { next.insert(b0); }
+			if (BDD const b1 = minterm * b; !b1.IsZero()) { next.insert(b1); }
+			if (BDD const b0 = minterm * !b; !b0.IsZero()) { next.insert(b0); }
 		}
 		stack = next;
 	}

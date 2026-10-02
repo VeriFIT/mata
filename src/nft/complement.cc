@@ -54,7 +54,9 @@ Nft mata::nft::complement(const Nft& nft, const Alphabet& alphabet, const Parame
 
 Nft mata::nft::complement(const Nft& nft, const OrdVector<Symbol>& symbols, const ParameterMap& params) {
 	// Setting the requested algorithm.
-	decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
+	// The pointee is a function type, which cannot be const-qualified; only the pointer can, and it is.
+	// NOLINTNEXTLINE(misc-const-correctness)
+	decltype(algorithms::complement_classical)* const algo = algorithms::complement_classical;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
 			std::to_string(__func__) +

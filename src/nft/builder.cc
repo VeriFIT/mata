@@ -219,7 +219,7 @@ Nft builder::construct(
 
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
 		}
@@ -386,7 +386,7 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num
 	// We apply simple DFS
 	std::vector<State> worklist; // worklist for DFS
 	worklist.reserve(result.initial.size());
-	for (State initial_state : result.initial) {
+	for (const State initial_state : result.initial) {
 		// start with initial states, which should be level 0
 		levels[initial_state] = 0;
 		worklist.push_back(initial_state);
@@ -395,7 +395,7 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num
 	while (!worklist.empty()) {
 		const State state_to_process = worklist.back();
 		worklist.pop_back();
-		for (State tgt : result.delta[state_to_process].get_successors()) {
+		for (const State tgt : result.delta[state_to_process].get_successors()) {
 			Level next_level = levels[state_to_process] + 1;
 			if (next_level == num_of_levels) { next_level = 0; }
 			if (levels[tgt] == num_of_levels) { // tgt does not have a level yet

@@ -214,7 +214,7 @@ Nft mata::nft::algorithms::product(
 	}
 
 	while (!worklist.empty()) {
-		State product_source = worklist.back();
+		const State product_source = worklist.back();
 		;
 		worklist.pop_back();
 		const State lhs_source = product_storage.get_first_inverted(product_source);

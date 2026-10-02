@@ -515,7 +515,7 @@ void mata::FormulaGraph::print_tree(std::ostream& os) const {
 
 	next_level.push_back(this);
 	while (!next_level.empty()) {
-		std::vector<const FormulaGraph*> this_level = next_level;
+		const std::vector<const FormulaGraph*> this_level = next_level;
 		next_level.clear();
 		for (const auto& graph : this_level) {
 			for (const auto& child : graph->children) { next_level.push_back(&child); }

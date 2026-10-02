@@ -104,7 +104,7 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
-		State state = get_state_name(str);
+		const State state = get_state_name(str);
 		aut.initial.insert(state);
 	}
 
@@ -140,7 +140,7 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	} else {
 		// we add all states in final_formula_nodes to final states
 		for (const auto& str : final_formula_nodes) {
-			State state = get_state_name(str);
+			const State state = get_state_name(str);
 			aut.final.insert(state);
 		}
 	}

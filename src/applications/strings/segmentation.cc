@@ -162,7 +162,7 @@ void seg_nfa::Segmentation::compute_epsilon_depths() {
 	std::deque<StateDepthTuple> worklist{initialize_worklist()};
 
 	while (!worklist.empty()) {
-		StateDepthTuple state_depth_pair{worklist.front()};
+		const StateDepthTuple state_depth_pair{worklist.front()};
 		worklist.pop_front();
 
 		if (!visited[state_depth_pair.state]) {

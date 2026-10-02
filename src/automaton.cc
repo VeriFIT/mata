@@ -228,7 +228,7 @@ std::vector<State> Automaton::distances_from_initial() const {
 	BoolVector visited(num_of_states() + 1, false);
 	std::deque<State> que;
 
-	for (State qi : initial) {
+	for (const State qi : initial) {
 		visited[qi] = true;
 		distances[qi] = 0;
 		que.push_back(qi);
@@ -335,7 +335,7 @@ void Automaton::tarjan_scc_discover(
 	for (const State& q0 : (initial_states.value_or(this->initial)).get()) { program_stack.push_back(q0); }
 
 	while (!program_stack.empty()) {
-		State act_state = program_stack.back();
+		const State act_state = program_stack.back();
 		TarjanNodeData& act_state_data = node_info[act_state];
 
 		// if a node is initialized and is not on stack --> skip it; this state was

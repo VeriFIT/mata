@@ -266,7 +266,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 		// If all levels contain epsilon, we eventually achieve a simple change of state.
 		auto symbol_post_it{state_post.find(nft::EPSILON)};
 		if (symbol_post_it != state_post_end) {
-			for (State target : symbol_post_it->targets) {
+			for (const State target : symbol_post_it->targets) {
 				if (aut.levels[target] == 0 && aut.final.contains(target) && words_match(words_its)) { return true; }
 				worklist.emplace_back(target, words_its);
 			}
@@ -277,7 +277,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 		if (word_symbol_it == track_words_ends[level]) { continue; }
 
 		auto handle_symbol_it{[&] {
-			for (State target : symbol_post_it->targets) {
+			for (const State target : symbol_post_it->targets) {
 				bool jump_failed{false};
 				const Level level_target{aut.levels[target]};
 				auto next_words_its{words_its};
@@ -510,7 +510,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 			for (Level cur_level = 0; cur_level < aut.levels.num_of_levels; ++cur_level) {
 				std::vector<std::vector<State>> new_state_safe_epsilon_runs;
 				for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
-					State state_s = safe_epsilon_run.back();
+					const State state_s = safe_epsilon_run.back();
 					const StatePost& post_s{aut.delta[state_s]};
 					if (const auto eps_move_it_s{post_s.find(epsilon)}; eps_move_it_s != post_s.end()) {
 						if (cur_level != DEFAULT_LEVEL && (aut.delta[state_s].size() != 1)) {
@@ -525,7 +525,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 							// safe
 							continue;
 						}
-						for (State target : eps_move_it_s->targets) {
+						for (const State target : eps_move_it_s->targets) {
 							if (cur_level == aut.levels.num_of_levels - 1) {
 								// we are at the last level, next level will be 0
 								MATA_ASSERT(aut.levels[target] == DEFAULT_LEVEL);
@@ -571,10 +571,10 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 			continue;
 		}
 
-		for (State before_state : before_states) {
+		for (const State before_state : before_states) {
 			if (before_state != state) { eps_delta[before_state].insert(after_states); }
 		}
-		for (State after_state : after_states) {
+		for (const State after_state : after_states) {
 			if (after_state != state) { eps_delta_inverse[after_state].insert(before_states); }
 		}
 	}
@@ -589,7 +589,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 	std::set<Transition> safe_epsilon_runs_transitions;
 	for (const auto& safe_epsilon_run : safe_epsilon_runs) {
 		for (size_t i = 0; i < safe_epsilon_run.size() - 1; ++i) {
-			if (Transition safe_epsilon_run_transition{safe_epsilon_run[i], epsilon, safe_epsilon_run[i + 1]};
+			if (const Transition safe_epsilon_run_transition{safe_epsilon_run[i], epsilon, safe_epsilon_run[i + 1]};
 				!safe_epsilon_runs_transitions.contains(safe_epsilon_run_transition)) {
 				result.delta.remove(safe_epsilon_run_transition);
 				safe_epsilon_runs_transitions.insert(safe_epsilon_run_transition);
@@ -599,7 +599,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
 	// we add new transitions using epsilon closure
 	for (State state{0}; state < num_of_states; ++state) {
-		for (State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
+		for (const State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
 			if (eps_cl_state != state) { // transitions from state are already in result
 				if (aut.final[eps_cl_state]) { result.final.insert(state); }
 				// we only need to add the first transition to level 1 state

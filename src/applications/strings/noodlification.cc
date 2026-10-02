@@ -125,7 +125,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
 		return {};
 	}
 
-	auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
+	const auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
 	std::map<std::pair<State, State>, NoodleSegment> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
@@ -718,8 +718,8 @@ std::optional<Nfa> equation_product(
 	unify_initial_and_final_states(rhs_automata, unified_nfas);
 
 	// Automata representing the left/right side concatenated over different epsilon transitions.
-	Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
-	Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON - 1);
+	const Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
+	const Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON - 1);
 
 	Nfa product_pres_eps_trans{intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON - 1)};
 	product_pres_eps_trans.trim();

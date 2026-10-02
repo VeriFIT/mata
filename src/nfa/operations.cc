@@ -351,7 +351,7 @@ void check_covered_and_covering(
 				//
 				// same applies for any covered state, if it contains newly turned state in theirs
 				// covering set, then it has to be updated
-				State erase_state = it->second; // covered state to remove
+				const State erase_state = it->second; // covered state to remove
 				for (const auto& state : covered | std::views::values) {
 					if (covering_indexes[state].contains(erase_state)) {
 						covering_indexes[state].erase(erase_state);
@@ -1053,6 +1053,8 @@ Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
 }
 
 Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
+	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
+	// NOLINTNEXTLINE(misc-const-correctness)
 	decltype(algorithms::minimize_auto)* algo = algorithms::minimize_auto;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
@@ -1877,12 +1879,12 @@ Nfa mata::nfa::determinize(
 
 		// add moves of S to the sync ex iterator
 		synchronized_iterator.reset();
-		for (State q : states_orig) { push_back(synchronized_iterator, aut.delta[q]); }
+		for (const State q : states_orig) { push_back(synchronized_iterator, aut.delta[q]); }
 
 		while (synchronized_iterator.advance()) {
 			// extract post from the synchronized_iterator iterator
 			const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
-			Symbol current_symbol = (*symbol_posts.begin())->symbol;
+			const Symbol current_symbol = (*symbol_posts.begin())->symbol;
 			// Skipping before the targets are unified keeps the macrostates reachable only over a foreign symbol
 			//  from ever being constructed.
 			if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, current_symbol)) { continue; }
@@ -2243,7 +2245,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 	std::vector<Predecessor> pred(num_of_states);
 
 	// Initialize BFS from all initial states
-	for (mata::nfa::State init_state : this->initial) {
+	for (const mata::nfa::State init_state : this->initial) {
 		dist[init_state] = 0;
 		worklist.push(init_state);
 
@@ -2255,18 +2257,18 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 	// Standard BFS loop
 	while (!worklist.empty()) {
 		// Get the next state in the queue and remove it
-		mata::nfa::State curr_state = worklist.front();
+		const mata::nfa::State curr_state = worklist.front();
 		worklist.pop();
 
 		// Calculate the distance for any newly discovered states from this node
-		int next_dist = dist[curr_state] + 1;
+		const int next_dist = dist[curr_state] + 1;
 
 		// Iterate outgoing transitions
 		for (const auto& sym_post : this->delta[curr_state]) {
-			mata::Symbol transition_sym = sym_post.symbol;
+			const mata::Symbol transition_sym = sym_post.symbol;
 
 			// Iterate over all destination states for this specific symbol
-			for (mata::nfa::State target_state : sym_post.targets) {
+			for (const mata::nfa::State target_state : sym_post.targets) {
 				// Skip if the state has already been visited
 				if (dist[target_state] != -1) { continue; }
 
@@ -2279,7 +2281,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 					// reconstruct shortest word
 					for (mata::nfa::State backtrack_state = target_state; dist[backtrack_state] > 0;
 						 backtrack_state = pred[backtrack_state].prev) {
-						Symbol next_symbol = pred[backtrack_state].sym;
+						const Symbol next_symbol = pred[backtrack_state].sym;
 						if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
 					}
 					// Reverse the backtracked word
@@ -2749,15 +2751,15 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 		// add moves of S to the sync ex iterator
 		synchronized_iterator.reset();
-		for (State q : states_orig) { mata::utils::push_back(synchronized_iterator, nfa.delta[q]); }
+		for (const State q : states_orig) { mata::utils::push_back(synchronized_iterator, nfa.delta[q]); }
 
 		while (synchronized_iterator.advance()) {
 			bool add = false; // check whether to add transitions
 
 			// extract post from the synchronized_iterator iterator
 			const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-			Symbol current_symbol = (*moves.begin())->symbol;
-			StateSet targets = synchronized_iterator.unify_targets(); // new state unify
+			const Symbol current_symbol = (*moves.begin())->symbol;
+			const StateSet targets = synchronized_iterator.unify_targets(); // new state unify
 
 			auto existing_target_res = subset_map.find(targets); // check if state was already discovered
 			State target_res;
@@ -2795,7 +2797,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 				result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
 				predecessors.record(state_res, current_symbol, target_res);
 			} else {
-				for (State switch_target : covering_indexes[target_res]) {
+				for (const State switch_target : covering_indexes[target_res]) {
 					predecessors.add(result, state_res, current_symbol, switch_target);
 				}
 			}

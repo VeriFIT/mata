@@ -279,7 +279,7 @@ void Nft::print_to_dot(
 		tgt_symbols_map.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
-			for (State target : move.targets) {
+			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
 				tgt_symbols_map[target].insert(move.symbol);
 			}
@@ -293,7 +293,7 @@ void Nft::print_to_dot(
 			const Level source_level = source < levels.size() ? levels[source] : 0;
 			std::string label = use_intervals ? vec_of_symbols_to_string_with_intervals(symbols, source_level)
 											  : vec_of_symbols_to_string(symbols, source_level);
-			std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
+			const std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
 			bool is_shortened = false;
 			if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
 				label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");

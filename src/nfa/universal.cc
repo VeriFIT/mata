@@ -188,6 +188,8 @@ bool contains_epsilon(const Nfa& nfa) {
 // The dispatching method that calls the correct one based on parameters.
 bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
+	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
+	// NOLINTNEXTLINE(misc-const-correctness)
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(

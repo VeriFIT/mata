@@ -106,7 +106,6 @@ Nfa mata::nfa::algorithms::product(
 		worklist.pop_back();
 		const State lhs_source = product_storage.get_first_inverted(product_source);
 		const State rhs_source = product_storage.get_second_inverted(product_source);
-
 		// Compute classic product for current state pair.
 		const StatePost& lhs_state_post{lhs.delta[lhs_source]};
 		const StatePost& rhs_state_post{rhs.delta[rhs_source]};

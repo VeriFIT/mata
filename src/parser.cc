@@ -315,7 +315,7 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		MATA_ASSERT(quoted || '@' != maybe_key[0]);
 
 		if (!quoted && '%' == maybe_key[0]) {
-			std::string key = maybe_key.substr(1);
+			const std::string key = maybe_key.substr(1);
 			if (key.empty()) { throw std::runtime_error("%KEY name missing: " + line); }
 
 			auto it = result.dict.find(key);

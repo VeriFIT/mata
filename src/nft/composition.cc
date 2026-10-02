@@ -1105,7 +1105,7 @@ Nft compose_fast_no_jump_with(
 		const Level target_level = result.levels[target];
 		const size_t common_path_length =
 			(target_level == 0 ? result.levels.num_of_levels : target_level) - source_level - 1;
-		State internal_state = create_epsilon_transition_with_common_path(source, common_path_length);
+		const State internal_state = create_epsilon_transition_with_common_path(source, common_path_length);
 		SymbolPost symbol_post{EPSILON};
 		symbol_post.insert(target);
 		insert_symbol_post_to_delta(internal_state, std::move(symbol_post));
@@ -1492,8 +1492,8 @@ Nft compose_fast_no_jump_with(
 			const auto epsilon_target_it = running_delta[running_root_state].find(EPSILON);
 			// There has to be some EPSILON transition. Otherwise, there would be no reason to wait.
 			MATA_ASSERT(epsilon_target_it != running_delta[running_root_state].end());
-			StateSet new_composition_targets;
-			State new_composition_state =
+			const StateSet new_composition_targets;
+			const State new_composition_state =
 				create_epsilon_transition_with_common_path(composition_root_state, result.levels.num_of_levels - 1);
 			SymbolPost symbol_post{EPSILON};
 			for (const State epsilon_target : epsilon_target_it->targets) {
@@ -1726,7 +1726,7 @@ Nft compose_fast_no_jump_with(
 		// Branch only at the last level of that common path.
 		MATA_ASSERT(result.levels.num_of_levels > 0);
 		const size_t common_path_len = result_num_of_levels - 1;
-		State source = create_epsilon_transition_with_common_path(composition_state, common_path_len);
+		const State source = create_epsilon_transition_with_common_path(composition_state, common_path_len);
 
 		SymbolPost symbol_post{EPSILON};
 		for (const State lhs_target : lhs_only_targets) {
