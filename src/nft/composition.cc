@@ -1406,7 +1406,7 @@ Nft compose_fast_no_jump_with(
 							new_composition_state = result.add_state_with_level(new_composition_state_level);
 							if (normalize_generated) { generated.add(new_composition_state, GeneratedKind::Waiting); }
 							waiting_state_storage.emplace(copy_target, new_composition_state);
-							waiting_worklist->push({new_composition_state, copy_target});
+							waiting_worklist->emplace(new_composition_state, copy_target);
 						}
 						// A cached waiting state can be smaller than a target added before it.
 						symbol_post.insert(new_composition_state);
@@ -1522,7 +1522,7 @@ Nft compose_fast_no_jump_with(
 			first_composition_state =
 				create_epsilon_transition_with_common_path(composition_root_state, waiting_trans_before_sync);
 		}
-		worklist.push({first_composition_state, running_root_state});
+		worklist.emplace(first_composition_state, running_root_state);
 
 		// The main loop of the waiting simulation.
 		while (!worklist.empty()) {
@@ -1580,7 +1580,7 @@ Nft compose_fast_no_jump_with(
 						// This synchronization level is being projected out (it will vanish).
 						// There are no EPSILON transitions to add before or after the synchronization level.
 						// However, we are sure, that there will be a least one "running" transition after this.
-						worklist.push({composition_state, running_epsilon_target});
+						worklist.emplace(composition_state, running_epsilon_target);
 					} else if (is_last_running_transition) {
 						// We are connecting to the zero-level state, therefore we have to
 						// create a new composition state that will be put into the main worklist
@@ -1606,7 +1606,7 @@ Nft compose_fast_no_jump_with(
 							new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
 							if (normalize_generated) { generated.add(new_composition_state, GeneratedKind::Waiting); }
 							waiting_state_storage.emplace(running_epsilon_target, new_composition_state);
-							worklist.push({new_composition_state, running_epsilon_target});
+							worklist.emplace(new_composition_state, running_epsilon_target);
 						}
 						// A cached waiting state can be smaller than a target added before it.
 						epsilon_symbol_post.insert(new_composition_state);
