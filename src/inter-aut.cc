@@ -11,11 +11,9 @@
 namespace {
 
 bool has_at_most_one_auto_naming(const mata::IntermediateAut& aut) {
-	return !(
-		!(aut.node_naming == mata::IntermediateAut::Naming::Auto &&
-		  aut.symbol_naming == mata::IntermediateAut::Naming::Auto) &&
-		(aut.state_naming == mata::IntermediateAut::Naming::Auto)
-	);
+	return (aut.node_naming == mata::IntermediateAut::Naming::Auto &&
+			aut.symbol_naming == mata::IntermediateAut::Naming::Auto) ||
+		   (aut.state_naming != mata::IntermediateAut::Naming::Auto);
 }
 
 /// Determines whether the character is one of the logical operators of a transition formula.
@@ -170,11 +168,8 @@ mata::FormulaNode create_node(const mata::IntermediateAut& mata, const std::stri
  * Checks if @p op1 has lower precedence than @p op2. Precedence from the lowest to highest is: | < & < !
  */
 bool lower_precedence(const mata::FormulaNode::OperatorType op1, const mata::FormulaNode::OperatorType op2) {
-	if (op1 == mata::FormulaNode::OperatorType::Neg ||
-		(op1 == mata::FormulaNode::OperatorType::And && op2 != mata::FormulaNode::OperatorType::Neg)) {
-		return false;
-	}
-	return true;
+	return op1 != mata::FormulaNode::OperatorType::Neg &&
+		   (op1 != mata::FormulaNode::OperatorType::And || op2 == mata::FormulaNode::OperatorType::Neg);
 }
 
 /**
