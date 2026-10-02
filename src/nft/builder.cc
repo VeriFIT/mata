@@ -201,7 +201,9 @@ void builder::construct(
 }
 
 Nft builder::construct(
-	const mata::IntermediateAut& inter_aut, std::shared_ptr<mata::AlphabetLevels> alphabets, NameStateMap* state_map
+	const mata::IntermediateAut& inter_aut,
+	const std::shared_ptr<mata::AlphabetLevels>& alphabets,
+	NameStateMap* state_map
 ) {
 	MATA_ASSERT(nullptr != alphabets);
 
@@ -260,7 +262,7 @@ Nft builder::construct(
 void builder::construct(
 	mata::nft::Nft* result,
 	const mata::IntermediateAut& inter_aut,
-	std::shared_ptr<mata::AlphabetLevels> alphabets,
+	const std::shared_ptr<mata::AlphabetLevels>& alphabets,
 	mata::nft::builder::NameStateMap* state_map
 ) {
 	*result = construct(inter_aut, alphabets, state_map);
@@ -271,7 +273,7 @@ Nft builder::create_single_word_nft(const std::vector<Symbol>& word) {
 }
 
 Nft builder::create_single_word_nft(const std::vector<std::string>& word, std::shared_ptr<mata::Alphabet> alphabet) {
-	return Nft(mata::nfa::builder::create_single_word_nfa(word, alphabet));
+	return Nft(mata::nfa::builder::create_single_word_nfa(word, std::move(alphabet)));
 }
 
 Nft builder::create_empty_string_nft(const size_t num_of_levels) {

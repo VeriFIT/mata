@@ -173,7 +173,7 @@ Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, std::s
 
 Nfa builder::create_empty_string_nfa() { return Nfa{1, {0}, {0}}; }
 
-Nfa builder::create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet) {
+Nfa builder::create_sigma_star_nfa(const std::shared_ptr<Alphabet>& alphabet) {
 	Nfa nfa{1, {0}, {0}, alphabet};
 	for (const Symbol& symbol : alphabet->get_alphabet_symbols()) { nfa.delta.add(0, symbol, 0); }
 	return nfa;

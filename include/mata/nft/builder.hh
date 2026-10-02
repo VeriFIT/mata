@@ -83,12 +83,14 @@ void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet
  * @c nullptr.
  */
 Nft construct(
-	const IntermediateAut& inter_aut, std::shared_ptr<AlphabetLevels> alphabets, NameStateMap* state_map = nullptr
+	const IntermediateAut& inter_aut,
+	const std::shared_ptr<AlphabetLevels>& alphabets,
+	NameStateMap* state_map = nullptr
 );
 void construct(
 	Nft* result,
 	const IntermediateAut& inter_aut,
-	std::shared_ptr<AlphabetLevels> alphabets,
+	const std::shared_ptr<AlphabetLevels>& alphabets,
 	NameStateMap* state_map = nullptr
 );
 
