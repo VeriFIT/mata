@@ -6,6 +6,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/two-dimensional-map.hh"
+#include <algorithm>
 #include <functional>
 
 using namespace mata::nfa;
@@ -42,10 +43,12 @@ Nfa mata::nfa::algorithms::product(
 		} else {
 			if (const auto symbol_post_it = product_state_post.find(new_product_symbol_post.symbol);
 				symbol_post_it == product_state_post.end()) {
-				product_state_post.insert(new_product_symbol_post);
+				product_state_post.insert(std::move(new_product_symbol_post));
 			}
 			// Epsilons are not inserted in order, we insert all lhs epsilons and then all rhs epsilons.
-			//  It can happen that we insert an e-transition from lhs and then another with the same e from rhs.
+			//  It can happen that we insert an e-transition from lhs and then another with the same e from rhs. Both
+			//  sides can reach the same product state (e.g. with an e-self-loop on both sides), so this merge
+			//  deduplicates.
 			else {
 				symbol_post_it->insert(new_product_symbol_post.targets);
 			}
@@ -73,8 +76,9 @@ Nfa mata::nfa::algorithms::product(
 
 			if (final_condition(lhs_target, rhs_target)) { product.final.insert(product_target); }
 		}
-		// TODO: Push_back all of them and sort at the could be faster.
-		product_symbol_post.insert(product_target);
+		// The caller sorts @p product_symbol_post once it is complete: inserting the targets in a sorted order here
+		//  would shift O(|targets|) elements per target, since the ids do not arrive in an increasing order.
+		product_symbol_post.push_back(product_target);
 	};
 
 	// Initialize pairs to process with initial state pairs.
@@ -93,70 +97,73 @@ Nfa mata::nfa::algorithms::product(
 	}
 
 	while (!worklist.empty()) {
-		State product_source = worklist.back();
-		;
+		const State product_source = worklist.back();
 		worklist.pop_back();
-		State lhs_source = product_storage.get_first_inverted(product_source);
-		State rhs_source = product_storage.get_second_inverted(product_source);
+		const State lhs_source = product_storage.get_first_inverted(product_source);
+		const State rhs_source = product_storage.get_second_inverted(product_source);
+
 		// Compute classic product for current state pair.
+		const StatePost& lhs_state_post{lhs.delta[lhs_source]};
+		const StatePost& rhs_state_post{rhs.delta[rhs_source]};
+		// Epsilons sort after all normal symbols and are handled separately below.
+		const StatePost::const_iterator lhs_symbols_end{lhs_state_post.first_epsilon_it(first_epsilon)};
+		const StatePost::const_iterator rhs_symbols_end{rhs_state_post.first_epsilon_it(first_epsilon)};
 
-		mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
-		mata::utils::push_back(sync_iterator, lhs.delta[lhs_source]);
-		mata::utils::push_back(sync_iterator, rhs.delta[rhs_source]);
-
-		while (sync_iterator.advance()) {
-			const std::vector<StatePost::const_iterator>& same_symbol_posts{sync_iterator.get_current()};
-			MATA_ASSERT(same_symbol_posts.size() == 2); // One move per state in the pair.
-
-			// Compute product for state transitions with same symbols.
-			// Find all transitions that have the same symbol for first and the second state in the pair_to_process.
-			// Create transition from the pair_to_process to all pairs between states to which first transition goes
-			//  and states to which second one goes.
-			if (Symbol symbol = same_symbol_posts[0]->symbol; symbol < first_epsilon) {
-				SymbolPost product_symbol_post{symbol};
-				for (const State lhs_target : same_symbol_posts[0]->targets) {
-					for (const State rhs_target : same_symbol_posts[1]->targets) {
-						create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
-					}
-				}
-				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
-				// Here we are sure that we are working with the largest symbol so far, since we iterate through
-				// the symbol posts of the lhs and rhs in order. So we can just push_back (not insert).
-				product_state_post.push_back(std::move(product_symbol_post));
-			} else {
-				break;
+		// Find all transitions that have the same symbol for the first and the second state of the processed pair, and
+		//  create a transition to every pair of a target of the first one and a target of the second one. Both state
+		//  posts are sorted by symbol, so a single two-pointer merge finds the shared symbols.
+		auto lhs_symbol_post{lhs_state_post.begin()};
+		auto rhs_symbol_post{rhs_state_post.begin()};
+		while (lhs_symbol_post != lhs_symbols_end && rhs_symbol_post != rhs_symbols_end) {
+			if (lhs_symbol_post->symbol < rhs_symbol_post->symbol) {
+				++lhs_symbol_post;
+				continue;
 			}
+			if (rhs_symbol_post->symbol < lhs_symbol_post->symbol) {
+				++rhs_symbol_post;
+				continue;
+			}
+
+			SymbolPost product_symbol_post{lhs_symbol_post->symbol};
+			product_symbol_post.targets.reserve(lhs_symbol_post->targets.size() * rhs_symbol_post->targets.size());
+			for (const State lhs_target : lhs_symbol_post->targets) {
+				for (const State rhs_target : rhs_symbol_post->targets) {
+					create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
+				}
+			}
+			// The pairs of this symbol post are pairwise distinct, hence so are their product states. Sorting them
+			//  therefore restores the invariant of SymbolPost::targets, no deduplication is needed.
+			std::ranges::sort(product_symbol_post.targets);
+			// Here we are sure that we are working with the largest symbol so far, since we iterate through
+			// the symbol posts of the lhs and rhs in order. So we can just push_back (not insert).
+			product.delta.mutable_state_post(product_source).push_back(std::move(product_symbol_post));
+			++lhs_symbol_post;
+			++rhs_symbol_post;
 		}
 
 		// Add epsilon transitions, from lhs e-transitions.
-		const StatePost& lhs_state_post{lhs.delta[lhs_source]};
-
 		// TODO: handling of epsilons might not be ideal, don't know, it would need some brain cycles to improve.
 		//  (handling of normal symbols is ok though)
-		if (auto lhs_first_epsilon_it = lhs_state_post.first_epsilon_it(first_epsilon);
-			lhs_first_epsilon_it != lhs_state_post.end()) {
-			for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end();
-				 ++lhs_symbol_post) {
-				SymbolPost prod_symbol_post{lhs_symbol_post->symbol};
-				for (const State lhs_target : lhs_symbol_post->targets) {
-					create_product_state_and_symbol_post(lhs_target, rhs_source, prod_symbol_post);
-				}
-				add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
+		for (auto lhs_epsilon_post{lhs_symbols_end}; lhs_epsilon_post != lhs_state_post.end(); ++lhs_epsilon_post) {
+			SymbolPost prod_symbol_post{lhs_epsilon_post->symbol};
+			prod_symbol_post.targets.reserve(lhs_epsilon_post->targets.size());
+			for (const State lhs_target : lhs_epsilon_post->targets) {
+				create_product_state_and_symbol_post(lhs_target, rhs_source, prod_symbol_post);
 			}
+			// The pairs (lhs_target, rhs_source) are pairwise distinct, so sorting is enough here, too.
+			std::ranges::sort(prod_symbol_post.targets);
+			add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
 		}
 
 		// Add epsilon transitions, from rhs e-transitions.
-		const StatePost& rhs_state_post{rhs.delta[rhs_source]};
-		if (auto rhs_first_epsilon_it = rhs_state_post.first_epsilon_it(first_epsilon);
-			rhs_first_epsilon_it != rhs_state_post.end()) {
-			for (auto rhs_symbol_post = rhs_first_epsilon_it; rhs_symbol_post < rhs_state_post.end();
-				 ++rhs_symbol_post) {
-				SymbolPost prod_symbol_post{rhs_symbol_post->symbol};
-				for (const State rhs_target : rhs_symbol_post->targets) {
-					create_product_state_and_symbol_post(lhs_source, rhs_target, prod_symbol_post);
-				}
-				add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
+		for (auto rhs_epsilon_post{rhs_symbols_end}; rhs_epsilon_post != rhs_state_post.end(); ++rhs_epsilon_post) {
+			SymbolPost prod_symbol_post{rhs_epsilon_post->symbol};
+			prod_symbol_post.targets.reserve(rhs_epsilon_post->targets.size());
+			for (const State rhs_target : rhs_epsilon_post->targets) {
+				create_product_state_and_symbol_post(lhs_source, rhs_target, prod_symbol_post);
 			}
+			std::ranges::sort(prod_symbol_post.targets);
+			add_product_e_post(lhs_source, rhs_source, prod_symbol_post);
 		}
 	}
 	return product;

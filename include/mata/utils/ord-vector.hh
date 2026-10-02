@@ -205,6 +205,28 @@ template <class Key> class OrdVector {
 		return {pos, inserted};
 	}
 
+	/**
+	 * @brief Insert @p x, moving from it when it is not present yet.
+	 *
+	 * Without this overload, an @c insert(std::move(x)) call binds to @c insert(const Key&) and copies @p x, which
+	 *  matters for keys that own memory (e.g. @c SymbolPost).
+	 */
+	virtual std::pair<iterator, bool> insert(Key&& x) {
+		MATA_ASSERT(is_sorted());
+
+		reserve_on_insert(vec_);
+
+		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
+		bool inserted{false};
+		if (pos == vec_.end() || *pos != x) {
+			pos = vec_.insert(pos, std::move(x));
+			inserted = true;
+		}
+
+		MATA_ASSERT(is_sorted());
+		return {pos, inserted};
+	}
+
 	virtual bool insert(const OrdVector& vec) {
 		static OrdVector tmp{};
 		MATA_ASSERT(is_sorted());

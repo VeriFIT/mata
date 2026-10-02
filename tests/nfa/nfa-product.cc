@@ -263,6 +263,73 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions") {
 	CHECK(result.delta.state_post(prod_map[{5, 8}]).empty());
 }
 
+TEST_CASE("mata::nfa::intersection() with product states revisited out of order") {
+	// The product states are numbered in the order in which the product first reaches them, so a symbol post can
+	//  reach an older (smaller) product state after a newer (greater) one. The targets of the resulting symbol post
+	//  still have to be sorted, otherwise lookups in it (binary search) miss transitions.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nfa a{4};
+	a.initial.insert(0);
+	a.final.insert({1, 2, 3});
+	a.delta.add(0, 'a', 3);
+	a.delta.add(0, 'b', 1);
+	a.delta.add(0, 'b', 2);
+	a.delta.add(0, 'b', 3);
+
+	Nfa b{4};
+	b.initial.insert(0);
+	b.final.insert({1, 2, 3});
+	b.delta.add(0, 'a', 3);
+	b.delta.add(0, 'b', 1);
+	b.delta.add(0, 'b', 2);
+	b.delta.add(0, 'b', 3);
+
+	const Nfa result{intersection(a, b, EPSILON, &prod_map)};
+
+	// (3, 3) is created over 'a', hence it is the smallest of the product states reached over 'b', even though it is
+	//  the last target pair of 'b'.
+	const State source{prod_map[{0, 0}]};
+	CHECK(result.num_of_states() == 10);
+	CHECK(result.delta.num_of_transitions() == 10);
+	CHECK(result.delta.state_post(source).num_of_moves() == 10);
+	CHECK(result.delta.contains(source, 'a', prod_map[{3, 3}]));
+	for (const State lhs_target : {State{1}, State{2}, State{3}}) {
+		for (const State rhs_target : {State{1}, State{2}, State{3}}) {
+			CHECK(result.delta.contains(source, 'b', prod_map[{lhs_target, rhs_target}]));
+		}
+	}
+	CHECK(mata::utils::is_sorted(result.delta.state_post(source).find('b')->targets.to_vector()));
+}
+
+TEST_CASE("mata::nfa::intersection() with epsilon self-loops on both sides") {
+	// Both operands have an epsilon self-loop, so both epsilon posts of the product state contain the product state
+	//  itself: merging them must not duplicate it.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nfa a{2};
+	a.initial.insert(0);
+	a.final.insert({0, 1});
+	a.delta.add(0, EPSILON, 0);
+	a.delta.add(0, EPSILON, 1);
+
+	Nfa b{2};
+	b.initial.insert(0);
+	b.final.insert({0, 1});
+	b.delta.add(0, EPSILON, 0);
+	b.delta.add(0, EPSILON, 1);
+
+	const Nfa result{intersection(a, b, EPSILON, &prod_map)};
+
+	const State source{prod_map[{0, 0}]};
+	CHECK(result.num_of_states() == 4);
+	CHECK(result.delta.state_post(source).num_of_moves() == 3);
+	CHECK(result.delta.contains(source, EPSILON, source));
+	CHECK(result.delta.contains(source, EPSILON, prod_map[{1, 0}]));
+	CHECK(result.delta.contains(source, EPSILON, prod_map[{0, 1}]));
+	CHECK(result.delta.num_of_transitions() == 7);
+}
+
 TEST_CASE("mata::nfa::intersection() for profiling", "[.profiling],[intersection]") {
 	Nfa a{6};
 	a.initial.insert(0);
