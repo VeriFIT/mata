@@ -2,6 +2,9 @@ from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.vector cimport vector
 
+cdef extern from "mata/utils/generator-support.hh":
+    cdef bint C_HAS_GENERATOR_SUPPORT "MATA_HAS_GENERATOR_SUPPORT"
+
 cdef extern from "mata/utils/sparse-set.hh" namespace "mata::utils":
     cdef cppclass CSparseSet "mata::utils::SparseSet" [T]:
         vector[T] dense

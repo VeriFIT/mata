@@ -206,8 +206,14 @@ def test_get_word_for_path(fa_one_divisible_by_two, fa_one_divisible_by_four, fa
     assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2]) == ([1, 1], True)
     assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 0]) == ([], False)
     assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 2]) == ([1, 1, 0], True)
-    assert fa_one_divisible_by_four.get_word_for_path([0, 1, 2, 3, 4]) == ([1, 1, 1, 1], True)
-    assert fa_one_divisible_by_eight.get_word_for_path([0, 1, 2, 3, 4, 5, 6, 7, 8]) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
+    assert fa_one_divisible_by_four.get_word_for_path([0, 1, 2, 3, 4]) == (
+        [1, 1, 1, 1],
+        True,
+    )
+    assert fa_one_divisible_by_eight.get_word_for_path([0, 1, 2, 3, 4, 5, 6, 7, 8]) == (
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        True,
+    )
 
 
 def test_encode_word():
@@ -804,11 +810,19 @@ def test_simulation(fa_one_divisible_by_four):
 def test_simulation_other_features(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     rel = mata_nfa.compute_relation(lhs)
-    assert rel.to_matrix() == [[True, False, True], [False, True, False], [False, False, True]]
+    assert rel.to_matrix() == [
+        [True, False, True],
+        [False, True, False],
+        [False, False, True],
+    ]
 
     # Testing transposition
     trans_rel = rel.transpose()
-    assert trans_rel.to_matrix() == [[True, False, False], [False, True, False], [True, False, True]]
+    assert trans_rel.to_matrix() == [
+        [True, False, False],
+        [False, True, False],
+        [True, False, True],
+    ]
 
     assert not rel.is_symmetric_at(0, 2)
     assert not rel.is_symmetric_at(1, 2)
@@ -1200,8 +1214,8 @@ def test_get_words():
 
 
 @pytest.mark.skipif(
-    not hasattr(mata_nfa.Nfa, "get_words_lazy"),
-    reason="get_words_lazy() is compiled out when the standard library lacks std::generator support",
+    not mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() needs a standard library implementing std::generator",
 )
 def test_get_words_lazy():
     nfa = mata_nfa.Nfa(3)
@@ -1223,3 +1237,17 @@ def test_get_words_lazy():
         if len(first_words) == 3:
             break
     assert first_words == [(), (0,), (0, 0)]
+
+
+@pytest.mark.skipif(
+    mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() only fails without a standard library implementing std::generator",
+)
+def test_get_words_lazy_without_generator_support():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    with pytest.raises(RuntimeError):
+        next(iter(nfa.get_words_lazy(5)))
