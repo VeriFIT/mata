@@ -4,6 +4,8 @@
 #ifndef MATA_ALPHABET_HH
 #define MATA_ALPHABET_HH
 
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -541,7 +543,7 @@ class OnTheFlyAlphabet : public Alphabet {
 class AlphabetLevels {
   public:
 	/// Operating mode of the @c AlphabetLevels instance.
-	enum class Mode {
+	enum class Mode : std::uint8_t {
 		Global, ///< @c alphabets[0] is used for every level; level argument is ignored.
 		MultiLevel, ///< Each level uses its own alphabet from @c alphabets[level]; level argument is required.
 	};

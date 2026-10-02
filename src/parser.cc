@@ -7,6 +7,7 @@
 #include "mata/utils/utils.hh"
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 
 using std::tie;
@@ -55,7 +56,7 @@ bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch ==
 std::string get_token_from_line(std::istream& input, bool* quoted) {
 	MATA_ASSERT(nullptr != quoted);
 
-	enum class TokenizerState { Init, Unquoted, Quoted, QuotedEscape };
+	enum class TokenizerState : std::uint8_t { Init, Unquoted, Quoted, QuotedEscape };
 
 	std::string result;
 	*quoted = false;

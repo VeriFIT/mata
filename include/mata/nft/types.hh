@@ -6,6 +6,7 @@
 #define MATA_NFT_TYPES_HH
 
 #include <concepts>
+#include <cstdint>
 #include <optional>
 #include <utility>
 
@@ -57,13 +58,13 @@ using Limits = mata::nfa::Limits;
 
 class Nft; ///< A non-deterministic finite transducer.
 
-enum class JumpMode {
+enum class JumpMode : std::uint8_t {
 	RepeatSymbol, ///< Repeat the symbol on the jump.
 	AppendDontCares, ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 	NoJump ///< No jumps are allowed.
 };
 
-enum class CompositionMode {
+enum class CompositionMode : std::uint8_t {
 	General, ///< General composition mode for arbitrary number or synchronization levels and jump modes.
 	FastNoJump, ///< Fast composition mode for a single synchronization level and no jumps.
 	Auto ///< Automatically select the best composition mode based on the parameters.

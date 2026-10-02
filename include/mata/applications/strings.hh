@@ -16,6 +16,8 @@
 	#include <generator>
 #endif
 
+#include <cstdint>
+
 /**
  * Operations on NFAs/NFTs used for string constraint solving.
  */
@@ -654,7 +656,7 @@ constexpr Symbol END_MARKER{mata::nft::EPSILON - 99}; ///< Marker marking the en
 /**
  * How many occurrences of the regex to replace, in order from left to right?
  */
-enum class ReplaceMode {
+enum class ReplaceMode : std::uint8_t {
 	Single, ///< Replace only the first occurrence of the regex.
 	All, ///< Replace all occurrences of the regex.
 };
