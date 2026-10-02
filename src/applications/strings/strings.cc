@@ -355,11 +355,9 @@ bool mata::applications::strings::is_lang_eps(const Nfa& nfa) {
 	Nfa tr_aut{nfa};
 	tr_aut.trim();
 	if (tr_aut.initial.empty()) { return false; }
-	for (const auto& ini : tr_aut.initial) {
-		if (!tr_aut.final[ini]) { return false; }
-		if (!tr_aut.delta[ini].empty()) { return false; }
-	}
-	return true;
+	return std::ranges::all_of(tr_aut.initial, [&](const auto& ini) {
+		return tr_aut.delta[ini].empty() && tr_aut.final[ini];
+	});
 }
 
 namespace {

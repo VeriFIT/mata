@@ -316,7 +316,7 @@ template <typename Number> class SparseSet {
 				if (b.contains(i)) { return false; }
 			}
 		}
-		return true;
+		return !std::ranges::any_of(a, [&b](auto i) { return b.contains(i); });
 	}
 };
 } // namespace mata::utils

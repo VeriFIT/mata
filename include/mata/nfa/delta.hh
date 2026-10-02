@@ -324,10 +324,9 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @return True if @p target is reachable from this state post over any symbol, false otherwise.
 	 */
 	bool has_target(const State target) const {
-		for (const SymbolPost& symbol_post : *this) {
-			if (symbol_post.has_target(target)) { return true; }
-		}
-		return false;
+		return std::ranges::any_of(*this, [target](const SymbolPost& symbol_post) {
+			return symbol_post.has_target(target);
+		});
 	}
 }; // class StatePost.
 

@@ -347,10 +347,9 @@ mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
 bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
 	if (mode_ == Mode::MultiLevel && !level.has_value()) {
 		// MultiLevel + nullopt: empty iff every underlying alphabet is empty.
-		for (const auto& alphabet : alphabets_) {
-			if (alphabet != nullptr && !alphabet->empty()) { return false; }
-		}
-		return true;
+		return std::ranges::all_of(alphabets_, [](const auto& alphabet) {
+			return alphabet == nullptr || alphabet->empty();
+		});
 	}
 	return for_level(level)->empty();
 }
