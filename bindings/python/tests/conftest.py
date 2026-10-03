@@ -14,10 +14,14 @@ __author__ = "Tomas Fiedor"
 @pytest.fixture(scope="function")
 def cleandir():
     """Runs the test in the clean new dir, which is purged afterwards"""
+    original_path = os.getcwd()
     temp_path = tempfile.mkdtemp()
     os.chdir(temp_path)
-    yield
-    shutil.rmtree(temp_path)
+    try:
+        yield temp_path
+    finally:
+        os.chdir(original_path)
+        shutil.rmtree(temp_path)
 
 
 @pytest.fixture(scope="function")
@@ -92,6 +96,7 @@ def fa_odd_ones():
     lhs.add_transition(1, 1, 0)
     lhs.add_transition(1, 0, 1)
     lhs.make_final_state(1)
+    yield lhs
 
 
 @pytest.fixture(scope="function")
@@ -103,6 +108,7 @@ def fa_even_ones():
     lhs.add_transition(1, 1, 0)
     lhs.add_transition(1, 0, 1)
     lhs.make_final_state(0)
+    yield lhs
 
 
 @pytest.fixture(scope="function")
