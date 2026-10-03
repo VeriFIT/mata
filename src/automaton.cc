@@ -53,6 +53,98 @@ StateBoolArray reachable_states(
 	return reachable;
 }
 
+/**
+ * Compute reachability of states considering only specified states from a given initial set.
+ *
+ * @param[in] aut Automaton to compute reachability for.
+ * @param[in] initial_states States to start the traversal from.
+ * @param[in] states_to_consider State to consider as potentially reachable. If @c std::nullopt is used, all states
+ *  are considered as potentially reachable.
+ * @return Bool array for reachable states (from @p initial_states): true for reachable, false for unreachable states.
+ */
+BoolVector reachable_states(
+	const Automaton& aut,
+	const SparseSet<State>& initial_states,
+	const std::optional<const BoolVector>& states_to_consider = std::nullopt
+) {
+	std::vector<State> worklist{};
+	const size_t num_of_states{aut.num_of_states()};
+	BoolVector reachable(num_of_states, false);
+	for (const State state : initial_states) {
+		if (state < num_of_states && (!states_to_consider.has_value() || states_to_consider.value()[state])) {
+			worklist.push_back(state);
+			reachable[state] = true;
+		}
+	}
+
+	while (!worklist.empty()) {
+		const State state{worklist.back()};
+		worklist.pop_back();
+		aut.delta.for_each_successor(state, [&](const State target_state) {
+			if (!reachable[target_state] &&
+				(!states_to_consider.has_value() || states_to_consider.value()[target_state])) {
+				worklist.push_back(target_state);
+				reachable[target_state] = true;
+			}
+		});
+	}
+	return reachable;
+}
+
+/**
+ * @brief Label-free predecessor lists of a @c Delta in the CSR (compressed sparse row) layout.
+ *
+ * The predecessors of a state @c target are the slice `sources[offsets[target]..offsets[target + 1])`. Symbols are
+ *  not stored: the backward traversals using the index only ask which states can reach a given state.
+ */
+struct PredecessorIndex {
+	/// Start of the predecessor slice of each state; one element longer than the number of indexed states.
+	std::vector<State> offsets{};
+	/// Sources of all indexed transitions, grouped by their target state.
+	std::vector<State> sources{};
+};
+
+/**
+ * @brief Build the predecessor index of @p delta over @p num_of_states states.
+ *
+ * Only transitions leaving a state selected by @p source_filter are indexed; the others are skipped both when
+ *  counting and when filling, so the index costs exactly one entry per kept transition.
+ *
+ * @param[in] delta Transition relation to index. All its target states have to be smaller than @p num_of_states.
+ * @param[in] num_of_states Number of states to index.
+ * @param[in] source_filter Bool array selecting the sources whose outgoing transitions are indexed.
+ * @return Predecessor index of the selected transitions.
+ */
+PredecessorIndex
+	build_predecessor_index(const Delta& delta, const size_t num_of_states, const BoolVector& source_filter) {
+	PredecessorIndex index{};
+	index.offsets.assign(num_of_states + 1, 0);
+	const size_t num_of_delta_states{std::min(num_of_states, delta.num_of_states())};
+
+	// Count the kept incoming transitions of each state in the offset of the following state.
+	for (State source{0}; source < num_of_delta_states; ++source) {
+		if (!source_filter[source]) { continue; }
+		delta.for_each_successor(source, [&](const State target) {
+			MATA_ASSERT(target < num_of_states);
+			++index.offsets[target + 1];
+		});
+	}
+	// Prefix sums turn the counts into the start of the predecessor slice of each state.
+	for (State state{0}; state < num_of_states; ++state) { index.offsets[state + 1] += index.offsets[state]; }
+
+	index.sources.resize(index.offsets.back());
+	std::vector<State> fill_cursors{index.offsets.begin(), index.offsets.end() - 1};
+	for (State source{0}; source < num_of_delta_states; ++source) {
+		if (!source_filter[source]) { continue; }
+		delta.for_each_successor(source, [&](const State target) { index.sources[fill_cursors[target]++] = source; });
+	}
+	// Each slice has to be filled exactly up to the start of the next one.
+	for (State state{0}; state < num_of_states; ++state) {
+		MATA_ASSERT(fill_cursors[state] == index.offsets[state + 1]);
+	}
+	return index;
+}
+
 // A structure to store metadata related to each state/node during the computation
 // of useful states. It contains Tarjan's metadata and the state of the
 // iteration through the successors.
@@ -281,39 +373,44 @@ BoolVector Automaton::get_useful_states(
 	const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states,
 	const std::optional<std::reference_wrapper<const SparseSet<State>>> final_states
 ) const {
-	BoolVector useful(this->num_of_states(), false);
-	bool final_scc = false;
-
-	const SparseSet<State>& used_initial_states{initial_states.value_or(initial)};
+	const size_t num_of_states{this->num_of_states()};
+	const SparseSet<State>& used_initial_states{initial_states.value_or(this->initial)};
 	const SparseSet<State>& used_final_states{final_states.value_or(this->final)};
 
-	TarjanDiscoverCallback callback{};
-	callback.state_discover = [&](const State state) -> bool {
-		if (used_final_states.contains(state)) { useful[state] = true; }
-		return false;
-	};
-	callback.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
-		if (final_scc) {
-			// Propagate usefulness to the closed SCC.
-			for (const State& st : scc) { useful[st] = true; }
-			// Propagate usefulness to predecessors in @p tarjan_stack.
-			for (auto state_it{tarjan_stack.rbegin()}, state_it_end{tarjan_stack.rend()}; state_it != state_it_end;
-				 ++state_it) {
-				if (useful[*state_it]) { break; }
-				useful[*state_it] = true;
+	// Forward pass: find all states reachable from initial states.
+	BoolVector reachable{reachable_states(*this, used_initial_states)};
+
+	// Build predecessor index for forward-reachable states.
+	PredecessorIndex pred_index{build_predecessor_index(this->delta, num_of_states, reachable)};
+
+	// Backward pass: BFS from final states over the predecessor index.
+	// Mark only the final states that are forward-reachable.
+	BoolVector useful(num_of_states, false);
+	std::vector<State> worklist{};
+	for (const State state : used_final_states) {
+		if (state < num_of_states && reachable[state]) {
+			worklist.push_back(state);
+			useful[state] = true;
+		}
+	}
+
+	// BFS backward over predecessors.
+	while (!worklist.empty()) {
+		const State state{worklist.back()};
+		worklist.pop_back();
+
+		// Iterate over predecessors of state.
+		const State pred_start{pred_index.offsets[state]};
+		const State pred_end{pred_index.offsets[state + 1]};
+		for (State pred_idx{pred_start}; pred_idx < pred_end; ++pred_idx) {
+			const State pred_state{pred_index.sources[pred_idx]};
+			if (!useful[pred_state]) {
+				useful[pred_state] = true;
+				worklist.push_back(pred_state);
 			}
 		}
-		final_scc = false;
-		return false;
-	};
-	callback.scc_state_discover = [&](const State state) {
-		if (useful[state]) { final_scc = true; }
-	};
-	callback.succ_state_discover = [&](const State act_state, const State next_state) {
-		if (useful[next_state]) { useful[act_state] = true; }
-	};
+	}
 
-	tarjan_scc_discover(callback, used_initial_states);
 	return useful;
 }
 
