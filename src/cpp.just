@@ -37,16 +37,13 @@ build-werror MODE=BUILD_MODE: && (compile-db MODE)
 check MODE=BUILD_MODE:
 	make -C '{{ ROOT }}' check BUILD_DIR='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}'
 
-# Run clang-tidy over the compilation database of the build. Extra ARGS go to run-clang-tidy, e.g. '-fix' to apply the fixes or '-checks=...' to override the '.clang-tidy' set.
-lint MODE=BUILD_MODE *ARGS:
+# Run clang-tidy over the compilation database of the build, which is rebuilt first so that the
+# database matches the current sources. Extra ARGS go to run-clang-tidy, e.g. '-fix' to apply the fixes or '-checks=...' to override the '.clang-tidy' set.
+lint MODE=BUILD_MODE *ARGS: (build MODE)
 	#!/usr/bin/env bash
 	# Which headers are analysed is decided by '.clang-tidy'; here we only pick the source files.
 	set -euo pipefail
 	db='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}'
-	if [[ ! -f "$db/compile_commands.json" ]]; then
-		echo "No compilation database in '$db'. Run '{{ JUST }} cpp::build {{ MODE }}' first." >&2
-		exit 1
-	fi
 	# clang-tidy does not inherit the system include paths of the compiler that produced the
 	# database, so ask the compiler for them and forward them explicitly. Without this every '#include <...>' fails to resolve.
 	extra_args=(-extra-arg=-Wno-unknown-warning-option)
