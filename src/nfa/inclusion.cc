@@ -42,7 +42,8 @@ bool mata::nfa::algorithms::is_included_naive(
 bool mata::nfa::algorithms::is_included_antichains(
 	const Nfa& smaller,
 	const Nfa& bigger,
-	const Alphabet* const alphabet, // TODO: this parameter is not used
+	[[maybe_unused]] const Alphabet* const
+		alphabet, // Parameter exists so signature matches AlgoType used by set_algorithm
 	Run* cex
 ) { // {{{
 	(void) alphabet;
@@ -289,7 +290,7 @@ bool mata::nfa::is_included(
 bool mata::nfa::are_equivalent(
 	const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet, const ParameterMap& params, Run* const cex
 ) {
-	// TODO: add comment on what this is doing, what is __func__ ...
+	// __func__ names the caller in set_algorithm\'s error message
 	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
 
 	if (params.at("algorithm") == "naive") {

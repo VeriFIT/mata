@@ -1,4 +1,5 @@
-/* nfa-plumbings.hh -- Wrapping up different supporting functions.
+/** @file
+ * @brief NFT plumbing support functions.
  */
 
 #ifndef MATA_NFT_PLUMBING_HH_

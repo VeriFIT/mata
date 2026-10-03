@@ -81,7 +81,6 @@ template <class Key> class OrdVector {
 		oss << n;
 		// Return the string.
 		return oss.str();
-		// TODO: When C++20 compliant compilers are sufficiently widespread, use std::format directly.
 		// return std::format("{}", n);
 	}
 

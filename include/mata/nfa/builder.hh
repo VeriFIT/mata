@@ -1,4 +1,7 @@
-// TODO: Insert file header.
+/** @file
+ * @brief Functions to build predefined types of NFAs, to create them from regular expressions, and to load them from
+ *  files.
+ */
 
 #ifndef LIBMATA_BUILDER_HH
 #define LIBMATA_BUILDER_HH
@@ -68,8 +71,18 @@ Nfa create_random_nfa_tabakov_vardi(
 	const std::optional<unsigned int>& seed = std::nullopt
 );
 
-/** Loads an automaton from Parsed object */
-// TODO this function should the same thing as the one taking IntermediateAut or be deleted
+/**
+ * Loads an automaton from a single parsed section of the mata format.
+ *
+ * Unlike the @c IntermediateAut overload below, this one reads @p parsec verbatim: `%Initial` and `%Final` are taken
+ *  as plain lists of state names and a body line is always a `source symbol target` triple. State names are therefore
+ *  arbitrary strings, not subject to the `q`/`a`/`n` naming markers or to the Boolean formulas that
+ *  @c IntermediateAut parses; symbol names are still resolved through @p alphabet, which decides which of them are
+ *  valid. The two overloads consequently accept different inputs and cannot be merged: routing this one through
+ *  @c IntermediateAut would subject the state names to the naming mode of the section (with the default `%States`
+ *  marked naming rejecting every name not starting with `q`) and would renumber states, as the @c IntermediateAut
+ *  path collects names from an unordered set.
+ */
 Nfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /** Loads an automaton from Parsed object */

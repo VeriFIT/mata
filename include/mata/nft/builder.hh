@@ -60,8 +60,17 @@ Nft create_sigma_star_nft(
 	size_t num_of_levels = DEFAULT_NUM_OF_LEVELS
 );
 
-/** Loads an automaton from Parsed object */
-// TODO this function should the same thing as the one taking IntermediateAut or be deleted
+/**
+ * Loads an automaton from a single parsed section of the mata format.
+ *
+ * Unlike the @c IntermediateAut overload below, this one reads @p parsec verbatim: `%Initial` and `%Final` are taken
+ *  as plain lists of state names and a body line is always a `source symbol target` triple. State names are therefore
+ *  arbitrary strings, not subject to the naming markers that @c IntermediateAut parses; symbol names are still
+ *  resolved through @p alphabet, which decides which of them are valid. This overload is also the only one that reads
+ *  the level metadata: `%Levels` assigns `state:level` pairs and `%LevelsNum` sets the number of levels, both of which
+ *  the @c IntermediateAut path ignores. The two overloads consequently accept different inputs and cannot be merged
+ *  without changing observable behavior.
+ */
 Nft construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /** Loads an automaton from Parsed object */

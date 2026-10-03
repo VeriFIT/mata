@@ -1,4 +1,7 @@
-// TODO: Insert header file.
+/** @file
+ * @brief Functions to build predefined types of NFTs, to create them from regular expressions, and to load them from
+ *  files.
+ */
 
 #include "mata/nft/builder.hh"
 #include "mata/utils/assert.hh"

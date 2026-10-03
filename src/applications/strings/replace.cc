@@ -1,4 +1,5 @@
-/* replace.hh -- Operations for replace operations in string solving.
+/** @file
+ * @brief String replacement operations for string solving.
  */
 
 #include <utility>
