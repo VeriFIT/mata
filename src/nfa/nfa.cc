@@ -60,7 +60,7 @@ Nfa mata::nfa::trim(
 	if (!initial_states) { initial_states = nfa.initial; }
 	if (!final_states) { final_states = nfa.final; }
 
-	// Compute useful states using Tarjan's algorithm.
+	// Compute useful states using two reachability passes.
 	// The result is a bool vector where true means the state is useful.
 #ifdef _STATIC_STRUCTURES_
 	BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};

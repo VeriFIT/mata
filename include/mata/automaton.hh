@@ -109,7 +109,7 @@ class Automaton {
 	nfa::StateSet get_terminating_states() const;
 
 	/**
-	 * @brief Get the useful states using a modified Tarjan's algorithm.
+	 * @brief Get the useful states using two reachability passes.
 	 *
 	 * A state is useful if it is reachable from an initial state and can reach a final state.
 	 *
@@ -252,7 +252,7 @@ class Automaton {
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.
 	 *
 	 * Lets a leaf class compute the useful states once, adjust its own per-state data (such as
-	 *  @c mata::nft::Nft::levels) and then hand the same bool vector over, instead of running Tarjan twice.
+	 *  @c mata::nft::Nft::levels) and then hand the same bool vector over, instead of computing it twice.
 	 *  Any renaming that happens after the trim follows ascending order of the original state numbers.
 	 *
 	 * @note Kept protected: it assumes @p useful_states was computed for @c self and gives no guarantee about a
