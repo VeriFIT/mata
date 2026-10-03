@@ -48,33 +48,77 @@ bool mata::nfa::algorithms::is_included_antichains(
 ) { // {{{
 	(void) alphabet;
 
-	// TODO: Decide what is the best optimization for inclusion.
-
 	using ProdStateType = std::tuple<State, StateSet, size_t>;
 	using ProdStatesType = std::vector<ProdStateType>;
-	// ProcessedType is indexed by states of the smaller nfa
-	// tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
-	using ProcessedType = std::vector<ProdStatesType>;
+
+	/**
+	 * @brief The macrostates already processed for one state of the smaller automaton, bucketed by cardinality.
+	 *
+	 * All entries stored here share the same state of the smaller automaton, so the dominance relation reduces to
+	 *  set inclusion between the macrostates of the bigger automaton. Cardinality alone then decides which entries
+	 *  can possibly be related to a candidate @c succ:
+	 *  - @c anti ⊆ @c succ requires @c |anti| ≤ @c |succ|, so the subsumption test reads nothing above @c |succ|;
+	 *  - @c succ ⊆ @c d requires @c |d| ≥ @c |succ|, so pruning reads nothing below @c |succ|;
+	 *  - at equal cardinality both reduce to equality, which is one comparison of two sorted vectors, and an entry
+	 *    equal to @c succ subsumes it, so pruning never has to consider that bucket.
+	 */
+	class ProcessedAntichain {
+	  public:
+		/// Is some stored macrostate a subset of @p succ, and therefore dominates it?
+		bool subsumes(const StateSet& succ) const {
+			const size_t cardinality{succ.size()};
+			if (cardinality >= buckets_.size()) {
+				for (const ProdStatesType& bucket : buckets_) {
+					for (const ProdStateType& anti : bucket) {
+						if (std::get<1>(anti).is_subset_of(succ)) { return true; }
+					}
+				}
+				return false;
+			}
+			for (size_t size{0}; size < cardinality; ++size) {
+				for (const ProdStateType& anti : buckets_[size]) {
+					if (std::get<1>(anti).is_subset_of(succ)) { return true; }
+				}
+			}
+			// A subset of the same cardinality is the set itself.
+			for (const ProdStateType& anti : buckets_[cardinality]) {
+				if (std::get<1>(anti) == succ) { return true; }
+			}
+			return false;
+		}
+
+		/// Removes every stored macrostate that @p succ dominates, that is, every strict superset of @p succ.
+		void prune(const StateSet& succ) {
+			for (size_t size{succ.size() + 1}; size < buckets_.size(); ++size) {
+				std::erase_if(buckets_[size], [&](const ProdStateType& stored) {
+					return succ.is_subset_of(std::get<1>(stored));
+				});
+			}
+		}
+
+		void insert(const ProdStateType& pair) {
+			const size_t cardinality{std::get<1>(pair).size()};
+			if (cardinality >= buckets_.size()) { buckets_.resize(cardinality + 1); }
+			buckets_[cardinality].push_back(pair);
+		}
+
+	  private:
+		/// Stored pairs indexed by the cardinality of their macrostate; most buckets stay empty.
+		std::vector<ProdStatesType> buckets_{};
+	};
+
+	// Indexed by the states of the smaller nfa; tailored for the pure antichain approach (the simulation-based
+	//  antichain would not work without changes).
+	using ProcessedType = std::vector<ProcessedAntichain>;
 
 	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
 		if (std::get<0>(lhs) != std::get<0>(rhs)) { return false; }
-
-		const StateSet& lhs_bigger = std::get<1>(lhs);
-		const StateSet& rhs_bigger = std::get<1>(rhs);
-
-		// TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
-		// TODO: Try BDDs! What about some abstractions?
-		return lhs_bigger.is_subset_of(rhs_bigger);
+		return std::get<1>(lhs).is_subset_of(std::get<1>(rhs));
 	};
 
 	// initialize
-	ProdStatesType worklist{}; // Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept
-							   // sorted by the size of S,
-	// worklist.reserve(32);
-	// so those with smaller popped for processing first.
+	ProdStatesType worklist{}; // Pairs (q,S) to be processed.
 	ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
-	// The pairs of each state are also kept sorted. It allows slightly faster antichain pruning - no need to test
-	// inclusion in sets that have less elements.
 
 	// Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
 	//  auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() <
@@ -112,15 +156,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 		return distances_smaller[std::get<0>(pair)] < std::get<2>(pair);
 	};
 
-	auto insert_to_pairs = [&](ProdStatesType& pairs, const ProdStateType& pair) {
-		// auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
-		// auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_dist);
-		// auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_closer);
-		// auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_smaller);
-		// pairs.insert(it,pair);
-		pairs.push_back(pair);
-		// std::sort(pairs.begin(), pairs.end(), smaller_closer);
-	};
+	auto insert_to_pairs = [](ProdStatesType& pairs, const ProdStateType& pair) { pairs.push_back(pair); };
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
@@ -139,7 +175,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 		StateSet bigger_state_set{bigger.initial};
 		const ProdStateType st = std::tuple(state, bigger_state_set, min_dst(bigger_state_set));
 		insert_to_pairs(worklist, st);
-		insert_to_pairs(processed[state], st);
+		processed[state].insert(st);
 
 		if (cex != nullptr) { paths.insert({st, {st, 0}}); }
 	}
@@ -195,35 +231,16 @@ bool mata::nfa::algorithms::is_included_antichains(
 					return false;
 				}
 
-				bool is_subsumed = false;
-				for (const auto& anti_state : processed[smaller_succ]) { // trying to find in processed a smaller state
-																		 // than the newly created succ
-					// if (smaller_set(succ,anti_state)) {
-					//     break;
-					// }
-					if (subsumes(anti_state, succ)) {
-						is_subsumed = true;
-						break;
-					}
-				}
+				// Is some already processed macrostate of smaller_succ a subset of bigger_succ, and therefore
+				//  dominates it?
+				if (processed[smaller_succ].subsumes(bigger_succ)) { continue; }
 
-				if (is_subsumed) { continue; }
-
-				for (ProdStatesType* ds : {&processed[smaller_succ], &worklist}) {
-					// Pruning of processed and the worklist.
-					// Since they are ordered by the size of the sets, we can iterate from back,
-					// and as soon as we get to sets larger than succ, we can stop (larger sets cannot be subsets).
-					std::erase_if(*ds, [&](const auto& d) { return subsumes(succ, d); });
-					// for (long it = static_cast<long>(ds->size()-1);it>=0;--it) {
-					//     // if (smaller_set((*ds)[static_cast<size_t>(it)],succ))
-					//         // break;
-					//     if (subsumes(succ, (*ds)[static_cast<size_t>(it)])) {
-					//         //Using index it instead of an iterator since erase could invalidate it (?)
-					//         ds->erase(ds->begin() + it);
-					//     }
-					// }
-					insert_to_pairs(*ds, succ);
-				}
+				// Pruning: drop every stored pair that succ dominates, in the processed antichain and in the
+				//  worklist, and store succ in both.
+				processed[smaller_succ].prune(bigger_succ);
+				processed[smaller_succ].insert(succ);
+				std::erase_if(worklist, [&](const ProdStateType& d) { return subsumes(succ, d); });
+				insert_to_pairs(worklist, succ);
 
 				if (cex != nullptr) {
 					// also set that succ was accessed from state
