@@ -2560,6 +2560,56 @@ q10 67 q5
 	}
 } // }}}
 
+TEST_CASE("mata::nfa::is_included() antichains agree with naive on random automata") {
+	// The antichain algorithm prunes a configuration only when a dominating one has already been stored. The
+	//  dominance direction is easy to reverse by accident, and a reversed one still answers correctly on the
+	//  hand-written cases above, because their antichains hold at most a few entries. Here both algorithms decide
+	//  the same randomly generated instances, half of which hold by construction.
+	constexpr size_t symbols{3};
+	std::mt19937 gen{42};
+
+	for (size_t iteration{0}; iteration < 60; ++iteration) {
+		std::uniform_int_distribution<size_t> size_dist{1, 8};
+		const size_t num_of_states{size_dist(gen)};
+		std::uniform_int_distribution<size_t> state_dist{0, num_of_states - 1};
+
+		Nfa bigger(num_of_states);
+		Nfa smaller(num_of_states);
+		bigger.initial.insert(0);
+		smaller.initial.insert(0);
+		// Every second instance keeps the transitions of the smaller automaton a subset of the bigger one's and
+		//  its final states a subset as well, which makes the inclusion hold.
+		const bool included_by_construction{iteration % 2 == 0};
+		for (State source{0}; source < num_of_states; ++source) {
+			for (Symbol symbol{0}; symbol < symbols; ++symbol) {
+				for (size_t edge{0}; edge < 2; ++edge) {
+					const State target{static_cast<State>(state_dist(gen))};
+					bigger.delta.add(source, symbol, target);
+					if (!included_by_construction || gen() % 2 == 0) { smaller.delta.add(source, symbol, target); }
+				}
+			}
+			if (gen() % 3 == 0) {
+				bigger.final.insert(source);
+				smaller.final.insert(source);
+			} else if (!included_by_construction && gen() % 3 == 0) {
+				smaller.final.insert(source);
+			}
+		}
+
+		const OnTheFlyAlphabet alphabet{std::vector<std::string>{"a", "b", "c"}};
+		const bool naive{algorithms::is_included_naive(smaller, bigger, &alphabet, nullptr)};
+		const bool antichains{algorithms::is_included_antichains(smaller, bigger, &alphabet, nullptr)};
+		INFO("iteration " << iteration);
+		CHECK(naive == antichains);
+		if (included_by_construction) { CHECK(antichains); }
+
+		// The opposite direction is decided on the same pair, which exercises instances that do not hold.
+		const bool naive_reverse{algorithms::is_included_naive(bigger, smaller, &alphabet, nullptr)};
+		const bool antichains_reverse{algorithms::is_included_antichains(bigger, smaller, &alphabet, nullptr)};
+		CHECK(naive_reverse == antichains_reverse);
+	}
+}
+
 TEST_CASE("mata::nfa::are_equivalent") {
 	Nfa smaller(10);
 	Nfa bigger(16);
