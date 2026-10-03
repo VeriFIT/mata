@@ -5484,3 +5484,190 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 		CHECK(are_equivalent(result, aut.decode_utf8()));
 	}
 }
+
+
+TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
+	// Brute-force oracle: simple independent forward and backward reachability
+	auto oracle_useful_states = [](const Nfa& aut) -> mata::BoolVector {
+		const size_t num_states = aut.num_of_states();
+		mata::BoolVector useful(num_states, false);
+		if (num_states == 0) return useful;
+
+		// Forward reachability from initial states
+		mata::BoolVector forward(num_states, false);
+		std::vector<State> queue(aut.initial.begin(), aut.initial.end());
+		for (const State s : queue) {
+			forward[s] = true;
+		}
+		for (size_t i = 0; i < queue.size(); ++i) {
+			const State s = queue[i];
+			aut.delta.for_each_successor(s, [&](State t) {
+				if (!forward[t]) {
+					forward[t] = true;
+					queue.push_back(t);
+				}
+			});
+		}
+
+		// Backward reachability from final states (using explicit predecessor collection)
+		mata::BoolVector backward(num_states, false);
+		queue.clear();
+		for (const State s : aut.final) {
+			if (forward[s]) {
+				backward[s] = true;
+				queue.push_back(s);
+			}
+		}
+		
+		// Build predecessor list by scanning all transitions
+		std::vector<std::vector<State>> predecessors(num_states);
+		for (State src = 0; src < num_states; ++src) {
+			aut.delta.for_each_successor(src, [&](State tgt) {
+				predecessors[tgt].push_back(src);
+			});
+		}
+		
+		// Backward BFS using the predecessor list
+		for (size_t i = 0; i < queue.size(); ++i) {
+			const State t = queue[i];
+			for (const State pred : predecessors[t]) {
+				if (!backward[pred]) {
+					backward[pred] = true;
+					queue.push_back(pred);
+				}
+			}
+		}
+
+		// Useful = forward AND backward (intersection)
+		for (size_t i = 0; i < num_states; ++i) {
+			useful[i] = forward[i] && backward[i];
+		}
+		return useful;
+	};
+
+	SECTION("Empty automaton") {
+		Nfa aut;
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		CHECK(result.empty());
+	}
+
+	SECTION("Single initial and final, linear path") {
+		Nfa aut(5, {0}, {4});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'd', 4);
+		
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		CHECK(result == mata::BoolVector{1, 1, 1, 1, 1});
+	}
+
+	SECTION("Dead ends (unreachable final)") {
+		Nfa aut(6, {0}, {5});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		// States 4, 5 unreachable
+		
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		// Only 0, 1, 2, 3 forward-reachable; 3 is not final
+		CHECK(result[4] == false);
+		CHECK(result[5] == false);
+	}
+
+	SECTION("Irrelevant initial/final (non-terminating)") {
+		Nfa aut(5, {0}, {3});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 2);  // Cycle, never reaches 3
+		// State 3 is final but unreachable
+		
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		// No useful states since 3 is unreachable
+		CHECK(result.count() == 0);
+	}
+
+	SECTION("Isolated useful state (initial equals final)") {
+		Nfa aut(3, {0}, {0});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		// Only state 0 (reachable from itself and final)
+		CHECK(result == mata::BoolVector{1, 0, 0});
+	}
+
+	SECTION("Multiple initials and finals") {
+		Nfa aut(7, {0, 1}, {5, 6});
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'b', 3);
+		aut.delta.add(2, 'c', 5);
+		aut.delta.add(3, 'd', 6);
+		aut.delta.add(4, 'e', 5);  // 4 unreachable
+		
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		CHECK(result[4] == false);  // Not reachable
+	}
+
+	SECTION("Randomized: 50 random graphs") {
+		std::mt19937 gen(42);  // Deterministic seed
+		for (int test = 0; test < 50; ++test) {
+			const size_t num_states = std::uniform_int_distribution<>(5, 50)(gen);
+			Nfa aut(num_states);
+			
+			// Random initials and finals
+			const size_t num_init = std::max(size_t(1), static_cast<size_t>(std::uniform_int_distribution<int>(1, static_cast<int>(num_states / 4))(gen)));
+			const size_t num_final = std::max(size_t(1), static_cast<size_t>(std::uniform_int_distribution<int>(1, static_cast<int>(num_states / 4))(gen)));
+			for (size_t i = 0; i < num_init; ++i) {
+				aut.initial.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
+			}
+			for (size_t i = 0; i < num_final; ++i) {
+				aut.final.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
+			}
+			
+			// Random edges (allow duplicates, the delta will ignore them)
+			const size_t num_edges = static_cast<size_t>(std::uniform_int_distribution<int>(static_cast<int>(num_states / 2), static_cast<int>(num_states * 2))(gen));
+			for (size_t i = 0; i < num_edges; ++i) {
+				State src = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
+				State tgt = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
+				Symbol sym = std::uniform_int_distribution<Symbol>(0, 255)(gen);
+				aut.delta.add(src, sym, tgt);
+			}
+			
+			const auto result = aut.get_useful_states();
+			const auto oracle = oracle_useful_states(aut);
+			CHECK(result == oracle);  // Verify equality with oracle
+		}
+	}
+
+	SECTION("trim() preserves state renamings") {
+		Nfa aut(10, {0}, {9});
+		// Linear chain: all useful
+		for (State s = 0; s < 9; ++s) {
+			aut.delta.add(s, 'a', s + 1);
+		}
+		
+		mata::nfa::StateRenaming renaming;
+		const Nfa trimmed = nfa::trim(aut, &renaming);
+		
+		// All 10 states should be useful and mapped
+		CHECK(renaming.size() == 10);
+		for (State s = 0; s < 10; ++s) {
+			CHECK(renaming.count(s) > 0);
+		}
+		// Trimmed NFA should have 10 states
+		CHECK(trimmed.num_of_states() == 10);
+	}
+}
