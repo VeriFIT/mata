@@ -109,7 +109,7 @@ class Automaton {
 	nfa::StateSet get_terminating_states() const;
 
 	/**
-	 * @brief Get the useful states using a modified Tarjan's algorithm.
+	 * @brief Get the useful states using two reachability passes.
 	 *
 	 * A state is useful if it is reachable from an initial state and can reach a final state.
 	 *
