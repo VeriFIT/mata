@@ -36,11 +36,31 @@ class Mintermization {
 	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
 	std::unordered_set<BDD> bdds_{}; // bdds created from transitions
+	/// BDDs created from transitions, in the order of their first appearance in the transitions.
+	std::vector<BDD> source_bdds_{};
+	/// Position of each BDD of @c source_bdds_ in that vector.
+	std::unordered_map<BDD, size_t> source_bdd_to_index_{};
+
+	/// Registers @p bdd as a source BDD of the refinement unless it is already known.
+	void add_source_bdd(const BDD& bdd);
 
 	void trans_to_bdd_nfa(const IntermediateAut& aut);
 	void trans_to_bdd_afa(const IntermediateAut& aut);
 
   public:
+	/**
+	 * The minterm partition of a sequence of source BDDs together with the incidence between the two.
+	 *
+	 * The minterms are numbered by their position in @c minterms, which is the order in which the refinement
+	 * created them and therefore depends only on the input, not on the addresses CUDD assigned to the nodes.
+	 */
+	struct MintermPartition {
+		/// Minterms of the source BDDs, in creation order.
+		std::vector<BDD> minterms{};
+		/// For each source BDD, the ascending numbers of the minterms below it.
+		std::vector<std::vector<size_t>> minterms_of_source{};
+	};
+
 	/**
 	 * Takes a set of BDDs and build a minterm tree over it.
 	 * The leaves of BDDs, which are minterms of input set, are returned
@@ -48,6 +68,18 @@ class Mintermization {
 	 * @return Computed minterms
 	 */
 	std::unordered_set<BDD> compute_minterms(const std::unordered_set<BDD>& source_bdds) const;
+
+	/**
+	 * Computes the same partition as @c compute_minterms() and additionally records, for each source BDD, which
+	 * minterms lie below it.
+	 *
+	 * The incidence is carried along the refinement: when a region is split by a source BDD, the part inside the
+	 * BDD inherits the incidence of the region plus that BDD, and the part outside inherits it unchanged. No BDD
+	 * operation is therefore needed afterwards to relate a source BDD to the minterms below it.
+	 * @param source_bdds BDDs for which minterms are computed
+	 * @return Computed minterms and their incidence with @p source_bdds
+	 */
+	MintermPartition compute_minterms_with_incidence(const std::vector<BDD>& source_bdds) const;
 
 	/**
 	 * Transforms a graph representing formula at transition to bdd.
@@ -89,18 +121,18 @@ class Mintermization {
 	 * It is method specialized for NFA.
 	 * @param res The resulting mintermized automaton
 	 * @param aut Automaton to be mintermized
-	 * @param minterms Set of minterms for mintermization
+	 * @param minterms_of_source For each source BDD, the indices of minterms below it
 	 */
-	void minterms_to_aut_nfa(IntermediateAut& res, const IntermediateAut& aut, const std::unordered_set<BDD>& minterms);
+	void minterms_to_aut_nfa(IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source);
 
 	/**
 	 * The method for mintermization of alternating finite automaton using
 	 * a given set of minterms
 	 * @param res The resulting mintermized automaton
 	 * @param aut Automaton to be mintermized
-	 * @param minterms Set of minterms for mintermization
+	 * @param minterms_of_source For each source BDD, the indices of minterms below it
 	 */
-	void minterms_to_aut_afa(IntermediateAut& res, const IntermediateAut& aut, const std::unordered_set<BDD>& minterms);
+	void minterms_to_aut_afa(IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source);
 
 	Mintermization() : bdd_mng_(0) {}
 };
