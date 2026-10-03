@@ -2203,6 +2203,90 @@ TEST_CASE("mata::nfa::is_universal()") { // {{{
 		);
 	}
 } // }}}
+TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterator (issue #788)") { // {{{
+	Nfa aut;
+	OnTheFlyAlphabet alph;
+	Run cex;
+	ParameterMap params;
+	params["algorithm"] = "antichains";
+
+	SECTION("is_universal: alphabet symbol at boundary, missing") {
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {0, 1};
+		alph.translate_symb("a");
+		alph.translate_symb("b");
+		const Symbol b = alph["b"];
+		aut.delta.add(0, b, 1);  // Only 'b', missing 'a'
+		REQUIRE(!aut.is_universal(alph, &cex, params));
+		REQUIRE(!aut.is_in_lang(cex.word));
+	}
+
+	SECTION("is_universal: all required symbols present") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		aut.final = {0};
+		const Symbol a = alph.translate_symb("a");
+		const Symbol b = alph.translate_symb("b");
+		aut.delta.add(0, a, 0);
+		aut.delta.add(0, b, 0);
+		REQUIRE(aut.is_universal(alph, params));
+	}
+
+	SECTION("is_universal: antichain vs naive on random") {
+		ParameterMap params_naive;
+		params_naive["algorithm"] = "naive";
+		
+		const Nfa test_aut = builder::create_random_nfa_tabakov_vardi(4, 2, 0.5, 0.5, 99);
+		OnTheFlyAlphabet test_alph;
+		test_aut.delta.add_symbols_to(test_alph);
+		
+		Run antichain_cex;
+		const bool antichain_res = test_aut.is_universal(test_alph, &antichain_cex, params);
+		Run naive_cex;
+		const bool naive_res = test_aut.is_universal(test_alph, &naive_cex, params_naive);
+		
+		REQUIRE(antichain_res == naive_res);
+		if (!antichain_res && antichain_cex.word.size() > 0) {
+			REQUIRE(!test_aut.is_in_lang(antichain_cex.word));
+		}
+	}
+
+	SECTION("is_complete: all required symbols present") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		alph.translate_symb("a");
+		alph.translate_symb("b");
+		const Symbol a = alph["a"];
+		const Symbol b = alph["b"];
+		aut.delta.add(0, a, 0);
+		aut.delta.add(0, b, 0);
+		REQUIRE(aut.is_complete(&alph));
+	}
+
+	SECTION("is_complete: missing required symbol") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		alph.translate_symb("a");
+		alph.translate_symb("b");
+		const Symbol a = alph["a"];
+		aut.delta.add(0, a, 0);  // Missing 'b'
+		REQUIRE(!aut.is_complete(&alph));
+	}
+
+	SECTION("is_complete: foreign symbol throws") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		alph.translate_symb("a");
+		const Symbol foreign = 99999;
+		aut.delta.add(0, foreign, 0);
+		CHECK_THROWS_WITH(
+			aut.is_complete(&alph),
+			Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
+		);
+	}
+} // }}}
+
 
 TEST_CASE("mata::nfa::is_included()") { // {{{
 	Nfa smaller(10);
