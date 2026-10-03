@@ -129,7 +129,8 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
  *
  * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
- * @param[out] cex Counterexample word which eventually breaks the universality
+ * @param[out] cex Counterexample word which eventually breaks the universality. The search is depth-first, so the
+ *  word is a valid counterexample but not necessarily a shortest one.
  * @return True if the automaton is universal, otherwise false.
  */
 bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex);
