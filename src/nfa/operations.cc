@@ -2133,6 +2133,7 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<size_t> max_length) const {
 	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
 	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
@@ -2144,6 +2145,7 @@ std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<si
 		if (!search.cut_off() || length >= length_max) { co_return; }
 	}
 }
+MATA_GENERATOR_COROUTINE_END
 #endif // MATA_HAS_GENERATOR_SUPPORT
 
 OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet* const shared_alphabet) {

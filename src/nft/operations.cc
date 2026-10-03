@@ -2104,6 +2104,7 @@ std::set<Word> Nft::get_words(const std::optional<size_t> max_length, const Jump
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<Word> Nft::get_words_lazy(const std::optional<size_t> max_length, const JumpMode jump_mode) const {
 	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
 	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
@@ -2114,4 +2115,5 @@ std::generator<Word> Nft::get_words_lazy(const std::optional<size_t> max_length,
 		if (!search.cut_off()) { co_return; }
 	}
 }
+MATA_GENERATOR_COROUTINE_END
 #endif // MATA_HAS_GENERATOR_SUPPORT
