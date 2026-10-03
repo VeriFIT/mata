@@ -488,33 +488,48 @@ bool Nfa::is_complete(const Alphabet* const alphabet) const { return is_complete
 
 bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 	// TODO: make a general function for traversal over reachable states that can be shared by other functions?
-	std::list<State> worklist(initial.begin(), initial.end());
-	std::unordered_set<State> processed(initial.begin(), initial.end());
+	// Breadth-first search over the reachable states, with a vector used as a FIFO queue and a byte array in place
+	//  of a hash set of visited states. Both a state post and @p symbols are sorted by symbol, so a state is decided
+	//  by a single two-pointer merge instead of one binary search per outgoing symbol.
+	// No `delta.empty()` guard: `delta[state]` of an empty or unallocated state post already yields nothing, while
+	//  `Delta::empty()` walks state posts until it finds a nonempty one and so costs O(|Q|) per worklist item.
+	std::vector<State> worklist(initial.begin(), initial.end());
+	std::vector<char> visited(num_of_states(), 0);
+	const auto visit = [&visited](const State state) -> bool {
+		if (state >= visited.size()) { visited.resize(state + 1, 0); }
+		if (visited[state] != 0) { return false; }
+		visited[state] = 1;
+		return true;
+	};
+	for (const State state : initial) { visit(state); }
 
-	while (!worklist.empty()) {
-		const State state = *worklist.begin();
-		worklist.pop_front();
-
-		size_t n = 0; // counter of symbols
-		// No `delta.empty()` guard: `delta[state]` of an empty or unallocated state post already yields
-		//  nothing, while `Delta::empty()` walks state posts until it finds a nonempty one and so costs
-		//  O(|Q|) per worklist item.
-		for (const auto& symb_stateset : delta[state]) {
-			++n;
-			if (!haskey(symbols, symb_stateset.symbol)) {
+	const auto symbols_end{symbols.end()};
+	for (size_t head{0}; head < worklist.size(); ++head) {
+		const StatePost& state_post{delta[worklist[head]]};
+		auto symbol_post_it{state_post.begin()};
+		const auto symbol_post_end{state_post.end()};
+		auto symbol_it{symbols.begin()};
+		// A transition symbol outside @p symbols throws, and the throw takes precedence over a symbol of @p symbols
+		//  missing in the same state. The whole state post is therefore scanned before `false` is returned.
+		bool is_symbol_missing{false};
+		while (symbol_post_it != symbol_post_end) {
+			if (symbol_it == symbols_end || symbol_post_it->symbol < *symbol_it) {
 				throw std::runtime_error(
 					std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
 				);
 			}
-
-			for (const auto& tgt_state : symb_stateset.targets) {
-				bool inserted;
-				tie(std::ignore, inserted) = processed.insert(tgt_state);
-				if (inserted) { worklist.push_back(tgt_state); }
+			if (*symbol_it < symbol_post_it->symbol) { // The symbol has no transition from this state.
+				is_symbol_missing = true;
+				++symbol_it;
+				continue;
 			}
+			for (const State target : symbol_post_it->targets) {
+				if (visit(target)) { worklist.push_back(target); }
+			}
+			++symbol_post_it;
+			++symbol_it;
 		}
-
-		if (symbols.size() != n) { return false; }
+		if (is_symbol_missing || symbol_it != symbols_end) { return false; }
 	}
 
 	return true;
