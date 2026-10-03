@@ -1206,7 +1206,7 @@ Nfa trim(
 namespace std {
 template <> struct hash<mata::nfa::Transition> {
 	size_t operator()(const mata::nfa::Transition& trans) const noexcept {
-		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
+		size_t accum = mata::utils::hash_combine(mata::utils::HASH_SEED, trans.source);
 		accum = mata::utils::hash_combine(accum, trans.symbol);
 		accum = mata::utils::hash_combine(accum, trans.target);
 		return accum;
