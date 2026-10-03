@@ -226,9 +226,7 @@ template <> struct CompositionKey<false> {
  */
 class SynchronizationProperties {
   public:
-	// A stack-allocated helper that borrows the composed transducer for its lifetime; it is never copied nor
-	//  assigned. A pointer member would instead make '-Weffc++' demand a copy constructor and a copy assignment.
-	// NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+	// A stack-allocated helper that borrows the composed transducer for its lifetime; it is never copied nor assigned.
 	const Nft& nft;
 	Level sync_level;
 	size_t num_of_levels_before_sync;
@@ -236,14 +234,14 @@ class SynchronizationProperties {
 	//  deliberately shadowing the members.
 	// NOLINTNEXTLINE(cppcoreguidelines-use-default-member-init,modernize-use-default-member-init)
 	size_t num_of_levels_after_sync;
-	std::vector<SynchronizationType> sync_types_v;
+	std::vector<SynchronizationType> sync_types_vec;
 
 	SynchronizationProperties(const Nft& nft, const Level sync_level)
 		: nft(nft),
 		  sync_level(sync_level),
 		  num_of_levels_before_sync(sync_level),
 		  num_of_levels_after_sync(nft.levels.num_of_levels - sync_level - 1),
-		  sync_types_v(nft.num_of_states(), SynchronizationType::Undefined) {
+		  sync_types_vec(nft.num_of_states(), SynchronizationType::Undefined) {
 		get_synchronization_types();
 	}
 
@@ -272,7 +270,7 @@ class SynchronizationProperties {
 				stack.pop();
 				const Level state_level = nft.levels[state];
 				const StatePost& state_post = nft.delta[state];
-				SynchronizationType current_sync_type = sync_types_v[state];
+				SynchronizationType current_sync_type = sync_types_vec[state];
 				if (current_sync_type != SynchronizationType::Undefined &&
 					current_sync_type != SynchronizationType::UnderComputation) {
 					// We already computed the synchronization type for this state, so we can skip it.
@@ -300,10 +298,10 @@ class SynchronizationProperties {
 								continue;
 							}
 							MATA_ASSERT(nft.levels[target] > nft.levels[state]);
-							current_sync_type |= sync_types_v[target];
+							current_sync_type |= sync_types_vec[target];
 						}
 					}
-					sync_types_v[state] = current_sync_type;
+					sync_types_vec[state] = current_sync_type;
 					continue; // We already visited its children.
 				}
 
@@ -321,12 +319,12 @@ class SynchronizationProperties {
 					} else if (!state_post.empty()) {
 						current_sync_type = SynchronizationType::OnlyOnSymbol;
 					}
-					sync_types_v[state] = current_sync_type;
+					sync_types_vec[state] = current_sync_type;
 					continue; // No need to visit its children.
 				}
 
 				// We need to visit its children.
-				sync_types_v[state] = SynchronizationType::UnderComputation; // Mark this state as under computation.
+				sync_types_vec[state] = SynchronizationType::UnderComputation; // Mark this state as under computation.
 				stack.push(state); // Push it back to the stack to compute it later.
 				for (const SymbolPost& symbol_post : state_post) {
 					for (const State target : symbol_post.targets) {
@@ -336,9 +334,9 @@ class SynchronizationProperties {
 							continue;
 						}
 						MATA_ASSERT(nft.levels[target] > nft.levels[state]);
-						MATA_ASSERT(sync_types_v[target] != SynchronizationType::UnderComputation);
-						if (sync_types_v[target] != SynchronizationType::Undefined) {
-							current_sync_type |= sync_types_v[target];
+						MATA_ASSERT(sync_types_vec[target] != SynchronizationType::UnderComputation);
+						if (sync_types_vec[target] != SynchronizationType::Undefined) {
+							current_sync_type |= sync_types_vec[target];
 						} else {
 							stack.push(target); // Push the target state onto the stack to visit it.
 						}
@@ -347,7 +345,7 @@ class SynchronizationProperties {
 			}
 		}
 
-		MATA_ASSERT(std::ranges::all_of(sync_types_v, [](SynchronizationType type) {
+		MATA_ASSERT(std::ranges::all_of(sync_types_vec, [](SynchronizationType type) {
 			return type != SynchronizationType::UnderComputation;
 		}));
 	}
@@ -1311,8 +1309,8 @@ Nft compose_fast_no_jump_with(
 		const Level copy_state_level = copy_nft.levels[copy_state];
 		const Level stationar_state_level = stationar_sync_props.nft.levels[stationar_state];
 		const Level copy_sync_level = copy_sync_props.sync_level;
-		const std::vector<SynchronizationType>& copy_sync_types = copy_sync_props.sync_types_v;
-		const SynchronizationType stationar_state_sync_type = stationar_sync_props.sync_types_v[stationar_state];
+		const std::vector<SynchronizationType>& copy_sync_types = copy_sync_props.sync_types_vec;
+		const SynchronizationType stationar_state_sync_type = stationar_sync_props.sync_types_vec[stationar_state];
 
 		// It may happen that
 		// 1) we want to project out synchronization levels,
@@ -1765,8 +1763,8 @@ Nft compose_fast_no_jump_with(
 		MATA_ASSERT(composition_state != Limits::max_state);
 		const Level lhs_level = lhs.levels[lhs_state];
 		const Level rhs_level = rhs.levels[rhs_state];
-		const SynchronizationType lhs_sync_type = lhs_sync_props.sync_types_v[lhs_state];
-		const SynchronizationType rhs_sync_type = rhs_sync_props.sync_types_v[rhs_state];
+		const SynchronizationType lhs_sync_type = lhs_sync_props.sync_types_vec[lhs_state];
+		const SynchronizationType rhs_sync_type = rhs_sync_props.sync_types_vec[rhs_state];
 
 		if (lhs_level == 0 and rhs_level == 0) {
 			// We are at the zero-level states before any synchronization level.
