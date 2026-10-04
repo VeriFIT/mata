@@ -415,6 +415,52 @@ class SynchronizedExistentialSymbolPostIterator
 }; // class SynchronizedExistentialSymbolPostIterator.
 
 /**
+ * @brief Reusable scratch space of the successor and epsilon-closure computations.
+ *
+ * Reading a word asks for the successors of the active state set once per input symbol. Each such step only needs
+ *  a duplicate-free collection of states, which the generation stamps below provide without allocating or sorting:
+ *  a state belongs to the current step exactly when its stamp equals the current generation, so clearing the whole
+ *  workspace is one increment of the generation counter.
+ *
+ * A workspace belongs to one call or to one explicit caller context. It must never be shared between threads, and
+ *  in particular it must never be a function-local @c static: that is the data race of #731.
+ */
+class PostWorkspace {
+  public:
+	/// Prepares the workspace for an automaton with @p num_of_states states and starts a new generation.
+	void start(const size_t num_of_states) {
+		if (stamps_.size() < num_of_states) { stamps_.resize(num_of_states, 0); }
+		if (generation_ == std::numeric_limits<uint64_t>::max()) {
+			// Wrap-around: no stamp may survive into generation 1.
+			std::ranges::fill(stamps_, 0);
+			generation_ = 0;
+		}
+		++generation_;
+		gathered_.clear();
+		queue_.clear();
+	}
+
+	/// Stamps @p state with the current generation and reports whether it was not stamped in it before.
+	bool mark(const State state) {
+		if (state >= stamps_.size()) { stamps_.resize(state + 1, 0); }
+		if (stamps_[state] == generation_) { return false; }
+		stamps_[state] = generation_;
+		return true;
+	}
+
+	/// States collected in the current generation, in discovery order.
+	std::vector<State>& gathered() { return gathered_; }
+	/// Worklist of the closure traversal.
+	std::vector<State>& queue() { return queue_; }
+
+  private:
+	std::vector<uint64_t> stamps_{}; ///< Per-state generation in which the state was last collected.
+	uint64_t generation_{ 0 }; ///< Current generation; zero is never used, so a fresh array holds no marks.
+	std::vector<State> gathered_{};
+	std::vector<State> queue_{};
+};
+
+/**
  * @brief Delta is a data structure for representing transition relation.
  *
  * Transition is represented as a triple Transition(source state, symbol, target state). Move is the part (symbol,
@@ -680,8 +726,37 @@ class Delta {
 
 	const StateSet& get_successors(State state, Symbol symbol) const;
 
-	// TODO(nfa): Implement.
+	/**
+	 * @brief Get the successors of @p state over @p symbol, with an epsilon closure as asked by
+	 *  @p epsilon_closure_opt.
+	 *
+	 * Equivalent to @c post({state}, symbol, epsilon_closure_opt) and computed by the same routine, so the two
+	 *  cannot disagree.
+	 */
 	StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
+
+	/**
+	 * @brief Get the states reachable from @p states over @p symbol, with an epsilon closure as asked by
+	 *  @p epsilon_closure_opt.
+	 *
+	 * @param[in] states Source states.
+	 * @param[in] symbol Symbol of the transition step.
+	 * @param[in] epsilon_closure_opt Where to apply the epsilon closure; see @c EpsilonClosureOpt.
+	 * @param[in] epsilons Symbols treated as epsilon by the closure.
+	 * @param[in,out] workspace Scratch space reused across calls; see @c PostWorkspace.
+	 */
+	StateSet post(
+		const StateSet& states,
+		Symbol symbol,
+		EpsilonClosureOpt epsilon_closure_opt,
+		const std::vector<Symbol>& epsilons,
+		PostWorkspace& workspace
+	) const;
+
+	/// @brief Get the epsilon closure of @p states over @p epsilons, reusing @p workspace.
+	StateSet epsilon_closure(
+		const StateSet& states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
+	) const;
 
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state.

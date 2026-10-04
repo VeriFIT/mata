@@ -22,12 +22,35 @@ struct Run {
 	std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
+/**
+ * @brief Where an epsilon closure is applied around a transition step.
+ *
+ * The values are bit flags, so @c BeforeAndAfter must be tested with @c closes_before() and @c closes_after()
+ *  rather than compared for equality. For @c 0 -ε-> 1 -a-> 2 -ε-> 3 and the step over @c a from @c {0}:
+ *
+ * | Option | Applied | Result |
+ * |---|---|---|
+ * | @c None | post(S) | @c {} |
+ * | @c Before | post(closure(S)) | @c {2} |
+ * | @c After | closure(post(S)) | @c {} |
+ * | @c BeforeAndAfter | closure(post(closure(S))) | @c {2,3} |
+ */
 enum class EpsilonClosureOpt : std::uint8_t {
 	None = 1 << 0, ///< No epsilon closure.
 	Before = 1 << 1, ///< Epsilon closure before the transition.
 	After = 1 << 2, ///< Epsilon closure after the transition.
 	BeforeAndAfter = Before | After ///< Epsilon closure before and after the transition.
 };
+
+/// Does @p opt ask for an epsilon closure before the transition step?
+constexpr bool closes_before(const EpsilonClosureOpt opt) {
+	return (static_cast<std::uint8_t>(opt) & static_cast<std::uint8_t>(EpsilonClosureOpt::Before)) != 0;
+}
+
+/// Does @p opt ask for an epsilon closure after the transition step?
+constexpr bool closes_after(const EpsilonClosureOpt opt) {
+	return (static_cast<std::uint8_t>(opt) & static_cast<std::uint8_t>(EpsilonClosureOpt::After)) != 0;
+}
 
 enum class ProductFinalStateCondition : std::uint8_t {
 	And, ///< Both original states have to be final.

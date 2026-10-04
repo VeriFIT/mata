@@ -332,34 +332,8 @@ Nfa Nfa::get_one_letter_aut(const Symbol abstract_symbol) const {
 void Nfa::get_one_letter_aut(Nfa& result) const { result = get_one_letter_aut(); }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-	// If the symbol is EPSILON, we can stay in the same state.
-	const bool stays_via_epsilon{symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None};
-
-	if (delta.empty()) { return stays_via_epsilon ? states : StateSet{}; }
-
-	StateSet from_states = states;
-	if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
-		// Before making the step using the symbol, we compute the epsilon closure.
-		from_states = mk_epsilon_closure(states);
-	}
-
-	// Now, we can make the step using the symbol. Gathering every matching target list once and merging them all in
-	// a single sort + dedup pass. It keeps the merge cost close to the number of distinct targets instead of growing
-	// with the number of source states touched.
-	std::vector<State> merged{};
-	if (stays_via_epsilon) { merged.assign(states.begin(), states.end()); }
-	for (const State state : from_states) {
-		const StatePost& post{delta[state]};
-		if (const auto move_it{post.find(symbol)}; move_it != post.end()) {
-			merged.insert(merged.end(), move_it->targets.begin(), move_it->targets.end());
-		}
-	}
-	StateSet res{merged};
-
-	// Compute the epsilon closure of the resulting states.
-	if (epsilon_closure_opt == EpsilonClosureOpt::After) { res = mk_epsilon_closure(res); }
-
-	return res;
+	PostWorkspace workspace{};
+	return delta.post(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
 Nfa& Nfa::unify_initial(const bool force_new_state) {
@@ -615,19 +589,6 @@ Nfa Nfa::decode_utf8() const {
 }
 
 StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
-	StateSet closure{source_states};
-	std::queue<State> worklist;
-	for (const State state : source_states) { worklist.push(state); }
-	while (!worklist.empty()) {
-		const State state = worklist.front();
-		worklist.pop();
-		for (const Symbol epsilon : epsilons) {
-			if (auto move_it{delta[state].find(epsilon)}; move_it != delta[state].end()) {
-				for (const State target : move_it->targets) {
-					if (closure.insert(target).second) { worklist.push(target); }
-				}
-			}
-		}
-	}
-	return closure;
+	PostWorkspace workspace{};
+	return delta.epsilon_closure(source_states, epsilons, workspace);
 }
