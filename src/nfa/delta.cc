@@ -16,8 +16,8 @@
 #include <functional>
 #include <iterator>
 #include <queue>
-#include <utility>
 #include <stdexcept>
+#include <utility>
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -476,13 +476,12 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 	return copied_state_posts;
 }
 
-
 Delta& Delta::append_shifted(const Delta& other, State offset) {
 	if (this == &other) {
 		// Self-append: take a snapshot to avoid reading moved-from state.
 		return append_shifted(Delta{other}, offset);
 	}
-	
+
 	// Check for overflow: offset + other.num_of_states() must fit in State.
 	if (offset > Limits::max_state - other.num_of_states()) {
 		throw std::overflow_error(
@@ -490,12 +489,10 @@ Delta& Delta::append_shifted(const Delta& other, State offset) {
 			std::to_string(other.num_of_states()) + ") exceeds max_state"
 		);
 	}
-	
+
 	// Allocate empty posts up to offset if needed.
-	if (num_of_states() < offset) {
-		allocate(offset);
-	}
-	
+	if (num_of_states() < offset) { allocate(offset); }
+
 	// For each state post in other, shift targets by offset and append.
 	for (const StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post;
@@ -503,14 +500,12 @@ Delta& Delta::append_shifted(const Delta& other, State offset) {
 		for (const SymbolPost& other_symbol_post : other_post) {
 			StateSet shifted_targets;
 			shifted_targets.reserve(other_symbol_post.num_of_targets());
-			for (const State& target : other_symbol_post.targets) {
-				shifted_targets.push_back(target + offset);
-			}
+			for (const State& target : other_symbol_post.targets) { shifted_targets.push_back(target + offset); }
 			shifted_post.push_back(SymbolPost(other_symbol_post.symbol, shifted_targets));
 		}
 		state_posts_.push_back(shifted_post);
 	}
-	
+
 	return *this;
 }
 
@@ -521,7 +516,7 @@ Delta& Delta::append_shifted(Delta&& other, State offset) {
 		other.clear();
 		return append_shifted(snapshot, offset);
 	}
-	
+
 	// Check for overflow: offset + other.num_of_states() must fit in State.
 	if (offset > Limits::max_state - other.num_of_states()) {
 		throw std::overflow_error(
@@ -529,12 +524,10 @@ Delta& Delta::append_shifted(Delta&& other, State offset) {
 			std::to_string(other.num_of_states()) + ") exceeds max_state"
 		);
 	}
-	
+
 	// Allocate empty posts up to offset if needed.
-	if (num_of_states() < offset) {
-		allocate(offset);
-	}
-	
+	if (num_of_states() < offset) { allocate(offset); }
+
 	// For each state post in other, shift targets by offset and move.
 	for (StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post;
@@ -544,23 +537,17 @@ Delta& Delta::append_shifted(Delta&& other, State offset) {
 			// We cannot mutate the StateSet directly, so we build a new one.
 			StateSet shifted_targets;
 			shifted_targets.reserve(other_symbol_post.targets.size());
-			for (const State& target : other_symbol_post.targets) {
-				shifted_targets.push_back(target + offset);
-			}
+			for (const State& target : other_symbol_post.targets) { shifted_targets.push_back(target + offset); }
 			shifted_post.push_back(SymbolPost(other_symbol_post.symbol, std::move(shifted_targets)));
 		}
 		state_posts_.push_back(std::move(shifted_post));
 	}
-	
+
 	// Clear other to leave it valid but empty.
 	other.state_posts_.clear();
-	
+
 	return *this;
 }
-
-
-
-
 
 StatePost& Delta::mutable_state_post(const State source) {
 	if (source >= state_posts_.size()) {
@@ -949,48 +936,38 @@ Symbol Delta::get_max_symbol() const {
 }
 
 StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
-	// TODO: decide which version performs the best.
-
 	if (!is_synchronized()) { return {}; }
 
-	StateSet unified_targets{};
+	const auto& current = get_current();
+	const size_t k = current.size();
 
-	// Version with synchronized iterator.
-	// static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
-	// sync_iterator.reset();
-	// size_t all_targets_size{ 0 };
-	// const std::vector<StatePost::const_iterator>& current_symbol_post_its{ this->get_current() };
-	// sync_iterator.reserve(current_symbol_post_its.size());
-	// for (const auto symbol_post_it: current_symbol_post_its) {
-	//     sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
-	//     all_targets_size += symbol_post_it->num_of_targets();
-	// }
-	// unified_targets.reserve(all_targets_size);
-	// while (sync_iterator.advance()) { unified_targets.push_back(*sync_iterator.get_current_minimum()); }
+	// Fast path: k == 1, single post contributes all targets.
+	if (k == 1) { return StateSet{current[0]->targets}; }
 
-	// Version with set union.
-	// for (const auto& symbol_post_it: get_current()) {
-	//     unified_targets.insert(symbol_post_it->targets);
-	// }
-
-	// Version with priority queue.
-	using TargetSetBeginEndPair = std::pair<StateSet::const_iterator, StateSet::const_iterator>;
-	auto compare = [](const auto& a, const auto& b) { return *(a.first) > *(b.first); };
-	std::priority_queue<TargetSetBeginEndPair, std::vector<TargetSetBeginEndPair>, decltype(compare)> queue(compare);
-	for (const StatePost::const_iterator& symbol_post_it : get_current()) {
-		queue.emplace(symbol_post_it->cbegin(), symbol_post_it->cend());
-	}
-	unified_targets.reserve(32);
-	while (!queue.empty()) {
-		auto item = queue.top();
-		queue.pop();
-		if (unified_targets.empty() || unified_targets.back() != *(item.first)) {
-			unified_targets.push_back(*(item.first));
-		}
-		if (++item.first != item.second) { queue.emplace(item); }
+	// Fast path: k == 2, merge two sorted sets with std::set_union.
+	if (k == 2) {
+		const StateSet& a = current[0]->targets;
+		const StateSet& b = current[1]->targets;
+		StateSet result = StateSet::with_reserved(a.size() + b.size());
+		std::set_union(a.cbegin(), a.cend(), b.cbegin(), b.cend(), std::back_inserter(result));
+		return result;
 	}
 
-	return unified_targets;
+	// General path: k >= 3, gather all targets into a reused buffer, sort, unique.
+	unify_buffer_.clear();
+	size_t total_size{0};
+	for (const auto& symbol_post_it : current) { total_size += symbol_post_it->targets.size(); }
+	unify_buffer_.reserve(total_size);
+	for (const auto& symbol_post_it : current) {
+		for (const State t : symbol_post_it->targets) { unify_buffer_.push_back(t); }
+	}
+	std::sort(unify_buffer_.begin(), unify_buffer_.end());
+	const auto last = std::unique(unify_buffer_.begin(), unify_buffer_.end());
+	unify_buffer_.erase(last, unify_buffer_.end());
+	// Build result from the sorted, unique buffer; push_back asserts sorted order.
+	StateSet result = StateSet::with_reserved(unify_buffer_.size());
+	for (const State target : unify_buffer_) { result.push_back(target); }
+	return result;
 }
 
 bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const Symbol sync_symbol) {

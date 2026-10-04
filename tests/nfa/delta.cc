@@ -839,3 +839,115 @@ TEST_CASE("mata::nfa::Delta randomized mutation sequence vs oracle") {
 		CHECK(delta.empty() == (oracle_num_of_transitions(delta) == 0));
 	}
 }
+
+TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets") {
+	SECTION("Not synchronized returns empty") {
+		Nfa aut{};
+		aut.add_state(3);
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		// Add transitions from state 0
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 2);
+		
+		// Create a synchronized iterator and don't synchronize it
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		// Calling unify_targets without synchronizing should return empty
+		StateSet result = sync_it.unify_targets();
+		CHECK(result.empty());
+	}
+
+	SECTION("k == 1: single post contributes all targets") {
+		Nfa aut{};
+		aut.add_state(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 3);
+		aut.delta.add(1, 'b', 2);
+		
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result = sync_it.unify_targets();
+		// Only post from state 0 has symbol 'a', so result should be {1, 3}
+		StateSet expected{1, 3};
+		CHECK(result == expected);
+	}
+
+	SECTION("k == 2: merging two sorted sets with overlapping targets") {
+		Nfa aut{};
+		aut.add_state(5);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 3);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result = sync_it.unify_targets();
+		// Both have 'a': state 0 -> {1, 3}, state 1 -> {2, 3}
+		// Union should be {1, 2, 3}
+		StateSet expected{1, 2, 3};
+		CHECK(result == expected);
+	}
+
+	SECTION("k >= 3: gathering, sorting, unique with duplicates") {
+		Nfa aut{};
+		aut.add_state(6);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 3);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'a', 4);
+		
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
+		
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result = sync_it.unify_targets();
+		// state 0 -> {1, 3}, state 1 -> {2, 3}, state 2 -> {3, 4}
+		// Union should be {1, 2, 3, 4}
+		StateSet expected{1, 2, 3, 4};
+		CHECK(result == expected);
+	}
+
+	SECTION("Buffer reuse: buffer is cleared between calls, no state leakage") {
+		Nfa aut{};
+		aut.add_state(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(2, 'c', 0);
+		aut.delta.add(2, 'c', 3);
+		
+		// Call unify_targets three times: first with k>=3, then again to ensure buffer cleared
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
+		
+		// First call: all three states have 'a' (state 2 doesn't, so k=2)
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result1 = sync_it.unify_targets();
+		StateSet expected1{1, 2, 3};
+		CHECK(result1 == expected1);
+		
+		// Reset and try again: ensure reusing the iterator gives same results
+		sync_it.reset(3);
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result2 = sync_it.unify_targets();
+		CHECK(result2 == expected1);
+	}
+}
+

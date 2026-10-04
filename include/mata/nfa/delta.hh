@@ -412,6 +412,10 @@ class SynchronizedExistentialSymbolPostIterator
 	 * @return True iff the synchronized iterator points to the same symbol as @p sync.
 	 */
 	bool synchronize_with(Symbol sync_symbol);
+
+  private:
+	/// Scratch buffer reused by @c unify_targets() when three or more symbol posts are synchronized.
+	mutable std::vector<State> unify_buffer_{};
 }; // class SynchronizedExistentialSymbolPostIterator.
 
 /**
