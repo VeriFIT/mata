@@ -96,11 +96,17 @@ TEST_CASE("mata::nfa::Delta::remove()") {
 
 	SECTION("Simple remove") {
 		nfa.delta.add(0, 1, 0);
-		CHECK_NOTHROW(nfa.delta.remove(3, 5, 6));
-		CHECK_NOTHROW(nfa.delta.remove(0, 1, 0));
+		// Removing a transition that is not there reports false, whichever part of it is missing.
+		CHECK(!nfa.delta.remove(3, 5, 6));
+		CHECK(nfa.delta.remove(0, 1, 0));
 		CHECK(nfa.delta.empty());
 		nfa.delta.add(10, 1, 0);
-		CHECK_THROWS_AS(nfa.delta.remove(3, 5, 6), std::invalid_argument);
+		CHECK(!nfa.delta.remove(3, 5, 6));
+		CHECK(!nfa.delta.remove(10, 5, 0));
+		CHECK(!nfa.delta.remove(10, 1, 7));
+		CHECK(nfa.delta.contains(10, 1, 0));
+		CHECK(nfa.delta.remove(10, 1, 0));
+		CHECK(nfa.delta.empty());
 	}
 }
 
@@ -850,7 +856,7 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		// Add transitions from state 0
 		aut.delta.add(0, 'a', 1);
 		aut.delta.add(0, 'b', 2);
-		
+
 		// Create a synchronized iterator and don't synchronize it
 		SynchronizedExistentialSymbolPostIterator sync_it;
 		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
@@ -865,11 +871,11 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		aut.delta.add(0, 'a', 1);
 		aut.delta.add(0, 'a', 3);
 		aut.delta.add(1, 'b', 2);
-		
+
 		SynchronizedExistentialSymbolPostIterator sync_it;
 		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
 		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
-		
+
 		CHECK(sync_it.synchronize_with('a'));
 		StateSet result = sync_it.unify_targets();
 		// Only post from state 0 has symbol 'a', so result should be {1, 3}
@@ -884,11 +890,11 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		aut.delta.add(0, 'a', 3);
 		aut.delta.add(1, 'a', 2);
 		aut.delta.add(1, 'a', 3);
-		
+
 		SynchronizedExistentialSymbolPostIterator sync_it;
 		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
 		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
-		
+
 		CHECK(sync_it.synchronize_with('a'));
 		StateSet result = sync_it.unify_targets();
 		// Both have 'a': state 0 -> {1, 3}, state 1 -> {2, 3}
@@ -906,12 +912,12 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		aut.delta.add(1, 'a', 3);
 		aut.delta.add(2, 'a', 3);
 		aut.delta.add(2, 'a', 4);
-		
+
 		SynchronizedExistentialSymbolPostIterator sync_it;
 		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
 		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
 		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
-		
+
 		CHECK(sync_it.synchronize_with('a'));
 		StateSet result = sync_it.unify_targets();
 		// state 0 -> {1, 3}, state 1 -> {2, 3}, state 2 -> {3, 4}
@@ -928,19 +934,19 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		aut.delta.add(1, 'a', 3);
 		aut.delta.add(2, 'c', 0);
 		aut.delta.add(2, 'c', 3);
-		
+
 		// Call unify_targets three times: first with k>=3, then again to ensure buffer cleared
 		SynchronizedExistentialSymbolPostIterator sync_it;
 		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
 		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
 		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
-		
+
 		// First call: all three states have 'a' (state 2 doesn't, so k=2)
 		CHECK(sync_it.synchronize_with('a'));
 		StateSet result1 = sync_it.unify_targets();
 		StateSet expected1{1, 2, 3};
 		CHECK(result1 == expected1);
-		
+
 		// Reset and try again: ensure reusing the iterator gives same results
 		sync_it.reset(3);
 		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
@@ -951,4 +957,3 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		CHECK(result2 == expected1);
 	}
 }
-

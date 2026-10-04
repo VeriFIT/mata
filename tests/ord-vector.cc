@@ -216,3 +216,76 @@ TEST_CASE("mata::utils::OrdVector should not be polymorphic") {
 	CHECK(!std::is_polymorphic_v<OrdVector<char>>);
 	CHECK(sizeof(OrdVector<int>) == sizeof(std::vector<int>));
 }
+
+TEST_CASE("mata::utils::OrdVector::insert() with a hint - issue #769") {
+	OrdVector<int> vec{1, 5, 9};
+
+	SECTION("a correct hint inserts at the hinted place") {
+		const auto [it, inserted] = vec.insert(vec.begin() + 1, 7);
+		CHECK(inserted);
+		CHECK(*it == 7);
+		CHECK(vec == OrdVector<int>{1, 5, 7, 9});
+	}
+
+	SECTION("a wrong hint falls back to the search and keeps the vector sorted") {
+		// The element belongs between 1 and 5, but the hint points at the end.
+		const auto [it, inserted] = vec.insert(vec.end(), 3);
+		CHECK(inserted);
+		CHECK(*it == 3);
+		CHECK(vec == OrdVector<int>{1, 3, 5, 9});
+		CHECK(mata::utils::is_sorted(vec.to_vector()));
+	}
+
+	SECTION("an end() hint does not append a duplicate out of order") {
+		const auto [it, inserted] = vec.insert(vec.end(), 5);
+		CHECK(!inserted);
+		CHECK(*it == 5);
+		CHECK(vec == OrdVector<int>{1, 5, 9});
+		CHECK(mata::utils::is_sorted(vec.to_vector()));
+	}
+}
+
+TEST_CASE("mata::utils::is_sorted() on an empty vector - issue #769") {
+	const std::vector<int> empty{};
+	CHECK(mata::utils::is_sorted(empty));
+	CHECK(mata::utils::is_sorted(std::vector<int>{1}));
+	CHECK(mata::utils::is_sorted(std::vector<int>{1, 2, 3}));
+	CHECK(!mata::utils::is_sorted(std::vector<int>{1, 1}));
+	CHECK(!mata::utils::is_sorted(std::vector<int>{3, 2}));
+}
+
+TEST_CASE("mata::utils::OrdVector::filter() accepts a named predicate - issue #769") {
+	OrdVector<int> vec{1, 2, 3, 4, 5};
+	auto is_odd = [](const int value) { return value % 2 == 1; };
+	vec.filter(is_odd);
+	CHECK(vec == OrdVector<int>{1, 3, 5});
+	CHECK(vec.size() == 3);
+
+	OrdVector<int> indexed{10, 20, 30, 40};
+	auto keeps_first_two = [](const size_t index) { return index < 2; };
+	indexed.filter_indexes(keeps_first_two);
+	CHECK(indexed == OrdVector<int>{10, 20});
+	CHECK(indexed.size() == 2);
+}
+
+TEST_CASE("mata::BoolVector::get_elements() returns the set bits - issue #769") {
+	const mata::BoolVector bool_vector{0, 1, 0, 1, 1};
+	std::vector<size_t> elements{};
+	mata::BoolVector::get_elements(&elements, bool_vector);
+	CHECK(elements == std::vector<size_t>{1, 3, 4});
+
+	std::vector<size_t> other_elements{};
+	bool_vector.get_elements(other_elements);
+	CHECK(other_elements == std::vector<size_t>{1, 3, 4});
+}
+
+TEST_CASE("mata::utils::filter() shrinks the vector - issue #769") {
+	std::vector<int> values{1, 2, 3, 4, 5};
+	mata::utils::filter(values, [](const int value) { return value % 2 == 1; });
+	// reserve() kept the dropped elements in the vector.
+	CHECK(values == std::vector<int>{1, 3, 5});
+
+	std::vector<int> indexed{10, 20, 30};
+	mata::utils::filter_indexes(indexed, [](const size_t index) { return index == 1; });
+	CHECK(indexed == std::vector<int>{20});
+}

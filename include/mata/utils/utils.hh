@@ -86,17 +86,23 @@ class BoolVector : public std::vector<uint8_t> {
 		return cnt;
 	}
 
-	template <typename T> T& get_elements(T& element_set) {
+	/// Collect the indices of the set bits into @p element_set, replacing its contents.
+	template <typename T> T& get_elements(T& element_set) const {
 		element_set.clear();
-		element_set.resize(count());
-		for (size_t i{0}; i < size(); ++i) { element_set.push_back(i); }
+		element_set.reserve(count());
+		for (size_t i{0}; i < size(); ++i) {
+			if ((*this)[i] == 1) { element_set.push_back(i); }
+		}
 		return element_set;
 	}
 
+	/// Collect the indices of the set bits of @p bool_vec into @p element_set, replacing its contents.
 	template <typename T> static T* get_elements(T* element_set, const BoolVector& bool_vec) {
 		element_set->clear();
 		element_set->reserve(bool_vec.count());
-		for (size_t i{0}; i < bool_vec.size(); ++i) { element_set->push_back(i); }
+		for (size_t i{0}; i < bool_vec.size(); ++i) {
+			if (bool_vec[i] == 1) { element_set->push_back(i); }
+		}
 		return element_set;
 	}
 
@@ -321,17 +327,18 @@ template <class Vector, typename Index> void defragment(Vector& vec, const std::
 			vec[i] = std::move(vec[renaming[i]]);
 		}
 	}
-	vec.reserve(i);
+	// The kept elements are the first @c i ones: drop the rest. reserve() kept them all.
+	vec.resize(i);
 }
 
 // In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
 template <class Vector, typename Index> void rename(Vector& vec, const std::vector<Index>& renaming) {
-	for (size_t i = 0, size = vec.size(); i < size; ++i) {
-		if (i != vec[i]) { vec[i] = renaming[vec[i]]; }
-	}
+	// Every element is renamed: the former 'i == vec[i]' shortcut silently skipped elements whose value
+	//  happened to equal their index, which is only correct for renamings that keep them in place.
+	for (size_t i = 0, size = vec.size(); i < size; ++i) { vec[i] = renaming[vec[i]]; }
 }
 
-template <class Vector, typename Fun> void filter_indexes(Vector& vec, const Fun&& is_staying) {
+template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun&& is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -340,10 +347,11 @@ template <class Vector, typename Fun> void filter_indexes(Vector& vec, const Fun
 			last++;
 		}
 	}
-	vec.reserve(last);
+	// Only the first @c last elements stay: drop the rest. reserve() kept them all.
+	vec.resize(last);
 }
 
-template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_staying) {
+template <class Vector, typename Fun> void filter(Vector& vec, Fun&& is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -352,7 +360,8 @@ template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_st
 			last++;
 		}
 	}
-	vec.reserve(last);
+	// Only the first @c last elements stay: drop the rest. reserve() kept them all.
+	vec.resize(last);
 }
 
 /**

@@ -48,6 +48,10 @@
 #ifndef MATA_CLOSED_SET_HH_
 #define MATA_CLOSED_SET_HH_
 
+#include <limits>
+#include <stdexcept>
+#include <vector>
+
 #include "assert.hh"
 #include "ord-vector.hh"
 #include "utils.hh"
@@ -89,7 +93,7 @@ template <typename T> struct ClosedSet {
 		: type_(type),
 		  min_val_(min_val),
 		  max_val_(max_val),
-		  antichain_(Nodes(value)) {
+		  antichain_(Nodes{Node{value}}) {
 		MATA_ASSERT(min_val <= max_val);
 		MATA_ASSERT(min_val <= value && value <= max_val);
 	}
@@ -99,7 +103,7 @@ template <typename T> struct ClosedSet {
 		: type_(type),
 		  min_val_(min_val),
 		  max_val_(max_val),
-		  antichain_(Node(node)) {
+		  antichain_(Nodes{node}) {
 		MATA_ASSERT(min_val <= max_val);
 		MATA_ASSERT(in_interval(node));
 	}
@@ -139,7 +143,7 @@ template <typename T> struct ClosedSet {
 			type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_,
 			"Types and borders of given closed sets must be the same to perform their >=-comparison."
 		);
-		return contains(rhs.antichain);
+		return contains(rhs.antichain_);
 	} // operator<= }}}
 
 	// Text representation of a closed set

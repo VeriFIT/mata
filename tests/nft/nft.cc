@@ -3216,7 +3216,7 @@ TEST_CASE("mata::nft::delta.remove()") {
 			CHECK(!aut.delta.contains(1, 3, 5));
 		}
 
-		SECTION("Remove missing transition") { CHECK_THROWS_AS(aut.delta.remove(1, 1, 5), std::invalid_argument); }
+		SECTION("Remove missing transition") { CHECK(!aut.delta.remove(1, 1, 5)); }
 
 		SECTION("Remove the last state_to from targets") {
 			CHECK(aut.delta.contains(6, 'a', 2));

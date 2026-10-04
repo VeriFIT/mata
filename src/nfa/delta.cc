@@ -310,32 +310,21 @@ void Delta::add(std::vector<Transition>&& transitions) {
 	}
 }
 
-void Delta::remove(const State source, const Symbol symbol, const State target) {
-	++mutation_epoch_;
-	if (source >= state_posts_.size()) { return; }
+bool Delta::remove(const State source, const Symbol symbol, const State target) {
+	if (source >= state_posts_.size()) { return false; }
 
 	StatePost& state_transitions{state_posts_[source]};
-	if (state_transitions.empty()) {
-		throw std::invalid_argument(
-			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
-			"] does not exist."
-		);
-	}
-	if (state_transitions.back().symbol < symbol) {
-		throw std::invalid_argument(
-			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
-			"] does not exist."
-		);
-	}
+	if (state_transitions.empty()) { return false; }
+	if (state_transitions.back().symbol < symbol) { return false; }
 	const auto symbol_transitions{state_transitions.find(symbol)};
-	if (symbol_transitions == state_transitions.end()) {
-		throw std::invalid_argument(
-			"Transition [" + std::to_string(source) + ", " + std::to_string(symbol) + ", " + std::to_string(target) +
-			"] does not exist."
-		);
-	}
-	if (symbol_transitions->erase(target)) { note_removed(1); }
-	if (symbol_transitions->empty()) { state_posts_[source].erase(*symbol_transitions); }
+	if (symbol_transitions == state_transitions.end()) { return false; }
+	if (!symbol_transitions->erase(target)) { return false; }
+
+	++mutation_epoch_;
+	note_removed(1);
+	// Erase through the iterator that was already found instead of searching for the post again.
+	if (symbol_transitions->empty()) { state_transitions.erase(symbol_transitions); }
+	return true;
 }
 
 bool Delta::contains(const State source, const Symbol symbol, const State target) const { // {{{
@@ -885,7 +874,7 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
-			if (const size_t capacity{symbol_post.symbol + 1}; symbols.size() < capacity) { symbols.resize(capacity); }
+			if (const size_t capacity{static_cast<size_t>(symbol_post.symbol) + 1}; symbols.size() < capacity) { symbols.resize(capacity); }
 			symbols[symbol_post.symbol] = true;
 		}
 	}
@@ -903,7 +892,7 @@ mata::BoolVector Delta::get_used_symbols_chv() const {
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
-			if (const size_t capacity{symbol_post.symbol + 1}; symbols.size() < capacity) {
+			if (const size_t capacity{static_cast<size_t>(symbol_post.symbol) + 1}; symbols.size() < capacity) {
 				symbols.resize(capacity * 2);
 			}
 			symbols[symbol_post.symbol] = true;

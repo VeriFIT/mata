@@ -90,11 +90,16 @@ TEST_CASE("mata::nft::Delta::remove()") {
 
 	SECTION("Simple remove") {
 		nft.delta.add(0, 1, 0);
-		CHECK_NOTHROW(nft.delta.remove(3, 5, 6));
-		CHECK_NOTHROW(nft.delta.remove(0, 1, 0));
+		// Removing a transition that is not there reports false, whichever part of it is missing.
+		CHECK(!nft.delta.remove(3, 5, 6));
+		CHECK(nft.delta.remove(0, 1, 0));
 		CHECK(nft.delta.empty());
 		nft.delta.add(10, 1, 0);
-		CHECK_THROWS_AS(nft.delta.remove(3, 5, 6), std::invalid_argument);
+		CHECK(!nft.delta.remove(3, 5, 6));
+		CHECK(!nft.delta.remove(10, 5, 0));
+		CHECK(!nft.delta.remove(10, 1, 7));
+		CHECK(nft.delta.remove(10, 1, 0));
+		CHECK(nft.delta.empty());
 	}
 }
 

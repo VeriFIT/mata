@@ -152,7 +152,11 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <class T> explicit SparseSet(T& container) {
+	template <class T>
+		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_value_t<T>, Number> &&
+				 (!std::same_as<std::remove_cvref_t<T>, SparseSet>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, BoolVector>)
+	explicit SparseSet(const T& container) {
 		insert(container.begin(), container.end());
 		MATA_ASSERT(consistent());
 	}
@@ -191,14 +195,24 @@ template <typename Number> class SparseSet {
 		return *this;
 	}
 
-	// TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
-	//  comparing contained elements should be enough?
-	bool operator==(const SparseSet<Number>&) const = default;
+	/**
+	 * @brief Compare the contents, not the internal buffers.
+	 *
+	 * The dense and sparse buffers keep stale slots behind @c size_ and the domain size depends on the
+	 *  insertion history, so the defaulted member-wise comparison reported equal sets as different.
+	 */
+	bool operator==(const SparseSet<Number>& other) const {
+		if (size_ != other.size_) { return false; }
+		for (size_t i{0}; i < size_; ++i) {
+			if (!other.contains(dense_[i])) { return false; }
+		}
+		return true;
+	}
 
 	// Things
 
 	// Tests the basic invariant of the sparse set.
-	bool consistent() {
+	bool consistent() const {
 		return domain_size_ >= size_ && (max() < domain_size_ || (size_ == 0 && domain_size_ == 0)) &&
 			   dense_.size() >= domain_size_ && sparse_.size() >= domain_size_;
 	}
@@ -288,7 +302,7 @@ template <typename Number> class SparseSet {
 	/// @brief Maximal Number in set.
 	///
 	/// Expensive operation as it has to compute the maximal Number in linear time.
-	Number max() {
+	Number max() const {
 		Number max = 0;
 		for (Number i = 0; i < size_; ++i) {
 			if (max < dense_[i]) { max = dense_[i]; }

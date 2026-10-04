@@ -50,7 +50,7 @@ Nft intersection(
 Nft mata::nft::algorithms::product(
 	const Nft& lhs,
 	const Nft& rhs,
-	const std::function<bool(State, State)>&& final_condition,
+	const std::function<bool(State, State)>& final_condition,
 	ProductMap* product_map,
 	const JumpMode jump_mode,
 	const State lhs_first_aux_state,

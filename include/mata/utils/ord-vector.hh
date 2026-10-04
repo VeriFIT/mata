@@ -5,6 +5,8 @@
 #define MATA_ORD_VECTOR_HH_
 
 #include <algorithm>
+#include <concepts>
+#include <ranges>
 #include <vector>
 
 #include "assert.hh"
@@ -30,13 +32,9 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 }
 
 template <class Key> bool is_sorted(const std::vector<Key>& vec) {
-	for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
-		if (!(*(it_vec - 1) < *it_vec)) {
-			// In case there is an unordered pair (or there is one element twice).
-			return false;
-		}
-	}
-	return true;
+	// Works with only operator< defined and with an empty vector (no cbegin()+1).
+	return std::adjacent_find(vec.begin(), vec.end(), [](const Key& lhs, const Key& rhs) { return !(lhs < rhs); }) ==
+		   vec.end();
 }
 
 /**
@@ -89,7 +87,10 @@ template <class Key> class OrdVector {
 	explicit OrdVector(const VectorType& vec) : vec_(vec) { utils::sort_and_rmdupl(vec_); }
 	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
 	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
-	template <class T> explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
+	template <class T>
+		requires std::ranges::range<T> && std::convertible_to<std::ranges::range_value_t<T>, Key> &&
+				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>)
+	explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(const OrdVector& rhs) = default;
 	OrdVector(OrdVector&& other) noexcept : vec_{std::move(other.vec_)} {}
@@ -122,9 +123,10 @@ template <class Key> class OrdVector {
 	}
 
 	std::pair<iterator, bool> insert(iterator itr, const Key& x) {
-		if (empty() || itr == end()) { return {vec_.insert(itr, x), true}; }
-		if (x >= *itr || (itr != begin() && x <= *(itr - 1))) { return {itr, false}; }
-		return {vec_.insert(itr, x), true};
+		if ((itr == end() || x < *itr) && (itr == begin() || *(itr - 1) < x)) { return {vec_.insert(itr, x), true}; }
+		if (itr != end() && *itr == x) { return {itr, false}; }
+		// The hint was wrong: fall back to the binary search.
+		return insert(x);
 	}
 
 	// EMPLACE_BACK WHICH BREAKS SORTEDNESS,
@@ -345,10 +347,10 @@ template <class Key> class OrdVector {
 	inline bool empty() const { return vec_.empty(); }
 
 	// Indexes which ar staying are shifted left to take place of those that are not staying.
-	template <typename Fun> void filter_indexes(const Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
+	template <typename Fun> void filter_indexes(Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
 
 	// Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
-	template <typename Fun> void filter(const Fun&& is_staying) { utils::filter(vec_, is_staying); }
+	template <typename Fun> void filter(Fun&& is_staying) { utils::filter(vec_, is_staying); }
 
 	inline const_reference back() const { return vec_.back(); }
 
@@ -405,7 +407,7 @@ template <class Key> class OrdVector {
 	}
 
 	const std::vector<Key>& to_vector() const { return vec_; }
-	std::vector<Key>& to_vector_mut() const { return vec_; }
+	std::vector<Key>& to_vector_mut() { return vec_; }
 
 	bool is_subset_of(const OrdVector& bigger) const {
 		return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
