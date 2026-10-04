@@ -31,14 +31,14 @@ class Mintermization {
 
 	using DisjunctStatesPair = std::pair<const FormulaGraph*, const FormulaGraph*>;
 
-	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-	std::unordered_map<std::string, BDD> symbol_to_bddvar_{};
-	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
-	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
-	std::unordered_set<BDD> bdds_{}; // bdds created from transitions
-	/// BDDs created from transitions, in the order of their first appearance in the transitions.
+	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs. Shared across calls.
+	std::unordered_map<std::string, BDD> symbol_to_bddvar_{}; // Symbol to BDD variable mapping. Shared across calls.
+	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{}; // Per-call: cleared at start of mintermize().
+	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{}; // Per-call: cleared at start of mintermize().
+	std::unordered_set<BDD> bdds_{}; // Per-call BDDs created from transitions; cleared at start of mintermize().
+	/// Per-call: BDDs created from transitions, in the order of their first appearance in the transitions.
 	std::vector<BDD> source_bdds_{};
-	/// Position of each BDD of @c source_bdds_ in that vector.
+	/// Per-call: Position of each BDD of @c source_bdds_ in that vector.
 	std::unordered_map<BDD, size_t> source_bdd_to_index_{};
 
 	/// Registers @p bdd as a source BDD of the refinement unless it is already known.

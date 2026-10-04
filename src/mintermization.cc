@@ -361,10 +361,15 @@ mata::IntermediateAut mata::Mintermization::mintermize(const IntermediateAut& au
 }
 
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<const IntermediateAut*>& auts) {
-	// Initialize source BDD tracking structures
+	// Clear per-call state: bdds_, trans_to_bddvar_, and lhs_to_disjuncts_and_states_ accumulate
+	// across calls if the object is reused. Clear them to ensure a fresh minterm computation.
+	// Keep bdd_mng_ and symbol_to_bddvar_ shared across calls (intentional).
+	bdds_.clear();
+	trans_to_bddvar_.clear();
+	lhs_to_disjuncts_and_states_.clear();
+	// Also clear source BDD tracking structures
 	source_bdds_.clear();
 	source_bdd_to_index_.clear();
-
 	for (const IntermediateAut* aut : auts) {
 		if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::AlphabetType::Bitvector) {
 			throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
