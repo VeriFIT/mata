@@ -2,6 +2,8 @@
  */
 
 #include <mata/alphabet.hh>
+#include <mata/nfa/types.hh>
+#include <mata/nft/types.hh>
 #include <mata/utils/assert.hh>
 
 using mata::AlphabetLevels;
@@ -40,6 +42,10 @@ void mata::OnTheFlyAlphabet::add_symbols_from(const std::vector<std::string>& sy
 }
 
 Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
+	// The reserved special-symbol names translate straight to the special symbols and are never registered as ordinary
+	// symbols, so a printed name always parses back to the same symbol.
+	if (str == EPSILON_NAME) { return nfa::EPSILON; }
+	if (str == DONT_CARE_NAME) { return nft::DONT_CARE; }
 	const auto [it, inserted] = symbol_map_.insert({str, next_symbol_value_});
 	if (inserted) { return next_symbol_value_++; }
 	return it->second;
@@ -60,6 +66,15 @@ mata::Word mata::OnTheFlyAlphabet::translate_word(const mata::WordName& word_nam
 	Word word;
 	word.reserve(word_size);
 	for (size_t i{0}; i < word_size; ++i) {
+		// The reserved special-symbol names are never registered and translate to the special symbols.
+		if (word_name[i] == EPSILON_NAME) {
+			word.push_back(nfa::EPSILON);
+			continue;
+		}
+		if (word_name[i] == DONT_CARE_NAME) {
+			word.push_back(nft::DONT_CARE);
+			continue;
+		}
 		const auto symbol_mapping_it = symbol_map_.find(word_name[i]);
 		if (symbol_mapping_it == symbol_map_.end()) {
 			throw std::runtime_error("Unknown symbol \'" + word_name[i] + "\'");

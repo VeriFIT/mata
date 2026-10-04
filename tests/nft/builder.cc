@@ -139,6 +139,33 @@ TEST_CASE("mata::nft::parse_from_mata()") {
 		}
 	}
 
+	SECTION("transducer with EPSILON and DONT_CARE transitions") {
+		// Two levels: 0 -a-> 1 -<eps>-> 2 (level 0 again), plus a DONT_CARE edge across one level.
+		Nft nft{Nft::with_levels({2, {0, 1, 0, 1}}, Delta{}, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, DONT_CARE, 3);
+		nft.delta.add(3, 'b', 0);
+
+		const std::string printed{nft.print_to_mata()};
+		CHECK(printed.find(mata::EPSILON_NAME) != std::string::npos);
+		CHECK(printed.find(mata::DONT_CARE_NAME) != std::string::npos);
+
+		Nft parsed{mata::nft::builder::parse_from_mata(printed)};
+		// The parser renames states by order of appearance, so compare the symbols, not the IDs.
+		size_t num_of_epsilons{0};
+		size_t num_of_dont_cares{0};
+		for (const Transition& transition : parsed.delta.transitions()) {
+			if (transition.symbol == EPSILON) { ++num_of_epsilons; }
+			if (transition.symbol == DONT_CARE) { ++num_of_dont_cares; }
+		}
+		CHECK(num_of_epsilons == 1);
+		CHECK(num_of_dont_cares == 1);
+		CHECK(parsed.delta.num_of_transitions() == nft.delta.num_of_transitions());
+		CHECK(parsed.levels.num_of_levels == nft.levels.num_of_levels);
+		CHECK(parsed.num_of_states() == nft.num_of_states());
+	}
+
 	SECTION("larger automaton") {
 		Nft nft;
 		nft.initial = {1, 2, 50};
