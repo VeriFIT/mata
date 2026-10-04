@@ -1,3 +1,7 @@
 [submodule "tests-integration/nfa-bench"]
 	path = tests-integration/nfa-bench
 	url = https://github.com/VeriFIT/nfa-bench
+[submodule "tests-integration/pycobench"]
+	path = tests-integration/pycobench
+	url = https://github.com/VeriFIT/pycobench.git
+	branch = master
