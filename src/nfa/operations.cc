@@ -216,22 +216,54 @@ bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::op
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
+	if (symbols.empty()) { return false; }
+
 	bool transition_added{false};
 	const size_t num_of_states{this->num_of_states()};
 	const State sink_state_val{sink_state.value_or(num_of_states)};
+	const auto symbols_begin{symbols.begin()};
+	const auto symbols_end{symbols.end()};
 
-	OrdVector<Symbol> used_symbols{};
+	// Scratch buffer reused by every rebuilt state post. Completing the whole automaton therefore allocates at most
+	//  as much as the largest state post needs instead of allocating for each state separately.
+	StatePost completed_post{};
 	for (State state{0}; state < num_of_states; ++state) {
-		for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
-		for (const OrdVector<Symbol> unused_symbols{symbols.difference(used_symbols)};
-			 const Symbol symbol : unused_symbols) {
-			delta.add(state, symbol, sink_state_val);
-			transition_added = true;
+		StatePost& state_post{delta.mutable_state_post(state)};
+
+		// Both the state post and @p symbols are sorted by symbol, so a single merge finds the missing symbols.
+		//  Symbols outside @p symbols are simply skipped over, they complete nothing.
+		auto symbols_it{symbols_begin};
+		auto post_it{state_post.begin()};
+		const auto post_end{state_post.end()};
+		while (symbols_it != symbols_end) {
+			while (post_it != post_end && post_it->symbol < *symbols_it) { ++post_it; }
+			if (post_it == post_end || post_it->symbol != *symbols_it) { break; } // '*symbols_it' is missing.
+			++post_it;
+			++symbols_it;
 		}
-		used_symbols.clear();
+		if (symbols_it == symbols_end) { continue; } // The state is already complete.
+		transition_added = true;
+
+		// Rebuild the state post as the merge of the original symbol posts with the missing symbols. Both sequences
+		//  are sorted, so the merged state post is created by appending only, with no sorted insert in the middle.
+		completed_post.clear();
+		completed_post.reserve(state_post.size() + static_cast<size_t>(symbols_end - symbols_it));
+		symbols_it = symbols_begin;
+		for (SymbolPost& symbol_post : state_post) {
+			while (symbols_it != symbols_end && *symbols_it < symbol_post.symbol) {
+				completed_post.emplace_back(*symbols_it, sink_state_val);
+				++symbols_it;
+			}
+			if (symbols_it != symbols_end && *symbols_it == symbol_post.symbol) { ++symbols_it; }
+			completed_post.emplace_back(std::move(symbol_post));
+		}
+		for (; symbols_it != symbols_end; ++symbols_it) { completed_post.emplace_back(*symbols_it, sink_state_val); }
+		std::swap(state_post, completed_post);
 	}
 
 	if (transition_added && num_of_states <= sink_state_val) {
+		StatePost& sink_post{delta.mutable_state_post(sink_state_val)};
+		sink_post.reserve(sink_post.size() + symbols.size());
 		for (const Symbol symbol : symbols) { delta.add(sink_state_val, symbol, sink_state_val); }
 	}
 
