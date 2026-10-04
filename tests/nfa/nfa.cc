@@ -4473,6 +4473,32 @@ TEST_CASE("mata::nfa::trim()") {
 		CHECK(state_map.empty());
 	}
 }
+TEST_CASE("mata::nfa::trim() preserves alphabet") {
+	// Create an NFA with a concrete alphabet.
+	OnTheFlyAlphabet alph;
+	alph.translate_symb("a");
+	alph.translate_symb("b");
+	const Symbol a = alph["a"];
+	const Symbol b = alph["b"];
+
+	// State 2 is reachable but cannot reach a final state, so trimming removes it and its only incoming transition,
+	//  the only use of `b`.
+	Nfa nfa{3, {0}, {1}};
+	nfa.alphabet = std::make_shared<OnTheFlyAlphabet>(alph);
+	nfa.delta.add(0, a, 1);
+	nfa.delta.add(0, b, 2);
+
+	const Nfa trimmed = trim(nfa);
+
+	CHECK(trimmed.num_of_states() == 2);
+	CHECK(trimmed.delta.num_of_transitions() == 1);
+	CHECK(trimmed.delta.contains(0, a, 1));
+	// The alphabet is carried over, so `b` is still known although no transition uses it anymore.
+	CHECK(trimmed.alphabet == nfa.alphabet);
+	CHECK(trimmed.get_symbols_to_work_with() == utils::OrdVector<Symbol>{a, b});
+	CHECK(!trimmed.is_complete());
+	CHECK(trimmed.print_to_mata() == "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\n");
+}
 
 TEST_CASE("mata::nfa::Nfa::delta.empty()") {
 	Nfa aut{};

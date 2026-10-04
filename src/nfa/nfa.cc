@@ -61,7 +61,11 @@ Nfa mata::nfa::trim(
 #else
 	const BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
 #endif
+	// Build the result from the useful states directly instead of copying and trimming in place, which would copy
+	//  every transition only to discard those of the useless states.
 	Nfa nfa_trimmed{};
+	nfa_trimmed.alphabet = nfa.alphabet;
+	nfa_trimmed.attributes = nfa.attributes;
 
 	const size_t useful_states_size{useful_states.size()};
 	std::vector<State> renaming(useful_states_size);
