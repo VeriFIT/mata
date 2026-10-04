@@ -1,9 +1,7 @@
-import networkx as nx
-import graphviz
-import IPython
 import sys
 
-from IPython.display import display, HTML
+# networkx, graphviz and IPython are imported inside the functions that need them: importing
+# libmata.plotting must not pull the whole plotting stack into every process.
 
 cimport libmata.alphabets as alph
 cimport libmata.nfa.nfa as mata_nfa
@@ -83,6 +81,12 @@ def plot_using_graphviz(
     :param alph.Alphabet alphabet: alphabet for reverse translation of symbols
     :return: automaton in graphviz
     """
+    try:
+        import graphviz
+    except ImportError as error:
+        raise ImportError(
+            "Plotting needs graphviz: install it with \"pip install libmata[plotting]\"."
+        ) from error
     # Configuration
     base_configuration = store()['node_style']
     edge_configuration = store()['edge_style']
@@ -97,6 +101,12 @@ def plot_using_graphviz(
         )
 
     if with_scc:
+        try:
+            import networkx as nx
+        except ImportError as error:
+            raise ImportError(
+                "Plotting with SCCs needs networkx: install it with \"pip install libmata[plotting]\"."
+            ) from error
         G = aut.to_networkx_graph()
         for i, scc in enumerate(nx.strongly_connected_components(G)):
             with dot.subgraph(name=f"cluster_{i}") as c:
@@ -175,6 +185,12 @@ def display_inline(*args, per_row=None, show=None):
     If the `per_row` argument is given, at most `per_row` arguments are
     displayed on each row, each one taking 1/per_row of the line width.
     """
+    try:
+        from IPython.display import display, HTML
+    except ImportError as error:
+        raise ImportError(
+            "display_inline() needs IPython: install it with \"pip install libmata[plotting]\"."
+        ) from error
     width = res = ''
     if per_row:
         width = 'width:{}%;'.format(100//per_row)

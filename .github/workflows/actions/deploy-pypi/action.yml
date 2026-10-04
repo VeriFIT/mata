@@ -32,9 +32,24 @@ runs:
       uses: ./.github/workflows/actions/compile-python-src
     - name: Compile the Python bindings from the tarball
       uses: ./.github/workflows/actions/compile-python-tarball
+    - name: Build wheels
+      shell: bash
+      # Wheels spare users the C++ build (and a system cmake/make) on install. Only the manylinux
+      #  and macOS targets that the library is tested on are built.
+      env:
+        CIBW_BUILD: "cp313-* cp314-*"
+        CIBW_ARCHS_LINUX: "x86_64 aarch64"
+        CIBW_ARCHS_MACOS: "x86_64 arm64"
+        CIBW_BEFORE_ALL_LINUX: "yum install -y cmake make gcc-c++ || apt-get update && apt-get install -y cmake make g++"
+        CIBW_TEST_EXTRAS: "dev"
+        CIBW_TEST_COMMAND: "python -c \"import libmata.nfa.nfa as nfa; nfa.Nfa(1)\""
+      run: |
+        python3 -m pip install --upgrade cibuildwheel
+        python3 -m cibuildwheel --output-dir bindings/python/dist bindings/python
     - name: Upload to PyPI
       shell: bash
-      run: python3 -m twine upload bindings/python/dist/*.tar.gz
+      # The sdist and every built wheel are published together.
+      run: python3 -m twine upload bindings/python/dist/*.tar.gz bindings/python/dist/*.whl
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ inputs.pypi-token }}

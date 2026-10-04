@@ -1,7 +1,5 @@
 import shlex
 import subprocess
-import pandas
-import networkx as nx
 
 from libc.stdint cimport uint8_t
 from libcpp cimport bool
@@ -980,7 +978,7 @@ cdef class Nfa:
             del output_stream
         return result.decode(encoding)
 
-    def to_dataframe(self) -> pandas.DataFrame:
+    def to_dataframe(self):
         """Transforms the automaton to DataFrame format.
 
         Transforms the automaton into pandas.DataFrame format,
@@ -990,13 +988,19 @@ cdef class Nfa:
 
         :return: automaton represented as a pandas dataframe
         """
+        try:
+            import pandas
+        except ImportError as error:
+            raise ImportError(
+                "Nfa.to_dataframe() needs pandas: install it with \"pip install libmata[pandas]\"."
+            ) from error
         columns = ['source', 'symbol', 'target']
         data = [
             [trans.source, trans.symbol, trans.target] for trans in self.iterate()
         ]
         return pandas.DataFrame(data, columns=columns)
 
-    def to_networkx_graph(self) -> nx.Graph:
+    def to_networkx_graph(self):
         """Transforms the automaton into networkx.Graph
 
         Transforms the automaton into networkx.Graph format,
@@ -1009,6 +1013,12 @@ cdef class Nfa:
 
         :return:
         """
+        try:
+            import networkx as nx
+        except ImportError as error:
+            raise ImportError(
+                "Nfa.to_networkx_graph() needs networkx: install it with \"pip install libmata[plotting]\"."
+            ) from error
         # Accumulate symbols per (source, target) pair.
         edge_symbols = {}
         for trans in self.iterate():
