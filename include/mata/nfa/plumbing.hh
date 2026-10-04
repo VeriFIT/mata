@@ -79,6 +79,26 @@ inline void union_nondet(Nfa* union_automaton, const Nfa& lhs, const Nfa& rhs) {
 	*union_automaton = union_nondet(lhs, rhs);
 }
 
+inline void union_nondet(Nfa* union_automaton, Nfa&& lhs, const Nfa& rhs) {
+	if (union_automaton == &lhs) {
+		union_automaton->unite_nondet_with(rhs);
+	} else {
+		*union_automaton = union_nondet(std::move(lhs), rhs);
+	}
+}
+
+inline void union_nondet(Nfa* union_automaton, const Nfa& lhs, Nfa&& rhs) {
+	*union_automaton = union_nondet(lhs, std::move(rhs));
+}
+
+inline void union_nondet(Nfa* union_automaton, Nfa&& lhs, Nfa&& rhs) {
+	if (union_automaton == &lhs) {
+		union_automaton->unite_nondet_with(std::move(rhs));
+	} else {
+		*union_automaton = union_nondet(std::move(lhs), std::move(rhs));
+	}
+}
+
 /**
  * @brief Compute intersection of two NFAs.
  *
@@ -119,6 +139,32 @@ inline void concatenate(
 	StateRenaming* rhs_result_state_renaming = nullptr
 ) {
 	*res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+}
+
+inline void concatenate(
+	Nfa* res,
+	Nfa&& lhs,
+	const Nfa& rhs,
+	const bool use_epsilon = false,
+	StateRenaming* lhs_result_state_renaming = nullptr,
+	StateRenaming* rhs_result_state_renaming = nullptr
+) {
+	if (res == &lhs) {
+		*res = concatenate(std::move(*res), rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+	} else {
+		*res = concatenate(std::move(lhs), rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+	}
+}
+
+inline void concatenate(
+	Nfa* res,
+	const Nfa& lhs,
+	Nfa&& rhs,
+	const bool use_epsilon = false,
+	StateRenaming* lhs_result_state_renaming = nullptr,
+	StateRenaming* rhs_result_state_renaming = nullptr
+) {
+	*res = concatenate(lhs, std::move(rhs), use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
 /**
