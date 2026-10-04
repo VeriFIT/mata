@@ -757,6 +757,7 @@ class Nft : public mata::Automaton {
 	 * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
 	 * sequence of @c DONT_CARE symbols.
+	 * @throw std::invalid_argument when the level vector does not cover all states or a level is out of range.
 	 */
 	void unwind_jumps_inplace(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
@@ -770,6 +771,7 @@ class Nft : public mata::Automaton {
 	 * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
 	 * sequence of @c DONT_CARE symbols.
+	 * @throw std::invalid_argument when the level vector does not cover all states or a level is out of range.
 	 */
 	Nft unwind_jumps(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
