@@ -11,11 +11,14 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
+#include <functional>
 #include <random>
 #include <set>
 #include <thread>
 #include <vector>
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -916,5 +919,503 @@ TEST_CASE("mata::nfa::State width and state overflow checks") {
 		CHECK(state_post.front().symbol == 7);
 		CHECK(state_post.front().targets == StateSet{3});
 		CHECK(!std::is_constructible_v<StateSet, State, State>);
+	}
+}
+
+// ============================================================
+// Tests for Issue #805: O(1) empty() and transition_count
+// ============================================================
+
+TEST_CASE("mata::nfa::Delta mutation epoch") {
+	Delta delta;
+	const auto initial_epoch = delta.mutation_epoch();
+
+	// Epoch should increment on mutations
+	delta.add(0, 'a', 1);
+	CHECK(delta.mutation_epoch() == initial_epoch + 1);
+
+	delta.add(1, 'b', 2);
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+
+	// Non-mutating operations should not change epoch
+	auto _ = delta.num_of_transitions();
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+
+	(void) delta.empty();
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+}
+
+TEST_CASE("mata::nfa::Delta mutation epoch of resize_for_states()") {
+	Delta delta;
+	const auto initial_epoch = delta.mutation_epoch();
+	delta.resize_for_states(State{10});
+	CHECK(delta.num_of_states() == 11);
+	CHECK(delta.mutation_epoch() == initial_epoch + 1);
+	// Already fits: nothing changes.
+	delta.resize_for_states(State{5});
+	CHECK(delta.mutation_epoch() == initial_epoch + 1);
+	// A growing add() still moves the epoch once.
+	delta.add(20, 'a', 30);
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+}
+
+TEST_CASE("mata::nfa::Delta moves and assignments keep count and epoch consistent") {
+	Delta source;
+	source.add(0, 'a', 1);
+	REQUIRE(source.num_of_transitions() == 1);
+
+	SECTION("move construction leaves a reusable empty source") {
+		Delta target{std::move(source)};
+		CHECK(target.num_of_transitions() == 1);
+		CHECK(source.num_of_transitions() == 0);
+		CHECK(source.empty());
+		source.add(0, 'b', 1);
+		CHECK(source.num_of_transitions() == 1);
+	}
+
+	SECTION("move assignment leaves a reusable empty source") {
+		Delta target;
+		target.add(0, 'c', 0);
+		target.add(1, 'c', 0);
+		REQUIRE(target.num_of_transitions() == 2);
+		target = std::move(source);
+		CHECK(target.num_of_transitions() == 1);
+		CHECK(source.num_of_transitions() == 0);
+		source.add(0, 'b', 1);
+		CHECK(source.num_of_transitions() == 1);
+	}
+
+	SECTION("assignment moves the epoch of the target past both operands") {
+		Delta target;
+		const auto target_epoch = target.mutation_epoch();
+		target = source;
+		CHECK(target.mutation_epoch() > std::max(target_epoch, source.mutation_epoch()));
+		CHECK(target.num_of_transitions() == 1);
+
+		// Equal epochs before the assignment must not survive it.
+		Delta other;
+		other.add(5, 'z', 5);
+		REQUIRE(other.mutation_epoch() == source.mutation_epoch());
+		const auto other_epoch = other.mutation_epoch();
+		other = std::move(source);
+		CHECK(other.mutation_epoch() != other_epoch);
+		CHECK(other.contains(0, 'a', 1));
+		CHECK(!other.contains(5, 'z', 5));
+	}
+}
+
+TEST_CASE("mata::nfa::Delta transition_count caching") {
+	Delta delta;
+
+	CHECK(delta.num_of_transitions() == 0);
+	CHECK(delta.empty());
+
+	// Add some transitions
+	delta.add(0, 'a', 1);
+	delta.add(0, 'a', 2);
+	delta.add(1, 'b', 2);
+	delta.add(2, 'a', 3);
+
+	// Cached count should match scan
+	CHECK(delta.num_of_transitions() == 4);
+	CHECK(!delta.empty());
+
+	// Duplicate add should not change count
+	delta.add(0, 'a', 1);
+	CHECK(delta.num_of_transitions() == 4);
+
+	// Remove should decrement
+	delta.remove(0, 'a', 1);
+	CHECK(delta.num_of_transitions() == 3);
+
+	// Clear should zero count
+	delta.clear();
+	CHECK(delta.num_of_transitions() == 0);
+	CHECK(delta.empty());
+}
+
+TEST_CASE("mata::nfa::Delta long empty prefix no scan") {
+	// Create a delta with 2000 empty state posts, then a few transitions
+	// The old empty() would scan all 2000; now it just checks the count
+
+	Delta delta;
+	delta.allocate(2'000);
+
+	// Add transitions only at the end
+	delta.add(1'999, 'x', 1'990);
+
+	// The new empty() should be O(1) cache lookup, not O(2000) scan
+	CHECK(!delta.empty());
+	CHECK(delta.num_of_transitions() == 1);
+
+	// Similarly, verify with a totally empty large delta
+	Delta empty_delta;
+	empty_delta.allocate(5'000);
+	CHECK(empty_delta.empty()); // Should not scan all 5000 posts
+	CHECK(empty_delta.num_of_transitions() == 0);
+}
+
+TEST_CASE("mata::nfa::Delta mutable_state_post invalidates count") {
+	Delta delta;
+	delta.add(0, 'a', 1);
+	delta.add(0, 'b', 2);
+
+	CHECK(delta.num_of_transitions() == 2);
+
+	// Raw edit via mutable_state_post should mark count dirty
+	auto& post = delta.mutable_state_post(1);
+	post.insert(SymbolPost('c', StateSet{3})); // Add transition 1 -> 3 via 'c'
+
+	// After the raw edit, the cached count is stale; next query recomputes
+	CHECK(delta.num_of_transitions() == 3);
+}
+
+TEST_CASE("mata::nfa::Delta empty and num_of_transitions agree") {
+	// Ensure they can never disagree (the fix for #747)
+	Delta delta;
+
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	delta.add(0, 'a', 1);
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	delta.add(1, 'b', 2);
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	delta.clear();
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+}
+
+TEST_CASE("mata::nfa::Delta SymbolPost insert/erase return values") {
+	SymbolPost post('a');
+
+	// insert(State) returns true on new insertion, false on duplicate
+	CHECK(post.insert(1) == true);
+	CHECK(post.insert(2) == true);
+	CHECK(post.insert(1) == false); // duplicate
+
+	// erase(State) returns true iff removed
+	CHECK(post.erase(1) == true);
+	CHECK(post.erase(1) == false); // not present
+	CHECK(post.erase(2) == true);
+
+	// insert(StateSet) returns count of newly added states
+	StateSet states{10, 11, 12};
+	CHECK(post.insert(states) == 3);
+	CHECK(post.insert(states) == 0); // all already present
+
+	StateSet partial{11, 13, 14};
+	CHECK(post.insert(partial) == 2); // only 13 and 14 are new
+}
+
+// Oracle: recompute transition count by full scan (slow but correct)
+static size_t oracle_num_of_transitions(const Delta& delta) {
+	size_t count = 0;
+	for (const StatePost& state_post : delta) {
+		for (const auto& sp : state_post) { count += sp.num_of_targets(); }
+	}
+	return count;
+}
+
+TEST_CASE("mata::nfa::Delta randomized mutation sequence vs oracle") {
+	std::mt19937 gen(42); // Fixed seed for reproducibility
+	std::uniform_int_distribution<State> state_dist(0, 99);
+	std::uniform_int_distribution<Symbol> symbol_dist(0, 9);
+	std::uniform_int_distribution<> op_dist(0, 6); // 7 operations
+
+	Delta delta;
+
+	for (int step = 0; step < 500; ++step) {
+		int op = op_dist(gen);
+
+		switch (op) {
+			case 0: { // add
+				State src = state_dist(gen);
+				Symbol sym = symbol_dist(gen);
+				State tgt = state_dist(gen);
+				delta.add(src, sym, tgt);
+				break;
+			}
+			case 1: { // remove (often fails)
+				State src = state_dist(gen);
+				Symbol sym = symbol_dist(gen);
+				State tgt = state_dist(gen);
+				try {
+					delta.remove(src, sym, tgt);
+				} catch (...) {
+					// Failed remove is fine; doesn't change count
+				}
+				break;
+			}
+			case 2: { // clear
+				delta.clear();
+				break;
+			}
+			case 3: { // append
+				if (!delta.empty() && step % 3 == 0) {
+					std::vector<StatePost> posts;
+					for (State i = 0; i < delta.num_of_states() && posts.size() < 5; ++i) { posts.push_back(delta[i]); }
+					delta.append(posts);
+				}
+				break;
+			}
+			case 4: { // emplace_back
+				StatePost new_post;
+				delta.emplace_back(std::move(new_post));
+				break;
+			}
+			case 5: { // allocate
+				delta.allocate(std::max(delta.num_of_states(), size_t{state_dist(gen) + 5}));
+				break;
+			}
+			case 6: { // mutable_state_post direct edit
+				const State src{static_cast<State>(state_dist(gen) % (delta.num_of_states() + 10))};
+				(void) delta.mutable_state_post(src);
+				// Do NOT further mutate after this before checking count
+				// (respecting the reference-invalidation rule)
+				break;
+			}
+		}
+
+		// After each operation, verify count matches oracle
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+		CHECK(delta.empty() == (oracle_num_of_transitions(delta) == 0));
+	}
+}
+
+TEST_CASE("mata::nfa::Delta batched imports keep the count and the epoch") {
+	Delta delta{};
+	delta.add(0, 'a', 1);
+	delta.add(1, 'b', 2);
+	REQUIRE(delta.num_of_transitions() == 2); // The count is clean from here on.
+
+	SECTION("add(std::vector<Transition>&&) into a non-empty delta") {
+		const uint64_t epoch{delta.mutation_epoch()};
+		// Merges into the post of (0, 'a'), adds a new symbol to state 1 and a new state, with a duplicate.
+		delta.add(std::vector<Transition>{{0, 'a', 1}, {0, 'a', 3}, {1, 'c', 0}, {4, 'a', 0}, {4, 'a', 0}});
+		CHECK(delta.num_of_transitions() == 5);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+		CHECK(delta.mutation_epoch() > epoch);
+	}
+
+	SECTION("add(State, SymbolPost&&)") {
+		const uint64_t epoch{delta.mutation_epoch()};
+		delta.add(0, SymbolPost{'a', StateSet{1, 2}});
+		CHECK(delta.mutation_epoch() == epoch + 1);
+		delta.add(0, SymbolPost{'b', StateSet{0}});
+		delta.add(5, SymbolPost{'a', StateSet{0}});
+		CHECK(delta.num_of_transitions() == 5);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+		CHECK(!delta.empty());
+	}
+}
+
+TEST_CASE("mata::nfa::Delta::append_shifted() keeps the count and the epoch") {
+	Delta lhs{};
+	lhs.add(0, 'a', 1);
+	Delta rhs{};
+	rhs.add(0, 'c', 1);
+	rhs.add(0, 'c', 0);
+	rhs.add(1, 'c', 1);
+	REQUIRE(lhs.num_of_transitions() == 1); // Make the cached count clean before appending.
+	const auto epoch{lhs.mutation_epoch()};
+
+	SECTION("copying overload") {
+		lhs.append_shifted(rhs, 5);
+		CHECK(lhs.mutation_epoch() == epoch + 1);
+		CHECK(lhs.num_of_transitions() == 4);
+		CHECK(lhs.num_of_transitions() == oracle_num_of_transitions(lhs));
+	}
+
+	SECTION("consuming overload") {
+		lhs.append_shifted(std::move(rhs), 5);
+		CHECK(lhs.mutation_epoch() == epoch + 1);
+		CHECK(lhs.num_of_transitions() == 4);
+		CHECK(lhs.num_of_transitions() == oracle_num_of_transitions(lhs));
+		CHECK(rhs.num_of_transitions() == 0);
+	}
+
+	SECTION("self-append") {
+		lhs.append_shifted(lhs, 2);
+		CHECK(lhs.num_of_transitions() == 2);
+		CHECK(lhs.num_of_transitions() == oracle_num_of_transitions(lhs));
+	}
+}
+
+TEST_CASE("mata::nfa::Delta count and epoch of sized and rebuilt deltas and of rejected edits") {
+	SECTION("sized constructor") {
+		Delta delta{5};
+		CHECK(delta.num_of_states() == 5);
+		CHECK(delta.empty());
+		delta.add(4, 'a', 0);
+		CHECK(delta.num_of_transitions() == 1);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+	}
+
+	SECTION("add(std::vector<Transition>&&) into an unallocated delta builds it from scratch") {
+		Delta delta{};
+		const uint64_t epoch{delta.mutation_epoch()};
+		delta.add(std::vector<Transition>{{2, 'a', 0}, {0, 'b', 3}, {0, 'b', 3}});
+		CHECK(delta.mutation_epoch() > epoch);
+		CHECK(delta.num_of_states() == 4);
+		CHECK(delta.num_of_transitions() == 2);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+		delta.add(3, 'c', 3);
+		CHECK(delta.num_of_transitions() == 3);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+	}
+
+	SECTION("reverted()") {
+		Delta delta{};
+		delta.add(0, 'a', 1);
+		delta.add(0, 'a', 2);
+		delta.add(1, 'b', 2);
+		Delta reverted{delta.reverted(3)};
+		CHECK(reverted.num_of_transitions() == 3);
+		CHECK(reverted.num_of_transitions() == oracle_num_of_transitions(reverted));
+		reverted.add(2, 'z', 0);
+		CHECK(reverted.num_of_transitions() == 4);
+		CHECK(reverted.num_of_transitions() == oracle_num_of_transitions(reverted));
+	}
+
+	SECTION("a rejected state leaves the count exact") {
+		Delta delta{};
+		delta.add(0, 'a', 1);
+		REQUIRE(delta.num_of_transitions() == 1);
+		CHECK_THROWS_AS(delta.add(Limits::max_state, 'a', 0), std::overflow_error);
+		CHECK_THROWS_AS(delta.add(0, 'a', StateSet{Limits::max_state}), std::overflow_error);
+		CHECK(delta.num_of_transitions() == 1);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+	}
+
+	SECTION("an overflowing append_shifted() changes neither operand") {
+		Delta lhs{};
+		lhs.add(0, 'a', 1);
+		Delta rhs{};
+		rhs.add(0, 'b', 1);
+		REQUIRE(lhs.num_of_transitions() == 1);
+		REQUIRE(rhs.num_of_transitions() == 1);
+		const uint64_t lhs_epoch{lhs.mutation_epoch()};
+		const uint64_t rhs_epoch{rhs.mutation_epoch()};
+		const State offset{Limits::max_state - 1};
+		CHECK_THROWS_AS(lhs.append_shifted(rhs, offset), std::overflow_error);
+		CHECK_THROWS_AS(lhs.append_shifted(std::move(rhs), offset), std::overflow_error);
+		CHECK(lhs.mutation_epoch() == lhs_epoch);
+		CHECK(rhs.mutation_epoch() == rhs_epoch);
+		CHECK(lhs.num_of_transitions() == 1);
+		CHECK(rhs.num_of_transitions() == 1);
+		CHECK(rhs.num_of_transitions() == oracle_num_of_transitions(rhs));
+	}
+}
+
+TEST_CASE("mata::nfa::Delta count of consuming union and concatenation") {
+	Nfa lhs{};
+	lhs.initial = {0};
+	lhs.final = {1};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'b', 1);
+	Nfa rhs{};
+	rhs.initial = {0};
+	rhs.final = {1};
+	rhs.delta.add(0, 'c', 1);
+	// Clean counts, so the appends below update them instead of leaving them to a recount.
+	REQUIRE(lhs.delta.num_of_transitions() == 2);
+	REQUIRE(rhs.delta.num_of_transitions() == 1);
+
+	const auto check_consumed{[](const Nfa& aut) {
+		CHECK(aut.delta.num_of_transitions() == oracle_num_of_transitions(aut.delta));
+		CHECK(aut.delta.empty() == (oracle_num_of_transitions(aut.delta) == 0));
+	}};
+
+	SECTION("union_nondet(Nfa&&, Nfa&&)") {
+		const Nfa result{union_nondet(std::move(lhs), std::move(rhs))};
+		CHECK(result.delta.num_of_transitions() == 3);
+		CHECK(result.delta.num_of_transitions() == oracle_num_of_transitions(result.delta));
+		check_consumed(lhs);
+		check_consumed(rhs);
+	}
+
+	SECTION("Nfa::unite_nondet_with(Nfa&&)") {
+		const uint64_t epoch{lhs.delta.mutation_epoch()};
+		lhs.unite_nondet_with(std::move(rhs));
+		CHECK(lhs.delta.mutation_epoch() > epoch);
+		CHECK(lhs.delta.num_of_transitions() == 3);
+		CHECK(lhs.delta.num_of_transitions() == oracle_num_of_transitions(lhs.delta));
+		check_consumed(rhs);
+	}
+
+	SECTION("concatenate(Nfa&&, Nfa&&) with an epsilon transition") {
+		const Nfa result{concatenate(std::move(lhs), std::move(rhs), true)};
+		CHECK(result.delta.num_of_transitions() == 4);
+		CHECK(result.delta.num_of_transitions() == oracle_num_of_transitions(result.delta));
+		check_consumed(lhs);
+		check_consumed(rhs);
+	}
+
+	SECTION("Nfa::concatenate(Nfa&&)") {
+		const uint64_t epoch{lhs.delta.mutation_epoch()};
+		lhs.concatenate(std::move(rhs));
+		CHECK(lhs.delta.mutation_epoch() > epoch);
+		CHECK(lhs.delta.num_of_transitions() == 4);
+		CHECK(lhs.delta.num_of_transitions() == oracle_num_of_transitions(lhs.delta));
+		check_consumed(rhs);
+	}
+}
+
+// The bad read only shows under AddressSanitizer (MATA_SANITIZE=address): freed memory usually still holds the size.
+TEST_CASE("mata::nfa::Delta::add() of targets taken from the same state post") {
+	// Fill the capacity that `reserve_on_insert()` gives a state post, so the next new symbol post reallocates it.
+	constexpr Symbol num_of_symbol_posts{32};
+	Delta delta{};
+	for (Symbol symbol{0}; symbol < num_of_symbol_posts; ++symbol) { delta.add(0, 2 * symbol, 1); }
+	delta.add(0, 0, 2);
+	delta.add(0, 2 * (num_of_symbol_posts - 1), StateSet{3, 4, 5});
+	const size_t num_of_transitions{num_of_symbol_posts + 4};
+	REQUIRE(delta.num_of_transitions() == num_of_transitions); // Make the cached count clean.
+
+	SECTION("new greatest symbol") {
+		delta.add(0, 1'000, delta.get_successors(0, 0));
+		CHECK(delta.get_successors(0, 1'000) == StateSet{1, 2});
+		CHECK(delta.num_of_transitions() == num_of_transitions + 2);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+	}
+
+	SECTION("new symbol in the middle") {
+		delta.add(0, 1, delta.get_successors(0, 2 * (num_of_symbol_posts - 1)));
+		CHECK(delta.get_successors(0, 1) == StateSet{1, 3, 4, 5});
+		CHECK(delta.num_of_transitions() == num_of_transitions + 4);
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+	}
+}
+
+// A data race here is reported by a `MATA_SANITIZE=thread` build.
+TEST_CASE("mata::nfa::Delta concurrent const queries of a dirty count") {
+	Delta delta;
+	delta.add(0, 'a', 1);
+	delta.add(1, 'b', 2);
+	delta.mutable_state_post(2).insert(SymbolPost('c', StateSet{0, 1}));
+	const Delta& shared{delta};
+
+	// Each thread queries the shared delta and copies it, while the count of the shared delta is dirty.
+	struct Seen {
+		size_t count{};
+		bool empty{true};
+		size_t count_of_copy{};
+	};
+	std::array<Seen, 2> seen{};
+	const auto query{[&shared](Seen& out) {
+		out.count = shared.num_of_transitions();
+		out.empty = shared.empty();
+		out.count_of_copy = Delta{shared}.num_of_transitions();
+	}};
+	std::thread first{query, std::ref(seen[0])};
+	std::thread second{query, std::ref(seen[1])};
+	first.join();
+	second.join();
+
+	for (const Seen& s : seen) {
+		CHECK(s.count == 4);
+		CHECK(!s.empty);
+		CHECK(s.count_of_copy == 4);
 	}
 }

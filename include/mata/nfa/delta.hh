@@ -13,6 +13,7 @@
 #include "mata/utils/synchronized-iterator.hh"
 
 #include <algorithm>
+#include <atomic>
 #include <iterator>
 #include <span>
 #include <utility>
@@ -90,9 +91,15 @@ class SymbolPost {
 	bool empty() const { return targets.empty(); }
 	size_t num_of_targets() const { return targets.size(); }
 
-	void insert(const State s) { targets.insert(s); }
+	/// @return Whether @p s was inserted.
+	bool insert(const State s) { return targets.insert(s).second; }
 	/// Insert the sorted, duplicate-free @p states, such as a @c StateSet or another post's targets.
-	void insert(const std::span<const State> states) { targets.insert(states); }
+	/// @return Number of states inserted.
+	size_t insert(const std::span<const State> states) {
+		const size_t old_size{targets.size()};
+		targets.insert(states);
+		return targets.size() - old_size;
+	}
 
 	// THIS BREAKS THE SORTEDNESS INVARIANT,
 	// dangerous,
@@ -104,7 +111,7 @@ class SymbolPost {
 		return targets.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void erase(const State s) { targets.erase(s); }
+	bool erase(const State s) { return targets.erase(s) != 0; }
 
 	SmallStateSet::const_iterator find(const State s) const { return targets.find(s); }
 	SmallStateSet::iterator find(const State s) { return targets.find(s); }
@@ -497,12 +504,37 @@ class Delta {
 	inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
 	Delta() : state_posts_{} {}
-	Delta(const Delta& other) = default;
-	Delta(Delta&& other) = default;
+	Delta(const Delta& other) : mutation_epoch_{other.mutation_epoch_}, state_posts_{other.state_posts_} {
+		copy_count_from(other);
+	}
+	/// Leaves @p other empty, so its count and epoch stay consistent with its content.
+	Delta(Delta&& other) noexcept
+		: mutation_epoch_{other.mutation_epoch_},
+		  state_posts_{std::move(other.state_posts_)} {
+		copy_count_from(other);
+		other.clear();
+	}
 	explicit Delta(const size_t n) : state_posts_{} { allocate(n); }
 
-	Delta& operator=(const Delta& other) = default;
-	Delta& operator=(Delta&& other) = default;
+	/// The epoch advances past both operands, so a cache keyed on the old epoch of @c this cannot match.
+	Delta& operator=(const Delta& other) {
+		if (this == &other) { return *this; }
+		// Copy first: a throwing copy leaves @c this, and its count, untouched.
+		std::vector<StatePost> state_posts{other.state_posts_};
+		state_posts_ = std::move(state_posts);
+		copy_count_from(other);
+		mutation_epoch_ = std::max(mutation_epoch_, other.mutation_epoch_) + 1;
+		return *this;
+	}
+	/// The epoch advances past both operands; @p other is left empty.
+	Delta& operator=(Delta&& other) noexcept {
+		if (this == &other) { return *this; }
+		state_posts_ = std::move(other.state_posts_);
+		copy_count_from(other);
+		mutation_epoch_ = std::max(mutation_epoch_, other.mutation_epoch_) + 1;
+		other.clear();
+		return *this;
+	}
 
 	bool operator==(const Delta& other) const;
 
@@ -547,6 +579,10 @@ class Delta {
 	 * Use the constant 'state_post()' is possible. Or, to prevent the side effect from causing issues, one might want
 	 *  to make sure that posts of all states in the automaton are allocated, e.g., write an NFA method that allocate
 	 *  @c Delta for all states of the NFA.
+	 * The reference may be used for edits only until the next query of the transition count of this delta:
+	 *  @c num_of_transitions(), @c empty(), or any operation on the owning automaton, which may call them. The query
+	 *  takes the edits made so far into account; edits made through the reference after it are not seen by the
+	 *  cached count. Obtain the reference again after such a query.
 	 * @param source[in] Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
@@ -565,12 +601,25 @@ class Delta {
 	Delta& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 	friend Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
+	/**
+	 * @brief Append a state post constructed from @p args.
+	 *
+	 * The returned reference may be used for edits under the same rule as @c mutable_state_post().
+	 */
 	template <typename... Args> StatePost& emplace_back(Args&&... args) {
 		// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+		++mutation_epoch_;
+		// The appended post is built in place from arbitrary arguments, so its size is not known here.
+		mark_count_dirty();
 		return state_posts_.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void clear() { state_posts_.clear(); }
+	void clear() {
+		++mutation_epoch_;
+		cached_transition_count_.store(0, std::memory_order_relaxed);
+		count_dirty_.store(false, std::memory_order_relaxed);
+		state_posts_.clear();
+	}
 
 	/**
 	 * @brief Allocate state posts up to @p num_of_states states, creating empty @c StatePost for yet unallocated state
@@ -583,6 +632,8 @@ class Delta {
 	void allocate(const size_t num_of_states) {
 		MATA_ASSERT(num_of_states >= this->num_of_states());
 		check_num_of_states(num_of_states);
+		// Only empty state posts are created, so the transition count does not change.
+		if (num_of_states > this->num_of_states()) { ++mutation_epoch_; }
 		state_posts_.resize(num_of_states);
 	}
 
@@ -597,9 +648,11 @@ class Delta {
 	bool uses_state(const State state) const { return state < num_of_states(); }
 
 	/**
-	 * @note Walks every state post, so it is linear in the size of the delta. To test for transitions, use @c empty(),
-	 *  which stops at the first non-empty state post; the two differ only on a symbol post without targets.
 	 * @return Number of transitions in Delta.
+	 *
+	 * Constant time, except the first call after a raw edit (see @c mutable_state_post()), which recounts once. Like
+	 *  every const query, it may run concurrently with other const queries of the same delta. With
+	 *  @c MATA_EXPENSIVE_ASSERTS, every call also checks the cached count against a full recount.
 	 */
 	size_t num_of_transitions() const;
 
@@ -649,7 +702,12 @@ class Delta {
 	 * @param post_vector Vector of posts to be appended.
 	 */
 	void append(const std::vector<StatePost>& post_vector) {
-		for (const StatePost& pst : post_vector) { this->state_posts_.push_back(pst); }
+		if (!post_vector.empty()) { ++mutation_epoch_; }
+		for (const StatePost& pst : post_vector) {
+			this->state_posts_.push_back(pst);
+			// Counted only once appended: a throwing push_back must not leave its transitions counted.
+			if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(pst.num_of_moves()); }
+		}
 	}
 
 	/**
@@ -801,13 +859,7 @@ class Delta {
 	template <typename... States>
 		requires utils::AllOfType<State, States...>
 	Delta& resize_for_states(States... states) {
-		if constexpr (sizeof...(states) > 0) {
-			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
-				const size_t new_size{num_of_states_for(max_state)};
-				reserve_on_insert(state_posts_, max_state);
-				state_posts_.resize(new_size);
-			}
-		}
+		if (grow_for_states(states...)) { ++mutation_epoch_; }
 		return *this;
 	}
 
@@ -892,6 +944,73 @@ class Delta {
 	 * @brief Get the maximum non-epsilon used symbol.
 	 */
 	Symbol get_max_symbol() const;
+
+  private:
+	/// Monotonic counter of mutating calls; lets clients of @c Delta invalidate their own derived data.
+	uint64_t mutation_epoch_{0};
+	/// Exact number of transitions whenever @c count_dirty_ is false. Both are atomic because concurrent const
+	///  queries may recount; mutators run exclusively, so they use relaxed order.
+	mutable std::atomic<size_t> cached_transition_count_{0};
+	/// Set only by edits whose effect on the count cannot be derived, such as @c mutable_state_post().
+	mutable std::atomic<bool> count_dirty_{true};
+
+	void mark_count_dirty() { count_dirty_.store(true, std::memory_order_relaxed); }
+
+	/// Take over the count of @p other, which a concurrent const query may be recounting.
+	void copy_count_from(const Delta& other) {
+		// The flag first: a clean flag (acquire) publishes the count stored before it.
+		const bool dirty{other.count_dirty_.load(std::memory_order_acquire)};
+		cached_transition_count_.store(
+			other.cached_transition_count_.load(std::memory_order_relaxed), std::memory_order_relaxed
+		);
+		count_dirty_.store(dirty, std::memory_order_relaxed);
+	}
+
+	/// Record @p added newly inserted transitions. A no-op while the count is dirty: it is recomputed anyway.
+	void note_added(const size_t added) {
+		if (!count_dirty_.load(std::memory_order_relaxed)) {
+			cached_transition_count_.store(
+				cached_transition_count_.load(std::memory_order_relaxed) + added, std::memory_order_relaxed
+			);
+		}
+	}
+
+	/// Record @p removed deleted transitions.
+	void note_removed(const size_t removed) {
+		if (!count_dirty_.load(std::memory_order_relaxed)) {
+			const size_t count{cached_transition_count_.load(std::memory_order_relaxed)};
+			MATA_ASSERT(removed <= count);
+			cached_transition_count_.store(count - removed, std::memory_order_relaxed);
+		}
+	}
+
+	/// Grow the delta to fit @p states without touching the epoch, so that @c add() moves it only once.
+	/// @return Whether any state post was added.
+	template <typename... States>
+		requires utils::AllOfType<State, States...>
+	bool grow_for_states(States... states) {
+		if constexpr (sizeof...(states) > 0) {
+			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
+				const size_t new_size{num_of_states_for(max_state)};
+				reserve_on_insert(state_posts_, max_state);
+				state_posts_.resize(new_size);
+				return true;
+			}
+		}
+		return false;
+	}
+
+  public:
+	/**
+	 * @brief Number of mutating calls performed on this delta so far.
+	 *
+	 * Increases by one per mutating public call, including @c mutable_state_post(), which cannot observe what the
+	 *  caller does with the returned reference; an assignment moves it past the epochs of both operands. Holders of
+	 *  data derived from the delta can cache the epoch together with the value and recompute once the epoch moves.
+	 *  Copy and move construction carry the epoch of their source; a moved-from delta is left empty with a new
+	 *  epoch. The value is only ever compared with another value read from the same delta.
+	 */
+	uint64_t mutation_epoch() const { return mutation_epoch_; }
 
   protected:
 	std::vector<StatePost> state_posts_;
