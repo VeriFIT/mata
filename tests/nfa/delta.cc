@@ -627,3 +627,12 @@ TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
 		CHECK(batched == delta_from_adds({{1, 'a', 7}}));
 	}
 }
+
+TEST_CASE("mata::nfa types should not be polymorphic - #746") {
+	// OrdVector members no longer virtual, so StateSet/SymbolPost/StatePost should not be polymorphic
+	CHECK(!std::is_polymorphic_v<StateSet>);
+	CHECK(!std::is_polymorphic_v<SymbolPost>);
+	CHECK(!std::is_polymorphic_v<StatePost>);
+	// StateSet should be same size as std::vector<State>
+	CHECK(sizeof(StateSet) == sizeof(std::vector<State>));
+}
