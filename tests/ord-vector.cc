@@ -1,6 +1,7 @@
 /* tests-ord-vector.cc -- tests of OrdVector
  */
 
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -206,4 +207,12 @@ TEST_CASE("mata::utils::PairHash") {
 
 	const std::unordered_map<std::pair<int, int>, int, PairHash<int, int>> map{{{1, 2}, 42}};
 	CHECK(map.at({1, 2}) == 42);
+}
+
+TEST_CASE("mata::utils::OrdVector should not be polymorphic") {
+	// #746: Remove virtual from OrdVector members
+	// OrdVector must not have a vptr, so sizeof should equal std::vector
+	CHECK(!std::is_polymorphic_v<OrdVector<int>>);
+	CHECK(!std::is_polymorphic_v<OrdVector<char>>);
+	CHECK(sizeof(OrdVector<int>) == sizeof(std::vector<int>));
 }

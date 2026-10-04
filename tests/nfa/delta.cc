@@ -478,3 +478,12 @@ TEST_CASE("Transition comparison") {
 	CHECK(tr5 <= tr4);
 	CHECK(tr5 == tr4);
 }
+
+TEST_CASE("mata::nfa types should not be polymorphic - #746") {
+	// OrdVector members no longer virtual, so StateSet/SymbolPost/StatePost should not be polymorphic
+	CHECK(!std::is_polymorphic_v<StateSet>);
+	CHECK(!std::is_polymorphic_v<SymbolPost>);
+	CHECK(!std::is_polymorphic_v<StatePost>);
+	// StateSet should be same size as std::vector<State>
+	CHECK(sizeof(StateSet) == sizeof(std::vector<State>));
+}
