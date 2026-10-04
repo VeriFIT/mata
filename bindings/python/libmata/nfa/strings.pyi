@@ -41,7 +41,7 @@ class ReplaceMode(IntEnum):
     Single = 0
     All = 1
 
-def noodlify(aut: mata_nfa.Nfa, symbol: Symbol, include_empty: bool = False) -> list[mata_nfa.Nfa]:
+def noodlify(aut: mata_nfa.Nfa, symbol: Symbol, include_empty: bool = False) -> list[list[mata_nfa.Nfa]]:
     """Create noodles from segment automaton.
 
     Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
@@ -61,7 +61,7 @@ def noodlify_for_equation(
     right_side_automaton: mata_nfa.Nfa,
     include_empty: bool = False,
     params: dict[Literal["reduce"], Literal["false", "forward", "backward", "bidirectional"]] | None = None,
-) -> None:
+) -> list[list[mata_nfa.Nfa]]:
     """Create noodles for equation.
 
     Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
