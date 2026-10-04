@@ -61,6 +61,14 @@ class Alphabet {
 		throw std::runtime_error("Unimplemented");
 	} // }}}
 
+	/**
+	 * @brief Stream the contents of the alphabet into @p os.
+	 *
+	 * @c IntAlphabet prints a fixed tag, because asking it for its symbols throws.
+	 *  The other alphabets print their symbols.
+	 */
+	virtual std::ostream& print(std::ostream& os) const { throw std::runtime_error("Unimplemented"); }
+
 	virtual ~Alphabet() = default;
 
 	/**
@@ -113,6 +121,9 @@ class IntAlphabet : public Alphabet {
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override {
 		throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
 	}
+
+	/// Prints a fixed tag; the integer alphabet has no enumerable symbols.
+	std::ostream& print(std::ostream& os) const override;
 
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
 		(void) symbols;
@@ -185,6 +196,10 @@ class EnumAlphabet : public Alphabet {
 	EnumAlphabet(utils::OrdVector<Symbol> symbols) : symbols_(std::move(symbols)) {}
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
+
+	/// Prints the enumerated symbols.
+	std::ostream& print(std::ostream& os) const override;
+
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
 		return symbols_.difference(symbols);
 	}
@@ -327,6 +342,10 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override;
+
+	/// Prints the name to symbol pairs of the alphabet.
+	std::ostream& print(std::ostream& os) const override;
+
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override;
 
 	std::string reverse_translate_symbol(Symbol symbol) const override;
