@@ -241,6 +241,61 @@ void Delta::add(const State source, const Symbol symbol, const StateSet& targets
 	}
 }
 
+void Delta::add(const State source, SymbolPost&& symbol_post) {
+	if (symbol_post.targets.empty()) { return; }
+	resize_for_states(source, symbol_post.targets.back());
+
+	StatePost& state_post{state_posts_[source]};
+	if (state_post.empty() || state_post.back().symbol < symbol_post.symbol) {
+		state_post.insert(std::move(symbol_post));
+		return;
+	}
+	if (const auto existing{state_post.find(symbol_post)}; existing != state_post.end()) {
+		// One linear merge of two sorted target sets, instead of a search and a shift per target.
+		existing->targets.insert(symbol_post.targets);
+		return;
+	}
+	state_post.insert(std::move(symbol_post));
+}
+
+void Delta::add(std::vector<Transition>&& transitions) {
+	if (transitions.empty()) { return; }
+	std::ranges::sort(transitions, [](const Transition& lhs, const Transition& rhs) {
+		return std::tie(lhs.source, lhs.symbol, lhs.target) < std::tie(rhs.source, rhs.symbol, rhs.target);
+	});
+	const auto duplicates{std::ranges::unique(transitions)};
+	transitions.erase(duplicates.begin(), duplicates.end());
+
+	const bool build_from_scratch{empty() && num_of_states() == 0};
+	DeltaBuilder builder{build_from_scratch ? transitions.back().source + 1 : 0};
+	size_t index{0};
+	const size_t size{transitions.size()};
+	while (index < size) {
+		const State source{transitions[index].source};
+		if (build_from_scratch) { builder.begin_state(source); }
+		while (index < size && transitions[index].source == source) {
+			const Symbol symbol{transitions[index].symbol};
+			if (build_from_scratch) {
+				builder.begin_symbol(symbol);
+				while (index < size && transitions[index].source == source && transitions[index].symbol == symbol) {
+					builder.push_sorted_target(transitions[index].target);
+					++index;
+				}
+				builder.finish_symbol();
+			} else {
+				SymbolPost symbol_post{symbol};
+				while (index < size && transitions[index].source == source && transitions[index].symbol == symbol) {
+					symbol_post.targets.push_back(transitions[index].target);
+					++index;
+				}
+				add(source, std::move(symbol_post));
+			}
+		}
+		if (build_from_scratch) { builder.finish_state(); }
+	}
+	if (build_from_scratch) { *this = builder.finish(); }
+}
+
 void Delta::remove(const State source, const Symbol symbol, const State target) {
 	if (source >= state_posts_.size()) { return; }
 
