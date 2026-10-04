@@ -1092,6 +1092,7 @@ TEST_CASE("mata::nft::make_complete()") {
 
 	SECTION("make_complete with levels.num_of_levels == 1") {
 		nft.levels.num_of_levels = 1;
+		nft.levels.set({0, 0, 0});
 		nft.initial = {0};
 		nft.final = {2};
 		nft.delta.add(0, 'a', 1);
@@ -2029,12 +2030,12 @@ TEST_CASE("mata::nft::Nft::invert_levels()") {
 			aut.delta.add(1, 'c', 3);
 			Nft aut_new = invert_levels(aut);
 
-			Nft expected = Nft(5);
+			Nft expected = Nft(6);
 			expected.initial.insert(0);
 			expected.final.insert(4);
 			expected.final.insert(5);
 			expected.levels.num_of_levels = 2;
-			expected.levels.set({0, 1, 1, 0, 0});
+			expected.levels.set({0, 1, 1, 0, 0, 0});
 			expected.delta.add(0, 'b', 1);
 			expected.delta.add(0, 'c', 2);
 			expected.delta.add(1, 'a', 3);
@@ -4224,7 +4225,7 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 							 : ((delta).add(src, symbol, inter)));                                                     \
 	REPLACE_DONT_CARE(delta, inter, trg);
 	SECTION("level_cnt == 1") {
-		Nft aut{Nft::with_levels({5, {3, 4}}, 5, {0})};
+		Nft aut{Nft::with_levels({1, {0, 0, 0, 0, 0}}, 5, {0})};
 		aut.delta.add(0, 0, 1);
 		aut.delta.add(0, 1, 2);
 		aut.delta.add(1, 0, 1);
@@ -4236,7 +4237,7 @@ TEST_CASE("mata::nft::Nft::unwind_jump") {
 		aut.delta.add(4, 1, 2);
 		aut.delta.add(4, DONT_CARE, 4);
 
-		Nft expected{Nft::with_levels({5, {3, 4}}, 5, {0})};
+		Nft expected{Nft::with_levels({1, {0, 0, 0, 0, 0}}, 5, {0})};
 		expected.delta.add(0, 0, 1);
 		expected.delta.add(0, 1, 2);
 		expected.delta.add(1, 0, 1);
@@ -4906,7 +4907,10 @@ TEST_CASE("mata::nft::project_to()") {
 		expected.delta.add(5, 5, 6);
 		expected.delta.add(6, 9, 7);
 		expected.delta.add(7, 10, 0);
-		CHECK(nft::are_equivalent(projection, expected));
+		// The expected automaton is the already-unwound projection: it has no consistent level assignment, so
+		//  it cannot be unwound again. Compare the flattened relations explicitly (was implicit via the old
+		//  silent fallback).
+		CHECK(nfa::are_equivalent(projection.to_nfa_copy(), expected.to_nfa_copy()));
 	}
 
 	SECTION("cycle longer project to { 0, 2 } with epsilon and dont care symbols") {
@@ -6511,4 +6515,41 @@ TEST_CASE("mata::nft::symbols_match") {
 	CHECK(symbols_match('b', DONT_CARE));
 	CHECK(not symbols_match(DONT_CARE, EPSILON));
 	CHECK(not symbols_match(EPSILON, DONT_CARE));
+}
+
+TEST_CASE("mata::nft::Nft::unwind_jumps() validates level metadata") {
+	SECTION("a short level vector is rejected instead of silently returning the transducer") {
+		Nft nft{Nft::with_levels({2, {0, 1}}, 2, {0}, {1})};
+		nft.delta.add(0, 'a', 1);
+		// Add a state outside the level vector.
+		nft.delta.add(0, 'b', 3);
+		nft.final = {1, 3};
+		REQUIRE_THROWS_AS(nft.unwind_jumps(), std::invalid_argument);
+		REQUIRE_THROWS_AS(nft.unwind_jumps_inplace({DONT_CARE}), std::invalid_argument);
+	}
+
+	SECTION("a level at or above the number of levels is rejected") {
+		Nft nft{Nft::with_levels(3, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'a', 2);
+		nft.levels[2] = nft.levels.num_of_levels;
+		REQUIRE_THROWS_AS(nft.unwind_jumps(), std::invalid_argument);
+	}
+
+	SECTION("an empty transducer has trivially consistent levels") {
+		Nft nft{Nft::with_levels(2)};
+		CHECK(nft.unwind_jumps().is_lang_empty());
+	}
+}
+
+TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_CARE") {
+	// Every transition advances exactly one level and no DONT_CARE is expanded: unwinding is an identity.
+	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+	nft.delta.add(0, 'a', 1);
+	nft.delta.add(1, 'b', 2);
+	nft.delta.add(2, 'c', 3);
+	const Nft unwound{nft.unwind_jumps(OrdVector<Symbol>{49, 50})};
+	CHECK(unwound.is_lang_empty() == nft.is_lang_empty());
+	CHECK(unwound.num_of_states() == nft.num_of_states());
+	CHECK(unwound.delta.num_of_transitions() == nft.delta.num_of_transitions());
 }

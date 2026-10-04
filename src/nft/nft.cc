@@ -443,7 +443,38 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return res;
 }
 
+namespace mata::nft {
+namespace {
+/**
+ * @brief Throw @c std::invalid_argument when the level metadata of @p nft is incomplete or out of range.
+ *
+ * Operations that interpret transitions through the level vector (jump unwinding, inclusion, equivalence)
+ *  must not silently treat a transducer with missing or malformed levels as a flat NFA; that produced
+ *  wrong answers without any error (#791).
+ */
+void validate_nft_levels(const Nft& nft, const char* const operation) {
+	// num_of_states() counts only states used in delta, initial and final; the level vector may legitimately
+	//  be longer (e.g. sized by construction or before trimming). Missing levels for used states are the hazard.
+	if (nft.levels.size() < nft.num_of_states()) {
+		throw std::invalid_argument(
+			std::string{operation} + ": the level vector has " + std::to_string(nft.levels.size()) + " entries for " +
+			std::to_string(nft.num_of_states()) + " states"
+		);
+	}
+	for (State state{0}; state < nft.levels.size(); ++state) {
+		if (nft.levels[state] >= nft.levels.num_of_levels) {
+			throw std::invalid_argument(
+				std::string{operation} + ": state " + std::to_string(state) + " has level " +
+				std::to_string(nft.levels[state]) + " outside [0, " + std::to_string(nft.levels.num_of_levels) + ")"
+			);
+		}
+	}
+}
+} // anonymous namespace
+} // namespace mata::nft
+
 void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
+	validate_nft_levels(*this, "unwind_jumps_inplace");
 	const bool dont_care_for_dont_care = dont_care_symbol_replacements == utils::OrdVector<Symbol>({DONT_CARE});
 	std::vector<Transition> transitions_to_del;
 	std::vector<Transition> transitions_to_add;
@@ -508,9 +539,23 @@ void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replace
 }
 
 Nft Nft::unwind_jumps(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
+	validate_nft_levels(*this, "unwind_jumps");
+	// Fast path: without any jump transition (a transition spanning more than one level) and without a
+	//  DONT_CARE edge to expand, unwinding changes nothing. (#753)
+	const bool dont_care_for_dont_care = dont_care_symbol_replacements == utils::OrdVector<Symbol>({DONT_CARE});
+	bool needs_unwinding{false};
+	for (const auto& transition : delta.transitions()) {
+		const Level src_lvl = levels[transition.source];
+		const Level trg_lvl = levels[transition.target];
+		const Level diff_lvl =
+			(trg_lvl == 0) ? (static_cast<Level>(levels.num_of_levels) - src_lvl) : trg_lvl - src_lvl;
+		if (diff_lvl > 1 || (transition.symbol == DONT_CARE && !dont_care_for_dont_care)) {
+			needs_unwinding = true;
+			break;
+		}
+	}
+	if (!needs_unwinding) { return *this; }
 	Nft result{*this};
-	// HACK. Works only for automata without levels.
-	if (result.levels.size() != result.num_of_states()) { return result; }
 	result.unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
 	return result;
 }
