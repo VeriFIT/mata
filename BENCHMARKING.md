@@ -73,8 +73,8 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
 - `./tests-integration/scripts/`: helper scripts used for profiling or testing:
   - `./tests-integration/scripts/run_callgrind.sh` prints the top most time-consuming functions (in terms of exclusive time; outputs only functions with time greater than 1% of overall time spent in program)
   - `./tests-integration/scripts/run_massif.sh` prints the memory peak of the program in `[B]`
-- `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench -c job.yaml`.
-- `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench < input.input`.
+- `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench/src/pycobench.py -c job.yaml`.
+- `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench/src/pycobench.py < input.input`.
 - Both directories hold only the `*.in` templates. `cmake` expands them into
   `<BUILD_DIR>/tests-integration/jobs/` and `<BUILD_DIR>/tests-integration/inputs/`, so that the generated job files always
   refer to the binaries of the build directory they belong to. Use the generated copies when invoking `pycobench`
