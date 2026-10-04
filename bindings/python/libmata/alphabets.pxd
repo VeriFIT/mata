@@ -9,7 +9,7 @@ from libmata.utils cimport COrdVector
 
 
 cdef extern from "mata/alphabet.hh" namespace "mata":
-    ctypedef uintptr_t Symbol
+    ctypedef unsigned int Symbol
     ctypedef uintptr_t Level
 
     cdef cppclass CConstAlphabet "const mata::Alphabet"
