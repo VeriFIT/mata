@@ -23,23 +23,30 @@ void seg_nfa::Segmentation::process_state_depth_pair(
 void seg_nfa::Segmentation::handle_epsilon_transitions(
 	const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
 ) {
-	/// TODO: Maybe we don't need to keep the transitions in both structures
-	this->epsilon_depth_transitions_.insert(std::make_pair(state_depth_pair.depth, std::vector<Transition>{}));
-	this->eps_depth_trans_map_.insert({state_depth_pair.depth, {{state_depth_pair.state, std::vector<Transition>{}}}});
+	if (state_depth_pair.depth >= this->epsilon_transitions_by_depth_.size()) {
+		this->epsilon_transitions_by_depth_.resize(state_depth_pair.depth + 1);
+	}
+	std::vector<Transition>& depth_transitions{this->epsilon_transitions_by_depth_[state_depth_pair.depth]};
+	const size_t span_begin{depth_transitions.size()};
 
 	std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
 	visited_eps_aux[move.symbol]++;
 
 	for (const State target_state : move.targets) {
-		// TODO: Use vector indexed by depths instead of a map.
-		this->epsilon_depth_transitions_[state_depth_pair.depth].emplace_back(
-			state_depth_pair.state, move.symbol, target_state
-		);
-		this->eps_depth_trans_map_[state_depth_pair.depth][state_depth_pair.state].emplace_back(
-			state_depth_pair.state, move.symbol, target_state
-		);
+		depth_transitions.emplace_back(state_depth_pair.state, move.symbol, target_state);
 		worklist.push_back({.state = target_state, .depth = state_depth_pair.depth + 1, .eps = visited_eps_aux});
 		this->visited_eps_[target_state] = visited_eps_aux;
+	}
+
+	// Each state is expanded exactly once and all its ε-transitions land consecutively at this single depth.
+	const auto [span_it, inserted]{this->epsilon_transitions_by_state_.try_emplace(
+		state_depth_pair.state, EpsilonTransitionSpan{state_depth_pair.depth, span_begin, depth_transitions.size()}
+	)};
+	if (!inserted) {
+		// More ε-symbols on the same state extend its span.
+		MATA_ASSERT(span_it->second.depth == state_depth_pair.depth);
+		MATA_ASSERT(span_it->second.end == span_begin);
+		span_it->second.end = depth_transitions.size();
 	}
 }
 
@@ -69,15 +76,13 @@ std::unordered_map<State, bool> seg_nfa::Segmentation::initialize_visited_map() 
 }
 
 void seg_nfa::Segmentation::split_aut_into_segments() {
-	segments_raw_ = {epsilon_depth_transitions_.size() + 1, automaton_};
+	segments_raw_ = {epsilon_transitions_by_depth_.size() + 1, automaton_};
 	remove_inner_initial_and_final_states();
 
 	// Construct segment automata.
-	std::unique_ptr<const std::vector<Transition>> depth_transitions{};
-	for (size_t depth{0}; depth < epsilon_depth_transitions_.size(); ++depth) {
+	for (size_t depth{0}; depth < epsilon_transitions_by_depth_.size(); ++depth) {
 		// Split the left segment from automaton into a new segment.
-		depth_transitions = std::make_unique<const std::vector<Transition>>(epsilon_depth_transitions_[depth]);
-		for (const auto& transition : *depth_transitions) {
+		for (const auto& transition : epsilon_transitions_by_depth_[depth]) {
 			update_current_segment(depth, transition);
 			update_next_segment(depth, transition);
 		}

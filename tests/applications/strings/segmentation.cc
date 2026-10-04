@@ -186,3 +186,79 @@ TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
 		CHECK(segments[2].delta.num_of_transitions() == 0);
 	}
 }
+
+TEST_CASE("mata::nfa::Segmentation keeps exactly one copy of every epsilon transition - issue #795") {
+	SECTION("no epsilon transitions") {
+		Nfa aut{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+
+		seg_nfa::Segmentation segmentation{aut, {EPSILON}};
+		CHECK(segmentation.get_epsilon_depths().empty());
+		CHECK(!segmentation.get_epsilon_transitions(0).has_value());
+		CHECK(!segmentation.get_epsilon_transitions(1).has_value());
+	}
+
+	SECTION("one epsilon transition at depth zero") {
+		Nfa aut{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+
+		seg_nfa::Segmentation segmentation{aut, {EPSILON}};
+		const auto& depths{segmentation.get_epsilon_depths()};
+		REQUIRE(depths.size() == 1);
+		REQUIRE(depths.count(0) == 1);
+		REQUIRE(depths.at(0).size() == 1);
+		CHECK(depths.at(0)[0] == Transition{1, EPSILON, 2});
+
+		const auto state_1_transitions{segmentation.get_epsilon_transitions(1)};
+		REQUIRE(state_1_transitions.has_value());
+		CHECK(std::distance(state_1_transitions->first, state_1_transitions->second) == 1);
+		CHECK(*state_1_transitions->first == Transition{1, EPSILON, 2});
+		CHECK(!segmentation.get_epsilon_transitions(0).has_value());
+		CHECK(!segmentation.get_epsilon_transitions(2).has_value());
+	}
+
+	SECTION("several epsilon transitions of one state are consecutive at one depth") {
+		Nfa aut{5};
+		aut.initial = {0};
+		aut.final = {4};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(1, EPSILON, 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 4);
+
+		seg_nfa::Segmentation segmentation{aut, {EPSILON}};
+		REQUIRE(segmentation.get_epsilon_depths().size() == 1);
+		const auto state_1_transitions{segmentation.get_epsilon_transitions(1)};
+		REQUIRE(state_1_transitions.has_value());
+		REQUIRE(std::distance(state_1_transitions->first, state_1_transitions->second) == 2);
+		CHECK(state_1_transitions->first[0] == Transition{1, EPSILON, 2});
+		CHECK(state_1_transitions->first[1] == Transition{1, EPSILON, 3});
+		CHECK(!segmentation.get_epsilon_transitions(2).has_value());
+		CHECK(!segmentation.get_epsilon_transitions(3).has_value());
+	}
+
+	SECTION("several epsilon symbols from one state form one span") {
+		Nfa aut{4};
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(1, EPSILON - 1, 3);
+
+		seg_nfa::Segmentation segmentation{aut, {EPSILON, EPSILON - 1}};
+		REQUIRE(segmentation.get_epsilon_depths().size() == 1);
+		const auto state_1_transitions{segmentation.get_epsilon_transitions(1)};
+		REQUIRE(state_1_transitions.has_value());
+		REQUIRE(std::distance(state_1_transitions->first, state_1_transitions->second) == 2);
+		// Symbol posts are processed in symbol order: EPSILON - 1 first, EPSILON second.
+		CHECK(state_1_transitions->first[0] == Transition{1, EPSILON - 1, 3});
+		CHECK(state_1_transitions->first[1] == Transition{1, EPSILON, 2});
+	}
+}
