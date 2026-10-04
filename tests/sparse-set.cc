@@ -109,3 +109,41 @@ TEST_CASE("mata::utils::SparseSet") {
 		CHECK(p.domain_size() == 4);
 	}
 }
+
+TEST_CASE("mata::utils::SparseSet equality compares contents - issue #769") {
+	SparseSet<unsigned long> inserted_in_order{};
+	inserted_in_order.insert(5);
+	inserted_in_order.insert(3);
+
+	SparseSet<unsigned long> inserted_in_other_order{};
+	inserted_in_other_order.insert(3);
+	inserted_in_other_order.insert(5);
+
+	// The internal buffers and the domain size differ with the insertion history; the contents do not.
+	CHECK(inserted_in_order == inserted_in_other_order);
+
+	SparseSet<unsigned long> with_bigger_domain{};
+	with_bigger_domain.insert(100);
+	with_bigger_domain.erase(100);
+	with_bigger_domain.insert(3);
+	with_bigger_domain.insert(5);
+	CHECK(with_bigger_domain == inserted_in_order);
+
+	inserted_in_other_order.insert(7);
+	CHECK(!(inserted_in_order == inserted_in_other_order));
+}
+
+TEST_CASE("mata::utils::SparseSet is copied from a const container - issue #769") {
+	const std::vector<unsigned long> values{1, 2, 3};
+	// The greedy 'T&' constructor used to bind non-const lvalues better than the copy constructor.
+	const SparseSet<unsigned long> from_vector{values};
+	CHECK(from_vector.size() == 3);
+	CHECK(from_vector.contains(1));
+	CHECK(from_vector.contains(3));
+
+	SparseSet<unsigned long> original{};
+	original.insert(4);
+	SparseSet<unsigned long> copy{original}; // Must copy, not re-insert element by element.
+	CHECK(copy == original);
+	CHECK(copy.domain_size() == original.domain_size());
+}

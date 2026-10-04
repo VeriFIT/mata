@@ -5,6 +5,9 @@
 #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
 #define MATA_SYNCHRONIZED_ITERATOR_HH
 
+#include <cstddef>
+#include <vector>
+
 namespace mata::utils {
 
 /** @page synchronized_iterator Synchronized Iterator
@@ -126,6 +129,10 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 			if (this->positions[i] == this->ends[i]) { return false; }
 
 			//  Advance position[i] and position[0] to the closest equal values.
+			// Remember the value of position[0]: when it moves, every earlier position has to be
+			//  re-synchronized. Comparing the iterators themselves only worked when all positions pointed
+			//  into one container, which is never the case here.
+			auto position_0_value{*this->positions[0]};
 			while (*this->positions[i] != *this->positions[0]) {
 				// Advance position[i] to or beyond position[0].
 				while (*this->positions[i] < *this->positions[0]) {
@@ -139,13 +146,12 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 					if (this->positions[0] == this->ends[0]) { return false; }
 				}
 
-				// If position[0] changed, start from position 1 again.
-				// (note that
-				// i gets incremented at the end of the for-loop body,
-				// and that,
-				// since we are inside the for, there are at least two positions
-				// as the for starts with i=1.)
-				if (this->positions[0] > this->positions[1]) { i = 0; }
+				// If position[0] moved, start from position 1 again (i is incremented by the for-loop).
+				if (!(*this->positions[0] == position_0_value)) {
+					position_0_value = *this->positions[0];
+					i = 0;
+					break;
+				}
 			}
 		}
 		this->synchronized_at_current_minimum = true;
@@ -202,7 +208,9 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 				// swapped with a position from the end of the vector,
 				// and the vector is shortened.
 				// The same is done with ends.
-				while (position_i_it == end_i_it && i < positions_size) {
+				// The bound is checked first: once i == positions_size, the slot at i was popped and
+				// comparing it with its end is reading a stale pair.
+				while (i < positions_size && position_i_it == end_i_it) {
 					position_i_it = this->positions[positions_size - 1];
 					end_i_it = this->ends[positions_size - 1];
 					// This must be here, because in the next call, position_size is set again with positions.size().

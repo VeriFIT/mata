@@ -4196,7 +4196,7 @@ TEST_CASE("mata::nfa::delta.remove()") {
 			REQUIRE(!aut.delta.contains(1, 3, 5));
 		}
 
-		SECTION("Remove missing transition") { REQUIRE_THROWS_AS(aut.delta.remove(1, 1, 5), std::invalid_argument); }
+		SECTION("Remove missing transition") { REQUIRE(!aut.delta.remove(1, 1, 5)); }
 
 		SECTION("Remove the last state_to from targets") {
 			REQUIRE(aut.delta.contains(6, 'a', 2));
