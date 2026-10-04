@@ -10,6 +10,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <algorithm>
+#include <random>
+#include <vector>
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -477,4 +481,149 @@ TEST_CASE("Transition comparison") {
 	CHECK(tr4 < tr3);
 	CHECK(tr5 <= tr4);
 	CHECK(tr5 == tr4);
+}
+
+namespace {
+/// The same transitions inserted one by one through @c Delta::add(), which is the reference behaviour.
+Delta delta_from_adds(const std::vector<Transition>& transitions) {
+	Delta delta{};
+	for (const Transition& transition : transitions) { delta.add(transition); }
+	return delta;
+}
+} // namespace
+
+TEST_CASE("mata::nfa::DeltaBuilder") {
+	SECTION("ordered construction equals repeated Delta::add()") {
+		const std::vector<Transition> transitions{{0, 'a', 1}, {0, 'a', 3}, {0, 'b', 2},
+												  {2, 'a', 0}, {2, 'c', 2}, {5, 'a', 1}};
+		DeltaBuilder builder{6};
+		size_t index{0};
+		while (index < transitions.size()) {
+			const State source{transitions[index].source};
+			builder.begin_state(source);
+			while (index < transitions.size() && transitions[index].source == source) {
+				const Symbol symbol{transitions[index].symbol};
+				builder.begin_symbol(symbol);
+				while (index < transitions.size() && transitions[index].source == source &&
+					   transitions[index].symbol == symbol) {
+					builder.push_sorted_target(transitions[index].target);
+					++index;
+				}
+				builder.finish_symbol();
+			}
+			builder.finish_state();
+		}
+		const Delta built{builder.finish()};
+		CHECK(built == delta_from_adds(transitions));
+		CHECK(built.num_of_transitions() == transitions.size());
+	}
+
+	SECTION("a state with no emitted symbol keeps an empty post") {
+		DeltaBuilder builder{};
+		builder.begin_state(2);
+		builder.begin_symbol('a');
+		builder.finish_symbol(); // No target: nothing is emitted.
+		builder.finish_state();
+		const Delta built{builder.finish()};
+		CHECK(built.empty());
+		CHECK(built.num_of_states() == 3);
+	}
+
+	SECTION("an empty builder yields an empty delta") {
+		CHECK(DeltaBuilder{}.finish().empty());
+		CHECK(DeltaBuilder{}.finish().num_of_states() == 0);
+	}
+}
+
+TEST_CASE("mata::nfa::Delta::add() of a whole symbol post") {
+	Delta delta{};
+	delta.add(1, 'a', 4);
+	delta.add(1, 'a', 8);
+	delta.add(1, 'c', 2);
+
+	SECTION("an empty symbol post changes nothing") {
+		const Delta before{delta};
+		delta.add(1, SymbolPost{'a', StateSet{}});
+		CHECK(delta == before);
+	}
+
+	SECTION("disjoint, overlapping, equal and duplicate-heavy target sets merge like repeated add()") {
+		const std::vector<StateSet> target_sets{StateSet{0, 2}, StateSet{4, 6, 8}, StateSet{4, 8},
+												StateSet{4},	StateSet{9},	   StateSet{0, 4, 8, 11}};
+		for (const StateSet& targets : target_sets) {
+			Delta merged{delta};
+			merged.add(1, SymbolPost{'a', targets});
+
+			Delta one_by_one{delta};
+			for (const State target : targets) { one_by_one.add(1, 'a', target); }
+			CHECK(merged == one_by_one);
+		}
+	}
+
+	SECTION("a symbol that is not in the post yet is inserted in order") {
+		delta.add(1, SymbolPost{'b', StateSet{3, 5}});
+		CHECK(delta.contains(1, 'b', 3));
+		CHECK(delta.contains(1, 'b', 5));
+		std::vector<Symbol> symbols{};
+		for (const SymbolPost& symbol_post : delta[1]) { symbols.push_back(symbol_post.symbol); }
+		CHECK(symbols == std::vector<Symbol>{'a', 'b', 'c'});
+	}
+}
+
+TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
+	const std::vector<Transition> sorted{{0, 'a', 1}, {0, 'a', 2}, {0, 'b', 0}, {1, 'a', 1}, {3, 'c', 2}, {3, 'c', 7}};
+
+	SECTION("the input order does not matter and duplicates collapse") {
+		std::vector<std::vector<Transition>> inputs{};
+		inputs.push_back(sorted);
+		std::vector<Transition> descending{sorted};
+		std::ranges::reverse(descending);
+		inputs.push_back(descending);
+		std::vector<Transition> shuffled{sorted};
+		std::ranges::shuffle(shuffled, std::mt19937{11});
+		inputs.push_back(shuffled);
+		std::vector<Transition> duplicate_heavy{};
+		for (int repetition{0}; repetition < 3; ++repetition) {
+			duplicate_heavy.insert(duplicate_heavy.end(), sorted.begin(), sorted.end());
+		}
+		std::ranges::shuffle(duplicate_heavy, std::mt19937{12});
+		inputs.push_back(duplicate_heavy);
+
+		const Delta reference{delta_from_adds(sorted)};
+		for (std::vector<Transition>& input : inputs) {
+			Delta batched{};
+			batched.add(std::move(input));
+			CHECK(batched == reference);
+		}
+	}
+
+	SECTION("a batch merges into a delta that already holds transitions") {
+		Delta batched{};
+		batched.add(0, 'a', 1);
+		batched.add(9, 'z', 9);
+		std::vector<Transition> input{sorted};
+		std::ranges::shuffle(input, std::mt19937{13});
+		batched.add(std::move(input));
+
+		Delta reference{};
+		reference.add(0, 'a', 1);
+		reference.add(9, 'z', 9);
+		for (const Transition& transition : sorted) { reference.add(transition); }
+		CHECK(batched == reference);
+	}
+
+	SECTION("an empty batch changes nothing") {
+		Delta batched{};
+		batched.add(0, 'a', 1);
+		const Delta before{batched};
+		batched.add(std::vector<Transition>{});
+		CHECK(batched == before);
+	}
+
+	SECTION("states up to the largest mentioned one are allocated") {
+		Delta batched{};
+		batched.add(std::vector<Transition>{{1, 'a', 7}});
+		CHECK(batched.num_of_states() == 8);
+		CHECK(batched == delta_from_adds({{1, 'a', 7}}));
+	}
 }

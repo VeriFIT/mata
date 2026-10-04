@@ -776,15 +776,19 @@ Nft mata::nft::insert_levels(
 		result.alphabets = std::move(new_alphabets);
 	}
 
+	// The transitions below are produced in an arbitrary order and for states that are created on the way, so they
+	//  are gathered and imported in one batch instead of being inserted one by one.
+	std::vector<nfa::Transition> new_transitions;
+	new_transitions.reserve(nft.delta.num_of_transitions());
 	// Function to create a transition between source and target states.
 	// The transition symbol is determined based on the parameters:
 	// it could be a specific symb, DONT_CARE, or a default symbol.
 	auto create_transition = [&](const State src, const Symbol symb, const State tgt, const bool is_inserted_level,
 								 const bool is_old_level_processed) {
 		if (!is_inserted_level && (jump_mode != JumpMode::AppendDontCares || !is_old_level_processed)) {
-			result.delta.add(src, symb, tgt);
+			new_transitions.emplace_back(src, symb, tgt);
 		} else {
-			result.delta.add(src, DONT_CARE, tgt);
+			new_transitions.emplace_back(src, DONT_CARE, tgt);
 		}
 	};
 
@@ -834,6 +838,8 @@ Nft mata::nft::insert_levels(
 		// Construct the n-th part of the transition.
 		create_transition(src, trans.symbol, trans.target, new_levels_mask[src_lvl], is_old_level_processed);
 	}
+
+	result.delta.add(std::move(new_transitions));
 
 	return result;
 }
