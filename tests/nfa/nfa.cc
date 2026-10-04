@@ -2177,7 +2177,7 @@ TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterato
 		alph.translate_symb("a");
 		alph.translate_symb("b");
 		const Symbol b = alph["b"];
-		aut.delta.add(0, b, 1);  // Only 'b', missing 'a'
+		aut.delta.add(0, b, 1); // Only 'b', missing 'a'
 		REQUIRE(!aut.is_universal(alph, &cex, params));
 		REQUIRE(!aut.is_in_lang(cex.word));
 	}
@@ -2196,20 +2196,18 @@ TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterato
 	SECTION("is_universal: antichain vs naive on random") {
 		ParameterMap params_naive;
 		params_naive["algorithm"] = "naive";
-		
+
 		const Nfa test_aut = builder::create_random_nfa_tabakov_vardi(4, 2, 0.5, 0.5, 99);
 		OnTheFlyAlphabet test_alph;
 		test_aut.delta.add_symbols_to(test_alph);
-		
+
 		Run antichain_cex;
 		const bool antichain_res = test_aut.is_universal(test_alph, &antichain_cex, params);
 		Run naive_cex;
 		const bool naive_res = test_aut.is_universal(test_alph, &naive_cex, params_naive);
-		
+
 		REQUIRE(antichain_res == naive_res);
-		if (!antichain_res && antichain_cex.word.size() > 0) {
-			REQUIRE(!test_aut.is_in_lang(antichain_cex.word));
-		}
+		if (!antichain_res && antichain_cex.word.size() > 0) { REQUIRE(!test_aut.is_in_lang(antichain_cex.word)); }
 	}
 
 	SECTION("is_complete: all required symbols present") {
@@ -2230,7 +2228,7 @@ TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterato
 		alph.translate_symb("a");
 		alph.translate_symb("b");
 		const Symbol a = alph["a"];
-		aut.delta.add(0, a, 0);  // Missing 'b'
+		aut.delta.add(0, a, 0); // Missing 'b'
 		REQUIRE(!aut.is_complete(&alph));
 	}
 
@@ -2238,15 +2236,13 @@ TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterato
 		aut = Nfa(1);
 		aut.initial = {0};
 		alph.translate_symb("a");
-		const Symbol foreign = 99999;
+		const Symbol foreign = 99'999;
 		aut.delta.add(0, foreign, 0);
 		CHECK_THROWS_WITH(
-			aut.is_complete(&alph),
-			Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
+			aut.is_complete(&alph), Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
 		);
 	}
 } // }}}
-
 
 TEST_CASE("mata::nfa::is_included()") { // {{{
 	Nfa smaller(10);
@@ -3391,6 +3387,153 @@ TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
 		CHECK(aut_brz.delta.num_of_transitions() == aut_hop.delta.num_of_transitions());
 		CHECK(aut_brz.initial.size() == aut_hop.initial.size());
 		CHECK(aut_brz.final.size() == aut_hop.final.size());
+	}
+}
+
+namespace {
+/**
+ * @brief Is @p dfa a minimal DFA of its language?
+ *
+ * Fills the table of distinguishable state pairs (Moore): a pair is distinguishable when exactly one of its
+ *  states is final, or when some symbol leads to an already distinguishable pair, where a missing transition
+ *  counts as a transition to an implicit dead state. A trimmed DFA is minimal when every pair of its states is
+ *  distinguishable. This is an oracle independent of the implementation; language equivalence alone would not
+ *  show that a result is minimal.
+ */
+bool is_minimal_dfa(const Nfa& dfa) {
+	const size_t num_of_states{dfa.num_of_states()};
+	if (num_of_states == 0) { return true; }
+	if (!dfa.is_deterministic()) { return false; }
+	// An automaton of the empty language is minimal exactly when it has one state: every one of its states is
+	//  equivalent to the implicit dead state, so the pairwise test below would reject even the canonical form.
+	if (dfa.final.empty()) { return num_of_states == 1; }
+
+	const OrdVector<Symbol> symbols{dfa.delta.get_used_symbols()};
+	// 'dead' is an implicit extra state standing for a missing transition.
+	const size_t dead{num_of_states};
+	const auto successor = [&](const size_t state, const Symbol symbol) -> size_t {
+		if (state == dead) { return dead; }
+		const StatePost& state_post{dfa.delta[state]};
+		const auto symbol_post_it{state_post.find(symbol)};
+		if (symbol_post_it == state_post.end() || symbol_post_it->targets.empty()) { return dead; }
+		return *symbol_post_it->targets.begin();
+	};
+	const auto is_final = [&](const size_t state) { return state != dead && dfa.final[state]; };
+
+	const size_t size{num_of_states + 1};
+	std::vector distinguishable(size, std::vector<bool>(size, false));
+	for (size_t lhs{0}; lhs < size; ++lhs) {
+		for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+			if (is_final(lhs) != is_final(rhs)) { distinguishable[lhs][rhs] = true; }
+		}
+	}
+	for (bool changed{true}; changed;) {
+		changed = false;
+		for (size_t lhs{0}; lhs < size; ++lhs) {
+			for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+				if (distinguishable[lhs][rhs]) { continue; }
+				for (const Symbol symbol : symbols) {
+					const size_t lhs_succ{successor(lhs, symbol)};
+					const size_t rhs_succ{successor(rhs, symbol)};
+					if (lhs_succ == rhs_succ) { continue; }
+					if (distinguishable[std::min(lhs_succ, rhs_succ)][std::max(lhs_succ, rhs_succ)]) {
+						distinguishable[lhs][rhs] = true;
+						changed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// Every pair of real states must be distinguishable, and no real state may be equivalent to the dead state.
+	for (size_t lhs{0}; lhs < num_of_states; ++lhs) {
+		for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+			if (!distinguishable[lhs][rhs]) { return false; }
+		}
+	}
+	return true;
+}
+} // namespace
+
+TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
+	SECTION("the default no longer determinizes twice") {
+		// A trimmed, complete DFA: Brzozowski reverts and determinizes it twice, which is exponential in the
+		//  worst case, while "auto" sends it straight to Hopcroft.
+		Nfa dfa(4);
+		dfa.initial.insert(0);
+		dfa.final.insert(3);
+		for (State state{0}; state < 4; ++state) {
+			dfa.delta.add(state, 'a', (state + 1) % 4);
+			dfa.delta.add(state, 'b', state);
+		}
+		const Nfa minimized{minimize(dfa)};
+		CHECK(are_equivalent(dfa, minimized));
+		CHECK(is_minimal_dfa(minimized));
+		CHECK(minimized.num_of_states() == 4);
+	}
+
+	SECTION("a nondeterministic input is determinized first") {
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'a', 2);
+		const Nfa minimized{minimize(nfa)};
+		CHECK(are_equivalent(nfa, minimized));
+		CHECK(minimized.is_deterministic());
+		CHECK(is_minimal_dfa(minimized));
+	}
+
+	SECTION("an empty language becomes one non-final initial state") {
+		Nfa empty_language(5);
+		empty_language.initial.insert(0);
+		empty_language.delta.add(0, 'a', 1);
+		empty_language.delta.add(1, 'a', 2);
+		const Nfa minimized{minimize(empty_language)};
+		CHECK(minimized.is_lang_empty());
+		CHECK(minimized.num_of_states() == 1);
+		CHECK(minimized.initial.size() == 1);
+		CHECK(minimized.final.empty());
+		CHECK(minimized.delta.num_of_transitions() == 0);
+
+		Nfa no_states;
+		CHECK(minimize(no_states).is_lang_empty());
+	}
+
+	SECTION("the explicit algorithms are still reachable and agree") {
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, 'b', 2);
+		nfa.delta.add(0, 'a', 2);
+		const Nfa automatic{minimize(nfa, {{"algorithm", "auto"}})};
+		const Nfa brzozowski{minimize(nfa, {{"algorithm", "brzozowski"}})};
+		CHECK(are_equivalent(automatic, brzozowski));
+		CHECK(automatic.num_of_states() == brzozowski.num_of_states());
+		CHECK_THROWS_WITH(minimize(nfa, {{"algorithm", "moore"}}), Catch::Matchers::ContainsSubstring("unknown value"));
+	}
+
+	SECTION("auto agrees with Brzozowski on random automata") {
+		std::mt19937 gen{7};
+		std::uniform_int_distribution<size_t> state_dist{0, 4};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			Nfa nfa(5);
+			nfa.initial.insert(0);
+			for (State state{0}; state < 5; ++state) {
+				for (const Symbol symbol : {'a', 'b'}) {
+					nfa.delta.add(state, symbol, static_cast<State>(state_dist(gen)));
+				}
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+			}
+			INFO("iteration " << iteration);
+			const Nfa automatic{minimize(nfa)};
+			CHECK(are_equivalent(nfa, automatic));
+			CHECK(is_minimal_dfa(automatic));
+			CHECK(automatic.num_of_states() == minimize(nfa, {{"algorithm", "brzozowski"}}).num_of_states());
+		}
 	}
 }
 
@@ -5579,20 +5722,17 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 	}
 }
 
-
 TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 	// Brute-force oracle: simple independent forward and backward reachability
 	auto oracle_useful_states = [](const Nfa& aut) -> mata::BoolVector {
 		const size_t num_states = aut.num_of_states();
 		mata::BoolVector useful(num_states, false);
-		if (num_states == 0) return useful;
+		if (num_states == 0) { return useful; }
 
 		// Forward reachability from initial states
 		mata::BoolVector forward(num_states, false);
 		std::vector<State> queue(aut.initial.begin(), aut.initial.end());
-		for (const State s : queue) {
-			forward[s] = true;
-		}
+		for (const State s : queue) { forward[s] = true; }
 		for (size_t i = 0; i < queue.size(); ++i) {
 			const State s = queue[i];
 			aut.delta.for_each_successor(s, [&](State t) {
@@ -5612,15 +5752,13 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 				queue.push_back(s);
 			}
 		}
-		
+
 		// Build predecessor list by scanning all transitions
 		std::vector<std::vector<State>> predecessors(num_states);
 		for (State src = 0; src < num_states; ++src) {
-			aut.delta.for_each_successor(src, [&](State tgt) {
-				predecessors[tgt].push_back(src);
-			});
+			aut.delta.for_each_successor(src, [&](State tgt) { predecessors[tgt].push_back(src); });
 		}
-		
+
 		// Backward BFS using the predecessor list
 		for (size_t i = 0; i < queue.size(); ++i) {
 			const State t = queue[i];
@@ -5633,9 +5771,7 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		}
 
 		// Useful = forward AND backward (intersection)
-		for (size_t i = 0; i < num_states; ++i) {
-			useful[i] = forward[i] && backward[i];
-		}
+		for (size_t i = 0; i < num_states; ++i) { useful[i] = forward[i] && backward[i]; }
 		return useful;
 	};
 
@@ -5653,7 +5789,7 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		aut.delta.add(1, 'b', 2);
 		aut.delta.add(2, 'c', 3);
 		aut.delta.add(3, 'd', 4);
-		
+
 		const auto result = aut.get_useful_states();
 		const auto oracle = oracle_useful_states(aut);
 		CHECK(result == oracle);
@@ -5666,7 +5802,7 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		aut.delta.add(1, 'b', 2);
 		aut.delta.add(2, 'c', 3);
 		// States 4, 5 unreachable
-		
+
 		const auto result = aut.get_useful_states();
 		const auto oracle = oracle_useful_states(aut);
 		CHECK(result == oracle);
@@ -5679,9 +5815,9 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		Nfa aut(5, {0}, {3});
 		aut.delta.add(0, 'a', 1);
 		aut.delta.add(1, 'b', 2);
-		aut.delta.add(2, 'c', 2);  // Cycle, never reaches 3
+		aut.delta.add(2, 'c', 2); // Cycle, never reaches 3
 		// State 3 is final but unreachable
-		
+
 		const auto result = aut.get_useful_states();
 		const auto oracle = oracle_useful_states(aut);
 		CHECK(result == oracle);
@@ -5693,7 +5829,7 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		Nfa aut(3, {0}, {0});
 		aut.delta.add(0, 'a', 1);
 		aut.delta.add(1, 'b', 2);
-		
+
 		const auto result = aut.get_useful_states();
 		const auto oracle = oracle_useful_states(aut);
 		CHECK(result == oracle);
@@ -5707,60 +5843,66 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		aut.delta.add(1, 'b', 3);
 		aut.delta.add(2, 'c', 5);
 		aut.delta.add(3, 'd', 6);
-		aut.delta.add(4, 'e', 5);  // 4 unreachable
-		
+		aut.delta.add(4, 'e', 5); // 4 unreachable
+
 		const auto result = aut.get_useful_states();
 		const auto oracle = oracle_useful_states(aut);
 		CHECK(result == oracle);
-		CHECK(result[4] == false);  // Not reachable
+		CHECK(result[4] == false); // Not reachable
 	}
 
 	SECTION("Randomized: 50 random graphs") {
-		std::mt19937 gen(42);  // Deterministic seed
+		std::mt19937 gen(42); // Deterministic seed
 		for (int test = 0; test < 50; ++test) {
 			const size_t num_states = std::uniform_int_distribution<>(5, 50)(gen);
 			Nfa aut(num_states);
-			
+
 			// Random initials and finals
-			const size_t num_init = std::max(size_t(1), static_cast<size_t>(std::uniform_int_distribution<int>(1, static_cast<int>(num_states / 4))(gen)));
-			const size_t num_final = std::max(size_t(1), static_cast<size_t>(std::uniform_int_distribution<int>(1, static_cast<int>(num_states / 4))(gen)));
+			const size_t num_init = std::max(
+				size_t(1),
+				static_cast<size_t>(std::uniform_int_distribution<int>(1, static_cast<int>(num_states / 4))(gen))
+			);
+			const size_t num_final = std::max(
+				size_t(1),
+				static_cast<size_t>(std::uniform_int_distribution<int>(1, static_cast<int>(num_states / 4))(gen))
+			);
 			for (size_t i = 0; i < num_init; ++i) {
 				aut.initial.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
 			}
 			for (size_t i = 0; i < num_final; ++i) {
 				aut.final.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
 			}
-			
+
 			// Random edges (allow duplicates, the delta will ignore them)
-			const size_t num_edges = static_cast<size_t>(std::uniform_int_distribution<int>(static_cast<int>(num_states / 2), static_cast<int>(num_states * 2))(gen));
+			const size_t num_edges = static_cast<size_t>(
+				std::uniform_int_distribution<int>(static_cast<int>(num_states / 2), static_cast<int>(num_states * 2))(
+					gen
+				)
+			);
 			for (size_t i = 0; i < num_edges; ++i) {
 				State src = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
 				State tgt = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
 				Symbol sym = std::uniform_int_distribution<Symbol>(0, 255)(gen);
 				aut.delta.add(src, sym, tgt);
 			}
-			
+
 			const auto result = aut.get_useful_states();
 			const auto oracle = oracle_useful_states(aut);
-			CHECK(result == oracle);  // Verify equality with oracle
+			CHECK(result == oracle); // Verify equality with oracle
 		}
 	}
 
 	SECTION("trim() preserves state renamings") {
 		Nfa aut(10, {0}, {9});
 		// Linear chain: all useful
-		for (State s = 0; s < 9; ++s) {
-			aut.delta.add(s, 'a', s + 1);
-		}
-		
+		for (State s = 0; s < 9; ++s) { aut.delta.add(s, 'a', s + 1); }
+
 		mata::nfa::StateRenaming renaming;
 		const Nfa trimmed = nfa::trim(aut, &renaming);
-		
+
 		// All 10 states should be useful and mapped
 		CHECK(renaming.size() == 10);
-		for (State s = 0; s < 10; ++s) {
-			CHECK(renaming.count(s) > 0);
-		}
+		for (State s = 0; s < 10; ++s) { CHECK(renaming.count(s) > 0); }
 		// Trimmed NFA should have 10 states
 		CHECK(trimmed.num_of_states() == 10);
 	}
