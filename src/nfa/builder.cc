@@ -48,6 +48,10 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		for (const auto& str : it->second) { aut.final.insert(get_state_name(str)); }
 	}
 
+	// The transitions arrive in file order, so they are gathered and imported in one batch instead of being
+	//  inserted one by one, each with its own search and vector shift.
+	std::vector<Transition> transitions;
+	transitions.reserve(parsec.body.size());
 	for (const auto& body_line : parsec.body) {
 		if (body_line.size() != 3) {
 			if (body_line.size() == 2) {
@@ -57,10 +61,11 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 			}
 		}
 
-		aut.delta.add(
+		transitions.emplace_back(
 			get_state_name(body_line[0]), alphabet->translate_symb(body_line[1]), get_state_name(body_line[2])
 		);
 	}
+	aut.delta.add(std::move(transitions));
 
 	return aut;
 }
@@ -92,6 +97,9 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 		aut.initial.insert(state);
 	}
 
+	// Gathered and imported in one batch, see the ParsedSection overload above.
+	std::vector<Transition> transitions;
+	transitions.reserve(inter_aut.transitions.size());
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) {
@@ -101,12 +109,13 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 			}
 		}
 
-		State src_state = get_state_name(formula_node.name);
-		Symbol symbol = alphabet->translate_symb(formula_graph.children[0].node.name);
-		State tgt_state = get_state_name(formula_graph.children[1].node.name);
+		const State src_state{get_state_name(formula_node.name)};
+		const Symbol symbol{alphabet->translate_symb(formula_graph.children[0].node.name)};
+		const State tgt_state{get_state_name(formula_graph.children[1].node.name)};
 
-		aut.delta.add(src_state, symbol, tgt_state);
+		transitions.emplace_back(src_state, symbol, tgt_state);
 	}
+	aut.delta.add(std::move(transitions));
 
 	std::unordered_set<std::string> final_formula_nodes;
 	if (!(inter_aut.final_formula.node.is_constant())) {
