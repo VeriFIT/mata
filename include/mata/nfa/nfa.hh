@@ -914,6 +914,29 @@ Nfa intersection(
 );
 
 /**
+ * @brief Check whether the language intersection of two NFAs is empty, without materializing the product.
+ *
+ * Explores reachable pairs `(state_of_lhs, state_of_rhs)` directly and stops at the first pair that is final in
+ *  both automata. The traversal moves on shared symbols in both automata at once and lets a symbol at or above
+ *  @p first_epsilon move one side only -- the same semantics that `intersection(lhs, rhs, first_epsilon)`
+ *  materializes, but only up to the first witness.
+ *
+ * @param[in] lhs First NFA.
+ * @param[in] rhs Second NFA.
+ * @param[out] witness When not null and the intersection is nonempty, receives a word accepted by both
+ *  automata (some valid word, not necessarily the shortest). One-sided epsilon moves are stripped, so the
+ *  word replays in both automata with `Nfa::is_in_lang(witness, use_epsilon = true)`.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return True iff there is no word accepted by both @p lhs and @p rhs.
+ */
+bool is_intersection_empty(
+	const Nfa& lhs,
+	const Nfa& rhs,
+	Run* witness = nullptr,
+	Symbol first_epsilon = EPSILON
+);
+
+/**
  * @brief Concatenate two NFAs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
