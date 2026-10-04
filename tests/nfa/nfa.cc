@@ -4037,6 +4037,35 @@ TEST_CASE("mata::nfa::trim()") {
 		CHECK(state_map.empty());
 	}
 }
+TEST_CASE("mata::nfa::trim() preserves alphabet") {
+	// Create an NFA with a concrete alphabet.
+	OnTheFlyAlphabet alph;
+	alph.translate_symb("a");
+	alph.translate_symb("b");
+	const Symbol a = alph["a"];
+	const Symbol b = alph["b"];
+
+	// NFA with a useless state (state 2 has no path to any final state).
+	Nfa nfa{3, {0}, {1}};
+	nfa.alphabet = std::make_shared<OnTheFlyAlphabet>(alph);
+	nfa.delta.add(0, a, 1);
+	nfa.delta.add(0, b, 2); // State 2 is unreachable from final state 1.
+	nfa.delta.add(2, a, 1);
+
+	// Trim the automaton.
+	const Nfa trimmed = trim(nfa);
+
+	// The alphabet should be preserved.
+	REQUIRE(trimmed.alphabet != nullptr);
+	REQUIRE(trimmed.alphabet->get_alphabet_symbols().contains(a));
+	REQUIRE(trimmed.alphabet->get_alphabet_symbols().contains(b));
+
+	// Printing should show symbol names, not raw numbers.
+	std::string mata_output;
+	REQUIRE_NOTHROW(mata_output = trimmed.print_to_mata());
+	REQUIRE((mata_output.find("\"a\"") != std::string::npos || mata_output.find("a") != std::string::npos));
+	REQUIRE((mata_output.find("\"b\"") != std::string::npos || mata_output.find("b") != std::string::npos));
+}
 
 TEST_CASE("mata::nfa::Nfa::delta.empty()") {
 	Nfa aut{};

@@ -1186,9 +1186,7 @@ std::optional<Word> get_word_from_lang_difference(const Nfa& nfa_included, const
  * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
  * the starting point of a path ending in a final state).
  *
- * The out-of-place trimming is faster than in-place trimming when you wish to keep the original NFA intact.
- * This is caused by the out-of-place trimming directly constructing the trimmed NFA, while the in-place trimming needs
- *  to meticulously find and remove states and transitions from the original NFA.
+ * The out-of-place trimming is implemented as copy + in-place trim, which preserves the alphabet and attributes.
  *
  * @note The states in the returned NFA are renumbered.
  *
