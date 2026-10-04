@@ -80,8 +80,8 @@ class SymbolPost {
 	bool empty() const { return targets.empty(); }
 	size_t num_of_targets() const { return targets.size(); }
 
-	void insert(State s);
-	void insert(const StateSet& states);
+	bool insert(State s);
+	size_t insert(const StateSet& states);
 
 	// THIS BREAKS THE SORTEDNESS INVARIANT,
 	// dangerous,
@@ -94,7 +94,7 @@ class SymbolPost {
 		return targets.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void erase(const State s) { targets.erase(s); }
+	bool erase(const State s) { return targets.erase(s) != 0; }
 
 	std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
 	std::vector<State>::iterator find(const State s) { return targets.find(s); }
@@ -548,10 +548,18 @@ class Delta {
 
 	template <typename... Args> StatePost& emplace_back(Args&&... args) {
 		// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+		++mutation_epoch_;
+		// The appended post is built in place from arbitrary arguments, so its size is not known here.
+		count_dirty_ = true;
 		return state_posts_.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void clear() { state_posts_.clear(); }
+	void clear() {
+		++mutation_epoch_;
+		cached_transition_count_ = 0;
+		count_dirty_ = false;
+		state_posts_.clear();
+	}
 
 	/**
 	 * @brief Allocate state posts up to @p num_of_states states, creating empty @c StatePost for yet unallocated state
@@ -562,6 +570,8 @@ class Delta {
 	 */
 	void allocate(const size_t num_of_states) {
 		MATA_ASSERT(num_of_states >= this->num_of_states());
+		// Only empty state posts are created, so the transition count does not change.
+		if (num_of_states > this->num_of_states()) { ++mutation_epoch_; }
 		state_posts_.resize(num_of_states);
 	}
 
@@ -626,7 +636,13 @@ class Delta {
 	 * @param post_vector Vector of posts to be appended.
 	 */
 	void append(const std::vector<StatePost>& post_vector) {
-		for (const StatePost& pst : post_vector) { this->state_posts_.push_back(pst); }
+		if (!post_vector.empty()) { ++mutation_epoch_; }
+		for (const StatePost& pst : post_vector) {
+			if (!count_dirty_) {
+				for (const SymbolPost& symbol_post : pst) { cached_transition_count_ += symbol_post.num_of_targets(); }
+			}
+			this->state_posts_.push_back(pst);
+		}
 	}
 
 	/**
@@ -819,6 +835,38 @@ class Delta {
 	 * @brief Get the maximum non-epsilon used symbol.
 	 */
 	Symbol get_max_symbol() const;
+
+  private:
+	/// Monotonic counter of mutating calls; lets clients of @c Delta invalidate their own derived data.
+	uint64_t mutation_epoch_{0};
+	/// Exact number of transitions whenever @c count_dirty_ is false.
+	mutable size_t cached_transition_count_{0};
+	/// Set only by edits whose effect on the count cannot be derived, such as @c mutable_state_post().
+	mutable bool count_dirty_{true};
+
+	/// Record @p added newly inserted transitions. A no-op while the count is dirty: it is recomputed anyway.
+	void note_added(const size_t added) {
+		if (!count_dirty_) { cached_transition_count_ += added; }
+	}
+
+	/// Record @p removed deleted transitions.
+	void note_removed(const size_t removed) {
+		if (!count_dirty_) {
+			MATA_ASSERT(removed <= cached_transition_count_);
+			cached_transition_count_ -= removed;
+		}
+	}
+
+  public:
+	/**
+	 * @brief Number of mutating calls performed on this delta so far.
+	 *
+	 * Increases by exactly one per mutating public call, including @c mutable_state_post(), which cannot observe
+	 *  what the caller does with the returned reference. Holders of data derived from the delta can cache the
+	 *  epoch together with the value and recompute once the epoch moves. Copies and moves carry the epoch of
+	 *  their source; the value is only ever compared with another value read from the same delta.
+	 */
+	uint64_t mutation_epoch() const { return mutation_epoch_; }
 
   protected:
 	std::vector<StatePost> state_posts_;
