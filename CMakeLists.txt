@@ -73,10 +73,24 @@ option (MATA_ARCH_NATIVE "Optimize for the architecture of the building machine 
 #  runs the training workload, a `use` build reads it back. A profile belongs to one exact compiler
 #  and source tree, so it is never installed and never committed. `just cpp::pgo` runs both stages.
 set (MATA_PGO "off" CACHE STRING "Profile-guided optimization stage: off, generate, or use")
+# Sanitizers: AddressSanitizer, UndefinedBehaviorSanitizer, and libstdc++ assertions. A comma-separated
+#  list of sanitizer names (e.g. "address,undefined"); empty disables all sanitizers. The runtime checks
+#  are enabled only in Debug builds. UBSAN and ASAN are supported on GCC and Clang; _GLIBCXX_ASSERTIONS
+#  is GCC/libstdc++ only but is safe to pass to Clang (which ignores unknown -D flags for compatibility).
+set (MATA_SANITIZE "" CACHE STRING "Comma-separated list of sanitizers to enable (e.g. address,undefined)")
 set_property (CACHE MATA_PGO PROPERTY STRINGS off generate use)
 set (MATA_PGO_DIR "${CMAKE_BINARY_DIR}/pgo" CACHE PATH "Directory holding the profile data of MATA_PGO")
 if (NOT MATA_PGO MATCHES "^(off|generate|use)$")
 	message (FATAL_ERROR "MATA_PGO must be one of off, generate, use; got '${MATA_PGO}'")
+endif ()
+
+if (NOT MATA_SANITIZE STREQUAL "")
+	if (NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+		message (FATAL_ERROR "MATA_SANITIZE is not supported for compiler '${CMAKE_CXX_COMPILER_ID}'")
+	endif ()
+	# Build the sanitizer flag: -fsanitize=address,undefined etc.
+	set (MATA_SANITIZE_FLAGS -fsanitize=${MATA_SANITIZE} -fno-omit-frame-pointer -g -O1 -fno-sanitize-recover=undefined)
+	message ("-- Building Mata with sanitizers: ${MATA_SANITIZE}")
 endif ()
 
 if (MATA_ENABLE_IPO)
@@ -148,6 +162,13 @@ function (mata_add_optimizations TARGET)
 			)
 		endif ()
 	endif ()
+	if (NOT MATA_SANITIZE STREQUAL "")
+		target_compile_options (${TARGET} PRIVATE ${MATA_SANITIZE_FLAGS})
+		target_link_options (${TARGET} PRIVATE ${MATA_SANITIZE_FLAGS})
+		# -D_GLIBCXX_ASSERTIONS enables libstdc++ debug assertions; Clang ignores unknown -D flags
+		target_compile_options (${TARGET} PRIVATE -D_GLIBCXX_ASSERTIONS)
+	endif ()
+
 endfunction ()
 
 # Registering the install rules unconditionally means a `FetchContent`/`add_subdirectory()` consumer
