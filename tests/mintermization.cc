@@ -474,3 +474,46 @@ TEST_CASE("mata::Mintermization::mintermization produces correct symbol renaming
 				res_ref.transitions[i].second.children[1].node.name);
 	}
 }
+
+TEST_CASE("mata::Mintermization::reuse_clears_state()") {
+	// Issue #766: Mintermization object reused across multiple mintermize() calls
+	// would accumulate BDDs and pointer-keyed maps from earlier calls, causing spurious
+	// symbols and transitions in the result.
+
+	auto parse = [](const std::string& s) {
+		return mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(s, false))[0];
+	};
+
+	// Simple automaton with one transition and one symbol
+	const mata::IntermediateAut aut1 = parse(
+		"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a1 & a2 q1\n"
+	);
+	// Different automaton with different symbols
+	const mata::IntermediateAut aut2 = parse(
+		"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a5 q1\n"
+	);
+
+	// Verify baseline: fresh Mintermization on aut2
+	mata::Mintermization fresh;
+	const auto res_fresh = fresh.mintermize(aut2);
+	std::set<std::string> symbols_fresh;
+	for (const auto& trans : res_fresh.transitions) {
+		symbols_fresh.insert(trans.second.children[0].node.name);
+	}
+	const size_t transitions_fresh = res_fresh.transitions.size();
+
+	// Reused Mintermization: first mintermize aut1, then aut2
+	mata::Mintermization reused;
+	(void) reused.mintermize(aut1);  // This should not pollute state
+	const auto res_reused = reused.mintermize(aut2);
+	std::set<std::string> symbols_reused;
+	for (const auto& trans : res_reused.transitions) {
+		symbols_reused.insert(trans.second.children[0].node.name);
+	}
+	const size_t transitions_reused = res_reused.transitions.size();
+
+	// The results must be identical
+	REQUIRE(transitions_fresh == transitions_reused);
+	REQUIRE(symbols_fresh == symbols_reused);
+	// Before the fix: transitions_reused would be > transitions_fresh due to accumulated BDDs
+}
