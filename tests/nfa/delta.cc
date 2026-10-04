@@ -636,3 +636,207 @@ TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
 		CHECK(batched == delta_from_adds({{1, 'a', 7}}));
 	}
 }
+
+// ============================================================
+// Tests for Issue #805: O(1) empty() and transition_count
+// ============================================================
+
+TEST_CASE("mata::nfa::Delta mutation epoch") {
+	Delta delta;
+	const auto initial_epoch = delta.mutation_epoch();
+
+	// Epoch should increment on mutations
+	delta.add(0, 'a', 1);
+	CHECK(delta.mutation_epoch() == initial_epoch + 1);
+
+	delta.add(1, 'b', 2);
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+
+	// Non-mutating operations should not change epoch
+	auto _ = delta.num_of_transitions();
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+
+	bool e = delta.empty();
+	CHECK(delta.mutation_epoch() == initial_epoch + 2);
+}
+
+TEST_CASE("mata::nfa::Delta transition_count caching") {
+	Delta delta;
+
+	CHECK(delta.num_of_transitions() == 0);
+	CHECK(delta.empty());
+
+	// Add some transitions
+	delta.add(0, 'a', 1);
+	delta.add(0, 'a', 2);
+	delta.add(1, 'b', 2);
+	delta.add(2, 'a', 3);
+
+	// Cached count should match scan
+	CHECK(delta.num_of_transitions() == 4);
+	CHECK(!delta.empty());
+
+	// Duplicate add should not change count
+	delta.add(0, 'a', 1);
+	CHECK(delta.num_of_transitions() == 4);
+
+	// Remove should decrement
+	delta.remove(0, 'a', 1);
+	CHECK(delta.num_of_transitions() == 3);
+
+	// Clear should zero count
+	delta.clear();
+	CHECK(delta.num_of_transitions() == 0);
+	CHECK(delta.empty());
+}
+
+TEST_CASE("mata::nfa::Delta long empty prefix no scan") {
+	// Create a delta with 2000 empty state posts, then a few transitions
+	// The old empty() would scan all 2000; now it just checks the count
+
+	Delta delta;
+	delta.allocate(2'000);
+
+	// Add transitions only at the end
+	delta.add(1'999, 'x', 1'990);
+
+	// The new empty() should be O(1) cache lookup, not O(2000) scan
+	CHECK(!delta.empty());
+	CHECK(delta.num_of_transitions() == 1);
+
+	// Similarly, verify with a totally empty large delta
+	Delta empty_delta;
+	empty_delta.allocate(5'000);
+	CHECK(empty_delta.empty()); // Should not scan all 5000 posts
+	CHECK(empty_delta.num_of_transitions() == 0);
+}
+
+TEST_CASE("mata::nfa::Delta mutable_state_post invalidates count") {
+	Delta delta;
+	delta.add(0, 'a', 1);
+	delta.add(0, 'b', 2);
+
+	CHECK(delta.num_of_transitions() == 2);
+
+	// Raw edit via mutable_state_post should mark count dirty
+	auto& post = delta.mutable_state_post(1);
+	post.insert(SymbolPost('c', StateSet{3})); // Add transition 1 -> 3 via 'c'
+
+	// After the raw edit, the cached count is stale; next query recomputes
+	CHECK(delta.num_of_transitions() == 3);
+}
+
+TEST_CASE("mata::nfa::Delta empty and num_of_transitions agree") {
+	// Ensure they can never disagree (the fix for #747)
+	Delta delta;
+
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	delta.add(0, 'a', 1);
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	delta.add(1, 'b', 2);
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	delta.clear();
+	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+}
+
+TEST_CASE("mata::nfa::Delta SymbolPost insert/erase return values") {
+	SymbolPost post('a');
+
+	// insert(State) returns true on new insertion, false on duplicate
+	CHECK(post.insert(1) == true);
+	CHECK(post.insert(2) == true);
+	CHECK(post.insert(1) == false); // duplicate
+
+	// erase(State) returns true iff removed
+	CHECK(post.erase(1) == true);
+	CHECK(post.erase(1) == false); // not present
+	CHECK(post.erase(2) == true);
+
+	// insert(StateSet) returns count of newly added states
+	StateSet states{10, 11, 12};
+	CHECK(post.insert(states) == 3);
+	CHECK(post.insert(states) == 0); // all already present
+
+	StateSet partial{11, 13, 14};
+	CHECK(post.insert(partial) == 2); // only 13 and 14 are new
+}
+
+// Oracle: recompute transition count by full scan (slow but correct)
+static size_t oracle_num_of_transitions(const Delta& delta) {
+	size_t count = 0;
+	for (size_t i = 0; i < delta.num_of_states(); ++i) {
+		for (const auto& sp : delta[i]) { count += sp.num_of_targets(); }
+	}
+	return count;
+}
+
+TEST_CASE("mata::nfa::Delta randomized mutation sequence vs oracle") {
+	std::mt19937 gen(42); // Fixed seed for reproducibility
+	std::uniform_int_distribution<> state_dist(0, 99);
+	std::uniform_int_distribution<> symbol_dist(0, 9);
+	std::uniform_int_distribution<> op_dist(0, 6); // 7 operations
+
+	Delta delta;
+
+	for (int step = 0; step < 500; ++step) {
+		int op = op_dist(gen);
+
+		switch (op) {
+			case 0: { // add
+				State src = state_dist(gen);
+				Symbol sym = symbol_dist(gen);
+				State tgt = state_dist(gen);
+				delta.add(src, sym, tgt);
+				break;
+			}
+			case 1: { // remove (often fails)
+				State src = state_dist(gen);
+				Symbol sym = symbol_dist(gen);
+				State tgt = state_dist(gen);
+				try {
+					delta.remove(src, sym, tgt);
+				} catch (...) {
+					// Failed remove is fine; doesn't change count
+				}
+				break;
+			}
+			case 2: { // clear
+				delta.clear();
+				break;
+			}
+			case 3: { // append
+				if (!delta.empty() && step % 3 == 0) {
+					std::vector<StatePost> posts;
+					for (size_t i = 0; i < delta.num_of_states() && posts.size() < 5; ++i) {
+						posts.push_back(delta[i]);
+					}
+					delta.append(posts);
+				}
+				break;
+			}
+			case 4: { // emplace_back
+				StatePost new_post;
+				delta.emplace_back(std::move(new_post));
+				break;
+			}
+			case 5: { // allocate
+				delta.allocate(std::max(delta.num_of_states(), (size_t) (state_dist(gen) + 5)));
+				break;
+			}
+			case 6: { // mutable_state_post direct edit
+				State src = state_dist(gen) % (delta.num_of_states() + 10);
+				auto& post = delta.mutable_state_post(src);
+				// Do NOT further mutate after this before checking count
+				// (respecting the reference-invalidation rule)
+				break;
+			}
+		}
+
+		// After each operation, verify count matches oracle
+		CHECK(delta.num_of_transitions() == oracle_num_of_transitions(delta));
+		CHECK(delta.empty() == (oracle_num_of_transitions(delta) == 0));
+	}
+}
