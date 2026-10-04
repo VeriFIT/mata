@@ -627,22 +627,62 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 	}
 
 	SECTION("smaller transition symbol") {
+		// The transition over the symbol 0 is outside of the alphabet {'a', 'b', 'c'} and is ignored.
 		aut.initial = {1};
 		aut.final = {1};
 		aut.delta.add(1, 'a', 1);
 		aut.delta.add(1, 0, 2);
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
-		CHECK(*result == Word{0});
+		CHECK(*result == Word{'b'});
 	}
 
 	SECTION("smaller transition symbol 2") {
+		// The only transition over the symbol 0 is outside of the alphabet {'a', 'b', 'c'} and is ignored.
 		aut.initial = {1};
 		aut.final = {1};
 		aut.delta.add(1, 0, 2);
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
-		CHECK(*result == Word{0});
+		CHECK(*result == Word{'a'});
+	}
+
+	SECTION("transitions over symbols outside of the alphabet are ignored - issue #757") {
+		// L = {0,5}* over alphabet {0}: universal over {0}; the out-of-alphabet symbol 5 must be ignored.
+		aut = Nfa{1};
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 0, 0);
+		aut.delta.add(0, 5, 0);
+		mata::EnumAlphabet alphabet_with_zero{0};
+		result = aut.get_word_from_complement(&alphabet_with_zero);
+		CHECK(!result.has_value());
+	}
+
+	SECTION("returned word never contains a symbol outside of the alphabet - issue #757") {
+		// L = 1* with a dead branch over 0, over alphabet {1}: universal over {1}; symbol 0 must not appear
+		//  in the complement at all and must not fool the determinization into reading past the alphabet symbols.
+		aut = Nfa{2};
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 1, 0);
+		aut.delta.add(0, 0, 1);
+		mata::EnumAlphabet alphabet_with_one{1};
+		result = aut.get_word_from_complement(&alphabet_with_one);
+		CHECK(!result.has_value());
+	}
+
+	SECTION("a returned word is never accepted and only uses alphabet symbols - issue #757") {
+		aut = Nfa{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 1, 2);
+		aut.delta.add(0, 6, 1); // symbol 6 is outside of the alphabet below and has to be ignored
+		mata::EnumAlphabet alphabet_half{0, 1};
+		result = aut.get_word_from_complement(&alphabet_half);
+		REQUIRE(result.has_value());
+		CHECK(!aut.is_in_lang(*result));
+		for (const Symbol symbol : *result) { CHECK(symbol <= 1); }
 	}
 }
 
@@ -4009,8 +4049,7 @@ TEST_CASE("mata::nfa::reduce_residual_state_renaming_error_and_ub_fix()") {
 
 	SECTION("reduce with state_renaming should throw") {
 		CHECK_THROWS_WITH(
-			reduce(aut, &renaming, params),
-			Catch::Matchers::ContainsSubstring("does not support state_renaming")
+			reduce(aut, &renaming, params), Catch::Matchers::ContainsSubstring("does not support state_renaming")
 		);
 	}
 
@@ -4457,8 +4496,14 @@ TEST_CASE("mata::nfa::trim() preserves alphabet") {
 	// Printing should show symbol names, not raw numbers.
 	std::string mata_output;
 	REQUIRE_NOTHROW(mata_output = trimmed.print_to_mata());
-	REQUIRE((mata_output.find("\"a\"") != std::string::npos || mata_output.find("a") != std::string::npos));
-	REQUIRE((mata_output.find("\"b\"") != std::string::npos || mata_output.find("b") != std::string::npos));
+	const bool mata_output_has_a{
+		mata_output.find("\"a\"") != std::string::npos || mata_output.find('a') != std::string::npos
+	};
+	const bool mata_output_has_b{
+		mata_output.find("\"b\"") != std::string::npos || mata_output.find('b') != std::string::npos
+	};
+	REQUIRE(mata_output_has_a);
+	REQUIRE(mata_output_has_b);
 }
 
 TEST_CASE("mata::nfa::Nfa::delta.empty()") {
@@ -6255,8 +6300,10 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 		for (State state{0}; state + 1 < num_states; ++state) {
 			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
 			for (size_t i{0}; i < out_degree; ++i) {
-				nfa.delta.add(state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
-					  num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, num_states - 1)(gen) : 0);
+				nfa.delta.add(
+					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
+					num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, num_states - 1)(gen) : 0
+				);
 			}
 			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
 		}
@@ -6265,4 +6312,3 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 		CHECK(nfa.distances_to_final() == revert(nfa).distances_from_initial());
 	}
 } // }}}
-

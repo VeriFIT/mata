@@ -1100,10 +1100,7 @@ Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
 	return product(lhs, rhs, ProductFinalStateCondition::Or, EPSILON);
 }
 
-
-Nfa mata::nfa::union_nondet(Nfa&& lhs, const Nfa& rhs) {
-	return Nfa{std::move(lhs)}.unite_nondet_with(rhs);
-}
+Nfa mata::nfa::union_nondet(Nfa&& lhs, const Nfa& rhs) { return Nfa{std::move(lhs)}.unite_nondet_with(rhs); }
 
 Nfa mata::nfa::union_nondet(Nfa&& lhs, Nfa&& rhs) {
 	// Both are rvalues; move lhs into result, then move rhs.
@@ -1111,7 +1108,6 @@ Nfa mata::nfa::union_nondet(Nfa&& lhs, Nfa&& rhs) {
 	result.unite_nondet_with(std::move(rhs));
 	return result;
 }
-
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
 	if (!haskey(params, "relation")) {
@@ -1282,13 +1278,13 @@ std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
 
 void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	for (const StatePost& state_post : this->delta) {
-	for (const StatePost& state_post : this->delta) {
-		for (const SymbolPost& symbol_post : state_post) {
-			if (symbol_post.symbol == EPSILON) { continue; }
-			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
-			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+		for (const StatePost& state_post : this->delta) {
+			for (const SymbolPost& symbol_post : state_post) {
+				if (symbol_post.symbol == EPSILON) { continue; }
+				alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
+				alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+			}
 		}
-	}
 	}
 }
 
@@ -1604,7 +1600,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 			const Symbol symbol_advanced_to{(*orig_symbol_posts.begin())->symbol};
 			StateSet orig_targets{synchronized_iterator.unify_targets()};
 
-			if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
+			if (symbols_it != symbols_end && symbol_advanced_to == *symbols_it) {
 				State target_macrostate;
 				// Continue with the determinization of the NFA.
 				if (const auto target_macrostate_it = subset_map.find(orig_targets);
@@ -1620,6 +1616,11 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 					worklist.emplace_back(subset_map_it.operator->());
 				}
 				nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
+				if (!continue_complementation) { break; }
+				++symbols_it;
+			} else if (symbols_it == symbols_end || symbol_advanced_to < *symbols_it) {
+				// The symbol on the transitions is not in the requested alphabet. The symbol does not belong to the
+				//  complemented language over the alphabet either way; skip it.
 			} else {
 				MATA_ASSERT(symbol_advanced_to > *symbols_it);
 				// There are more transitions from the 'orig_states', but there is a missing transition over
@@ -1630,8 +1631,6 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 				break;
 			}
 
-			if (!continue_complementation) { break; }
-			if (symbol_advanced_to >= *symbols_it) { ++symbols_it; }
 			sync_it_advanced = synchronized_iterator.advance();
 		}
 	}
