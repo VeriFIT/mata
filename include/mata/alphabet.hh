@@ -321,7 +321,9 @@ class OnTheFlyAlphabet : public Alphabet {
 	OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet) = default;
 	OnTheFlyAlphabet(OnTheFlyAlphabet&& alphabet) = default;
 	explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet) : OnTheFlyAlphabet(*alphabet) {}
-	explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
+	explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) {
+		add_symbols_from(std::move(str_sym_map));
+	}
 
 	/**
 	 * Create alphabet from a list of symbol names.
@@ -418,7 +420,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	 * Get the number of existing symbols, epsilon symbols excluded.
 	 * @return The number of symbols.
 	 */
-	size_t get_number_of_symbols() const { return next_symbol_value_; }
+	size_t get_number_of_symbols() const { return symbol_map_.size(); }
 
 	/**
 	 * Get the symbol map used in the alphabet.
