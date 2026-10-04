@@ -1525,7 +1525,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 			const Symbol symbol_advanced_to{(*orig_symbol_posts.begin())->symbol};
 			StateSet orig_targets{synchronized_iterator.unify_targets()};
 
-			if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
+			if (symbols_it != symbols_end && symbol_advanced_to == *symbols_it) {
 				State target_macrostate;
 				// Continue with the determinization of the NFA.
 				if (const auto target_macrostate_it = subset_map.find(orig_targets);
@@ -1541,6 +1541,11 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 					worklist.emplace_back(subset_map_it.operator->());
 				}
 				nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
+				if (!continue_complementation) { break; }
+				++symbols_it;
+			} else if (symbols_it == symbols_end || symbol_advanced_to < *symbols_it) {
+				// The symbol on the transitions is not in the requested alphabet. The symbol does not belong to the
+				//  complemented language over the alphabet either way; skip it.
 			} else {
 				MATA_ASSERT(symbol_advanced_to > *symbols_it);
 				// There are more transitions from the 'orig_states', but there is a missing transition over
@@ -1551,8 +1556,6 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 				break;
 			}
 
-			if (!continue_complementation) { break; }
-			if (symbol_advanced_to >= *symbols_it) { ++symbols_it; }
 			sync_it_advanced = synchronized_iterator.advance();
 		}
 	}

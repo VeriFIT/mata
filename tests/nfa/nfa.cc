@@ -627,22 +627,62 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 	}
 
 	SECTION("smaller transition symbol") {
+		// The transition over the symbol 0 is outside of the alphabet {'a', 'b', 'c'} and is ignored.
 		aut.initial = {1};
 		aut.final = {1};
 		aut.delta.add(1, 'a', 1);
 		aut.delta.add(1, 0, 2);
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
-		CHECK(*result == Word{0});
+		CHECK(*result == Word{'b'});
 	}
 
 	SECTION("smaller transition symbol 2") {
+		// The only transition over the symbol 0 is outside of the alphabet {'a', 'b', 'c'} and is ignored.
 		aut.initial = {1};
 		aut.final = {1};
 		aut.delta.add(1, 0, 2);
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
-		CHECK(*result == Word{0});
+		CHECK(*result == Word{'a'});
+	}
+
+	SECTION("transitions over symbols outside of the alphabet are ignored - issue #757") {
+		// L = {0,5}* over alphabet {0}: universal over {0}; the out-of-alphabet symbol 5 must be ignored.
+		aut = Nfa{1};
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 0, 0);
+		aut.delta.add(0, 5, 0);
+		mata::EnumAlphabet alphabet_with_zero{0};
+		result = aut.get_word_from_complement(&alphabet_with_zero);
+		CHECK(!result.has_value());
+	}
+
+	SECTION("returned word never contains a symbol outside of the alphabet - issue #757") {
+		// L = 1* with a dead branch over 0, over alphabet {1}: universal over {1}; symbol 0 must not appear
+		//  in the complement at all and must not fool the determinization into reading past the alphabet symbols.
+		aut = Nfa{2};
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 1, 0);
+		aut.delta.add(0, 0, 1);
+		mata::EnumAlphabet alphabet_with_one{1};
+		result = aut.get_word_from_complement(&alphabet_with_one);
+		CHECK(!result.has_value());
+	}
+
+	SECTION("a returned word is never accepted and only uses alphabet symbols - issue #757") {
+		aut = Nfa{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 1, 2);
+		aut.delta.add(0, 6, 1); // symbol 6 is outside of the alphabet below and has to be ignored
+		mata::EnumAlphabet alphabet_half{0, 1};
+		result = aut.get_word_from_complement(&alphabet_half);
+		REQUIRE(result.has_value());
+		CHECK(!aut.is_in_lang(*result));
+		for (const Symbol symbol : *result) { CHECK(symbol <= 1); }
 	}
 }
 
