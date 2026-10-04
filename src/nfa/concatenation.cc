@@ -117,7 +117,7 @@ Nfa algorithms::concatenate_eps(
 		}
 	}
 
-	if (!use_epsilon) { result.remove_epsilon(); }
+	if (!use_epsilon) { result.remove_epsilon(epsilon); }
 	if (lhs_state_renaming != nullptr) { *lhs_state_renaming = lhs_states_renaming; }
 	if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
 	return result;

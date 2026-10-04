@@ -144,11 +144,15 @@ Nfa product(
 /**
  * @brief Concatenate two NFAs.
  *
- * Supports epsilon symbols when @p use_epsilon is set to true.
+ * Connects @p lhs and @p rhs by adding ε-transitions from each final state of @p lhs to each initial state of
+ * @p rhs. The ε is set to @p epsilon. If @p use_epsilon is false, the ε-transitions are then removed (and the
+ * choice of @p epsilon determines which symbol is removed). The operands' own @p epsilon transitions are preserved
+ * when @p use_epsilon is false; only transitions with the connecting @p epsilon symbol are removed.
+ *
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon to be used for concatenation (provided @p use_epsilon is true)
- * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
+ * @param[in] epsilon Symbol used for the connecting transitions between @p lhs and @p rhs.
+ * @param[in] use_epsilon Whether to keep the connecting epsilon transitions in the result.
  * @param[out] lhs_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.

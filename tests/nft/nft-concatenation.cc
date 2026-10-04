@@ -9,7 +9,7 @@
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nft/builder.hh"
-#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 
 using namespace mata::nft;
 using namespace mata::applications::strings;
@@ -1128,4 +1128,28 @@ TEST_CASE("mata::nft::concatenate_nth_power()") {
 
 		CHECK(are_equivalent(concatenate_nth_power(nft, 4), expected));
 	}
+}
+TEST_CASE("mata::nft::concatenate_eps() with custom epsilon and use_epsilon=false") {
+	// Test that concatenate_eps with a custom epsilon and use_epsilon=false removes the custom epsilon.
+	const Symbol custom_epsilon = 100;
+
+	// Use simple 1-level NFTs (essentially NFAs)
+	Nft a{Nft::with_levels(1, 3)};
+	a.initial.insert(0);
+	a.final.insert(2);
+	a.delta.add(0, 1, 2);
+
+	Nft b{Nft::with_levels(1, 3)};
+	b.initial.insert(0);
+	b.final.insert(2);
+	b.delta.add(0, 2, 2);
+
+	const Nft ab_concat = mata::nft::algorithms::concatenate_eps(a, b, custom_epsilon, /*use_epsilon=*/false);
+	const Nft ab_normal = concatenate(a, b);
+
+	// The two results should be equivalent.
+	REQUIRE(are_equivalent(ab_concat, ab_normal));
+
+	// The custom epsilon symbol should not be in the used symbols.
+	REQUIRE(!ab_concat.delta.get_used_symbols().contains(custom_epsilon));
 }
