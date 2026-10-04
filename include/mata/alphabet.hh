@@ -116,6 +116,9 @@ class IntAlphabet : public Alphabet {
 
 	Symbol translate_symb(const std::string& symb) override;
 
+	/// Parses each name as the number it holds; accepts exactly the whole numeric text.
+	Word translate_word(const WordName& word_name) const override;
+
 	std::string reverse_translate_symbol(const Symbol symbol) const override { return std::to_string(symbol); }
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override {
