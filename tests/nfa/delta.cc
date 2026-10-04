@@ -541,3 +541,112 @@ TEST_CASE("mata::nfa types should not be polymorphic - #746") {
 	// StateSet should be same size as std::vector<State>
 	CHECK(sizeof(StateSet) == sizeof(std::vector<State>));
 }
+
+TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets") {
+	SECTION("Not synchronized returns empty") {
+		Nfa aut{};
+		aut.add_state(3);
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		// Add transitions from state 0
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 2);
+
+		// Create a synchronized iterator and don't synchronize it
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		// Calling unify_targets without synchronizing should return empty
+		StateSet result = sync_it.unify_targets();
+		CHECK(result.empty());
+	}
+
+	SECTION("k == 1: single post contributes all targets") {
+		Nfa aut{};
+		aut.add_state(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 3);
+		aut.delta.add(1, 'b', 2);
+
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result = sync_it.unify_targets();
+		// Only post from state 0 has symbol 'a', so result should be {1, 3}
+		StateSet expected{1, 3};
+		CHECK(result == expected);
+	}
+
+	SECTION("k == 2: merging two sorted sets with overlapping targets") {
+		Nfa aut{};
+		aut.add_state(5);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 3);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result = sync_it.unify_targets();
+		// Both have 'a': state 0 -> {1, 3}, state 1 -> {2, 3}
+		// Union should be {1, 2, 3}
+		StateSet expected{1, 2, 3};
+		CHECK(result == expected);
+	}
+
+	SECTION("k >= 3: gathering, sorting, unique with duplicates") {
+		Nfa aut{};
+		aut.add_state(6);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 3);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'a', 4);
+
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
+
+		CHECK(sync_it.synchronize_with('a'));
+		StateSet result = sync_it.unify_targets();
+		// state 0 -> {1, 3}, state 1 -> {2, 3}, state 2 -> {3, 4}
+		// Union should be {1, 2, 3, 4}
+		StateSet expected{1, 2, 3, 4};
+		CHECK(result == expected);
+	}
+
+	SECTION("Buffer reuse: a later call with three posts returns no targets of an earlier call") {
+		Nfa aut{};
+		aut.add_state(8);
+		aut.delta.add(0, 'a', 4);
+		aut.delta.add(0, 'a', 5);
+		aut.delta.add(0, 'b', 1);
+		aut.delta.add(1, 'a', 5);
+		aut.delta.add(1, 'a', 6);
+		aut.delta.add(1, 'b', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'a', 6);
+		aut.delta.add(2, 'a', 7);
+		aut.delta.add(2, 'b', 2);
+
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
+
+		REQUIRE(sync_it.synchronize_with('a'));
+		REQUIRE(sync_it.get_current().size() == 3);
+		CHECK(sync_it.unify_targets() == StateSet{4, 5, 6, 7});
+
+		// The second union is smaller and disjoint from the first, so any target kept in the buffer shows up.
+		REQUIRE(sync_it.synchronize_with('b'));
+		REQUIRE(sync_it.get_current().size() == 3);
+		CHECK(sync_it.unify_targets() == StateSet{1, 2});
+	}
+}
