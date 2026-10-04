@@ -334,4 +334,40 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 		CHECK(nfa1_1.is_identical(nfa1_2));
 		CHECK(!nfa1_2.is_identical(nfa2));
 	}
+	SECTION("random NFA attaches correct alphabet") {
+		const size_t num_of_states = 10;
+		const size_t alphabet_size = 4;
+		const double states_trans_ratio = 0.5;
+		const double final_state_density = 0.5;
+
+		Nfa nfa = builder::create_random_nfa_tabakov_vardi(
+			num_of_states, alphabet_size, states_trans_ratio, final_state_density, 42
+		);
+
+		// The alphabet should not be null and should contain exactly alphabet_size symbols.
+		REQUIRE(nfa.alphabet != nullptr);
+		const auto alphabet_symbols = nfa.alphabet->get_alphabet_symbols();
+		REQUIRE(alphabet_symbols.size() == alphabet_size);
+		// Symbols should be 0, 1, 2, 3 (in some order).
+		for (size_t i = 0; i < alphabet_size; ++i) {
+			REQUIRE(alphabet_symbols.contains(static_cast<Symbol>(i)));
+		}
+
+		// print_to_mata() should not throw.
+		std::string mata_str;
+		REQUIRE_NOTHROW(mata_str = nfa.print_to_mata());
+		REQUIRE(!mata_str.empty());
+
+		// is_complete() should not throw.
+		bool is_complete_result;
+		REQUIRE_NOTHROW(is_complete_result = nfa.is_complete(nfa.alphabet.get()));
+		// The randomly generated NFA is typically not complete, but that's okay; we just need no exception.
+
+		// make_complete() on a copy should work without throwing.
+		Nfa nfa_copy{nfa};
+		int added;
+		REQUIRE_NOTHROW(added = nfa_copy.make_complete());
+		// After make_complete, is_complete should return true.
+		REQUIRE(nfa_copy.is_complete(nfa_copy.alphabet.get()));
+	}
 }
