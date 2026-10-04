@@ -549,7 +549,7 @@ class Nft : public mata::Automaton {
 	 * in the vector.
 	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols.
+	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
@@ -564,7 +564,7 @@ class Nft : public mata::Automaton {
 	 *  @c resolve_alphabet for the resolution order).
 	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols.
+	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, const Alphabet* alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
@@ -577,7 +577,7 @@ class Nft : public mata::Automaton {
 	 * @param symbol The symbol used for the identity transition.
 	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols.
+	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);

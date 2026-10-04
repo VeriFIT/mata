@@ -259,6 +259,12 @@ Nft compose(
 	const JumpMode jump_mode,
 	const CompositionMode composition_mode
 ) {
+	if (lhs_sync_levels.size() != rhs_sync_levels.size() || lhs_sync_levels.empty()) {
+		throw std::invalid_argument(
+			"compose requires a non-empty pair of synchronization level vectors of the same size: got sizes " +
+			std::to_string(lhs_sync_levels.size()) + " and " + std::to_string(rhs_sync_levels.size()) + "."
+		);
+	}
 	switch (composition_mode) {
 		case CompositionMode::FastNoJump:
 			if (jump_mode != JumpMode::NoJump) {

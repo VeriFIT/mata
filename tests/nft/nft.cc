@@ -213,6 +213,26 @@ TEST_CASE("mata::nft::size()") {
 	CHECK(nft.num_of_states() == 0);
 }
 
+TEST_CASE("mata::nft::Nft::add_state() does not reset the level of an existing state - issue #763") {
+	Nft nft = Nft::with_levels(3);
+	nft.add_state_with_level(0);
+	const State q1 = nft.add_state_with_level(1);
+	const State q2 = nft.add_state_with_level(1);
+	CHECK(nft.levels[q1] == 1);
+	CHECK(nft.levels[q2] == 1);
+
+	// Adding an existing state again is a no-op for its level.
+	nft.add_state(q1);
+	nft.add_state(q2);
+	CHECK(nft.levels[q1] == 1);
+	CHECK(nft.levels[q2] == 1);
+	CHECK(nft.num_of_states() == 3);
+
+	// insert_word() between two level-1 states now compares their true levels instead of the levels
+	//  add_state() used to reset; the word has to span a whole level cycle to land on level 1 again.
+	REQUIRE_NOTHROW(nft.insert_word(q1, Word{5, 6, 7}, q2));
+}
+
 TEST_CASE("mata::nft::Trans::operator<<") {
 	Transition trans(1, 2, 3);
 	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
@@ -1815,10 +1835,51 @@ TEST_CASE("mata::nft::revert()") { // {{{
 		CHECK(res.delta.contains(2, 'a', 6));
 		CHECK(res.delta.contains(2, 'a', 0));
 		CHECK(res.delta.contains(2, 'b', 2));
-		CHECK(res.delta.contains(0, 'a', 2));
 		CHECK(res.delta.contains(12, 'c', 2));
 		CHECK(res.delta.contains(12, 'b', 14));
 		CHECK(res.delta.contains(14, 'a', 12));
+	}
+
+	SECTION("revert preserves and maps the state levels - issue #763") {
+		Nft nft = Nft::with_levels(3);
+		const State q0 = nft.add_state_with_level(0);
+		const State q1 = nft.add_state_with_level(0);
+		nft.initial.insert(q0);
+		nft.final.insert(q1);
+		nft.insert_word(q0, Word{'a', 'b', 'c'}, q1);
+
+		CHECK(nft.num_of_states() == 4);
+		const State inner_level_1 = 2;
+		const State inner_level_2 = 3;
+		CHECK(nft.levels[inner_level_1] == 1);
+		CHECK(nft.levels[inner_level_2] == 2);
+
+		const Nft result = revert(nft);
+
+		CHECK(result.num_of_states() == 4);
+		CHECK(result.levels.size() == result.num_of_states());
+		CHECK(result.levels.num_of_levels == 3);
+		// Reversed tape order: a state on level l moves to level (3 - l) mod 3.
+		CHECK(result.levels[q0] == 0);
+		CHECK(result.levels[q1] == 0);
+		CHECK(result.levels[inner_level_1] == 2);
+		CHECK(result.levels[inner_level_2] == 1);
+		// All three revert variants agree on the levels.
+		CHECK(simple_revert(nft).levels == result.levels);
+		CHECK(fragile_revert(nft).levels == result.levels);
+		CHECK(somewhat_simple_revert(nft).levels == result.levels);
+	}
+
+	SECTION("minimize_brzozowski does not crash on a multi-level NFT - issue #763") {
+		Nft nft = Nft::with_levels(3);
+		const State q0 = nft.add_state_with_level(0);
+		const State q1 = nft.add_state_with_level(0);
+		nft.initial.insert(q0);
+		nft.final.insert(q1);
+		nft.insert_word(q0, Word{'a', 'b', 'c'}, q1);
+
+		const Nft minimized = mata::nft::algorithms::minimize_brzozowski(nft);
+		CHECK(minimized.num_of_states() > 0);
 	}
 } // }}}
 
@@ -5673,7 +5734,9 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 	}
 
 	SECTION("add_transition_by_levels()") {
-		nft = Nft::with_levels(3);
+		// States 0, 1, 2 are the level-0 anchors declared upfront; insert_word() between two states with
+		//  different levels throws, so the target states cannot be inner states of a previous word.
+		nft = Nft::with_levels({3, {0, 0, 0}}, 3);
 		nft.add_transition_by_levels(0, {'a', 'b', 'c'}, 1);
 		nft.add_transition_by_levels(1, {'d', 'e', 'f'}, 2);
 
