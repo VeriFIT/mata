@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
-#include <queue>
 #include <stdexcept>
 #include <utility>
 
@@ -922,48 +921,40 @@ Symbol Delta::get_max_symbol() const {
 }
 
 StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
-	// TODO: decide which version performs the best.
-
 	if (!is_synchronized()) { return {}; }
 
-	StateSet unified_targets{};
+	const std::vector<StatePost::const_iterator>& current{get_current()};
 
-	// Version with synchronized iterator.
-	// static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
-	// sync_iterator.reset();
-	// size_t all_targets_size{ 0 };
-	// const std::vector<StatePost::const_iterator>& current_symbol_post_its{ this->get_current() };
-	// sync_iterator.reserve(current_symbol_post_its.size());
-	// for (const auto symbol_post_it: current_symbol_post_its) {
-	//     sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
-	//     all_targets_size += symbol_post_it->num_of_targets();
-	// }
-	// unified_targets.reserve(all_targets_size);
-	// while (sync_iterator.advance()) { unified_targets.push_back(*sync_iterator.get_current_minimum()); }
+	// One synchronized post contributes all its targets, already sorted and deduplicated.
+	if (current.size() == 1) { return current[0]->targets; }
 
-	// Version with set union.
-	// for (const auto& symbol_post_it: get_current()) {
-	//     unified_targets.insert(symbol_post_it->targets);
-	// }
-
-	// Version with priority queue.
-	using TargetSetBeginEndPair = std::pair<StateSet::const_iterator, StateSet::const_iterator>;
-	auto compare = [](const auto& a, const auto& b) { return *(a.first) > *(b.first); };
-	std::priority_queue<TargetSetBeginEndPair, std::vector<TargetSetBeginEndPair>, decltype(compare)> queue(compare);
-	for (const StatePost::const_iterator& symbol_post_it : get_current()) {
-		queue.emplace(symbol_post_it->cbegin(), symbol_post_it->cend());
-	}
-	unified_targets.reserve(32);
-	while (!queue.empty()) {
-		auto item = queue.top();
-		queue.pop();
-		if (unified_targets.empty() || unified_targets.back() != *(item.first)) {
-			unified_targets.push_back(*(item.first));
-		}
-		if (++item.first != item.second) { queue.emplace(item); }
+	// Two posts merge with one linear pass over both sorted target sets.
+	if (current.size() == 2) {
+		const StateSet& lhs{current[0]->targets};
+		const StateSet& rhs{current[1]->targets};
+		StateSet result{StateSet::with_reserved(lhs.size() + rhs.size())};
+		std::ranges::set_union(lhs, rhs, std::back_inserter(result));
+		return result;
 	}
 
-	return unified_targets;
+	// Three or more posts: gather into the reused buffer, then sort and deduplicate once. A k-way merge
+	//  through a priority queue costs a heap operation per target and allocates the heap on every call.
+	unify_buffer_.clear();
+	size_t num_of_targets{0};
+	for (const StatePost::const_iterator& symbol_post_it : current) {
+		num_of_targets += symbol_post_it->num_of_targets();
+	}
+	unify_buffer_.reserve(num_of_targets);
+	for (const StatePost::const_iterator& symbol_post_it : current) {
+		for (const State target : symbol_post_it->targets) { unify_buffer_.push_back(target); }
+	}
+	std::ranges::sort(unify_buffer_);
+	const auto duplicates{std::ranges::unique(unify_buffer_)};
+	unify_buffer_.erase(duplicates.begin(), duplicates.end());
+	// The buffer is reused by the next call, so its content is copied out rather than moved.
+	StateSet result{StateSet::with_reserved(unify_buffer_.size())};
+	for (const State target : unify_buffer_) { result.push_back(target); }
+	return result;
 }
 
 bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const Symbol sync_symbol) {
