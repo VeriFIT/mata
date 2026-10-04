@@ -1,0 +1,97 @@
+name: performance
+
+# A/B performance comparison of the base branch against the head of a PR.
+# Unlike the old code-quality.yml jobs, the base and the head build and benchmark
+# in ONE job, so both run on the very same runner and machine-to-machine variance
+# does not leak into the comparison.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base ref to compare the current ref against"
+        required: false
+        default: "devel"
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: performance-${{ (github.event_name == 'pull_request' && github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  a-b-comparison:
+    # For pull requests, run only when the PR carries the 'performance' label.
+    if: >-
+      ${{
+        github.event_name != 'pull_request'
+        || contains(github.event.pull_request.labels.*.name, 'performance')
+      }}
+    runs-on: ubuntu-latest
+    env:
+      TIMEOUT_S: 60
+      THRESHOLD: "1.10"
+    steps:
+      - name: Check out head
+        uses: actions/checkout@v6
+        with:
+          path: head
+          submodules: recursive
+          # If PR, checkout the PR's repo (needed for PRs coming from forks).
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check out base
+        uses: actions/checkout@v6
+        with:
+          path: base
+          submodules: recursive
+          repository: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.base.sha || inputs.base_ref || github.base_ref || 'devel' }}
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build
+          python -m pip install --upgrade pip
+          pip install pandas numpy tabulate psutil pyyaml termcolor
+
+      - name: Build base
+        working-directory: base
+        run: make release JOBS=2
+
+      - name: Build head
+        working-directory: head
+        run: make release JOBS=2
+
+      # A curated, fast benchmark set: a single-parameter job suite only, run for the base
+      # and the head on this very runner, on the same inputs, back to back.
+      - name: Benchmark base
+        working-directory: base
+        run: |
+          ./tests-integration/pycobench -c "build/tests-integration/jobs/corr-single-param-jobs.yaml" \
+            < "build/tests-integration/inputs/single-automata.input" \
+            -o ./base-single.out
+          ./tests-integration/pyco_proc --csv ./base-single.out > $GITHUB_WORKSPACE/base-single.csv
+
+      - name: Benchmark head
+        working-directory: head
+        run: |
+          ./tests-integration/pycobench -c "build/tests-integration/jobs/corr-single-param-jobs.yaml" \
+            < "build/tests-integration/inputs/single-automata.input" \
+            -o ./head-single.out
+          ./tests-integration/pyco_proc --csv ./head-single.out > $GITHUB_WORKSPACE/head-single.csv
+
+      # A timeout or an error costs twice the timeout (PAR-2) instead of vanishing from the
+      # mean; the job fails when any metric regresses beyond the threshold.
+      - name: Compare base against head
+        working-directory: head
+        run: >-
+          ./tests-integration/pycobench/src/compare_profiles.py
+          --timeout "$TIMEOUT_S" --threshold "$THRESHOLD"
+          "$GITHUB_WORKSPACE/head-single.csv" "$GITHUB_WORKSPACE/base-single.csv"
