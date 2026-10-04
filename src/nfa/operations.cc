@@ -1282,10 +1282,13 @@ std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
 
 void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	for (const StatePost& state_post : this->delta) {
+	for (const StatePost& state_post : this->delta) {
 		for (const SymbolPost& symbol_post : state_post) {
+			if (symbol_post.symbol == EPSILON) { continue; }
 			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
 			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
 		}
+	}
 	}
 }
 

@@ -9,10 +9,12 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nft/nft.hh"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
 using namespace mata::nfa;
+using namespace mata::nft;
 using namespace mata::utils;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
@@ -195,5 +197,70 @@ TEST_CASE("mata::Alphabet streaming - #760") {
 		std::ostringstream out;
 		out << alphabet;
 		CHECK(out.str() == "IntAlphabet");
+	}
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet::next symbol value") {
+	SECTION("the symbol map constructor updates the next symbol value") {
+		OnTheFlyAlphabet alphabet{OnTheFlyAlphabet::StringToSymbolMap{{"a", 0}, {"b", 1}}};
+		CHECK(alphabet.get_next_value() == 2);
+		CHECK(alphabet.translate_symb("a") == 0);
+		CHECK(alphabet.translate_symb("b") == 1);
+		CHECK(alphabet.translate_symb("c") == 2);
+		CHECK(alphabet.get_number_of_symbols() == 3);
+	}
+
+	SECTION("create_alphabet() does not turn EPSILON into a letter") {
+		nfa::Nfa aut{2};
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 5, 1);
+		aut.delta.add(0, nfa::EPSILON, 1);
+		OnTheFlyAlphabet alphabet{nfa::create_alphabet(aut)};
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{5});
+		CHECK(alphabet.get_number_of_symbols() == 1);
+		CHECK(alphabet.translate_symb("new") == 6);
+	}
+
+	SECTION("Nft::fill_alphabet() does not turn DONT_CARE into a letter") {
+		nft::Nft transducer{nft::Nft::with_levels(2, 3)};
+		transducer.initial.insert(0);
+		transducer.final.insert(2);
+		transducer.delta.add(0, 5, 1);
+		transducer.delta.add(1, DONT_CARE, 2);
+		OnTheFlyAlphabet alphabet{};
+		transducer.fill_alphabet(alphabet);
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{5});
+		CHECK(alphabet.translate_symb("new") == 6);
+	}
+
+	SECTION("get_number_of_symbols() counts the symbols, not the counter") {
+		OnTheFlyAlphabet alphabet{100};
+		alphabet.add_new_symbol("x");
+		alphabet.add_new_symbol("y");
+		CHECK(alphabet.get_number_of_symbols() == 2);
+		CHECK(alphabet.get_next_value() == 102);
+		CHECK(alphabet.erase("x") == 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("an exhausted symbol space is reported instead of handing out EPSILON") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("almost_epsilon", nfa::EPSILON - 1);
+		CHECK(alphabet.get_next_value() == nfa::EPSILON);
+		CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("an explicitly added EPSILON does not wrap the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("a", 3);
+		// Adding EPSILON directly does not advance counter (EPSILON is not < max_symbol)
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		// Counter stays at 4 (one above symbol 3)
+		CHECK(alphabet.get_next_value() == 4);
+		// But translate_symb still throws because counter < max_symbol is still true
+		CHECK(alphabet.translate_symb("new") == 4);
 	}
 }
