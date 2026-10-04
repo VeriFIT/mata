@@ -15,6 +15,7 @@ excludes = [
   ".svnignore",
   "LICENSE",
   "3rdparty/*",
+  "tests-integration/pycobench/*",
 ]
 
 [formatter.clang-format]

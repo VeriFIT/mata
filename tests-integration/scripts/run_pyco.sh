@@ -92,7 +92,7 @@ prepend_directory() {
 # Check that dependencies for running pycobench were installed
 
 tmp_output=$(mktemp)
-"$rootdir/"pycobench >& "$tmp_output"
+"$rootdir/"pycobench/src/pycobench.py >& "$tmp_output"
 if grep -q ModuleNotFoundError "$tmp_output"; then
   echo "[!] Your system is missing python modules for running pycobench."
   read -rp "Do you wish to install these requirements? [y/n] " choice
@@ -129,19 +129,19 @@ do
     echo "[!] Performing benchmarks"
     sub_result_file="$result_file.output"
     intermediate+=( "$sub_result_file" )
-    "$rootdir/"pycobench "${methods_args[@]}" -j "$jobs" -c "$config" -t "$timeout" -o "$sub_result_file" < "$benchmark_file"
+    "$rootdir/"pycobench/src/pycobench.py "${methods_args[@]}" -j "$jobs" -c "$config" -t "$timeout" -o "$sub_result_file" < "$benchmark_file"
 
     number_of_params=$(($(head -1 < "$benchmark_file"  | tr -cd ';' | wc -c) + 1))
 
     echo "[!] Benchmark measured"
-    "$basedir"/process_pyco.sh -o "$result_file.csv" -p "$number_of_params" "${intermediate[@]}"
+    python3 "$rootdir/"pycobench/src/pyco_proc.py --csv --params-num "$number_of_params" --output "$result_file.csv" "$sub_result_file"
     echo "[!] Benchmark processed"
 
     # All intermediate files are deleted
     rm "${intermediate[@]}"
 done
 
-python3 "$basedir"/compare_profiles.py "$result_file.csv"
+python3 "$rootdir/"pycobench/src/compare_profiles.py "$result_file.csv"
 
 secs=$((SECONDS - start_time))
 formated_elapsed=$(printf "%dd:%dh:%dm:%ds\n" $((secs/86400)) $((secs%86400/3600)) $((secs%3600/60)) $((secs%60)))

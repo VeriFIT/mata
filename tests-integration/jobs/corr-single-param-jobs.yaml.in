@@ -1,3 +1,7 @@
+# Mata engines return 0 on success and a nonzero code only on failure.
+defaults:
+  accepted_return_codes: [0]
+
 nfa:
   cmd: @CMAKE_CURRENT_BINARY_DIR@/nfa-operations $1
 

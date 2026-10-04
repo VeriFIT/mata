@@ -95,11 +95,13 @@ test-coverage:
 # The job and input files are generated into `$(BUILD_DIR)/tests-integration`, so the benchmarks that
 #  run here are always the ones built in `$(BUILD_DIR)`.
 BENCH_DIR = $(BUILD_DIR)/tests-integration
+PYCOBENCH = ./tests-integration/pycobench/src/pycobench.py
+PYCO_PROC = ./tests-integration/pycobench/src/pyco_proc.py
 test-performance:
-	./tests-integration/pycobench -c "$(BENCH_DIR)/jobs/corr-single-param-jobs.yaml" < "$(BENCH_DIR)/inputs/single-automata.input" -o ./tests-integration/results/corr-single-param-jobs.out
-	./tests-integration/pyco_proc --csv ./tests-integration/results/corr-single-param-jobs.out > ./tests-integration/results/corr-single-param-jobs.csv
-	./tests-integration/pycobench -c "$(BENCH_DIR)/jobs/corr-double-param-jobs.yaml" < "$(BENCH_DIR)/inputs/double-automata.input" -o ./tests-integration/results/corr-double-param-jobs.out
-	./tests-integration/pyco_proc --csv --param-no 2 ./tests-integration/results/corr-double-param-jobs.out > ./tests-integration/results/corr-double-param-jobs.csv
+	$(PYCOBENCH) -c "$(BENCH_DIR)/jobs/corr-single-param-jobs.yaml" < "$(BENCH_DIR)/inputs/single-automata.input" -o ./tests-integration/results/corr-single-param-jobs.out
+	$(PYCO_PROC) --csv ./tests-integration/results/corr-single-param-jobs.out > ./tests-integration/results/corr-single-param-jobs.csv
+	$(PYCOBENCH) -c "$(BENCH_DIR)/jobs/corr-double-param-jobs.yaml" < "$(BENCH_DIR)/inputs/double-automata.input" -o ./tests-integration/results/corr-double-param-jobs.out
+	$(PYCO_PROC) --csv --params-num 2 ./tests-integration/results/corr-double-param-jobs.out > ./tests-integration/results/corr-double-param-jobs.csv
 
 # Runs cppcheck over the compilation database of an already configured build directory. Mata always
 #  configures with `CMAKE_EXPORT_COMPILE_COMMANDS=ON`, so no reconfiguration is needed here.

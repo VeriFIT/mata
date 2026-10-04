@@ -10,7 +10,10 @@
       treefmt = {
         projectRootFile = ".git/config";
         settings = {
-          excludes = [ "3rdparty/*" ];
+          excludes = [
+            "3rdparty/*"
+            "tests-integration/pycobench/*"
+          ];
           allow-missing-formatter = true;
         };
         programs = {
