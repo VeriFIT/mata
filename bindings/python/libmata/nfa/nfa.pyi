@@ -452,7 +452,9 @@ class Nfa:
         that is represented as graph with edges (source, target) with
         additional properties.
 
-        Each symbol is added as an property to each edge.
+        Each symbol is added as a property to each edge. If multiple symbols
+        exist on the same edge, they are accumulated into a sorted 'symbols' list.
+        Single-symbol edges retain the scalar 'symbol' attribute for compatibility.
 
         :return:
         """
@@ -533,11 +535,12 @@ class Nfa:
         """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
     def get_words_lazy(self, max_length: int | None = None) -> Iterator[tuple[Symbol, ...]]:
         """Lazily enumerate the words in the language of the automaton whose length is <= `max_length`."""
-    def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> None:
+    def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> bool:
         """Makes NFA complete.
 
         :param Symbol sink_state: sink state of the automaton
         :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
+        :return: True if the automaton was modified, False if already complete.
         """
     def get_symbols(self) -> set[Symbol]:
         """Return a set of symbols used on the transitions in NFA.
