@@ -12,6 +12,10 @@ inputs:
     description: "Version tag to write to the VERSION file (e.g. v1.2.3)."
     required: false
     default: "v0.0.0-dev.1"
+  install-binding:
+    description: "Whether to install the Python binding (pip install ./); set to false for jobs that only need test dependencies"
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
@@ -29,7 +33,9 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-        make -C bindings/python init
+        if [ "${{ inputs.install-binding }}" = "true" ]; then
+          make -C bindings/python init
+        fi
     - name: Building MacOS dependencies
       if: ${{ inputs.os == 'macos-latest' }}
       shell: bash
@@ -40,8 +46,8 @@ runs:
       run: |
         sudo apt -qq update
         sudo apt -qq install -y graphviz graphviz-dev
-    - name: Install Python Dependencies
+    - name: Install Python test and documentation dependencies
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install setuptools wheel twine
+        python3 -m pip install setuptools wheel twine pytest pytest-cov ipykernel pandas seaborn papermill sphinx breathe

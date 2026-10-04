@@ -2027,8 +2027,8 @@ TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{
 		Nfa foreign_aut(2);
 		foreign_aut.initial = {0};
 		foreign_aut.final = {1};
-		foreign_aut.delta.add(0, alph["a"], 1);  // 'a' is in the alphabet
-		foreign_aut.delta.add(0, 25, 1);          // 'z' (symbol 25) is NOT in the alphabet {a=0, b=1}
+		foreign_aut.delta.add(0, alph["a"], 1); // 'a' is in the alphabet
+		foreign_aut.delta.add(0, 25, 1); // 'z' (symbol 25) is NOT in the alphabet {a=0, b=1}
 
 		REQUIRE(foreign_aut.is_deterministic());
 
@@ -2038,7 +2038,7 @@ TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{
 
 		// The result should NOT accept 'za' because 'z' is not in the alphabet
 		// Foreign symbols are dropped, so the result is over alphabet {a, b} only
-		Word za_word{25, alph["a"]};  // 'z', 'a'
+		Word za_word{25, alph["a"]}; // 'z', 'a'
 		// After dropping foreign symbols, the automaton only has transition 0 -a-> 1
 		// After complement, it accepts everything except words starting with 'a'
 		// So 'za' (which becomes just 'a' after symbol 25 is dropped) should NOT be accepted
@@ -2050,7 +2050,7 @@ TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{
 	SECTION("NFA - uses classical/brzozowski algorithm") {
 		// Build an NFA
 		aut = Nfa(3);
-		aut.initial = {0, 1};  // Multiple initial states -> nondeterministic
+		aut.initial = {0, 1}; // Multiple initial states -> nondeterministic
 		aut.final = {2};
 		aut.delta.add(0, alph["a"], 2);
 		aut.delta.add(1, alph["a"], 2);
@@ -2067,7 +2067,7 @@ TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{
 		// DFA that accepts nothing
 		aut = Nfa(2);
 		aut.initial = {0};
-		aut.final = {};  // No final states
+		aut.final = {}; // No final states
 		aut.delta.add(0, alph["a"], 1);
 		aut.delta.add(1, alph["b"], 0);
 
@@ -2085,7 +2085,7 @@ TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{
 		// DFA that accepts everything (complete and all states final)
 		aut = Nfa(2);
 		aut.initial = {0};
-		aut.final = {0, 1};  // All states final
+		aut.final = {0, 1}; // All states final
 		aut.delta.add(0, alph["a"], 1);
 		aut.delta.add(0, alph["b"], 0);
 		aut.delta.add(1, alph["a"], 0);
@@ -2102,7 +2102,7 @@ TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{
 	SECTION("no initial state") {
 		// DFA with no initial state (undefined behavior - result should still be deterministic)
 		aut = Nfa(2);
-		aut.initial = {};  // No initial state
+		aut.initial = {}; // No initial state
 		aut.final = {1};
 		aut.delta.add(0, alph["a"], 1);
 
@@ -3679,7 +3679,7 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 			Nfa nfa(5);
 			nfa.initial.insert(0);
 			for (State state{0}; state < 5; ++state) {
-				for (const Symbol symbol : {'a', 'b'}) {
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
 					nfa.delta.add(state, symbol, static_cast<State>(state_dist(gen)));
 				}
 				if (gen() % 3 == 0) { nfa.final.insert(state); }
@@ -5971,7 +5971,7 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 	SECTION("Randomized: 50 random graphs") {
 		std::mt19937 gen(42); // Deterministic seed
 		for (int test = 0; test < 50; ++test) {
-			const size_t num_states = std::uniform_int_distribution<>(5, 50)(gen);
+			const size_t num_states = std::uniform_int_distribution<size_t>(5, 50)(gen);
 			Nfa aut(num_states);
 
 			// Random initials and finals
