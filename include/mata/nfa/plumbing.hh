@@ -42,7 +42,7 @@ inline void complement(
 	*result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Nfa* res, const Nfa& aut, const ParameterMap& params = {{"algorithm", "brzozowski"}}) {
+inline void minimize(Nfa* res, const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}}) {
 	*res = minimize(aut, params);
 }
 

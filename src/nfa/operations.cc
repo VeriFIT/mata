@@ -624,10 +624,24 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
 	return determinize(revert(determinize(revert(aut))));
 }
 
+Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
+	// Brzozowski determinizes twice, so it can blow up exponentially even on an input that already is a trimmed
+	//  DFA; Hopcroft is O(a*n*log(n)) on such an input and supports partial transition functions, so the
+	//  determinization is only needed when the input is not deterministic.
+	Nfa deterministic{aut.is_deterministic() ? aut : determinize(aut)};
+	deterministic.trim();
+	if (deterministic.num_of_states() == 0) {
+		// Trimming an automaton with an empty language removes every state. Return the canonical automaton of the
+		//  empty language instead, so that the result is a usable automaton with a single non-final initial state.
+		Nfa empty_language{1};
+		empty_language.initial.insert(0);
+		return empty_language;
+	}
+	return minimize_hopcroft(deterministic);
+}
+
 Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
-	Nfa result;
-	// setting the default algorithm
-	decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
+	decltype(algorithms::minimize_auto)* algo = algorithms::minimize_auto;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
 			std::to_string(__func__) +
@@ -637,7 +651,9 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 		);
 	}
 
-	if (const std::string& str_algo = params.at("algorithm"); "brzozowski" == str_algo) { /* default */
+	if (const std::string& str_algo = params.at("algorithm"); "auto" == str_algo) { /* default */
+	} else if ("brzozowski" == str_algo) {
+		algo = algorithms::minimize_brzozowski;
 	} else if ("hopcroft" == str_algo) {
 		algo = algorithms::minimize_hopcroft;
 	} else {

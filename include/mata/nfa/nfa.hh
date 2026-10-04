@@ -984,10 +984,15 @@ Nfa complement(
  *
  * @param[in] aut Automaton whose minimal version to compute.
  * @param[in] params Optional parameters to control the minimization algorithm:
- * - "algorithm": "brzozowski"
+ * - "algorithm":
+ *   - "auto" (default): determinize the automaton if it is not deterministic, trim it, and run Hopcroft
+ *     minimization. An automaton with an empty language is returned as a single non-final initial state.
+ *   - "hopcroft": Hopcroft minimization; the input must be a trimmed deterministic automaton.
+ *   - "brzozowski": revert, determinize, revert, determinize. Accepts any automaton, but determinizes twice and
+ *     can therefore blow up exponentially, even on an input that already is a trimmed deterministic automaton.
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "brzozowski"}});
+Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}});
 
 /**
  * @brief Determinize automaton.

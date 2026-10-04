@@ -1272,11 +1272,14 @@ def minimize(Nfa lhs, params = None):
     :param Nfa lhs: automaton to be minimized
     :param Dict params: Additional parameters for the minimization operation:
       - "algorithm":
-        - "brzozowski": The Brzozowski minimization algorithm.
+        - "auto": Determinize the automaton if it is not deterministic, trim it, and minimize it with Hopcroft.
+          An automaton with an empty language is returned as a single non-final initial state. This is the default.
         - "hopcroft": The Hopcroft minimization algorithm, only works on trimmed (no useless states) DFAs as input.
+        - "brzozowski": The Brzozowski minimization algorithm. Accepts any automaton, but determinizes twice and
+          can blow up exponentially even on an input that already is a trimmed DFA.
     :return: minimized automaton
     """
-    params = params or {"algorithm": "brzozowski"}
+    params = params or {"algorithm": "auto"}
     result = Nfa()
     mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()),
         {

@@ -40,6 +40,18 @@ Nfa minimize_brzozowski(const Nfa& aut);
 Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
 
 /**
+ * @brief Minimization that picks the algorithm from the shape of the input.
+ *
+ * Determinizes @p aut when it is not deterministic already, trims it, and runs Hopcroft minimization on the
+ *  result. Brzozowski minimization is never picked: it determinizes twice, so it can blow up exponentially even
+ *  on an input that is already a trimmed DFA, where Hopcroft is O(a*n*log(n)).
+ * An automaton with an empty language is returned as a single non-final initial state with no transitions.
+ * @param[in] aut Automaton to be minimized.
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize_auto(const Nfa& aut);
+
+/**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
  *  which were non-final in the original automaton.
  * @param[in] aut Automaton to be complemented.
