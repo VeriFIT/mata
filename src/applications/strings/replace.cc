@@ -290,7 +290,7 @@ Nft mata::applications::strings::replace::replace_reluctant_regex(
 }
 
 nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
-	if (!regex.is_deterministic()) { regex = determinize(regex); }
+	regex = as_dfa(std::move(regex));
 	for (const State orig_final : regex.final) {
 		const State new_final = regex.add_state();
 		regex.final.insert(new_final);
@@ -327,7 +327,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(const std::string& regex, const Al
 }
 
 nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, const Alphabet* const alphabet) {
-	if (!regex.is_deterministic()) { regex = determinize(regex); }
+	regex = as_dfa(std::move(regex));
 
 	const utils::OrdVector<Symbol> alphabet_symbols{alphabet->get_alphabet_symbols()};
 	nfa::Nfa dfa_generic_end_marker{};
