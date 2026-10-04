@@ -209,7 +209,7 @@ extensions = [
         sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"] + project_sources,
         include_dirs=project_includes,
         language="c++",
-        extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
+        extra_compile_args=["-std=c++20"],
     ) for pkg in (
         'nfa.nfa', 'alphabets', 'utils', 'parser', 'nfa.strings', 'plotting', 'module'
     )

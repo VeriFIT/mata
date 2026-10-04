@@ -1,4 +1,3 @@
-import tabulate
 
 from cython.operator import dereference
 
@@ -158,4 +157,10 @@ cdef class BinaryRelation:
         return projection
 
     def __str__(self):
+        try:
+            import tabulate
+        except ImportError as error:
+            raise ImportError(
+                "Printing a BinaryRelation needs tabulate: install it with \"pip install libmata[pandas]\"."
+            ) from error
         return str(tabulate.tabulate(self.to_matrix()))
