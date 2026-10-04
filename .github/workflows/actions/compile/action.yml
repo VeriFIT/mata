@@ -1,14 +1,29 @@
 name: Compile Mata
 description: Build the Mata library, unit tests, benchmarks and examples, keeping the diagnostics in `build_log`.
+inputs:
+  target:
+    description: "CMake target to build (e.g. 'tests', 'all'); default is 'all'"
+    required: false
+    default: "all"
+  werror:
+    description: "Enable -Werror (treat warnings as errors)"
+    required: false
+    default: "false"
 runs:
   using: "composite"
   steps:
-    - name: Compile the static and shared libraries, tests, benchmarks and examples
+    - name: Compile the specified target with optional -Werror
       shell: sh
       # `2>&1` is load-bearing: GCC and Clang print diagnostics to stderr, so plain `> build_log`
       #  stored a log without a single warning in it and the warning comparison below always found
       #  nothing to report, no matter how many warnings the build produced.
-      run: make release > build_log 2>&1 || { cat build_log; exit 1; }
+      run: |
+        WERROR_FLAG=""
+        if [ "${{ inputs.werror }}" = "true" ]; then
+          WERROR_FLAG="-DMATA_WERROR:BOOL=ON"
+        fi
+        cmake -B build -S . $WERROR_FLAG
+        cmake --build build --target ${{ inputs.target }} --parallel 6 > build_log 2>&1 || { cat build_log; exit 1; }
     - name: Print the build log
       shell: sh
       run: cat build_log

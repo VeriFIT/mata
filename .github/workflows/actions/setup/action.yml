@@ -12,21 +12,21 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Set Homebrew environment (macOS)
+      if: ${{ inputs.os == 'macos-latest' }}
+      shell: sh
+      run: echo "HOMEBREW_NO_AUTO_UPDATE=1" >> "$GITHUB_ENV"
     - name: Building MacOS dependencies
       if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
-      run: brew install lcov gcovr automake
-    - name: Building Unix dependencies
-      if: ${{ inputs.os == 'ubuntu-latest' }}
-      shell: sh
-      run: sudo apt install -y build-essential lcov gcovr xdg-utils
+      run: brew install llvm
     # Mata uses C++23. The distro's default gcc/g++ (unversioned) can lag behind, so pick the
     #  newest versioned gcc-<N>/g++-<N> package available in apt instead of hardcoding a version.
     - name: Select GCC (Linux)
       if: ${{ inputs.os == 'ubuntu-latest' && inputs.compiler == 'gcc' }}
       shell: sh
       run: |
-        sudo apt update
+        sudo apt-get update
         GCC_VER="$(apt-cache search --names-only '^gcc-[0-9]+$' | awk '{print $1}' | sed 's/^gcc-//' | sort -n | tail -n 1)"
         sudo apt install -y "gcc-$GCC_VER" "g++-$GCC_VER"
         echo "CC=gcc-$GCC_VER" >> "$GITHUB_ENV"
@@ -38,7 +38,7 @@ runs:
       if: ${{ inputs.os == 'ubuntu-latest' && inputs.compiler == 'clang' }}
       shell: sh
       run: |
-        sudo apt update
+        sudo apt-get update
         CLANG_VER="$(apt-cache search --names-only '^clang-[0-9]+$' | awk '{print $1}' | sed 's/^clang-//' | sort -n | tail -n 1)"
         GCC_VER="$(apt-cache search --names-only '^gcc-[0-9]+$' | awk '{print $1}' | sed 's/^gcc-//' | sort -n | tail -n 1)"
         sudo apt install -y "clang-$CLANG_VER" "g++-$GCC_VER"
@@ -54,7 +54,6 @@ runs:
       if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
       run: |
-        brew install llvm
         LLVM_PREFIX="$(brew --prefix llvm)"
         echo "CC=$LLVM_PREFIX/bin/clang" >> "$GITHUB_ENV"
         echo "CXX=$LLVM_PREFIX/bin/clang++" >> "$GITHUB_ENV"

@@ -16,20 +16,24 @@ runs:
     - uses: ./.github/workflows/actions/setup
       with:
         os: ${{ inputs.os }}
-    - name: Setup Python environment
+    - name: Install Doxygen
+      uses: ssciwr/doxygen-install@v1
+    - name: Setup Python environment (docs-only dependencies, no binding)
       uses: ./.github/workflows/actions/setup-python
       with:
         os: ${{ inputs.os }}
         python-version: ${{ inputs.python-version }}
-    - name: Install Python Dependencies for documentation build
+        install-binding: "false"
+    - name: Configure for documentation
       shell: bash
       run: |
-        python3 -m pip install --upgrade pip
-        make -C docs init
-    - uses: ssciwr/doxygen-install@v1
-    - name: Compile the documentation
+        cmake -B build -S . \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_TESTING=OFF \
+          -DMATA_BUILD_EXAMPLES=OFF
+    - name: Generate Doxygen documentation
       shell: bash
-      run: |
-        python3 -m pip install --upgrade pip
-        make docs
-        make -C docs/ html
+      run: cmake --build build --target docs
+    - name: Generate Sphinx documentation
+      shell: bash
+      run: make -C docs html
