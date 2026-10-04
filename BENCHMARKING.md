@@ -241,6 +241,74 @@ For additional details, see tests-integration README and our replication package
 
 - Use the [`hyperfine`](https://github.com/sharkdp/hyperfine) tool to manually measure the run time of a binary.
 
+## Optional optimization settings
+
+A Release build uses `-O3 -DNDEBUG` and nothing else. The following switches are off by default and
+have to be enabled explicitly; always report a measurement together with the configuration,
+compiler and compiler version it was taken with.
+
+| Option             | Values                                 | Effect                                                                                                |
+| ------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `MATA_ENABLE_IPO`  | `ON`/`OFF` (default `OFF`)             | Interprocedural (link-time) optimization of `libmata` and the integration benchmarks                  |
+| `MATA_ARCH_NATIVE` | `ON`/`OFF` (default `OFF`)             | `-march=native`, for local measurements only                                                          |
+| `MATA_PGO`         | `off`/`generate`/`use` (default `off`) | Profile-guided optimization stage                                                                     |
+| `MATA_USE_CCACHE`  | `ON`/`OFF` (default `ON`)              | Use `ccache` as the compiler launcher when it is installed; turn it off to measure cold compile times |
+
+Each is a `make` variable as well, so a build directory keeps a predictable configuration:
+
+```sh
+make release MATA_ENABLE_IPO=ON
+make release MATA_ARCH_NATIVE=ON
+```
+
+`MATA_ARCH_NATIVE` is attached privately, so it never reaches `mataTargets.cmake` and a consumer of
+an installed Mata never inherits it. A binary built with it may crash on an older CPU, so released
+packages must not use it.
+
+`MATA_ENABLE_IPO` adds `-ffat-lto-objects` on GCC. Without it, CMake's `-fno-fat-lto-objects` would
+leave `libmata.a` holding compiler bytecode only, and every consumer — the Python extension, an
+external `find_package(mata)` user, Z3-Noodler — would have to link with the matching compiler's
+LTO plugin.
+
+### Profile-guided optimization
+
+PGO is a two-stage build: an instrumented binary records which branches and functions are hot, and
+a second build is optimized for that behaviour. `just cpp::pgo` runs both stages and the training
+in between:
+
+```sh
+just cpp::pgo release './tests/tests'                 # train on the unit tests
+just cpp::pgo release './tests-integration/bench-automata-inclusion <args>'
+```
+
+The result is left in `build/<mode>/<compiler>-pgo`. The stages can also be driven directly:
+
+```sh
+make release BUILD_DIR=build-pgo MATA_PGO=generate
+( cd build-pgo && ./tests/tests )                     # the training run
+# Clang: merge raw profiles; GCC's .gcda files need no merge.
+llvm-profdata merge -output=build-pgo/pgo/mata.profdata build-pgo/pgo/*.profraw
+make release BUILD_DIR=build-pgo MATA_PGO=use
+```
+
+Rules for a PGO result that means anything:
+
+- Train and evaluate on **disjoint** inputs. Training and measuring on the same automata overfits
+  and the number does not reproduce on new data.
+- A profile belongs to one exact compiler version and source tree. It is never installed and never
+  committed; `MATA_PGO_DIR` (default `<build>/pgo`) holds it.
+- A `MATA_PGO=generate` build emits a configure-time warning: it produces an instrumented library
+  that writes profile data at runtime, and is not a deployable artefact. Install or package a
+  `MATA_PGO=use` or `MATA_PGO=off` build instead.
+- If the training command succeeds without running an instrumented binary (e.g. no `-fprofile-*`
+  in the generated flags, or the binary skips the hot code), the `just cpp::pgo` recipe detects
+  the missing profile data and errors out with the expected location, before starting the use stage.
+- Record compiler, flags, corpus revision and the profile hash next to the measurement.
+- GCC's `use` stage adds `-fprofile-partial-training`, so code the training run never reached is
+  still optimized for speed instead of size.
+- Keep a plain Release baseline and compare baseline, IPO, PGO and IPO+PGO; a flag change can
+  otherwise hide whether a source change really helped.
+
 ## Profiling
 
 We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using macOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
