@@ -651,6 +651,7 @@ cdef class Nfa:
     def unify_final(self, bool force_new_state = False) -> Nfa:
         """Unify final states into a single new final state."""
         self.thisptr.get().unify_final(force_new_state)
+        return self
 
     def add_transition_object(self, Transition tr):
         """Adds transition to automaton
@@ -925,8 +926,10 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in self.thisptr.get().final])
         result += "transitions:\n"
         for trans in self.iterate():
-            symbol = trans.symbol if self.thisptr.get().alphabet.get() == NULL \
-                else self.thisptr.get().alphabet.get().reverse_translate_symbol(trans.symbol)
+            if self.thisptr.get().alphabet.get() == NULL:
+                symbol = trans.symbol
+            else:
+                symbol = self.thisptr.get().alphabet.get().reverse_translate_symbol(trans.symbol).decode('utf-8')
             result += f"{trans.source}-[{symbol}]\u2192{trans.target}\n"
         return result
 
@@ -1000,13 +1003,30 @@ cdef class Nfa:
         that is represented as graph with edges (source, target) with
         additional properties.
 
-        Each symbol is added as an property to each edge.
+        Each symbol is added as a property to each edge. If multiple symbols
+        exist on the same edge, they are accumulated into a sorted 'symbols' list.
+        Single-symbol edges retain the scalar 'symbol' attribute for compatibility.
 
         :return:
         """
-        G = nx.DiGraph()
+        # Accumulate symbols per (source, target) pair.
+        edge_symbols = {}
         for trans in self.iterate():
-            G.add_edge(trans.source, trans.target, symbol=trans.symbol)
+            key = (trans.source, trans.target)
+            if key not in edge_symbols:
+                edge_symbols[key] = []
+            edge_symbols[key].append(trans.symbol)
+
+        G = nx.DiGraph()
+        # Add edges with sorted symbols list, and scalar symbol for single-symbol edges.
+        edges_to_add = []
+        for (source, target), symbols in edge_symbols.items():
+            symbols_sorted = sorted(set(symbols))
+            attrs = {"symbols": symbols_sorted}
+            if len(symbols_sorted) == 1:
+                attrs["symbol"] = symbols_sorted[0]
+            edges_to_add.append((source, target, attrs))
+        G.add_edges_from(edges_to_add)
         return G
 
     def post_map_of(self, State st, alph.Alphabet alphabet):
@@ -1157,15 +1177,16 @@ cdef class Nfa:
         finally:
             del it
 
-    def make_complete(self, State sink_state, alph.Alphabet alphabet):
+    def make_complete(self, State sink_state, alph.Alphabet alphabet) -> bool:
         """Makes NFA complete.
 
         :param Symbol sink_state: sink state of the automaton
         :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
+        :return: True if the automaton was modified, False if already complete.
         """
         if not self.thisptr.get().is_state(sink_state):
             self.thisptr.get().add_state(self.thisptr.get().num_of_states())
-        self.thisptr.get().make_complete(alphabet.as_base().get(), make_optional[State](sink_state))
+        return self.thisptr.get().make_complete(alphabet.as_base().get(), make_optional[State](sink_state))
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
