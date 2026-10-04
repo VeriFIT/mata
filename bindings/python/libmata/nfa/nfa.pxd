@@ -72,6 +72,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void clear()
         bool empty()
         bool uses_state(State)
+        size_t num_of_transitions()
         size_t num_of_states()
         void add(CTrans) except +
         void add(State, Symbol, State) except +
@@ -80,13 +81,14 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void remove(State, Symbol, State) except +
         bool contains(State, Symbol, State)
         bool contains(CTrans)
+        CTransitions transitions()
+        vector[CTrans] get_transitions_to(State) except +
+        vector[CTrans] get_transitions_between(State, State) except +
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
-        size_t num_of_transitions()
-        CTransitions transitions()
-        vector[CTrans] get_transitions_to(State)
-        vector[CTrans] get_transitions_between(State, State)
+        void add(vector[CTrans]&) except +
         COrdVector[Symbol] get_used_symbols()
+
 
     cdef cppclass CRun "mata::nfa::Run":
         # Public Attributes
@@ -231,20 +233,32 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 #
 # This is needed in order for these classes to be used in other packages.
 cdef class Nfa:
-    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
-    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
-    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
-    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
+    """Wrapper over NFA automaton.
+    
+    Ownership model:
+    - Nfa owns the automaton via shared_ptr[CNfa]; the C++ object lives as long as any Python or C++ reference exists.
+    - Delta views obtained from Nfa.delta hold an aliasing shared_ptr to the same automaton, keeping it alive.
+    - Iteration generators (iterate(), iter_transitions_from()) hold self alive, so the automaton outlives them.
+    - Transition/SymbolPost/Run objects own a raw heap object individually (not shared).
+    """
+    # TODO: Shared pointers bring atomic-count overhead; measure in a loop (create/drop views, call methods) to decide if real.
     cdef shared_ptr[CNfa] thisptr
     cdef label
 
 cdef class Transition:
+    """Wrapper over a transition: (source, symbol, target).
+    
+    Ownership: owns a raw heap object (not shared with the automaton).
+    """
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)
 
 cdef class Delta:
-    # Holds a shared pointer to the owning automaton (rather than a raw `CDelta*`) so that the `Delta` view stays
-    # valid even if all other Python references to the automaton are dropped.
+    """View over the transition relation (Delta) of an automaton.
+    
+    Ownership: holds an aliasing shared_ptr to the owning automaton, keeping it alive. The Delta view
+    stays valid even if all other Python references to the automaton are dropped.
+    """
     cdef shared_ptr[CAutomaton] automaton_ptr
 
 cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr)
