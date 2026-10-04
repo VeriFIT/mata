@@ -21,7 +21,7 @@ pyco *ARGS:
 
 # Compare CSV profiles of several benchmark runs.
 compare +PROFILES:
-	python3 ./scripts/compare_profiles.py {{ PROFILES }}
+	python3 ./pycobench/src/compare_profiles.py {{ PROFILES }}
 
 # Profile the memory consumption of a command with Valgrind Massif.
 massif +ARGS:

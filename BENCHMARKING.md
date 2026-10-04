@@ -65,13 +65,16 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
   - `src/templates/template-with-cli.args.cc` contains a basic template that takes file as a command line argument, parses the automaton, and computes minterms.
   - `src/templates/template-with-list-of-automata.cc` contains a basic template that without arguments takes a hardcoded list of input automata taken from `automata` directory;
     in case it is run with arguments, it reads the input files that contain paths to source automata.
-- `./tests-integration/pycobench`: a performance testing script (see below or `./pycobench --help` for more info)
-- `./tests-integration/pyco_proc`: a parser of performance results (see below or `./pyco_proc --help` for more information)
+- `./tests-integration/pycobench`: the [pycobench](https://github.com/VeriFIT/pycobench) repository, included as a git submodule.
+  Fetch it together with the repository (`git clone --recurse-submodules` or `git submodule update --init` later on).
+  The benchmarking tools live in `./tests-integration/pycobench/src/`:
+  - `./tests-integration/pycobench/src/pycobench.py`: a performance testing script (see below or `pycobench.py --help` for more info)
+  - `./tests-integration/pycobench/src/pyco_proc.py`: a parser of performance results (see below or `pyco_proc.py --help` for more information)
 - `./tests-integration/scripts/`: helper scripts used for profiling or testing:
   - `./tests-integration/scripts/run_callgrind.sh` prints the top most time-consuming functions (in terms of exclusive time; outputs only functions with time greater than 1% of overall time spent in program)
   - `./tests-integration/scripts/run_massif.sh` prints the memory peak of the program in `[B]`
-- `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench -c job.yaml`.
-- `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench < input.input`.
+- `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench/src/pycobench.py -c job.yaml`.
+- `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench/src/pycobench.py < input.input`.
 - Both directories hold only the `*.in` templates. `cmake` expands them into
   `<BUILD_DIR>/tests-integration/jobs/` and `<BUILD_DIR>/tests-integration/inputs/`, so that the generated job files always
   refer to the binaries of the build directory they belong to. Use the generated copies when invoking `pycobench`
@@ -135,7 +138,7 @@ To run the benchmarking on a single benchmark instance, we use custom binaries w
 
 ### Run multiple benchmarks through the benchmarking tool `pycobench`
 
-To run the benchmarks, we use our own benchmarking tool `pycobench`, from the main repository `VeriFIT/mata` in the folder `./tests-integration/`.
+To run the benchmarks, we use the benchmarking tool [pycobench](https://github.com/VeriFIT/pycobench), included as a submodule in `./tests-integration/pycobench`.
 
 We suggest using the benchmarks from `VeriFIT/nfa-bench` (added as a submodule to the main repository `VeriFIT/mata` inside `./tests-integration/` directory). The description of the benchmarks can be found in the repository README, and additional information in our [paper from TACAS'24 introducing Mata](https://doi.org/10.1007/978-3-031-57249-4_7).
 
@@ -160,11 +163,22 @@ The binaries take files with NFAs written in the `.mata` automata format as a co
   The format of the configuration file is:
 
   ```text
+  defaults:
+    return_codes:
+      0: finished
+      "*": error
+
   name_of_the_benchmark_test:
     cmd: <path/to/the/binary/to/execute> <INPUTS...>               `
   ```
 
   where `<INPUTS...>` is a sequence of `.mata` files to be loaded by the binary, passed as `$1` for the first automaton (in the first file), `$2` for the second automaton in the second file, etc.
+
+  `return_codes` maps the return code of a binary to the status of the run, with `"*"` matching every code without an entry of its own.
+  The statuses are `finished`, `error`, `timeout`, `memout` and `crash`; the results processed by `pyco_proc` show them as the measured values, `ERR`, `TO`, `MO` and `CRASH` respectively.
+  By default, `pycobench` treats both `0` and `1` as a successful run (solvers often return `1` for legitimate results).
+  The mata binaries return a nonzero code only on failure, so the mata job configurations map only `0` to `finished` globally in the top-level `defaults` section; an individual operation can override the mapping with its own `return_codes`.
+  A return code left to the catch-all entry is recognized as a `crash` when a signal killed the binary (e.g. a segfault), and as a `memout` when the run reached the limit given by `--memout`.
 
 - with specific options such as setting the timeout, number of parallel jobs, the identifier appended to the results file, etc.
 
@@ -195,25 +209,25 @@ E.g.:
 
 <!-- The results are saved in `results` directory in `csv` format. In addition, a short summary is printed at the end of the benchmarking process. -->
 
-<!-- When all tests are run, you can generate CSV files with all the raw results by running a pyco_proc processing tool through a script `tests-integration/scripts/process_pyco.sh` -->
+<!-- When all tests are run, you can generate CSV files with all the raw results by running a pyco_proc processing tool through a script `tests-integration/pycobench/src/process_pyco.sh` -->
 
 <!-- ```
-./tests-integration/process_pyco.sh ../results/<results_file>.csv
+./tests-integration/pycobench/src/process_pyco.sh ../results/<results_file>.csv
 ``` -->
 
 For additional details, see tests-integration README and our replication package for the TACAS'24 paper introducing Mata.
 
-- Running pychobench manually
-  1. Run `./tests-integration/pycobench`:
+- Running pycobench manually
+  1. Run `./tests-integration/pycobench/src/pycobench.py`:
 
      ```sh
-     ./tests-integration/pycobench -c build/tests-integration/jobs/<JOB>.yaml -o some.output < build/tests-integration/inputs/<INPUT>.input
+     ./tests-integration/pycobench/src/pycobench.py -c build/tests-integration/jobs/<JOB>.yaml -o some.output < build/tests-integration/inputs/<INPUT>.input
      ```
 
      - Note, one can pass any shell command that returns list of automata, e.g. `< ls -1 ./automata/**/aut1.mata`
-     - `./tests-integration/pycobench` generates `some.output` file; this format is supported by `./tests-integration/pyco_proc` script that parses the output to `csv`/`html`/`text` format.
+     - `pycobench.py` generates `some.output` file; this format is supported by `./tests-integration/pycobench/src/pyco_proc.py` script that parses the output to `csv`/`html`/`text` format.
 
-  1. Run `./pyco_proc --csv some.output > some.csv` to generate the output `.csv` file (change `csv` to `html` or `text` to generate a different format).
+  1. Run `./tests-integration/pycobench/src/pyco_proc.py --csv some.output > some.csv` to generate the output `.csv` file (change `csv` to `html` or `text` to generate a different format).
 
 - Alternatively, run `make test-performance` from the project root directory
 
