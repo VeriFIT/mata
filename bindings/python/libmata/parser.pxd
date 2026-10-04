@@ -25,7 +25,7 @@ cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
 
 
 cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
-    cdef void construct(CNfa*, CInterAut&, CAlphabet*);
+    cdef void construct(CNfa*, CInterAut&, CAlphabet*) except +
 
 cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
     cdef struct CParsedSection "mata::parser::ParsedSection":
@@ -36,10 +36,10 @@ cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
     cdef Parsed parse_mf(istream, bool) except +
 
 cdef extern from "mata/parser/inter-aut.hh" namespace "mata::IntermediateAut":
-    vector[CInterAut] parse_from_mf(Parsed&)
+    vector[CInterAut] parse_from_mf(Parsed&) except +
 
 cdef extern from "mata/parser/mintermization.hh" namespace "mata":
     cdef cppclass CMintermization "mata::Mintermization":
         CMintermization()
-        CInterAut  c_mintermize "mata::Mintermization::mintermize" (CInterAut&);
-        vector[CInterAut]  c_mintermize_vec "mata::Mintermization::mintermize" (vector[CInterAut]&);
+        CInterAut  c_mintermize "mata::Mintermization::mintermize" (CInterAut&) except +
+        vector[CInterAut]  c_mintermize_vec "mata::Mintermization::mintermize" (vector[CInterAut]&) except +
