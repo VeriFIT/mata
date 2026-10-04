@@ -10,6 +10,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <sstream>
+
 using namespace mata::parser;
 using namespace mata::utils;
 
@@ -881,4 +883,21 @@ q1 \false q2
 TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)") { // {{{
 	SECTION("aux") { WARN_PRINT("Insufficient testing of mata::Parser::ParsedSection::operator<<(ostream&)"); }
 
+} // }}}
+
+TEST_CASE("mata::IntermediateAut streaming a negated compound formula - #760") { // {{{
+	std::string file = "@NFA-bits\n"
+					   "%Alphabet-auto\n"
+					   "%Initial q0\n"
+					   "%Final q1\n"
+					   "q0 !(a0 & a1) q1\n";
+
+	const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+	std::ostringstream out;
+	out << auts[0];
+	std::string printed{out.str()};
+
+	// The negated compound formula must keep its operands; before the fix the unary branch of serialize_graph()
+	//  recursed on the child node alone, dropped the children and printed the formula with the operands missing.
+	CHECK(printed.find("!(a0 & a1)") != std::string::npos);
 } // }}}
