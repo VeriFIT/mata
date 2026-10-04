@@ -528,7 +528,9 @@ Nfa Nfa::decode_utf8() const {
 	// will result in the higher number.
 	auto add_to_state_post = [&](StatePost& state_post, const SymbolPost& symbol_post, const bool is_nondet) {
 		if (is_nondet) {
-			state_post.insert(symbol_post);
+			if (auto [it, inserted] = state_post.insert(symbol_post); !inserted) {
+				it->insert(symbol_post.targets);
+			}
 		} else {
 			state_post.emplace_back(symbol_post);
 		}
