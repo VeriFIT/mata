@@ -2,7 +2,10 @@
  * @brief String replacement operations for string solving.
  */
 
+#include <deque>
+#include <limits>
 #include <utility>
+#include <vector>
 
 #include "mata/alphabet.hh"
 #include "mata/applications/strings.hh"
@@ -388,25 +391,73 @@ Nft ReluctantReplace::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbo
 
 nfa::Nfa
 	ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol marker, const Alphabet* const alphabet) {
+	(void) alphabet;
 	// Convert to reluctant NFA.
 	nfa = reluctant_nfa(nfa);
 
-	// Add marker self-loops to accept begin markers inside the shortest match.
-	for (State state{0}; state < nfa.num_of_states(); ++state) { nfa.delta.add(state, marker, state); }
+	// Intersect with the two-state guard that accepts a word with interleaved begin markers but requires it to end
+	//  on an ordinary letter (the marker is never consumed as the last symbol). The guard is built directly as two
+	//  copies of the reluctant NFA instead of going through a generic intersection() with a helper NFA: state
+	//  (q, b) keeps whether a marker currently awaits an ordinary letter (b = 1) or not (b = 0). A marker self-loop
+	//  on a final state of the reluctant NFA would create an unreachable lasso state; the direct construction never
+	//  adds it, so the result contains no useless marker state. The input is a DFA by the precondition of
+	//  replace_reluctant_regex, and the direct product of a DFA with the guard stays a DFA.
+	const size_t num_states{nfa.num_of_states()};
+	const State sentinel_state{std::numeric_limits<State>::max()};
+	std::vector<State> await_letter_state(num_states, sentinel_state); // States (q, 0).
+	std::vector<State> after_marker_state(num_states, sentinel_state); // States (q, 1).
 
-	// Intersect with NFA to avoid removing the next begin marker which might be used for the next replace.
-	// TODO(nft): Could be optimised.
-	nfa::Nfa nfa_avoid_removing_next_begin_marker{2, {0}, {0}};
-	StatePost& initial{nfa_avoid_removing_next_begin_marker.delta.mutable_state_post(0)};
-	const utils::OrdVector<Symbol> alphabet_symbols{alphabet->get_alphabet_symbols()};
-	for (const Symbol symbol : alphabet_symbols) { initial.emplace_back(symbol, 0); }
-	StatePost& marker_state{nfa_avoid_removing_next_begin_marker.delta.mutable_state_post(1)};
-	nfa_avoid_removing_next_begin_marker.delta.add(0, marker, 1);
-	for (const Symbol symbol : alphabet_symbols) { marker_state.emplace_back(symbol, 0); }
-	nfa_avoid_removing_next_begin_marker.delta.add(1, marker, 1);
-	// TODO(nft): Leaves a non-terminating begin_marker transitions in a form of a lasso from final states.
-	//  These lassos should be removed to further optimize NFT creation.
-	return reluctant_nfa(reduce(intersection(nfa, nfa_avoid_removing_next_begin_marker)));
+	nfa::Nfa product{};
+	std::deque<State> worklist_await{};
+	std::deque<State> worklist_after_marker{};
+
+	auto get_or_add{[&](std::vector<State>& row, const State orig_state) {
+		if (row[orig_state] == sentinel_state) { row[orig_state] = product.add_state(); }
+		return row[orig_state];
+	}};
+
+	for (const State initial_state : nfa.initial) {
+		product.initial.insert(get_or_add(await_letter_state, initial_state));
+		worklist_await.push_back(initial_state);
+	}
+	while (!worklist_await.empty() || !worklist_after_marker.empty()) {
+		// Process a state (q, 0): letters go to (t, 0), the marker goes to (q, 1).
+		if (!worklist_await.empty()) {
+			const State orig_state{worklist_await.front()};
+			worklist_await.pop_front();
+			const State product_state{await_letter_state[orig_state]};
+			for (const SymbolPost& symbol_post : nfa.delta[orig_state]) {
+				for (const State target : symbol_post.targets) {
+					if (await_letter_state[target] == sentinel_state) { worklist_await.push_back(target); }
+					product.delta.add(product_state, symbol_post.symbol, get_or_add(await_letter_state, target));
+				}
+			}
+			if (!nfa.final.contains(orig_state)) {
+				if (after_marker_state[orig_state] == sentinel_state) { worklist_after_marker.push_back(orig_state); }
+				product.delta.add(product_state, marker, get_or_add(after_marker_state, orig_state));
+			}
+			continue;
+		}
+		// Process a state (q, 1): letters go to (t, 0), the marker stays at (q, 1).
+		const State orig_state{worklist_after_marker.front()};
+		worklist_after_marker.pop_front();
+		const State product_state{after_marker_state[orig_state]};
+		for (const SymbolPost& symbol_post : nfa.delta[orig_state]) {
+			for (const State target : symbol_post.targets) {
+				if (await_letter_state[target] == sentinel_state) { worklist_await.push_back(target); }
+				product.delta.add(product_state, symbol_post.symbol, get_or_add(await_letter_state, target));
+			}
+		}
+		product.delta.add(product_state, marker, product_state);
+	}
+
+	for (const State final_state : nfa.final) {
+		if (await_letter_state[final_state] != sentinel_state) {
+			product.final.insert(await_letter_state[final_state]);
+		}
+	}
+
+	return reduce(product);
 }
 
 Nft ReluctantReplace::reluctant_leftmost_nft(

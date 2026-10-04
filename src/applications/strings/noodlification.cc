@@ -235,8 +235,6 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
-	const auto& epsilon_depths_map{segmentation.get_epsilon_depth_trans_map()};
-
 	struct SegItem {
 		NoodleWithEpsilonsCounter noodle{};
 		State fin{};
@@ -271,18 +269,42 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 			continue;
 		}
 
-		for (const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
-			// TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise
-			// what about StateSet?
-			mata::utils::SparseSet<mata::nfa::State> fins = segments[item.seg_id + 1].final;
-			// final states of the segment
-			if (item.seg_id + 1 == segments.size() - 1) { // last segment
-				fins = mata::utils::SparseSet<mata::nfa::State>({unused_state});
-			}
+		const auto epsilon_transitions{segmentation.get_epsilon_transitions(item.fin).value_or(
+			std::pair{seg_nfa::Segmentation::ConstTransitionIter{}, seg_nfa::Segmentation::ConstTransitionIter{}}
+		)};
+		// TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise
+		// what about StateSet?
+		mata::utils::SparseSet<mata::nfa::State> fins = segments[item.seg_id + 1].final;
+		// final states of the segment
+		if (item.seg_id + 1 == segments.size() - 1) { // last segment
+			fins = mata::utils::SparseSet<mata::nfa::State>({unused_state});
+		}
+		// Positions of the finals in their insertion order, to visit connected segments in the same order the
+		//  original per-final-state probe loop used (noodle completion order stays unchanged).
+		std::unordered_map<State, size_t> fin_positions{};
+		{
+			size_t position{0};
+			for (const State& fin : fins) { fin_positions.emplace(fin, position++); }
+		}
 
-			for (const State& fn : fins) {
-				auto seg_iter = segments_one_initial_final.find({tr.target, fn});
-				if (seg_iter == segments_one_initial_final.end()) { continue; }
+		for (auto tr_it = epsilon_transitions.first; tr_it != epsilon_transitions.second; ++tr_it) {
+			const Transition& tr{*tr_it};
+			using SegmentsMapIter = decltype(segments_one_initial_final)::const_iterator;
+			// All pairs of one initial state are contiguous in the ordered pair map: scan them with one
+			//  lower_bound probe instead of probing for every final state of the next segment.
+			std::vector<SegmentsMapIter> connected_segments{};
+			for (auto seg_iter = segments_one_initial_final.lower_bound({tr.target, 0});
+				 seg_iter != segments_one_initial_final.end() && seg_iter->first.first == tr.target; ++seg_iter) {
+				if (fins.contains(seg_iter->first.second)) { connected_segments.push_back(seg_iter); }
+			}
+			// Visit the connected finals in the order of the segment's final set, keeping the order in which noodles
+			//  are completed identical to the original per-final-state probe loop.
+			std::ranges::stable_sort(connected_segments, [&](const SegmentsMapIter lhs, const SegmentsMapIter rhs) {
+				return fin_positions.at(lhs->first.second) < fin_positions.at(rhs->first.second);
+			});
+
+			for (const SegmentsMapIter& seg_iter : connected_segments) {
+				const State& fn{seg_iter->first.second};
 
 				SegItem new_item = item; // deep copy
 				new_item.seg_id++;

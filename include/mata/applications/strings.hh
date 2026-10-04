@@ -164,8 +164,12 @@ class Segmentation {
 	/// Dictionary of lists of ε-transitions grouped by their depth.
 	/// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
 	using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, std::vector<Transition>>;
-	using EpsilonDepthTransitionMap =
-		std::unordered_map<EpsilonDepth, std::unordered_map<State, std::vector<Transition>>>;
+	/// Span of consecutive ε-transitions in the segmented vector.
+	struct EpsilonTransitionSpan {
+		EpsilonDepth depth; ///< Depth at which the ε-transitions lie.
+		size_t begin; ///< First ε-transition index in the vector for its depth.
+		size_t end; ///< One past the last ε-transition index in the vector for its depth.
+	};
 
 	/**
 	 * Prepare automaton @p aut for segmentation.
@@ -178,16 +182,37 @@ class Segmentation {
 
 	/**
 	 * Get segmentation depths for ε-transitions.
+	 * Built as a view over the internal per-depth vector on first call.
 	 * @return Map of depths to lists of ε-transitions.
 	 */
-	const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions_; }
+	const EpsilonDepthTransitions& get_epsilon_depths() const {
+		if (!epsilon_depths_cache_.has_value()) {
+			epsilon_depths_cache_.emplace();
+			for (EpsilonDepth depth{0}; depth < epsilon_transitions_by_depth_.size(); ++depth) {
+				epsilon_depths_cache_->emplace(depth, epsilon_transitions_by_depth_[depth]);
+			}
+		}
+		return *epsilon_depths_cache_;
+	}
 
+	using ConstTransitionIter = std::vector<Transition>::const_iterator;
 	/**
-	 * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
+	 * Get the ε-transitions leaving @p state.
 	 *
-	 * @return Map of depths to a map of states to transitions
+	 * All ε-transitions of one source state lie consecutive and at a single segmentation depth.
+	 * @return Pair of iterators into the internal per-depth vector covering exactly the ε-transitions of @p state,
+	 *  or @c std::nullopt when @p state has none.
 	 */
-	const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map_; }
+	std::optional<std::pair<ConstTransitionIter, ConstTransitionIter>> get_epsilon_transitions(
+		const State state
+	) const {
+		const auto span_it{epsilon_transitions_by_state_.find(state)};
+		if (span_it == epsilon_transitions_by_state_.end()) { return std::nullopt; }
+		const EpsilonTransitionSpan& span{span_it->second};
+		const std::vector<Transition>& transitions{epsilon_transitions_by_depth_[span.depth]};
+		return std::pair{transitions.cbegin() + static_cast<ptrdiff_t>(span.begin),
+						 transitions.cbegin() + static_cast<ptrdiff_t>(span.end)};
+	}
 
 	/**
 	 * Get segment automata.
@@ -210,8 +235,12 @@ class Segmentation {
 	const std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
 	/// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
 	const SegNfa& automaton_;
-	EpsilonDepthTransitions epsilon_depth_transitions_{}; ///< Epsilon depths.
-	EpsilonDepthTransitionMap eps_depth_trans_map_{}; /// Epsilon depths with mapping of states to epsilon transitions
+	/// Epsilon transitions stored once, indexed by their segmentation depth.
+	std::vector<std::vector<Transition>> epsilon_transitions_by_depth_{};
+	/// Per-source-state span into the per-depth vectors.
+	std::unordered_map<State, EpsilonTransitionSpan> epsilon_transitions_by_state_{};
+	/// Lazily built @c unordered_map view for @c get_epsilon_depths().
+	mutable std::optional<EpsilonDepthTransitions> epsilon_depths_cache_{};
 	std::vector<SegNfa> segments_{}; ///< Segments for @p automaton.
 	std::vector<SegNfa> segments_raw_{}; ///< Raw segments for @p automaton.
 	VisitedEpsMap visited_eps_{}; /// number of visited eps for each state

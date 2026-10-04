@@ -1375,3 +1375,28 @@ TEST_CASE("mata::applications::strings::replace::marker_nft() with several epsil
 	}
 	CHECK(marked_targets == StateSet{ 1, 2 });
 }
+
+TEST_CASE("mata::applications::strings::reluctant_nfa_with_marker() has no useless marker states - issue #795") {
+	EnumAlphabet alphabet{'a', 'b', 'c'};
+	ReluctantReplaceSUT reluctant_replace{};
+
+	SECTION("regex a") {
+		nfa::Nfa result{reluctant_replace.reluctant_nfa_with_marker(
+			nfa::builder::create_from_regex("a"), BEGIN_MARKER, &alphabet
+		)};
+		// The pre-fix construction produced one more state: a marker self-loop lasso uniquely reachable only
+		// through another marker transition from the final state.
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.is_deterministic());
+		CHECK(nfa::trim(result).num_of_states() == result.num_of_states());
+	}
+
+	SECTION("regex (a|b)*c(a|b)") {
+		nfa::Nfa result{reluctant_replace.reluctant_nfa_with_marker(
+			nfa::builder::create_from_regex("(a|b)*c(a|b)"), BEGIN_MARKER, &alphabet
+		)};
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.is_deterministic());
+		CHECK(nfa::trim(result).num_of_states() == result.num_of_states());
+	}
+}
