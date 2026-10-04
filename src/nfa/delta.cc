@@ -96,6 +96,84 @@ const StateSet& Delta::get_successors(const State state, const Symbol symbol) co
 	return state_post(state).get_successors(symbol);
 }
 
+namespace {
+/// Collects the epsilon closure of the states gathered in @p workspace into its own gathered buffer.
+void close_gathered(const Delta& delta, const std::vector<Symbol>& epsilons, PostWorkspace& workspace) {
+	std::vector<State>& gathered{workspace.gathered()};
+	std::vector<State>& queue{workspace.queue()};
+	queue.assign(gathered.begin(), gathered.end());
+	while (!queue.empty()) {
+		const State state{queue.back()};
+		queue.pop_back();
+		const StatePost& state_post{delta[state]};
+		for (const Symbol epsilon : epsilons) {
+			const auto symbol_post_it{state_post.find(epsilon)};
+			if (symbol_post_it == state_post.end()) { continue; }
+			for (const State target : symbol_post_it->targets) {
+				if (workspace.mark(target)) {
+					gathered.push_back(target);
+					queue.push_back(target);
+				}
+			}
+		}
+	}
+}
+} // namespace
+
+StateSet Delta::epsilon_closure(
+	const StateSet& states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
+) const {
+	workspace.start(num_of_states());
+	for (const State state : states) {
+		if (workspace.mark(state)) { workspace.gathered().push_back(state); }
+	}
+	close_gathered(*this, epsilons, workspace);
+	return StateSet{workspace.gathered()};
+}
+
+StateSet Delta::post(
+	const StateSet& states,
+	const Symbol symbol,
+	const EpsilonClosureOpt epsilon_closure_opt,
+	const std::vector<Symbol>& epsilons,
+	PostWorkspace& workspace
+) const {
+	// Stepping over epsilon with a closure requested means the source states are reachable as well.
+	const bool stays_via_epsilon{symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None};
+
+	workspace.start(num_of_states());
+	std::vector<State>& gathered{workspace.gathered()};
+	for (const State state : states) {
+		if (workspace.mark(state)) { gathered.push_back(state); }
+	}
+	if (closes_before(epsilon_closure_opt)) { close_gathered(*this, epsilons, workspace); }
+
+	// The sources are read out before the buffer is reused for the targets.
+	const std::vector<State> sources{gathered};
+	workspace.start(num_of_states());
+	if (stays_via_epsilon) {
+		for (const State state : states) {
+			if (workspace.mark(state)) { gathered.push_back(state); }
+		}
+	}
+	for (const State state : sources) {
+		const StatePost& state_post{(*this)[state]};
+		const auto symbol_post_it{state_post.find(symbol)};
+		if (symbol_post_it == state_post.end()) { continue; }
+		for (const State target : symbol_post_it->targets) {
+			if (workspace.mark(target)) { gathered.push_back(target); }
+		}
+	}
+	if (closes_after(epsilon_closure_opt)) { close_gathered(*this, epsilons, workspace); }
+	return StateSet{gathered};
+}
+
+StateSet
+	Delta::get_successors(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+	PostWorkspace workspace{};
+	return post(StateSet{state}, symbol, epsilon_closure_opt, {EPSILON}, workspace);
+}
+
 std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
 	std::vector<Transition> transitions_to_state{};
 	const size_t num_of_states{this->num_of_states()};
