@@ -1,6 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import os
+import shutil
 
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
@@ -700,17 +701,26 @@ def test_minimize(fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divi
     assert minimized_hopcroft.get_num_of_transitions() == 1
 
 
-def test_to_dot():
-    lhs = mata_nfa.Nfa()
-    expected = 'digraph finiteAutomaton {\nnode [shape=circle];\nnode [shape=none, label=""];\n}\n'
-    assert lhs.to_dot_str() == expected
+EXPECTED_DOT = 'digraph finiteAutomaton {\nnode [shape=circle];\nnode [shape=none, label=""];\n}\n'
 
+
+def test_to_dot_str():
+    """String serialization needs no graphviz installation."""
+    lhs = mata_nfa.Nfa()
+    assert lhs.to_dot_str() == EXPECTED_DOT
+
+
+def test_to_dot_file(tmp_path, monkeypatch):
+    if shutil.which("dot") is None:
+        pytest.skip("graphviz 'dot' is not installed")
+    monkeypatch.chdir(tmp_path)
+    lhs = mata_nfa.Nfa()
     lhs.to_dot_file("test.dot")
     assert "test.dot.pdf" in os.listdir(".")
     assert "test.dot" in os.listdir(".")
     with open("test.dot", "r") as test_handle:
         lines = test_handle.read()
-    assert lines == expected
+    assert lines == EXPECTED_DOT
 
 
 def test_to_str():
