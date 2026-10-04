@@ -1301,3 +1301,77 @@ TEST_CASE("mata::applications::strings::replace::replace_reluctant_regex()") {
 		));
 	}
 }
+
+TEST_CASE("mata::applications::strings::replace: symbol outside the alphabet (#764)") {
+	EnumAlphabet alphabet{'a', 'b'};
+	const Symbol missing{'z'};
+	for (const ReplaceMode mode : { ReplaceMode::All, ReplaceMode::Single }) {
+		CHECK_THROWS_AS(create_identity_with_single_symbol_replace(&alphabet, missing, 'c', mode), std::runtime_error);
+		CHECK_THROWS_AS(
+			create_identity_with_single_symbol_replace(&alphabet, missing, Word{ 'c' }, mode), std::runtime_error
+		);
+		CHECK_THROWS_AS(replace_reluctant_single_symbol(missing, 'c', &alphabet, mode), std::runtime_error);
+		CHECK_THROWS_AS(replace_reluctant_single_symbol(missing, Word{ 'c' }, &alphabet, mode), std::runtime_error);
+	}
+	CHECK_NOTHROW(replace_reluctant_single_symbol('a', 'b', &alphabet, ReplaceMode::All));
+}
+
+TEST_CASE("mata::applications::strings::replace::end_marker_dfa() with several finals (#764)") {
+	ReluctantReplaceSUT reluctant_replace{};
+	EnumAlphabet alphabet{'a', 'b', 'c'};
+	SECTION("chain DFA with every state final") {
+		for (State n{ 1 }; n <= 40; ++n) {
+			nfa::Nfa chain{ n + 1 };
+			chain.initial.insert(0);
+			for (State q{ 0 }; q < n; ++q) { chain.delta.add(q, 'a', q + 1); }
+			for (State q{ 0 }; q <= n; ++q) { chain.final.insert(q); }
+			const nfa::Nfa marked{ reluctant_replace.end_marker_dfa(chain) };
+			CHECK(marked.final.size() == n + 1);
+			for (const State final : marked.final) {
+				CHECK(final > n);
+				size_t num_of_sources{ 0 };
+				for (State source{ 0 }; source < marked.num_of_states(); ++source) {
+					for (const auto& [symbol, target] : marked.delta[source].moves()) {
+						if (target == final) {
+							++num_of_sources;
+							CHECK(symbol == EPSILON);
+							CHECK(source <= n);
+						}
+					}
+				}
+				CHECK(num_of_sources == 1);
+			}
+			CHECK(nfa::are_equivalent(nfa::remove_epsilon(marked), chain, &alphabet));
+		}
+	}
+	SECTION("regex a|ab|abc") {
+		const nfa::Nfa regex{ nfa::determinize(nfa::builder::create_from_regex("a|ab|abc")) };
+		const nfa::Nfa marked{ reluctant_replace.end_marker_dfa(regex) };
+		CHECK(marked.final.size() == regex.final.size());
+		CHECK(nfa::are_equivalent(nfa::remove_epsilon(marked), regex, &alphabet));
+	}
+}
+
+TEST_CASE("mata::applications::strings::replace::marker_nft() with several epsilon targets (#764)") {
+	ReluctantReplaceSUT reluctant_replace{};
+	constexpr Symbol MARKER{ 'M' };
+	nfa::Nfa nfa{ 3 };
+	nfa.initial.insert(0);
+	nfa.delta.add(0, EPSILON, 1);
+	nfa.delta.add(0, EPSILON, 2);
+	nfa.final.insert(1);
+	nfa.final.insert(2);
+	const Nft marked{ reluctant_replace.marker_nft(nfa, MARKER) };
+	const StateSet epsilon_targets{ marked.delta[0].get_successors(EPSILON) };
+	REQUIRE(epsilon_targets.size() == 2);
+	StateSet marked_targets{};
+	for (const State marker_state : epsilon_targets) {
+		CHECK(marker_state >= 3);
+		const StatePost& marker_post{ marked.delta[marker_state] };
+		REQUIRE(marker_post.size() == 1);
+		CHECK(marker_post.front().symbol == MARKER);
+		REQUIRE(marker_post.front().num_of_targets() == 1);
+		marked_targets.insert(marker_post.front().targets.front());
+	}
+	CHECK(marked_targets == StateSet{ 1, 2 });
+}
