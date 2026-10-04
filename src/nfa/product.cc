@@ -8,7 +8,11 @@
 #include "mata/utils/assert.hh"
 #include "mata/utils/two-dimensional-map.hh"
 #include <algorithm>
+#include <deque>
 #include <functional>
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace mata::nfa;
 
@@ -169,5 +173,120 @@ Nfa mata::nfa::algorithms::product(
 	}
 	return product;
 } // intersection().
+
+bool is_intersection_empty(const Nfa& lhs, const Nfa& rhs, Run* const witness, const Symbol first_epsilon) {
+	using StatePair = std::pair<State, State>;
+
+	std::unordered_set<StatePair, utils::PairHash<State, State>> visited{};
+	// Predecessor (source pair, symbol) for every non-initial visited pair; allocated only when a witness is
+	//  requested.
+	std::unordered_map<StatePair, std::pair<StatePair, Symbol>, utils::PairHash<State, State>> predecessor{};
+	std::deque<StatePair> worklist{};
+
+	std::optional<StatePair> accepting_pair{};
+
+	// Insert @p pair into the visit table. Returns false when the traversal should stop (a pair final in both
+	//  automata was just discovered and recorded in @c accepting_pair).
+	auto visit_pair = [&](const StatePair& pair, const StatePair& source_pair, const Symbol via_symbol) {
+		const auto [_, is_new] = visited.insert(pair);
+		if (!is_new) { return true; }
+		// Initial pairs pass source_pair == pair and get no predecessor, so witness reconstruction stops at
+		//  an initial pair.
+		if (witness != nullptr && pair != source_pair) {
+			predecessor.emplace(pair, std::make_pair(source_pair, via_symbol));
+		}
+		if (lhs.final.contains(pair.first) && rhs.final.contains(pair.second)) {
+			accepting_pair = pair;
+			return false;
+		}
+		worklist.push_back(pair);
+		return true;
+	};
+
+	for (const State lhs_initial_state : lhs.initial) {
+		for (const State rhs_initial_state : rhs.initial) {
+			if (!visit_pair({lhs_initial_state, rhs_initial_state}, {lhs_initial_state, rhs_initial_state}, 0)) {
+				break;
+			}
+		}
+		if (accepting_pair.has_value()) { break; }
+	}
+
+	while (!accepting_pair.has_value() && !worklist.empty()) {
+		const StatePair source{worklist.back()};
+		worklist.pop_back();
+		const StatePost& lhs_state_post{lhs.delta[source.first]};
+		const StatePost& rhs_state_post{rhs.delta[source.second]};
+		// Epsilons sort after all normal symbols and move one side only.
+		const StatePost::const_iterator lhs_epsilon_begin{lhs_state_post.first_epsilon_it(first_epsilon)};
+		const StatePost::const_iterator rhs_epsilon_begin{rhs_state_post.first_epsilon_it(first_epsilon)};
+
+		// Shared symbols: two-pointer merge over both sorted state posts, one product move per pair of targets.
+		auto lhs_symbol_post{lhs_state_post.begin()};
+		auto rhs_symbol_post{rhs_state_post.begin()};
+		bool stop{false};
+		while (!stop && lhs_symbol_post != lhs_epsilon_begin && rhs_symbol_post != rhs_epsilon_begin) {
+			if (lhs_symbol_post->symbol < rhs_symbol_post->symbol) {
+				++lhs_symbol_post;
+				continue;
+			}
+			if (rhs_symbol_post->symbol < lhs_symbol_post->symbol) {
+				++rhs_symbol_post;
+				continue;
+			}
+			for (const State lhs_target : lhs_symbol_post->targets) {
+				for (const State rhs_target : rhs_symbol_post->targets) {
+					if (!visit_pair({lhs_target, rhs_target}, source, lhs_symbol_post->symbol)) {
+						stop = true;
+						break;
+					}
+				}
+				if (stop) { break; }
+			}
+			++lhs_symbol_post;
+			++rhs_symbol_post;
+		}
+
+		// Epsilon moves on the lhs side only.
+		for (auto lhs_epsilon_post{lhs_epsilon_begin}; !stop && lhs_epsilon_post != lhs_state_post.end();
+			 ++lhs_epsilon_post) {
+			for (const State lhs_target : lhs_epsilon_post->targets) {
+				if (!visit_pair({lhs_target, source.second}, source, lhs_epsilon_post->symbol)) {
+					stop = true;
+					break;
+				}
+			}
+		}
+
+		// Epsilon moves on the rhs side only.
+		for (auto rhs_epsilon_post{rhs_epsilon_begin}; !stop && rhs_epsilon_post != rhs_state_post.end();
+			 ++rhs_epsilon_post) {
+			for (const State rhs_target : rhs_epsilon_post->targets) {
+				if (!visit_pair({source.first, rhs_target}, source, rhs_epsilon_post->symbol)) {
+					stop = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (!accepting_pair.has_value()) { return true; }
+
+	if (witness != nullptr) {
+		// Epsilon moves happen on one side only and are stripped: the witness replays in both automata with
+		//  epsilon closure (Nfa::is_in_lang(run, use_epsilon = true)).
+		Word reversed_word{};
+		StatePair current{*accepting_pair};
+		for (auto predecessor_it = predecessor.find(current); predecessor_it != predecessor.end();) {
+			if (predecessor_it->second.second < first_epsilon) {
+				reversed_word.push_back(predecessor_it->second.second);
+			}
+			current = predecessor_it->second.first;
+			predecessor_it = predecessor.find(current);
+		}
+		witness->word.assign(reversed_word.rbegin(), reversed_word.rend());
+	}
+	return false;
+} // is_intersection_empty().
 
 } // namespace mata::nfa.
