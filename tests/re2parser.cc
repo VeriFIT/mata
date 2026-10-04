@@ -1627,18 +1627,18 @@ TEST_CASE("mata::Parser UTF-8 encoding") { // {{{
 		Nfa aut = mata::parser::create_nfa("(\\x{200}a)*\\x{200}b", false, 306, true, Encoding::Utf8);
 		Nfa decoded = aut.decode_utf8();
 		// Must accept the word [0x200, 'b']
-		CHECK(decoded.is_in_lang(Run{Word{0x200, 'b'}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'00, 'b'}, {}}));
 		// Must accept the word [0x200, 'a', 0x200, 'b']
-		CHECK(decoded.is_in_lang(Run{Word{0x200, 'a', 0x200, 'b'}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'00, 'a', 0x2'00, 'b'}, {}}));
 	}
 
 	SECTION("Regex (\\x{200}|\\x{280})*\\x{280} with overlapping byte paths") {
 		// Both code points share the same 2-byte prefix; decoding may have nondeterministic byte paths.
 		Nfa aut = mata::parser::create_nfa("(\\x{200}|\\x{280})*\\x{280}", false, 306, true, Encoding::Utf8);
 		Nfa decoded = aut.decode_utf8();
-		CHECK(decoded.is_in_lang(Run{Word{0x280}, {}}));
-		CHECK(decoded.is_in_lang(Run{Word{0x200, 0x280}, {}}));
-		CHECK(decoded.is_in_lang(Run{Word{0x280, 0x280}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'80}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'00, 0x2'80}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'80, 0x2'80}, {}}));
 	}
 
 } // }}}
@@ -1896,5 +1896,52 @@ TEST_CASE("Foldcase") {
 		result.final.insert(final_s);
 		for (Symbol c = 0; c <= 0x7F; c++) { result.delta.add(initial_s, c, final_s); }
 		CHECK(are_equivalent(nfa, result));
+	}
+}
+
+TEST_CASE("mata::parser::create_nfa() with Re2Options post-processing control") {
+	SECTION("default options reproduce the legacy overloads") {
+		const std::string pattern{"a(b|c)*d?"};
+		const Nfa via_options{mata::parser::create_nfa(pattern, mata::parser::Re2Options{})};
+		const Nfa via_legacy{mata::parser::create_nfa(pattern)};
+		CHECK(via_options.is_identical(via_legacy));
+	}
+
+	SECTION("post-processing can be switched off without changing the language") {
+		mata::parser::Re2Options options{};
+		options.trim = false;
+		options.reduce = false;
+		const Nfa plain{mata::parser::create_nfa("a(b|c)*d?", options)};
+		const Nfa processed{mata::parser::create_nfa("a(b|c)*d?")};
+		CHECK(plain.is_in_lang(Run{mata::Word{'a'}}));
+		CHECK(plain.is_in_lang(Run{mata::Word{'a', 'b', 'c', 'd'}}));
+		CHECK(!plain.is_in_lang(Run{mata::Word{'a', 'd', 'd'}}));
+		CHECK(are_equivalent(plain, processed));
+		// A trim-free conversion may keep unreachable states; the reduced default does not.
+		CHECK(processed.num_of_states() <= plain.num_of_states());
+	}
+
+	SECTION("keeping epsilon transitions is honored") {
+		mata::parser::Re2Options options{};
+		options.use_epsilon = true;
+		options.trim = false;
+		options.reduce = false;
+		const Nfa with_epsilon{mata::parser::create_nfa("(a|b)?c", options)};
+		bool has_epsilon_transition{false};
+		for (const Transition& transition : with_epsilon.delta.transitions()) {
+			if (transition.symbol == options.epsilon_value) { has_epsilon_transition = true; }
+		}
+		CHECK(has_epsilon_transition);
+		// The kept epsilon edges on the custom epsilon symbol carry the same language once removed.
+		const Nfa epsilon_removed{mata::nfa::remove_epsilon(with_epsilon, options.epsilon_value)};
+		CHECK(epsilon_removed.is_in_lang(Run{mata::Word{'c'}}));
+		CHECK(epsilon_removed.is_in_lang(Run{mata::Word{'a', 'c'}}));
+		CHECK(epsilon_removed.is_in_lang(Run{mata::Word{'b', 'c'}}));
+		CHECK(are_equivalent(epsilon_removed, mata::parser::create_nfa("(a|b)?c")));
+	}
+
+	SECTION("a regex that cannot match compiles through kInstFail to an empty NFA") {
+		const Nfa empty{mata::parser::create_nfa("[^\\x00-\\xff]", mata::parser::Re2Options{})};
+		CHECK(empty.is_lang_empty());
 	}
 }

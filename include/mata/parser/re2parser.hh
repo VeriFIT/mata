@@ -15,6 +15,32 @@ enum class Encoding { Utf8 = 0, Latin1 = 1 << 5 };
 
 namespace mata::parser {
 /**
+ * @brief Post-processing options for RE2-to-NFA conversion.
+ *
+ * Parsing a regex must not silently trim and reduce: @ref create_nfa(const std::string&, const Re2Options&) runs
+ *  only the steps the options ask for. The compatibility overloads below forward with defaults that reproduce
+ *  the historical behaviour (epsilon removed, trimmed, simulation-reduced).
+ */
+struct Re2Options {
+	bool use_epsilon{false}; ///< Whether to keep epsilon transitions in the created NFA.
+	Symbol epsilon_value{306}; ///< Symbol representing epsilon.
+	bool trim{true}; ///< Trim the created NFA.
+	bool reduce{true}; ///< Reduce the (trimmed) NFA with simulation reduction.
+	Encoding encoding{Encoding::Latin1}; ///< Encoding of the regex.
+};
+
+/**
+ * @brief Creates NFA from regular expression using RE2 parser
+ *
+ * @sa mata::parser::create_nfa() with the compatibility overloads for the individual parameters.
+ * @param pattern regex as a string
+ * @param options conversion and post-processing options
+ * @return Nfa corresponding to pattern
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
+ */
+nfa::Nfa create_nfa(const std::string& pattern, const Re2Options& options);
+
+/**
  * @brief Creates NFA from regular expression using RE2 parser
  *
  * At https://github.com/google/re2/wiki/Syntax, you can find the syntax

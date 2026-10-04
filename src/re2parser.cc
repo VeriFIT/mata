@@ -75,8 +75,13 @@ class RegexParser {
 	 * @param epsilon_value value, that will represent epsilon on transitions
 	 * @return Nfa created from prog
 	 */
-	void
-		convert_pro_to_nfa(Nfa* output_nfa, re2::Prog* prog, const bool use_epsilon, const mata::Symbol epsilon_value) {
+	void convert_pro_to_nfa(
+		Nfa* output_nfa,
+		re2::Prog* prog,
+		const bool use_epsilon,
+		const mata::Symbol epsilon_value,
+		const bool trim_result = true
+	) {
 		const auto start_state = static_cast<size_t>(prog->start());
 		const auto prog_size = static_cast<size_t>(prog->size());
 		// The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
@@ -145,8 +150,18 @@ class RegexParser {
 			}
 			switch (inst->opcode()) {
 				default:
-					LOG(DFATAL) << "unhandled " << inst->opcode() << " in convertProgToNfa";
+					throw std::runtime_error{
+						"create_nfa: unsupported re2 instruction opcode " +
+						std::to_string(static_cast<int>(inst->opcode()))
+					};
+
+				case re2::kInstFail:
+					// A fail instruction marks a branch that can never match; emitting no transitions from it is
+					//  exactly its semantics.
 					break;
+
+				case re2::kInstAltMatch:
+					throw std::runtime_error{"create_nfa: unexpected kInstAltMatch in a flattened re2 program"};
 
 				case re2::kInstMatch:
 					// The kInstMatch type of state is a final state,
@@ -231,7 +246,7 @@ class RegexParser {
 				}
 			}
 		}
-		*output_nfa = Nfa(explicit_nfa).trim();
+		*output_nfa = trim_result ? Nfa(explicit_nfa).trim() : explicit_nfa;
 	}
 
   private: // private methods
@@ -465,6 +480,28 @@ class RegexParser {
 };
 } // namespace
 
+mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Options& options) {
+	mata::nfa::Nfa result;
+	RegexParser regex_parser{};
+	const auto parsed_regex = regex_parser.parse_regex_string(pattern, options.encoding);
+	const auto program = parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3);
+	// FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
+	//  pass the argument use_epsilon to convert_pro_to_nfa().
+	regex_parser.convert_pro_to_nfa(&result, program, true, options.epsilon_value, options.trim);
+	delete program;
+	// Decrements reference count and deletes object if the count reaches 0
+	parsed_regex->Decref();
+
+	// TODO: should this really be done implicitly?
+	if (!options.use_epsilon) { result = mata::nfa::remove_epsilon(result, options.epsilon_value); }
+	if (options.reduce) {
+		// Simulation reduction expects a trimmed input in the compatibility pipeline.
+		result = mata::nfa::reduce(result.trim());
+	}
+
+	return result;
+}
+
 mata::nfa::Nfa mata::parser::create_nfa(
 	const std::string& pattern,
 	const bool use_epsilon,
@@ -472,27 +509,7 @@ mata::nfa::Nfa mata::parser::create_nfa(
 	const bool use_reduce,
 	const Encoding encoding
 ) {
-	mata::nfa::Nfa result;
-	RegexParser regex_parser{};
-	const auto parsed_regex = regex_parser.parse_regex_string(pattern, encoding);
-	const auto program = parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3);
-	// FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
-	//  pass the argument use_epsilon to convert_pro_to_nfa().
-	regex_parser.convert_pro_to_nfa(&result, program, true, epsilon_value);
-	delete program;
-	// Decrements reference count and deletes object if the count reaches 0
-	parsed_regex->Decref();
-
-	// TODO: should this really be done implicitly?
-	if (!use_epsilon) { result = mata::nfa::remove_epsilon(result, epsilon_value); }
-	// TODO: in fact, maybe parser should not do trimming and reducing, maybe these operations should be done
-	// transparently.
-	if (use_reduce) {
-		// TODO: trimming might be unnecessary, regex->nfa construction should not produce useless states. Or does it?
-		result = mata::nfa::reduce(result.trim());
-	}
-
-	return result;
+	return create_nfa(pattern, Re2Options{use_epsilon, epsilon_value, true, use_reduce, encoding});
 }
 
 void mata::parser::create_nfa(
