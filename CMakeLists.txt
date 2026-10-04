@@ -73,10 +73,25 @@ option (MATA_ARCH_NATIVE "Optimize for the architecture of the building machine 
 #  runs the training workload, a `use` build reads it back. A profile belongs to one exact compiler
 #  and source tree, so it is never installed and never committed. `just cpp::pgo` runs both stages.
 set (MATA_PGO "off" CACHE STRING "Profile-guided optimization stage: off, generate, or use")
+# Sanitizers: AddressSanitizer, UndefinedBehaviorSanitizer, and libstdc++ assertions. A comma-separated
+#  list of sanitizer names (e.g. "address,undefined"); empty disables all sanitizers. The flags apply to
+#  every build type, and force `-O1 -g`, so a sanitized build is a debugging build whatever
+#  CMAKE_BUILD_TYPE says. UBSAN and ASAN are supported on GCC and Clang; _GLIBCXX_ASSERTIONS
+#  is GCC/libstdc++ only but is safe to pass to Clang (which ignores unknown -D flags for compatibility).
+set (MATA_SANITIZE "" CACHE STRING "Comma-separated list of sanitizers to enable (e.g. address,undefined)")
 set_property (CACHE MATA_PGO PROPERTY STRINGS off generate use)
 set (MATA_PGO_DIR "${CMAKE_BINARY_DIR}/pgo" CACHE PATH "Directory holding the profile data of MATA_PGO")
 if (NOT MATA_PGO MATCHES "^(off|generate|use)$")
 	message (FATAL_ERROR "MATA_PGO must be one of off, generate, use; got '${MATA_PGO}'")
+endif ()
+
+if (NOT MATA_SANITIZE STREQUAL "")
+	if (NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+		message (FATAL_ERROR "MATA_SANITIZE is not supported for compiler '${CMAKE_CXX_COMPILER_ID}'")
+	endif ()
+	# Build the sanitizer flag: -fsanitize=address,undefined etc.
+	set (MATA_SANITIZE_FLAGS -fsanitize=${MATA_SANITIZE} -fno-omit-frame-pointer -g -O1 -fno-sanitize-recover=undefined)
+	message ("-- Building Mata with sanitizers: ${MATA_SANITIZE}")
 endif ()
 
 if (MATA_ENABLE_IPO)
@@ -148,6 +163,20 @@ function (mata_add_optimizations TARGET)
 			)
 		endif ()
 	endif ()
+	if (NOT MATA_SANITIZE STREQUAL "")
+		target_compile_options (${TARGET} PRIVATE ${MATA_SANITIZE_FLAGS})
+		# Instrumented objects reference the sanitizer runtime, so everything linking this target
+		#  needs `-fsanitize` too; without it the unit tests, the benchmarks and the examples fail
+		#  with undefined `__asan_*`/`__ubsan_*` references. Only the `-fsanitize` part is exported:
+		#  `-O1`, `-g` and `-fno-omit-frame-pointer` shape this build, not a consumer's.
+		target_link_options (${TARGET} PUBLIC
+			"$<BUILD_INTERFACE:${MATA_SANITIZE_FLAGS}>"
+			"$<INSTALL_INTERFACE:-fsanitize=${MATA_SANITIZE}>"
+		)
+		# -D_GLIBCXX_ASSERTIONS enables libstdc++ debug assertions; Clang ignores unknown -D flags
+		target_compile_options (${TARGET} PRIVATE -D_GLIBCXX_ASSERTIONS)
+	endif ()
+
 endfunction ()
 
 # Registering the install rules unconditionally means a `FetchContent`/`add_subdirectory()` consumer
@@ -283,6 +312,16 @@ add_subdirectory (src)
 add_subdirectory (3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory (3rdparty/simlib EXCLUDE_FROM_ALL)
 add_subdirectory (3rdparty/cudd EXCLUDE_FROM_ALL)
+
+# The bundled sources end up inside `libmata.a` as plain objects, so they stay invisible to the
+#  sanitizers unless they are instrumented here too; mata exercises them through its own API, and an
+#  uninstrumented object is a hole in exactly the coverage the sanitizers job exists to provide. Only
+#  the sanitizer flags are shared: warnings and the other optimization toggles remain upstream's call.
+if (NOT MATA_SANITIZE STREQUAL "")
+	foreach (MATA_BUNDLED re2 simlib cudd)
+		target_compile_options (${MATA_BUNDLED} PRIVATE ${MATA_SANITIZE_FLAGS})
+	endforeach ()
+endif ()
 
 if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) AND MATA_BUILD_EXAMPLES)
 	message ("-- Building examples")
