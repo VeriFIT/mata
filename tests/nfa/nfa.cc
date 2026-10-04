@@ -5905,6 +5905,94 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 		result.final.insert(4);
 		CHECK(are_equivalent(result, aut.decode_utf8()));
 	}
+
+	SECTION("two byte paths decoding to the same two-byte code point") {
+		// 0xc8 0x80 == U+0200 along two distinct byte paths leaving state 0 with different targets.
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xc8, 1);
+		aut.delta.add(0, 0xc8, 2);
+		aut.delta.add(1, 0x80, 3);
+		aut.delta.add(2, 0x80, 4);
+		aut.delta.add(3, 'a', 5);
+		aut.delta.add(4, 'b', 5);
+		aut.final.insert(5);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x2'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+
+	SECTION("two byte paths decoding to the same three-byte code point") {
+		// 0xe0 0xa4 0x80 == U+0900, nondeterministic already on the first byte.
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xe0, 1);
+		aut.delta.add(0, 0xe0, 2);
+		aut.delta.add(1, 0xa4, 3);
+		aut.delta.add(2, 0xa4, 4);
+		aut.delta.add(3, 0x80, 5);
+		aut.delta.add(4, 0x80, 6);
+		aut.delta.add(5, 'a', 7);
+		aut.delta.add(6, 'b', 7);
+		aut.final.insert(7);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x9'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+
+	SECTION("two byte paths decoding to the same three-byte code point, nondeterministic on the second byte") {
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xe0, 1);
+		aut.delta.add(1, 0xa4, 2);
+		aut.delta.add(1, 0xa4, 3);
+		aut.delta.add(2, 0x80, 4);
+		aut.delta.add(3, 0x80, 5);
+		aut.delta.add(4, 'a', 6);
+		aut.delta.add(5, 'b', 6);
+		aut.final.insert(6);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x9'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+
+	SECTION("two byte paths decoding to the same four-byte code point") {
+		// 0xf0 0x90 0x80 0x80 == U+10000, nondeterministic on the third byte.
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xf0, 1);
+		aut.delta.add(1, 0x90, 2);
+		aut.delta.add(2, 0x80, 3);
+		aut.delta.add(2, 0x80, 4);
+		aut.delta.add(3, 0x80, 5);
+		aut.delta.add(4, 0x80, 6);
+		aut.delta.add(5, 'a', 7);
+		aut.delta.add(6, 'b', 7);
+		aut.final.insert(7);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x1'00'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
 }
 
 TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {

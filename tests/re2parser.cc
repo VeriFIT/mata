@@ -1622,6 +1622,25 @@ TEST_CASE("mata::Parser UTF-8 encoding") { // {{{
 		for (const Symbol c : symbols) { CHECK(aut.is_in_lang(Run{Word{c}, {}})); }
 	}
 
+	SECTION("Regex (\\x{200}a)*\\x{200}b with nondeterministic byte paths") {
+		// RE2 produces nondeterministic byte paths for the repeated \x{200}, one for the loop and one for the final b.
+		Nfa aut = mata::parser::create_nfa("(\\x{200}a)*\\x{200}b", false, 306, true, Encoding::Utf8);
+		Nfa decoded = aut.decode_utf8();
+		// Must accept the word [0x200, 'b']
+		CHECK(decoded.is_in_lang(Run{Word{0x200, 'b'}, {}}));
+		// Must accept the word [0x200, 'a', 0x200, 'b']
+		CHECK(decoded.is_in_lang(Run{Word{0x200, 'a', 0x200, 'b'}, {}}));
+	}
+
+	SECTION("Regex (\\x{200}|\\x{280})*\\x{280} with overlapping byte paths") {
+		// Both code points share the same 2-byte prefix; decoding may have nondeterministic byte paths.
+		Nfa aut = mata::parser::create_nfa("(\\x{200}|\\x{280})*\\x{280}", false, 306, true, Encoding::Utf8);
+		Nfa decoded = aut.decode_utf8();
+		CHECK(decoded.is_in_lang(Run{Word{0x280}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x200, 0x280}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x280, 0x280}, {}}));
+	}
+
 } // }}}
 
 TEST_CASE("mata::parser Parsing regexes with ^ and $") {
