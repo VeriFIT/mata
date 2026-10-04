@@ -1031,8 +1031,9 @@ Nfa determinize(
  * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
- * @param[out] state_renaming Mapping of original states to reduced states. Left empty by "sat" and "qbf", whose
- *  result is constructed anew.
+ * @param[out] state_renaming Mapping of original states to reduced states. Left empty by "sat", "qbf", and
+ *  "residual"; for "residual", state_renaming must be nullptr. Call reduce() without requesting a state_renaming,
+ *  or use algorithm="simulation" instead.
  * @param[in] params Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation", "residual", "sat", "qbf",
  *      and options to parametrize residual reduction, not utilized in simulation
@@ -1043,6 +1044,7 @@ Nfa determinize(
  *    automata. Their options are:
  * - "type": "nfa" (default), "dfa" (only for "sat"): the kind of the resulting automaton,
  * - "solver": the command running the solver (default: found automatically).
+ * @throw std::runtime_error if algorithm="residual" and state_renaming is not nullptr.
  * @return Reduced automaton.
  */
 Nfa reduce(

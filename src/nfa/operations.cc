@@ -60,22 +60,17 @@ Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
 }
 
 void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
-	// help set to store elements to remove
-	const auto delta_begin = nfa.delta[remove].begin();
-	const auto remove_size = nfa.delta[remove].size();
-	for (size_t i = 0; i < remove_size; i++) { // remove trans from covered state
-		for (StateSet tmp_targets{delta_begin->targets}; const State target : tmp_targets) {
-			nfa.delta.remove(remove, delta_begin->symbol, target);
-		}
-	}
+	// Remove all transitions from the covered state.
+	nfa.delta.mutable_state_post(remove).clear();
 
+	// Redirect transitions to the covered state to the covering set instead.
 	for (const auto remove_transitions = nfa.delta.get_transitions_to(remove); const auto& move : remove_transitions) {
 		// transfer transitions from covered state to covering set
 		for (const State switch_target : covering_set) { nfa.delta.add(move.source, move.symbol, switch_target); }
 		nfa.delta.remove(move);
 	}
 
-	// check final  and initial states
+	// check final and initial states
 	nfa.final.erase(remove);
 	if (nfa.initial.contains(remove)) {
 		nfa.initial.erase(remove);
@@ -1148,6 +1143,16 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 	if (const std::string& algorithm = params.at("algorithm"); "simulation" == algorithm) {
 		result = algorithms::reduce_simulation(aut, reduced_state_map);
 	} else if ("residual" == algorithm) {
+		// Throw early before any work if state_renaming is requested: residual reduces by prime residuals
+		// (double-determinized macrostates), not by equivalence classes, so no original→reduced mapping exists.
+		if (state_renaming != nullptr) {
+			throw std::runtime_error(
+				"mata::nfa::reduce() with algorithm=\"residual\" does not support state_renaming; "
+				"the result states are prime residuals, not equivalence classes of input states. "
+				"Call reduce() without requesting a state_renaming, or use algorithm=\"simulation\" instead."
+			);
+		}
+
 		// reduce type either 'after' or 'with' creation of residual automaton
 		if (!haskey(params, "type")) {
 			throw std::runtime_error(
@@ -1170,7 +1175,9 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		const std::string& residual_type = params.at("type");
 		const std::string& residual_direction = params.at("direction");
 
-		result = algorithms::reduce_residual(aut, reduced_state_map, residual_type, residual_direction);
+		// Use a dummy map since reduce_residual requires one but we won't use it.
+		std::unordered_map<State, State> dummy_map;
+		result = algorithms::reduce_residual(aut, dummy_map, residual_type, residual_direction);
 	} else if ("sat" == algorithm) {
 		// The result is constructed anew, its states do not correspond to the states of the original automaton.
 		result = algorithms::reduce_sat(
@@ -1832,8 +1839,8 @@ Nfa mata::nfa::algorithms::reduce_residual(
 	if (direction == "forward") { back_determinized = revert(back_determinized); }
 	back_determinized = revert(determinize(back_determinized)); // Backward determinization.
 
-	// TODO: Not really sure how to handle state_renaming.
-	(void) state_renaming;
+	// state_renaming is passed but not used: residual reduction is checked at the caller (reduce())
+	// to reject any state_renaming request before performing any work.
 
 	// two different implementations of the same algorithm, for type "after" the
 	// residual automaton and removal of covering states is done after the final

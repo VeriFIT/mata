@@ -3695,7 +3695,6 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 
 TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 	Nfa aut;
-	StateRenaming state_renaming;
 	ParameterMap params_after, params_with;
 	params_after["algorithm"] = "residual";
 	params_with["algorithm"] = "residual";
@@ -3706,8 +3705,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		params_with["type"] = "with";
 		params_with["direction"] = "forward";
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.delta.empty());
 		REQUIRE(result_after.initial.empty());
@@ -3725,8 +3724,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.initial.insert(1);
 
 		aut.final.insert(2);
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 0);
 		REQUIRE(result_after.initial.empty());
@@ -3736,8 +3735,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		REQUIRE(are_equivalent(aut, result_after));
 
 		aut.delta.add(1, 'a', 2);
-		result_after = reduce(aut, &state_renaming, params_after);
-		result_with = reduce(aut, &state_renaming, params_with);
+		result_after = reduce(aut, nullptr, params_after);
+		result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 2);
 		REQUIRE(result_after.initial[0]);
@@ -3764,8 +3763,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.delta.add(3, 'a', 3);
 		aut.delta.add(2, 'a', 1);
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 4);
 		REQUIRE(result_after.initial[0]);
@@ -3827,8 +3826,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.delta.add(6, 'c', 1);
 		aut.delta.add(6, 'd', 1);
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 5);
 		REQUIRE(result_after.initial[0]);
@@ -3932,8 +3931,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.delta.add(6, 'c', 1);
 		aut.delta.add(6, 'd', 1);
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 6);
 		REQUIRE(result_after.initial[0]);
@@ -3967,30 +3966,71 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
 	SECTION("error checking") {
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("requires setting the \"type\" key in the \"params\" argument;")
 		);
 
 		params_after["type"] = "bad_type";
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("requires setting the \"direction\" key in the \"params\" argument;")
 		);
 
 		params_after["direction"] = "unknown_direction";
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("received an unknown value of the \"direction\" key")
 		);
 
 		params_after["direction"] = "forward";
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("received an unknown value of the \"type\" key")
 		);
 
 		params_after["type"] = "after";
-		CHECK_NOTHROW(reduce(aut, &state_renaming, params_after));
+		CHECK_NOTHROW(reduce(aut, nullptr, params_after));
+	}
+}
+
+TEST_CASE("mata::nfa::reduce_residual_state_renaming_error_and_ub_fix()") {
+	// Issue #767: reduce(aut, &renaming, {"algorithm": "residual", ...}) should throw
+	// because residual reduction returns prime residuals, not a mapping of original states.
+	// Also verify the invalidated-iterator fix by checking the function doesn't crash.
+
+	Nfa aut{2, {0}, {0}};
+	aut.delta.add(0, 1, 1);
+	aut.delta.add(1, 0, 0);
+	aut.delta.add(1, 0, 1);
+	aut.delta.add(1, 1, 1);
+
+	StateRenaming renaming;
+	ParameterMap params{{"algorithm", "residual"}, {"type", "after"}, {"direction", "forward"}};
+
+	SECTION("reduce with state_renaming should throw") {
+		CHECK_THROWS_WITH(
+			reduce(aut, &renaming, params),
+			Catch::Matchers::ContainsSubstring("does not support state_renaming")
+		);
+	}
+
+	SECTION("reduce without state_renaming works and gives correct result") {
+		const Nfa res = reduce(aut, nullptr, params);
+		REQUIRE(are_equivalent(aut, res));
+		REQUIRE(res.num_of_states() > 0);
+	}
+
+	SECTION("all four type/direction combinations work without state_renaming") {
+		const auto test_variant = [&](const std::string& type, const std::string& direction) {
+			ParameterMap p{{"algorithm", "residual"}, {"type", type}, {"direction", direction}};
+			const Nfa res = reduce(aut, nullptr, p);
+			REQUIRE(are_equivalent(aut, res));
+		};
+
+		test_variant("after", "forward");
+		test_variant("after", "backward");
+		test_variant("with", "forward");
+		test_variant("with", "backward");
 	}
 }
 

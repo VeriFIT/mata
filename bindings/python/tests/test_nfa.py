@@ -1074,6 +1074,10 @@ def test_reduce_errors():
         mata_nfa.reduce(nfa, {"algorithm": "unknown"})
     with pytest.raises(RuntimeError, match="cannot be found"):
         mata_nfa.reduce(nfa, {"algorithm": "sat", "solver": "/nonexistent/sat-solver"})
+    with pytest.raises(RuntimeError, match="does not support state_renaming"):
+        mata_nfa.reduce_with_state_map(
+            nfa, {"algorithm": "residual", "type": "after", "direction": "forward"}
+        )
 
 
 def test_reduce_sat():
