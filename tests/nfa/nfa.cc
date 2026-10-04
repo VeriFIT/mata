@@ -496,7 +496,7 @@ TEST_CASE("mata::nfa::is_lang_empty_cex()") {
 }
 
 // `is_lang_empty()`, `get_word_for_path()` and `is_complete()` used to guard their inner loop with
-//  `delta.empty()`, which walks state posts until it finds a nonempty one. The guard was redundant:
+//  `delta.empty()`, which walked state posts until it found a nonempty one. The guard was redundant:
 //  a state post that is empty, or not allocated at all, already yields nothing. Pin the answers on
 //  deltas whose low-numbered states carry no transitions.
 TEST_CASE("mata::nfa::Nfa queries on a delta with an empty prefix") {
