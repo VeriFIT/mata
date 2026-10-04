@@ -229,8 +229,10 @@ Nft applications::strings::replace::create_identity_with_single_symbol_replace(
 	const Alphabet* const alphabet, const Symbol from_symbol, const Word& replacement, const ReplaceMode replace_mode
 ) {
 	Nft nft{create_identity(alphabet)};
-	if (alphabet->empty()) { throw std::runtime_error("Alphabet does not contain symbol being replaced."); }
 	const auto symbol_post_to_state_with_replace{nft.delta.mutable_state_post(0).find(from_symbol)};
+	if (symbol_post_to_state_with_replace == nft.delta.mutable_state_post(0).end()) {
+		throw std::runtime_error("Alphabet does not contain symbol being replaced.");
+	}
 	State state_lvl1{symbol_post_to_state_with_replace->targets.front()};
 	nft.delta.mutable_state_post(state_lvl1).clear();
 	const auto replacement_end{replacement.end()};
@@ -289,15 +291,12 @@ Nft mata::applications::strings::replace::replace_reluctant_regex(
 
 nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
 	if (!regex.is_deterministic()) { regex = determinize(regex); }
-	for (const State orig_final : regex.final) {
+	std::vector<State> orig_finals(regex.final.begin(), regex.final.end());
+	for (const State orig_final : orig_finals) {
 		const State new_final = regex.add_state();
 		regex.final.insert(new_final);
 		regex.final.erase(orig_final);
-		StatePost::Moves orig_moves{regex.delta[orig_final].moves()};
-		for (std::vector<Move> moves{orig_moves.begin(), orig_moves.end()}; const auto& [symbol, target] : moves) {
-			regex.delta.remove(orig_final, symbol, target);
-			regex.delta.add(new_final, symbol, target);
-		}
+		regex.delta.mutable_state_post(new_final) = std::move(regex.delta.mutable_state_post(orig_final));
 		regex.delta.add(orig_final, EPSILON, new_final);
 	}
 	return regex;
@@ -306,16 +305,19 @@ nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
 Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, const Symbol marker) {
 	Nft dft_marker{nft::builder::from_nfa_with_levels_zero(marker_dfa)};
 	const size_t dft_marker_num_of_states{dft_marker.num_of_states()};
+	std::vector<std::pair<State, State>> epsilon_moves;
 	for (State source{0}; source < dft_marker_num_of_states; ++source) {
 		for (const auto& [symbol, target] : dft_marker.delta[source].moves_epsilons()) {
-			const State marker_state{dft_marker.add_state()};
-			dft_marker.levels.resize(marker_state + 1);
-			dft_marker.levels[marker_state] = 1;
-			SymbolPost& symbol_post{*dft_marker.delta.mutable_state_post(source).find(symbol)};
-			symbol_post.targets.erase(target);
-			symbol_post.targets.insert(marker_state);
-			dft_marker.delta.add(marker_state, marker, target);
+			epsilon_moves.push_back({source, target});
 		}
+	}
+	for (const auto& [source, target] : epsilon_moves) {
+		const State marker_state{dft_marker.add_state()};
+		dft_marker.levels.resize(marker_state + 1);
+		dft_marker.levels[marker_state] = 1;
+		dft_marker.delta.remove(source, EPSILON, target);
+		dft_marker.delta.add(source, EPSILON, marker_state);
+		dft_marker.delta.add(marker_state, marker, target);
 	}
 	return dft_marker;
 }
