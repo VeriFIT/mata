@@ -180,62 +180,69 @@ std::vector<Transition> Delta::get_transitions_between(const State state_from, c
 }
 
 void Delta::add(const State source, Symbol symbol, const State target) {
-	resize_for_states(source, target);
+	++mutation_epoch_;
+	grow_for_states(source, target);
 
-	if (StatePost& state_transitions{state_posts_[source]}; state_transitions.empty()) {
+	StatePost& state_transitions{state_posts_[source]};
+	if (state_transitions.empty() || state_transitions.back().symbol < symbol) {
 		state_transitions.insert(SymbolPost{symbol, target});
-	} else if (state_transitions.back().symbol < symbol) {
-		state_transitions.insert(SymbolPost{symbol, target});
+		note_added(1);
+		return;
+	}
+	if (const auto symbol_transitions{state_transitions.find(SymbolPost{symbol})};
+		symbol_transitions != state_transitions.end()) {
+		// Add transition with symbol already used on transitions from state_from.
+		if (symbol_transitions->insert(target)) { note_added(1); }
 	} else {
-		if (const auto symbol_transitions{state_transitions.find(SymbolPost{symbol})};
-			symbol_transitions != state_transitions.end()) {
-			// Add transition with symbol already used on transitions from state_from.
-			symbol_transitions->insert(target);
-		} else {
-			// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-			const SymbolPost new_symbol_transitions{symbol, target};
-			state_transitions.insert(new_symbol_transitions);
-		}
+		// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
+		state_transitions.insert(SymbolPost{symbol, target});
+		note_added(1);
 	}
 }
 
 void Delta::add(const State source, const Symbol symbol, const std::span<const State> targets) {
+	++mutation_epoch_;
 	if (targets.empty()) { return; }
-	resize_for_states(source, targets.back());
+	// `targets` may refer into this state post (e.g. `get_successors()` of another symbol), and an insert of a new
+	//  symbol post relocates the symbol posts: read everything needed from it before inserting.
+	const size_t num_of_targets{targets.size()};
+	grow_for_states(source, targets.back());
 
-	if (StatePost& state_transitions{state_posts_[source]}; state_transitions.empty()) {
+	StatePost& state_transitions{state_posts_[source]};
+	if (state_transitions.empty() || state_transitions.back().symbol < symbol) {
 		state_transitions.insert({symbol, targets});
-	} else if (state_transitions.back().symbol < symbol) {
-		state_transitions.insert({symbol, targets});
+		note_added(num_of_targets);
+		return;
+	}
+	if (const auto symbol_transitions{state_transitions.find(symbol)}; symbol_transitions != state_transitions.end()) {
+		// Add transition with symbolOnTransition already used on transitions from state_from.
+		note_added(symbol_transitions->insert(targets));
 	} else {
-		if (const auto symbol_transitions{state_transitions.find(symbol)};
-			symbol_transitions != state_transitions.end()) {
-			// Add transition with symbolOnTransition already used on transitions from state_from.
-			symbol_transitions->insert(targets);
-
-		} else {
-			// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-			// Move new_symbol_transitions{ symbol, states };
-			state_transitions.insert(SymbolPost{symbol, targets});
-		}
+		// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
+		state_transitions.insert(SymbolPost{symbol, targets});
+		note_added(num_of_targets);
 	}
 }
 
 void Delta::add(const State source, SymbolPost&& symbol_post) {
+	++mutation_epoch_;
 	if (symbol_post.targets.empty()) { return; }
-	resize_for_states(source, symbol_post.targets.back());
+	grow_for_states(source, symbol_post.targets.back());
 
 	StatePost& state_post{state_posts_[source]};
+	const size_t num_of_targets{symbol_post.targets.size()};
 	if (state_post.empty() || state_post.back().symbol < symbol_post.symbol) {
 		state_post.insert(std::move(symbol_post));
+		note_added(num_of_targets);
 		return;
 	}
 	if (const auto existing{state_post.find(symbol_post)}; existing != state_post.end()) {
 		// One linear merge of two sorted target sets, instead of a search and a shift per target.
-		existing->targets.insert(symbol_post.targets);
+		note_added(existing->insert(symbol_post.targets));
 		return;
 	}
 	state_post.insert(std::move(symbol_post));
+	note_added(num_of_targets);
 }
 
 void Delta::add(std::vector<Transition>&& transitions) {
@@ -277,6 +284,7 @@ void Delta::add(std::vector<Transition>&& transitions) {
 }
 
 void Delta::remove(const State source, const Symbol symbol, const State target) {
+	++mutation_epoch_;
 	if (source >= state_posts_.size()) { return; }
 
 	StatePost& state_transitions{state_posts_[source]};
@@ -299,7 +307,7 @@ void Delta::remove(const State source, const Symbol symbol, const State target) 
 			"] does not exist."
 		);
 	}
-	symbol_transitions->erase(target);
+	if (symbol_transitions->erase(target)) { note_removed(1); }
 	if (symbol_transitions->empty()) { state_posts_[source].erase(*symbol_transitions); }
 }
 
@@ -320,16 +328,27 @@ bool Delta::contains(const Transition& transition) const {
 }
 
 size_t Delta::num_of_transitions() const {
-	size_t number_of_transitions{0};
-	for (const StatePost& state_post : state_posts_) {
-		for (const SymbolPost& symbol_post : state_post) { number_of_transitions += symbol_post.num_of_targets(); }
+	const auto count_by_scan{[this] {
+		size_t count{0};
+		for (const StatePost& state_post : state_posts_) {
+			for (const SymbolPost& symbol_post : state_post) { count += symbol_post.num_of_targets(); }
+		}
+		return count;
+	}};
+	// Concurrent const callers may all recount; they store the same value, and the release publishes it.
+	if (count_dirty_.load(std::memory_order_acquire)) {
+		const size_t count{count_by_scan()};
+		cached_transition_count_.store(count, std::memory_order_relaxed);
+		count_dirty_.store(false, std::memory_order_release);
+		return count;
 	}
-	return number_of_transitions;
+	const size_t count{cached_transition_count_.load(std::memory_order_relaxed)};
+	// Catches a missed count update, or an edit through a `mutable_state_post()` reference kept past a query.
+	MATA_EXPENSIVE_ASSERT(count == count_by_scan());
+	return count;
 }
 
-bool Delta::empty() const {
-	return std::ranges::all_of(state_posts_, [](const StatePost& state_post) { return state_post.empty(); });
-}
+bool Delta::empty() const { return num_of_transitions() == 0; }
 
 Delta::Transitions::const_iterator::const_iterator(const Delta& delta) : delta_{&delta} {
 	const size_t post_size = delta_->num_of_states();
@@ -461,11 +480,14 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 	// Self-append: one controlled snapshot, then the consuming path.
 	if (this == &other) { return append_shifted(Delta{other}, offset); }
 	check_append_shifted_range(offset, other.num_of_states());
-	if (num_of_states() < offset) { allocate(offset); }
+	if (num_of_states() < offset || !other.state_posts_.empty()) { ++mutation_epoch_; }
+	// Empty posts only: the count does not change, and `allocate()` would move the epoch a second time.
+	if (num_of_states() < offset) { state_posts_.resize(offset); }
 	for (const StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post{other_post};
 		shift_state_post(shifted_post, offset);
 		state_posts_.push_back(std::move(shifted_post));
+		if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(state_posts_.back().num_of_moves()); }
 	}
 	return *this;
 }
@@ -474,11 +496,16 @@ Delta& Delta::append_shifted(Delta&& other, const State offset) {
 	// Self-append: the snapshot is the operand, `this` keeps its own posts.
 	if (this == &other) { return append_shifted(Delta{other}, offset); }
 	check_append_shifted_range(offset, other.num_of_states());
-	if (num_of_states() < offset) { allocate(offset); }
+	if (num_of_states() < offset || !other.state_posts_.empty()) { ++mutation_epoch_; }
+	if (num_of_states() < offset) { state_posts_.resize(offset); }
+	// The posts of `other` are consumed below; should an append throw, `other` must not keep a count of them.
+	++other.mutation_epoch_;
+	other.mark_count_dirty();
 	for (StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post{std::move(other_post)};
 		shift_state_post(shifted_post, offset);
 		state_posts_.push_back(std::move(shifted_post));
+		if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(state_posts_.back().num_of_moves()); }
 	}
 	other.clear();
 	return *this;
@@ -560,6 +587,8 @@ StatePost& Delta::mutable_state_post(const State source) {
 		state_posts_.resize(new_size);
 	}
 
+	++mutation_epoch_;
+	mark_count_dirty(); // Raw edits invalidate the count
 	return state_posts_[source];
 }
 
@@ -592,6 +621,8 @@ Delta mata::nfa::defragment(const Delta& delta, const BoolVector& is_staying, co
 }
 
 Delta& Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+	++mutation_epoch_;
+	mark_count_dirty();
 	size_t source_new{0};
 	for (size_t source_orig{0}, num_of_states{this->num_of_states()}; source_orig < num_of_states; ++source_orig) {
 		if (!is_staying[source_orig]) { continue; } // Skip source states not staying.
