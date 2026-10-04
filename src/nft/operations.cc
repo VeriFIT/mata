@@ -345,6 +345,18 @@ std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const st
 		level = nft.levels.next_level_after(level);
 	}
 }
+/// Map state levels onto the reversed automaton. Reversing the direction of every transition also reverses the
+///  order of the tapes: tape i becomes tape N-1-i, so a state on level l moves to level (N - l) mod N. States
+///  without a level entry keep the default level.
+Levels revert_levels_(const Levels& forward_levels, const size_t num_of_states) {
+	std::vector<Level> mapped(num_of_states, DEFAULT_LEVEL);
+	const size_t num_of_levels{forward_levels.num_of_levels};
+	if (num_of_levels == 0) { return Levels{num_of_levels, std::move(mapped)}; }
+	for (State state{0}; state < forward_levels.size() && state < num_of_states; ++state) {
+		mapped[state] = static_cast<Level>((num_of_levels - forward_levels[state]) % num_of_levels);
+	}
+	return Levels{num_of_levels, std::move(mapped)};
+}
 } // Anonymous namespace.
 
 bool mata::nft::has_epsilon_cycle(const Nft& nft) {
@@ -871,6 +883,7 @@ Nft mata::nft::fragile_revert(const Nft& aut) {
 
 	result.initial = aut.final;
 	result.final = aut.initial;
+	result.levels = revert_levels_(aut.levels, num_of_states);
 
 	// Compute non-epsilon symbols.
 	OrdVector<Symbol> symbols = aut.delta.get_used_symbols();
@@ -1000,6 +1013,7 @@ Nft mata::nft::simple_revert(const Nft& aut) {
 
 	result.initial = aut.final;
 	result.final = aut.initial;
+	result.levels = revert_levels_(aut.levels, num_of_states);
 
 	return result;
 }
@@ -1012,6 +1026,7 @@ Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
 
 	result.initial = aut.final;
 	result.final = aut.initial;
+	result.levels = revert_levels_(aut.levels, num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
 		for (const SymbolPost& transition : aut.delta[source_state]) {

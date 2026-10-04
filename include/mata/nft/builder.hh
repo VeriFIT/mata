@@ -159,6 +159,8 @@ Nft from_nfa_with_levels_zero(
  * If you only have one level, then it is more efficient to call the constructor that
  * takes Nfa as input.
  *
+ * States unreachable from the initial states get the default level 0: any level is vacuously correct for them.
+ *
  * @throws std::runtime_error if some state should be assigned two different levels
  *                            or if the final state is not at level 0.
  */
