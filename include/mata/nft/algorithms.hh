@@ -141,11 +141,17 @@ Nft product(
 /**
  * @brief Concatenate two NFTs.
  *
- * Supports epsilon symbols when @p use_epsilon is set to true.
+ * Connects @p lhs and @p rhs by adding a run of ε-transitions, one per level, from each final state of @p lhs to
+ * each initial state of @p rhs. The ε is set to @p epsilon. If @p use_epsilon is false, @c remove_epsilon(@p
+ * epsilon) is run on the result, so every transition over @p epsilon disappears, including the operands' own
+ * transitions labelled with that symbol. Operand transitions over any other symbol are preserved; in particular,
+ * with @p epsilon != @c EPSILON the operands' @c EPSILON transitions survive, which is not the case when
+ * @p epsilon == @c EPSILON.
+ *
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon to be used for concatenation (provided @p use_epsilon is true)
- * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
+ * @param[in] epsilon Symbol used for the connecting transitions between @p lhs and @p rhs.
+ * @param[in] use_epsilon Whether to keep the connecting epsilon transitions in the result.
  * @param[out] lhs_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
