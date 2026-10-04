@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
+#include <stdexcept>
+#include <string>
 
 using namespace mata::nft;
 
@@ -30,7 +32,15 @@ Nft intersection(
 		return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
 	};
 
-	if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty()) { return Nft{}; }
+	if (lhs.levels.num_of_levels != rhs.levels.num_of_levels) {
+		throw std::invalid_argument{
+			"Cannot intersect NFTs with different numbers of levels: " + std::to_string(lhs.levels.num_of_levels) +
+			" != " + std::to_string(rhs.levels.num_of_levels) + "."
+		};
+	}
+	if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty()) {
+		return Nft::with_levels(lhs.levels.num_of_levels);
+	}
 
 	return algorithms::product(lhs, rhs, both_final, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
 }

@@ -871,7 +871,8 @@ State Nft::add_state() {
 }
 
 State Nft::add_state(const State state) {
-	levels.set(state);
+	// Do not reset the level of a state that is already in this NFT; only newly added states get the default level.
+	if (state >= levels.size()) { levels.resize(state + 1, DEFAULT_LEVEL); }
 	return Automaton::add_state(state);
 }
 
@@ -1336,13 +1337,13 @@ StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vecto
 
 void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	for (const StatePost& state_post : delta) {
-	for (const StatePost& state_post : delta) {
-		for (const SymbolPost& symbol_post : state_post) {
-			if (symbol_post.symbol >= EPSILON - 1) { continue; }
-			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
-			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+		for (const StatePost& state_post : delta) {
+			for (const SymbolPost& symbol_post : state_post) {
+				if (symbol_post.symbol >= EPSILON - 1) { continue; }
+				alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
+				alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+			}
 		}
-	}
 	}
 }
 
