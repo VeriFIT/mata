@@ -257,7 +257,44 @@ std::vector<State> Automaton::distances_from_initial() const {
 	return distances;
 }
 
-std::vector<State> Automaton::distances_to_final() const { return reverted().distances_from_initial(); }
+std::vector<State> Automaton::distances_to_final() const {
+	// A BFS from the final states over the reversed edges. Reverting the automaton first, as the previous
+	//  implementation did, builds the whole reversed delta with one sorted insert per transition, while the
+	//  BFS only needs predecessor lists.
+	const size_t num_states{this->num_of_states()};
+	std::vector<size_t> offsets(num_states + 2, 0);
+	for (State source{0}; source < num_states; ++source) {
+		for (const nfa::SymbolPost& symbol_post : delta[source]) {
+			for (const State target : symbol_post.targets) { ++offsets[target + 2]; }
+		}
+	}
+	for (size_t i = 2; i < offsets.size(); ++i) { offsets[i] += offsets[i - 1]; }
+	std::vector<State> predecessors(offsets[num_states + 1]);
+	for (State source{0}; source < num_states; ++source) {
+		for (const nfa::SymbolPost& symbol_post : delta[source]) {
+			for (const State target : symbol_post.targets) { predecessors[offsets[target + 1]++] = source; }
+		}
+	}
+	// Predecessors of a state t are in [offsets[t], offsets[t + 1]).
+
+	std::vector<State> distances(num_states + 1, nfa::Limits::max_state);
+	std::vector<State> queue;
+	queue.reserve(num_states);
+	for (const State target_final : final) {
+		distances[target_final] = 0;
+		queue.push_back(target_final);
+	}
+	for (size_t head{0}; head < queue.size(); ++head) {
+		const State target = queue[head];
+		for (size_t i = offsets[target]; i < offsets[target + 1]; ++i) {
+			if (const State predecessor = predecessors[i]; distances[predecessor] == nfa::Limits::max_state) {
+				distances[predecessor] = distances[target] + 1;
+				queue.push_back(predecessor);
+			}
+		}
+	}
+	return distances;
+}
 
 /**
  * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
