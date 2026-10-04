@@ -41,7 +41,9 @@ Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
 
 /**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
- *  which were non-final in the original automaton.
+ *  which were non-final in the original automaton. An already deterministic @p aut is complemented directly, without
+ *  determinizing it first.
+ * Transitions over symbols outside of @p symbols are dropped: the complement is a language over @p symbols only.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
  * @return Complemented automaton.
@@ -51,6 +53,7 @@ Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& s
 /**
  * Complement implemented by determization using Brzozowski minimization, adding a sink state and making the automaton
  *  complete. Then it swaps final and non-final states.
+ * Transitions over symbols outside of @p symbols are dropped: the complement is a language over @p symbols only.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
  * @return Complemented automaton.
