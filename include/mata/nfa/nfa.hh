@@ -295,6 +295,14 @@ class Nfa : public Automaton {
 	 * @brief In-place concatenation.
 	 */
 	Nfa& concatenate(const Nfa& aut);
+	/**
+	 * @brief In-place concatenation, consuming @p aut.
+	 *
+	 * The state posts of @p aut are moved into @c this. If @c this and @p aut are aliased,
+	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
+	 * @p aut is left valid but empty after the operation.
+	 */
+	Nfa& concatenate(Nfa&& aut);
 
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nfa.
@@ -302,6 +310,16 @@ class Nfa : public Automaton {
 	 * Does not add epsilon transitions, just unites initial and final states.
 	 */
 	Nfa& unite_nondet_with(const Nfa& nfa);
+	/**
+	 * @brief In-place nondeterministic union of @c this with @p nfa, consuming @p nfa.
+	 *
+	 * Does not add epsilon transitions, just unites initial and final states.
+	 * The state posts of @p nfa are moved into @c this, so no deep copy of the operand occurs.
+	 * If @c this and @p nfa are aliased (which should not normally happen with rvalues),
+	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
+	 * @p nfa is left valid but empty after the operation.
+	 */
+	Nfa& unite_nondet_with(Nfa&& nfa);
 
 	/**
 	 * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -830,6 +848,28 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 Nfa union_nondet(const Nfa& lhs, const Nfa& rhs);
 
 /**
+ * @brief Compute nondeterministic union of two NFAs, consuming @p lhs.
+ *
+ * The left operand's state posts are moved into the result, so no deep copy of @p lhs occurs.
+ * The right operand is copied normally. If @p lhs and @p rhs are aliased, a controlled snapshot
+ * is taken of @p rhs and the operation falls back to the lvalue path.
+ * @p lhs is left valid but empty after the operation.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nfa union_nondet(Nfa&& lhs, const Nfa& rhs);
+
+/**
+ * @brief Compute nondeterministic union of two NFAs, consuming both operands.
+ *
+ * Both operands' state posts are moved into the result. If @p lhs and @p rhs are aliased,
+ * a controlled snapshot of @p rhs is taken and the operation falls back to the lvalue path.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nfa union_nondet(Nfa&& lhs, Nfa&& rhs);
+
+
+/**
  * @brief Compute union of two complete deterministic NFAs. Preserves determinism.
  *
  * The union is computed by product construction with OR condition on the final states.
@@ -929,6 +969,23 @@ Nfa concatenate(
 	StateRenaming* lhs_state_renaming = nullptr,
 	StateRenaming* rhs_state_renaming = nullptr
 );
+
+/**
+ * @brief Concatenate two NFAs, consuming the left operand.
+ *
+ * The left operand's state posts are moved into the result. The right operand is copied normally.
+ * If @p lhs and @p rhs are aliased, a controlled snapshot of @p rhs is taken and the operation
+ * falls back to the lvalue path.
+ * @p lhs is left valid but empty after the operation.
+ */
+Nfa concatenate(
+	Nfa&& lhs,
+	const Nfa& rhs,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
 
 /**
  * @brief Compute NFA by concatenating @p nfa_to_concatenate with itself @p power times.

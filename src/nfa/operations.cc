@@ -1100,6 +1100,19 @@ Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
 	return product(lhs, rhs, ProductFinalStateCondition::Or, EPSILON);
 }
 
+
+Nfa mata::nfa::union_nondet(Nfa&& lhs, const Nfa& rhs) {
+	return Nfa{std::move(lhs)}.unite_nondet_with(rhs);
+}
+
+Nfa mata::nfa::union_nondet(Nfa&& lhs, Nfa&& rhs) {
+	// Both are rvalues; move lhs into result, then move rhs.
+	Nfa result{std::move(lhs)};
+	result.unite_nondet_with(std::move(rhs));
+	return result;
+}
+
+
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
 	if (!haskey(params, "relation")) {
 		throw std::runtime_error(

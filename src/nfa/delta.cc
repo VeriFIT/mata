@@ -17,6 +17,7 @@
 #include <iterator>
 #include <queue>
 #include <utility>
+#include <stdexcept>
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -474,6 +475,92 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 	}
 	return copied_state_posts;
 }
+
+
+Delta& Delta::append_shifted(const Delta& other, State offset) {
+	if (this == &other) {
+		// Self-append: take a snapshot to avoid reading moved-from state.
+		return append_shifted(Delta{other}, offset);
+	}
+	
+	// Check for overflow: offset + other.num_of_states() must fit in State.
+	if (offset > Limits::max_state - other.num_of_states()) {
+		throw std::overflow_error(
+			"Delta::append_shifted: offset (" + std::to_string(offset) + ") + other.num_of_states() (" +
+			std::to_string(other.num_of_states()) + ") exceeds max_state"
+		);
+	}
+	
+	// Allocate empty posts up to offset if needed.
+	if (num_of_states() < offset) {
+		allocate(offset);
+	}
+	
+	// For each state post in other, shift targets by offset and append.
+	for (const StatePost& other_post : other.state_posts_) {
+		StatePost shifted_post;
+		shifted_post.reserve(other_post.size());
+		for (const SymbolPost& other_symbol_post : other_post) {
+			StateSet shifted_targets;
+			shifted_targets.reserve(other_symbol_post.num_of_targets());
+			for (const State& target : other_symbol_post.targets) {
+				shifted_targets.push_back(target + offset);
+			}
+			shifted_post.push_back(SymbolPost(other_symbol_post.symbol, shifted_targets));
+		}
+		state_posts_.push_back(shifted_post);
+	}
+	
+	return *this;
+}
+
+Delta& Delta::append_shifted(Delta&& other, State offset) {
+	if (this == &other) {
+		// Self-append: take a snapshot of other before consuming.
+		Delta snapshot{other};
+		other.clear();
+		return append_shifted(snapshot, offset);
+	}
+	
+	// Check for overflow: offset + other.num_of_states() must fit in State.
+	if (offset > Limits::max_state - other.num_of_states()) {
+		throw std::overflow_error(
+			"Delta::append_shifted: offset (" + std::to_string(offset) + ") + other.num_of_states() (" +
+			std::to_string(other.num_of_states()) + ") exceeds max_state"
+		);
+	}
+	
+	// Allocate empty posts up to offset if needed.
+	if (num_of_states() < offset) {
+		allocate(offset);
+	}
+	
+	// For each state post in other, shift targets by offset and move.
+	for (StatePost& other_post : other.state_posts_) {
+		StatePost shifted_post;
+		shifted_post.reserve(other_post.size());
+		for (SymbolPost& other_symbol_post : other_post) {
+			// Create shifted targets by transforming the original targets.
+			// We cannot mutate the StateSet directly, so we build a new one.
+			StateSet shifted_targets;
+			shifted_targets.reserve(other_symbol_post.targets.size());
+			for (const State& target : other_symbol_post.targets) {
+				shifted_targets.push_back(target + offset);
+			}
+			shifted_post.push_back(SymbolPost(other_symbol_post.symbol, std::move(shifted_targets)));
+		}
+		state_posts_.push_back(std::move(shifted_post));
+	}
+	
+	// Clear other to leave it valid but empty.
+	other.state_posts_.clear();
+	
+	return *this;
+}
+
+
+
+
 
 StatePost& Delta::mutable_state_post(const State source) {
 	if (source >= state_posts_.size()) {

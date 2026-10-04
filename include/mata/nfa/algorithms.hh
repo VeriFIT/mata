@@ -167,6 +167,24 @@ Nfa concatenate_eps(
 );
 
 /**
+ * @brief Concatenate two NFAs with epsilon transitions, consuming the left operand.
+ *
+ * The left operand's state posts are moved into the result. The right operand is copied normally.
+ * If @p lhs and @p rhs are aliased, a controlled snapshot of @p rhs is taken and the operation
+ * falls back to the lvalue path.
+ * @p lhs is left valid but empty after the operation.
+ */
+Nfa concatenate_eps(
+	Nfa&& lhs,
+	const Nfa& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+
+/**
  * @brief Reduce NFA using (forward) simulation.
  *
  * @param[in] nfa NFA to reduce

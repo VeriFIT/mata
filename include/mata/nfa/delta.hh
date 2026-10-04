@@ -658,6 +658,36 @@ class Delta {
 	std::vector<StatePost> renumber_targets(const std::function<State(State)>& target_renumberer) const;
 
 	/**
+	 * @brief Append the state posts of @p other, shifting every state of @p other by @p offset.
+	 *
+	 * The state posts of @p other become the state posts of @c offset, @c offset+1, ... of @c this, and every
+	 *  target of @p other is increased by @p offset. The shift is monotone, so the target sets stay sorted and
+	 *  are never re-sorted. State posts up to @p offset are allocated (as empty posts) first, so the appended
+	 *  posts land exactly at @p offset.
+	 *
+	 * This is the primitive behind the union and the concatenation of two automata, where the right operand's
+	 *  states are the left operand's states shifted by a constant.
+	 * @param[in] other Delta to append; appending a delta to itself takes one controlled snapshot.
+	 * @param[in] offset State offset to shift @p other by; must be at least @c num_of_states().
+	 * @throws std::overflow_error If @c offset+other.num_of_states() does not fit into @c State.
+	 * @return @c this after the append.
+	 */
+	Delta& append_shifted(const Delta& other, State offset);
+
+	/**
+	 * @brief Append the state posts of @p other, shifting every state of @p other by @p offset, consuming @p other.
+	 *
+	 * Same result as @c append_shifted(const Delta&, State), but the state posts of @p other are moved instead of
+	 *  copied, so the append allocates nothing per post. @p other is left empty.
+	 * @param[in,out] other Delta to consume; left empty.
+	 * @param[in] offset State offset to shift @p other by; must be at least @c num_of_states().
+	 * @throws std::overflow_error If @c offset+other.num_of_states() does not fit into @c State.
+	 * @return @c this after the append.
+	 */
+	Delta& append_shifted(Delta&& other, State offset);
+
+
+	/**
 	 * @brief Add transitions to multiple destinations
 	 *
 	 * @param source From

@@ -441,6 +441,47 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 	return *this;
 }
 
+
+Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
+	if (this == &nfa) {
+		// Alias: take a snapshot to avoid reading moved-from state.
+		Nfa snapshot = nfa;
+		nfa.clear();
+		return unite_nondet_with(snapshot);
+	}
+
+	if (final.empty() || initial.empty()) {
+		*this = std::move(nfa);
+		return *this;
+	}
+	if (nfa.final.empty() || nfa.initial.empty()) { return *this; }
+
+	const size_t num_of_states_this{this->num_of_states()};
+	const size_t num_of_states_aut{nfa.num_of_states()};
+
+	this->delta.reserve(num_of_states_this + num_of_states_aut);
+	this->delta.allocate(num_of_states_this);
+
+	// Use append_shifted to move the rhs state posts without copying.
+	this->delta.append_shifted(std::move(nfa.delta), num_of_states_this);
+
+	// Set accepting states.
+	this->final.reserve(num_of_states_this + num_of_states_aut);
+	for (const State& aut_fin : nfa.final) {
+		this->final.insert(num_of_states_this + aut_fin);
+	}
+	// Set initial states.
+	this->initial.reserve(num_of_states_this + num_of_states_aut);
+	for (const State& aut_ini : nfa.initial) {
+		this->initial.insert(num_of_states_this + aut_ini);
+	}
+
+	// Clear nfa to leave it valid but empty.
+	nfa.clear();
+	return *this;
+}
+
+
 Nfa Nfa::decode_utf8() const {
 	Nfa result{num_of_states(), {initial}, {final}};
 	BoolVector used(num_of_states(), false);
