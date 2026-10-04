@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,21 @@ using Symbol = unsigned;
 using Level = unsigned;
 using Word = std::vector<Symbol>;
 using WordName = std::vector<std::string>;
+
+/// The name under which @c EPSILON is printed in the .mata format and in DOT, and which the .mata parser maps back to
+// @c EPSILON. The name is reserved: alphabets map it straight to @c EPSILON and never register it as an ordinary
+// symbol, so it cannot collide with a translated symbol.
+constexpr std::string_view EPSILON_NAME{"<eps>"};
+/// The name under which the NFT @c DONT_CARE symbol is printed in the .mata format and in DOT, and which the .mata
+/// parser
+// maps back to @c DONT_CARE. Reserved the same way as @c EPSILON_NAME.
+constexpr std::string_view DONT_CARE_NAME{"<dntcr>"};
+
+/// Whether @p name is a reserved special-symbol name (@c EPSILON_NAME or @c DONT_CARE_NAME) that
+/// alphabets must not register as an ordinary symbol.
+constexpr bool is_reserved_symbol_name(const std::string_view name) {
+	return name == EPSILON_NAME || name == DONT_CARE_NAME;
+}
 
 /**
  * The abstract interface for NFA alphabets.
@@ -379,13 +395,17 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Try to add symbol to the alphabet map.
 	 *
-	 * Does not throw an exception when the adding fails.
+	 * Does not throw an exception when the adding fails. Throws on a reserved special-symbol name (@c EPSILON_NAME or
+	 * @c DONT_CARE_NAME); those names belong to no alphabet.
 	 *
 	 * @param[in] key User-space representation of the symbol.
 	 * @param[in] value Number of the symbol to be used on transitions.
 	 * @return Result of the insertion as @c InsertionResult.
 	 */
 	InsertionResult try_add_new_symbol(const std::string& key, Symbol value) {
+		if (is_reserved_symbol_name(key)) {
+			throw std::runtime_error{"Cannot register the reserved special-symbol name '" + key + "'."};
+		}
 		return symbol_map_.insert({key, value});
 	}
 

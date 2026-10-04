@@ -8,6 +8,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nft/types.hh"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
@@ -80,6 +81,28 @@ TEST_CASE("mata::OnTheFlyAlphabet::add_symbols_from()") {
 	alphabet = alphabet2;
 
 	alphabet.clear();
+	CHECK(alphabet.get_number_of_symbols() == 0);
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet reserved special-symbol names (#794)") {
+	OnTheFlyAlphabet alphabet{};
+	// The reserved names translate straight to the special symbols and are never registered, so a
+	//  printed automaton parses back with the same transition symbols.
+	CHECK(alphabet.translate_symb(std::string{EPSILON_NAME}) == nfa::EPSILON);
+	CHECK(alphabet.translate_symb(std::string{DONT_CARE_NAME}) == nft::DONT_CARE);
+	CHECK(alphabet.get_number_of_symbols() == 0);
+	CHECK(
+		alphabet.translate_word({std::string{EPSILON_NAME}, std::string{DONT_CARE_NAME}}) ==
+		Word{nfa::EPSILON, nft::DONT_CARE}
+	);
+
+	// The reserved names cannot be registered as ordinary symbols.
+	CHECK_THROWS(alphabet.add_new_symbol(std::string{EPSILON_NAME}));
+	CHECK_THROWS(alphabet.add_new_symbol(std::string{DONT_CARE_NAME}));
+	CHECK_THROWS(alphabet.add_new_symbol(std::string{EPSILON_NAME}, 13));
+	CHECK_THROWS(alphabet.try_add_new_symbol(std::string{DONT_CARE_NAME}, 13));
+	CHECK_THROWS(alphabet.add_symbols_from({std::string{EPSILON_NAME}}));
+	CHECK_THROWS(OnTheFlyAlphabet{{std::string{EPSILON_NAME}, 13}});
 	CHECK(alphabet.get_number_of_symbols() == 0);
 }
 
