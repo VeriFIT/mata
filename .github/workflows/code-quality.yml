@@ -329,6 +329,39 @@ jobs:
           else
               echo "Code is properly formatted."
           fi
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ubuntu-latest
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: sanitizers-ubuntu-latest
+          max-size: 500M
+      - name: Configure with sanitizers
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DMATA_SANITIZE=address,undefined \
+            -DMATA_BUILD_EXAMPLES=ON
+      # One example comes along to prove that a target linking the instrumented `libmata.a`
+      #  still links: the sanitizer runtime has to reach dependents, not just the library.
+      - name: Build unit tests and one example
+        run: cmake --build build --target tests example01-simple --parallel 4
+      - name: Run unit tests under sanitizers
+        env:
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
   build-docs:
     runs-on: ${{ matrix.os }}
     strategy:
