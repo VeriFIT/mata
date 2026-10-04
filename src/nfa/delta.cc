@@ -16,6 +16,7 @@
 #include <functional>
 #include <iterator>
 #include <queue>
+#include <stdexcept>
 #include <utility>
 
 using namespace mata::utils;
@@ -313,6 +314,53 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 		copied_state_posts.emplace_back(copied_state_post);
 	}
 	return copied_state_posts;
+}
+
+namespace {
+
+/// Shift every target of @p state_post by @p offset. The shift is monotone, so the target sets stay sorted.
+void shift_state_post(StatePost& state_post, const State offset) {
+	for (SymbolPost& symbol_post : state_post) {
+		for (State& target : symbol_post.targets) { target += offset; }
+	}
+}
+
+void check_append_shifted_range(const State offset, const size_t other_num_of_states) {
+	if (static_cast<size_t>(Limits::max_state) - offset < other_num_of_states) {
+		throw std::overflow_error(
+			"Delta::append_shifted: offset (" + std::to_string(offset) + ") + other.num_of_states() (" +
+			std::to_string(other_num_of_states) + ") exceeds max_state"
+		);
+	}
+}
+
+} // namespace
+
+Delta& Delta::append_shifted(const Delta& other, const State offset) {
+	// Self-append: one controlled snapshot, then the consuming path.
+	if (this == &other) { return append_shifted(Delta{other}, offset); }
+	check_append_shifted_range(offset, other.num_of_states());
+	if (num_of_states() < offset) { allocate(offset); }
+	for (const StatePost& other_post : other.state_posts_) {
+		StatePost shifted_post{other_post};
+		shift_state_post(shifted_post, offset);
+		state_posts_.push_back(std::move(shifted_post));
+	}
+	return *this;
+}
+
+Delta& Delta::append_shifted(Delta&& other, const State offset) {
+	// Self-append: the snapshot is the operand, `this` keeps its own posts.
+	if (this == &other) { return append_shifted(Delta{other}, offset); }
+	check_append_shifted_range(offset, other.num_of_states());
+	if (num_of_states() < offset) { allocate(offset); }
+	for (StatePost& other_post : other.state_posts_) {
+		StatePost shifted_post{std::move(other_post)};
+		shift_state_post(shifted_post, offset);
+		state_posts_.push_back(std::move(shifted_post));
+	}
+	other.clear();
+	return *this;
 }
 
 StatePost& Delta::mutable_state_post(const State source) {
