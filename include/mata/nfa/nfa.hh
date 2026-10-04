@@ -733,6 +733,9 @@ class Nfa : public Automaton {
 	 * @param[in] alphabet Alphabet to use for computing the complement. If @c nullptr, uses @c this->alphabet when
 	 *  defined, otherwise uses @c this->delta.get_used_symbols().
 	 *
+	 * Transitions over symbols outside of the chosen alphabet are ignored; the automaton is complemented only
+	 *  with respect to the symbols of @p alphabet and the returned word never contains any other symbol.
+	 *
 	 * @pre The automaton does not contain any epsilon transitions.
 	 * TODO: Support lazy epsilon closure?
 	 * @return An arbitrary word from the complemented automaton, or @c std::nullopt if the automaton is universal on
