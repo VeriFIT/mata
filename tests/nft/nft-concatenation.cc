@@ -8,8 +8,8 @@
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
-#include "mata/nft/nft.hh"
 
 using namespace mata::nft;
 using namespace mata::applications::strings;
@@ -1128,4 +1128,53 @@ TEST_CASE("mata::nft::concatenate_nth_power()") {
 
 		CHECK(are_equivalent(concatenate_nth_power(nft, 4), expected));
 	}
+}
+
+TEST_CASE("mata::nft::concatenate_eps() with custom epsilon and use_epsilon=false") {
+	// Test that concatenate_eps with a custom epsilon and use_epsilon=false removes the custom epsilon.
+	const Symbol custom_epsilon = 100;
+
+	// Use simple 1-level NFTs (essentially NFAs)
+	Nft a{Nft::with_levels(1, 3)};
+	a.initial.insert(0);
+	a.final.insert(2);
+	a.delta.add(0, 1, 2);
+
+	Nft b{Nft::with_levels(1, 3)};
+	b.initial.insert(0);
+	b.final.insert(2);
+	b.delta.add(0, 2, 2);
+
+	const Nft ab_concat = mata::nft::algorithms::concatenate_eps(a, b, custom_epsilon, /*use_epsilon=*/false);
+	const Nft ab_normal = concatenate(a, b);
+
+	// The two results should be equivalent.
+	REQUIRE(are_equivalent(ab_concat, ab_normal));
+
+	// The custom epsilon symbol should not be in the used symbols.
+	REQUIRE(!ab_concat.delta.get_used_symbols().contains(custom_epsilon));
+}
+
+TEST_CASE("mata::nft::concatenate_eps() with custom epsilon on a multi-level NFT") {
+	// With more than one level the connectors are a run of one epsilon transition per level, which takes a
+	// different path through remove_epsilon() than the single-transition case above.
+	const Symbol custom_epsilon = 100;
+
+	Nft a{Nft::with_levels(2)};
+	a.initial.insert(0);
+	a.add_state(2);
+	a.final.insert(2);
+	a.add_transition_by_levels(0, {1, 1}, 2);
+
+	Nft b{Nft::with_levels(2)};
+	b.initial.insert(0);
+	b.add_state(2);
+	b.final.insert(2);
+	b.add_transition_by_levels(0, {2, 2}, 2);
+
+	const Nft ab_concat = mata::nft::algorithms::concatenate_eps(a, b, custom_epsilon, /*use_epsilon=*/false);
+
+	CHECK(ab_concat.levels.num_of_levels == 2);
+	CHECK(are_equivalent(ab_concat, concatenate(a, b)));
+	CHECK(!ab_concat.delta.get_used_symbols().contains(custom_epsilon));
 }

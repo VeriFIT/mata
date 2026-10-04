@@ -7,8 +7,8 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/applications/strings.hh"
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
-#include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -1112,4 +1112,69 @@ TEST_CASE("mata::nfa::concatenate_nth_power()") {
 
 		CHECK(are_equivalent(concatenate_nth_power(aut, 4), expected));
 	}
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() with custom epsilon and use_epsilon=false") {
+	// Test that concatenate_eps with a custom epsilon and use_epsilon=false behaves like concatenate().
+	Nfa x{2, {0}, {1}};
+	x.delta.add(0, 1, 1);
+
+	Nfa y{2, {0}, {1}};
+	y.delta.add(0, 2, 1);
+
+	const Symbol custom_epsilon = 100;
+
+	// concatenate_eps with custom epsilon and use_epsilon=false should remove the custom epsilon transitions.
+	const Nfa xy_concat = mata::nfa::algorithms::concatenate_eps(x, y, custom_epsilon, /*use_epsilon=*/false);
+	const Nfa xy_normal = concatenate(x, y);
+
+	// The two results should be equivalent.
+	REQUIRE(are_equivalent(xy_concat, xy_normal));
+
+	// The custom epsilon symbol should not be in the used symbols.
+	REQUIRE(!xy_concat.delta.get_used_symbols().contains(custom_epsilon));
+
+	// Test the language: [1,2] should be accepted, [1,100,2] should not.
+	REQUIRE(xy_concat.is_in_lang({1, 2}));
+	REQUIRE(!xy_concat.is_in_lang({1, custom_epsilon, 2}));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() with custom epsilon preserves operand epsilon transitions") {
+	// Test that when custom epsilon != EPSILON, the operands' own EPSILON transitions are preserved.
+	const Symbol custom_epsilon = 100;
+
+	Nfa x{2, {0}, {1}};
+	x.delta.add(0, 1, 1);
+	x.delta.add(0, EPSILON, 1); // Operand has its own EPSILON transition.
+
+	Nfa y{2, {0}, {1}};
+	y.delta.add(0, 2, 1);
+
+	// With use_epsilon=false and custom_epsilon, the operand's EPSILON should be preserved.
+	const Nfa xy_concat = mata::nfa::algorithms::concatenate_eps(x, y, custom_epsilon, /*use_epsilon=*/false);
+
+	// The operand's EPSILON transition should still be there (reached from state 0 of the concatenation).
+	REQUIRE(xy_concat.delta.get_used_symbols().contains(EPSILON));
+	// The custom epsilon should not be present.
+	REQUIRE(!xy_concat.delta.get_used_symbols().contains(custom_epsilon));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() removes operand transitions over the connecting symbol") {
+	// The guarantee is about the symbol, not about where the transition came from: an operand transition labelled
+	// with the connecting epsilon is removed together with the connectors.
+	const Symbol custom_epsilon = 100;
+
+	Nfa x{3, {0}, {2}};
+	x.delta.add(0, 1, 1);
+	x.delta.add(1, custom_epsilon, 2); // Operand's own transition over the connecting symbol.
+
+	Nfa y{2, {0}, {1}};
+	y.delta.add(0, 2, 1);
+
+	const Nfa xy_concat = mata::nfa::algorithms::concatenate_eps(x, y, custom_epsilon, /*use_epsilon=*/false);
+
+	CHECK(!xy_concat.delta.get_used_symbols().contains(custom_epsilon));
+	// x accepted 1.100, so with 100 treated as epsilon the concatenation accepts 1.2, not 1.100.2.
+	CHECK(xy_concat.is_in_lang({1, 2}));
+	CHECK(!xy_concat.is_in_lang({1, custom_epsilon, 2}));
 }
