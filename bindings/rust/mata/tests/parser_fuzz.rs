@@ -52,7 +52,6 @@ proptest! {
 	#![proptest_config(ProptestConfig::with_cases(2000))]
 
 	#[test]
-	#[ignore = "crashes the parser until #877 (transitions with too few tokens) is fixed"]
 	fn parsing_never_crashes(text in text()) {
 		let mut sigma = Alphabet::new();
 		if let Ok(nfa) = Nfa::parse_mata(&text, &mut sigma) {
@@ -95,7 +94,6 @@ proptest! {
 	#![proptest_config(ProptestConfig::with_cases(4000))]
 
 	#[test]
-	#[ignore = "crashes the parser until #877 (transitions with too few tokens) is fixed"]
 	fn transducer_parsing_never_crashes(
 		header in prop_oneof![Just("@NFT-explicit\n"), Just("@NFT\n"), Just("@NFT-bits\n"), Just("")],
 		lines in proptest::collection::vec(nft_line(), 0..8),
