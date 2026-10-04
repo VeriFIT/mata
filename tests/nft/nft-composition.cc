@@ -3033,3 +3033,13 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 		CHECK_FALSE(mutable_alphabet->empty());
 	}
 }
+
+TEST_CASE("mata::nft::compose() validates the synchronization level vectors - issue #763") {
+	const Nft lhs = mata::nft::builder::create_sigma_star_nft(size_t{3});
+	const Nft rhs = mata::nft::builder::create_sigma_star_nft(size_t{2});
+
+	// Mismatched sync-level vector sizes used to read past the vector and crash in compose_general.
+	CHECK_THROWS_AS(compose(lhs, rhs, {1, 2}, {0}), std::invalid_argument);
+	const OrdVector<Level> empty_levels{};
+	CHECK_THROWS_AS(compose(lhs, rhs, empty_levels, empty_levels), std::invalid_argument);
+}
