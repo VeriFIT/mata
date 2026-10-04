@@ -265,12 +265,18 @@ void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
 	}
 
 	for (const Transition& trans : delta.transitions()) {
-		output << "q" << trans.source << " "
-			   << ((alphabet != nullptr)
-					   ? alphabet->reverse_translate_symbol(trans.symbol)
-					   : ((this->alphabet != nullptr) ? this->alphabet->reverse_translate_symbol(trans.symbol)
-													  : std::to_string(trans.symbol)))
-			   << " q" << trans.target << std::endl;
+		// EPSILON is not a member of any alphabet; print the name the parser maps back (#505).
+		std::string symbol_name;
+		if (trans.symbol == EPSILON) {
+			symbol_name = EPSILON_NAME;
+		} else if (alphabet != nullptr) {
+			symbol_name = alphabet->reverse_translate_symbol(trans.symbol);
+		} else if (this->alphabet != nullptr) {
+			symbol_name = this->alphabet->reverse_translate_symbol(trans.symbol);
+		} else {
+			symbol_name = std::to_string(trans.symbol);
+		}
+		output << "q" << trans.source << " " << symbol_name << " q" << trans.target << std::endl;
 	}
 }
 
@@ -498,9 +504,7 @@ Nfa Nfa::decode_utf8() const {
 	// will result in the higher number.
 	auto add_to_state_post = [&](StatePost& state_post, const SymbolPost& symbol_post, const bool is_nondet) {
 		if (is_nondet) {
-			if (auto [it, inserted] = state_post.insert(symbol_post); !inserted) {
-				it->insert(symbol_post.targets);
-			}
+			if (auto [it, inserted] = state_post.insert(symbol_post); !inserted) { it->insert(symbol_post.targets); }
 		} else {
 			state_post.emplace_back(symbol_post);
 		}

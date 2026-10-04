@@ -839,19 +839,18 @@ class Nft : public mata::Automaton {
 	/**
 	 * @brief Prints the automaton in mata format
 	 *
-	 * If you need to parse the automaton again, use IntAlphabet in construct()
+	 * Symbols are resolved through @c alphabets by the source level of each transition; EPSILON and
+	 * DONT_CARE are printed as @c EPSILON_NAME and @c DONT_CARE_NAME, which @c parse_from_mata maps
+	 * back to the two symbols.
 	 *
 	 * @return automaton in mata format
-	 * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
 	 */
 	std::string print_to_mata() const;
 
 	/**
 	 * @brief Prints the automaton to the output stream in mata format
 	 *
-	 * If you need to parse the automaton again, use IntAlphabet in construct()
-	 *
-	 * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+	 * @see print_to_mata() for how symbols are printed.
 	 */
 	void print_to_mata(std::ostream& output) const;
 
@@ -859,9 +858,7 @@ class Nft : public mata::Automaton {
 	 * @brief Prints the automaton to the file in mata format
 	 * @param filename Name of the file to print the automaton to
 	 *
-	 * If you need to parse the automaton again, use IntAlphabet in construct()
-	 *
-	 * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+	 * @see print_to_mata() for how symbols are printed.
 	 */
 	void print_to_mata(const std::string& filename) const;
 

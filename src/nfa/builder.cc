@@ -16,6 +16,15 @@ using namespace mata::nfa;
 using mata::Symbol;
 using mata::nfa::Nfa;
 
+namespace {
+/// Maps the printed name of EPSILON back to the symbol; every other name goes to the alphabet,
+/// which never sees the special names (#505).
+Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) {
+	if (name == mata::EPSILON_NAME) { return EPSILON; }
+	return alphabet->translate_symb(name);
+}
+} // namespace
+
 Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map) {
 	Nfa aut;
 	MATA_ASSERT(nullptr != alphabet);
@@ -62,7 +71,7 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		}
 
 		transitions.emplace_back(
-			get_state_name(body_line[0]), alphabet->translate_symb(body_line[1]), get_state_name(body_line[2])
+			get_state_name(body_line[0]), translate_symbol_name(alphabet, body_line[1]), get_state_name(body_line[2])
 		);
 	}
 	aut.delta.add(std::move(transitions));
@@ -72,9 +81,7 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 
 Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map) {
 	Nfa aut;
-	if (nullptr == alphabet) {
-		throw std::runtime_error("construct(): alphabet must not be null");
-	}
+	if (nullptr == alphabet) { throw std::runtime_error("construct(): alphabet must not be null"); }
 
 	if (!inter_aut.is_nfa()) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFA + "\"");
@@ -112,7 +119,7 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 		}
 
 		const State src_state{get_state_name(formula_node.name)};
-		const Symbol symbol{alphabet->translate_symb(formula_graph.children[0].node.name)};
+		const Symbol symbol{translate_symbol_name(alphabet, formula_graph.children[0].node.name)};
 		const State tgt_state{get_state_name(formula_graph.children[1].node.name)};
 
 		transitions.emplace_back(src_state, symbol, tgt_state);

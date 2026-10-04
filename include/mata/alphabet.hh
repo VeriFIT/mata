@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,14 @@ using Symbol = unsigned;
 using Level = unsigned;
 using Word = std::vector<Symbol>;
 using WordName = std::vector<std::string>;
+
+/// The name under which @c EPSILON is printed in the .mata format and in DOT, and which the .mata
+/// parser maps back to @c EPSILON. Alphabets never see this name, so it cannot collide with a
+/// translated symbol (#505).
+constexpr std::string_view EPSILON_NAME{"<eps>"};
+/// The name under which the NFT @c DONT_CARE symbol is printed in the .mata format and in DOT, and
+/// which the .mata parser maps back to @c DONT_CARE (#505).
+constexpr std::string_view DONT_CARE_NAME{"<dntcr>"};
 
 /**
  * The abstract interface for NFA alphabets.

@@ -87,6 +87,33 @@ TEST_CASE("parse_from_mata()") {
 		}
 	}
 
+	SECTION("automaton with epsilon transitions") {
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, EPSILON, 2);
+		nfa.delta.add(2, EPSILON, 0);
+
+		SECTION("from string") {
+			const std::string printed{nfa.print_to_mata()};
+			CHECK(printed.find(mata::EPSILON_NAME) != std::string::npos);
+			Nfa parsed{mata::nfa::builder::parse_from_mata(printed)};
+			CHECK(parsed.delta.contains(1, EPSILON, 2));
+			CHECK(parsed.delta.contains(2, EPSILON, 0));
+			CHECK(parsed.delta.contains(0, 'a', 1));
+			CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+		}
+
+		SECTION("an attached enumeration alphabet does not see the special name") {
+			auto alphabet{std::make_shared<mata::EnumAlphabet>(mata::EnumAlphabet{'a'})};
+			nfa.alphabet = alphabet;
+			std::string printed;
+			REQUIRE_NOTHROW(printed = nfa.print_to_mata());
+			Nfa parsed{mata::nfa::builder::parse_from_mata(printed)};
+			CHECK(parsed.delta.contains(1, EPSILON, 2));
+			CHECK(alphabet->get_number_of_symbols() == 1);
+		}
+	}
+
 	SECTION("larger automaton") {
 		Nfa nfa;
 		nfa.initial = {1, 2, 50};
@@ -349,9 +376,7 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 		const auto alphabet_symbols = nfa.alphabet->get_alphabet_symbols();
 		REQUIRE(alphabet_symbols.size() == alphabet_size);
 		// Symbols should be 0, 1, 2, 3 (in some order).
-		for (size_t i = 0; i < alphabet_size; ++i) {
-			REQUIRE(alphabet_symbols.contains(static_cast<Symbol>(i)));
-		}
+		for (size_t i = 0; i < alphabet_size; ++i) { REQUIRE(alphabet_symbols.contains(static_cast<Symbol>(i))); }
 
 		// print_to_mata() should not throw.
 		std::string mata_str;
@@ -375,7 +400,10 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 TEST_CASE("parse_from_mata() rejects a negative symbol - #758") { // {{{
 	// "-1" used to parse as the wrapped-around Symbol 4294967295, which is EPSILON, so this transition silently
 	//  became an epsilon transition. Strict numeric parsing rejects the string instead.
-	const std::string negative_symbol{		"@NFA-explicit\n"		"%Alphabet-auto\n"		"%Initial q0\n"		"%Final q1\n"		"q0 -1 q1\n"	};
+	const std::string negative_symbol{"@NFA-explicit\n"
+									  "%Alphabet-auto\n"
+									  "%Initial q0\n"
+									  "%Final q1\n"
+									  "q0 -1 q1\n"};
 	CHECK_THROWS_AS(mata::nfa::builder::parse_from_mata(negative_symbol), std::runtime_error);
 } // }}}
-
