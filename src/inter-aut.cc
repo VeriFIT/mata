@@ -22,7 +22,10 @@ bool is_logical_operator(const char ch) { return mata::utils::haskey(std::set<ch
 
 mata::IntermediateAut::Naming get_naming_type(const std::string& key) {
 	const size_t found = key.find('-');
-	MATA_ASSERT(found != std::string::npos);
+	if (found == std::string::npos) {
+		// Bare @NFA or %Alphabet without suffix; accept for compatibility
+		return mata::IntermediateAut::Naming::Auto;
+	}
 
 	const std::string& type = key.substr(found + 1, std::string::npos);
 	if (type == "auto") { return mata::IntermediateAut::Naming::Auto; }
@@ -31,14 +34,19 @@ mata::IntermediateAut::Naming get_naming_type(const std::string& key) {
 	if (type == "chars") { return mata::IntermediateAut::Naming::Chars; }
 	if (type == "utf") { return mata::IntermediateAut::Naming::Utf; }
 
-	MATA_ASSERT(false, "Unknown naming type for the automaton");
+	throw std::runtime_error("Unknown naming type '" + type + "'; expected one of: auto, enum, marked, chars, utf");
 	return {};
 }
 
 mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string& type) {
-	MATA_ASSERT(type.find('-') != std::string::npos);
+	const size_t found = type.find('-');
+	if (found == std::string::npos) {
+		// Bare %Alphabet without suffix; accept for compatibility
+		return mata::IntermediateAut::AlphabetType::Explicit;
+	}
 
-	if (const std::string& alph_type = type.substr(type.find('-') + 1, std::string::npos); alph_type == "bits") {
+	const std::string alph_type = type.substr(found + 1, std::string::npos);
+	if (alph_type == "bits") {
 		return mata::IntermediateAut::AlphabetType::Bitvector;
 	} else if (alph_type == "explicit") {
 		return mata::IntermediateAut::AlphabetType::Explicit;
@@ -46,10 +54,7 @@ mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string& type) {
 		return mata::IntermediateAut::AlphabetType::Intervals;
 	}
 
-	MATA_ASSERT(
-		false, "Unknown alphabet type - an alphabet type should be always defined correctly otherwise it is "
-			   "impossible to parse automaton correctly"
-	);
+	throw std::runtime_error("Unknown alphabet type '" + alph_type + "'; expected one of: bits, explicit, intervals");
 	return {};
 }
 
@@ -308,6 +313,8 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Afa;
 	} else if (section.type.find("NFT") != std::string::npos) {
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nft;
+	} else {
+		throw std::runtime_error("Unknown automaton type '" + section.type + "'; expected type to contain one of: NFA, AFA, NFT");
 	}
 	aut.alphabet_type = get_alphabet_type(section.type);
 
@@ -389,7 +396,10 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const {
  * @param tokens Series of tokens representing transition formula
  */
 void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const std::vector<std::string>& tokens) {
-	MATA_ASSERT(tokens.size() > 1); // transition formula has at least two items
+	if (tokens.size() < 2) {
+		std::string msg = "Malformed transition: expected at least 2 tokens, got " + std::to_string(tokens.size());
+		throw std::runtime_error(msg);
+	}
 	mata::FormulaNode lhs = create_node(aut, tokens[0]);
 	std::vector<std::string> rhs(tokens.begin() + 1, tokens.end());
 
@@ -400,7 +410,10 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const s
 		// we need to take care about this case manually since user does not need to determine
 		// symbol and state naming and put conjunction to transition
 		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
-			MATA_ASSERT(rhs.size() == 2);
+			if (rhs.size() != 2) {
+				std::string msg = "Malformed explicit NFA transition: expected exactly 3 tokens (state, symbol, state), got " + std::to_string(tokens.size());
+				throw std::runtime_error(msg);
+			}
 			postfix.emplace_back(
 				mata::FormulaNode::Type::Operand, rhs[0], rhs[0], mata::FormulaNode::OperandType::Symbol
 			);
@@ -420,7 +433,10 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const s
 		// we need to take care about this case manually since user does not need to determine
 		// symbol and state naming and put conjunction to transition
 		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
-			MATA_ASSERT(rhs.size() == 2);
+			if (rhs.size() != 2) {
+				std::string msg = "Malformed explicit NFT transition: expected exactly 3 tokens (state, symbol, state), got " + std::to_string(tokens.size());
+				throw std::runtime_error(msg);
+			}
 			postfix.emplace_back(
 				mata::FormulaNode::Type::Operand, rhs[0], rhs[0], mata::FormulaNode::OperandType::Symbol
 			);
