@@ -16,11 +16,18 @@ MATA_WERROR ?= OFF
 MATA_ENABLE_COVERAGE ?= OFF
 BUILD_TESTING ?= ON
 MATA_BUILD_EXAMPLES ?= ON
+MATA_ENABLE_IPO ?= OFF
+MATA_ARCH_NATIVE ?= OFF
+# `off`, `generate` or `use`; see `just cpp::pgo` and BENCHMARKING.md.
+MATA_PGO ?= off
 CMAKE_TOGGLES = \
 	-DMATA_WERROR:BOOL=$(MATA_WERROR) \
 	-DMATA_ENABLE_COVERAGE:BOOL=$(MATA_ENABLE_COVERAGE) \
 	-DBUILD_TESTING:BOOL=$(BUILD_TESTING) \
-	-DMATA_BUILD_EXAMPLES:BOOL=$(MATA_BUILD_EXAMPLES)
+	-DMATA_BUILD_EXAMPLES:BOOL=$(MATA_BUILD_EXAMPLES) \
+	-DMATA_ENABLE_IPO:BOOL=$(MATA_ENABLE_IPO) \
+	-DMATA_ARCH_NATIVE:BOOL=$(MATA_ARCH_NATIVE) \
+	-DMATA_PGO:STRING=$(MATA_PGO)
 
 .PHONY: all debug debug-werror debug-lib release release-werror release-lib release-debuginfo \
 	coverage docs test test-coverage test-performance check install uninstall clean

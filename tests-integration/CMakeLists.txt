@@ -58,4 +58,7 @@ foreach (SOURCE ${SOURCES})
 
 	# Add Mata's compile warnings.
 	mata_add_warnings (${TARGET})
+
+	# The benchmarks measure the library, so they must be built with the same optimization settings.
+	mata_add_optimizations (${TARGET})
 endforeach ()

@@ -6,4 +6,8 @@ target_link_libraries (tests PRIVATE libmata Catch2::Catch2WithMain)
 # Add Mata's compile warnings.
 mata_add_warnings (tests)
 
+# The unit tests are the default PGO training workload, so they follow the same optimization
+#  settings as the library.
+mata_add_optimizations (tests)
+
 catch_discover_tests (tests)

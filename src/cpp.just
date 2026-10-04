@@ -63,6 +63,55 @@ lint MODE=BUILD_MODE *ARGS:
 # Run clang-tidy as a gate: any reported diagnostic fails the recipe.
 lint-werror MODE=BUILD_MODE *ARGS: (lint MODE "-warnings-as-errors=*" ARGS)
 
+# Build Mata with profile-guided optimization. Runs the instrumented 'generate' stage, trains it
+# with TRAIN (a command run from the build directory), and rebuilds with the recorded profile. The
+# result is left in 'build/<MODE>/<CXX>-pgo'. Record the compiler, the flags and the corpus when
+# reporting numbers from it; a profile belongs to exactly one compiler and source tree.
+pgo MODE='release' TRAIN='./tests/tests':
+	#!/usr/bin/env bash
+	set -euo pipefail
+	build='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}-pgo'
+	profile="$build/pgo"
+	rm -rf "$profile"
+	mkdir -p "$profile"
+	echo "=== PGO stage 1/3: instrumented build in $build"
+	make -C '{{ ROOT }}' '{{ MODE }}' BUILD_DIR="$build" JOBS='{{ JOBS }}' \
+		MATA_PGO=generate
+	echo "=== PGO stage 2/3: training with '{{ TRAIN }}'"
+	( cd "$build" && {{ TRAIN }} )
+	# Detect the compiler from the CMakeCXXCompiler.cmake file, not from the CXX variable;
+	#  an absolute path like /opt/homebrew/bin/clang++ does not start with 'clang'.
+	compiler_id=$(grep -h '^set(CMAKE_CXX_COMPILER_ID' "$build"/CMakeFiles/*/CMakeCXXCompiler.cmake 2>/dev/null | head -1 | sed -n 's/^set(CMAKE_CXX_COMPILER_ID "\([^"]*\)").*/\1/p')
+	if [[ -z "$compiler_id" ]]; then
+		echo "error: could not determine CMAKE_CXX_COMPILER_ID from the generate-stage build" >&2
+		exit 1
+	fi
+	case "$compiler_id" in
+		Clang|AppleClang)
+			profraw_count=$(find "$profile" -name "*.profraw" 2>/dev/null | wc -l)
+			if [[ $profraw_count -eq 0 ]]; then
+				echo "error: no raw profiles (.profraw) found in $profile; the training command may not have run an instrumented binary" >&2
+				exit 1
+			fi
+			llvm-profdata merge -output="$profile/mata.profdata" "$profile"/*.profraw
+			;;
+		GNU)
+			gcda_count=$(find "$build" -name "*.gcda" 2>/dev/null | wc -l)
+			if [[ $gcda_count -eq 0 ]]; then
+				echo "error: no GCC profile data (.gcda) found under $build; the training command may not have run an instrumented binary" >&2
+				exit 1
+			fi
+			;;
+		*)
+			echo "error: unsupported compiler '$compiler_id' (only GNU and Clang/AppleClang are supported)" >&2
+			exit 1
+			;;
+	esac
+	echo "=== PGO stage 3/3: rebuilding with the recorded profile"
+	make -C '{{ ROOT }}' '{{ MODE }}' BUILD_DIR="$build" JOBS='{{ JOBS }}' \
+		MATA_PGO=use
+	echo "=== PGO build ready in $build"
+
 # Install the built library, headers, and CMake package files.
 install MODE=BUILD_MODE:
 	make -C '{{ ROOT }}' install BUILD_DIR='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}'

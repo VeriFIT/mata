@@ -43,3 +43,6 @@ target_include_directories (libmata
 
 # Add Mata's compile warnings.
 mata_add_warnings (libmata)
+
+# Add the opt-in optimization settings (IPO, `-march=native`).
+mata_add_optimizations (libmata)

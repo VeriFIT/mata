@@ -61,6 +61,95 @@ set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 option (MATA_WERROR "Warnings should be handled as errors" OFF)
 option (MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
 
+# Interprocedural (link-time) optimization. Off by default: an IPO build of the static `libmata.a`
+#  holds compiler bytecode, so every consumer has to link with the matching compiler's LTO plugin.
+#  `-ffat-lto-objects` below keeps an installed IPO build linkable by plain, non-LTO consumers.
+option (MATA_ENABLE_IPO "Build Mata with interprocedural (link-time) optimization" OFF)
+# Developer-only switch for local benchmarking. It is attached PRIVATE, so no `-march` flag ever
+#  reaches `mataTargets.cmake` and therefore no consumer of an installed Mata inherits it.
+option (MATA_ARCH_NATIVE "Optimize for the architecture of the building machine (local use only)" OFF)
+
+# Profile-guided optimization, driven in two stages: a `generate` build writes a profile while it
+#  runs the training workload, a `use` build reads it back. A profile belongs to one exact compiler
+#  and source tree, so it is never installed and never committed. `just cpp::pgo` runs both stages.
+set (MATA_PGO "off" CACHE STRING "Profile-guided optimization stage: off, generate, or use")
+set_property (CACHE MATA_PGO PROPERTY STRINGS off generate use)
+set (MATA_PGO_DIR "${CMAKE_BINARY_DIR}/pgo" CACHE PATH "Directory holding the profile data of MATA_PGO")
+if (NOT MATA_PGO MATCHES "^(off|generate|use)$")
+	message (FATAL_ERROR "MATA_PGO must be one of off, generate, use; got '${MATA_PGO}'")
+endif ()
+
+if (MATA_ENABLE_IPO)
+	include (CheckIPOSupported)
+	check_ipo_supported (RESULT MATA_IPO_SUPPORTED OUTPUT MATA_IPO_ERROR)
+	if (NOT MATA_IPO_SUPPORTED)
+		message (FATAL_ERROR "MATA_ENABLE_IPO is on, but this toolchain does not support IPO: ${MATA_IPO_ERROR}")
+	endif ()
+	message ("-- Building Mata with interprocedural optimization")
+endif ()
+
+if (NOT MATA_PGO STREQUAL "off")
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		if (MATA_PGO STREQUAL "generate")
+			set (MATA_PGO_FLAGS -fprofile-generate=${MATA_PGO_DIR})
+			set (MATA_PGO_LINK_FLAGS -fprofile-generate)
+		else ()
+			# Without `-fprofile-partial-training`, GCC optimizes code the training run never
+			#  reached for size, which penalises paths the corpus simply does not cover.
+			set (MATA_PGO_FLAGS -fprofile-use=${MATA_PGO_DIR} -fprofile-partial-training -Wno-missing-profile)
+		endif ()
+	elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		if (MATA_PGO STREQUAL "generate")
+			set (MATA_PGO_FLAGS -fprofile-instr-generate=${MATA_PGO_DIR}/%m.profraw)
+			set (MATA_PGO_LINK_FLAGS -fprofile-instr-generate)
+		else ()
+			# Produced by `llvm-profdata merge` over the raw profiles of the generate stage.
+			set (MATA_PGO_FLAGS -fprofile-instr-use=${MATA_PGO_DIR}/mata.profdata)
+		endif ()
+	else ()
+		message (FATAL_ERROR "MATA_PGO is not supported for compiler '${CMAKE_CXX_COMPILER_ID}'")
+	endif ()
+	message ("-- Building Mata with PGO stage '${MATA_PGO}', profile data in '${MATA_PGO_DIR}'")
+	if (MATA_PGO STREQUAL "generate")
+		message (WARNING
+			"MATA_PGO=generate produces an instrumented libmata that writes profile data while it "
+			"runs. It is a measurement artefact, not a deliverable: do not package it, and install "
+			"a MATA_PGO=use or MATA_PGO=off build instead.")
+	endif ()
+endif ()
+
+# Attach the optional optimization settings to a target built from Mata's own sources.
+function (mata_add_optimizations TARGET)
+	if (MATA_ENABLE_IPO)
+		set_property (TARGET ${TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+		# CMake passes `-fno-fat-lto-objects` to GCC, which leaves the archive without machine code.
+		#  An installed library has to stay linkable without LTO, so put the object code back.
+		if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+			target_compile_options (${TARGET} PRIVATE -ffat-lto-objects)
+		endif ()
+	endif ()
+	if (MATA_ARCH_NATIVE)
+		target_compile_options (${TARGET} PRIVATE
+			"$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-march=native>"
+		)
+	endif ()
+	if (NOT MATA_PGO STREQUAL "off")
+		target_compile_options (${TARGET} PRIVATE ${MATA_PGO_FLAGS})
+		# The instrumentation of the `generate` stage pulls in the profiling runtime, so everything
+		#  that links this target needs the flag as well; without it the unit tests, the benchmarks
+		#  and the examples fail to link against an instrumented `libmata.a` — and so would a
+		#  consumer of an installed one, which is why the flag is exported too. The exported form
+		#  carries no `=<dir>`: the output location is baked into the objects at compile time and a
+		#  build-local path means nothing in `mataTargets.cmake`. The `use` stage links plainly.
+		if (MATA_PGO STREQUAL "generate")
+			target_link_options (${TARGET} PUBLIC
+				"$<BUILD_INTERFACE:${MATA_PGO_FLAGS}>"
+				"$<INSTALL_INTERFACE:${MATA_PGO_LINK_FLAGS}>"
+			)
+		endif ()
+	endif ()
+endfunction ()
+
 # Registering the install rules unconditionally means a `FetchContent`/`add_subdirectory()` consumer
 #  installs libmata.a and the Mata, CUDD and simlib headers along with its own artefacts.
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -82,11 +171,17 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	include (FetchContent)
 
 	### CCACHE ###
-	# TODO: Should we use CCACHE? Why it might be useful: https://stackoverflow.com/questions/10136761/when-is-the-case-to-use-ccache
-	# Why we use the following code: https://stackoverflow.com/questions/64592095/cmake-ccache-rule-launch-compile-or-cmake-lang-compiler-launcher
-	find_program (CCACHE_PROGRAM ccache)
-	if (CCACHE_PROGRAM)
-		set (CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+	# ccache caches the preprocessed translation units, which makes repeated builds of the same
+	#  sources (switching branches, reconfiguring) much cheaper. It is used when it is installed; set
+	#  `MATA_USE_CCACHE=OFF` to measure cold compile times.
+	# Setting `CMAKE_CXX_COMPILER_LAUNCHER` rather than `RULE_LAUNCH_COMPILE` keeps it working with
+	#  every generator: https://stackoverflow.com/questions/64592095
+	option (MATA_USE_CCACHE "Use ccache as the compiler launcher when it is installed" ON)
+	if (MATA_USE_CCACHE)
+		find_program (CCACHE_PROGRAM ccache)
+		if (CCACHE_PROGRAM)
+			set (CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+		endif ()
 	endif ()
 
 	### Doxygen - voluntary ###
