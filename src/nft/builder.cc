@@ -368,11 +368,12 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num
 	std::vector<Level> levels(result.num_of_states(), static_cast<Level>(num_of_levels));
 
 	// We apply simple DFS
-	StateSet worklist; // worklist for DFS
+	std::vector<State> worklist; // worklist for DFS
+	worklist.reserve(result.initial.size());
 	for (State initial_state : result.initial) {
 		// start with initial states, which should be level 0
 		levels[initial_state] = 0;
-		worklist.insert(initial_state);
+		worklist.push_back(initial_state);
 	}
 
 	while (!worklist.empty()) {
@@ -389,7 +390,7 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num
 					);
 				}
 				levels[tgt] = next_level;
-				worklist.insert(tgt);
+				worklist.push_back(tgt);
 			} else if (levels[tgt] != next_level) {
 				throw std::runtime_error(
 					"Creating Nft from Nfa that does not represent a valid Nft (a state has more possible levels) in "
@@ -398,6 +399,10 @@ Nft builder::from_nfa_with_levels_advancing(mata::nfa::Nfa nfa, const size_t num
 			}
 		}
 	}
+	// States unreachable from the initial states are assigned the default level: any level is vacuously
+	//  correct for them, and an in-range level prevents out-of-range indexing into per-level structures.
+	std::ranges::replace(levels, static_cast<Level>(num_of_levels), DEFAULT_LEVEL);
+
 	result.levels = Levels{num_of_levels, std::move(levels)};
 
 	return result;

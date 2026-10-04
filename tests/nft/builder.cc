@@ -395,3 +395,19 @@ TEST_CASE("mata::nft::parse_from_mata()") {
 		}
 	}
 }
+
+TEST_CASE("mata::nft::builder::from_nfa_with_levels_advancing() gives unreachable states a valid level - issue #763") {
+	mata::nfa::Nfa nfa(4, {0}, {0});
+	nfa.delta.add(0, 'a', 1);
+	nfa.delta.add(1, 'b', 0);
+	nfa.delta.add(2, 'c', 3); // Unreachable from the initial states.
+	nfa.delta.add(3, 'd', 2);
+
+	const Nft nft = builder::from_nfa_with_levels_advancing(nfa, 2);
+	CHECK(nft.levels[0] == 0);
+	CHECK(nft.levels[1] == 1);
+	// Unreachable states must not keep the sentinel level.
+	CHECK(nft.levels[2] == 0);
+	CHECK(nft.levels[3] == 0);
+	for (const Level level : nft.levels) { CHECK(level < nft.levels.num_of_levels); }
+}

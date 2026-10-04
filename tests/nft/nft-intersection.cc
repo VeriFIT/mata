@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 
 using namespace mata::nft;
@@ -853,4 +854,19 @@ TEST_CASE("mata::nft::Move semantics", "[.profiling][std::move]") {
 		a.initial.insert(1);
 		b = std::move(a);
 	}
+}
+
+TEST_CASE("mata::nft::intersection() with an empty operand keeps the level count - issue #763") {
+	const Nft empty3 = Nft::with_levels(3);
+	const Nft sigma_star3 = mata::nft::builder::create_sigma_star_nft(size_t{3});
+
+	const Nft result = intersection(empty3, sigma_star3);
+	CHECK(result.is_lang_empty());
+	CHECK(result.levels.num_of_levels == 3);
+}
+
+TEST_CASE("mata::nft::intersection() between NFTs with different level counts throws - issue #763") {
+	const Nft two = Nft::with_levels(2);
+	const Nft three = Nft::with_levels(3);
+	CHECK_THROWS_AS(intersection(two, three), std::invalid_argument);
 }

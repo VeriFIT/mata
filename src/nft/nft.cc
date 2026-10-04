@@ -871,7 +871,8 @@ State Nft::add_state() {
 }
 
 State Nft::add_state(const State state) {
-	levels.set(state);
+	// Do not reset the level of a state that is already in this NFT; only newly added states get the default level.
+	if (state >= levels.size()) { levels.resize(state + 1, DEFAULT_LEVEL); }
 	return Automaton::add_state(state);
 }
 
