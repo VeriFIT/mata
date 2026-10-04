@@ -878,6 +878,8 @@ Nfa union_nondet(Nfa&& lhs, Nfa&& rhs);
  * The union is computed by product construction with OR condition on the final states.
  * @param lhs First complete deterministic automaton.
  * @param rhs Second complete deterministic automaton.
+ * @throw std::invalid_argument when an input is not deterministic or not complete; previously only asserted in
+ *  Debug builds, so a Release build silently miscomputed.
  */
 Nfa union_det_complete(const Nfa& lhs, const Nfa& rhs);
 
@@ -1086,6 +1088,19 @@ Nfa determinize(
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
 	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt
 );
+
+/**
+ * @brief Return a deterministic version of @p aut, avoiding the determinization machinery when possible.
+ *
+ * For language-only callers (complement, minimization, marker construction) that need a deterministic
+ *  automaton but do not care about the state numbering. Determinizing an already deterministic automaton is
+ *  needlessly expensive; `as_dfa` returns a copy (or moves the rvalue) unchanged in that case.
+ *
+ * @param[in] aut Automaton to obtain a deterministic copy of.
+ * @return @p aut itself (copied or moved) when @p aut is deterministic, otherwise `determinize(aut)`.
+ */
+Nfa as_dfa(const Nfa& aut);
+Nfa as_dfa(Nfa&& aut);
 
 /**
  * @brief Reduce the size of the automaton.

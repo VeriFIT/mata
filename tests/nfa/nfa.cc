@@ -516,7 +516,146 @@ TEST_CASE("mata::nfa::determinize()") {
 		OnTheFlyAlphabet alphabet{};
 		auto complement_result{determinize(x)};
 	}
+
+	SECTION("deterministic input: scalar renumbering, singleton subset map, discovery order") {
+		aut = Nfa(5);
+		aut.initial = {1};
+		aut.final = {2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'b', 3);
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(3, 'b', 2);
+		aut.delta.add(4, 'a', 4); // unreachable
+		REQUIRE(aut.is_deterministic());
+
+		std::vector<StateSet> discovered{};
+		result = determinize(aut, &subset_map, [&discovered](const Nfa&, const State, const StateSet& set) -> bool {
+			discovered.push_back(set);
+			return true;
+		});
+
+		// Depth-first renumbering: initial {1} -> 0, first-seen a- and b-targets {2} -> 1, {3} -> 1's
+		//  sibling 2; unreachable state 4 never appears.
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.initial.contains(0));
+		CHECK(result.initial.size() == 1);
+		CHECK(result.final.contains(1));
+		CHECK(result.final.size() == 1);
+		CHECK(result.delta.contains(0, 'a', 1));
+		CHECK(result.delta.contains(0, 'b', 2));
+		CHECK(result.delta.contains(1, 'a', 1));
+		CHECK(result.delta.contains(2, 'b', 1));
+		CHECK(subset_map == std::unordered_map<StateSet, State>{{StateSet{1}, 0}, {StateSet{2}, 1}, {StateSet{3}, 2}});
+		CHECK(discovered == std::vector<StateSet>{StateSet{1}, StateSet{2}, StateSet{3}});
+	}
+
+	SECTION("macrostate_discover may stop a deterministic automaton early") {
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.final = {2};
+		result = determinize(aut, nullptr, [](const Nfa&, const State, const StateSet& set) -> bool {
+			return set.size() == 1 && set.front() == 0;
+		});
+		// The stop fires on discovering {1}: the state and the 0-a->1 edge were already emitted, but {1}
+		//  is never expanded and the final {2} is never reached.
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.contains(0, 'a', 1));
+		CHECK(!result.delta.contains(1, 'a', 2));
+		CHECK(result.final.empty());
+	}
 } // }}}
+
+TEST_CASE("mata::nfa::as_dfa()") {
+	SECTION("deterministic input is returned unchanged") {
+		Nfa dfa(2);
+		dfa.initial = {0};
+		dfa.final = {1};
+		dfa.delta.add(0, 'a', 1);
+		const Nfa result{as_dfa(dfa)};
+		CHECK(result.is_deterministic());
+		CHECK(result.delta.contains(0, 'a', 1));
+	}
+
+	SECTION("nondeterministic input is determinized") {
+		Nfa nfa(3);
+		nfa.initial = {0};
+		nfa.final = {2};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		const Nfa result{as_dfa(nfa)};
+		CHECK(result.is_deterministic());
+		CHECK(result.is_in_lang(Run{{'a'}}));
+		CHECK(!result.is_in_lang(Run{{'b'}}));
+	}
+
+	SECTION("rvalue overload moves deterministic input") {
+		Nfa nfa(2);
+		nfa.initial = {0};
+		nfa.final = {1};
+		nfa.delta.add(0, 'a', 1);
+		const Nfa result{as_dfa(std::move(nfa))};
+		CHECK(result.is_deterministic());
+		CHECK(result.is_in_lang(Run{{'a'}}));
+		CHECK(result.final.contains(1));
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::is_in_lang() unique-run fast path") {
+	Nfa aut(3);
+	aut.initial = {0};
+	aut.final = {2};
+
+	SECTION("deterministic automaton accepts and rejects correctly") {
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		CHECK(aut.is_in_lang(Run{{'a', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{'a'}}));
+		CHECK(!aut.is_in_lang(Run{{'a', 'c'}}));
+		CHECK(!aut.is_in_lang(Run{{'b', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{}}));
+	}
+
+	SECTION("nondeterministic post falls back to the generic algorithm") {
+		aut = Nfa(4);
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(2, 'b', 3);
+		CHECK(aut.is_in_lang(Run{{'a', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{'a'}}));
+		CHECK(!aut.is_in_lang(Run{{'b'}}));
+		// Empty language.
+		aut.final = utils::SparseSet<State>{};
+		CHECK(!aut.is_in_lang(Run{{'a', 'b'}}));
+	}
+
+	SECTION("several initial states use the generic algorithm") {
+		aut = Nfa(4);
+		aut.initial = {0, 1};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		CHECK(aut.is_in_lang(Run{{'a'}}));
+	}
+
+	SECTION("prefix matching keeps the generic algorithm") {
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 2);
+		CHECK(aut.is_in_lang(Run{{'a', 'b', 'c'}}, false, true));
+		CHECK(!aut.is_in_lang(Run{{'b'}}, false, true));
+	}
+
+	SECTION("epsilon mode keeps the generic algorithm") {
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 2);
+		CHECK(aut.is_in_lang(Run{{'a'}}, true));
+		CHECK(!aut.is_in_lang(Run{{'a'}}));
+	}
+}
 
 TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 	Nfa aut{};
@@ -6312,3 +6451,34 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 		CHECK(nfa.distances_to_final() == revert(nfa).distances_from_initial());
 	}
 } // }}}
+
+TEST_CASE("mata::nfa::union_det_complete() validates preconditions instead of asserting") {
+	Nfa lhs(1);
+	lhs.initial = {0};
+	lhs.final = {0};
+	lhs.delta.add(0, 'a', 0);
+
+	SECTION("complete deterministic inputs are unioned") {
+		Nfa rhs(2);
+		rhs.initial = {0};
+		rhs.delta.add(0, 'a', 1);
+		rhs.delta.add(1, 'a', 1);
+		rhs.final = {1};
+		const Nfa result{union_det_complete(lhs, rhs)};
+		CHECK(result.is_in_lang(Run{mata::Word{'a'}}));
+	}
+
+	SECTION("a nondeterministic input throws in every build type") {
+		lhs.delta.add(0, 'a', 1);
+		lhs.add_state(1);
+		REQUIRE_THROWS_AS(union_det_complete(lhs, lhs), std::invalid_argument);
+	}
+
+	SECTION("an incomplete input throws in every build type") {
+		Nfa incomplete_dfa(2);
+		incomplete_dfa.initial = {0};
+		incomplete_dfa.delta.add(0, 'a', 1);
+		incomplete_dfa.final = {1};
+		REQUIRE_THROWS_AS(union_det_complete(incomplete_dfa, lhs), std::invalid_argument);
+	}
+}
