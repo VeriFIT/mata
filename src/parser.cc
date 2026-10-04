@@ -353,10 +353,7 @@ ParsedSection mata::parser::parse_mf_section(const std::string& input, const boo
 
 const std::vector<std::string>& mata::parser::ParsedSection::operator[](const std::string& key) const {
 	const auto it = this->dict.find(key);
-	if (this->dict.end() == it) {
-		MATA_ASSERT(false);
-		// return this->dict.at("");
-	}
+	if (this->dict.end() == it) { throw std::runtime_error("Key '" + key + "' not found in parsed section"); }
 	return it->second;
 }
 
