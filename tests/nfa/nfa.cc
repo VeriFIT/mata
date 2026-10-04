@@ -546,6 +546,42 @@ TEST_CASE("mata::nfa::determinize()") {
 		OnTheFlyAlphabet alphabet{};
 		auto complement_result{determinize(x)};
 	}
+
+	SECTION("restricted to symbols, nondeterministic input") {
+		// 'z' leads to a macrostate of its own, which must not be constructed when 'z' is outside of the symbols.
+		const OrdVector<Symbol> symbols{'a', 'b'};
+		Nfa nfa(4);
+		nfa.initial = {0};
+		nfa.final = {1};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(0, 'z', 3);
+		nfa.delta.add(3, 'a', 1);
+		REQUIRE(!nfa.is_deterministic());
+
+		result = determinize(nfa, nullptr, std::nullopt, &symbols);
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
+		CHECK(result.is_in_lang(Word{'a'}));
+		CHECK_FALSE(result.is_in_lang(Word{'z', 'a'}));
+	}
+
+	SECTION("restricted to symbols, deterministic input") {
+		const OrdVector<Symbol> symbols{'a', 'b'};
+		Nfa dfa(3);
+		dfa.initial = {0};
+		dfa.final = {1};
+		dfa.delta.add(0, 'a', 1);
+		dfa.delta.add(0, 'z', 2);
+		dfa.delta.add(2, 'a', 1);
+		REQUIRE(dfa.is_deterministic());
+
+		result = determinize(dfa, nullptr, std::nullopt, &symbols);
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
+		CHECK(result.is_in_lang(Word{'a'}));
+		CHECK_FALSE(result.is_in_lang(Word{'z', 'a'}));
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
@@ -2024,6 +2060,326 @@ TEST_CASE("mata::nfa::complement()") { // {{{
 		CHECK(are_equivalent(cmpl, cmpl_min, &alph));
 		CHECK(cmpl_min.num_of_states() == 4);
 		CHECK(cmpl.num_of_states() == 5);
+	}
+
+} // }}}
+
+namespace {
+
+/**
+ * Complement computed independently of complement(): always determinize, keep only the transitions over @p symbols,
+ *  complete by hand into a fresh sink state, and swap the final and non-final states.
+ * Shares no code with the fast paths under test, so it catches a language error in them.
+ */
+Nfa reference_complement(const Nfa& aut, const OrdVector<Symbol>& symbols) {
+	const Nfa det{determinize(aut)};
+	const State sink{det.num_of_states()};
+	Nfa result{sink + 1};
+	result.initial = det.initial;
+	for (const Transition& transition : det.delta.transitions()) {
+		if (symbols.contains(transition.symbol)) {
+			result.delta.add(transition.source, transition.symbol, transition.target);
+		}
+	}
+	for (State state{0}; state <= sink; ++state) {
+		for (const Symbol symbol : symbols) {
+			if (result.delta[state].find(symbol) == result.delta[state].end()) {
+				result.delta.add(state, symbol, sink);
+			}
+		}
+	}
+	for (State state{0}; state <= sink; ++state) {
+		if (!det.final.contains(state)) { result.final.insert(state); }
+	}
+	return result;
+}
+
+} // namespace
+
+TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{{
+	const std::shared_ptr<OnTheFlyAlphabet> alph_ptr{
+		std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{"a", "b"})
+	};
+	OnTheFlyAlphabet& alph{*alph_ptr};
+	const Symbol a{alph["a"]};
+	const Symbol b{alph["b"]};
+	const OrdVector<Symbol> symbols{a, b};
+	Nfa aut;
+	Nfa cmpl;
+
+	SECTION("complete DFA") {
+		// Words ending with 'a'.
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, b, 0);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, b, 0);
+		REQUIRE(aut.is_deterministic());
+		REQUIRE(aut.is_complete(symbols));
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+		CHECK(cmpl.is_in_lang(Word{a, b}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{b, a}));
+	}
+
+	SECTION("partial DFA") {
+		// The single word "ab".
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(1, b, 2);
+		REQUIRE(aut.is_deterministic());
+		REQUIRE(!aut.is_complete(symbols));
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a, b}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{a}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+		CHECK(cmpl.is_in_lang(Word{a, a}));
+		CHECK(cmpl.is_in_lang(Word{a, b, a}));
+	}
+
+	SECTION("sparse alphabet") {
+		// Alphabet with gaps, the language '0 5*'.
+		const OrdVector<Symbol> sparse_symbols{0, 5, 100};
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 5, 1);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, sparse_symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(sparse_symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, sparse_symbols)));
+		CHECK_FALSE(cmpl.is_in_lang(Word{0}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{0, 5, 5}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{100}));
+		CHECK(cmpl.is_in_lang(Word{0, 100}));
+	}
+
+	SECTION("foreign symbols are dropped, not complemented") {
+		// The single word "za", where 'z' lies outside of the complemented alphabet {a, b}.
+		constexpr Symbol z{25};
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, z, 1);
+		aut.delta.add(1, a, 2);
+		REQUIRE(aut.is_deterministic());
+		const Word za_word{z, a};
+		REQUIRE(aut.is_in_lang(za_word));
+
+		cmpl = complement(aut, symbols, {{"algorithm", "classical"}});
+		// Dropping 'z' empties the language, so the complement is the universal language over {a, b}.
+		CHECK(cmpl.delta.get_used_symbols() == symbols);
+		CHECK_FALSE(cmpl.is_in_lang(za_word));
+		CHECK_FALSE(cmpl.is_in_lang(Word{z}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{a}));
+		CHECK(cmpl.is_in_lang(Word{a, b, b}));
+		CHECK(are_equivalent(cmpl, builder::create_sigma_star_nfa(alph_ptr), &alph));
+	}
+
+	SECTION("foreign symbols keep the rest of the language") {
+		// The words "a" and "z", only "a" survives the restriction to {a, b}.
+		constexpr Symbol z{25};
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {1, 2};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, z, 2);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.delta.get_used_symbols() == symbols);
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{z}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+		CHECK(cmpl.is_in_lang(Word{a, a}));
+	}
+
+	SECTION("empty alphabet drops every transition") {
+		// Complementing over no symbols leaves only the empty word to decide.
+		const OrdVector<Symbol> no_symbols{};
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, no_symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.delta.num_of_transitions() == 0);
+		CHECK(cmpl.is_in_lang(Word{})); // The empty word is not accepted by 'aut'.
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a, a}));
+
+		aut.final = {0}; // 'aut' now accepts the empty word, so its complement over no symbols is empty.
+		cmpl = complement(aut, no_symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_lang_empty());
+	}
+
+	SECTION("nondeterministic automaton") {
+		// The words "a" and "b".
+		aut = Nfa(3);
+		aut.initial = {0, 1};
+		aut.final = {2};
+		aut.delta.add(0, a, 2);
+		aut.delta.add(1, a, 2);
+		aut.delta.add(1, b, 2);
+		REQUIRE(!aut.is_deterministic());
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{a, a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{b}));
+	}
+
+	SECTION("nondeterministic automaton with foreign symbols") {
+		// Determinization has to ignore 'z' instead of building the macrostates behind it.
+		constexpr Symbol z{25};
+		aut = Nfa(4);
+		aut.initial = {0, 1};
+		aut.final = {3};
+		aut.delta.add(0, a, 2);
+		aut.delta.add(0, z, 2);
+		aut.delta.add(1, a, 3);
+		aut.delta.add(1, z, 3);
+		aut.delta.add(2, b, 3);
+		REQUIRE(!aut.is_deterministic());
+
+		cmpl = complement(aut, symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.delta.get_used_symbols() == symbols);
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a, b}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{z}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+	}
+
+	SECTION("empty language") {
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(1, b, 0);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(are_equivalent(cmpl, builder::create_sigma_star_nfa(alph_ptr), &alph));
+
+		// Brzozowski reuses the single state of the minimized automaton as the sink instead of adding a second one.
+		const Nfa cmpl_brzozowski{complement(aut, alph, {{"algorithm", "brzozowski"}})};
+		CHECK(cmpl_brzozowski.num_of_states() == 1);
+		CHECK(are_equivalent(cmpl_brzozowski, builder::create_sigma_star_nfa(alph_ptr), &alph));
+	}
+
+	SECTION("universal language") {
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {0, 1};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, b, 0);
+		aut.delta.add(1, a, 0);
+		aut.delta.add(1, b, 1);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_lang_empty());
+	}
+
+	SECTION("no initial state") {
+		aut = Nfa(2);
+		aut.initial = {};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(are_equivalent(cmpl, builder::create_sigma_star_nfa(alph_ptr), &alph));
+	}
+
+	SECTION("a deterministic input still obeys the requested algorithm") {
+		// All nonempty words. The states 1 and 2 are equivalent, so only minimization collapses them.
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {1, 2};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, b, 2);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, b, 1);
+		aut.delta.add(2, a, 2);
+		aut.delta.add(2, b, 2);
+		REQUIRE(aut.is_deterministic());
+
+		const Nfa cmpl_classical{complement(aut, alph, {{"algorithm", "classical"}})};
+		const Nfa cmpl_brzozowski{complement(aut, alph, {{"algorithm", "brzozowski"}})};
+		CHECK(are_equivalent(cmpl_classical, cmpl_brzozowski, &alph));
+		CHECK(cmpl_brzozowski.num_of_states() < cmpl_classical.num_of_states());
+		CHECK(cmpl_brzozowski.is_in_lang(Word{}));
+		CHECK_FALSE(cmpl_brzozowski.is_in_lang(Word{a}));
+
+		CHECK_THROWS_WITH(
+			complement(aut, alph, ParameterMap{}),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_THROWS_WITH(
+			complement(aut, alph, {{"algorithm", "unknown"}}),
+			Catch::Matchers::ContainsSubstring("unknown value of the \"algorithm\" key")
+		);
+	}
+
+	SECTION("rvalue overload") {
+		// Words ending with 'a'.
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, b, 0);
+		REQUIRE(aut.is_deterministic());
+
+		CHECK(are_equivalent(
+			complement(Nfa{aut}, symbols, {{"algorithm", "classical"}}),
+			complement(aut, symbols, {{"algorithm", "classical"}}), &alph
+		));
+		CHECK(are_equivalent(
+			complement(Nfa{aut}, symbols, {{"algorithm", "brzozowski"}}),
+			complement(aut, symbols, {{"algorithm", "brzozowski"}}), &alph
+		));
+		// The in-place fast path must not swallow the parameter validation either.
+		CHECK_THROWS_WITH(
+			complement(Nfa{aut}, symbols, ParameterMap{}),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_THROWS_WITH(
+			complement(Nfa{aut}, symbols, {{"algorithm", "unknown"}}),
+			Catch::Matchers::ContainsSubstring("unknown value of the \"algorithm\" key")
+		);
 	}
 
 } // }}}

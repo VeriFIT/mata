@@ -948,12 +948,16 @@ Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power);
 /**
  * @brief Compute automaton accepting complement of @p aut.
  *
+ * The complement is a language over @p alphabet only: transitions over symbols outside of @p alphabet are dropped
+ *  and the words of the result therefore never contain any other symbol.
+ *
  * @param[in] aut Automaton whose complement to compute.
  * @param[in] alphabet Alphabet used for complementation.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm":
  *      - "classical": The classical algorithm determinizes the automaton, makes it complete, and swaps final and
- *                      non-final states.
+ *                      non-final states. An already deterministic automaton is complemented directly, without
+ *                      determinizing it first.
  *      - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
  *                       complete, and swaps final and non-final states.
  * @return Complemented automaton.
@@ -969,17 +973,36 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& par
  *  the alphabet again (and for each automaton).
  *
  * @param[in] aut Automaton whose complement to compute.
- * @param[in] symbols Symbols to complement over.
+ * @param[in] symbols Symbols to complement over. Transitions over any other symbol are dropped, the complement is a
+ *  language over @p symbols only.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm":
  *      - "classical": The classical algorithm determinizes the automaton, makes it complete, and swaps final and
- *                      non-final states.
+ *                      non-final states. An already deterministic automaton is complemented directly, without
+ *                      determinizing it first.
  *      - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
  *                       complete, and swaps final and non-final states.
  * @return Complemented automaton.
  */
 Nfa complement(
 	const Nfa& aut, const utils::OrdVector<Symbol>& symbols, const ParameterMap& params = {{"algorithm", "classical"}}
+);
+
+/**
+ * @brief Compute automaton accepting complement of @p aut.
+ *
+ * This overloaded version accepts an rvalue reference and complements in place when the input is deterministic and
+ *  the "classical" algorithm is requested, avoiding an unnecessary copy of a temporary automaton.
+ *
+ * @param[in] aut Automaton (rvalue) whose complement to compute.
+ * @param[in] symbols Symbols to complement over. Transitions over any other symbol are dropped, the complement is a
+ *  language over @p symbols only.
+ * @param[in] params Optional parameters to control the complementation algorithm. See @c complement(const Nfa&,
+ *  const utils::OrdVector<Symbol>&, const ParameterMap&).
+ * @return Complemented automaton.
+ */
+Nfa complement(
+	Nfa&& aut, const utils::OrdVector<Symbol>& symbols, const ParameterMap& params = {{"algorithm", "classical"}}
 );
 
 /**
@@ -1001,13 +1024,17 @@ Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "brzozo
  *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
  *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
  *  determinization should stop and return only the determinized NFA constructed so far.
+ * @param[in] restrict_to_symbols When not @c nullptr, determinize over these symbols only. Transitions over any other
+ *  symbol are ignored, so the macrostates reachable only over such a transition are never constructed. The caller
+ *  gets the determinization of @p aut with its transitions restricted to @p restrict_to_symbols.
  * @return Determinized automaton.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
 Nfa determinize(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
-	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
 );
 
 /**

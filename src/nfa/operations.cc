@@ -211,22 +211,55 @@ bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::op
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
+	if (symbols.empty()) { return false; }
+
 	bool transition_added{false};
 	const size_t num_of_states{this->num_of_states()};
 	const State sink_state_val{sink_state.value_or(num_of_states)};
+	const auto symbols_begin{symbols.begin()};
+	const auto symbols_end{symbols.end()};
 
-	OrdVector<Symbol> used_symbols{};
+	// Scratch buffer for merging an incomplete state post. The swap below hands its storage over to the state and
+	//  takes the storage of the state in exchange, so a later, larger state post can still reallocate. The win is
+	//  appending the merged state post instead of inserting every missing symbol into the middle of the old one.
+	StatePost completed_post{};
 	for (State state{0}; state < num_of_states; ++state) {
-		for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
-		for (const OrdVector<Symbol> unused_symbols{symbols.difference(used_symbols)};
-			 const Symbol symbol : unused_symbols) {
-			delta.add(state, symbol, sink_state_val);
-			transition_added = true;
+		StatePost& state_post{delta.mutable_state_post(state)};
+
+		// Both the state post and @p symbols are sorted by symbol, so a single merge finds the missing symbols.
+		//  Symbols outside @p symbols are simply skipped over, they complete nothing.
+		auto symbols_it{symbols_begin};
+		auto post_it{state_post.begin()};
+		const auto post_end{state_post.end()};
+		while (symbols_it != symbols_end) {
+			while (post_it != post_end && post_it->symbol < *symbols_it) { ++post_it; }
+			if (post_it == post_end || post_it->symbol != *symbols_it) { break; } // '*symbols_it' is missing.
+			++post_it;
+			++symbols_it;
 		}
-		used_symbols.clear();
+		if (symbols_it == symbols_end) { continue; } // The state is already complete.
+		transition_added = true;
+
+		// Rebuild the state post as the merge of the original symbol posts with the missing symbols. Both sequences
+		//  are sorted, so the merged state post is created by appending only, with no sorted insert in the middle.
+		completed_post.clear();
+		completed_post.reserve(state_post.size() + static_cast<size_t>(symbols_end - symbols_it));
+		symbols_it = symbols_begin;
+		for (SymbolPost& symbol_post : state_post) {
+			while (symbols_it != symbols_end && *symbols_it < symbol_post.symbol) {
+				completed_post.emplace_back(*symbols_it, sink_state_val);
+				++symbols_it;
+			}
+			if (symbols_it != symbols_end && *symbols_it == symbol_post.symbol) { ++symbols_it; }
+			completed_post.emplace_back(std::move(symbol_post));
+		}
+		for (; symbols_it != symbols_end; ++symbols_it) { completed_post.emplace_back(*symbols_it, sink_state_val); }
+		std::swap(state_post, completed_post);
 	}
 
 	if (transition_added && num_of_states <= sink_state_val) {
+		StatePost& sink_post{delta.mutable_state_post(sink_state_val)};
+		sink_post.reserve(sink_post.size() + symbols.size());
 		for (const Symbol symbol : symbols) { delta.add(sink_state_val, symbol, sink_state_val); }
 	}
 
@@ -1138,7 +1171,8 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 Nfa mata::nfa::determinize(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map,
-	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover
+	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
+	const OrdVector<Symbol>* const restrict_to_symbols
 ) {
 	Nfa result{};
 	// assuming all sets targets are non-empty
@@ -1177,6 +1211,9 @@ Nfa mata::nfa::determinize(
 			// extract post from the synchronized_iterator iterator
 			const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
 			Symbol current_symbol = (*symbol_posts.begin())->symbol;
+			// Skipping before the targets are unified keeps the macrostates reachable only over a foreign symbol
+			//  from ever being constructed.
+			if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, current_symbol)) { continue; }
 			StateSet targets_orig = synchronized_iterator.unify_targets();
 
 			const auto existing_target_it = subset_map->find(targets_orig);
