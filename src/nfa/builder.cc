@@ -67,7 +67,9 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 
 Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map) {
 	Nfa aut;
-	MATA_ASSERT(nullptr != alphabet);
+	if (nullptr == alphabet) {
+		throw std::runtime_error("construct(): alphabet must not be null");
+	}
 
 	if (!inter_aut.is_nfa()) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_NFA + "\"");
