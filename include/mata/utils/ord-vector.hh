@@ -108,7 +108,7 @@ template <class Key> class OrdVector {
 		return *this;
 	}
 
-	virtual ~OrdVector() = default;
+	~OrdVector() = default;
 
 	/**
 	 * Create OrdVector with reserved @p capacity.
@@ -145,16 +145,16 @@ template <class Key> class OrdVector {
 	// but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
 	reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
-	virtual void reserve(size_t size) { vec_.reserve(size); }
-	virtual void resize(size_t size) { vec_.resize(size); }
+	void reserve(size_t size) { vec_.reserve(size); }
+	void resize(size_t size) { vec_.resize(size); }
 
-	virtual iterator erase(const_iterator pos) { return vec_.erase(pos); }
-	virtual iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
-	virtual size_type erase_if(std::function<bool(const value_type&)> should_erase) {
-		return std::erase_if(vec_, should_erase);
+	iterator erase(const_iterator pos) { return vec_.erase(pos); }
+	iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
+	template <class Pred> size_type erase_if(Pred&& should_erase) {
+		return std::erase_if(vec_, std::forward<Pred>(should_erase));
 	}
 
-	virtual std::pair<iterator, bool> insert(const Key& x) {
+	std::pair<iterator, bool> insert(const Key& x) {
 		MATA_ASSERT(is_sorted());
 
 		reserve_on_insert(vec_);
@@ -211,7 +211,7 @@ template <class Key> class OrdVector {
 	 * Without this overload, an @c insert(std::move(x)) call binds to @c insert(const Key&) and copies @p x, which
 	 *  matters for keys that own memory (e.g. @c SymbolPost).
 	 */
-	virtual std::pair<iterator, bool> insert(Key&& x) {
+	std::pair<iterator, bool> insert(Key&& x) {
 		MATA_ASSERT(is_sorted());
 
 		reserve_on_insert(vec_);
@@ -227,7 +227,7 @@ template <class Key> class OrdVector {
 		return {pos, inserted};
 	}
 
-	virtual bool insert(const OrdVector& vec) {
+	bool insert(const OrdVector& vec) {
 		static OrdVector tmp{};
 		MATA_ASSERT(is_sorted());
 		MATA_ASSERT(vec.is_sorted());
@@ -247,7 +247,7 @@ template <class Key> class OrdVector {
 
 	inline void clear() { vec_.clear(); }
 
-	virtual inline size_t size() const { return vec_.size(); }
+	inline size_t size() const { return vec_.size(); }
 
 	inline size_t count(const Key& key) const {
 		MATA_ASSERT(is_sorted());
@@ -270,7 +270,7 @@ template <class Key> class OrdVector {
 
 	OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
-	virtual const_iterator find(const Key& key) const {
+	const_iterator find(const Key& key) const {
 		MATA_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
@@ -281,7 +281,7 @@ template <class Key> class OrdVector {
 		}
 	}
 
-	virtual iterator find(const Key& key) {
+	iterator find(const Key& key) {
 		MATA_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
@@ -292,31 +292,31 @@ template <class Key> class OrdVector {
 		}
 	}
 
-	virtual const Key& front() const { return vec_[0]; }
-	virtual Key& front() { return vec_[0]; }
+	const Key& front() const { return vec_[0]; }
+	Key& front() { return vec_[0]; }
 
-	virtual const Key& min() const {
+	const Key& min() const {
 		if (vec_.empty()) { throw std::out_of_range("Cannot get min from an empty OrdVector"); }
 		return vec_.front();
 	}
 
-	virtual Key& min() {
+	Key& min() {
 		if (vec_.empty()) { throw std::out_of_range("Cannot get min from an empty OrdVector"); }
 		return vec_.front();
 	}
 
-	virtual const Key& max() const {
+	const Key& max() const {
 		if (vec_.empty()) { throw std::out_of_range("Cannot get max from an empty OrdVector"); }
 		return vec_.back();
 	}
 
-	virtual Key& max() {
+	Key& max() {
 		if (vec_.empty()) { throw std::out_of_range("Cannot get max from an empty OrdVector"); }
 		return vec_.back();
 	}
 
-	virtual const Key& at(const size_t index) const { return vec_.at(index); }
-	virtual Key& at(const size_t index) { return vec_.at(index); }
+	const Key& at(const size_t index) const { return vec_.at(index); }
+	Key& at(const size_t index) { return vec_.at(index); }
 
 	/**
 	 * Check whether @p key exists in the ordered vector.
@@ -342,7 +342,7 @@ template <class Key> class OrdVector {
 		return 0;
 	}
 
-	virtual inline bool empty() const { return vec_.empty(); }
+	inline bool empty() const { return vec_.empty(); }
 
 	// Indexes which ar staying are shifted left to take place of those that are not staying.
 	template <typename Fun> void filter_indexes(const Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
@@ -350,25 +350,25 @@ template <class Key> class OrdVector {
 	// Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
 	template <typename Fun> void filter(const Fun&& is_staying) { utils::filter(vec_, is_staying); }
 
-	virtual inline const_reference back() const { return vec_.back(); }
+	inline const_reference back() const { return vec_.back(); }
 
 	/**
 	 * @brief Get reference to the last element in the vector.
 	 *
 	 * Modifying the underlying value in the reference could break sortedness.
 	 */
-	virtual inline reference back() { return vec_.back(); }
+	inline reference back() { return vec_.back(); }
 
-	virtual inline void pop_back() { return vec_.pop_back(); }
+	inline void pop_back() { return vec_.pop_back(); }
 
-	virtual inline const_iterator begin() const { return vec_.begin(); }
-	virtual inline const_iterator end() const { return vec_.end(); }
+	inline const_iterator begin() const { return vec_.begin(); }
+	inline const_iterator end() const { return vec_.end(); }
 
-	virtual inline iterator begin() { return vec_.begin(); }
-	virtual inline iterator end() { return vec_.end(); }
+	inline iterator begin() { return vec_.begin(); }
+	inline iterator end() { return vec_.end(); }
 
-	virtual inline const_iterator cbegin() const { return begin(); }
-	virtual inline const_iterator cend() const { return end(); }
+	inline const_iterator cbegin() const { return begin(); }
+	inline const_iterator cend() const { return end(); }
 
 	/**
 	 * @brief  Overloaded << operator
