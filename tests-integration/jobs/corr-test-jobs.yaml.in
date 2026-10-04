@@ -1,6 +1,9 @@
-# Mata engines return 0 on success and a nonzero code only on failure.
+# Mata engines return 0 on success and a nonzero code only on failure; anything
+# else is an error, refined into a crash or a memout by pycobench itself.
 defaults:
-  accepted_return_codes: [0]
+  return_codes:
+    0: finished
+    "*": error
 
 test-unary:
   cmd: @CMAKE_CURRENT_BINARY_DIR@/test-unary-op $1

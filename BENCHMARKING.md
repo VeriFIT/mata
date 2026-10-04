@@ -164,7 +164,9 @@ The binaries take files with NFAs written in the `.mata` automata format as a co
 
   ```text
   defaults:
-    accepted_return_codes: [0]
+    return_codes:
+      0: finished
+      "*": error
 
   name_of_the_benchmark_test:
     cmd: <path/to/the/binary/to/execute> <INPUTS...>               `
@@ -172,8 +174,11 @@ The binaries take files with NFAs written in the `.mata` automata format as a co
 
   where `<INPUTS...>` is a sequence of `.mata` files to be loaded by the binary, passed as `$1` for the first automaton (in the first file), `$2` for the second automaton in the second file, etc.
 
-  `pycobench` accepts return codes `0` and `1` as a successful run by default (solvers often return `1` for legitimate results).
-  The mata binaries return a nonzero code only on failure, so the mata job configurations set `accepted_return_codes: [0]` globally in the top-level `defaults` section; an individual operation can override it with its own `accepted_return_codes`.
+  `return_codes` maps the return code of a binary to the status of the run, with `"*"` matching every code without an entry of its own.
+  The statuses are `finished`, `error`, `timeout`, `memout` and `crash`; the results processed by `pyco_proc` show them as the measured values, `ERR`, `TO`, `MO` and `CRASH` respectively.
+  By default, `pycobench` treats both `0` and `1` as a successful run (solvers often return `1` for legitimate results).
+  The mata binaries return a nonzero code only on failure, so the mata job configurations map only `0` to `finished` globally in the top-level `defaults` section; an individual operation can override the mapping with its own `return_codes`.
+  A return code left to the catch-all entry is recognized as a `crash` when a signal killed the binary (e.g. a segfault), and as a `memout` when the run reached the limit given by `--memout`.
 
 - with specific options such as setting the timeout, number of parallel jobs, the identifier appended to the results file, etc.
 
