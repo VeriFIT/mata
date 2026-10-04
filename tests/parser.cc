@@ -10,6 +10,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <sstream>
+
 using namespace mata::parser;
 using namespace mata::utils;
 
@@ -846,4 +848,44 @@ q1 \false q2
 TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)") { // {{{
 	SECTION("aux") { WARN_PRINT("Insufficient testing of mata::Parser::ParsedSection::operator<<(ostream&)"); }
 
+} // }}}
+
+TEST_CASE("mata::IntermediateAut streaming a negated compound formula - #760") { // {{{
+	// Before the fix, the unary branch of serialize_graph() recursed on the child node alone, dropped its children
+	//  and printed the formula from reserved but unconstructed memory, with the operands missing.
+	const auto print_transition = [](const std::string& formula) {
+		const std::string file{"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 " + formula + " q1\n"};
+		const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+		std::ostringstream out;
+		out << auts[0];
+		const std::string printed{out.str()};
+		const size_t begin{printed.find("q0 -> ")};
+		REQUIRE(begin != std::string::npos);
+		return printed.substr(begin, printed.find('\n', begin) - begin);
+	};
+
+	SECTION("negated binary formula") { CHECK(print_transition("!(a0 & a1)") == "q0 -> !(a0 & a1) & q1"); }
+
+	SECTION("negated nested binary formula") {
+		CHECK(print_transition("!((a0 & a1) | a2)") == "q0 -> !((a0 & a1) | a2) & q1");
+	}
+
+	SECTION("negation under a binary operator") {
+		CHECK(print_transition("a2 | !(a0 & !a1)") == "q0 -> (a2 | !(a0 & !a1)) & q1");
+	}
+
+	SECTION("double negation") { CHECK(print_transition("!!a0") == "q0 -> !(!a0) & q1"); }
+
+	SECTION("operator node without children throws instead of reading them") {
+		mata::IntermediateAut aut{};
+		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
+		aut.transitions.emplace_back(
+			mata::FormulaNode{mata::FormulaNode::Type::Operand, "q0", "q0", mata::FormulaNode::OperandType::State},
+			mata::FormulaGraph{
+				mata::FormulaNode{mata::FormulaNode::Type::Operator, "&", "&", mata::FormulaNode::OperatorType::And}
+			}
+		);
+		std::ostringstream out;
+		CHECK_THROWS_WITH(out << aut, Catch::Matchers::ContainsSubstring("0 children"));
+	}
 } // }}}

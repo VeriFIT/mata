@@ -103,9 +103,36 @@ void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
 	if (next_symbol_value_ <= value) { next_symbol_value_ = value + 1; }
 }
 
-std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) {
-	return os << std::to_string(alphabet);
+std::ostream& mata::OnTheFlyAlphabet::print(std::ostream& os) const {
+	// symbol_map_ is unordered and names may share a value; sort by (value, name) so that the output is deterministic.
+	std::vector<std::pair<std::string, Symbol>> pairs{symbol_map_.begin(), symbol_map_.end()};
+	std::sort(pairs.begin(), pairs.end(), [](const auto& lhs, const auto& rhs) {
+		return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
+	});
+	os << '{';
+	bool first = true;
+	for (const auto& [name, symbol] : pairs) {
+		if (!first) { os << ", "; }
+		os << name << "->" << symbol;
+		first = false;
+	}
+	return os << '}';
 }
+
+std::ostream& mata::EnumAlphabet::print(std::ostream& os) const {
+	os << '{';
+	bool first = true;
+	for (const Symbol symbol : symbols_) {
+		if (!first) { os << ", "; }
+		os << symbol;
+		first = false;
+	}
+	return os << '}';
+}
+
+std::ostream& mata::IntAlphabet::print(std::ostream& os) const { return os << "IntAlphabet"; }
+
+std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
 
 Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
 	Symbol symbol;
