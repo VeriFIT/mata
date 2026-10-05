@@ -178,15 +178,16 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	using super::erase;
 
 	using super::find;
+	// A projected binary search, not `super::find(SymbolPost{symbol})`: the key object used to be a
+	//  function-local `static` that every thread in the process wrote to, and building a fresh one per
+	//  call would allocate nothing but still construct an empty target set.
 	iterator find(const Symbol symbol) {
-		static SymbolPost symbol_post{};
-		symbol_post.symbol = symbol;
-		return super::find(symbol_post);
+		const auto it{std::ranges::lower_bound(super::begin(), super::end(), symbol, {}, &SymbolPost::symbol)};
+		return (it != super::end() && it->symbol == symbol) ? it : super::end();
 	}
 	const_iterator find(const Symbol symbol) const {
-		static SymbolPost symbol_post{};
-		symbol_post.symbol = symbol;
-		return super::find(symbol_post);
+		const auto it{std::ranges::lower_bound(super::cbegin(), super::cend(), symbol, {}, &SymbolPost::symbol)};
+		return (it != super::cend() && it->symbol == symbol) ? it : super::cend();
 	}
 
 	/// returns an iterator to the smallest epsilon, or end() if there is no epsilon
