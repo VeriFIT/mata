@@ -1442,6 +1442,23 @@ TEST_CASE("mata::nfa::construct() invalid calls") { // {{{
 
 		CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
 	}
+	SECTION("construct() call with IntAlphabet that throws on a non-numeric symbol") {
+		parsec.type = nfa::TYPE_NFA;
+		parsec.dict.clear();
+		parsec.body.clear();
+		parsec.dict.insert({"Initial", {"q0"}});
+		parsec.dict.insert({"Final", {"q1"}});
+		parsec.body = {{"q0", "x", "q1"}}; // 'x' is not numeric
+		mata::IntAlphabet int_alphabet;
+
+		// The symbol translation throws; the temporary NameStateMap is a stack object, so it is released while the
+		//  exception propagates. Only the sanitizer builds can observe that release, this section pins the throw.
+		CHECK_THROWS_WITH(
+			builder::construct(parsec, &int_alphabet),
+			Catch::Matchers::ContainsSubstring("Cannot translate string 'x' to symbol")
+		);
+	}
+
 } // }}}
 
 TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls") { // {{{

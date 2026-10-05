@@ -17,7 +17,6 @@
  */
 namespace mata::parser {
 
-// TODO: make into a multimap
 using KeyListStore = std::map<std::string, std::vector<std::string>>;
 using BodyLine = std::vector<std::string>;
 

@@ -1,4 +1,5 @@
-/* nfa-intersection.cc -- Intersection of NFAs
+/** @file
+ * @brief NFA intersection (product) construction.
  */
 
 // MATA headers

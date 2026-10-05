@@ -94,7 +94,6 @@ class Automaton {
 	 * @brief Get set of reachable states.
 	 *
 	 * Reachable states are states accessible from any initial state.
-	 * @todo With the new get_useful_states, it might be useless now.
 	 * @param[in] filter Optional filter function to apply to reachable states.
 	 *  If provided, only states for which the filter returns true will be included in the result.
 	 * @return Set of reachable states.
@@ -105,7 +104,6 @@ class Automaton {
 	 * @brief Get set of terminating states.
 	 *
 	 * Terminating states are states leading to any final state.
-	 * @todo With the new get_useful_states, it might be useless now.
 	 * @return Set of terminating states.
 	 */
 	nfa::StateSet get_terminating_states() const;

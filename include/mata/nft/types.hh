@@ -9,6 +9,8 @@
 #include <optional>
 #include <utility>
 
+#include <version>
+
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
@@ -164,7 +166,9 @@ class Levels : std::vector<Level> {
 		super::const_reverse_iterator,
 		// Member functions.
 		super::assign,
-		// super::assign_range // TODO(C++23): Enable when switching to C++23.
+#if __cpp_lib_containers_ranges >= 202'202L
+		super::assign_range,
+#endif
 		super::get_allocator,
 		// - Element access.
 		super::at, super::operator[], super::front, super::back, super::data, super::begin, super::cbegin, super::end,
@@ -173,9 +177,13 @@ class Levels : std::vector<Level> {
 		super::empty, super::size, super::max_size, super::reserve, super::capacity, super::shrink_to_fit,
 		// - Modifiers.
 		super::clear, super::insert,
-		// super::insert_range, // TODO(C++23): Enable when switching to C++23.
+#if __cpp_lib_containers_ranges >= 202'202L
+		super::insert_range,
+#endif
 		super::emplace, super::erase, super::push_back, super::emplace_back,
-		// super::append_range, // TODO(C++23): Enable when switching to C++23.
+#if __cpp_lib_containers_ranges >= 202'202L
+		super::append_range,
+#endif
 		super::pop_back, super::resize, super::swap;
 
 	std::weak_ordering operator<=>(const Levels& other) const = default;

@@ -10,8 +10,7 @@
 #include "mata/nfa/nfa.hh"
 
 // Encoding for the regular expression
-// FIXME: Use enum class re2::Regexp::ParseFlags from re2/regexp.h instead. It is not possible to include it here. Need
-// to fix cmake.
+// Encoding mirrors re2::Regexp::ParseFlags; enum class cannot be included in public header.
 enum class Encoding { Utf8 = 0, Latin1 = 1 << 5 };
 
 namespace mata::parser {

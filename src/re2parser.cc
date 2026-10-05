@@ -15,6 +15,9 @@
 namespace {
 using namespace mata::nfa;
 
+static_assert(
+	static_cast<int>(Encoding::Latin1) == re2::Regexp::Latin1, "Encoding::Latin1 must match re2::Regexp::Latin1"
+);
 class RegexParser {
   private:
 	/**

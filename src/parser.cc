@@ -1,4 +1,5 @@
-/* parser.cc -- implementation of VTF format parser
+/** @file
+ * @brief MATA format parser implementation.
  */
 
 #include "mata/parser/parser.hh"
