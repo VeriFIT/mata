@@ -25,6 +25,60 @@ TEST_CASE("mata::nfa::SymbolPost") {
 	CHECK(SymbolPost{1, StateSet{0}} >= SymbolPost{0, StateSet{1}});
 }
 
+TEST_CASE("mata::nfa::SymbolPost move assignment keeps the targets - issue #732") {
+	// The move assignment used to be guarded by `*this != rhs`, which compares the symbols only, so
+	//  every assignment between posts over the same symbol silently did nothing.
+	SECTION("assigning a post over the same symbol replaces the targets") {
+		SymbolPost lhs{1, StateSet{1, 2}};
+		SymbolPost rhs{1, StateSet{3}};
+		lhs = std::move(rhs);
+		CHECK(lhs.targets == StateSet{3});
+	}
+
+	SECTION("swapping two posts over the same symbol exchanges the targets") {
+		SymbolPost lhs{1, StateSet{5, 6}};
+		SymbolPost rhs{1, StateSet{7}};
+		std::swap(lhs, rhs);
+		CHECK(lhs.targets == StateSet{7});
+		CHECK(rhs.targets == StateSet{5, 6});
+	}
+
+	SECTION("self-swap keeps the targets") {
+		SymbolPost post{1, StateSet{8, 9}};
+		std::swap(post, post);
+		CHECK(post.targets == StateSet{8, 9});
+	}
+
+	SECTION("sorting posts with repeated symbols keeps every target") {
+		std::vector<SymbolPost> posts{};
+		posts.emplace_back(2, StateSet{10});
+		posts.emplace_back(2, StateSet{11});
+		posts.emplace_back(1, StateSet{12});
+		std::ranges::stable_sort(posts);
+		REQUIRE(posts.size() == 3);
+		CHECK(posts[0].targets == StateSet{12});
+		CHECK(posts[1].targets == StateSet{10});
+		CHECK(posts[2].targets == StateSet{11});
+	}
+}
+
+TEST_CASE("mata::nfa::StatePost equality compares the targets - issue #732") {
+	StatePost one_target{};
+	one_target.insert(SymbolPost{1, StateSet{1}});
+	StatePost two_targets{};
+	two_targets.insert(SymbolPost{1, StateSet{2, 3}});
+	StatePost same_as_one{};
+	same_as_one.insert(SymbolPost{1, StateSet{1}});
+
+	CHECK(one_target != two_targets);
+	CHECK(one_target == same_as_one);
+	CHECK(one_target != StatePost{});
+
+	// `SymbolPost` itself stays symbol-only; `StatePost::find()` and `erase()` identify a post by it.
+	CHECK(SymbolPost{1, StateSet{1}} == SymbolPost{1, StateSet{2, 3}});
+	CHECK(two_targets.find(SymbolPost{1}) != two_targets.end());
+}
+
 TEST_CASE("mata::nfa::Delta::state_post()") {
 	Nfa aut{};
 
