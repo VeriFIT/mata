@@ -31,7 +31,7 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
 
     cdef cset[vector[Symbol]] c_get_shortest_words "mata::applications::strings::get_shortest_words" (CNfa&)
     cdef optional[vector[vector[Symbol]]] c_get_words_of_lengths \
-        "mata::applications::strings::get_words_of_lengths" (CNft&, vector[unsigned]) except +
+        "mata::applications::strings::get_words_of_lengths" (CNft&, const vector[unsigned]&) except +
     cdef cset[Symbol] c_get_accepted_symbols "mata::applications::strings::get_accepted_symbols" (CNfa&)
     cdef cset[pair[int, int]] c_get_word_lengths "mata::applications::strings::get_word_lengths" (CNfa&)
     cdef bool c_is_lang_eps "mata::applications::strings::is_lang_eps" (CNfa&)
