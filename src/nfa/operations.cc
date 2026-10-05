@@ -26,37 +26,48 @@ using mata::Symbol;
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
+/**
+ * @brief Forward direct simulation: @c get(p, q) is true iff @c q simulates @c p.
+ *
+ * A final state may only be simulated by a final state. That used to be encoded by a self-loop over a
+ *  symbol the automaton does not use, which needed a search for such a symbol and threw when the whole
+ *  @c Symbol range was taken. The same constraint is the initial partition `{non-final, final}` with the
+ *  block relation `final(B) -> final(B')`, which the engine accepts directly and does not have to refine
+ *  the single block `{Q}` down to.
+ */
 Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-	OrdVector<mata::Symbol> used_symbols = aut.delta.get_used_symbols();
-	mata::Symbol unused_symbol = 0;
-	if (!used_symbols.empty() && *used_symbols.begin() == 0) {
-		auto it = used_symbols.begin();
-		unused_symbol = *it + 1;
-		++it;
-		const auto used_symbols_end = used_symbols.end();
-		while (it != used_symbols_end && unused_symbol == *it) {
-			unused_symbol = *it + 1;
-			++it;
-		}
-		if (unused_symbol == 0) { // sanity check to see if we did not use the full range of mata::Symbol
-			throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
-		}
-	}
-
 	const size_t state_num{aut.num_of_states()};
 	Simlib::ExplicitLTS lts_for_simulation(state_num);
 
 	for (const Transition& transition : aut.delta.transitions()) {
 		lts_for_simulation.add_transition(transition.source, transition.symbol, transition.target);
 	}
+	lts_for_simulation.init();
 
-	// final states cannot be simulated by nonfinal -> we add new self-loops over final states with new symbol in LTS
-	for (const State final_state : aut.final) {
-		lts_for_simulation.add_transition(final_state, unused_symbol, final_state);
+	std::vector<size_t> non_final_states{};
+	std::vector<size_t> final_states{};
+	for (State state{0}; state < state_num; ++state) {
+		(aut.final[state] ? final_states : non_final_states).push_back(state);
 	}
 
-	lts_for_simulation.init();
-	return lts_for_simulation.compute_simulation();
+	// The engine rejects empty blocks, so a block only enters the partition when it has a state.
+	std::vector<std::vector<size_t>> partition{};
+	size_t non_final_block{0};
+	size_t final_block{0};
+	if (!non_final_states.empty()) {
+		non_final_block = partition.size();
+		partition.push_back(std::move(non_final_states));
+	}
+	if (!final_states.empty()) {
+		final_block = partition.size();
+		partition.push_back(std::move(final_states));
+	}
+
+	Simlib::Util::BinaryRelation relation{partition.size(), false};
+	for (size_t block{0}; block < partition.size(); ++block) { relation.set(block, block, true); }
+	if (partition.size() == 2) { relation.set(non_final_block, final_block, true); }
+
+	return lts_for_simulation.compute_simulation(partition, relation, state_num);
 }
 
 void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {

@@ -2938,6 +2938,35 @@ TEST_CASE("mata::nft::fw-direct-simulation()") { // {{{
 		CHECK(!sim_for_nft.get(3, 2));
 		CHECK(sim_for_nft.get(3, 3));
 	}
+
+	// The level and final constraints used to be self-loops over `max_used_symbol + 1` and
+	//  `max_used_symbol + 2 + level`. EPSILON is the largest `Symbol`, so an NFT that uses it made
+	//  those markers wrap onto the real symbols 0, 1, 2, ... and states on different levels became
+	//  indistinguishable from each other.
+	SECTION("EPSILON in the delta does not relate states on different levels - issue #727") {
+		Nft nft{Nft::with_levels(2, 3)};
+		nft.levels[0] = 0;
+		nft.levels[1] = 1;
+		nft.levels[2] = 0;
+		nft.initial.insert(0);
+		nft.delta.add(2, EPSILON, 2); // Makes EPSILON the largest used symbol.
+		nft.delta.add(0, 2, 0); // Symbol 2 is what the old level marker of level 0 wrapped onto.
+		nft.delta.add(1, 1, 1); // Symbol 1 is what the old level marker of level 1 wrapped onto.
+		REQUIRE(nft.delta.get_max_symbol() == EPSILON);
+
+		const Simlib::Util::BinaryRelation relation{
+			algorithms::compute_relation(nft, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}})
+		};
+		CHECK(!relation.get(0, 1));
+		CHECK(!relation.get(1, 0));
+		CHECK(!relation.get(1, 2));
+		CHECK(!relation.get(2, 1));
+
+		// States 0 and 1 used to simulate each other, so the reduction merged two levels into one.
+		const Nft reduced{reduce(nft, nullptr, ParameterMap{{"algorithm", "simulation"}})};
+		CHECK(reduced.num_of_states() == 3);
+		CHECK(reduced.levels.num_of_levels == 2);
+	}
 } // }}
 
 TEST_CASE("mata::nft::reduce_size_by_simulation()") {
@@ -3045,6 +3074,40 @@ TEST_CASE("mata::nft::reduce_size_by_simulation()") {
 		CHECK(result.levels[state_renaming.at(0)] == 0);
 		CHECK(result.levels[state_renaming.at(1)] == 0);
 		CHECK(result.levels[middle_state] == 1);
+	}
+
+	// The marker self-loops that encoded "final" and "level" were derived from the largest used symbol
+	//  in `Symbol` arithmetic. EPSILON is the largest `Symbol`, so an NFT using it wrapped the final
+	//  marker onto symbol 0 and the level markers onto 1 + level; with DONT_CARE (EPSILON - 1) as the
+	//  largest symbol the level markers wrapped onto the level numbers themselves. Either way the
+	//  markers landed on real transitions and the reduction merged states it must keep apart.
+	SECTION("EPSILON in the delta does not change the language - issue #727") {
+		Nft nft{Nft::with_levels(Levels{1, std::vector<Level>(4, 0)}, 4, {0, 3}, {1})};
+		nft.delta.add(0, 0, 0);
+		nft.delta.add(3, 5, 1);
+		nft.delta.add(0, EPSILON, 2);
+		nft.delta.add(1, EPSILON, 2);
+
+		const Nft reduced{reduce(nft)};
+		const std::vector<Word> word{{5}};
+		REQUIRE(nft.is_in_lang_by_levels(word));
+		CHECK(reduced.is_in_lang_by_levels(word));
+		CHECK(are_equivalent(nft, reduced));
+	}
+
+	SECTION("DONT_CARE as the largest symbol does not change the language - issue #727") {
+		Nft nft{Nft::with_levels(Levels{1, std::vector<Level>(5, 0)}, 5, {0, 2}, {3})};
+		nft.delta.add(0, 7, 1);
+		nft.delta.add(1, 0, 1);
+		nft.delta.add(1, 5, 3);
+		nft.delta.add(2, 5, 3);
+		nft.delta.add(3, DONT_CARE, 4);
+
+		const Nft reduced{reduce(nft)};
+		const std::vector<Word> word{{0, 5}};
+		REQUIRE(!nft.is_in_lang_by_levels(word));
+		CHECK(!reduced.is_in_lang_by_levels(word));
+		CHECK(are_equivalent(nft, reduced));
 	}
 }
 
