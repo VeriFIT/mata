@@ -12,6 +12,7 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/synchronized-iterator.hh"
 
+#include <algorithm>
 #include <iterator>
 #include <span>
 
@@ -62,11 +63,14 @@ class SymbolPost {
 	SymbolPost(const Symbol symbol, const State state_to) : symbol{symbol}, targets{state_to} {}
 	SymbolPost(const Symbol symbol, StateSet states_to) : symbol{symbol}, targets{std::move(states_to)} {}
 
-	SymbolPost(SymbolPost&& rhs) noexcept : symbol{rhs.symbol}, targets{std::move(rhs.targets)} {}
+	SymbolPost(SymbolPost&& rhs) noexcept = default;
 	SymbolPost(const SymbolPost& rhs) = default;
-	SymbolPost& operator=(SymbolPost&& rhs) noexcept;
+	SymbolPost& operator=(SymbolPost&& rhs) noexcept = default;
 	SymbolPost& operator=(const SymbolPost& rhs) = default;
 
+	// Symbol-only, deliberately: a `StatePost` identifies a post by its symbol, so `find()`,
+	//  `erase(const Key&)` and the `std::unique()` of `sort_and_rmdupl()` all depend on it.
+	//  `StatePost::operator==` compares the targets as well.
 	std::weak_ordering operator<=>(const SymbolPost& other) const { return symbol <=> other.symbol; }
 	bool operator==(const SymbolPost& other) const { return symbol == other.symbol; }
 
@@ -147,7 +151,17 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	StatePost(StatePost&&) = default;
 	StatePost& operator=(const StatePost&) = default;
 	StatePost& operator=(StatePost&&) = default;
-	bool operator==(const StatePost&) const = default;
+	/**
+	 * @brief Two posts are equal when they hold the same symbols with the same targets.
+	 *
+	 * Not defaulted: a defaulted @c operator== compares the @c OrdVector base element by element, and
+	 *  @c SymbolPost::operator== only looks at the symbol, so posts with different targets compared equal.
+	 */
+	bool operator==(const StatePost& other) const {
+		return std::ranges::equal(*this, other, [](const SymbolPost& lhs, const SymbolPost& rhs) {
+			return lhs.symbol == rhs.symbol && lhs.targets == rhs.targets;
+		});
+	}
 	using super::empty, super::size;
 	using super::insert;
 	using super::reserve;
