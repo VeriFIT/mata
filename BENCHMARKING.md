@@ -136,6 +136,12 @@ To run the benchmarking on a single benchmark instance, we use custom binaries w
    ./build/tests-integration/bench-automata-inclusion ./tests-integration/automata/b-armc-incl-easiest/aut1.mata ./tests-integration/automata/b-armc-incl-easiest/aut2.mata
    ```
 
+   Every benchmark binary writes one `build: <configuration>` line to stderr before it measures
+   anything (`Release`, `Debug`, …, or `unspecified` when the build directory selects no
+   configuration), and adds `(assertions enabled; not comparable with a Release run)` when it was
+   built without `NDEBUG`. The measurements themselves go to stdout, so the line never reaches the
+   result CSV of `pycobench`; check it whenever a number looks surprising.
+
 ### Run multiple benchmarks through the benchmarking tool `pycobench`
 
 To run the benchmarks, we use the benchmarking tool [pycobench](https://github.com/VeriFIT/pycobench), included as a submodule in `./tests-integration/pycobench`.

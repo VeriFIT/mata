@@ -50,6 +50,13 @@ foreach (SOURCE ${SOURCES})
 	target_link_libraries (${TARGET} libmata)
 	# For the generated `utils/config.hh`.
 	target_include_directories (${TARGET} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
+	# The build type the binary announces at startup. `CMAKE_BUILD_TYPE` would be the obvious source
+	#  but it is empty under a multi-config generator (Ninja Multi-Config, Visual Studio, Xcode),
+	#  which picks the configuration at build time; `$<CONFIG>` is resolved then and equals
+	#  `CMAKE_BUILD_TYPE` for single-config generators.
+	target_compile_definitions (
+		${TARGET} PRIVATE "MATA_BENCH_BUILD_TYPE=\"$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,unspecified>\""
+	)
 
 	if (MATA_BENCH_PROFILING)
 		target_compile_options (${TARGET} PRIVATE -g --coverage)

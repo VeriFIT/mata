@@ -3,6 +3,7 @@
 #include "mata/parser/inter-aut.hh"
 #include <algorithm>
 #include <string>
+#include <string_view>
 
 namespace {
 bool has_bitvector_alphabet(const std::vector<mata::IntermediateAut>& inter_auts) {
@@ -20,6 +21,22 @@ bool reject_unmintermized_bitvector(const std::vector<mata::IntermediateAut>& in
 				 "mintermization; set `MINTERMIZE_AUTOMATA` to `true` for such inputs\n";
 	return true;
 }
+
+/// Announce on stderr, once per process, which build produced this binary. A benchmark run against
+///  a Debug `libmata.a` measures assertion checks at `-O0`, and nothing in the result CSV would
+///  otherwise say so. stderr, not stdout: stdout carries the `name: seconds` lines pycobench parses.
+struct BuildTypeAnnouncement {
+	BuildTypeAnnouncement() {
+#ifdef NDEBUG
+		const std::string_view assertions{};
+#else
+		const std::string_view assertions{" (assertions enabled; not comparable with a Release run)"};
+#endif
+		std::cerr << "build: " << MATA_BENCH_BUILD_TYPE << assertions << "\n";
+	}
+};
+
+const BuildTypeAnnouncement build_type_announcement{};
 } // namespace
 
 int load_automaton(
