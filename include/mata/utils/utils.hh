@@ -160,17 +160,55 @@ template <class T, class Cont> bool is_in(const T& elem, const Cont& cont) {
 }
 
 /**
- * @brief  Combine two hash values
+ * @brief The seed every composite hash of mata starts from.
  *
- * Values taken from
- * http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp
+ * Composite hashers must not start from the raw hash of their first element: @c std::hash of an integer is the
+ *  identity in libstdc++ and libc++, so an unmixed first element would survive into the result and make whole
+ *  families of keys collide.
+ */
+inline constexpr size_t HASH_SEED{
+	sizeof(size_t) == 8 ? static_cast<size_t>(0xcb'f2'9c'e4'84'22'23'25ULL) : static_cast<size_t>(0x81'1c'9d'c5UL)
+};
+
+/**
+ * @brief Spreads every input bit of @p value over all of its output bits.
  *
- * TODO: fix to be more suitable for 64b
+ * A multiply-xorshift finalizer: the 64-bit variant is the one Boost.ContainerHash uses since 1.81, the 32-bit
+ *  variant is Murmur3's @c fmix32. Without such a finalizer, nearby keys (which is what state identifiers are)
+ *  stay nearby in the hash space and share hash-table buckets.
+ */
+inline constexpr size_t hash_mix(size_t value) {
+	if constexpr (sizeof(size_t) == 8) {
+		uint64_t mixed{static_cast<uint64_t>(value)};
+		constexpr uint64_t multiplier{0x0e'98'46'af'9b'1a'61'5dULL};
+		mixed ^= mixed >> 32;
+		mixed *= multiplier;
+		mixed ^= mixed >> 32;
+		mixed *= multiplier;
+		mixed ^= mixed >> 28;
+		return static_cast<size_t>(mixed);
+	} else {
+		uint32_t mixed{static_cast<uint32_t>(value)};
+		mixed ^= mixed >> 16;
+		mixed *= 0x21'f0'aa'adUL;
+		mixed ^= mixed >> 15;
+		mixed *= 0x73'5a'2d'97UL;
+		mixed ^= mixed >> 15;
+		return static_cast<size_t>(mixed);
+	}
+}
+
+/**
+ * @brief Combines the hash of @p rhs into the running hash value @p lhs.
+ *
+ * @note The result depends on the order in which the elements are combined, which is what distinguishes the hash
+ *  of @c (a, b) from the hash of @c (b, a).
  */
 template <class T> inline size_t hash_combine(size_t lhs, const T& rhs) { // {{{
-	const size_t rhs_hash = std::hash<T>{}(rhs);
-	lhs ^= rhs_hash + 0x9e'37'79'b9 + (lhs << 6) + (lhs >> 2);
-	return lhs;
+	constexpr size_t golden_ratio{
+		sizeof(size_t) == 8 ? static_cast<size_t>(0x9e'37'79'b9'7f'4a'7c'15ULL) : static_cast<size_t>(0x9e'37'79'b9UL)
+	};
+	return hash_mix(lhs + golden_ratio + std::hash<T>{}(rhs));
 } // hash_combine }}}
 
 // Concept to check if all types in a parameter pack are the same as a specified type U
@@ -178,13 +216,12 @@ template <typename U, typename... Ts>
 concept AllOfType = (std::same_as<U, Ts> && ...);
 
 /**
- * @brief  Hashes a range
+ * @brief Hashes the range @p first to @p last.
  *
- * Inspired by
- * http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp
+ * Every element is combined into a constant seed, so that a one-element range does not hash to its only element.
  */
 template <typename It> size_t hash_range(It first, It last) { // {{{
-	size_t accum = 0;
+	size_t accum{HASH_SEED};
 
 	for (; first != last; ++first) { accum = hash_combine(accum, *first); }
 
@@ -219,7 +256,7 @@ template <class A> struct VectorHash {
  */
 template <class A, class B> struct PairHash {
 	size_t operator()(const std::pair<A, B>& pair) const {
-		return hash_combine(std::hash<A>{}(pair.first), pair.second);
+		return hash_combine(hash_combine(HASH_SEED, pair.first), pair.second);
 	}
 };
 
@@ -318,16 +355,18 @@ template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_st
 	vec.reserve(last);
 }
 
+/**
+ * @brief Sorts @p vec and removes its duplicate elements.
+ *
+ * @c std::sort stays the sorting algorithm: it is the fastest of the ones measured on the mixed sizes mata
+ *  produces, and a specialized sort would have to be restricted to unsigned integral keys anyway, because
+ *  @c SymbolPost compares by symbol only and would lose targets under a comparison sort.
+ * Already-sorted input is common (ordered construction, conversion from an ordered container), and the linear
+ *  @c std::is_sorted check that detects it costs far less than the sort it avoids.
+ */
 template <class Vector> void inline sort_and_rmdupl(Vector& vec) {
-	// TODO: try this?
-	// if (vectorIsSorted()) return;//probably useless
-
-	// sort
-	// TODO: is this the best available sorting algo?
-	std::sort(vec.begin(), vec.end());
-
-	// remove duplicates
-	auto it = std::unique(vec.begin(), vec.end());
+	if (!std::is_sorted(vec.begin(), vec.end())) { std::sort(vec.begin(), vec.end()); }
+	const auto it = std::unique(vec.begin(), vec.end());
 	vec.resize(static_cast<size_t>(it - vec.begin()));
 }
 

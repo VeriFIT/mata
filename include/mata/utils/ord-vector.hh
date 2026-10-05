@@ -87,7 +87,8 @@ template <class Key> class OrdVector {
   public:
 	OrdVector() : vec_() {}
 	explicit OrdVector(const VectorType& vec) : vec_(vec) { utils::sort_and_rmdupl(vec_); }
-	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} { utils::sort_and_rmdupl(vec_); }
+	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
+	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
 	template <class T> explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(const OrdVector& rhs) = default;

@@ -102,10 +102,14 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 	 * If positions are synchronized to start with, then synchronized_at_current_minimum decides whether to stay or
 	 *  advance further.
 	 * The general of the algorithm is to synchronize everybody with position[0].
+	 *
+	 * @note Over zero inputs this returns false, even though universal synchronization over no inputs is vacuously
+	 *  satisfied: an empty result is the only one the caller could read, and both callers (NFT intersection in
+	 *  @c src/nft/intersection.cc and composition in @c src/nft/composition.cc) push two inputs anyway.
 	 */
 	bool advance() override {
-		// Nothing to synchronize.
-		if (this->positions.empty()) { return false; } // TODO: ?? or not?
+		// Nothing to synchronize: there is no position to return.
+		if (this->positions.empty()) { return false; }
 
 		// If already synchronized, start moving forward by advancing position[0] (and so break synchronization).
 		if (this->synchronized_at_current_minimum) {
