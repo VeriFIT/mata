@@ -9,6 +9,7 @@
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nft/nft.hh"
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -366,5 +367,97 @@ TEST_CASE("mata::applications::strings::get_accepted_symbols()") {
 		(x).final = {1, 3, 2};
 		symbols = {'a', 'b', 'c', 'e', 'f'};
 		CHECK(get_accepted_symbols(x) == symbols);
+	}
+}
+
+TEST_CASE("mata::applications::strings::get_words_of_lengths()") {
+	using mata::nft::Levels;
+	using mata::nft::Nft;
+
+	auto has_lengths = [](const std::vector<Word>& words, const std::vector<unsigned>& lengths) {
+		if (words.size() != lengths.size()) { return false; }
+		for (size_t i{0}; i < lengths.size(); ++i) {
+			if (words[i].size() != lengths[i]) { return false; }
+		}
+		return true;
+	};
+
+	SECTION("epsilon cycle") {
+		// 0 -eps-> 1 -eps-> 0 is an epsilon cycle; 0 -a-> 2 -b-> 3 accepts the pair (a, b).
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 1, 0}}, 4, {0}, {3})};
+		nft.delta.add(0, mata::nft::EPSILON, 1);
+		nft.delta.add(1, mata::nft::EPSILON, 0);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(2, 'b', 3);
+
+		const std::optional<std::vector<Word>> words{get_words_of_lengths(nft, {1, 1})};
+		REQUIRE(words.has_value());
+		CHECK(*words == std::vector<Word>{Word{'a'}, Word{'b'}});
+		CHECK(nft.is_in_lang_by_levels(*words));
+		// No pair of lengths (2, 2) exists; the epsilon cycle must not keep the search going.
+		CHECK(!get_words_of_lengths(nft, {2, 2}).has_value());
+	}
+
+	SECTION("every accepted pair has equal lengths") {
+		// Three level-0 states and three level-1 states, fully connected by 'a' in both directions, plus the only
+		// path to the final state: 0 -b-> 3 -b-> 6.
+		constexpr mata::nft::State k{3};
+		Nft nft{Nft::with_levels(Levels{2, {0, 0, 0, 1, 1, 1, 0}}, 2 * k + 1, {0}, {2 * k})};
+		for (mata::nft::State i{0}; i < k; ++i) {
+			for (mata::nft::State j{0}; j < k; ++j) {
+				nft.delta.add(i, 'a', k + j);
+				nft.delta.add(k + j, 'a', i);
+			}
+		}
+		nft.delta.add(0, 'b', k);
+		nft.delta.add(k, 'b', 2 * k);
+
+		// Unequal lengths have no solution. The path tree is exponential in the lengths, the configuration space is
+		// not, so this must stay fast.
+		CHECK(!get_words_of_lengths(nft, {20, 21}).has_value());
+		const std::vector<unsigned> lengths{20, 20};
+		const std::optional<std::vector<Word>> words{get_words_of_lengths(nft, lengths)};
+		REQUIRE(words.has_value());
+		CHECK(has_lengths(*words, lengths));
+		CHECK(nft.is_in_lang_by_levels(*words));
+	}
+
+	SECTION("empty words") {
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {0, 2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		CHECK(get_words_of_lengths(nft, {0, 0}) == std::vector<Word>{Word{}, Word{}});
+		// A final initial state is not a solution for non-zero lengths.
+		CHECK(get_words_of_lengths(nft, {1, 1}) == std::vector<Word>{Word{'a'}, Word{'b'}});
+		CHECK(!get_words_of_lengths(nft, {1, 0}).has_value());
+	}
+
+	SECTION("several initial states and three levels") {
+		Nft nft{Nft::with_levels(Levels{3, {0, 1, 2, 0, 0, 1, 2, 0}}, 8, {0, 4}, {7})};
+		// 0 -a-> 1 -b-> 2 -c-> 3 is a dead end, 4 -x-> 5 -y-> 6 -z-> 7 accepts (x, y, z).
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(2, 'c', 3);
+		nft.delta.add(4, 'x', 5);
+		nft.delta.add(5, 'y', 6);
+		nft.delta.add(6, 'z', 7);
+		CHECK(get_words_of_lengths(nft, {1, 1, 1}) == std::vector<Word>{Word{'x'}, Word{'y'}, Word{'z'}});
+		CHECK(!get_words_of_lengths(nft, {2, 2, 2}).has_value());
+	}
+
+	SECTION("no solution without states to search") {
+		const Nft nft{Nft::with_levels(Levels{2, {0, 1}}, 2, {0}, {})};
+		CHECK(!get_words_of_lengths(nft, {0, 0}).has_value());
+	}
+
+	SECTION("rejected inputs") {
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		CHECK_THROWS_AS(get_words_of_lengths(nft, {1}), std::invalid_argument);
+		CHECK_THROWS_AS(get_words_of_lengths(nft, {1, 1, 1}), std::invalid_argument);
+		// 0 and 2 are both on level 0, so this transition jumps over level 1.
+		nft.delta.add(0, 'c', 2);
+		CHECK_THROWS_AS(get_words_of_lengths(nft, {1, 1}), std::invalid_argument);
 	}
 }

@@ -5,7 +5,10 @@
 #include "mata/nfa/builder.hh"
 #include "mata/utils/assert.hh"
 
+#include <limits>
 #include <optional>
+#include <stdexcept>
+#include <unordered_map>
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -175,73 +178,104 @@ bool mata::applications::strings::is_lang_eps(const Nfa& nfa) {
 	return true;
 }
 
+namespace {
+/// A configuration that the search has not reached yet.
+constexpr size_t UNVISITED{std::numeric_limits<size_t>::max()};
+/// A configuration the search started from.
+constexpr size_t SEARCH_ROOT{UNVISITED - 1};
+
+/// How the search reached a configuration: the previous configuration and the symbol read on its level.
+struct SearchNode {
+	size_t prev{UNVISITED};
+	mata::Symbol symbol{mata::nft::EPSILON};
+	mata::nft::Level level{0};
+};
+
+/// The number of configurations we are willing to index densely, trading about 24 B each for the hash map.
+constexpr size_t DENSE_LIMIT{1 << 20};
+} // namespace
+
 std::optional<std::vector<mata::Word>>
-	mata::applications::strings::get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths) {
-	MATA_ASSERT(nft.levels.num_of_levels == lengths.size());
-	MATA_ASSERT(!nft.contains_jump_transitions());
+	mata::applications::strings::get_words_of_lengths(const Nft& nft, const std::vector<unsigned>& lengths) {
+	if (lengths.size() != nft.levels.num_of_levels) {
+		throw std::invalid_argument("get_words_of_lengths(): lengths must have one entry per level");
+	}
+	if (nft.contains_jump_transitions()) {
+		throw std::invalid_argument("get_words_of_lengths(): jump transitions are not supported");
+	}
 	if (nft.initial.empty() || nft.final.empty()) { return std::nullopt; }
-	if (nft.initial.intersects_with(nft.final) && std::ranges::all_of(lengths, [](const int x) { return x == 0; })) {
-		return std::vector<mata::Word>(nft.levels.num_of_levels, mata::Word());
+
+	// A configuration is a state plus, per level, the number of symbols already written on that tape. What can still
+	// be read depends on nothing else, so a configuration is worth visiting once: the search is then linear in the
+	// number of configurations instead of the number of paths, and eps-cycles terminate.
+	const size_t num_of_levels{lengths.size()};
+	// radix[i] is the stride of level i in the packed count, radix[num_of_levels] the number of count combinations.
+	std::vector<size_t> radix(num_of_levels + 1, 1);
+	constexpr auto too_large = []() {
+		return std::invalid_argument("get_words_of_lengths(): the lengths span too many configurations");
+	};
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		const size_t span{static_cast<size_t>(lengths[level]) + 1};
+		if (radix[level] > UNVISITED / span) { throw too_large(); }
+		radix[level + 1] = radix[level] * span;
+	}
+	const size_t num_of_counts{radix[num_of_levels]};
+	// The one count combination that is a solution: every tape full.
+	const size_t full_counts{num_of_counts - 1};
+	const size_t num_of_states{nft.num_of_states()};
+	if (num_of_states > UNVISITED / num_of_counts) { throw too_large(); }
+	const size_t num_of_configs{num_of_states * num_of_counts};
+
+	const bool dense{num_of_configs <= DENSE_LIMIT};
+	std::vector<SearchNode> dense_nodes(dense ? num_of_configs : 0);
+	std::unordered_map<size_t, SearchNode> sparse_nodes{};
+	// Records how @p config was reached; returns false if it was already visited.
+	auto visit = [&](const size_t config, const SearchNode& node) {
+		if (dense) {
+			if (dense_nodes[config].prev != UNVISITED) { return false; }
+			dense_nodes[config] = node;
+			return true;
+		}
+		return sparse_nodes.emplace(config, node).second;
+	};
+	auto node_of = [&](const size_t config) -> const SearchNode& {
+		return dense ? dense_nodes[config] : sparse_nodes.find(config)->second;
+	};
+	// Walks the parents back to an initial configuration and reads the words off the symbols on the way.
+	auto words_leading_to = [&](size_t config) {
+		std::vector<Word> words(num_of_levels);
+		for (const SearchNode* node{&node_of(config)}; node->prev != SEARCH_ROOT; node = &node_of(config)) {
+			if (node->symbol != nft::EPSILON) { words[node->level].push_back(node->symbol); }
+			config = node->prev;
+		}
+		for (Word& word : words) { std::ranges::reverse(word); }
+		return words;
+	};
+
+	std::vector<size_t> worklist{};
+	for (const State initial_state : nft.initial) {
+		const size_t config{initial_state * num_of_counts};
+		if (!visit(config, SearchNode{.prev = SEARCH_ROOT})) { continue; }
+		if (full_counts == 0 && nft.final[initial_state]) { return std::vector<Word>(num_of_levels); }
+		worklist.push_back(config);
 	}
 
-	for (const State initial_state : nft.initial) {
-		/// Current state, its state post iterator, its end iterator, and iterator in the current symbol post to target
-		/// states.
-		std::vector<std::tuple<State, StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>>
-			worklist{};
-		std::vector<mata::Word> result(lengths.size());
-		auto is_result_correct = [&result, &lengths]() {
-			for (size_t i = 0; i < lengths.size(); ++i) {
-				if (result[i].size() != lengths[i]) { return false; }
-			}
-			return true;
-		};
-
-		const StatePost& initial_state_post{nft.delta[initial_state]};
-		auto initial_symbol_post_it{initial_state_post.cbegin()};
-		auto initial_symbol_post_end{initial_state_post.cend()};
-
-		if (initial_symbol_post_it == initial_symbol_post_end) { continue; }
-
-		worklist.emplace_back(
-			initial_state, initial_symbol_post_it, initial_symbol_post_end, initial_symbol_post_it->targets.cbegin()
-		);
-
-		while (!worklist.empty()) {
-			// Using references to iterators to be able to increment the top-most element in the worklist in place.
-			if (auto& [cur_state, state_post_it, state_post_end, targets_it]{worklist.back()};
-				state_post_it != state_post_end) {
-				Symbol cur_symbol = state_post_it->symbol;
-				if (const nft::Level cur_level = nft.levels[cur_state];
-					targets_it == state_post_it->targets.cend() ||
-					(cur_symbol != EPSILON && lengths[cur_level] == result[cur_level].size())) {
-					++state_post_it;
-					if (state_post_it != state_post_end) { targets_it = state_post_it->cbegin(); }
-				} else {
-					if (cur_symbol != EPSILON) { result[cur_level].push_back(cur_symbol); }
-					if (nft.final.contains(*targets_it) && is_result_correct()) { return result; }
-					if (const StatePost& state_post{nft.delta[*targets_it]}; !state_post.empty()) {
-						auto new_state_post_it{state_post.cbegin()};
-						auto new_targets_it{new_state_post_it->cbegin()};
-						worklist.emplace_back(*targets_it, new_state_post_it, state_post.cend(), new_targets_it);
-					} else {
-						if (cur_symbol != EPSILON) { result[cur_level].pop_back(); }
-						++targets_it;
-					}
-				}
-			} else { // state_post_it == state_post_end.
-				worklist.pop_back();
-				if (!worklist.empty()) {
-					auto& [prev_state, prev_state_post_it, prev_state_post_end, prev_targets_it]{worklist.back()};
-					MATA_ASSERT(prev_state_post_it != prev_state_post_end);
-					const Symbol prev_symbol = prev_state_post_it->symbol;
-					const nft::Level prev_level = nft.levels[prev_state];
-					if (prev_symbol != EPSILON) {
-						MATA_ASSERT(!result[prev_level].empty() && result[prev_level].back() == prev_symbol);
-						result[prev_level].pop_back();
-					}
-					++prev_targets_it;
-				}
+	for (size_t head{0}; head < worklist.size(); ++head) {
+		const size_t config{worklist[head]};
+		const State source{config / num_of_counts};
+		const size_t counts{config % num_of_counts};
+		const nft::Level level{nft.levels[source]};
+		// Reading a non-epsilon symbol fills one more place on the tape of the source level.
+		const bool tape_full{(counts / radix[level]) % (static_cast<size_t>(lengths[level]) + 1) == lengths[level]};
+		for (const SymbolPost& symbol_post : nft.delta[source]) {
+			const Symbol symbol{symbol_post.symbol};
+			if (symbol != nft::EPSILON && tape_full) { continue; }
+			const size_t new_counts{symbol == nft::EPSILON ? counts : counts + radix[level]};
+			for (const State target : symbol_post.targets) {
+				const size_t new_config{target * num_of_counts + new_counts};
+				if (!visit(new_config, SearchNode{.prev = config, .symbol = symbol, .level = level})) { continue; }
+				if (new_counts == full_counts && nft.final[target]) { return words_leading_to(new_config); }
+				worklist.push_back(new_config);
 			}
 		}
 	}
