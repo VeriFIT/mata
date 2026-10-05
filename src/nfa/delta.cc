@@ -24,14 +24,6 @@ using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-SymbolPost& SymbolPost::operator=(SymbolPost&& rhs) noexcept {
-	if (*this != rhs) {
-		symbol = rhs.symbol;
-		targets = std::move(rhs.targets);
-	}
-	return *this;
-}
-
 void SymbolPost::insert(const State s) {
 	if (targets.empty() || targets.back() < s) {
 		targets.push_back(s);
