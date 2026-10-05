@@ -268,3 +268,94 @@ TEST_CASE("mata::utils::OrdVector::filter() and filter_indexes() with a named pr
 	CHECK(indexed == OrdVector<int>{10, 20});
 	CHECK(indexed.size() == 2);
 }
+
+TEST_CASE("mata::utils::OrdVector::OrdVector(VectorType&&) - issue #847") {
+	using OrdVectorT = OrdVector<int>;
+
+	SECTION("an unsorted vector with duplicates is sorted and deduplicated") {
+		std::vector<int> values{5, 1, 5, 3, 1, 4};
+		const OrdVectorT moved{std::move(values)};
+		CHECK(moved == OrdVectorT{1, 3, 4, 5});
+		CHECK(moved == OrdVectorT{std::vector<int>{5, 1, 5, 3, 1, 4}});
+	}
+
+	SECTION("an empty vector yields an empty container") {
+		CHECK(OrdVectorT{std::vector<int>{}}.empty());
+		CHECK(OrdVectorT{sorted_unique, std::vector<int>{}}.empty());
+	}
+
+	SECTION("the storage of the operand is adopted, not copied") {
+		std::vector<int> values{1, 2, 3};
+		const int* const data{values.data()};
+		const OrdVectorT moved{std::move(values)};
+		CHECK(moved.to_vector().data() == data);
+	}
+
+	SECTION("the sorted_unique overload adopts a sorted vector as it is") {
+		std::vector<int> values{1, 3, 4, 5};
+		const int* const data{values.data()};
+		const OrdVectorT adopted{sorted_unique, std::move(values)};
+		CHECK(adopted == OrdVectorT{1, 3, 4, 5});
+		CHECK(adopted.to_vector().data() == data);
+	}
+
+	SECTION("an lvalue vector still selects the copying overload") {
+		std::vector<int> values{3, 1, 2};
+		const OrdVectorT copied{values};
+		CHECK(copied == OrdVectorT{1, 2, 3});
+		CHECK(values == std::vector<int>{3, 1, 2});
+	}
+}
+
+TEST_CASE("mata::utils::OrdVector::set_union() into a buffer - issue #847") {
+	using OrdVectorT = OrdVector<int>;
+	OrdVectorT buffer{};
+
+	SECTION("an empty left operand reports every element of the right one as new") {
+		CHECK(OrdVectorT::set_union(OrdVectorT{}, OrdVectorT{1, 2}, buffer));
+		CHECK(buffer == OrdVectorT{1, 2});
+	}
+
+	SECTION("an empty right operand adds nothing") {
+		CHECK_FALSE(OrdVectorT::set_union(OrdVectorT{1, 2}, OrdVectorT{}, buffer));
+		CHECK(buffer == OrdVectorT{1, 2});
+	}
+
+	SECTION("two empty operands yield an empty union") {
+		CHECK_FALSE(OrdVectorT::set_union(OrdVectorT{}, OrdVectorT{}, buffer));
+		CHECK(buffer.empty());
+	}
+
+	SECTION("disjoint operands interleave and report new elements") {
+		CHECK(OrdVectorT::set_union(OrdVectorT{1, 3, 5}, OrdVectorT{2, 4}, buffer));
+		CHECK(buffer == OrdVectorT{1, 2, 3, 4, 5});
+	}
+
+	SECTION("a right operand contained in the left one reports no new element") {
+		CHECK_FALSE(OrdVectorT::set_union(OrdVectorT{1, 2, 3}, OrdVectorT{1, 3}, buffer));
+		CHECK(buffer == OrdVectorT{1, 2, 3});
+	}
+
+	SECTION("overlapping operands report the elements outside the left one") {
+		CHECK(OrdVectorT::set_union(OrdVectorT{1, 2, 3}, OrdVectorT{3, 4}, buffer));
+		CHECK(buffer == OrdVectorT{1, 2, 3, 4});
+	}
+
+	SECTION("a cleared buffer keeps its capacity across calls") {
+		OrdVectorT::set_union(OrdVectorT{1, 2, 3, 4}, OrdVectorT{5, 6}, buffer);
+		const size_t capacity{buffer.to_vector().capacity()};
+		buffer.clear();
+		CHECK(OrdVectorT::set_union(OrdVectorT{1}, OrdVectorT{2}, buffer));
+		CHECK(buffer == OrdVectorT{1, 2});
+		CHECK(buffer.to_vector().capacity() == capacity);
+	}
+}
+
+TEST_CASE("mata::utils::OrdVector::insert(const OrdVector&) reports growth - issue #847") {
+	using OrdVectorT = OrdVector<int>;
+	OrdVectorT values{1, 3};
+	CHECK_FALSE(values.insert(OrdVectorT{}));
+	CHECK_FALSE(values.insert(OrdVectorT{1, 3}));
+	CHECK(values.insert(OrdVectorT{2, 3}));
+	CHECK(values == OrdVectorT{1, 2, 3});
+}

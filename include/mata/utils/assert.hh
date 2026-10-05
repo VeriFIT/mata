@@ -47,4 +47,17 @@ namespace mata::internal {
 		}
 #endif // NDEBUG
 
+/**
+ * @brief Assert a condition whose check is not constant time, e.g. a scan of a whole container.
+ *
+ * Off by default even in Debug builds; enable with the CMake option @c MATA_EXPENSIVE_ASSERTS, which defines
+ *  the macro of the same name. Without it a Debug lookup keeps the complexity of a Release lookup instead of
+ *  paying an extra linear scan per call.
+ */
+#ifdef MATA_EXPENSIVE_ASSERTS
+	#define MATA_EXPENSIVE_ASSERT(cond, ...) MATA_ASSERT(cond __VA_OPT__(, ) __VA_ARGS__)
+#else
+	#define MATA_EXPENSIVE_ASSERT(cond, ...) ((void) 0)
+#endif
+
 #endif // MATA_UTILS_ASSERT_HH

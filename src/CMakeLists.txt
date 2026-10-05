@@ -43,3 +43,7 @@ mata_add_warnings (libmata)
 
 # Add the opt-in optimization settings (IPO, `-march=native`).
 mata_add_optimizations (libmata)
+
+if (MATA_EXPENSIVE_ASSERTS)
+	target_compile_definitions (libmata PUBLIC MATA_EXPENSIVE_ASSERTS)
+endif ()
