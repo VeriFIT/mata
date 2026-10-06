@@ -231,7 +231,8 @@ class RegexParser {
 				}
 			}
 		}
-		*output_nfa = Nfa(explicit_nfa).trim();
+		explicit_nfa.trim();
+		*output_nfa = std::move(explicit_nfa);
 	}
 
   private: // private methods
