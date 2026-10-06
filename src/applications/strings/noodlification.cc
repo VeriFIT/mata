@@ -3,6 +3,7 @@
  */
 
 #include <ranges>
+#include <set>
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/algorithms.hh"
@@ -275,12 +276,18 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	};
 
 	std::vector<NoodleWithEpsilonsCounter> noodles{};
+	// Duplicates do occur: a segment whose language is {epsilon} is skipped, and two epsilon transitions with
+	//  different epsilon symbols between the same pair of states finish the same noodle twice. Comparing every
+	//  finished noodle with all noodles found so far is quadratic in their number.
+	std::set<NoodleWithEpsilonsCounter> seen_noodles{};
 	std::deque<SegItem> lifo;
 
 	for (const State& fn : segments[0].final) {
 		SegItem new_item;
 		if (std::shared_ptr<Nfa> seg = segments_one_initial_final[{unused_state, fn}];
-			seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+			// `delta.empty()` stops at the first non-empty state post, `num_of_transitions()` walks all of them.
+			//  `segs_one_initial_final()` builds the segments through `trim()`, which leaves no empty state post.
+			seg->final.size() != 1 || !seg->delta.empty()) { // L(seg_iter) != {epsilon}
 			new_item.noodle.emplace_back(seg, def_eps_vector);
 		}
 		new_item.seg_id = 0;
@@ -290,27 +297,22 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	/// Number of visited epsilons for each state.
 	auto visited_eps = segmentation.get_visited_eps();
 
+	const mata::utils::SparseSet<mata::nfa::State> last_segment_finals{unused_state};
 	while (!lifo.empty()) {
-		SegItem item = lifo.front();
+		SegItem item = std::move(lifo.front());
 		lifo.pop_front();
 
 		if (item.seg_id + 1 == segments.size()) {
-			// check if the noodle is already there
-			if (!std::ranges::any_of(noodles, [&](const NoodleWithEpsilonsCounter& s) { return s == item.noodle; })) {
-				noodles.push_back(item.noodle);
-			}
+			// Appended in completion order, so the output order is the one the quadratic scan produced.
+			if (seen_noodles.insert(item.noodle).second) { noodles.push_back(std::move(item.noodle)); }
 			continue;
 		}
 
+		// Final states of the segment; the last segment ends in the single auxiliary state.
+		const mata::utils::SparseSet<mata::nfa::State>& fins{
+			item.seg_id + 1 == segments.size() - 1 ? last_segment_finals : segments[item.seg_id + 1].final
+		};
 		for (const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
-			// TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise
-			// what about StateSet?
-			mata::utils::SparseSet<mata::nfa::State> fins = segments[item.seg_id + 1].final;
-			// final states of the segment
-			if (item.seg_id + 1 == segments.size() - 1) { // last segment
-				fins = mata::utils::SparseSet<mata::nfa::State>({unused_state});
-			}
-
 			for (const State& fn : fins) {
 				auto seg_iter = segments_one_initial_final.find({tr.target, fn});
 				if (seg_iter == segments_one_initial_final.end()) { continue; }
@@ -318,7 +320,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 				SegItem new_item = item; // deep copy
 				new_item.seg_id++;
 				// do not include segments with trivial epsilon language
-				if (seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) {
+				if (seg_iter->second->final.size() != 1 || !seg_iter->second->delta.empty()) {
 					// L(seg_iter) != {epsilon}
 					new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
 				}
