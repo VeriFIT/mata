@@ -97,22 +97,26 @@ Nfa mata::nfa::trim(
 
 bool Nfa::is_flat() const {
 	bool flat = true;
+	// Stamp the states of the current SCC instead of searching every SymbolPost for every member of the SCC, which
+	//  is quadratic in the size of the SCC and never exits early on a flat automaton.
+	std::vector<size_t> scc_id(num_of_states(), 0);
+	size_t current_id{0};
 
 	mata::nfa::Nfa::TarjanDiscoverCallback callback{};
 	callback.scc_discover = [&](const std::vector<mata::nfa::State>& scc,
 								const std::vector<mata::nfa::State>& tarjan_stack) -> bool {
 		(void) tarjan_stack;
 
-		for (const mata::nfa::State& st : scc) {
-			bool one_input_visited = false;
-			for (const mata::nfa::SymbolPost& sp : this->delta[st]) {
-				for (const mata::nfa::State& tgt : scc) {
-					if (sp.targets.contains(tgt)) {
-						if (one_input_visited) {
-							flat = false;
-							return true;
-						}
-						one_input_visited = true;
+		++current_id;
+		for (const mata::nfa::State state : scc) { scc_id[state] = current_id; }
+		for (const mata::nfa::State state : scc) {
+			size_t targets_in_scc{0};
+			for (const mata::nfa::SymbolPost& symbol_post : this->delta[state]) {
+				for (const mata::nfa::State target : symbol_post.targets) {
+					// As before, every in-SCC (symbol, target) pair counts, so parallel edges are not flat either.
+					if (scc_id[target] == current_id && ++targets_in_scc > 1) {
+						flat = false;
+						return true;
 					}
 				}
 			}
