@@ -2909,6 +2909,22 @@ TEST_CASE("mata::nfa::is_universal()") { // {{{
 			aut.is_universal(alph, params), Catch::Matchers::ContainsSubstring("received an unknown value")
 		);
 	}
+
+	SECTION("epsilon transitions do not decide universality") {
+		// 0 -eps-> 1, 1 -a-> 1 with final {1}: the language is a*, which is universal over {a}.
+		Nfa star{2, {0}, {1}};
+		star.delta.add(0, EPSILON, 1);
+		star.delta.add(1, 'a', 1);
+		const EnumAlphabet sigma{'a'};
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			CHECK(star.is_universal(sigma, params));
+			// An alphabet read off the automaton itself contains EPSILON, which is not a letter.
+			CHECK(star.is_universal(create_alphabet(star), params));
+			Run cex;
+			CHECK(star.is_universal(create_alphabet(star), &cex, params));
+		}
+	}
 } // }}}
 TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterator (issue #788)") { // {{{
 	Nfa aut;
@@ -3126,10 +3142,9 @@ TEST_CASE("mata::nfa::is_included()") { // {{{
 
 				is_incl = is_included(bigger, smaller, &cex, &alph, params);
 				REQUIRE(is_incl);
-				const bool cex_word_is_ab_or_ba_2 =
-					cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]};
-				REQUIRE(cex_word_is_ab_or_ba_2);
-				REQUIRE(cex.path == std::vector<State>{1, 1, 1});
+				// A reused Run must not keep the previous counterexample around.
+				CHECK(cex.word.empty());
+				CHECK(cex.path.empty());
 			}
 		}
 	}
@@ -3171,14 +3186,9 @@ TEST_CASE("mata::nfa::is_included()") { // {{{
 
 				is_incl = is_included(bigger, smaller, &cex, &alph, params);
 				REQUIRE(is_incl);
-
-				REQUIRE(cex.word.size() == 4);
-				for (size_t i = 0; i < 4; ++i) {
-					const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
-					REQUIRE(cex_word_char_is_a_or_b);
-				}
-				REQUIRE(cex.word[2] != cex.word[3]);
-				REQUIRE(cex.path == std::vector<State>{1, 1, 1, 1, 1});
+				// A reused Run must not keep the previous counterexample around.
+				CHECK(cex.word.empty());
+				CHECK(cex.path.empty());
 			}
 		}
 	}
@@ -3314,6 +3324,43 @@ q10 67 q5
 			is_included(smaller, bigger, &alph, params), Catch::Matchers::ContainsSubstring("received an unknown value")
 		);
 		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
+	}
+
+	SECTION("epsilon transitions do not decide inclusion") {
+		// smaller: 0 -eps-> 1 -a-> 2, L = {a}; bigger: 0 -a-> 1, L = {a}.
+		Nfa eps_smaller{3, {0}, {2}};
+		eps_smaller.delta.add(0, EPSILON, 1);
+		eps_smaller.delta.add(1, 'a', 2);
+		Nfa eps_bigger{2, {0}, {1}};
+		eps_bigger.delta.add(0, 'a', 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			SECTION(algo) {
+				params["algorithm"] = algo;
+				CHECK(is_included(eps_smaller, eps_bigger, nullptr, nullptr, params));
+				CHECK(is_included(eps_bigger, eps_smaller, nullptr, nullptr, params));
+				CHECK(is_included(eps_smaller, eps_smaller, nullptr, nullptr, params));
+			}
+		}
+	}
+
+	SECTION("a prefilled Run is overwritten, not appended to") {
+		Nfa ab{3, {0}, {2}};
+		ab.delta.add(0, 'a', 1);
+		ab.delta.add(1, 'b', 2);
+		Nfa a{2, {0}, {1}};
+		a.delta.add(0, 'a', 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			SECTION(algo) {
+				params["algorithm"] = algo;
+				Run reused{Run{Word{'z', 'z', 'z'}, std::vector<State>{7, 7}}};
+				CHECK(!is_included(ab, a, &reused, nullptr, params));
+				CHECK(ab.is_in_lang(reused.word));
+				CHECK(!is_included(ab, a, &reused, nullptr, params));
+				CHECK(ab.is_in_lang(reused.word));
+			}
+		}
 	}
 } // }}}
 
@@ -3527,6 +3574,24 @@ TEST_CASE("mata::nfa::are_equivalent") {
 		);
 		CHECK_NOTHROW(are_equivalent(smaller, bigger));
 	}
+
+	SECTION("epsilon transitions do not decide equivalence") {
+		// 0 -eps-> 1 -a-> 2 and 0 -a-> 1 both accept {a}.
+		Nfa with_eps{3, {0}, {2}};
+		with_eps.delta.add(0, EPSILON, 1);
+		with_eps.delta.add(1, 'a', 2);
+		Nfa without_eps{2, {0}, {1}};
+		without_eps.delta.add(0, 'a', 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			SECTION(algo) {
+				params["algorithm"] = algo;
+				CHECK(are_equivalent(with_eps, without_eps, params));
+				CHECK(are_equivalent(without_eps, with_eps, params));
+				CHECK(are_equivalent(with_eps, with_eps, params));
+			}
+		}
+	}
 }
 
 TEST_CASE("mata::nfa::are_equivalent() counterexample") {
@@ -3535,7 +3600,7 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 
 	const std::unordered_set<std::string> ALGORITHMS = {"naive", "antichains"};
 
-	SECTION("equivalent automata leave cex untouched") {
+	SECTION("equivalent automata clear a prefilled cex") {
 		Nfa aut1(1), aut2(2);
 		aut1.initial = {0};
 		aut1.final = {0};
@@ -3547,9 +3612,10 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			Run cex;
+			Run cex{Run{Word{alph["b"], alph["b"]}, std::vector<State>{7, 7, 7}}};
 			CHECK(are_equivalent(aut1, aut2, &alph, params, &cex));
 			CHECK(cex.word.empty());
+			CHECK(cex.path.empty());
 		}
 	}
 
