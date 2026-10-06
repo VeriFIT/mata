@@ -164,9 +164,10 @@ class Automaton {
 	/**
 	 * @brief Is no final state reachable from any initial state?
 	 *
-	 * Uses Tarjan's SCC discover algorithm. This is a pure graph property; whether it coincides with the emptiness
-	 *  of the accepted language (or relation) is a fact about the concrete automaton class, so the leaves expose it
-	 *  under their own names (e.g. @c mata::nfa::Nfa::is_lang_empty_scc()).
+	 * A plain breadth-first search over a visited bit vector that stops at the first final state. This is a pure
+	 *  graph property; whether it coincides with the emptiness of the accepted language (or relation) is a fact
+	 *  about the concrete automaton class, so the leaves expose it under their own names (e.g.
+	 *  @c mata::nfa::Nfa::is_lang_empty_scc()).
 	 *
 	 * @return true <-> no accepting path exists.
 	 */
@@ -198,6 +199,8 @@ class Automaton {
 	 *
 	 * @note A state is reachable when the state is the endpoint of a path starting from an initial state.
 	 *  A state is terminating when the state is the starting point of a path ending in a final state.
+	 * @note Every remaining state therefore lies on an accepting path: after trimming, the language is empty iff
+	 *  @c initial is empty, which is cheaper to test than @c is_lang_empty().
 	 * @note Reached only through a leaf's own one-line @c trim(), on @c *this, so an lvalue @p Self suffices here.
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.

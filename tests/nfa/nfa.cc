@@ -243,6 +243,45 @@ TEST_CASE("mata::nfa::is_lang_empty()") { // {{{
 		REQUIRE(cex.path[1] == 4);
 		REQUIRE(cex.path[2] == 8);
 	}
+
+	SECTION("A final state reachable only over epsilon") {
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		CHECK_FALSE(aut.is_lang_empty());
+		CHECK_FALSE(aut.is_lang_empty(&cex));
+		CHECK(cex.path == std::vector<State>{0, 1, 2});
+	}
+
+	SECTION("The witness is shortest in the number of transitions") {
+		aut.initial = {0};
+		aut.final = {4};
+		// A short path 0 -> 3 -> 4 and a longer one 0 -> 1 -> 2 -> 4 over the smaller-numbered states.
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(0, 'b', 3);
+		aut.delta.add(3, 'b', 4);
+		REQUIRE_FALSE(aut.is_lang_empty(&cex));
+		CHECK(cex.path == std::vector<State>{0, 3, 4});
+		CHECK(cex.word.size() == 2);
+	}
+
+	SECTION("The counterexample variant agrees with the plain one") {
+		aut.initial = {0};
+		aut.final = {5};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(2, 'a', 1); // Cycle that never reaches the final state.
+		CHECK(aut.is_lang_empty());
+		CHECK(aut.is_lang_empty(&cex));
+		CHECK(aut.is_lang_empty_scc());
+		aut.delta.add(2, 'b', 5);
+		CHECK_FALSE(aut.is_lang_empty());
+		CHECK_FALSE(aut.is_lang_empty(&cex));
+		CHECK_FALSE(aut.is_lang_empty_scc());
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::is_acyclic") { // {{{
