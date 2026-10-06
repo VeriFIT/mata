@@ -127,7 +127,8 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 	/// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
 	/// transitions are renamed to a single symbol (e.g., `a`).
 	aut.get_one_letter_aut(one_letter);
-	one_letter = determinize(one_letter).trim();
+	one_letter = determinize(one_letter);
+	one_letter.trim();
 	if (one_letter.num_of_states() == 0) { return {}; }
 
 	std::set<std::pair<int, int>> ret;
@@ -169,7 +170,8 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 }
 
 bool mata::applications::strings::is_lang_eps(const Nfa& nfa) {
-	const Nfa tr_aut = Nfa{nfa}.trim();
+	Nfa tr_aut{nfa};
+	tr_aut.trim();
 	if (tr_aut.initial.empty()) { return false; }
 	for (const auto& ini : tr_aut.initial) {
 		if (!tr_aut.final[ini]) { return false; }

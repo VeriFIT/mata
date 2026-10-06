@@ -1060,7 +1060,11 @@ Nfa mata::nfa::intersection(
 	return product(lhs, rhs, ProductFinalStateCondition::And, first_epsilon, prod_map);
 }
 
-Nfa mata::nfa::union_nondet(const Nfa& lhs, const Nfa& rhs) { return Nfa{lhs}.unite_nondet_with(rhs); }
+Nfa mata::nfa::union_nondet(const Nfa& lhs, const Nfa& rhs) {
+	Nfa result{lhs};
+	result.unite_nondet_with(rhs);
+	return result;
+}
 
 Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
 	MATA_ASSERT(lhs.is_deterministic());
@@ -1835,7 +1839,8 @@ Nfa mata::nfa::algorithms::reduce_residual(
 
 	if (direction == "backward") { result = revert(result); }
 
-	return result.trim();
+	result.trim();
+	return result;
 }
 
 Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {

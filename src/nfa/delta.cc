@@ -308,9 +308,9 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 			StateSet copied_targets;
 			copied_targets.reserve(symbol_post.num_of_targets());
 			for (const State& state : symbol_post.targets) { copied_targets.push_back(target_renumberer(state)); }
-			copied_state_post.push_back(SymbolPost(symbol_post.symbol, copied_targets));
+			copied_state_post.push_back(SymbolPost(symbol_post.symbol, std::move(copied_targets)));
 		}
-		copied_state_posts.emplace_back(copied_state_post);
+		copied_state_posts.emplace_back(std::move(copied_state_post));
 	}
 	return copied_state_posts;
 }

@@ -662,7 +662,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	}
 	// TODO(nft): Sometimes, unreachable states are left in the automaton.
 	// These states typically contain projected levels with a self-loop.
-	result = result.trim();
+	result.trim();
 
 	// Repare levels
 	for (State s{0}; s < result.levels.size(); s++) { result.levels[s] = new_levels[result.levels[s]]; }
@@ -1379,7 +1379,8 @@ OrdVector<Symbol> mata::nft::get_symbols_to_work_with(
 
 Nft mata::nft::union_nondet(const Nft& lhs, const Nft& rhs) {
 	Nft union_nft{lhs};
-	return union_nft.unite_nondet_with(rhs);
+	union_nft.unite_nondet_with(rhs);
+	return union_nft;
 }
 
 void Nft::assert_num_of_levels_match_(const Nft& nft) const {
