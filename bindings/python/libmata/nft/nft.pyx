@@ -953,6 +953,8 @@ def compose(
 
     :param lhs_sync_levels: A single level, or an ordered iterable of synchronization levels of `lhs`.
     :param rhs_sync_levels: A single level, or an ordered iterable of synchronization levels of `rhs`.
+    :raises ValueError: If the two level lists differ in size or are empty, if a level is not below its
+        transducer's `num_of_levels`, or if the composition would leave no levels.
     """
     if isinstance(lhs_sync_levels, int):
         lhs_sync_levels = [lhs_sync_levels]
@@ -973,6 +975,8 @@ def compose(
 def compose_alphabets(Nft lhs, Nft rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels = True):
     """Compose the per-level alphabets for NFTs to be composed via `compose`.
 
+    :raises ValueError: On the same invalid requests as `compose`, and if the kept synchronization levels of
+        `lhs` and `rhs` do not share one alphabet instance.
     :return: The composed `alph.AlphabetLevels`, or `None` if either `lhs.alphabets` or `rhs.alphabets` is `None`.
     """
     if isinstance(lhs_sync_levels, int):

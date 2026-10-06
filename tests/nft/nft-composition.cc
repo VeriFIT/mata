@@ -3043,3 +3043,69 @@ TEST_CASE("mata::nft::compose() validates the synchronization level vectors - is
 	const OrdVector<Level> empty_levels{};
 	CHECK_THROWS_AS(compose(lhs, rhs, empty_levels, empty_levels), std::invalid_argument);
 }
+
+TEST_CASE("mata::nft::compose() validates the whole request - issue #818") {
+	const Nft three_levels{mata::nft::builder::create_sigma_star_nft(size_t{3})};
+	const Nft two_levels{mata::nft::builder::create_sigma_star_nft(size_t{2})};
+	const Nft one_level{mata::nft::builder::create_sigma_star_nft(size_t{1})};
+
+	SECTION("synchronization level out of range") {
+		// General counted the levels after the last synchronization level unsigned, so an out-of-range level wrapped
+		//  the count to about 4.29 billion and the level mask exhausted memory; the fast path returned an empty NFT.
+		CHECK_THROWS_AS(compose(one_level, one_level), std::invalid_argument);
+		CHECK_THROWS_AS(compose(three_levels, two_levels, {3}, {0}), std::invalid_argument);
+		CHECK_THROWS_AS(compose(three_levels, two_levels, {0}, {7}), std::invalid_argument);
+		CHECK_THROWS_AS(
+			compose(three_levels, two_levels, {5}, {0}, true, JumpMode::NoJump, CompositionMode::FastNoJump),
+			std::invalid_argument
+		);
+		CHECK_THROWS_AS(algorithms::compose_fast_no_jump(three_levels, two_levels, 5, 0), std::invalid_argument);
+		CHECK_THROWS_AS(algorithms::compose_general(one_level, one_level, {1}, {0}), std::invalid_argument);
+	}
+
+	SECTION("synchronization levels not strictly increasing") {
+		// `OrdVector`'s constructors sort and deduplicate, `push_back()` does not.
+		OrdVector<Level> unsorted{};
+		unsorted.push_back(1);
+		unsorted.push_back(0);
+		CHECK_THROWS_AS(compose(three_levels, three_levels, unsorted, {0, 1}), std::invalid_argument);
+		CHECK_THROWS_AS(compose(three_levels, three_levels, {0, 1}, unsorted), std::invalid_argument);
+		OrdVector<Level> repeated{};
+		repeated.push_back(1);
+		repeated.push_back(1);
+		CHECK_THROWS_AS(compose(three_levels, three_levels, repeated, {0, 1}), std::invalid_argument);
+	}
+
+	SECTION("no level left in the result") {
+		// Dividing by `result.levels.num_of_levels` raised SIGFPE on the fast path.
+		CHECK_THROWS_AS(
+			compose(one_level, one_level, {0}, {0}, true, JumpMode::NoJump, CompositionMode::FastNoJump),
+			std::invalid_argument
+		);
+		CHECK_THROWS_AS(algorithms::compose_fast_no_jump(one_level, one_level, 0, 0), std::invalid_argument);
+		CHECK_THROWS_AS(compose(one_level, one_level, {0}, {0}, true), std::invalid_argument);
+		// Keeping the synchronization level leaves exactly one level, so this request is valid.
+		CHECK_NOTHROW(compose(one_level, one_level, {0}, {0}, false, JumpMode::NoJump, CompositionMode::FastNoJump));
+	}
+
+	SECTION("kept synchronization levels with different alphabet instances") {
+		Nft lhs{two_levels};
+		Nft rhs{two_levels};
+		lhs.alphabets =
+			std::make_shared<mata::AlphabetLevels>(std::make_shared<mata::EnumAlphabet>(mata::EnumAlphabet{'a'}));
+		rhs.alphabets =
+			std::make_shared<mata::AlphabetLevels>(std::make_shared<mata::EnumAlphabet>(mata::EnumAlphabet{'b'}));
+		CHECK_THROWS_AS(compose_alphabets(lhs, rhs, {0}, {0}, false), std::invalid_argument);
+		// Projected out, the synchronization alphabets are not kept and need not match.
+		CHECK_NOTHROW(compose_alphabets(lhs, rhs, {0}, {0}, true));
+	}
+
+	SECTION("compose_alphabets() rejects the same requests as compose()") {
+		CHECK_THROWS_AS(compose_alphabets(one_level, one_level, {1}, {0}), std::invalid_argument);
+		const OrdVector<Level> empty_levels{};
+		CHECK_THROWS_AS(compose_alphabets(one_level, one_level, empty_levels, empty_levels), std::invalid_argument);
+		// Even without alphabets, where the result is `nullptr`.
+		CHECK(one_level.alphabets == nullptr);
+		CHECK_THROWS_AS(compose_alphabets(three_levels, two_levels, {0, 1}, {0}), std::invalid_argument);
+	}
+}
