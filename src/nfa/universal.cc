@@ -115,6 +115,18 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 	return true;
 } // }}}
 
+namespace {
+/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
+bool contains_epsilon(const Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& state_post{nfa.delta[state]};
+		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
+	}
+	return false;
+}
+} // namespace
+
 // The dispatching method that calls the correct one based on parameters.
 bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
@@ -136,6 +148,8 @@ bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const Para
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
+	// Both algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automaton.
+	if (contains_epsilon(*this)) { return algo(mata::nfa::remove_epsilon(*this), alphabet, cex); }
 	return algo(*this, alphabet, cex);
 } // is_universal()
 

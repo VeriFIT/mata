@@ -16,6 +16,11 @@ bool mata::nfa::algorithms::is_included_naive(
 	const Alphabet* const alphabet, // TODO: this should not be needed, likewise for equivalence
 	Run* cex
 ) { // {{{
+	if (cex != nullptr) {
+		// A reused Run is left holding its previous counterexample when inclusion does hold.
+		cex->word.clear();
+		cex->path.clear();
+	}
 	Nfa bigger_cmpl;
 	if (alphabet == nullptr) {
 		bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
@@ -47,6 +52,11 @@ bool mata::nfa::algorithms::is_included_antichains(
 	Run* cex
 ) { // {{{
 	(void) alphabet;
+	if (cex != nullptr) {
+		// The counterexample is built by appending; a reused Run would otherwise grow a word its automaton rejects.
+		cex->word.clear();
+		cex->path.clear();
+	}
 
 	// TODO: Decide what is the best optimization for inclusion.
 
@@ -273,22 +283,27 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 	return algo;
 }
 
+/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
+bool contains_epsilon(const Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& state_post{nfa.delta[state]};
+		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
+	}
+	return false;
+}
+
+/// An epsilon-free view of @p nfa, stored in @p storage only when @p nfa actually has epsilon transitions.
+const Nfa& epsilon_free(const Nfa& nfa, Nfa& storage) {
+	if (!contains_epsilon(nfa)) { return nfa; }
+	storage = remove_epsilon(nfa);
+	return storage;
+}
+
 } // namespace
 
-// The dispatching method that calls the correct one based on parameters
-bool mata::nfa::is_included(
-	const Nfa& smaller,
-	const Nfa& bigger,
-	Run* cex,
-	const Alphabet* const alphabet,
-	const ParameterMap& params
-) { // {{{
-	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
-	return algo(smaller, bigger, alphabet, cex);
-} // is_included }}}
-
-bool mata::nfa::are_equivalent(
-	const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet, const ParameterMap& params, Run* const cex
+bool mata::nfa::algorithms::are_equivalent_epsilon_as_symbol(
+	const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const ParameterMap& params, Run* const cex
 ) {
 	// __func__ names the caller in set_algorithm\'s error message
 	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
@@ -301,6 +316,31 @@ bool mata::nfa::are_equivalent(
 	}
 
 	return compute_equivalence(lhs, rhs, alphabet, algo, cex);
+}
+
+// The dispatching method that calls the correct one based on parameters
+bool mata::nfa::is_included(
+	const Nfa& smaller,
+	const Nfa& bigger,
+	Run* cex,
+	const Alphabet* const alphabet,
+	const ParameterMap& params
+) { // {{{
+	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
+	// Both algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automata.
+	Nfa smaller_storage{};
+	Nfa bigger_storage{};
+	return algo(epsilon_free(smaller, smaller_storage), epsilon_free(bigger, bigger_storage), alphabet, cex);
+} // is_included }}}
+
+bool mata::nfa::are_equivalent(
+	const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet, const ParameterMap& params, Run* const cex
+) {
+	Nfa lhs_storage{};
+	Nfa rhs_storage{};
+	return algorithms::are_equivalent_epsilon_as_symbol(
+		epsilon_free(lhs, lhs_storage), epsilon_free(rhs, rhs_storage), alphabet, params, cex
+	);
 }
 
 bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params, Run* const cex) {

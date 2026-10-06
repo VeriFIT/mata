@@ -533,6 +533,9 @@ class Nfa : public Automaton {
 	 *      - "antichains": The algorithm uses antichains to check the universality.
 	 *      - "naive": The algorithm uses the naive approach to check the universality.
 	 *
+	 * Epsilon transitions are removed from a copy of the automaton first, so @p cex refers to the states of that
+	 *  epsilon-free copy.
+	 *
 	 * @return True if the language of the automaton is universal, false otherwise.
 	 */
 	bool is_universal(
@@ -547,6 +550,8 @@ class Nfa : public Automaton {
 	 * - "algorithm":
 	 *     - "antichains": The algorithm uses antichains to check the universality.
 	 *     - "naive": The algorithm uses the naive approach to check the universality.
+	 *
+	 * Epsilon transitions are removed from a copy of the automaton before the check.
 	 *
 	 * @return True if the language of the automaton is universal, false otherwise.
 	 */
@@ -1046,6 +1051,10 @@ Nfa reduce(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them, so @p cex refers to the states of
+ *  those epsilon-free copies. Use @c algorithms::is_included_naive() or @c algorithms::is_included_antichains()
+ *  directly to read @c EPSILON as an ordinary symbol.
  */
 bool is_included(
 	const Nfa& smaller,
@@ -1064,6 +1073,8 @@ bool is_included(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them.
  */
 inline bool is_included(
 	const Nfa& smaller,
@@ -1086,6 +1097,9 @@ inline bool is_included(
  *  language of one of @p lhs/@p rhs but not the other (as also produced by @c is_included() for whichever direction
  *  of inclusion fails first). Left untouched if @p lhs and @p rhs are equivalent.
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them, so @p cex refers to the states of
+ *  those epsilon-free copies. Use @c algorithms::are_equivalent_epsilon_as_symbol() to read @c EPSILON as a symbol.
  */
 bool are_equivalent(
 	const Nfa& lhs,
@@ -1113,6 +1127,8 @@ bool are_equivalent(
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
  *  language of one of @p lhs/@p rhs but not the other. Left untouched if @p lhs and @p rhs are equivalent.
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them.
  */
 bool are_equivalent(
 	const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{"algorithm", "antichains"}}, Run* cex = nullptr

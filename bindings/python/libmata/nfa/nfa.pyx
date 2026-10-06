@@ -956,6 +956,9 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: on the fly alphabet.
         :param dict params: additional params to the function, currently supports key 'algorithm',
             which determines used universality test.
+
+        Epsilon transitions are removed from a copy of the automaton before the check.
+
         :return: true if NFA is universal.
         """
         params = params or {'algorithm': 'antichains'}
@@ -1391,6 +1394,10 @@ def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params
     :param Nfa rhs: bigger automaton
     :param alph.Alphabet alphabet: alpabet shared by two automata
     :param dict params: additional params
+
+    Epsilon transitions are removed from copies of the operands that have them, so the counterexample
+    refers to the states of those epsilon-free copies.
+
     :return: true if lhs is included by rhs, counter example word if not
     """
     run = Run()
@@ -1415,6 +1422,9 @@ def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     :param Nfa rhs: bigger automaton
     :param alph.Alphabet alphabet: alpabet shared by two automata
     :param dict params: additional params
+
+    Epsilon transitions are removed from copies of the operands that have them.
+
     :return: true if lhs is included by rhs, counter example word if not
     """
     cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
@@ -1439,6 +1449,9 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
 :param alph.Alphabet alphabet: Alphabet shared by two automata.
 :param dict params: Additional params:
 - "algorithm": "antichains"
+
+Epsilon transitions are removed from copies of the operands that have them.
+
 :return: True if lhs is equivalent to rhs, False otherwise.
 """
     params = params or {'algorithm': 'antichains'}
