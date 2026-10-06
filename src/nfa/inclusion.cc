@@ -23,8 +23,10 @@ bool mata::nfa::algorithms::is_included_naive(
 		bigger_cmpl = complement(bigger, *alphabet);
 	}
 
+	// The map is only read to translate the counterexample path back to `smaller`'s states, but `intersection()`
+	//  inserts every product state into it.
 	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
-	Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, &prod_map);
+	Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, cex != nullptr ? &prod_map : nullptr);
 
 	bool result = nfa_isect.is_lang_empty(cex);
 	if (cex != nullptr && !result) {
