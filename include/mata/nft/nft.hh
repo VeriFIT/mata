@@ -286,6 +286,19 @@ class Nft : public mata::Automaton {
 	Nft(Nft&& other) noexcept = default;
 
 	Nft& operator=(const Nft& other) = default;
+
+	/**
+	 * @brief Returns a reference to targets (states) reachable from the given state over the given symbol.
+	 * Note: It treats the transitions as NFA transitions, i.e. it does not take into account levels and jump
+	 * transitions.
+	 *
+	 * This is an optimized shortcut for post(state, symbol, EpsilonClosureOpt::None).
+	 *
+	 * @param state A state to compute the post set from.
+	 * @param symbol Symbol to compute the post set for.
+	 * @return Set of states reachable from the given state over the given symbol.
+	 */
+	const StateSet& post(const State state, const Symbol symbol) const { return delta.get_successors(state, symbol); }
 	Nft& operator=(Nft&& other) noexcept;
 
 	/**
@@ -607,15 +620,20 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * Check whether the relation of the NFT is empty.
-	 * Currently, calls is_lang_empty_scc if cex is null.
+	 *
+	 * Without @p cex this is a reachability search that stops at the first reachable final state; with @p cex it is
+	 *  a BFS, so the witness is shortest in the number of transitions.
+	 *
 	 * @param[out] cex Counter-example path for a case the relation is not empty.
 	 * @return True if the relation is empty, false otherwise.
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
 	/**
-	 * @brief Check if the relation is empty using Tarjan's SCC discover algorithm.
+	 * @brief Check if the relation is empty.
 	 *
+	 * @deprecated Kept for source compatibility; the emptiness check no longer uses Tarjan's SCC discovery. Call
+	 *  @c is_lang_empty() instead.
 	 * @return Relation empty <-> True
 	 */
 	bool is_lang_empty_scc() const { return has_no_accepting_path(); }
@@ -896,19 +914,6 @@ class Nft : public mata::Automaton {
 	StateSet post(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
 		return post(StateSet{state}, symbol, epsilon_closure_opt);
 	}
-
-	/**
-	 * @brief Returns a reference to targets (states) reachable from the given state over the given symbol.
-	 * Note: It treats the transitions as NFA transitions, i.e. it does not take into account levels and jump
-	 * transitions.
-	 *
-	 * This is an optimized shortcut for post(state, symbol, EpsilonClosureOpt::None).
-	 *
-	 * @param state A state to compute the post set from.
-	 * @param symbol Symbol to compute the post set for.
-	 * @return Set of states reachable from the given state over the given symbol.
-	 */
-	const StateSet& post(const State state, const Symbol symbol) const { return delta.get_successors(state, symbol); }
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given set of zero-level @p states,

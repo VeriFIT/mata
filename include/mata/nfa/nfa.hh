@@ -450,15 +450,20 @@ class Nfa : public Automaton {
 
 	/**
 	 * Check whether the language of NFA is empty.
-	 * Currently, calls is_lang_empty_scc if cex is null
+	 *
+	 * Without @p cex this is a reachability search that stops at the first reachable final state; with @p cex it is
+	 *  a BFS, so the witness is shortest in the number of transitions.
+	 *
 	 * @param[out] cex Counter-example path for a case the language is not empty.
 	 * @return True if the language is empty, false otherwise.
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
 	/**
-	 * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
+	 * @brief Check if the language is empty.
 	 *
+	 * @deprecated Kept for source compatibility; the emptiness check no longer uses Tarjan's SCC discovery. Call
+	 *  @c is_lang_empty() instead.
 	 * @return Language empty <-> True
 	 */
 	bool is_lang_empty_scc() const { return has_no_accepting_path(); }

@@ -38,24 +38,20 @@ template <typename Self> bool Automaton::is_lang_empty(this const Self& self, nf
 	//  Perhaps make the get_useful_states return a witness on demand somehow.
 	if (!cex) { return self.has_no_accepting_path(); }
 
-	std::list<nfa::State> worklist(self.initial.begin(), self.initial.end());
-	std::unordered_set<nfa::State> processed(self.initial.begin(), self.initial.end());
+	// BFS over a vector queue, so the witness is still shortest in the number of transitions.
+	// `predecessors[q] == Limits::max_state` marks an unvisited state, an initial state is its own predecessor.
+	std::vector<nfa::State> worklist(self.initial.begin(), self.initial.end());
+	std::vector<nfa::State> predecessors(self.num_of_states(), nfa::Limits::max_state);
+	for (const nfa::State state : worklist) { predecessors[state] = state; }
 
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<nfa::State, nfa::State> paths;
-	// Initialize paths.
-	for (const nfa::State s : worklist) { paths[s] = s; }
-
-	while (!worklist.empty()) {
-		nfa::State state{worklist.front()};
-		worklist.pop_front();
+	for (size_t head{0}; head < worklist.size(); ++head) {
+		nfa::State state{worklist[head]};
 
 		if (self.final[state]) {
 			cex->path.clear();
 			cex->path.push_back(state);
-			while (paths[state] != state) {
-				state = paths[state];
+			while (predecessors[state] != state) {
+				state = predecessors[state];
 				cex->path.push_back(state);
 			}
 			std::ranges::reverse(cex->path);
@@ -69,17 +65,11 @@ template <typename Self> bool Automaton::is_lang_empty(this const Self& self, nf
 		// No `delta.empty()` guard: `for_each_successor()` of an empty or unallocated state post already
 		//  does nothing, while `Delta::empty()` walks state posts until it finds a nonempty one.
 		self.delta.for_each_successor(state, [&](const nfa::State target) {
-			bool inserted;
-			std::tie(std::ignore, inserted) = processed.insert(target);
-			if (inserted) {
-				worklist.push_back(target);
-				// Also set that tgt_state was accessed from state.
-				paths[target] = state;
-			} else {
-				MATA_ASSERT(utils::haskey(paths, target)); /* Invariant. */
-			}
+			if (predecessors[target] != nfa::Limits::max_state) { return; }
+			predecessors[target] = state;
+			worklist.push_back(target);
 		});
-	} // while (!worklist.empty()).
+	}
 	return true;
 } // is_lang_empty().
 
