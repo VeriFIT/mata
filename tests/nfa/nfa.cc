@@ -331,6 +331,36 @@ TEST_CASE("mata::nfa::is_flat") { // {{{
 		aut.delta.add(1, 'c', 2);
 		REQUIRE(!aut.is_flat());
 	}
+
+	SECTION("A self-loop is flat, two self-loops over different symbols are not") {
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 'a', 0);
+		CHECK(aut.is_flat());
+		aut.delta.add(0, 'b', 0);
+		CHECK_FALSE(aut.is_flat());
+	}
+
+	SECTION("Edges leaving the SCC do not make the automaton nonflat") {
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 0); // The only cycle, one in-SCC edge per state.
+		aut.delta.add(0, 'b', 2);
+		aut.delta.add(0, 'c', 3);
+		aut.delta.add(1, 'b', 3);
+		CHECK(aut.is_flat());
+	}
+
+	SECTION("Two parallel in-SCC edges over one symbol are not flat") {
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'a', 0);
+		aut.delta.add(2, 'a', 0);
+		CHECK_FALSE(aut.is_flat());
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::get_word_for_path()") { // {{{
