@@ -121,6 +121,27 @@ def test_nft_compose():
     assert composed.levels.num_of_levels == 2
 
 
+def test_nft_compose_rejects_invalid_requests():
+    """Invalid synchronization levels raise instead of exhausting memory or dividing by zero."""
+    lhs = mata_nft.Nft(1, num_of_levels=2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(lhs.insert_word(0, [10, 99]))
+    one_level = mata_nft.Nft(1, num_of_levels=1)
+    one_level.make_initial_state(0)
+    one_level.make_final_state(0)
+
+    with pytest.raises(ValueError):
+        mata_nft.compose(lhs, one_level, 2, 0)
+    with pytest.raises(ValueError):
+        mata_nft.compose(one_level, one_level, 1, 0)
+    with pytest.raises(ValueError):  # 1 + 1 - 2 == 0 levels left.
+        mata_nft.compose(one_level, one_level, 0, 0)
+    with pytest.raises(ValueError):
+        mata_nft.compose(lhs, lhs, [0, 1], [0])
+    with pytest.raises(ValueError):
+        mata_nft.compose_alphabets(lhs, one_level, 2, 0)
+
+
 def test_nft_is_included_and_are_equivalent():
     smaller = _make_word_nft([1, 2])
     bigger = mata_nft.union_nondet(smaller, _make_word_nft([3, 4]))
