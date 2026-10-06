@@ -10,8 +10,17 @@ indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[{*.cc,*.hh,*.c,*.h,*.just,justfile,Makefile,CMakeLists.txt}]
+[{*.cc,*.hh,*.c,*.h,*.just,justfile,Makefile,CMakeLists.txt,*.cmake,*.cmake.in}]
 indent_style = tab
 
 [{*.{md,toml,yml,yaml,nix,html,css,json},.clangd,.clang-format,.clang-tidy}]
 indent_size = 2
+
+# Vendored, kept byte-identical to upstream so a resync is a plain copy. No style is prescribed:
+#  the trees are internally mixed (cudd uses tabs in 95 files and spaces in 137, re2 two spaces,
+#  simlib tabs), so any single value would make an editor reindent upstream code on save. Trailing
+#  whitespace and the final newline stay normalized; only indentation is left alone.
+[{3rdparty/**,cmake/GetGitRevisionDescription.cmake}]
+indent_style = unset
+indent_size = unset
+tab_width = unset
