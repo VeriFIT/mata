@@ -18,7 +18,8 @@ bool has_at_most_one_auto_naming(const mata::IntermediateAut& aut) {
 	);
 }
 
-bool is_logical_operator(const char ch) { return mata::utils::haskey(std::set<char>{'&', '|', '!'}, ch); }
+/// Determines whether the character is one of the logical operators of a transition formula.
+bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch == '!'; }
 
 mata::IntermediateAut::Naming get_naming_type(const std::string& key) {
 	const size_t found = key.find('-');

@@ -104,18 +104,19 @@ class FormulaNode {
  * and q1 and s2 being children nodes of the root.
  */
 class FormulaGraph {
-	/// Maximal number of @c FormulaNode children in any @c FormulaGraph node (for AND, OR nodes). Only one (NOT node)
-	///  or zero (@c FormulaNode node) children may be used. Used as an optimization by pre-allocating @c children at
-	///  node initialization.
-	static constexpr size_t max_num_of_children{2};
+	/// Reserves the exact number of @c FormulaNode children an operator node will get. Operand nodes stay leaves, so
+	///  reserving for them would leave an unused buffer in every leaf of every formula tree.
+	void reserve_children_for_operator() {
+		if (node.is_operator()) { children.reserve(node.operator_type == FormulaNode::OperatorType::Neg ? 1 : 2); }
+	}
 
   public:
 	FormulaNode node{};
 	std::vector<FormulaGraph> children{};
 
 	FormulaGraph() = default;
-	explicit FormulaGraph(const FormulaNode& n) : node(n) { children.reserve(max_num_of_children); }
-	explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)) { children.reserve(max_num_of_children); }
+	explicit FormulaGraph(const FormulaNode& n) : node(n) { reserve_children_for_operator(); }
+	explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)) { reserve_children_for_operator(); }
 	FormulaGraph(const FormulaGraph& g) = default;
 	FormulaGraph(FormulaGraph&& g) noexcept : node(std::move(g.node)), children(std::move(g.children)) {}
 

@@ -269,8 +269,10 @@ void Nft::print_to_dot(
 
 	// Print transitions
 	const size_t delta_size = delta.num_of_states();
+	// Reused across sources to keep the hash table allocated.
+	std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
 	for (State source = 0; source != delta_size; ++source) {
-		std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
+		tgt_symbols_map.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
 			for (State target : move.targets) {
@@ -305,20 +307,20 @@ void Nft::print_to_dot(
 
 	// Circle for isolated states with no transitions
 	for (State state{0}; state < is_state_drawn.size(); ++state) {
-		if (!is_state_drawn[state]) { output << state << " [shape=circle];" << std::endl; }
+		if (!is_state_drawn[state]) { output << state << " [shape=circle];\n"; }
 	}
 
 	// Levels for each state
-	output << "node [shape=none, label=\"\"];" << std::endl;
-	output << "forcelabels=true;" << std::endl;
-	for (State s{0}; s < levels.size(); s++) {
-		output << s << " [label=\"" << s << ":" << levels[s] << "\"];" << std::endl;
-	}
+	output << "node [shape=none, label=\"\"];\n";
+	output << "forcelabels=true;\n";
+	for (State s{0}; s < levels.size(); s++) { output << s << " [label=\"" << s << ":" << levels[s] << "\"];\n"; }
 
 	// Arrow for initial states
-	for (const State init_state : initial) { output << "i" << init_state << " -> " << init_state << ";" << std::endl; }
+	for (const State init_state : initial) { output << "i" << init_state << " -> " << init_state << ";\n"; }
 
-	output << "}" << std::endl;
+	// Lines end with '\n', not std::endl: flushing per line costs one write() per line. Flush once so the caller's
+	//  stream holds the whole transducer when this returns.
+	output << "}\n" << std::flush;
 }
 
 void Nft::print_to_dot(
@@ -340,20 +342,20 @@ std::string Nft::print_to_mata() const {
 }
 
 void Nft::print_to_mata(std::ostream& output) const {
-	output << "@NFT-explicit" << std::endl << "%Alphabet-auto" << std::endl;
+	output << "@NFT-explicit\n" << "%Alphabet-auto\n";
 	// TODO should be this, but we cannot parse %Alphabet-numbers yet
-	//<< "%Alphabet-numbers" << std::endl;
+	//<< "%Alphabet-numbers\n";
 
 	if (!initial.empty()) {
 		output << "%Initial";
 		for (const State init_state : initial) { output << " q" << init_state; }
-		output << std::endl;
+		output << '\n';
 	}
 
 	if (!final.empty()) {
 		output << "%Final";
 		for (const State final_state : final) { output << " q" << final_state; }
-		output << std::endl;
+		output << '\n';
 	}
 
 	if (!levels.empty()) {
@@ -368,31 +370,34 @@ void Nft::print_to_mata(std::ostream& output) const {
 		for (State s{0}; s < num_of_states(); s++) {
 			if (live_states[s]) { output << " " << "q" << s << ":" << levels[s]; }
 		}
-		output << std::endl;
+		output << '\n';
 	}
-	output << "%LevelsNum " << levels.num_of_levels << std::endl;
+	output << "%LevelsNum " << levels.num_of_levels << '\n';
 
 	// Reverse lookups may scan the whole alphabet; translate each (symbol, level) once.
 	std::map<std::pair<Symbol, Level>, std::string> symbol_names{};
 	for (const Transition& trans : delta.transitions()) {
-		std::string symbol_label;
+		output << "q" << trans.source << " ";
 		// EPSILON and DONT_CARE belong to no alphabet; print the names the parser maps back.
 		if (trans.symbol == EPSILON) {
-			symbol_label = EPSILON_NAME;
+			output << EPSILON_NAME;
 		} else if (trans.symbol == DONT_CARE) {
-			symbol_label = DONT_CARE_NAME;
+			output << DONT_CARE_NAME;
 		} else if (alphabets != nullptr) {
 			const auto key{std::pair{trans.symbol, levels[trans.source]}};
 			auto it{symbol_names.find(key)};
 			if (it == symbol_names.end()) {
 				it = symbol_names.emplace(key, alphabets->reverse_translate_symbol(key.first, key.second)).first;
 			}
-			symbol_label = it->second;
+			output << it->second;
 		} else {
-			symbol_label = std::to_string(trans.symbol);
+			// Plain decimal, independent of the stream's format flags: the parser reads it back as decimal.
+			output << std::to_string(trans.symbol);
 		}
-		output << "q" << trans.source << " " << symbol_label << " q" << trans.target << std::endl;
+		output << " q" << trans.target << '\n';
 	}
+	// See print_to_dot(): one flush per call instead of one per line.
+	output.flush();
 }
 
 void Nft::print_to_mata(const std::string& filename) const {
