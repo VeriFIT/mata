@@ -21,15 +21,31 @@ def from_regex(regex, encoding='utf-8'):
     parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding))
     return result
 
+cdef _reject_multiple_automata(src, size_t num_of_automata):
+    """Refuses a .mata file holding more than one @-section.
+
+    Only the first automaton of a file is ever constructed, so loading such a file would drop
+    the remaining ones without a trace.
+    """
+    if num_of_automata > 1:
+        raise ValueError(
+            f"file '{src}' contains {num_of_automata} automata, but from_mata() loads exactly "
+            f"one automaton per file; split the file or keep only the wanted @-section"
+        )
+
 def from_mata(src: str | list[str], alph.Alphabet alphabet):
     """Loads automata from either single file or list or other stream of files.
-    
+
+    Every file must contain exactly one automaton, i.e. a single @-section; a file with more
+    automata is rejected with a ValueError, because only its first automaton would be used.
+
     All automata passed in sources are mintermized together. If you wish to load 
     multiple automata and mintermize them, then you have to pass them as a list.
 
     :param src: list of paths to automata or single path
     :param alphabet: target alphabet
     :return: single automaton or list of automata
+    :raises ValueError: if any of the files contains more than one automaton
     """
     cdef CAlphabet * c_alphabet = NULL
     cdef parser.Parsed parsed
@@ -46,6 +62,7 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
     if isinstance(src, str):
         fs = parser.ifstream(src.encode('utf-8'))
         res_inter_aut = parser.parse_from_mf(parser.parse_mf(fs, True))
+        _reject_multiple_automata(src, res_inter_aut.size())
         result = mata_nfa.Nfa()
         if res_inter_aut[0].is_bitvector():
             parser.construct(
@@ -66,6 +83,7 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
         for file in src:
             fs = parser.ifstream(file.encode('utf-8'))
             res_inter_aut = parser.parse_from_mf(parser.parse_mf(fs, True))
+            _reject_multiple_automata(file, res_inter_aut.size())
             inter_aut.emplace_back(res_inter_aut[0])
         if inter_aut[0].is_bitvector():
             mintermized_inter_aut = mintermization.c_mintermize_vec(inter_aut)
