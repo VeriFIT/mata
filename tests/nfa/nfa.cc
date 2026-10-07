@@ -2164,6 +2164,71 @@ TEST_CASE("mata::nfa::make_complete()") { // {{{
 		CHECK(aut.delta.contains(SINK, 'b', SINK));
 		CHECK(aut.delta.contains(SINK, 'c', SINK));
 	}
+
+	SECTION("posts with symbols outside the alphabet") {
+		constexpr Symbol OUT_OF_ALPHABET{'z'}; // Above every symbol of the alphabet, below EPSILON.
+		constexpr State SINK{4};
+		const OrdVector<Symbol> symbols{'a', 'b'};
+
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, EPSILON, 1); // Only a foreign symbol: nothing of the alphabet is covered.
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, OUT_OF_ALPHABET, 3); // As many symbols as the alphabet has, yet 'b' is missing.
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(2, EPSILON, 0); // Complete over the alphabet, with a foreign symbol on top.
+		aut.delta.add(3, 'a', 3);
+		aut.delta.add(3, 'b', 3);
+
+		CHECK(aut.make_complete(symbols, SINK));
+
+		// The foreign symbols survive, complete nothing, and the posts stay sorted.
+		auto post_symbols = [&aut](const State state) {
+			std::vector<Symbol> symbols_of_post{};
+			for (const SymbolPost& symbol_post : aut.delta[state]) { symbols_of_post.push_back(symbol_post.symbol); }
+			return symbols_of_post;
+		};
+		CHECK(post_symbols(0) == std::vector<Symbol>{'a', 'b', EPSILON});
+		CHECK(post_symbols(1) == std::vector<Symbol>{'a', 'b', OUT_OF_ALPHABET});
+		CHECK(post_symbols(2) == std::vector<Symbol>{'a', 'b', EPSILON});
+		CHECK(post_symbols(3) == std::vector<Symbol>{'a', 'b'});
+		CHECK(post_symbols(SINK) == std::vector<Symbol>{'a', 'b'});
+
+		CHECK(aut.delta.contains(0, EPSILON, 1));
+		CHECK(aut.delta.contains(1, OUT_OF_ALPHABET, 3));
+		CHECK(aut.delta.contains(2, EPSILON, 0));
+		CHECK(aut.delta.contains(0, 'a', SINK));
+		CHECK(aut.delta.contains(0, 'b', SINK));
+		CHECK(aut.delta.contains(1, 'a', 2));
+		CHECK(aut.delta.contains(1, 'b', SINK));
+		CHECK(aut.delta.contains(2, 'a', 2));
+		CHECK(aut.delta.contains(2, 'b', 3));
+		CHECK(aut.delta.contains(SINK, 'a', SINK));
+		CHECK(aut.delta.contains(SINK, 'b', SINK));
+	}
+
+	SECTION("complete automaton is not modified") {
+		const OrdVector<Symbol> symbols{'a', 'b'};
+
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 0);
+		aut.delta.add(1, 'a', 1);
+		aut.delta.add(1, 'b', 0);
+		aut.delta.add(1, EPSILON, 1);
+
+		const size_t num_of_states{aut.num_of_states()};
+		const size_t num_of_transitions{aut.delta.num_of_transitions()};
+		const Nfa original{aut};
+
+		CHECK(!aut.make_complete(symbols));
+
+		CHECK(aut.num_of_states() == num_of_states);
+		CHECK(aut.delta.num_of_transitions() == num_of_transitions);
+		CHECK(aut.is_identical(original));
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::complement()") { // {{{
