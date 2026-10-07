@@ -393,7 +393,11 @@ bool mata::nft::has_epsilon_cycle(const Nft& nft) {
 
 Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 	const size_t num_of_states{aut.num_of_states()};
-	mata::nfa::Nfa reversed_nfa{mata::nfa::revert(aut.to_nfa_copy())};
+	// How many transitions lead to each state. This used to be read off a reverted copy of the automaton, whose state
+	// post holds one entry per incoming symbol: a state with several epsilon predecessors looked like it had a single
+	// one, so its only outgoing epsilon transition was deleted from under the other predecessors.
+	std::vector<size_t> in_degree(num_of_states, 0);
+	for (const Transition& transition : aut.delta.transitions()) { ++in_degree[transition.target]; }
 
 	// this vector will collect epsilon run from level 0 state to level 0 state
 	// that contains only epsilon transitions, and all states inbetween (i.e.
@@ -436,10 +440,10 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 								new_safe_epsilon_run.push_back(target);
 								// we finish with generating this safe epsilon run and push it to safe_epsilon_runs
 								// directly
-								safe_epsilon_runs.push_back(new_safe_epsilon_run);
+								safe_epsilon_runs.push_back(std::move(new_safe_epsilon_run));
 								eps_delta[state].insert(target);
 								eps_delta_inverse[target].insert(state);
-							} else if (reversed_nfa.delta[target].size() == 1) {
+							} else if (in_degree[target] == 1) {
 								// we are not at the last level, next state must be level incremented by one (assuming
 								// no jumps)
 								MATA_ASSERT(aut.levels[target] == cur_level + 1);
@@ -447,7 +451,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 								new_safe_epsilon_run.push_back(target);
 								// this safe epsilon run is not finished yet, we save new_state_safe_epsilon_runs to
 								// return to it
-								new_state_safe_epsilon_runs.push_back(new_safe_epsilon_run);
+								new_state_safe_epsilon_runs.push_back(std::move(new_safe_epsilon_run));
 							}
 						}
 					}
@@ -455,7 +459,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 				if (new_state_safe_epsilon_runs.empty()) {
 					break;
 				} else {
-					state_safe_epsilon_runs = new_state_safe_epsilon_runs;
+					state_safe_epsilon_runs = std::move(new_state_safe_epsilon_runs);
 				}
 			}
 		}

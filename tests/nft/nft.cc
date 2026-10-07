@@ -3258,6 +3258,22 @@ TEST_CASE("mata::nft::remove_epsilon()") {
 		result.remove_epsilon();
 		REQUIRE(result.is_in_lang({EPSILON, EPSILON, 'a', 'b', EPSILON}));
 	}
+
+	SECTION("state shared by two epsilon predecessors") {
+		// 0 -eps-> 2 -eps-> 4 looks like a run of its own, but state 2 is also reachable from state 1, whose run is
+		// not safe. Deleting 2 -eps-> 4 used to leave state 1 with a dead end.
+		Nft nft{Nft::with_levels(Levels{2, {0, 0, 1, 1, 0, 0}}, 6, {1}, {4, 5})};
+		nft.delta.add(0, EPSILON, 2);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(1, EPSILON, 3);
+		nft.delta.add(2, EPSILON, 4);
+		nft.delta.add(3, 'b', 5);
+
+		const Nft result{remove_epsilon(nft)};
+		CHECK(result.is_in_lang_by_levels({{}, {}}));
+		CHECK(result.is_in_lang_by_levels({{}, {'b'}}));
+		CHECK(are_equivalent(nft, result));
+	}
 }
 
 TEST_CASE("Profile mata::nft::remove_epsilon()", "[.profiling]") {
