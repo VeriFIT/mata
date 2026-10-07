@@ -6,7 +6,10 @@
 #include <deque>
 #include <format>
 #include <iterator>
+#include <limits>
+#include <map>
 #include <optional>
+#include <queue>
 #include <ranges>
 #include <stdexcept>
 
@@ -1705,118 +1708,252 @@ bool nft::symbols_match(const Symbol a, const Symbol b) {
 }
 
 namespace {
-/// Shared DFS traversal behind @c Nft::get_words(). Walks one path at a time and shares @p word as scratch space
-///  (push on descent, truncate back on backtrack) instead of copying it at every edge, the way a BFS-by-length
-///  frontier would.
-void get_words_dfs_impl(
-	const Nft& nft,
-	const State state,
-	const size_t depth,
-	const std::optional<size_t> max_length,
-	const JumpMode jump_mode,
-	Word& word,
-	std::set<Word>& result
-) {
-	if (nft.final.contains(state)) { result.insert(word); }
-	if (max_length.has_value() && depth >= max_length.value()) { return; }
+/// Distance of a state from which no final state is reachable.
+constexpr size_t NO_FINAL_REACHABLE{std::numeric_limits<size_t>::max()};
 
-	const Level level_next{nft.levels.next_level_after(nft.levels[state])};
-	for (const SymbolPost& symbol_post : nft.delta[state]) {
-		const auto map_level_targets{nft.levels.map_levels_to(symbol_post.targets)};
-		for (size_t target_level{0}; target_level < map_level_targets.size(); ++target_level) {
-			const auto& targets_for_level{map_level_targets[target_level]};
-			if (targets_for_level.empty()) { continue; }
+/// The number of symbols a transition from a state on @p level_source to a state on @p level_target spells: its
+///  own symbol and one filler symbol per level it jumps over.
+size_t get_num_of_symbols_spelled(const Levels& levels, const Level level_source, const Level level_target) {
+	size_t num_of_symbols{1};
+	for (Level level{levels.next_level_after(level_source)}; level != level_target;
+		 level = levels.next_level_after(level)) {
+		++num_of_symbols;
+	}
+	return num_of_symbols;
+}
 
-			const size_t word_size_before{word.size()};
-			word.push_back(symbol_post.symbol);
-			if (target_level != level_next) {
-				for (Level level{level_next}; level != target_level; level = nft.levels.next_level_after(level)) {
-					switch (jump_mode) {
-						case JumpMode::AppendDontCares:
-							word.push_back(DONT_CARE);
-							break;
-						case JumpMode::RepeatSymbol:
-							word.push_back(symbol_post.symbol);
-							break;
-						default:
-							throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
-					}
-				}
+/// How far every state is from acceptance, which lets the word search skip branches that cannot be accepted.
+struct FinalDistances {
+	/// The length of a shortest word leading from each state to a final state, or @c NO_FINAL_REACHABLE.
+	std::vector<size_t> distances;
+	/// Whether each state has a transition to a state from which a final state is reachable.
+	std::vector<bool> extendable;
+};
+
+FinalDistances get_final_distances(const Nft& nft) {
+	const size_t num_of_states{nft.num_of_states()};
+	// Predecessors with the number of symbols spelled by the transition from them.
+	std::vector<std::vector<std::pair<State, size_t>>> predecessors(num_of_states);
+	for (State source{0}; source < num_of_states; ++source) {
+		for (const SymbolPost& symbol_post : nft.delta[source]) {
+			for (const State target : symbol_post.targets) {
+				predecessors[target].emplace_back(
+					source, get_num_of_symbols_spelled(nft.levels, nft.levels[source], nft.levels[target])
+				);
 			}
-			for (const State target : targets_for_level) {
-				get_words_dfs_impl(nft, target, depth + 1, max_length, jump_mode, word, result);
-			}
-			word.resize(word_size_before);
 		}
 	}
-}
-} // namespace
 
-std::set<Word> Nft::get_words(const std::optional<size_t> max_length, const JumpMode jump_mode) const {
-	std::set<Word> result;
-	Word word;
-	for (const State init_state : initial) {
-		get_words_dfs_impl(*this, init_state, 0, max_length, jump_mode, word, result);
+	FinalDistances result{
+		.distances = std::vector<size_t>(num_of_states, NO_FINAL_REACHABLE),
+		.extendable = std::vector<bool>(num_of_states, false)
+	};
+	using Entry = std::pair<size_t, State>;
+	std::priority_queue<Entry, std::vector<Entry>, std::greater<>> queue;
+	for (const State final_state : nft.final) {
+		result.distances[final_state] = 0;
+		queue.emplace(0, final_state);
+	}
+	while (!queue.empty()) {
+		const auto [distance, state]{queue.top()};
+		queue.pop();
+		if (distance > result.distances[state]) { continue; }
+		for (const auto& [predecessor, num_of_symbols] : predecessors[state]) {
+			// Every state reaching a final state is settled once, so this marks every extendable state.
+			result.extendable[predecessor] = true;
+			if (distance + num_of_symbols < result.distances[predecessor]) {
+				result.distances[predecessor] = distance + num_of_symbols;
+				queue.emplace(distance + num_of_symbols, predecessor);
+			}
+		}
 	}
 	return result;
 }
 
-#if MATA_HAS_GENERATOR_SUPPORT
-namespace {
-/// Shared DFS traversal behind @c Nft::get_words_lazy(). Same shape as @c get_words_dfs_impl(), but written as a
-///  coroutine so it can yield each word as it is found instead of collecting them all before returning.
-std::generator<Word> get_words_lazy_impl(
-	const Nft& nft,
-	const State state,
-	const size_t depth,
-	const std::optional<size_t> max_length,
-	const JumpMode jump_mode,
-	Word& word
-) {
-	if (nft.final.contains(state)) { co_yield word; }
-	if (max_length.has_value() && depth >= max_length.value()) { co_return; }
+/// The runs spelling one word: the number of transitions spelling it, mapped to the states those runs reach. Runs
+///  of one word that differ only in the number of transitions are kept apart, because a jump spells more than one
+///  symbol per transition and the same word can be spelled in different numbers of transitions (and accepted by
+///  only some of them).
+using WordRuns = std::map<size_t, std::vector<State>>;
 
-	const Level level_next{nft.levels.next_level_after(nft.levels[state])};
-	for (const SymbolPost& symbol_post : nft.delta[state]) {
-		const auto map_level_targets{nft.levels.map_levels_to(symbol_post.targets)};
-		for (size_t target_level{0}; target_level < map_level_targets.size(); ++target_level) {
-			const auto& targets_for_level{map_level_targets[target_level]};
-			if (targets_for_level.empty()) { continue; }
+/// The pending words below one prefix, keyed by their suffix after that prefix.
+using PendingWords = std::map<Word, WordRuns>;
 
-			const size_t word_size_before{word.size()};
-			word.push_back(symbol_post.symbol);
-			if (target_level != level_next) {
-				for (Level level{level_next}; level != target_level; level = nft.levels.next_level_after(level)) {
-					switch (jump_mode) {
-						case JumpMode::AppendDontCares:
-							word.push_back(DONT_CARE);
-							break;
-						case JumpMode::RepeatSymbol:
-							word.push_back(symbol_post.symbol);
-							break;
-						default:
-							throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
+/// The search behind @c Nft::get_words() and @c Nft::get_words_lazy(). It goes over words in lexicographic order,
+///  depth-first over one shared word, and keeps all runs spelling the same word together, however jumps split it
+///  between transitions; states from which no final state is reachable are dropped. A frame holds the pending
+///  words below one prefix on the current descent. A run of a word extends a run of a proper prefix of that word,
+///  and proper prefixes are lexicographically smaller, so a word popped from the top frame already has all of its
+///  runs merged in: it is expanded once, however many paths spell it. Pending words of the top frame that extend
+///  the popped word move down into the frame of the popped word.
+/// With a @p length_bound, the search visits only the words that can still be completed to an accepted word of at
+///  most that length and reports only the accepted words of exactly that length, recording whether it cut off any
+///  longer word: a caller raising the bound one by one gets every word in shortlex order and knows when to stop.
+class WordSearch {
+  public:
+	WordSearch(
+		const Nft& nft,
+		const FinalDistances& final_distances,
+		const std::optional<size_t> max_length,
+		const JumpMode jump_mode,
+		const std::optional<size_t> length_bound
+	)
+		: nft_{nft},
+		  final_distances_{final_distances},
+		  max_length_{max_length},
+		  jump_mode_{jump_mode},
+		  length_bound_{length_bound} {
+		std::vector<State> initial_states;
+		for (const State state : nft.initial) {
+			if (is_live(state, 0)) { initial_states.push_back(state); }
+		}
+		if (!initial_states.empty()) {
+			frames_.push_back(Frame{.prefix_length = 0, .pending = {{Word{}, {{0, std::move(initial_states)}}}}});
+		}
+	}
+
+	/// The next accepted word, or @c nullptr once the search is exhausted. Valid until the next call.
+	const Word* next() {
+		while (!frames_.empty()) {
+			Frame& frame{frames_.back()};
+			if (frame.pending.empty()) {
+				frames_.pop_back();
+				continue;
+			}
+			auto node{frame.pending.extract(frame.pending.begin())};
+			const Word& suffix{node.key()};
+			word_.resize(frame.prefix_length);
+			word_.insert(word_.end(), suffix.begin(), suffix.end());
+
+			// The extensions of the popped word queued below shorter prefixes directly follow it in the order.
+			//  (`std::ranges::mismatch()` stands in for `std::ranges::starts_with()`, missing from libstdc++ 14.)
+			PendingWords pending_below;
+			while (!frame.pending.empty() &&
+				   std::ranges::mismatch(suffix, frame.pending.begin()->first).in1 == suffix.end()) {
+				auto extension{frame.pending.extract(frame.pending.begin())};
+				extension.key().erase(extension.key().begin(), extension.key().begin() + std::ssize(suffix));
+				pending_below.insert(std::move(extension));
+			}
+
+			WordRuns& runs{node.mapped()};
+			bool accepted{false};
+			for (std::vector<State>& states : runs | std::views::values) {
+				// Targets are collected per word and sorted once here, not by a set union per transition.
+				sort_and_rmdupl(states);
+				accepted = accepted || nft_.final.intersects_with(states);
+			}
+			accepted = accepted && (!length_bound_.has_value() || word_.size() == length_bound_.value());
+
+			push_successors(runs, pending_below);
+			// Invalidates @c frame.
+			if (!pending_below.empty()) {
+				frames_.push_back(Frame{.prefix_length = word_.size(), .pending = std::move(pending_below)});
+			}
+			if (accepted) { return &word_; }
+		}
+		return nullptr;
+	}
+
+	/// Whether a word longer than the length bound was cut off, so a larger bound can find more words.
+	bool cut_off() const { return cut_off_; }
+
+  private:
+	struct Frame {
+		size_t prefix_length;
+		PendingWords pending;
+	};
+
+	/// Whether @p state can still lead to an accepted word within the length bound after a word of @p length.
+	bool is_live(const State state, const size_t length) {
+		const size_t distance{final_distances_.distances[state]};
+		if (distance == NO_FINAL_REACHABLE) { return false; }
+		if (length_bound_.has_value() &&
+			(length > length_bound_.value() || distance > length_bound_.value() - length)) {
+			cut_off_ = true;
+			return false;
+		}
+		return true;
+	}
+
+	/// Extend @c word_, spelled by @p runs, by one transition of every run with room for it under the maximum
+	///  length, and merge the resulting runs into @p pending, keyed by the symbols they append to @c word_.
+	void push_successors(const WordRuns& runs, PendingWords& pending) {
+		const size_t length{word_.size()};
+		for (const auto& [num_of_transitions, states] : runs) {
+			if (max_length_.has_value() && num_of_transitions >= max_length_.value()) { continue; }
+			if (length_bound_.has_value() && length == length_bound_.value()) {
+				// Every successor is longer than the bound; just record whether there is one.
+				for (const State state : states) {
+					if (final_distances_.extendable[state]) { cut_off_ = true; }
+				}
+				continue;
+			}
+			for (const State state : states) {
+				const Level level_next{nft_.levels.next_level_after(nft_.levels[state])};
+				for (const SymbolPost& symbol_post : nft_.delta[state]) {
+					const std::vector<StateSet> map_level_targets{nft_.levels.map_levels_to(symbol_post.targets)};
+					for (size_t target_level{0}; target_level < map_level_targets.size(); ++target_level) {
+						const StateSet& targets_for_level{map_level_targets[target_level]};
+						if (targets_for_level.empty()) { continue; }
+
+						suffix_.clear();
+						suffix_.push_back(symbol_post.symbol);
+						for (Level level{level_next}; level != target_level;
+							 level = nft_.levels.next_level_after(level)) {
+							switch (jump_mode_) {
+								case JumpMode::AppendDontCares:
+									suffix_.push_back(DONT_CARE);
+									break;
+								case JumpMode::RepeatSymbol:
+									suffix_.push_back(symbol_post.symbol);
+									break;
+								default:
+									throw std::runtime_error("Nft::get_words: Unsupported jump mode.");
+							}
+						}
+						std::vector<State>* targets{nullptr};
+						for (const State target : targets_for_level) {
+							if (!is_live(target, length + suffix_.size())) { continue; }
+							if (targets == nullptr) { targets = &pending[suffix_][num_of_transitions + 1]; }
+							targets->push_back(target);
+						}
 					}
 				}
 			}
-			for (const State target : targets_for_level) {
-				for (Word&& sub_word : get_words_lazy_impl(nft, target, depth + 1, max_length, jump_mode, word)) {
-					co_yield std::move(sub_word);
-				}
-			}
-			word.resize(word_size_before);
 		}
 	}
-}
+
+	const Nft& nft_;
+	const FinalDistances& final_distances_;
+	const std::optional<size_t> max_length_;
+	const JumpMode jump_mode_;
+	const std::optional<size_t> length_bound_;
+	/// The word of the current search node, shared by all frames.
+	Word word_{};
+	/// Scratch space for the symbols appended by one transition.
+	Word suffix_{};
+	std::vector<Frame> frames_{};
+	bool cut_off_{false};
+};
 } // namespace
 
+std::set<Word> Nft::get_words(const std::optional<size_t> max_length, const JumpMode jump_mode) const {
+	std::set<Word> result;
+	const FinalDistances final_distances{get_final_distances(*this)};
+	WordSearch search{*this, final_distances, max_length, jump_mode, std::nullopt};
+	while (const Word* word{search.next()}) { result.insert(*word); }
+	return result;
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
 std::generator<Word> Nft::get_words_lazy(const std::optional<size_t> max_length, const JumpMode jump_mode) const {
-	std::set<Word> seen;
-	Word word;
-	for (const State init_state : initial) {
-		for (Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, jump_mode, word)) {
-			if (seen.insert(w).second) { co_yield std::move(w); }
-		}
+	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
+	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
+	const FinalDistances final_distances{get_final_distances(*this)};
+	for (size_t length{0};; ++length) {
+		WordSearch search{*this, final_distances, max_length, jump_mode, length};
+		while (const Word* word{search.next()}) { co_yield *word; }
+		if (!search.cut_off()) { co_return; }
 	}
 }
 #endif // MATA_HAS_GENERATOR_SUPPORT

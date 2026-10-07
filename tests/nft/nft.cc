@@ -4170,6 +4170,57 @@ TEST_CASE("mata::nft::Nft::get_words_lazy() - infinite language stays lazy") {
 	CHECK(first_words == std::vector<Word>{{}, {0}, {0, 0}, {0, 0, 0}, {0, 0, 0, 0}});
 }
 
+TEST_CASE("mata::nft::Nft::get_words_lazy() - stays lazy in memory on a wide language") {
+	// A chain of k + 1 states over one level, both 'a' and 'b' from every state to the next, only the last state
+	//  final: the language is every word of length k, 2^k of them. The first word must be yielded after a bounded
+	//  amount of work and memory: the search may not build a whole depth (or the whole language) first.
+	constexpr size_t k{40};
+	Nft nft{k + 1, {0}, {k}, Levels{1, std::vector<Level>(k + 1, 0)}};
+	for (State s{0}; s < k; ++s) {
+		nft.delta.add(s, 'a', s + 1);
+		nft.delta.add(s, 'b', s + 1);
+	}
+
+	Word word_expected(k, 'a');
+	auto generator{nft.get_words_lazy(k)};
+	auto it{generator.begin()};
+	REQUIRE(it != generator.end());
+	CHECK(*it == word_expected);
+
+	// Destructing a partially consumed generator must not walk the rest of the language either.
+}
+
+TEST_CASE("mata::nft::Nft::get_words_lazy() - infinite branches do not starve other words") {
+	constexpr Symbol a{0}, b{1}, c{2};
+
+	SECTION("a branch that cannot be accepted") {
+		// The loop on state 1 is never accepted; the only word, b, must come out, and the generator must end.
+		Nft nft{3, {0, 1}, {2}, Levels{1, std::vector<Level>(3, 0)}};
+		nft.delta.add(0, b, 2);
+		nft.delta.add(1, a, 1);
+
+		std::vector<Word> words;
+		for (Word&& word : nft.get_words_lazy()) { words.push_back(std::move(word)); }
+		CHECK(words == std::vector<Word>{{b}});
+	}
+
+	SECTION("an infinite branch that can be accepted") {
+		// Every branch reaches a final state, but a, aa, aaa, ... are never accepted themselves; b must still come
+		//  out before the infinite language a*c is explored.
+		Nft nft{3, {0, 1}, {2}, Levels{1, std::vector<Level>(3, 0)}};
+		nft.delta.add(0, b, 2);
+		nft.delta.add(1, a, 1);
+		nft.delta.add(1, c, 2);
+
+		std::vector<Word> first_words;
+		for (Word&& word : nft.get_words_lazy()) {
+			first_words.push_back(std::move(word));
+			if (first_words.size() == 4) { break; }
+		}
+		CHECK(first_words == std::vector<Word>{{b}, {c}, {a, c}, {a, a, c}});
+	}
+}
+
 #else
 TEST_CASE("mata::nft::Nft::get_words()") {
 	Nft nft{Nft::with_levels(3)};
@@ -4294,6 +4345,65 @@ TEST_CASE("mata::nft::Nft::get_words()") {
 }
 
 #endif // MATA_HAS_GENERATOR_SUPPORT
+
+TEST_CASE("mata::nft::Nft::get_words() - diamond chain") {
+	// The NFT counterpart of the NFA diamond chain: k diamonds, each spelling 'a' on level 0 and 'b' on level 1
+	//  through one of two middle states. The language is the single word (ab)^k, reached by 2^k accepting paths.
+	constexpr size_t k{40};
+	std::vector<Level> levels(3 * k + 1, 0);
+	for (size_t i{0}; i < k; ++i) {
+		levels[3 * i + 1] = 1;
+		levels[3 * i + 2] = 1;
+	}
+	Nft nft{3 * k + 1, {0}, {3 * k}, Levels{2, levels}};
+	for (size_t i{0}; i < k; ++i) {
+		nft.delta.add(3 * i, 'a', 3 * i + 1);
+		nft.delta.add(3 * i, 'a', 3 * i + 2);
+		nft.delta.add(3 * i + 1, 'b', 3 * (i + 1));
+		nft.delta.add(3 * i + 2, 'b', 3 * (i + 1));
+	}
+
+	Word word_expected;
+	for (size_t i{0}; i < k; ++i) {
+		word_expected.push_back('a');
+		word_expected.push_back('b');
+	}
+	const std::set<Word> words_expected{word_expected};
+
+	CHECK(nft.get_words(2 * k) == words_expected);
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::set<Word> words_lazy;
+	for (Word&& word : nft.get_words_lazy(2 * k)) { words_lazy.insert(std::move(word)); }
+	CHECK(words_lazy == words_expected);
+#endif // MATA_HAS_GENERATOR_SUPPORT
+}
+
+TEST_CASE("mata::nft::Nft::get_words() - diamond chain split by jumps") {
+	// k diamonds over three levels, each spelling "aaa" in two transitions: either 'a' to level 1 and a jump over
+	//  level 2 back to level 0, or a jump over level 1 to level 2 and 'a' back to level 0. With repeated jump
+	//  symbols, the language is the single word a^(3k), split differently by each of the 2^k accepting paths.
+	constexpr size_t k{40};
+	std::vector<Level> levels(3 * k + 1, 0);
+	for (size_t i{0}; i < k; ++i) {
+		levels[3 * i + 1] = 1;
+		levels[3 * i + 2] = 2;
+	}
+	Nft nft{3 * k + 1, {0}, {3 * k}, Levels{3, levels}};
+	for (size_t i{0}; i < k; ++i) {
+		nft.delta.add(3 * i, 'a', 3 * i + 1);
+		nft.delta.add(3 * i + 1, 'a', 3 * (i + 1));
+		nft.delta.add(3 * i, 'a', 3 * i + 2);
+		nft.delta.add(3 * i + 2, 'a', 3 * (i + 1));
+	}
+	const std::set<Word> words_expected{Word(3 * k, 'a')};
+
+	CHECK(nft.get_words(2 * k, JumpMode::RepeatSymbol) == words_expected);
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::set<Word> words_lazy;
+	for (Word&& word : nft.get_words_lazy(2 * k, JumpMode::RepeatSymbol)) { words_lazy.insert(std::move(word)); }
+	CHECK(words_lazy == words_expected);
+#endif // MATA_HAS_GENERATOR_SUPPORT
+}
 
 TEST_CASE("mata::nft::Nft::unwind_jump") {
 #define REPLACE_DONT_CARE(delta, src, trg)                                                                             \

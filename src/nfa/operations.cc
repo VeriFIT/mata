@@ -3,7 +3,10 @@
  */
 
 #include <algorithm>
+#include <deque>
+#include <limits>
 #include <list>
+#include <optional>
 #include <queue>
 #include <unordered_set>
 
@@ -1439,70 +1442,174 @@ Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::stri
 }
 
 namespace {
-/// Shared DFS traversal behind @c Nfa::get_words(). Walks one path at a time and shares @p word as scratch space
-///  (push on descent, truncate back on backtrack), instead of copying it at every edge the way a BFS-by-length
-///  frontier would.
-void get_words_dfs_impl(
-	const mata::nfa::Nfa& nfa,
-	const mata::nfa::State state,
-	const size_t depth,
-	const size_t max_length,
-	mata::Word& word,
-	std::set<mata::Word>& result
-) {
-	if (nfa.final.contains(state)) { result.insert(word); }
-	if (depth >= max_length) { return; }
+/// Distance of a state from which no final state is reachable.
+constexpr size_t NO_FINAL_REACHABLE{std::numeric_limits<size_t>::max()};
 
-	for (const mata::nfa::SymbolPost& sp : nfa.delta[state]) {
-		word.push_back(sp.symbol);
-		for (const mata::nfa::State target : sp.targets) {
-			get_words_dfs_impl(nfa, target, depth + 1, max_length, word, result);
+/// How far every state is from acceptance, which lets the word search skip branches that cannot be accepted.
+struct FinalDistances {
+	/// The length of a shortest word leading from each state to a final state, or @c NO_FINAL_REACHABLE.
+	std::vector<size_t> distances;
+	/// Whether each state has a transition to a state from which a final state is reachable.
+	std::vector<bool> extendable;
+};
+
+FinalDistances get_final_distances(const mata::nfa::Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	std::vector<std::vector<mata::nfa::State>> predecessors(num_of_states);
+	for (mata::nfa::State source{0}; source < num_of_states; ++source) {
+		for (const mata::nfa::SymbolPost& symbol_post : nfa.delta[source]) {
+			for (const mata::nfa::State target : symbol_post.targets) { predecessors[target].push_back(source); }
 		}
-		word.pop_back();
 	}
+
+	FinalDistances result{
+		.distances = std::vector<size_t>(num_of_states, NO_FINAL_REACHABLE),
+		.extendable = std::vector<bool>(num_of_states, false)
+	};
+	std::deque<mata::nfa::State> queue;
+	for (const mata::nfa::State final_state : nfa.final) {
+		result.distances[final_state] = 0;
+		queue.push_back(final_state);
+	}
+	while (!queue.empty()) {
+		const mata::nfa::State state{queue.front()};
+		queue.pop_front();
+		for (const mata::nfa::State predecessor : predecessors[state]) {
+			// Every state reaching a final state is dequeued once, so this marks every extendable state.
+			result.extendable[predecessor] = true;
+			if (result.distances[predecessor] != NO_FINAL_REACHABLE) { continue; }
+			result.distances[predecessor] = result.distances[state] + 1;
+			queue.push_back(predecessor);
+		}
+	}
+	return result;
 }
+
+/// Collect the state posts of every state of @p macrostate into @p sync_iterator, which then yields the symbols
+///  enabled in @p macrostate in an increasing order, each together with the states it leads to.
+void sync_macrostate_posts(
+	const mata::nfa::Nfa& nfa,
+	const mata::nfa::StateSet& macrostate,
+	mata::nfa::SynchronizedExistentialSymbolPostIterator& sync_iterator
+) {
+	sync_iterator.reset(macrostate.size());
+	for (const mata::nfa::State state : macrostate) { mata::utils::push_back(sync_iterator, nfa.delta[state]); }
+}
+
+/// The search behind @c Nfa::get_words() and @c Nfa::get_words_lazy(). A search node is a macrostate (the set of
+///  states reachable by the current word), determinized on the fly, so every word is visited once however many
+///  accepting paths spell it, and states from which no final state is reachable are dropped from it. The search
+///  is depth-first in lexicographic order over one shared word, with one synchronized iterator per depth.
+/// With a @p length_bound, the search visits only the words that can still be completed to an accepted word of at
+///  most that length and reports only the accepted words of exactly that length, recording whether it cut off any
+///  longer word: a caller raising the bound one by one gets every word in shortlex order and knows when to stop.
+class WordSearch {
+  public:
+	WordSearch(
+		const mata::nfa::Nfa& nfa,
+		const FinalDistances& final_distances,
+		const size_t max_length,
+		const std::optional<size_t> length_bound
+	)
+		: nfa_{nfa},
+		  final_distances_{final_distances},
+		  max_length_{max_length},
+		  length_bound_{length_bound} {}
+
+	/// The next accepted word, or @c nullptr once the search is exhausted. Valid until the next call.
+	const mata::Word* next() {
+		if (!started_) {
+			started_ = true;
+			if (keep_live_states(mata::nfa::StateSet(nfa_.initial), 0) && enter()) { return &word_; }
+		}
+		while (num_of_frames_ > 0) {
+			mata::nfa::SynchronizedExistentialSymbolPostIterator& sync_iterator{sync_iterators_[num_of_frames_ - 1]};
+			word_.resize(num_of_frames_ - 1);
+			if (!sync_iterator.advance()) {
+				--num_of_frames_;
+				continue;
+			}
+			if (!keep_live_states(sync_iterator.unify_targets(), num_of_frames_)) { continue; }
+			word_.push_back(sync_iterator.get_current_minimum()->symbol);
+			if (enter()) { return &word_; }
+		}
+		return nullptr;
+	}
+
+	/// Whether a word longer than the length bound was cut off, so a larger bound can find more words.
+	bool cut_off() const { return cut_off_; }
+
+  private:
+	/// Keep in @c macrostate_ the states of @p states that can still lead to an accepted word within the length
+	///  bound after a word of @p length. Return whether any is left.
+	bool keep_live_states(const mata::nfa::StateSet& states, const size_t length) {
+		macrostate_.clear();
+		for (const mata::nfa::State state : states) {
+			const size_t distance{final_distances_.distances[state]};
+			if (distance == NO_FINAL_REACHABLE) { continue; }
+			if (length_bound_.has_value() && distance > length_bound_.value() - length) {
+				cut_off_ = true;
+				continue;
+			}
+			macrostate_.push_back(state);
+		}
+		return !macrostate_.empty();
+	}
+
+	/// Enter the search node of @c word_ and @c macrostate_. Return whether @c word_ is to be reported.
+	bool enter() {
+		const size_t length{word_.size()};
+		if (length < max_length_) {
+			if (length_bound_.has_value() && length == length_bound_.value()) {
+				// Every successor is longer than the bound; just record whether there is one.
+				for (const mata::nfa::State state : macrostate_) {
+					if (final_distances_.extendable[state]) { cut_off_ = true; }
+				}
+			} else {
+				// The deque keeps the references of the shallower frames valid while the deeper frames are appended.
+				if (sync_iterators_.size() <= num_of_frames_) { sync_iterators_.emplace_back(); }
+				sync_macrostate_posts(nfa_, macrostate_, sync_iterators_[num_of_frames_]);
+				++num_of_frames_;
+			}
+		}
+		return nfa_.final.intersects_with(macrostate_) &&
+			   (!length_bound_.has_value() || length == length_bound_.value());
+	}
+
+	const mata::nfa::Nfa& nfa_;
+	const FinalDistances& final_distances_;
+	const size_t max_length_;
+	const std::optional<size_t> length_bound_;
+	/// The word of the current search node; one symbol per transition, so its length is the depth of the node.
+	mata::Word word_{};
+	/// The macrostate of the node being entered.
+	mata::nfa::StateSet macrostate_{};
+	/// One synchronized iterator per depth, reused across sibling branches; the first @c num_of_frames_ are active.
+	std::deque<mata::nfa::SynchronizedExistentialSymbolPostIterator> sync_iterators_{};
+	size_t num_of_frames_{0};
+	bool started_{false};
+	bool cut_off_{false};
+};
 } // namespace
 
 std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
 	std::set<mata::Word> result;
-	mata::Word word;
-	for (const State init_state : initial) { get_words_dfs_impl(*this, init_state, 0, max_length, word, result); }
+	const FinalDistances final_distances{get_final_distances(*this)};
+	WordSearch search{*this, final_distances, max_length, std::nullopt};
+	while (const Word* word{search.next()}) { result.insert(*word); }
 	return result;
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
-namespace {
-/// Shared DFS traversal behind @c Nfa::get_words_lazy(). Same shape as @c get_words_dfs_impl(), but written as a
-///  coroutine so it can yield each word as it is found instead of collecting them all before returning.
-std::generator<mata::Word> get_words_lazy_impl(
-	const mata::nfa::Nfa& nfa,
-	const mata::nfa::State state,
-	const size_t depth,
-	const std::optional<size_t> max_length,
-	mata::Word& word
-) {
-	if (nfa.final.contains(state)) { co_yield word; }
-	if (max_length.has_value() && depth >= max_length.value()) { co_return; }
-
-	for (const mata::nfa::SymbolPost& sp : nfa.delta[state]) {
-		word.push_back(sp.symbol);
-		for (const mata::nfa::State target : sp.targets) {
-			for (mata::Word&& sub_word : get_words_lazy_impl(nfa, target, depth + 1, max_length, word)) {
-				co_yield std::move(sub_word);
-			}
-		}
-		word.pop_back();
-	}
-}
-} // namespace
-
 std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<size_t> max_length) const {
-	std::set<mata::Word> seen;
-	mata::Word word;
-	for (const State init_state : initial) {
-		for (mata::Word&& w : get_words_lazy_impl(*this, init_state, 0, max_length, word)) {
-			if (seen.insert(w).second) { co_yield std::move(w); }
-		}
+	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
+	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
+	const size_t length_max{max_length.value_or(std::numeric_limits<size_t>::max())};
+	const FinalDistances final_distances{get_final_distances(*this)};
+	for (size_t length{0};; ++length) {
+		WordSearch search{*this, final_distances, length_max, length};
+		while (const Word* word{search.next()}) { co_yield *word; }
+		if (!search.cut_off() || length >= length_max) { co_return; }
 	}
 }
 #endif // MATA_HAS_GENERATOR_SUPPORT

@@ -1366,6 +1366,10 @@ class Nft : public mata::Automaton {
 	 * If you have an automaton with finite language (can be checked using @ref is_acyclic),
 	 * you can get all words by calling
 	 *      aut.get_words(aut.num_of_states())
+	 *
+	 * The search goes over words, not over paths: runs spelling the same word are kept together however jumps split
+	 * the word between transitions, so each word is expanded once, and the work is bounded by the number of distinct
+	 * words of up to @p max_length transitions spelling them, no matter how many accepting paths each of them has.
 	 * @param max_length Maximum length of words to be returned. Default: "no limit"; will infinitely loop if the
 	 * language is infinite.
 	 * @param jump_mode Specifies how to interpret the jump transitions.
@@ -1383,9 +1387,14 @@ class Nft : public mata::Automaton {
 	 * the language might be large or infinite (with @p max_length left at its default, @ref get_words() will never
 	 * return for a cyclic automaton with an infinite language, whereas this can still be iterated and stopped at
 	 * will).
-	 *
 	 * Words are still deduplicated the same way @ref get_words() deduplicates them (the same word can be reachable
 	 * via more than one accepting path), so a duplicate is silently skipped rather than re-yielded.
+	 *
+	 * Words are yielded in shortlex order: by increasing length, and words of the same length lexicographically.
+	 * Each length is searched in its own depth-first pass, which keeps only the current descent in memory and skips
+	 * the branches that cannot reach an accepted word of that length. Every word of an infinite language is thus
+	 * eventually yielded, and the generator finishes once no longer accepted word is possible, also for a finite
+	 * language with the default unbounded @p max_length. Searching each length anew repeats the shorter prefixes.
 	 *
 	 * Only available when @c MATA_HAS_GENERATOR_SUPPORT is set (i.e. the standard library actually implements
 	 * @c std::generator — some, like Apple's system libc++, do not, even under `-std=c++23`).
