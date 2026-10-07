@@ -1054,140 +1054,250 @@ Nft nft::revert(const Nft& aut) {
 	// return somewhat_simple_revert(aut);
 }
 
-Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
-	const size_t num_of_states = aut.num_of_states();
+namespace {
+/**
+ * @brief Throw @c std::invalid_argument when @p aut is not layered between its level-zero boundaries.
+ *
+ * @c invert_levels() reads the segment between two level-zero states as a DAG whose levels strictly increase.
+ *  A transition that leaves an inner state for a level that neither increases nor is the level-zero boundary
+ *  closes a cycle through inner states; the path enumerator this construction replaced grew its stack on such
+ *  an input until the allocation failed (#809), so the input is rejected before any work is done.
+ */
+void validate_invert_levels_layering_(const Nft& aut) {
+	const size_t num_of_states{aut.num_of_states()};
+	if (aut.levels.size() < num_of_states) {
+		throw std::invalid_argument(
+			"invert_levels: the level vector has " + std::to_string(aut.levels.size()) + " entries for " +
+			std::to_string(num_of_states) + " states"
+		);
+	}
+	for (State source{0}; source < num_of_states; ++source) {
+		const Level source_level{aut.levels[source]};
+		if (source_level >= aut.levels.num_of_levels) {
+			throw std::invalid_argument(
+				"invert_levels: state " + std::to_string(source) + " has level " + std::to_string(source_level) +
+				" outside [0, " + std::to_string(aut.levels.num_of_levels) + ")"
+			);
+		}
+		if (source_level == 0) { continue; }
+		for (const SymbolPost& symbol_post : aut.delta[source]) {
+			for (const State target : symbol_post.targets) {
+				if (aut.levels[target] != 0 && aut.levels[target] <= source_level) {
+					throw std::invalid_argument(
+						"invert_levels: the transition " + std::to_string(source) + " -> " + std::to_string(target) +
+						" leads from level " + std::to_string(source_level) + " to level " +
+						std::to_string(aut.levels[target]) +
+						"; a transition out of an inner state must reach a strictly higher level or level 0"
+					);
+				}
+			}
+		}
+	}
+}
 
-	// Find states with level zero and rename them.
-	std::vector<State> renaming(num_of_states, Limits::max_state);
-	size_t num_of_zero_states = 0;
-	for (State s = 0; s < num_of_states; ++s) {
-		if (aut.levels[s] == 0) { renaming[s] = num_of_zero_states++; }
+/// Key of an auxiliary @c JumpMode::AppendDontCares state: the mapped endpoints of the jump and its level.
+struct InvertedAuxKey {
+	State source;
+	State target;
+	Level level;
+	bool operator==(const InvertedAuxKey& other) const = default;
+};
+
+struct InvertedAuxKeyHash {
+	size_t operator()(const InvertedAuxKey& key) const {
+		return hash_combine(hash_combine(hash_combine(utils::HASH_SEED, key.source), key.target), key.level);
+	}
+};
+} // Anonymous namespace.
+
+Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
+	validate_invert_levels_layering_(aut);
+	const size_t num_of_states{aut.num_of_states()};
+	const size_t num_of_levels{aut.levels.num_of_levels};
+
+	// The level-zero states are the boundaries of the segments and keep their identity in the result.
+	std::vector<State> zero_renaming(num_of_states, Limits::max_state);
+	size_t num_of_zero_states{0};
+	for (State s{0}; s < num_of_states; ++s) {
+		if (aut.levels[s] == 0) { zero_renaming[s] = static_cast<State>(num_of_zero_states++); }
 	}
 
-	// Rename initial states
 	SparseSet<State> new_initial;
-	for (const State s : aut.initial) { new_initial.insert(renaming[s]); }
-	// Rename final states
+	for (const State s : aut.initial) { new_initial.insert(zero_renaming[s]); }
 	SparseSet<State> new_final;
-	for (const State s : aut.final) { new_final.insert(renaming[s]); }
-	// Create new automaton
-	Nft aut_inv = Nft::with_levels(
-		{aut.levels.num_of_levels, num_of_zero_states, DEFAULT_LEVEL}, num_of_zero_states, std::move(new_initial),
+	for (const State s : aut.final) { new_final.insert(zero_renaming[s]); }
+
+	std::vector<Level> new_levels(num_of_zero_states, 0);
+	new_levels.reserve(num_of_states);
+	std::vector<Transition> new_transitions;
+	new_transitions.reserve(aut.delta.num_of_transitions());
+	auto add_inverted_state = [&](const Level level) {
+		new_levels.push_back(level);
+		return static_cast<State>(new_levels.size() - 1);
+	};
+
+	// JumpMode::AppendDontCares puts the DONT_CAREs of a jump in front of its symbol once the segment is read
+	//  backwards, which needs one auxiliary state carrying the symbol on the level before the mapped target.
+	//  The map is kept for the whole call: the mapped endpoints are already context specific, so an equal key
+	//  always means equal outgoing behaviour and the auxiliary can be shared instead of recreated.
+	std::unordered_map<InvertedAuxKey, State, InvertedAuxKeyHash> auxiliary_states;
+	auto add_inverted_transition = [&](const State source, const Symbol symbol, const State target,
+									   const bool original_jump_is_long) {
+		if (jump_mode != JumpMode::AppendDontCares || !original_jump_is_long) {
+			new_transitions.emplace_back(source, symbol, target);
+			return;
+		}
+		const Level aux_level{static_cast<Level>((new_levels[target] + num_of_levels - 1) % num_of_levels)};
+		const auto [entry, is_new] = auxiliary_states.try_emplace(InvertedAuxKey{source, target, aux_level});
+		if (is_new) {
+			entry->second = add_inverted_state(aux_level);
+			new_transitions.emplace_back(source, DONT_CARE, entry->second);
+		}
+		new_transitions.emplace_back(entry->second, symbol, target);
+	};
+
+	// Reverse adjacency among the inner states, walked backwards from a tail to cut a context down to the
+	//  states that lie on a path to that tail.
+	std::vector<std::vector<State>> inner_predecessors(num_of_states);
+	for (State s{0}; s < num_of_states; ++s) {
+		if (aut.levels[s] == 0) { continue; }
+		for (const SymbolPost& symbol_post : aut.delta[s]) {
+			for (const State target : symbol_post.targets) {
+				if (aut.levels[target] != 0) { inner_predecessors[target].push_back(s); }
+			}
+		}
+	}
+
+	// Stamped visited arrays, reset by bumping the mark instead of clearing.
+	std::vector<size_t> forward_stamp(num_of_states, 0);
+	std::vector<size_t> context_stamp(num_of_states, 0);
+	std::vector<State> context_state(num_of_states, Limits::max_state);
+	size_t forward_mark{0};
+	size_t context_mark{0};
+	std::vector<State> worklist;
+	std::vector<State> context_inner; ///< Inner states on some head -> tail path, i.e. the current context.
+	std::vector<std::pair<State, State>> tail_entries; ///< (tail, its inner predecessor) for the current head.
+
+	for (State head{0}; head < num_of_states; ++head) {
+		if (aut.levels[head] != 0) { continue; }
+
+		// A level-zero successor of the head closes a segment on its own, so the transition belongs to no
+		//  context and is copied once.
+		for (const SymbolPost& symbol_post : aut.delta[head]) {
+			for (const State target : symbol_post.targets) {
+				if (aut.levels[target] == 0) {
+					add_inverted_transition(
+						zero_renaming[head], symbol_post.symbol, zero_renaming[target], num_of_levels > 1
+					);
+				}
+			}
+		}
+
+		// Forward pass: the inner states reachable from the head and the tails they reach.
+		++forward_mark;
+		tail_entries.clear();
+		worklist.clear();
+		for (const SymbolPost& symbol_post : aut.delta[head]) {
+			for (const State target : symbol_post.targets) {
+				if (aut.levels[target] != 0 && forward_stamp[target] != forward_mark) {
+					forward_stamp[target] = forward_mark;
+					worklist.push_back(target);
+				}
+			}
+		}
+		while (!worklist.empty()) {
+			const State s{worklist.back()};
+			worklist.pop_back();
+			for (const SymbolPost& symbol_post : aut.delta[s]) {
+				for (const State target : symbol_post.targets) {
+					if (aut.levels[target] == 0) {
+						tail_entries.emplace_back(target, s);
+					} else if (forward_stamp[target] != forward_mark) {
+						forward_stamp[target] = forward_mark;
+						worklist.push_back(target);
+					}
+				}
+			}
+		}
+		std::ranges::sort(tail_entries);
+		tail_entries.erase(std::ranges::unique(tail_entries).begin(), tail_entries.end());
+
+		// One context per (head, tail) pair, holding the inner states on some head -> tail path. Mapping every
+		//  inner state to a single inverted state instead would be compact but wrong: for h -a-> p, p -b-> q1,
+		//  p -b-> q2, q1 -c-> t1, q2 -d-> t2 a shared p' also accepts h -c-> q1' -b-> p' -a-> t2, a tuple that
+		//  the original reaches only at t1. Inside one (head, tail) pair sharing is safe, since every inverted
+		//  path through s' joins a prefix head -> s with a suffix s -> tail, which is an original path read
+		//  backwards.
+		for (size_t entry_index{0}; entry_index < tail_entries.size();) {
+			const State tail{tail_entries[entry_index].first};
+			++context_mark;
+			context_inner.clear();
+			worklist.clear();
+			for (; entry_index < tail_entries.size() && tail_entries[entry_index].first == tail; ++entry_index) {
+				const State s{tail_entries[entry_index].second};
+				context_stamp[s] = context_mark;
+				context_inner.push_back(s);
+				worklist.push_back(s);
+			}
+			while (!worklist.empty()) {
+				const State s{worklist.back()};
+				worklist.pop_back();
+				for (const State predecessor : inner_predecessors[s]) {
+					if (forward_stamp[predecessor] == forward_mark && context_stamp[predecessor] != context_mark) {
+						context_stamp[predecessor] = context_mark;
+						context_inner.push_back(predecessor);
+						worklist.push_back(predecessor);
+					}
+				}
+			}
+
+			// One inverted state per (inner state, head, tail) context.
+			for (const State s : context_inner) {
+				context_state[s] = add_inverted_state(static_cast<Level>(num_of_levels - aut.levels[s]));
+			}
+			// Every original transition of the context is emitted once, carrying its own symbol.
+			for (const State s : context_inner) {
+				for (const SymbolPost& symbol_post : aut.delta[s]) {
+					for (const State target : symbol_post.targets) {
+						if (aut.levels[target] == 0) {
+							// s -a-> tail becomes head -a-> s'.
+							if (target != tail) { continue; }
+							add_inverted_transition(
+								zero_renaming[head], symbol_post.symbol, context_state[s],
+								num_of_levels - aut.levels[s] > 1
+							);
+						} else if (context_stamp[target] == context_mark) {
+							// u -a-> v between inner states becomes v' -a-> u'.
+							add_inverted_transition(
+								context_state[target], symbol_post.symbol, context_state[s],
+								aut.levels[target] - aut.levels[s] > 1
+							);
+						}
+					}
+				}
+			}
+			for (const SymbolPost& symbol_post : aut.delta[head]) {
+				for (const State target : symbol_post.targets) {
+					// head -a-> v becomes v' -a-> tail.
+					if (aut.levels[target] != 0 && context_stamp[target] == context_mark) {
+						add_inverted_transition(
+							context_state[target], symbol_post.symbol, zero_renaming[tail], aut.levels[target] > 1
+						);
+					}
+				}
+			}
+		}
+	}
+
+	// Sorted (source, symbol, target), every add appends at the back of its posts.
+	std::ranges::sort(new_transitions);
+	Delta new_delta;
+	for (const Transition& transition : new_transitions) { new_delta.add(transition); }
+	if (new_delta.num_of_states() < new_levels.size()) { new_delta.allocate(new_levels.size()); }
+	return Nft::with_levels(
+		Levels{num_of_levels, std::move(new_levels)}, std::move(new_delta), std::move(new_initial),
 		std::move(new_final), aut.alphabets
 	);
-
-	// Creates new states with inverted levels for each inner state in the path.
-	auto create_states_with_inverted_levels = [&](const std::vector<State>& path_states) {
-		for (const State s : path_states) {
-			if (aut.levels[s] == 0) { continue; }
-			renaming[s] = aut_inv.add_state_with_level(static_cast<Level>(aut.levels.num_of_levels - aut.levels[s]));
-		}
-	};
-
-	// Returns transitions of the path.
-	auto get_path_transitions = [&](const std::vector<State>& path_states) {
-		std::vector<Transition> path_transitions;
-		for (size_t i = 0; i < path_states.size() - 1; ++i) {
-			const State src = path_states[i];
-			const State tgt = path_states[i + 1];
-			std::vector<Transition> transitions_between = aut.delta.get_transitions_between(src, tgt);
-			path_transitions.insert(path_transitions.end(), transitions_between.begin(), transitions_between.end());
-		}
-
-		return path_transitions;
-	};
-
-	// Creates inverted transitions for each transition in the path.
-	// Can work with different jump modes.
-	auto map_inverted_transitions = [&](const std::vector<Transition>& path, const State head, const State tail) {
-		// Auxiliary state between two states can be reused for transitions over different symbols.
-		// The key is a pair of source and target states.
-		// auxiliary_states map will be used only if the jump_mode is JumpMode::AppendDontCares.
-		std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> auxiliary_states;
-		auto get_aux_state = [&](const State src, const State tgt, const Level level) {
-			const std::pair<State, State> key{src, tgt};
-			if (!auxiliary_states.contains(key)) { auxiliary_states[key] = aut_inv.add_state_with_level(level); }
-			return auxiliary_states[key];
-		};
-		for (const auto& [src, symbol, tgt] : path) {
-			const bool is_src_head = src == head;
-			if (const bool is_tgt_tail = tgt == tail; is_src_head && is_tgt_tail) {
-				// It is a direct transition between two zero-states (the head and the tail).
-				// Just copy it.
-				if (jump_mode == JumpMode::AppendDontCares && aut.levels.num_of_levels > 1) {
-					const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.levels.num_of_levels - 1));
-					aut_inv.delta.add(renaming[src], DONT_CARE, aux_state);
-					aut_inv.delta.add(aux_state, symbol, renaming[tgt]);
-				} else {
-					aut_inv.delta.add(renaming[src], symbol, renaming[tgt]);
-				}
-			} else if (is_src_head) {
-				// It is a transition from a zero-state (head) to a nonzero-state (inner state).
-				// Map it as transition from that nonzero-state (inner state) to the tail (zero-states).
-				if (jump_mode == JumpMode::AppendDontCares && aut.levels[tgt] > 1) {
-					const State aux_state = get_aux_state(src, tgt, static_cast<Level>(aut.levels.num_of_levels - 1));
-					aut_inv.delta.add(renaming[tgt], DONT_CARE, aux_state);
-					aut_inv.delta.add(aux_state, symbol, renaming[tail]);
-				} else {
-					aut_inv.delta.add(renaming[tgt], symbol, renaming[tail]);
-				}
-			} else if (is_tgt_tail) {
-				// It is a transition from a nonzero-state (inner state) to a zero-state (tail).
-				// Map it as transition from the zero-state (head) to that nonzero-state (inner state).
-				if (jump_mode == JumpMode::AppendDontCares && (aut.levels.num_of_levels - aut.levels[src]) > 1) {
-					const State aux_state =
-						get_aux_state(src, tgt, static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
-					aut_inv.delta.add(renaming[head], DONT_CARE, aux_state);
-					aut_inv.delta.add(aux_state, symbol, renaming[src]);
-				} else {
-					aut_inv.delta.add(renaming[head], symbol, renaming[src]);
-				}
-			} else {
-				// It is a transition between two nonzero-states (inner states).
-				// Just swap the source and target.
-				if (jump_mode == JumpMode::AppendDontCares && (aut.levels[tgt] - aut.levels[src]) > 1) {
-					const State aux_state =
-						get_aux_state(src, tgt, static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
-					aut_inv.delta.add(renaming[tgt], DONT_CARE, aux_state);
-					aut_inv.delta.add(aux_state, symbol, renaming[src]);
-				} else {
-					aut_inv.delta.add(renaming[tgt], symbol, renaming[src]);
-				}
-			}
-		}
-	};
-
-	// Main loop of the algorithm.
-	for (State path_head = 0; path_head < num_of_states; ++path_head) {
-		// Test if the state is a head of some path.
-		if (aut.levels[path_head] != 0) {
-			continue; // Not a head.
-		}
-		// Process all paths using dfs.
-		std::stack<std::pair<State, std::vector<State>>> stack;
-		stack.push({path_head, {path_head}});
-		while (!stack.empty()) {
-			auto [src, path] = stack.top();
-			stack.pop();
-
-			if (aut.levels[src] == 0 && path.size() > 1) {
-				// A tail of the path (src) has been reached.
-				create_states_with_inverted_levels(path);
-				const std::vector<Transition> path_transitions = get_path_transitions(path);
-				map_inverted_transitions(path_transitions, path.front(), path.back());
-				continue;
-			}
-
-			for (const State tgt : aut.delta[src].get_successors()) {
-				// Extend the path.
-				std::vector<State> new_path = path;
-				new_path.push_back(tgt);
-				stack.emplace(tgt, std::move(new_path));
-			}
-		}
-	}
-
-	return aut_inv;
 }
 
 bool Nft::is_in_lang(
