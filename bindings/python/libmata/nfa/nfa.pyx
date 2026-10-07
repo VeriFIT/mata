@@ -118,8 +118,8 @@ cdef class Transition:
     def __eq__(self, Transition other):
         return dereference(self.thisptr) == dereference(other.thisptr)
 
-    def __neq__(self, Transition other):
-        return dereference(self.thisptr) != dereference(other.thisptr)
+    def __hash__(self):
+        return hash((self.source, self.symbol, self.target))
 
     def __str__(self):
         return f"{self.thisptr.source}-[{self.thisptr.symbol}]\u2192{self.thisptr.target}"
@@ -173,8 +173,7 @@ cdef class SymbolPost:
     def __eq__(self, SymbolPost other):
         return self.symbol == other.symbol and self.targets == other.targets
 
-    def __neq__(self, SymbolPost other):
-        return self.symbol != other.symbol or self.targets != other.targets
+    # `SymbolPost` stays unhashable: its `symbol`/`targets` setters make instances mutable.
 
     def __str__(self):
         trans = "{" + ",".join(map(str, self.targets)) + "}"
