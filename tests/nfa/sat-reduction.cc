@@ -1,14 +1,20 @@
 /* sat-reduction.cc -- Tests for the reduction of NFAs to minimal automata using external SAT and QBF solvers.
  *
  * Tests with real solvers are skipped when no solver is found, unless the environment variable
- *  MATA_TESTS_REQUIRE_SOLVERS is set, in which case they fail.
+ *  MATA_TESTS_REQUIRE_SOLVERS is set, in which case they fail. Sections exercising the reduction with fake shell
+ *  solvers additionally skip when the temporary directory cannot execute scripts (mounted noexec).
  */
 
+#include <array>
+#include <cerrno>
+#include <csignal>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <locale>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -18,6 +24,8 @@
 #include "mata/nfa/nfa.hh"
 
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
+	#include <spawn.h>
+	#include <sys/wait.h>
 	#include <unistd.h>
 	#define MATA_TESTS_FAKE_SOLVERS
 #endif
@@ -55,22 +63,25 @@ Nfa reduce_or_skip(const Nfa& aut, const ParameterMap& params) {
 	return Nfa{};
 }
 
-/// A deterministic pseudo-random NFA with @p num_of_states states over symbols 0 and 1.
+/// A deterministic pseudo-random NFA with @p num_of_states states over symbols 0 and 1 and a nonempty language:
+///  reducing an automaton accepting nothing never reaches a solver.
 Nfa random_nfa(const size_t num_of_states, unsigned long long seed) {
 	const auto next{[&seed] {
 		seed = seed * 6'364'136'223'846'793'005ULL + 1'442'695'040'888'963'407ULL;
 		return seed >> 33;
 	}};
-	Nfa aut{num_of_states, {0}, {}};
-	for (State source{0}; source < num_of_states; ++source) {
-		if (next() % 3 == 0) { aut.final.insert(source); }
-		for (Symbol symbol{0}; symbol < 2; ++symbol) {
-			for (State target{0}; target < num_of_states; ++target) {
-				if (next() % 4 == 0) { aut.delta.add(source, symbol, target); }
+	while (true) {
+		Nfa aut{num_of_states, {0}, {}};
+		for (State source{0}; source < num_of_states; ++source) {
+			if (next() % 3 == 0) { aut.final.insert(source); }
+			for (Symbol symbol{0}; symbol < 2; ++symbol) {
+				for (State target{0}; target < num_of_states; ++target) {
+					if (next() % 4 == 0) { aut.delta.add(source, symbol, target); }
+				}
 			}
 		}
+		if (!aut.is_lang_empty()) { return aut; }
 	}
-	return aut;
 }
 
 /// A 6-state NFA which reduction by simulation does not reduce, residual reduction reduces to 4 states, and whose
@@ -104,12 +115,44 @@ Nfa nfa_with_three_state_minimum() {
 }
 
 #ifdef MATA_TESTS_FAKE_SOLVERS
+/// Whether a shell script written next to the fake solvers can be executed at all: TMPDIR or /tmp is mounted noexec
+///  on hardened systems and in containers started with '--tmpfs /tmp'.
+bool executable_scripts_work() {
+	static const bool works{[] {
+		const std::filesystem::path path{
+			std::filesystem::temp_directory_path() / ("mata exec probe-" + std::to_string(::getpid()))
+		};
+		std::ofstream{path} << "#!/bin/sh\nexit 0\n";
+		std::filesystem::permissions(path, std::filesystem::perms::owner_all);
+		std::string argument{path.string()};
+		std::array<char*, 2> argv{argument.data(), nullptr};
+		std::array<char*, 1> environment{nullptr};
+		pid_t process{};
+		bool result{false};
+		if (::posix_spawn(&process, argv.front(), nullptr, nullptr, argv.data(), environment.data()) == 0) {
+			int status{0};
+			while (::waitpid(process, &status, 0) == -1 && errno == EINTR) {}
+			result = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+		}
+		std::error_code error{};
+		std::filesystem::remove(path, error);
+		return result;
+	}()};
+	return works;
+}
+
 /// A shell script standing in for a solver, in a temporary directory (with a space in its name) removed on destruction.
 class FakeSolver {
   public:
 	explicit FakeSolver(const std::string& script, const std::string& name = "solver")
 		: directory_{std::filesystem::temp_directory_path() / ("mata fake solver-" + std::to_string(::getpid()) + "-" + std::to_string(counter_++))},
 		  path_{directory_ / name} {
+		if (!executable_scripts_work()) {
+			SKIP(
+				"Scripts in " + std::filesystem::temp_directory_path().string() +
+				" cannot be executed; the directory is probably mounted noexec."
+			);
+		}
 		std::filesystem::create_directories(directory_);
 		std::ofstream{path_} << "#!/bin/sh\n" << script << '\n';
 		std::filesystem::permissions(path_, std::filesystem::perms::owner_all);
@@ -160,6 +203,60 @@ class EnvironmentVariable {
 	std::string name_;
 	std::optional<std::string> previous_;
 };
+
+/// The beginning of a fake solver script, checking that the solver is run with @p arguments followed by the file with
+///  the formula, and that the formula contains nothing but the tokens of the (Q)DIMACS format. The script prints a
+///  message and fails if not, which the reduction reports as an error.
+std::string check_arguments(const std::vector<std::string>& arguments = {}) {
+	std::string script{
+		"if [ $# -ne " + std::to_string(arguments.size() + 1) +
+		" ]; then echo \"The solver got $# arguments: $*\"; exit 1; fi\n"
+	};
+	for (size_t index{0}; index < arguments.size(); ++index) {
+		const std::string position{std::to_string(index + 1)};
+		script += "if [ \"$" + position + "\" != '" + arguments[index] + "' ]; then echo \"Argument " + position +
+				  " is '$" + position + "'\"; exit 1; fi\n";
+	}
+	// A digit-grouping locale writes "p cnf 320 1,294" and the literals of the clauses with separators as well.
+	return script + "for formula do :; done\n" +
+		   "if [ ! -s \"$formula\" ]; then echo \"The formula file '$formula' is missing or empty\"; exit 1; fi\n" +
+		   "if grep -q '[^-0-9 acefnp]' \"$formula\"; then echo 'The formula has unexpected characters'; exit 1; fi\n";
+}
+
+/// A global C++ locale grouping digits, as en_US.UTF-8 does, restored on destruction. It groups every single digit,
+///  so that even the small formulae of the tests are affected.
+class GroupingLocale {
+  public:
+	GroupingLocale()
+		: previous_{std::locale::global(std::locale{std::locale::classic(), new Grouping{}})} {}
+	GroupingLocale(const GroupingLocale&) = delete;
+	GroupingLocale& operator=(const GroupingLocale&) = delete;
+	~GroupingLocale() { std::locale::global(previous_); }
+
+  private:
+	class Grouping : public std::numpunct<char> {
+	  protected:
+		char do_thousands_sep() const override { return ','; }
+		std::string do_grouping() const override { return "\1"; }
+	};
+
+	std::locale previous_;
+};
+
+/// Ignore SIGCHLD for the lifetime of the object: the system then reaps the children itself and waitpid() fails with
+///  ECHILD, as it does with SA_NOCLDWAIT or under a launcher reaping children in a handler.
+class IgnoredChildSignal {
+  public:
+	IgnoredChildSignal() : previous_{std::signal(SIGCHLD, SIG_IGN)} {}
+	IgnoredChildSignal(const IgnoredChildSignal&) = delete;
+	IgnoredChildSignal& operator=(const IgnoredChildSignal&) = delete;
+	~IgnoredChildSignal() {
+		if (previous_ != SIG_ERR) { std::signal(SIGCHLD, previous_); }
+	}
+
+  private:
+	void (*previous_)(int);
+};
 #endif
 
 } // namespace
@@ -169,12 +266,13 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 	const Nfa input{determinize(kth_last_symbol_is_one(2))};
 
 	SECTION("A solver proving that no smaller automaton exists keeps the automaton found without the solver") {
-		const FakeSolver unsat{"echo 's UNSATISFIABLE'\nexit 20"};
-		const FakeSolver qbf_unsat{"echo 's cnf 0 10 20'\nexit 20"};
+		const FakeSolver unsat{check_arguments() + "echo 's UNSATISFIABLE'\nexit 20"};
+		const FakeSolver qbf_unsat{check_arguments() + "echo 's cnf 0 10 20'\nexit 20"};
 		const Nfa by_simulation{trim(reduce(input))};
+		REQUIRE(by_simulation.num_of_states() == 4); // The minimal NFA has 3 states; only the fake solver stops here.
 
 		const Nfa nfa{reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", unsat.command()}})};
-		CHECK(nfa.num_of_states() == by_simulation.num_of_states());
+		CHECK(nfa.num_of_states() == 4);
 		CHECK(are_equivalent(nfa, input));
 
 		const Nfa dfa{reduce(input, nullptr, {{"algorithm", "sat"}, {"type", "dfa"}, {"solver", unsat.command()}})};
@@ -183,17 +281,42 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 		CHECK(are_equivalent(dfa, input));
 
 		const Nfa qbf{reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", qbf_unsat.command()}})};
-		CHECK(qbf.num_of_states() == by_simulation.num_of_states());
+		CHECK(qbf.num_of_states() == 4);
 		CHECK(are_equivalent(qbf, input));
 	}
 
 	SECTION("Solvers are found through environment variables, and results do not map states") {
-		const FakeSolver unsat{"echo 's UNSATISFIABLE'\nexit 20"};
+		const FakeSolver unsat{check_arguments() + "echo 's UNSATISFIABLE'\nexit 20"};
 		const EnvironmentVariable variable{"MATA_SAT_SOLVER", unsat.command()};
 		StateRenaming renaming{{0, 0}, {1, 1}};
 		const Nfa nfa{reduce(input, &renaming, {{"algorithm", "sat"}})};
+		// The minimal NFA has 3 states: a solver other than the fake one would be found by a different route.
+		CHECK(nfa.num_of_states() == 4);
 		CHECK(are_equivalent(nfa, input));
 		CHECK(renaming.empty());
+	}
+
+	SECTION("The formula is written in the classic locale") {
+		const FakeSolver unsat{check_arguments() + "echo 's UNSATISFIABLE'\nexit 20"};
+		// With a digit-grouping locale, the header would read "p cnf 3,2,0 1,2,9,4" and the solver reject it.
+		const GroupingLocale locale{};
+		const Nfa nfa{reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", unsat.command()}})};
+		CHECK(nfa.num_of_states() == 4);
+		CHECK(are_equivalent(nfa, input));
+	}
+
+	SECTION("A solver whose exit status is lost is judged by its output") {
+		const FakeSolver unsat{check_arguments() + "echo 's UNSATISFIABLE'\nexit 20"};
+		const IgnoredChildSignal ignored_child_signal{};
+		const Nfa nfa{reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", unsat.command()}})};
+		CHECK(nfa.num_of_states() == 4);
+		CHECK(are_equivalent(nfa, input));
+
+		const FakeSolver silent{check_arguments() + "exit 20"};
+		CHECK_THROWS_WITH(
+			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", silent.command()}}),
+			ContainsSubstring("did not report a result")
+		);
 	}
 
 	SECTION("A solver reporting the result only by its exit code and printing the model on several lines") {
@@ -213,7 +336,37 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 
 	SECTION("A model inconsistent with the sample words is detected") {
 		const FakeSolver wrong{"echo 's SATISFIABLE'\necho 'v 0'\nexit 10"};
-		CHECK_THROWS_AS(reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", wrong.command()}}), std::logic_error);
+		CHECK_THROWS_AS(
+			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", wrong.command()}}), std::runtime_error
+		);
+		CHECK_THROWS_WITH(
+			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", wrong.command()}}),
+			ContainsSubstring("does not agree with the sample words")
+		);
+	}
+
+	SECTION("Error messages quote the solver output as whole lines of valid UTF-8") {
+		// More than the 1,000 bytes of the excerpt, with a line of Latin-1 in the middle.
+		const FakeSolver noisy{
+			"i=0\nwhile [ $i -lt 100 ]; do printf 'line %03d padded to make the output long enough\\n' $i; "
+			"i=$((i + 1)); done\nprintf 'caf\\351 au lait\\n'\necho 'Segmentation fault'"
+		};
+		std::string message{};
+		try {
+			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", noisy.command()}});
+		} catch (const std::runtime_error& error) { message = error.what(); }
+		CHECK_THAT(message, ContainsSubstring("without reporting a result"));
+		CHECK_THAT(message, ContainsSubstring("...\nline ")); // The excerpt starts at a line boundary.
+		CHECK_THAT(message, ContainsSubstring("caf\xEF\xBF\xBD au lait")); // The invalid byte is replaced.
+		CHECK(message.find('\xE9') == std::string::npos);
+
+		// A solver command that is not valid UTF-8 either, here reported as not found.
+		std::string not_found{};
+		try {
+			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", "/nonexistent/caf\xE9-solver"}});
+		} catch (const ExternalSolverNotFound& error) { not_found = error.what(); }
+		CHECK_THAT(not_found, ContainsSubstring("caf\xEF\xBF\xBD-solver"));
+		CHECK(not_found.find('\xE9') == std::string::npos);
 	}
 
 	SECTION("Failing solvers are reported") {
@@ -252,20 +405,37 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 			"kill -6 $$",
 			"depqbf"
 		};
-		const EnvironmentVariable no_qbf_solver{"MATA_QBF_SOLVER", std::nullopt};
 		for (const FakeSolver* const depqbf : {&with_nenofex, &without_nenofex}) {
 			const EnvironmentVariable path{"PATH", depqbf->directory().string()};
-			const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}})};
-			CHECK(are_equivalent(nfa, input));
+			{ // Found in PATH.
+				const EnvironmentVariable no_qbf_solver{"MATA_QBF_SOLVER", std::nullopt};
+				const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}})};
+				CHECK(nfa.num_of_states() == 4);
+				CHECK(are_equivalent(nfa, input));
+			}
+			{ // Given by the environment variable.
+				const EnvironmentVariable qbf_solver{"MATA_QBF_SOLVER", "depqbf --qdo"};
+				const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}})};
+				CHECK(nfa.num_of_states() == 4);
+				CHECK(are_equivalent(nfa, input));
+			}
+			{ // Given by the "solver" parameter, by its full path.
+				const Nfa nfa{
+					reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf->command() + " --qdo"}})
+				};
+				CHECK(nfa.num_of_states() == 4);
+				CHECK(are_equivalent(nfa, input));
+			}
 		}
 	}
 
 	SECTION("Solver commands with quotes") {
-		const FakeSolver unsat{"echo 's UNSATISFIABLE'\nexit 20"};
+		const FakeSolver unsat{check_arguments({"--unused", "an argument"}) + "echo 's UNSATISFIABLE'\nexit 20"};
 		const Nfa nfa{reduce(
 			input, nullptr,
 			{{"algorithm", "sat"}, {"solver", "\"" + unsat.path().string() + "\" --unused 'an argument'"}}
 		)};
+		CHECK(nfa.num_of_states() == 4);
 		CHECK(are_equivalent(nfa, input));
 		CHECK_THROWS_WITH(
 			reduce(input, nullptr, {{"algorithm", "sat"}, {"solver", "'/path/to/solver"}}),
@@ -283,8 +453,16 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 	}
 
 	SECTION("Unknown types of automata are rejected") {
+		// No solver is run: the type is checked first.
+		for (const char* const algorithm : {"sat", "qbf"}) {
+			CHECK_THROWS_WITH(
+				reduce(input, nullptr, {{"algorithm", algorithm}, {"type", "after"}}),
+				ContainsSubstring("unknown type")
+			);
+		}
+		// "dfa" is a type of "sat" only; "qbf" always computes an NFA.
 		CHECK_THROWS_WITH(
-			reduce(input, nullptr, {{"algorithm", "sat"}, {"type", "after"}}), ContainsSubstring("unknown type")
+			reduce(input, nullptr, {{"algorithm", "qbf"}, {"type", "dfa"}}), ContainsSubstring("unknown type")
 		);
 	}
 }
@@ -317,12 +495,18 @@ TEST_CASE("mata::nfa::reduce() with algorithm \"sat\"") {
 	}
 
 	SECTION("Never larger than the reduction by simulation") {
+		size_t built_by_solver{0};
 		for (unsigned long long seed{1}; seed <= 20; ++seed) {
 			const Nfa input{random_nfa(5, seed)};
+			const Nfa by_simulation{trim(reduce(input))};
 			const Nfa nfa{reduce_or_skip(input, {{"algorithm", "sat"}})};
-			CHECK(nfa.num_of_states() <= trim(reduce(input)).num_of_states());
+			CHECK(nfa.num_of_states() <= by_simulation.num_of_states());
 			CHECK(are_equivalent(nfa, input));
+			if (nfa.num_of_states() < by_simulation.num_of_states()) { ++built_by_solver; }
 		}
+		// The solver built the result of 8 of the 20 seeds; without this the section would pass on inputs it never
+		//  sees, as it did on the seeds whose language was empty.
+		CHECK(built_by_solver >= 8);
 	}
 
 	SECTION("Symbols that are not 0, ..., n - 1 and the alphabet are kept") {
@@ -355,6 +539,17 @@ TEST_CASE("mata::nfa::reduce() with algorithm \"sat\"") {
 		Nfa empty{2, {0}, {}};
 		empty.delta.add(0, 0, 1);
 		CHECK(reduce(empty, nullptr, params).num_of_states() == 0);
+
+		ParameterMap dfa_params{params};
+		dfa_params["type"] = "dfa";
+		const Nfa empty_dfa{reduce(empty, nullptr, dfa_params)};
+		CHECK(empty_dfa.num_of_states() == 1);
+		CHECK(empty_dfa.is_lang_empty());
+		// An automaton without an initial state is not deterministic, and operations requiring a DFA reject it.
+		CHECK(empty_dfa.is_deterministic());
+		Nfa complete_empty_dfa{empty_dfa};
+		complete_empty_dfa.make_complete(mata::utils::OrdVector<Symbol>{0});
+		CHECK(union_det_complete(complete_empty_dfa, complete_empty_dfa).is_lang_empty());
 
 		const Nfa epsilon_only{reduce(Nfa{2, {0, 1}, {0, 1}}, nullptr, params)};
 		CHECK(epsilon_only.num_of_states() == 1);
