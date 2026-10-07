@@ -1416,10 +1416,28 @@ def test_reduce_errors():
     nfa.add_transition(0, 0, 1)
     with pytest.raises(RuntimeError, match="unknown value"):
         mata_nfa.reduce(nfa, {"algorithm": "unknown"})
-    with pytest.raises(RuntimeError, match="cannot be found"):
-        mata_nfa.reduce(nfa, {"algorithm": "sat", "solver": "/nonexistent/sat-solver"})
+    for algorithm in ("sat", "qbf"):
+        with pytest.raises(RuntimeError, match="unknown type"):
+            mata_nfa.reduce(nfa, {"algorithm": algorithm, "type": "after"})
+    with pytest.raises(RuntimeError, match="unknown type"):
+        mata_nfa.reduce(nfa, {"algorithm": "qbf", "type": "dfa"})
     with pytest.raises(RuntimeError, match="does not support state_renaming"):
         mata_nfa.reduce_with_state_map(nfa, {"algorithm": "residual", "type": "after", "direction": "forward"})
+
+    # A solver that cannot be found is reported by its own exception, a RuntimeError for callers not knowing it.
+    assert issubclass(mata_nfa.ExternalSolverNotFound, RuntimeError)
+    for params in (
+        {"algorithm": "sat", "solver": "/nonexistent/sat-solver"},
+        {"algorithm": "sat", "solver": "nonexistent-sat-solver"},
+        {"algorithm": "sat", "solver": "'unterminated"},
+        {"algorithm": "qbf", "solver": "/nonexistent/qbf-solver"},
+    ):
+        with pytest.raises(mata_nfa.ExternalSolverNotFound):
+            mata_nfa.reduce(nfa, params)
+    # Errors other than a missing solver stay plain RuntimeErrors.
+    with pytest.raises(RuntimeError) as error:
+        mata_nfa.reduce(nfa, {"algorithm": "unknown"})
+    assert not isinstance(error.value, mata_nfa.ExternalSolverNotFound)
 
 
 def test_reduce_sat():
@@ -1438,10 +1456,10 @@ def test_reduce_sat():
 
     try:
         result = mata_nfa.reduce(nfa, {"algorithm": "sat"})
-    except RuntimeError as error:
-        if "No SAT solver found" in str(error) and "MATA_TESTS_REQUIRE_SOLVERS" not in os.environ:
-            pytest.skip(str(error))
-        raise
+    except mata_nfa.ExternalSolverNotFound as error:
+        if "MATA_TESTS_REQUIRE_SOLVERS" in os.environ:
+            raise
+        pytest.skip(str(error))
     assert result.num_of_states() == 3
     assert mata_nfa.equivalence_check(result, nfa)
 

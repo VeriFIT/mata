@@ -237,6 +237,9 @@ cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
         unsigned block_size
         CDeterminizationReduction reduction
 
+# Translate the C++ exception being handled into a Python one; defined in nfa.pyx.
+cdef void translate_mata_exception() except *
+
 # The long-running entry points are declared `except + nogil` so that the callers can run them without the GIL.
 # The C++ library does not synchronise anything: concurrent calls may only read the automata and alphabets they
 # are given, and no other thread may mutate them meanwhile (`OnTheFlyAlphabet::translate_symb` mutates).
@@ -251,7 +254,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&) except + nogil
     cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except + nogil
     cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&) except + nogil
-    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&) except + nogil
+    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&) except +translate_mata_exception nogil
     cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&) except + nogil
     cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&) except + nogil
     cdef CLazyWordGenerator* c_get_words_lazy_ptr "mata::nfa::plumbing::get_words_lazy_ptr" (CNfa&, size_t) except +

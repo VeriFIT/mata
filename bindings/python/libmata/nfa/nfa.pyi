@@ -826,6 +826,9 @@ class _QbfReduceParams(TypedDict, total=False):
     type: Literal["nfa"]
     solver: str
 
+class ExternalSolverNotFound(RuntimeError):
+    """Raised when no external SAT or QBF solver can be found or run for reduce() with "sat" or "qbf"."""
+
 def reduce(
     aut: Nfa,
     params: dict[Literal["algorithm"], Literal["simulation"]]
@@ -856,7 +859,8 @@ def reduce(
           variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
           cryptominisat5, picosat; depqbf, caqe).
     :return: Reduced automaton.
-    :raises RuntimeError: If the reduction fails, e.g., when no solver is found for "algorithm": "sat" or "qbf".
+    :raises ExternalSolverNotFound: If no solver can be found or run for "algorithm": "sat" or "qbf".
+    :raises RuntimeError: If the reduction fails otherwise.
     """
 
 def reduce_residual_after(aut: Nfa) -> Nfa:
