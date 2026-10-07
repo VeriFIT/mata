@@ -19,15 +19,24 @@ bool mata::nfa::algorithms::is_universal_naive(const Nfa& aut, const Alphabet& a
 bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphabet& alphabet,
 													Run* cex) { // {{{
 
-	using WorklistType = std::list<StateSet>;
-	using ProcessedType = std::list<StateSet>;
+	/// A macrostate of the subset construction together with its signature, which is computed once, when the
+	///  macrostate is built, and then filters most of the subsumption tests in O(1).
+	struct Macrostate {
+		StateSet set{};
+		uint64_t signature{0};
+	};
 
-	auto subsumes = [](const StateSet& lhs, const StateSet& rhs) {
-		if (lhs.size() > rhs.size()) { // bigger set cannot be subset
+	using WorklistType = std::list<Macrostate>;
+	using ProcessedType = std::list<Macrostate>;
+
+	auto subsumes = [](const Macrostate& lhs, const Macrostate& rhs) {
+		if (lhs.set.size() > rhs.set.size()) { // bigger set cannot be subset
 			return false;
 		}
+		// A state of `lhs` outside of `rhs` shows up as a signature bit of `lhs` that `rhs` does not have.
+		if ((lhs.signature & ~rhs.signature) != 0) { return false; }
 
-		return std::ranges::includes(rhs, lhs);
+		return std::ranges::includes(rhs.set, lhs.set);
 	};
 
 	// process parameters
@@ -41,17 +50,19 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 	}
 
 	// initialize
-	WorklistType worklist = {StateSet(aut.initial)};
-	ProcessedType processed = {StateSet(aut.initial)};
+	const StateSet initial_set{aut.initial};
+	const Macrostate initial{initial_set, macrostate_signature(initial_set)};
+	WorklistType worklist = {initial};
+	ProcessedType processed = {initial};
 	const mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
-	std::map<StateSet, std::pair<StateSet, Symbol>> paths = {{StateSet(aut.initial), {StateSet(aut.initial), 0}}};
+	std::map<StateSet, std::pair<StateSet, Symbol>> paths = {{initial_set, {initial_set, 0}}};
 
 	while (!worklist.empty()) {
 		// get a next state
-		StateSet state;
+		Macrostate state;
 		if (is_dfs) {
 			state = *worklist.rbegin();
 			worklist.pop_back();
@@ -62,12 +73,12 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 
 		// process it
 		for (Symbol symb : alph_symbols) {
-			StateSet succ = aut.post(state, symb);
-			if (!aut.final.intersects_with(succ)) {
+			StateSet succ_set = aut.post(state.set, symb);
+			if (!aut.final.intersects_with(succ_set)) {
 				if (nullptr != cex) {
 					cex->word.clear();
 					cex->word.push_back(symb);
-					StateSet trav = state;
+					StateSet trav = state.set;
 					while (paths[trav].first != trav) { // go back until initial state
 						cex->word.push_back(paths[trav].second);
 						trav = paths[trav].first;
@@ -79,6 +90,8 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 				return false;
 			}
 
+			const uint64_t succ_signature{macrostate_signature(succ_set)};
+			const Macrostate succ{std::move(succ_set), succ_signature};
 			bool is_subsumed = false;
 			for (const auto& anti_state : processed) {
 				// trying to find a smaller state in processed
@@ -91,7 +104,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 			if (is_subsumed) { continue; }
 
 			// prune data structures and insert succ inside
-			for (std::list<StateSet>* ds : {&processed, &worklist}) {
+			for (std::list<Macrostate>* ds : {&processed, &worklist}) {
 				auto it = ds->begin();
 				while (it != ds->end()) {
 					if (subsumes(succ, *it)) {
@@ -108,7 +121,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 			}
 
 			// also set that succ was accessed from state
-			paths[succ] = {state, symb};
+			paths[succ.set] = {state.set, symb};
 		}
 	}
 

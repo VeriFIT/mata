@@ -11,6 +11,7 @@
 #ifndef MATA_NFA_INTERNALS_HH_
 #define MATA_NFA_INTERNALS_HH_
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 
@@ -84,6 +85,20 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
  * empty.
  */
 bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+
+/**
+ * @brief Signature of a macrostate: the OR of @c 1 << (q % 64) over its states @c q.
+ *
+ * A superset can only have more bits set, so a bit present in @c macrostate_signature(a) and absent from
+ *  @c macrostate_signature(b) exhibits a state of @c a that is missing from @c b and proves @c a ⊄ b. The converse
+ *  does not hold: states that are congruent modulo 64 share a bit, so equal signatures prove nothing. The filter
+ *  therefore only ever rejects, which is what the antichain subsumption tests need to stay sound.
+ */
+inline uint64_t macrostate_signature(const StateSet& macrostate) {
+	uint64_t signature{0};
+	for (const State state : macrostate) { signature |= UINT64_C(1) << (state & 63); }
+	return signature;
+}
 
 /**
  * @brief Inclusion implemented by antichain algorithms.
