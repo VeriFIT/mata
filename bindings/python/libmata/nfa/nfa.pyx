@@ -1316,15 +1316,33 @@ cdef class Nfa:
 
 
 # Operations
+cdef umap[string, string] encode_params(params) except *:
+    """Encode a parameter dictionary into the C++ `ParameterMap`.
+
+    The heavy operations release the GIL, so the dictionary has to be converted before the call, not inside it.
+
+    :param params: Dictionary of `str`/`bytes` keys and values.
+    :return: The parameters as a C++ `ParameterMap`.
+    """
+    cdef umap[string, string] c_params
+    for key, value in params.items():
+        c_params[key.encode('utf-8') if isinstance(key, str) else key] = \
+            value.encode('utf-8') if isinstance(value, str) else value
+    return c_params
+
+
 def determinize_with_subset_map(Nfa lhs):
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
     :return: deterministic finite automaton, subset map
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
     cdef umap[StateSet, State] subset_map
-    mata_nfa.c_determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_determinize(c_result, dereference(c_lhs), &subset_map)
     return result, subset_map_to_dictionary(subset_map)
 
 def determinize(Nfa lhs):
@@ -1333,8 +1351,11 @@ def determinize(Nfa lhs):
     :param Nfa lhs: non-deterministic finite automaton
     :return: deterministic finite automaton
     """
-    result = Nfa()
-    mata_nfa.c_determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_determinize(c_result, dereference(c_lhs), NULL)
     return result
 
 def union(Nfa lhs, Nfa rhs):
@@ -1344,10 +1365,12 @@ def union(Nfa lhs, Nfa rhs):
     :param Nfa rhs: second automaton
     :return: union of lhs and rhs
     """
-    result = Nfa()
-    mata_nfa.c_union_nondet(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
-    )
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_union_nondet(c_result, dereference(c_lhs), dereference(c_rhs))
     return result
 
 def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
@@ -1367,10 +1390,12 @@ def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
     :param Symbol first_epsilon: the smallest epsilon.
     :return: Intersection of lhs and rhs.
     """
-    result = Nfa()
-    mata_nfa.c_intersection(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, NULL
-    )
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_intersection(c_result, dereference(c_lhs), dereference(c_rhs), first_epsilon, NULL)
     return result
 
 def intersection_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
@@ -1390,10 +1415,15 @@ def intersection_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSI
     :param Nfa rhs: Second automaton.
     :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
     cdef umap[pair[State, State], State, CPairHash[State, State]] c_product_map
-    mata_nfa.c_intersection(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_intersection(
+            c_result, dereference(c_lhs), dereference(c_rhs), first_epsilon, &c_product_map
+        )
     return result, {tuple(k): v for k, v in c_product_map}
 
 def concatenate(Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
@@ -1405,9 +1435,13 @@ def concatenate(Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
     :param use_epsilon: Whether to concatenate over an epsilon symbol.
     :return: Nfa: Concatenated automaton.
     """
-    result = Nfa()
-    mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
-                         use_epsilon, NULL, NULL)
+    cdef Nfa result = Nfa()
+    cdef bool c_use_epsilon = use_epsilon
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_concatenate(c_result, dereference(c_lhs), dereference(c_rhs), c_use_epsilon, NULL, NULL)
     return result
 
 def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = False) \
@@ -1419,11 +1453,17 @@ def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = Fal
     :param use_epsilon: Whether to concatenate over an epsilon symbol.
     :return: Nfa: Concatenated automaton.
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
     cdef StateRenaming c_lhs_map
     cdef StateRenaming c_rhs_map
-    mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
-                         use_epsilon, &c_lhs_map, &c_rhs_map)
+    cdef bool c_use_epsilon = use_epsilon
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_concatenate(
+            c_result, dereference(c_lhs), dereference(c_rhs), c_use_epsilon, &c_lhs_map, &c_rhs_map
+        )
     lhs_map = {}
     for key, value in c_lhs_map:
         lhs_map[key] = value
@@ -1447,17 +1487,14 @@ def complement(Nfa nfa, alph.Alphabet alphabet, params = None):
                          complete, and swaps final and non-final states.
     :return: The complemented automaton.
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
     params = params or {'algorithm': 'classical'}
-    mata_nfa.c_complement(
-        result.thisptr.get(),
-        dereference(nfa.thisptr.get()),
-        <CAlphabet&>dereference(alphabet.as_base()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        },
-    )
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_nfa = nfa.thisptr.get()
+    cdef CAlphabet* c_alphabet = alphabet.as_base().get()
+    with nogil:
+        mata_nfa.c_complement(c_result, dereference(c_nfa), dereference(c_alphabet), c_params)
     return result
 
 def revert(Nfa lhs):
@@ -1466,8 +1503,11 @@ def revert(Nfa lhs):
     :param Nfa lhs: source automaton
     :return: automaton with reversed transitions
     """
-    result = Nfa()
-    mata_nfa.c_revert(result.thisptr.get(), dereference(lhs.thisptr.get()))
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_revert(c_result, dereference(c_lhs))
     return result
 
 def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
@@ -1477,8 +1517,11 @@ def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
     :param Symbol epsilon: Symbol representing the epsilon.
     :return: Nfa: Automaton with epsilon transitions removed.
     """
-    result = Nfa()
-    mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_remove_epsilon(c_result, dereference(c_lhs), epsilon)
     return result
 
 def minimize(Nfa lhs, params = None):
@@ -1495,12 +1538,12 @@ def minimize(Nfa lhs, params = None):
     :return: minimized automaton
     """
     params = params or {"algorithm": "auto"}
-    result = Nfa()
-    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-        }
-    )
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_minimize(c_result, dereference(c_lhs), c_params)
     return result
 
 def reduce_with_state_map(Nfa aut, params = None):
@@ -1514,13 +1557,12 @@ def reduce_with_state_map(Nfa aut, params = None):
     """
     params = params or {"algorithm": "simulation"}
     cdef StateRenaming state_map
-    result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), &state_map,
-                    {
-                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-                    }
-                    )
-
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce(c_result, dereference(c_aut), &state_map, c_params)
     return result, {k: v for k, v in state_map}
 
 def reduce(Nfa aut, params = None):
@@ -1549,12 +1591,12 @@ def reduce(Nfa aut, params = None):
     :raises RuntimeError: If the reduction fails, e.g., when no solver is found for "algorithm": "sat" or "qbf".
     """
     params = params or {"algorithm": "simulation"}
-    result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
-                    {
-                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-                    }
-                    )
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce(c_result, dereference(c_aut), NULL, c_params)
     return result
 
 def reduce_residual_after(Nfa aut):
@@ -1563,8 +1605,11 @@ def reduce_residual_after(Nfa aut):
     :param Nfa aut: Original automaton to reduce.
     :return: Reduced automaton.
     """
-    result = Nfa()
-    mata_nfa.c_reduce_residual_after(result.thisptr.get(), dereference(aut.thisptr.get()))
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce_residual_after(c_result, dereference(c_aut))
     return result
 
 def reduce_residual_with(Nfa aut):
@@ -1573,8 +1618,11 @@ def reduce_residual_with(Nfa aut):
     :param Nfa aut: Original automaton to reduce.
     :return: Reduced automaton.
     """
-    result = Nfa()
-    mata_nfa.c_reduce_residual_with(result.thisptr.get(), dereference(aut.thisptr.get()))
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce_residual_with(c_result, dereference(c_aut))
     return result
 
 def compute_relation(Nfa lhs, params = None):
@@ -1585,20 +1633,12 @@ def compute_relation(Nfa lhs, params = None):
     :return: computd relation
     """
     params = params or {'relation': 'simulation', 'direction': 'forward'}
-    cdef CBinaryRelation relation = mata_nfa.c_compute_relation(
-        dereference(lhs.thisptr.get()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
-    result = BinaryRelation()
-    cdef size_t relation_size = relation.size()
-    result.resize(relation_size)
-    for i in range(0, relation_size):
-        for j in range(0, relation_size):
-            val = relation.get(i, j)
-            result.set(i, j, val)
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef BinaryRelation result = BinaryRelation()
+    cdef CBinaryRelation* c_result = result.thisptr
+    with nogil:
+        c_result[0] = mata_nfa.c_compute_relation(dereference(c_lhs), c_params)
     return result
 
 # Tests
@@ -1611,19 +1651,16 @@ def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params
     :param dict params: additional params
     :return: true if lhs is included by rhs, counter example word if not
     """
-    run = Run()
+    cdef Run run = Run()
     cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
     params = params or {'algorithm': 'antichains'}
-    result = mata_nfa.c_is_included(
-        dereference(lhs.thisptr.get()),
-        dereference(rhs.thisptr.get()),
-        run.thisptr,
-        c_alphabet,
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    cdef CRun* c_run = run.thisptr
+    cdef bool result
+    with nogil:
+        result = mata_nfa.c_is_included(dereference(c_lhs), dereference(c_rhs), c_run, c_alphabet, c_params)
     return result, run
 
 def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
@@ -1637,16 +1674,12 @@ def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     """
     cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
     params = params or {'algorithm': 'antichains'}
-    result = mata_nfa.c_is_included(
-        dereference(lhs.thisptr.get()),
-        dereference(rhs.thisptr.get()),
-        NULL,
-        c_alphabet,
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    cdef bool result
+    with nogil:
+        result = mata_nfa.c_is_included(dereference(c_lhs), dereference(c_rhs), NULL, c_alphabet, c_params)
     return result
 
 def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None) -> bool:
@@ -1660,27 +1693,19 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
 :return: True if lhs is equivalent to rhs, False otherwise.
 """
     params = params or {'algorithm': 'antichains'}
-    cdef CAlphabet * c_alphabet = NULL
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    cdef CAlphabet* c_alphabet = NULL
+    cdef bool result
     if alphabet:
         c_alphabet = alphabet.as_base().get()
-        return mata_nfa.c_are_equivalent(
-            dereference(lhs.thisptr.get()),
-            dereference(rhs.thisptr.get()),
-            c_alphabet,
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
+        with nogil:
+            result = mata_nfa.c_are_equivalent(dereference(c_lhs), dereference(c_rhs), c_alphabet, c_params)
     else:
-        return mata_nfa.c_are_equivalent(
-            dereference(lhs.thisptr.get()),
-            dereference(rhs.thisptr.get()),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
+        with nogil:
+            result = mata_nfa.c_are_equivalent(dereference(c_lhs), dereference(c_rhs), c_params)
+    return result
 
 def accepts_epsilon(Nfa lhs):
     """Tests if automaton accepts epsilon

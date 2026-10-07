@@ -142,6 +142,117 @@ def test_noodlify_for_transducer():
     assert output_index == 0
 
 
+def _snapshot(value):
+    """Describe a noodlification result by value: states, initial/final states, transitions (and levels for NFTs)."""
+    if isinstance(value, (mata_nfa.Nfa, mata_nft.Nft)):
+        description = (
+            value.num_of_states(),
+            sorted(value.initial_states),
+            sorted(value.final_states),
+            sorted((t.source, t.symbol, t.target) for t in value.get_trans_as_sequence()),
+        )
+        return description + (list(value.levels),) if isinstance(value, mata_nft.Nft) else description
+    if isinstance(value, (list, tuple)):
+        return [_snapshot(item) for item in value]
+    return value
+
+
+def _two_initial_two_final_nfa():
+    """Unifying its initial and final states changes the automaton."""
+    aut = mata_nfa.Nfa(4)
+    aut.make_initial_states([0, 1])
+    aut.make_final_states([2, 3])
+    aut.add_transition(0, 1, 2)
+    aut.add_transition(1, 2, 3)
+    return aut
+
+
+def test_noodlify_for_equation_sides_and_transducer_do_not_mutate_their_inputs():
+    left = _two_initial_two_final_nfa()
+    right = _two_initial_two_final_nfa()
+    identity_nft = mata_nft.Nft(1, num_of_levels=2)
+    identity_nft.make_initial_state(0)
+    identity_nft.make_final_state(0)
+    identity_nft.insert_identity(0, [1, 2, 3])
+    expected = _snapshot([left, right, identity_nft])
+
+    assert mata_strings.noodlify_for_equation_sides([left], [right])
+    assert mata_strings.noodlify_for_transducer(identity_nft, [left], [right])
+    assert _snapshot([left, right, identity_nft]) == expected
+
+
+def test_noodlify_variants_threaded_match_single_threaded_results():
+    """The noodlify entry points run without the GIL; concurrent results must not depend on interleaving."""
+    import concurrent.futures
+    import threading
+
+    aut = mata_nfa.Nfa(6)
+    aut.make_initial_state(0)
+    aut.make_final_state(5)
+    aut.add_transition(0, 1, 1)
+    aut.add_transition(1, 200, 2)
+    aut.add_transition(2, 1, 3)
+    aut.add_transition(3, 200, 4)
+    aut.add_transition(4, 1, 5)
+
+    # Shared by all threads; the C++ noodlification unifies the initial and final states of its inputs in place.
+    left = _two_initial_two_final_nfa()
+    right = _two_initial_two_final_nfa()
+
+    identity_nft = mata_nft.Nft(1, num_of_levels=2)
+    identity_nft.make_initial_state(0)
+    identity_nft.make_final_state(0)
+    identity_nft.insert_identity(0, [1, 2, 3])
+
+    expected_noodles = _snapshot(mata_strings.noodlify(aut, 200))
+    expected_mult_eps = _snapshot(mata_strings.noodlify_mult_eps(aut, {200}))
+    expected_sides = _snapshot(mata_strings.noodlify_for_equation_sides([left], [right]))
+    expected_transducer = _snapshot(mata_strings.noodlify_for_transducer(identity_nft, [left], [right]))
+    assert expected_noodles and expected_mult_eps and expected_sides and expected_transducer
+
+    barrier = threading.Barrier(3)
+
+    def run():
+        barrier.wait()
+        return (
+            _snapshot(mata_strings.noodlify(aut, 200)),
+            _snapshot(mata_strings.noodlify_mult_eps(aut, {200})),
+            _snapshot(mata_strings.noodlify_for_equation_sides([left], [right])),
+            _snapshot(mata_strings.noodlify_for_transducer(identity_nft, [left], [right])),
+        )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
+    for result in results:
+        assert result == (expected_noodles, expected_mult_eps, expected_sides, expected_transducer)
+
+
+def _random_nfa(seed, num_states):
+    import random
+
+    rng = random.Random(seed)
+    aut = mata_nfa.Nfa(num_states)
+    for _ in range(4 * num_states):
+        aut.add_transition(rng.randrange(num_states), rng.randrange(2), rng.randrange(num_states))
+    aut.make_initial_state(0)
+    aut.make_final_state(num_states - 1)
+    return aut
+
+
+def test_noodlify_for_equation_sides_lets_other_threads_run(runs_without_the_gil):
+    left, right = _random_nfa(1, 100), _random_nfa(2, 100)
+    assert runs_without_the_gil(lambda: mata_strings.noodlify_for_equation_sides([left], [right]))
+
+
+def test_noodlify_for_transducer_lets_other_threads_run(runs_without_the_gil):
+    identity_nft = mata_nft.Nft(1, num_of_levels=2)
+    identity_nft.make_initial_state(0)
+    identity_nft.make_final_state(0)
+    identity_nft.insert_identity(0, [0, 1])
+    left, right = _random_nfa(1, 22), _random_nfa(2, 22)
+    assert runs_without_the_gil(lambda: mata_strings.noodlify_for_transducer(identity_nft, [left], [right]))
+
+
 def test_process_eps_map():
     assert mata_strings.process_eps_map({3: 2, 1: 5}) == [2, 5]
 

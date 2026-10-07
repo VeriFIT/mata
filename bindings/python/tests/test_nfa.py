@@ -954,6 +954,117 @@ def test_simulation_other_features(fa_one_divisible_by_two):
                 assert rel.is_symmetric_at(i, j)
 
 
+def _build_threaded_nfa(seed=42, num_states=60, num_transitions=240, num_symbols=2):
+    """A fixed-seed automaton on which the operations below run long enough to interleave."""
+    import random
+
+    rng = random.Random(seed)
+    aut = mata_nfa.Nfa(num_states)
+    for _ in range(num_transitions):
+        aut.add_transition(rng.randrange(num_states), rng.randrange(num_symbols), rng.randrange(num_states))
+    aut.make_initial_state(0)
+    aut.make_final_state(num_states - 1)
+    aut.make_final_state(num_states // 2)
+    return aut
+
+
+def test_threaded_determinize_matches_single_threaded_results():
+    """The GIL is released during determinize; concurrent results must not depend on interleaving."""
+    import concurrent.futures
+    import threading
+
+    aut = _build_threaded_nfa()
+    expected_result, expected_subset_map = mata_nfa.determinize_with_subset_map(aut)
+    expected_transitions = sorted((t.source, t.symbol, t.target) for t in expected_result.get_trans_as_sequence())
+
+    barrier = threading.Barrier(3)
+
+    def run():
+        barrier.wait()
+        result, subset_map = mata_nfa.determinize_with_subset_map(aut)
+        return sorted((t.source, t.symbol, t.target) for t in result.get_trans_as_sequence()), subset_map
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
+    for transitions, subset_map in results:
+        assert transitions == expected_transitions
+        assert subset_map == expected_subset_map
+
+
+def test_threaded_heavy_operations_match_single_threaded_results():
+    """Intersection, minimize and reduce agree with their single-threaded results when run concurrently."""
+    import concurrent.futures
+    import threading
+
+    lhs = _build_threaded_nfa(seed=1)
+    rhs = _build_threaded_nfa(seed=2, num_states=30)
+
+    expected_intersection = mata_nfa.intersection(lhs, rhs).get_trans_as_sequence()
+    expected_minimized = mata_nfa.minimize(lhs).get_trans_as_sequence()
+    expected_reduced = mata_nfa.reduce(lhs).get_trans_as_sequence()
+
+    barrier = threading.Barrier(3)
+
+    def run():
+        barrier.wait()
+        return (
+            mata_nfa.intersection(lhs, rhs).get_trans_as_sequence(),
+            mata_nfa.minimize(lhs).get_trans_as_sequence(),
+            mata_nfa.reduce(lhs).get_trans_as_sequence(),
+        )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
+    for intersection_result, minimized, reduced in results:
+        assert intersection_result == expected_intersection
+        assert minimized == expected_minimized
+        assert reduced == expected_reduced
+
+
+def _nth_symbol_from_the_end_nfa(n):
+    """Accepts the words over {0, 1} with 0 at the n-th position from the end; its minimal DFA has 2^n states."""
+    aut = mata_nfa.Nfa(n + 1)
+    aut.make_initial_state(0)
+    aut.make_final_state(n)
+    aut.add_transition(0, 0, 0)
+    aut.add_transition(0, 1, 0)
+    aut.add_transition(0, 0, 1)
+    for state in range(1, n):
+        aut.add_transition(state, 0, state + 1)
+        aut.add_transition(state, 1, state + 1)
+    return aut
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda aut, other, alphabet: mata_nfa.determinize(aut),
+        lambda aut, other, alphabet: mata_nfa.determinize_with_subset_map(aut),
+        lambda aut, other, alphabet: mata_nfa.minimize(aut),
+        lambda aut, other, alphabet: mata_nfa.complement(aut, alphabet),
+        lambda aut, other, alphabet: mata_nfa.reduce(other),
+        lambda aut, other, alphabet: mata_nfa.compute_relation(other),
+        lambda aut, other, alphabet: mata_nfa.intersection(other, other),
+    ],
+    ids=[
+        "determinize",
+        "determinize_with_subset_map",
+        "minimize",
+        "complement",
+        "reduce",
+        "compute_relation",
+        "intersection",
+    ],
+)
+def test_heavy_operations_let_other_threads_run(operation, runs_without_the_gil):
+    aut = _nth_symbol_from_the_end_nfa(14)
+    other = _build_threaded_nfa(num_states=600, num_transitions=2400)
+    alphabet = alphabets.OnTheFlyAlphabet()
+    alphabet.translate_symbol("a")
+    alphabet.translate_symbol("b")
+    assert runs_without_the_gil(lambda: operation(aut, other, alphabet))
+
+
 def test_simulation_equivalence():
     r = mata_utils.BinaryRelation(3, True, 3)
     classes, heads = r.build_equivalence_classes()

@@ -9,7 +9,7 @@ cdef extern from "mata/utils/sparse-set.hh" namespace "mata::utils":
     cdef cppclass CSparseSet "mata::utils::SparseSet" [T]:
         vector[T] dense
         vector[T] sparse
-        size_t size
+        size_t size()
         size_t domain_size
 
         CSparseSet()

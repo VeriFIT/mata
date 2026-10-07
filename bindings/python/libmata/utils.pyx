@@ -56,13 +56,14 @@ cdef class BinaryRelation:
 
         :return: relation of list of lists to booleans
         """
-        size = self.size()
+        cdef Py_ssize_t size = self.thisptr.size()
+        cdef Py_ssize_t i, j
         result = []
-        for i in range(0, size):
-            sub_result = []
-            for j in range(0, size):
-                sub_result.append(self.get(i, j))
-            result.append(sub_result)
+        for i in range(size):
+            row = [False] * size
+            for j in range(size):
+                row[j] = self.thisptr.get(i, j)
+            result.append(row)
         return result
 
     def reset(self, bool defValue = False):
