@@ -1304,3 +1304,24 @@ def test_get_words_lazy_without_generator_support():
     nfa.add_transition(1, 2, 2)
     with pytest.raises(RuntimeError):
         next(iter(nfa.get_words_lazy(5)))
+
+
+def test_transition_hashing():
+    """Tests that transitions can be used in sets and as dictionary keys."""
+    first = mata_nfa.Transition(1, 2, 3)
+    second = mata_nfa.Transition(1, 2, 3)
+    other = mata_nfa.Transition(1, 2, 4)
+
+    assert first == second
+    assert hash(first) == hash(second)
+    assert first != other
+    # Spelled out rather than as `first == second`: this checks the `__ne__` derived from `__eq__`.
+    assert (first != second) is False
+
+    assert len({first, second, other}) == 2
+
+    mapping = {first: "a", other: "b"}
+    mapping[second] = "c"
+    assert mapping[first] == "c"
+    assert mapping[other] == "b"
+    assert len(mapping) == 2
