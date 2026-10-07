@@ -654,6 +654,23 @@ class Delta {
 	Delta& append_shifted(Delta&& other, State offset);
 
 	/**
+	 * @brief Reverse every transition: the target of each (source, symbol, target) becomes the source and vice
+	 *  versa.
+	 *
+	 * Built by a counting sort: the incoming transitions of every state are counted, prefix-summed into CSR
+	 *  offsets, and (symbol, source) pairs scattered into one slice per target state; sorting each slice by
+	 *  (symbol, source) yields exactly the state post of the reversed state, emitted with exact capacity. There
+	 *  is no per-transition binary search and no symbol-indexed array, so the cost is linear in the number of
+	 *  states and transitions (plus the per-slice sort), regardless of the largest symbol used.
+	 *
+	 * As with building the result by repeated `add(target, symbol, source)`, a target beyond @p num_of_states
+	 *  extends the result to cover it; states without incoming transitions get an empty post.
+	 * @param[in] num_of_states Number of posts of the result; the state domain of the automaton being reverted.
+	 * @return The reversed delta.
+	 */
+	[[nodiscard]] Delta reverted(size_t num_of_states) const;
+
+	/**
 	 * @brief Add transitions to multiple destinations
 	 *
 	 * @param source From

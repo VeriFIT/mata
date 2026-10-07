@@ -1052,9 +1052,15 @@ Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
 }
 
 Nft nft::revert(const Nft& aut) {
-	return simple_revert(aut);
-	// return fragile_revert(aut);
-	// return somewhat_simple_revert(aut);
+	// The counting sort of Delta::reverted is much faster than the insertion-based variants below
+	//  (kept for benchmarking) and does not allocate any symbol-indexed arrays as fragile_revert does.
+	const size_t num_of_states{aut.num_of_states()};
+	Nft result{};
+	result.delta = aut.delta.reverted(num_of_states);
+	result.initial = aut.final;
+	result.final = aut.initial;
+	result.levels = revert_levels_(aut.levels, num_of_states);
+	return result;
 }
 
 namespace {

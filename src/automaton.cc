@@ -110,15 +110,7 @@ void Automaton::clear() {
 
 Automaton Automaton::reverted() const {
 	Automaton result{};
-
-	const size_t num_of_states{this->num_of_states()};
-	result.delta.allocate(num_of_states);
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		delta.for_each_move(source_state, [&](const Symbol symbol, const State target_state) {
-			result.delta.add(target_state, symbol, source_state);
-		});
-	}
+	result.delta = delta.reverted(num_of_states());
 
 	result.initial = final;
 	result.final = initial;

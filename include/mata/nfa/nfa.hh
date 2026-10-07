@@ -1250,8 +1250,8 @@ bool are_equivalent(
 	const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{"algorithm", "antichains"}}, Run* cex = nullptr
 );
 
-/// Reverting the automaton by one of the three functions below,
-/// currently simple_revert seems best (however, not tested enough).
+/// Reverting the automaton by a counting sort (see @c Delta::reverted()): much faster than the three
+///  insertion-based variants below, which are kept for benchmarking.
 Nfa revert(const Nfa& aut);
 
 /// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures, and is potentially

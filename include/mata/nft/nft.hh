@@ -1995,8 +1995,8 @@ bool are_equivalent(
 	const ParameterMap& params = {{"algorithm", "antichains"}}
 );
 
-// Reverting the automaton by one of the three functions below,
-// currently simple_revert seems best (however, not tested enough).
+// Reverting the automaton by a counting sort (see @c Delta::reverted()): much faster than the three
+//  insertion-based variants below, which are kept for benchmarking.
 Nft revert(const Nft& aut);
 
 // This revert algorithm is fragile, uses low level accesses to Nft and static data structures,

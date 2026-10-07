@@ -337,6 +337,75 @@ Delta& Delta::append_shifted(Delta&& other, const State offset) {
 	return *this;
 }
 
+Delta Delta::reverted(const size_t num_of_states) const {
+	// A target must never lie outside the state domain, but nothing enforces it, and building the result by
+	//  repeated `add(target, symbol, source)` would have grown it to such a target; stay faithful to that.
+	size_t num_of_reversed_states{num_of_states};
+	for (const StatePost& state_post : state_posts_) {
+		for (const SymbolPost& symbol_post : state_post) {
+			// The targets are sorted, so the last one is the largest.
+			if (!symbol_post.targets.empty() && num_of_reversed_states <= symbol_post.targets.back()) {
+				num_of_reversed_states = symbol_post.targets.back() + 1;
+			}
+		}
+	}
+
+	// Count the incoming transitions of each state in the offset of the following state,
+	//  then prefix-sum the counts into the start of the slice of each target.
+	std::vector<size_t> offsets(num_of_reversed_states + 1, 0);
+	for (const StatePost& state_post : state_posts_) {
+		for (const SymbolPost& symbol_post : state_post) {
+			for (const State target : symbol_post.targets) { ++offsets[target + 1]; }
+		}
+	}
+	for (size_t target{0}; target < num_of_reversed_states; ++target) { offsets[target + 1] += offsets[target]; }
+
+	struct ReversedEdge {
+		Symbol symbol;
+		State source;
+		bool operator<(const ReversedEdge& other) const {
+			return symbol < other.symbol || (symbol == other.symbol && source < other.source);
+		}
+		bool operator==(const ReversedEdge& other) const = default;
+	};
+
+	// Scatter the pairs (symbol, source) into the slice of their target; sources land in increasing order.
+	std::vector<ReversedEdge> edges(offsets.back());
+	std::vector<size_t> fill_cursors{offsets.begin(), offsets.end() - 1};
+	for (State source{0}; source < state_posts_.size(); ++source) {
+		for (const SymbolPost& symbol_post : state_posts_[source]) {
+			for (const State target : symbol_post.targets) {
+				edges[fill_cursors[target]++] = ReversedEdge{symbol_post.symbol, source};
+			}
+		}
+	}
+
+	Delta result{};
+	result.reserve(num_of_reversed_states);
+	for (State target{0}; target < num_of_reversed_states; ++target) {
+		// Sorting the slice by (symbol, source) yields exactly the state post of the reversed state: symbols
+		//  in ascending order, sources sorted and, after the dedup, unique.
+		const auto slice_first{edges.begin() + static_cast<std::ptrdiff_t>(offsets[target])};
+		const auto slice_end{edges.begin() + static_cast<std::ptrdiff_t>(offsets[target + 1])};
+		std::sort(slice_first, slice_end);
+		const auto slice_last{std::unique(slice_first, slice_end)};
+		StatePost state_post{};
+		for (auto run_first{slice_first}; run_first != slice_last;) {
+			auto run_last{run_first};
+			while (run_last != slice_last && run_last->symbol == run_first->symbol) { ++run_last; }
+			SymbolPost symbol_post{run_first->symbol};
+			symbol_post.targets.reserve(static_cast<size_t>(run_last - run_first));
+			for (auto edge_it{run_first}; edge_it != run_last; ++edge_it) {
+				symbol_post.targets.push_back(edge_it->source);
+			}
+			state_post.push_back(std::move(symbol_post));
+			run_first = run_last;
+		}
+		result.emplace_back(std::move(state_post));
+	}
+	return result;
+}
+
 StatePost& Delta::mutable_state_post(const State source) {
 	if (source >= state_posts_.size()) {
 		utils::reserve_on_insert(state_posts_, source);

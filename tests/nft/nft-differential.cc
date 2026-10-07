@@ -164,6 +164,27 @@ TEST_CASE("mata::nft differential: the inclusion algorithms agree", "[differenti
 	CHECK(nondeterministic_inputs > 0);
 }
 
+TEST_CASE("mata::nft differential: the revert variants build the same transducer", "[differential]") {
+	for (unsigned seed{0}; seed < 100; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_symbols{1 + seed % 3};
+		const size_t num_of_levels{1 + seed % 3};
+		const Nft nft{random_nft(rng, 1 + seed % 4, num_of_symbols, num_of_levels)};
+		INFO(describe(seed, nft));
+
+		const Nft reverted{revert(nft)};
+		CHECK(reverted.delta == simple_revert(nft).delta);
+		CHECK(reverted.delta == fragile_revert(nft).delta);
+		CHECK(reverted.delta == somewhat_simple_revert(nft).delta);
+		CHECK(reverted.initial == simple_revert(nft).initial);
+		CHECK(reverted.final == simple_revert(nft).final);
+		CHECK(reverted.levels == fragile_revert(nft).levels);
+		CHECK(reverted.levels == simple_revert(nft).levels);
+		// Reverting twice gives the original transition relation back.
+		CHECK(revert(reverted).delta == nft.delta);
+	}
+}
+
 // Only DONT_CARE is drawn into the operands below: with an EPSILON transition in an operand,
 //  compose(..., FastNoJump) can abort on the assertion at src/nft/composition.cc:848 (and segfault
 //  in Release), so the comparison of the EPSILON-erased relations waits for the fix (#902).
