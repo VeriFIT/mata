@@ -460,4 +460,15 @@ TEST_CASE("mata::applications::strings::get_words_of_lengths()") {
 		nft.delta.add(0, 'c', 2);
 		CHECK_THROWS_AS(get_words_of_lengths(nft, {1, 1}), std::invalid_argument);
 	}
+
+	SECTION("lengths that cannot be spanned are rejected, not wrapped") {
+		Nft nft{Nft::with_levels(Levels{2, {0, 1}}, 2, {0}, {1})};
+		nft.delta.add(0, 'a', 1);
+		// Where size_t is as wide as unsigned, the first length alone already makes 'length + 1' wrap to zero; on a
+		// 64-bit build it takes both of them to overflow the product.
+		CHECK_THROWS_AS(
+			get_words_of_lengths(nft, {std::numeric_limits<unsigned>::max(), std::numeric_limits<unsigned>::max()}),
+			std::invalid_argument
+		);
+	}
 }

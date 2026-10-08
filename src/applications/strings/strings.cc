@@ -215,6 +215,9 @@ std::optional<std::vector<mata::Word>>
 		return std::invalid_argument("get_words_of_lengths(): the lengths span too many configurations");
 	};
 	for (size_t level{0}; level < num_of_levels; ++level) {
+		// On a build where size_t is as wide as unsigned, 'lengths[level] + 1' would wrap to zero and the division
+		// below would be undefined, so the length that cannot be spanned is rejected before it is incremented.
+		if (static_cast<size_t>(lengths[level]) >= UNVISITED) { throw too_large(); }
 		const size_t span{static_cast<size_t>(lengths[level]) + 1};
 		if (radix[level] > UNVISITED / span) { throw too_large(); }
 		radix[level + 1] = radix[level] * span;
