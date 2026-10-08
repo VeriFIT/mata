@@ -255,32 +255,68 @@ std::optional<std::vector<mata::Word>>
 		return words;
 	};
 
-	std::vector<size_t> worklist{};
+	// The search descends into the first successor it has not seen yet and only looks at the next transition of a
+	// configuration once it comes back, so reaching an accepting configuration costs one step per symbol written
+	// instead of expanding every transition on the way. Breadth first would expand the whole frontier below the
+	// requested lengths before it ever reached one.
+	struct Frame {
+		size_t config;
+		size_t counts;
+		nft::Level level;
+		/// Nothing more can be written on the tape of @c level, so only epsilon transitions are left to take.
+		bool tape_full;
+		StatePost::const_iterator symbol_post;
+		StatePost::const_iterator symbol_post_end;
+		StateSet::const_iterator target;
+	};
+	std::vector<Frame> stack{};
+	auto enter = [&](const size_t config) {
+		const State source{config / num_of_counts};
+		const size_t counts{config % num_of_counts};
+		const nft::Level level{nft.levels[source]};
+		const StatePost& state_post{nft.delta[source]};
+		Frame frame{
+			.config = config,
+			.counts = counts,
+			.level = level,
+			// Reading a non-epsilon symbol fills one more place on the tape of the source level.
+			.tape_full = (counts / radix[level]) % (static_cast<size_t>(lengths[level]) + 1) == lengths[level],
+			.symbol_post = state_post.cbegin(),
+			.symbol_post_end = state_post.cend(),
+			.target = {},
+		};
+		if (frame.symbol_post != frame.symbol_post_end) { frame.target = frame.symbol_post->targets.cbegin(); }
+		stack.push_back(frame);
+	};
+
 	for (const State initial_state : nft.initial) {
 		const size_t config{initial_state * num_of_counts};
 		if (!visit(config, SearchNode{.prev = SEARCH_ROOT})) { continue; }
 		if (full_counts == 0 && nft.final[initial_state]) { return std::vector<Word>(num_of_levels); }
-		worklist.push_back(config);
+		enter(config);
 	}
 
-	for (size_t head{0}; head < worklist.size(); ++head) {
-		const size_t config{worklist[head]};
-		const State source{config / num_of_counts};
-		const size_t counts{config % num_of_counts};
-		const nft::Level level{nft.levels[source]};
-		// Reading a non-epsilon symbol fills one more place on the tape of the source level.
-		const bool tape_full{(counts / radix[level]) % (static_cast<size_t>(lengths[level]) + 1) == lengths[level]};
-		for (const SymbolPost& symbol_post : nft.delta[source]) {
-			const Symbol symbol{symbol_post.symbol};
-			if (symbol != nft::EPSILON && tape_full) { continue; }
-			const size_t new_counts{symbol == nft::EPSILON ? counts : counts + radix[level]};
-			for (const State target : symbol_post.targets) {
-				const size_t new_config{target * num_of_counts + new_counts};
-				if (!visit(new_config, SearchNode{.prev = config, .symbol = symbol, .level = level})) { continue; }
-				if (new_counts == full_counts && nft.final[target]) { return words_leading_to(new_config); }
-				worklist.push_back(new_config);
-			}
+	while (!stack.empty()) {
+		Frame& frame{stack.back()};
+		// Skip the symbol posts that are used up and the ones that would write past the requested length.
+		while (frame.symbol_post != frame.symbol_post_end &&
+			   (frame.target == frame.symbol_post->targets.cend() ||
+				(frame.symbol_post->symbol != nft::EPSILON && frame.tape_full))) {
+			++frame.symbol_post;
+			if (frame.symbol_post != frame.symbol_post_end) { frame.target = frame.symbol_post->targets.cbegin(); }
 		}
+		if (frame.symbol_post == frame.symbol_post_end) {
+			stack.pop_back();
+			continue;
+		}
+		const Symbol symbol{frame.symbol_post->symbol};
+		const State target{*frame.target};
+		++frame.target;
+		const size_t new_counts{symbol == nft::EPSILON ? frame.counts : frame.counts + radix[frame.level]};
+		const size_t new_config{target * num_of_counts + new_counts};
+		if (!visit(new_config, SearchNode{.prev = frame.config, .symbol = symbol, .level = frame.level})) { continue; }
+		if (new_counts == full_counts && nft.final[target]) { return words_leading_to(new_config); }
+		enter(new_config); // Invalidates 'frame'.
 	}
 
 	return std::nullopt;
