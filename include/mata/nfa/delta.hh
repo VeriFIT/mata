@@ -550,6 +550,26 @@ class Delta {
 
 	void add(State source, Symbol symbol, State target);
 	void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
+
+	/**
+	 * @brief Add a whole, already sorted symbol post to @p source.
+	 *
+	 * The targets of @p symbol_post are merged into the post of @p source in one linear pass, instead of one
+	 *  binary search and one vector shift per target as repeated @c add() would do.
+	 * @param[in] source Source state of the added transitions.
+	 * @param[in] symbol_post Symbol post to add; its targets must be sorted and unique, as @c StateSet guarantees.
+	 */
+	void add(State source, SymbolPost&& symbol_post);
+
+	/**
+	 * @brief Add transitions given in an arbitrary order.
+	 *
+	 * Sorts @p transitions by (source, symbol, target) and deduplicates them once, then writes whole symbol posts,
+	 *  instead of searching and shifting per transition as repeated @c add() does. Duplicates collapse and states
+	 *  up to the largest mentioned one are allocated, exactly as with repeated @c add().
+	 * @param[in,out] transitions Transitions to add; sorted in place, so the vector is consumed.
+	 */
+	void add(std::vector<Transition>&& transitions);
 	void remove(State source, Symbol symbol, State target);
 	void remove(const Transition& transition) { remove(transition.source, transition.symbol, transition.target); }
 
@@ -742,6 +762,102 @@ class Delta {
   protected:
 	std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+/**
+ * @brief Append-only builder of a @c Delta whose transitions are produced in order.
+ *
+ * @c Delta::add() is the right primitive for one unpredictable edit: it searches for the symbol and for the
+ *  position of the target and shifts the vectors. An algorithm that already produces its output in order pays
+ *  those searches for nothing. The builder promises the order instead, so every value is written at the end in
+ *  constant time, and the finished posts are moved into the delta once.
+ *
+ * The caller must keep these invariants; each is checked by @c MATA_ASSERT in Debug builds and assumed in
+ *  Release builds:
+ * - @c begin_state() is called with strictly increasing source states;
+ * - @c begin_symbol() is called with strictly increasing symbols within one source state;
+ * - @c push_sorted_target() is called with strictly increasing targets within one symbol;
+ * - @c begin_symbol() / @c begin_state() are closed by @c finish_symbol() / @c finish_state() before the next one
+ *   begins, and a symbol post with no target is not emitted;
+ * - no reference obtained from the builder survives @c finish_state().
+ *
+ * Duplicate transitions are a precondition violation, not a silently collapsed input: use
+ *  @c Delta::add(std::vector<Transition>&&) for data that may be unordered or contain duplicates.
+ */
+class DeltaBuilder {
+  public:
+	DeltaBuilder() = default;
+	/// @param[in] num_of_states_hint Expected number of states, used to reserve the state posts up front.
+	explicit DeltaBuilder(const size_t num_of_states_hint) { state_posts_.reserve(num_of_states_hint); }
+
+	/// Starts the transitions of @p source. Every state before @p source keeps an empty post.
+	void begin_state(State source) {
+		MATA_ASSERT(!in_state_ && "begin_state() called before finish_state()");
+		MATA_ASSERT(
+			(state_posts_.empty() || source >= state_posts_.size()) && "sources must be strictly increasing"
+		);
+		state_posts_.resize(source + 1);
+		source_ = source;
+		in_state_ = true;
+		has_symbol_ = false;
+	}
+
+	/// Starts the targets of @p symbol under the current source state.
+	void begin_symbol(const Symbol symbol) {
+		MATA_ASSERT(in_state_ && "begin_symbol() called outside of a state");
+		MATA_ASSERT(!in_symbol_ && "begin_symbol() called before finish_symbol()");
+		MATA_ASSERT((!has_symbol_ || symbol > symbol_post_.symbol) && "symbols must be strictly increasing");
+		symbol_post_ = SymbolPost{ symbol };
+		in_symbol_ = true;
+	}
+
+	/// Appends @p target to the targets of the current symbol.
+	void push_sorted_target(const State target) {
+		MATA_ASSERT(in_symbol_ && "push_sorted_target() called outside of a symbol");
+		MATA_ASSERT(
+			(symbol_post_.targets.empty() || target > symbol_post_.targets.back()) &&
+			"targets must be strictly increasing"
+		);
+		symbol_post_.targets.push_back(target);
+		max_target_ = std::max(max_target_, target);
+	}
+
+	/// Closes the current symbol. A symbol post without a target is dropped, since the delta stores no such post.
+	void finish_symbol() {
+		MATA_ASSERT(in_symbol_ && "finish_symbol() without begin_symbol()");
+		in_symbol_ = false;
+		if (symbol_post_.targets.empty()) { return; }
+		has_symbol_ = true;
+		state_posts_[source_].push_back(std::move(symbol_post_));
+	}
+
+	/// Closes the current source state.
+	void finish_state() {
+		MATA_ASSERT(in_state_ && "finish_state() without begin_state()");
+		MATA_ASSERT(!in_symbol_ && "finish_state() called before finish_symbol()");
+		in_state_ = false;
+	}
+
+	/// Hands over the finished delta. The builder must not be used afterwards.
+	Delta finish() {
+		MATA_ASSERT(!in_state_ && !in_symbol_ && "finish() called inside an unfinished state or symbol");
+		// A target state needs its own (possibly empty) post, like every other state of the delta.
+		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) { state_posts_.resize(max_target_ + 1); }
+		Delta delta{};
+		delta.reserve(state_posts_.size());
+		for (StatePost& state_post: state_posts_) { delta.emplace_back(std::move(state_post)); }
+		state_posts_.clear();
+		return delta;
+	}
+
+  private:
+	std::vector<StatePost> state_posts_{};
+	SymbolPost symbol_post_{};
+	State source_{ 0 };
+	State max_target_{ 0 };
+	bool in_state_{ false };
+	bool in_symbol_{ false };
+	bool has_symbol_{ false }; ///< Has the current state emitted a symbol post already?
+}; // class DeltaBuilder.
 
 /**
  * @brief Defragment the Delta.
