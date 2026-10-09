@@ -1203,7 +1203,11 @@ Nft algorithms::compose_general(
 	insert_self_loops(rhs_synced, rhs_new_levels_mask);
 
 	Nft result{intersection(lhs_synced, rhs_synced, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state)};
-	if (project_out_sync_levels) { result = project_out(result, sync_levels_to_project_out, jump_mode); }
+	if (project_out_sync_levels) {
+		// `project_out()` allocates per state and runs its closure over all of them, and only trims at the end.
+		result.trim();
+		result = project_out(result, sync_levels_to_project_out, jump_mode);
+	}
 
 	result.alphabets = compose_alphabets(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
 
