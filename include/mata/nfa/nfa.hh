@@ -983,6 +983,21 @@ Nfa complement(
 );
 
 /**
+ * @brief Compute automaton accepting complement of @p aut.
+ *
+ * This overloaded version accepts an rvalue reference and complements in place when the input is deterministic,
+ * avoiding an unnecessary copy for temporary automata.
+ *
+ * @param[in] aut Automaton (rvalue) whose complement to compute.
+ * @param[in] symbols Symbols to complement over.
+ * @param[in] params Optional parameters to control the complementation algorithm.
+ * @return Complemented automaton.
+ */
+Nfa complement(
+	Nfa&& aut, const utils::OrdVector<Symbol>& symbols, const ParameterMap& params = {{"algorithm", "classical"}}
+);
+
+/**
  * @brief Compute minimal deterministic automaton.
  *
  * @param[in] aut Automaton whose minimal version to compute.
