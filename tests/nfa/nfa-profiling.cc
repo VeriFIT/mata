@@ -38,12 +38,6 @@ TEST_CASE("mata::nfa::fragile_revert() speed, harder", "[.profiling]") {
 	for (int i = 0; i < 200; i++) { B = fragile_revert(B); }
 }
 
-TEST_CASE("mata::nfa::somewhat_simple_revert() speed, harder", "[.profiling]") {
-	// this gives an interesting test case if the parser is not trimming and reducing
-	Nfa B{mata::parser::create_nfa("((.*){10})*", false, EPSILON, false)};
-	for (int i = 0; i < 200; i++) { B = somewhat_simple_revert(B); }
-}
-
 TEST_CASE("mata::nfa::trim_inplace() speed, simple", "[.profiling]") {
 	Nfa A, B;
 	FILL_WITH_AUT_B(B);
@@ -70,26 +64,6 @@ TEST_CASE("mata::nfa::trim_inplace() speed, harder", "[.profiling]") {
 TEST_CASE("mata::nfa::get_used_symbols speed, harder", "[.profiling]") {
 	Nfa A{create_nfa("((.*){10})*")};
 	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols(); }
-}
-
-TEST_CASE("mata::nfa::get_used_symbols_bv speed, harder", "[.profiling]") {
-	Nfa A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_bv(); }
-}
-
-TEST_CASE("mata::nfa::get_used_symbols_vec speed, harder", "[.profiling]") {
-	Nfa A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_vec(); }
-}
-
-TEST_CASE("mata::nfa::get_used_symbols_set speed, harder", "[.profiling]") {
-	Nfa A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_set(); }
-}
-
-TEST_CASE("mata::nfa::get_used_symbols_sps speed, harder", "[.profiling]") {
-	Nfa A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_sps(); }
 }
 
 /////////////////////////////

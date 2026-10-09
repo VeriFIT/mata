@@ -54,13 +54,7 @@ Nfa mata::nfa::trim(
 
 	// Compute useful states using Tarjan's algorithm.
 	// The result is a bool vector where true means the state is useful.
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-	useful_states.clear();
-	useful_states = nfa.get_useful_states(initial_states, final_states);
-#else
 	const BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-#endif
 	Nfa nfa_trimmed{};
 
 	const size_t useful_states_size{useful_states.size()};

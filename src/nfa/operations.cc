@@ -305,41 +305,6 @@ Nfa mata::nfa::fragile_revert(const Nfa& aut) {
 	// size of the "used alphabet", i.e. max symbol+1 or 0
 	const Symbol alphabet_size = (symbols.empty()) ? 0 : (symbols.back() + 1);
 
-#ifdef _STATIC_STRUCTURES_
-	// STATIC DATA STRUCTURES:
-	//  Not sure that it works ideally, whether the space for the inner vectors stays there.
-	static std::vector<std::vector<State>> sources;
-	static std::vector<std::vector<State>> targets;
-	static std::vector<State> e_sources;
-	static std::vector<State> e_targets;
-	if (alphabet_size > sources.size()) {
-		sources.resize(alphabet_size);
-		targets.resize(alphabet_size);
-	}
-
-	e_sources.clear();
-	e_targets.clear();
-
-	// WHEN ONLY MAX SYMBOL IS COMPUTED
-	//  for (int i = 0;i<alphasize;i++) {
-	//      for (int i = 0;i<alphasize;i++) {
-	//          if (!sources[i].empty())
-	//          {
-	//              sources[i].resize(0);
-	//              targets[i].resize(0);
-	//          }
-	//      }
-	//  }
-
-	// WHEN ALL SYMBOLS ARE COMPUTED
-	for (Symbol symbol : symbols) {
-		if (!sources[symbol].empty()) {
-			sources[symbol].clear();
-			targets[symbol].clear();
-		}
-	}
-#else
-	// NORMAL, NON-STATIC DATA STRUCTURES:
 	// All transition of delta are to be copied here, into two arrays of transition sources and targets indexed by the
 	//  transition symbol.
 	// There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in
@@ -349,7 +314,6 @@ Nfa mata::nfa::fragile_revert(const Nfa& aut) {
 	std::vector<std::vector<State>> targets(alphabet_size);
 	std::vector<State> e_sources;
 	std::vector<State> e_targets;
-#endif
 
 	// Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
 	// Targets and sources of e-transitions go to the special place.
@@ -430,45 +394,9 @@ Nfa mata::nfa::simple_revert(const Nfa& aut) {
 	return result;
 }
 
-// not so great, can be removed
-Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
-	const size_t num_of_states{aut.num_of_states()};
-
-	Nfa result(num_of_states);
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : aut.delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				StatePost& post = result.delta.mutable_state_post(target_state);
-				// auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
-				if (auto move = post.find(SymbolPost(transition.symbol)); move == post.end()) {
-					// post.push_back(Move(transition.symbol,sourceState));
-					post.insert(SymbolPost(transition.symbol, source_state));
-				} else {
-					move->push_back(source_state);
-				}
-				// move->insert(sourceState);
-			}
-		}
-	}
-
-	// sorting the targets
-	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
-		// Post & post = result.delta.get_mutable_post(q);
-		// utils::sort_and_rmdupl(post);
-		for (SymbolPost& m : result.delta.mutable_state_post(q)) { sort_and_rmdupl(m.targets); }
-	}
-
-	return result;
-}
-
 Nfa mata::nfa::revert(const Nfa& aut) {
 	return simple_revert(aut);
 	// return fragile_revert(aut);
-	// return somewhat_simple_revert(aut);
 }
 
 bool mata::nfa::Nfa::is_deterministic() const {
