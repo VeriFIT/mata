@@ -5564,3 +5564,23 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 		CHECK(are_equivalent(result, aut.decode_utf8()));
 	}
 }
+
+TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740") { // {{{
+	std::mt19937 gen{740};
+	for (size_t iteration{0}; iteration < 30; ++iteration) {
+		const size_t num_states{std::uniform_int_distribution<size_t>(2, 40)(gen)};
+		Nfa nfa{num_states};
+		for (State state{0}; state + 1 < num_states; ++state) {
+			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
+			for (size_t i{0}; i < out_degree; ++i) {
+				nfa.delta.add(state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
+					  num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, num_states - 1)(gen) : 0);
+			}
+			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
+		}
+		// The slow oracle: revert the automaton completely and BFS over it, as distances_to_final() used to be
+		//  implemented.
+		CHECK(nfa.distances_to_final() == revert(nfa).distances_from_initial());
+	}
+} // }}}
+
