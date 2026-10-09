@@ -6,9 +6,11 @@
 #include <deque>
 #include <format>
 #include <iterator>
+#include <map>
 #include <optional>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/delta.hh"
@@ -26,28 +28,52 @@ using mata::Symbol;
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
+/**
+ * @brief Forward direct simulation: @c get(p, q) is true iff @c q simulates @c p.
+ *
+ * A final state may only be simulated by a final state, and states on different levels may not be
+ *  related at all. Both used to be encoded as self-loops over fresh symbols derived from the largest
+ *  used symbol: `max + 1` for the finals and `max + 2 + level` for every state. That added
+ *  `|Q| + |F|` transitions and `num_of_levels + 1` labels, and the arithmetic wrapped onto real
+ *  symbols whenever @c EPSILON or @c DONT_CARE was present (#727), which silently related states that
+ *  must not be related. The same constraints are the initial partition of the states by
+ *  `(level, final)` with the block relation `level(B) == level(B') && (final(B) -> final(B'))`.
+ */
 Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nft& aut) {
-	const Symbol max_symbol{aut.delta.get_max_symbol()};
 	const size_t state_num{aut.num_of_states()};
 	Simlib::ExplicitLTS lts_for_simulation(state_num);
 
 	for (const Transition& transition : aut.delta.transitions()) {
 		lts_for_simulation.add_transition(transition.source, transition.symbol, transition.target);
 	}
-
-	// final states cannot be simulated by nonfinal -> we add new self-loops over final states with new symbol in LTS
-	for (const State final_state : aut.final) {
-		lts_for_simulation.add_transition(final_state, max_symbol + 1, final_state);
-	}
-
-	// similarly, states on different levels cannot be simulated by each other, we add self loops over the same fresh
-	// symbol for each state of the same level
-	for (State state = 0; state < state_num; ++state) {
-		lts_for_simulation.add_transition(state, max_symbol + 2 + aut.levels[state], state);
-	}
-
 	lts_for_simulation.init();
-	return lts_for_simulation.compute_simulation();
+
+	// One block per occupied (level, final) pair; the engine rejects empty blocks.
+	std::map<std::pair<Level, bool>, size_t> block_of{};
+	std::vector<std::vector<size_t>> partition{};
+	std::vector<std::pair<Level, bool>> block_key{};
+	for (State state{0}; state < state_num; ++state) {
+		const std::pair<Level, bool> key{aut.levels[state], static_cast<bool>(aut.final[state])};
+		const auto [it, inserted]{block_of.try_emplace(key, partition.size())};
+		if (inserted) {
+			partition.emplace_back();
+			block_key.push_back(key);
+		}
+		partition[it->second].push_back(state);
+	}
+
+	Simlib::Util::BinaryRelation relation{partition.size(), false};
+	for (size_t simulated{0}; simulated < partition.size(); ++simulated) {
+		for (size_t simulating{0}; simulating < partition.size(); ++simulating) {
+			const auto& [simulated_level, simulated_final]{block_key[simulated]};
+			const auto& [simulating_level, simulating_final]{block_key[simulating]};
+			if (simulated_level == simulating_level && (!simulated_final || simulating_final)) {
+				relation.set(simulated, simulating, true);
+			}
+		}
+	}
+
+	return lts_for_simulation.compute_simulation(partition, relation, state_num);
 }
 
 Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
