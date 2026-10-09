@@ -85,6 +85,27 @@ bool is_included_antichains(
 );
 
 /**
+ * @brief Check equivalence with @c EPSILON read as an ordinary symbol.
+ *
+ * This is what @c mata::nfa::are_equivalent() does once its operands have no epsilon transitions left. Callers that
+ *  mean epsilon as a letter, such as the unwound transducers of @c mata::nft, use this entry point directly.
+ *
+ * @param[in] lhs,rhs Automata to compare.
+ * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if
+ *  you have it).
+ * @param[in] params Algorithm to use, @c "naive" or @c "antichains".
+ * @param[out] cex A word of the symmetric difference, when the languages differ.
+ * @return True if the languages are equal.
+ */
+bool are_equivalent_epsilon_as_symbol(
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const Alphabet* alphabet = nullptr,
+	const ParameterMap& params = {{"algorithm", "antichains"}},
+	Run* cex = nullptr
+);
+
+/**
  * @brief Check universality by checking the emptiness of a complement of @p aut.
  *
  * @param[in] aut Automaton which universality is checked

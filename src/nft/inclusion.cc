@@ -110,10 +110,13 @@ bool mata::nft::are_equivalent(
 		symbols = alphabet->get_alphabet_symbols();
 	}
 
-	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly.
+	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly. EPSILON
+	// on a level means "nothing on this tape" and stays a letter here, so the epsilon-unaware entry point is used.
 	Nft lhs_unwound{lhs.unwind_jumps(symbols, jump_mode)};
 	Nft rhs_unwound{rhs.unwind_jumps(symbols, jump_mode)};
-	return nfa::are_equivalent(lhs_unwound.to_nfa_move(), rhs_unwound.to_nfa_move(), alphabet, params);
+	return nfa::algorithms::are_equivalent_epsilon_as_symbol(
+		lhs_unwound.to_nfa_move(), rhs_unwound.to_nfa_move(), alphabet, params
+	);
 }
 
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const JumpMode jump_mode, const ParameterMap& params) {
