@@ -615,13 +615,9 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
 
 // returns symbols appearing in Delta, inserts to a std::set
 std::set<Symbol> Delta::get_used_symbols_set() const {
-	// static should prevent reallocation, seems to speed things up a little
-#ifdef _STATIC_STRUCTURES_
-	static std::set<Symbol> symbols;
-	symbols.clear();
-#else
-	static std::set<Symbol> symbols{};
-#endif
+	// Not a function-local `static`: the non-`_STATIC_STRUCTURES_` branch never cleared it, so the
+	//  results of every call on every `Delta` piled up in one set that all threads shared.
+	std::set<Symbol> symbols{};
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) { symbols.insert(symbol_post.symbol); }
 	}

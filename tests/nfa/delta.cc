@@ -10,6 +10,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <atomic>
+#include <set>
+#include <thread>
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -77,6 +81,50 @@ TEST_CASE("mata::nfa::StatePost equality compares the targets - issue #732") {
 	// `SymbolPost` itself stays symbol-only; `StatePost::find()` and `erase()` identify a post by it.
 	CHECK(SymbolPost{1, StateSet{1}} == SymbolPost{1, StateSet{2, 3}});
 	CHECK(two_targets.find(SymbolPost{1}) != two_targets.end());
+}
+
+TEST_CASE("mata::nfa concurrent lookups and unions on unrelated automata - issue #731") {
+	// `StatePost::find(Symbol)` wrote its lookup key into a function-local `static`, and
+	//  `OrdVector::insert(const OrdVector&)` merged into one. Two threads working on automata that
+	//  share nothing therefore raced on those buffers: the unions came out wrong and the heap was
+	//  corrupted. With both buffers gone the threads touch no common object at all.
+	Nfa first{2, {0}, {1}};
+	first.delta.add(0, 'a', 1);
+	Nfa second{2, {0}, {1}};
+	second.delta.add(0, 'b', 1);
+
+	std::atomic<long> wrong_find{0};
+	std::atomic<long> wrong_union{0};
+	constexpr int iterations{200'000};
+	const auto worker{[&](const Nfa& nfa, const Symbol symbol, const State base) {
+		for (int iteration{0}; iteration < iterations; ++iteration) {
+			if (nfa.delta[0].find(symbol) == nfa.delta[0].end()) { ++wrong_find; }
+			StateSet targets{base, base + 2};
+			targets.insert(StateSet{base + 1});
+			if (targets != StateSet{base, base + 1, base + 2}) { ++wrong_union; }
+		}
+	}};
+
+	std::thread first_worker{worker, std::cref(first), 'a', 0};
+	std::thread second_worker{worker, std::cref(second), 'b', 100};
+	first_worker.join();
+	second_worker.join();
+
+	CHECK(wrong_find == 0);
+	CHECK(wrong_union == 0);
+}
+
+TEST_CASE("mata::nfa::Delta::get_used_symbols_set() starts empty on every call - issue #731") {
+	// The set was a function-local `static` the default branch never cleared, so a second call
+	//  returned the union of everything seen so far, on this `Delta` and on every other one.
+	Nfa first{2, {0}, {1}};
+	first.delta.add(0, 'a', 1);
+	Nfa second{2, {0}, {1}};
+	second.delta.add(0, 'b', 1);
+
+	CHECK(first.delta.get_used_symbols_set() == std::set<Symbol>{'a'});
+	CHECK(second.delta.get_used_symbols_set() == std::set<Symbol>{'b'});
+	CHECK(first.delta.get_used_symbols_set() == std::set<Symbol>{'a'});
 }
 
 TEST_CASE("mata::nfa::Delta::state_post()") {

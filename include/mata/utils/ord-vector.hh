@@ -228,19 +228,26 @@ template <class Key> class OrdVector {
 	}
 
 	bool insert(const OrdVector& vec) {
-		static OrdVector tmp{};
 		MATA_ASSERT(is_sorted());
 		MATA_ASSERT(vec.is_sorted());
-		tmp.clear();
 
-		const auto inserted{set_union(*this, vec, tmp)};
-		vec_ = tmp.vec_;
-		/*
-		 * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
-		 * But it defeats the idea of having tmp vector shared between all the unions and allocated only once.
-		 * It would be good to try it with removing epsilon transitions or determinization.
-		 */
-		// std::swap(tmp.vec_,vec_);
+		if (vec.empty()) { return false; }
+		if (vec_.empty()) {
+			vec_ = vec.vec_;
+			return true;
+		}
+		if (vec_.back() < vec.vec_.front()) { // Disjoint and in order: append without any comparison.
+			vec_.insert(vec_.end(), vec.vec_.begin(), vec.vec_.end());
+			return true;
+		}
+
+		// The merge buffer is local. It used to be a function-local `static` shared by every thread in
+		//  the process, which corrupted the result of concurrent unions over unrelated containers.
+		VectorType merged{};
+		merged.reserve(vec_.size() + vec.vec_.size());
+		std::ranges::set_union(vec_, vec.vec_, std::back_inserter(merged));
+		const bool inserted{merged.size() > vec_.size()};
+		vec_ = std::move(merged);
 		MATA_ASSERT(is_sorted());
 		return inserted;
 	}
