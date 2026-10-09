@@ -150,16 +150,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CNfa(const CNfa&)
 
         # Public Functions
-        void make_initial(State)
-        void make_initial(vector[State])
-        bool has_initial(State)
-        void remove_initial(State)
-        void clear_initial()
-        void make_final(State)
-        void make_final(vector[State])
-        bool has_final(State)
-        void remove_final(State)
-        void clear_final()
         void unify_initial(bool)
         void unify_final(bool)
         bool is_state(State)
@@ -191,7 +181,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
         cset[vector[Symbol]] get_words(size_t) except +
-        void make_complete(CAlphabet*, optional[State]) except +
+        bool make_complete(CAlphabet*, optional[State]) except +
         shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
         COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +
 
