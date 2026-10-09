@@ -90,6 +90,16 @@ class Delta:
     def add(
         self, source: State, symbol: Symbol | str, target: Iterable[State], alphabet: alph.Alphabet = None
     ) -> None: ...
+    def add_transitions(self, sources: Iterable[State], symbols: Iterable[Symbol], targets: Iterable[State]) -> None:
+        """Add multiple transitions from sequences of sources, symbols, and targets.
+        
+        All three sequences must have equal length. Invalid input raises without modifying the automaton.
+        """
+    def add_transitions_from(self, triples: Iterable[tuple[State, Symbol, State]]) -> None:
+        """Add multiple transitions from an iterable of (source, symbol, target) triples.
+        
+        Equivalent to add_transitions() but accepting a single iterable. Invalid input raises without modifying.
+        """
     @overload
     def remove(self, source: Transition) -> None: ...
     @overload
@@ -118,6 +128,11 @@ class Delta:
     def __iter__(self) -> Iterator[Transition]: ...
     def get_transitions_from(self, source: State) -> list[Transition]:
         """Get the transitions leading from `source`."""
+    def iter_transitions_from(self, source: State) -> Iterator[Transition]:
+        """Iterate over transitions from a source state (streaming form).
+        
+        For a list, use get_transitions_from().
+        """
     def get_transitions_to(self, target: State) -> list[Transition]:
         """Get the transitions leading to `target`."""
     def get_transitions_between(self, source: State, target: State) -> list[Transition]:
@@ -278,10 +293,10 @@ class Nfa:
         """Get the current number of states in the whole automaton.
         :return: The number of states.
         """
-    def iterate(self) -> Iterable[Transition]:
-        """Iterates over all transitions
+    def iterate(self) -> Iterator[Transition]:
+        """Iterate over all transitions (streaming form).
 
-        :return: stream of transitions
+        For a list, use get_trans_as_sequence().
         """
     def get_transitions_from_state(self, state: State) -> list[SymbolPost]:
         """Returns list of SymbolPost for the given state
@@ -295,16 +310,21 @@ class Nfa:
         :return: List mata_nfa.CTrans: List of transitions leading to state_to.
         """
     def get_trans_as_sequence(self) -> list[Transition]:
-        """Get automaton transitions as a sequence.
+        """Get automaton transitions as a sequence (materializes iterate()).
 
-        TODO: Refactor into a generator.
+        For streaming, use iterate().
 
         :return: List of automaton transitions.
         """
+    def iter_transitions_from(self, state: State) -> Iterator[Transition]:
+        """Iterate over transitions from a source state (streaming form).
+        
+        For a list, use get_trans_from_state_as_sequence().
+        """
     def get_trans_from_state_as_sequence(self, source: State) -> list[Transition]:
-        """Get automaton transitions from state_from as a sequence.
+        """Get automaton transitions from source as a sequence (materializes iter_transitions_from()).
 
-        TODO: Refactor into a generator.
+        For streaming, use iter_transitions_from().
 
         :return: List of automaton transitions.
         """
