@@ -77,13 +77,19 @@ std::string serialize_graph(const mata::FormulaGraph& graph) {
 	if (graph.node.is_operand()) { return graph.node.raw; }
 
 	if (graph.children.size() == 1) { // unary operator
+		// Recurse on the child graph itself, keeping its children; wrapping only the node would drop them and the
+		//  binary branch below would then read children that do not exist.
 		const auto& child = graph.children.front();
-		const std::string child_name =
-			child.node.is_operand() ? child.node.raw : "(" + serialize_graph(mata::FormulaGraph{child.node}) + ")";
+		const std::string child_name = child.node.is_operand() ? child.node.raw : "(" + serialize_graph(child) + ")";
 		return graph.node.raw + child_name;
 	}
 
-	MATA_ASSERT(graph.node.is_operator() && graph.children.size() == 2);
+	if (!graph.node.is_operator() || graph.children.size() != 2) {
+		throw std::runtime_error(
+			"Cannot serialize a formula graph with a non-binary operator node and " +
+			std::to_string(graph.children.size()) + " children."
+		);
+	}
 	const auto& left_child = graph.children.front();
 	std::string lhs = (left_child.node.is_operand()) ? left_child.node.raw : serialize_graph(left_child);
 	if (left_child.children.size() == 2) { lhs = "(" + lhs + ")"; }

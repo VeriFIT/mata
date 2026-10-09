@@ -1,5 +1,6 @@
 // TODO: Some header.
 
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -171,5 +172,28 @@ TEST_CASE("UTF-8 encoding") {
 				  0x8'00,	 0x10'00,	0x20'00,   0x30'00,	  0x40'00,	 0x50'00,	0x60'00,   0x70'00,	  0xFF'FF,
 				  0x1'00'00, 0x2'00'01, 0x3'00'02, 0x4'00'03, 0x5'00'04, 0x6'00'05, 0x7'00'06, 0x8'00'07, 0x10'FF'FF};
 		CHECK(decode_word_utf8(encode_word_utf8(word)) == word);
+	}
+}
+
+TEST_CASE("mata::Alphabet streaming - #760") {
+	SECTION("OnTheFlyAlphabet prints its name to symbol pairs") {
+		OnTheFlyAlphabet alphabet{{"a", 0}, {"b", 1}};
+		std::ostringstream out;
+		out << alphabet;
+		CHECK(out.str() == "{a->0, b->1}");
+	}
+
+	SECTION("EnumAlphabet prints its symbols") {
+		EnumAlphabet alphabet{0, 1, 5};
+		std::ostringstream out;
+		out << alphabet;
+		CHECK(out.str() == "{0, 1, 5}");
+	}
+
+	SECTION("IntAlphabet prints a tag instead of recursing forever") {
+		IntAlphabet alphabet{};
+		std::ostringstream out;
+		out << alphabet;
+		CHECK(out.str() == "IntAlphabet");
 	}
 }
