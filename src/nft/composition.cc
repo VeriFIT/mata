@@ -2,7 +2,13 @@
  * @brief Composition of two NFTs.
  */
 
+#include <algorithm>
+#include <format>
+#include <functional>
 #include <queue>
+#include <ranges>
+#include <stdexcept>
+#include <string_view>
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
@@ -197,6 +203,83 @@ class SynchronizationProperties {
 
 namespace mata::nft {
 
+namespace {
+/// @brief Number of levels the composition leaves, or 0 if it leaves none.
+size_t count_result_levels(
+	const Nft& lhs, const Nft& rhs, const size_t num_of_sync_levels, const bool project_out_sync_levels
+) {
+	const size_t removed{num_of_sync_levels * (project_out_sync_levels ? 2 : 1)};
+	const size_t kept{lhs.levels.num_of_levels + rhs.levels.num_of_levels};
+	return kept > removed ? kept - removed : 0;
+}
+
+void check_sync_level_in_range(
+	const std::string_view caller, const std::string_view side, const Nft& nft, const Level level
+) {
+	if (level >= nft.levels.num_of_levels) {
+		throw std::invalid_argument(
+			std::format(
+				"{}: synchronization level {} is out of range for the {} NFT with {} levels.", caller, level, side,
+				nft.levels.num_of_levels
+			)
+		);
+	}
+}
+
+void check_result_num_of_levels(
+	const std::string_view caller,
+	const Nft& lhs,
+	const Nft& rhs,
+	const size_t num_of_sync_levels,
+	const bool project_out_sync_levels
+) {
+	if (count_result_levels(lhs, rhs, num_of_sync_levels, project_out_sync_levels) == 0) {
+		throw std::invalid_argument(
+			std::format(
+				"{}: composing {} and {} levels on {} synchronization level(s){} leaves no levels.", caller,
+				lhs.levels.num_of_levels, rhs.levels.num_of_levels, num_of_sync_levels,
+				project_out_sync_levels ? " projected out" : ""
+			)
+		);
+	}
+}
+
+void check_sync_levels(
+	const std::string_view caller, const std::string_view side, const Nft& nft, const OrdVector<Level>& sync_levels
+) {
+	// `OrdVector`'s constructors sort and deduplicate, but `push_back()` does not, and the composition subtracts
+	//  consecutive levels unsigned.
+	if (std::ranges::adjacent_find(sync_levels, std::greater_equal{}) != sync_levels.end()) {
+		throw std::invalid_argument(
+			std::format("{}: the {} synchronization levels must be strictly increasing.", caller, side)
+		);
+	}
+	check_sync_level_in_range(caller, side, nft, sync_levels.back());
+}
+
+/// @brief Check everything the composition engines assume about the request, in Release too.
+void validate_composition_request(
+	const std::string_view caller,
+	const Nft& lhs,
+	const Nft& rhs,
+	const OrdVector<Level>& lhs_sync_levels,
+	const OrdVector<Level>& rhs_sync_levels,
+	const bool project_out_sync_levels
+) {
+	if (lhs_sync_levels.size() != rhs_sync_levels.size() || lhs_sync_levels.empty()) {
+		throw std::invalid_argument(
+			std::format(
+				"{}: requires a non-empty pair of synchronization level vectors of the same size: got sizes {} and {}.",
+				caller, lhs_sync_levels.size(), rhs_sync_levels.size()
+			)
+		);
+	}
+	check_sync_levels(caller, "lhs", lhs, lhs_sync_levels);
+	check_sync_levels(caller, "rhs", rhs, rhs_sync_levels);
+	check_result_num_of_levels(caller, lhs, rhs, lhs_sync_levels.size(), project_out_sync_levels);
+}
+} // namespace
+
 std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 	const Nft& lhs,
 	const Nft& rhs,
@@ -204,6 +287,9 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 	const OrdVector<Level>& rhs_sync_levels,
 	const bool project_out_sync_levels
 ) {
+	validate_composition_request(
+		"compose_alphabets", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
+	);
 	if (lhs.alphabets == nullptr || rhs.alphabets == nullptr) { return nullptr; }
 
 	// Raw slot for a level, honoring Global (single shared alphabet) vs MultiLevel (per-level) mode.
@@ -228,10 +314,15 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 			composed_alphabets.push_back(slot_for_level(*rhs.alphabets, rhs_lvl));
 		}
 		if (!project_out_sync_levels) {
-			MATA_ASSERT(
-				slot_for_level(*lhs.alphabets, *lhs_sync_it) == slot_for_level(*rhs.alphabets, *rhs_sync_it),
-				"lhs and rhs must share the same alphabet instance on their synchronization levels"
-			);
+			if (slot_for_level(*lhs.alphabets, *lhs_sync_it) != slot_for_level(*rhs.alphabets, *rhs_sync_it)) {
+				throw std::invalid_argument(
+					std::format(
+						"compose_alphabets: lhs and rhs must share the same alphabet instance on their kept "
+						"synchronization levels {} and {}.",
+						*lhs_sync_it, *rhs_sync_it
+					)
+				);
+			}
 			composed_alphabets.push_back(slot_for_level(*lhs.alphabets, *lhs_sync_it));
 		}
 		++lhs_lvl;
@@ -259,12 +350,7 @@ Nft compose(
 	const JumpMode jump_mode,
 	const CompositionMode composition_mode
 ) {
-	if (lhs_sync_levels.size() != rhs_sync_levels.size() || lhs_sync_levels.empty()) {
-		throw std::invalid_argument(
-			"compose requires a non-empty pair of synchronization level vectors of the same size: got sizes " +
-			std::to_string(lhs_sync_levels.size()) + " and " + std::to_string(rhs_sync_levels.size()) + "."
-		);
-	}
+	validate_composition_request("compose", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
 	switch (composition_mode) {
 		case CompositionMode::FastNoJump:
 			if (jump_mode != JumpMode::NoJump) {
@@ -300,10 +386,9 @@ Nft algorithms::compose_fast_no_jump(
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels
 ) {
-	MATA_ASSERT(
-		lhs_sync_level < lhs.levels.num_of_levels && rhs_sync_level < rhs.levels.num_of_levels,
-		"Synchronization levels must be valid."
-	);
+	check_sync_level_in_range("compose_fast_no_jump", "lhs", lhs, lhs_sync_level);
+	check_sync_level_in_range("compose_fast_no_jump", "rhs", rhs, rhs_sync_level);
+	check_result_num_of_levels("compose_fast_no_jump", lhs, rhs, 1, project_out_sync_levels);
 	MATA_ASSERT(
 		std::all_of(
 			lhs.delta.transitions().begin(), lhs.delta.transitions().end(),
@@ -1103,8 +1188,9 @@ Nft algorithms::compose_general(
 	bool project_out_sync_levels,
 	const JumpMode jump_mode
 ) {
-	MATA_ASSERT(not lhs_sync_levels.empty());
-	MATA_ASSERT(lhs_sync_levels.size() == rhs_sync_levels.size());
+	validate_composition_request(
+		"compose_general", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
+	);
 
 	// Inserts loop into the given Nft for each state with level 0.
 	// The loop word is constructed using the EPSILON symbol for all levels, except for the levels

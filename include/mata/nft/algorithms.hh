@@ -197,6 +197,8 @@ Nft concatenate_eps(
  * of @c DONT_CARE.
  *
  * @return A new NFT after the composition.
+ * @throws std::invalid_argument When the request is invalid; the same checks as @c nft::compose() runs, so calling
+ *  this entry point directly does not skip them.
  */
 Nft compose_general(
 	const Nft& lhs,
@@ -224,6 +226,8 @@ Nft compose_general(
  * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
  *
  * @return A new NFT after the composition.
+ * @throws std::invalid_argument When a synchronization level is out of range for its operand, or when the
+ *  composition would leave no levels. The no-jump shape of the operands is only checked by @c MATA_ASSERT.
  */
 Nft compose_fast_no_jump(
 	const Nft& lhs,

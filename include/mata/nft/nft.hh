@@ -1691,7 +1691,14 @@ Nft intersection(
  *                             mode is optimized for NFTs without jump transitions and with only one synchronization
  * level.
  *
+ * @pre The synchronization level vectors are non-empty, of equal size and strictly increasing, every level is below
+ *  its operand's @c levels.num_of_levels, and the composition leaves at least one level; otherwise
+ *  @c std::invalid_argument naming the violated condition is thrown, in Release builds too.
+ *
  * @return A new NFT after the composition.
+ * @throws std::invalid_argument When the request violates the precondition above, when @p composition_mode is
+ *  @c FastNoJump and @p jump_mode is not @c NoJump, or when @c FastNoJump is asked for more than one
+ *  synchronization level.
  */
 Nft compose(
 	const Nft& lhs,
@@ -1711,8 +1718,8 @@ Nft compose(
  *  from @p rhs, then the synchronization level itself, repeated per synchronization block, with a trailing block
  *  of remaining non-synchronization levels after the last synchronization level).
  *
- * The synchronization levels of @p lhs and @p rhs are expected to already share the same alphabet instance
- *  (the caller's responsibility); when both are non-null this is checked with an assert.
+ * The synchronization levels of @p lhs and @p rhs must share the same alphabet instance when the synchronization
+ *  levels are kept (@p project_out_sync_levels is false) and both alphabets are non-null.
  *
  * @param[in] lhs First transducer whose alphabets to compose.
  * @param[in] rhs Second transducer whose alphabets to compose.
@@ -1720,6 +1727,8 @@ Nft compose(
  * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
  * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @return @c nullptr if either @p lhs.alphabets or @p rhs.alphabets is @c nullptr.
+ * @throws std::invalid_argument On the same invalid requests as @c compose(), and when the kept synchronization
+ *  levels do not share an alphabet instance.
  */
 std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 	const Nft& lhs,
