@@ -363,7 +363,12 @@ void Nft::print_to_mata(std::ostream& output) const {
 
 	for (const Transition& trans : delta.transitions()) {
 		std::string symbol_label;
-		if (alphabets != nullptr) {
+		// EPSILON and DONT_CARE belong to no alphabet; print the names the parser maps back (#505).
+		if (trans.symbol == EPSILON) {
+			symbol_label = EPSILON_NAME;
+		} else if (trans.symbol == DONT_CARE) {
+			symbol_label = DONT_CARE_NAME;
+		} else if (alphabets != nullptr) {
 			symbol_label = alphabets->reverse_translate_symbol(trans.symbol, levels[trans.source]);
 		} else {
 			symbol_label = std::to_string(trans.symbol);

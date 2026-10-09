@@ -87,6 +87,33 @@ TEST_CASE("parse_from_mata()") {
 		}
 	}
 
+	SECTION("automaton with epsilon transitions") {
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, EPSILON, 2);
+		nfa.delta.add(2, EPSILON, 0);
+
+		SECTION("from string") {
+			const std::string printed{nfa.print_to_mata()};
+			CHECK(printed.find(mata::EPSILON_NAME) != std::string::npos);
+			Nfa parsed{mata::nfa::builder::parse_from_mata(printed)};
+			CHECK(parsed.delta.contains(1, EPSILON, 2));
+			CHECK(parsed.delta.contains(2, EPSILON, 0));
+			CHECK(parsed.delta.contains(0, 'a', 1));
+			CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+		}
+
+		SECTION("an attached enumeration alphabet does not see the special name") {
+			auto alphabet{std::make_shared<mata::EnumAlphabet>(mata::EnumAlphabet{'a'})};
+			nfa.alphabet = alphabet;
+			std::string printed;
+			REQUIRE_NOTHROW(printed = nfa.print_to_mata());
+			Nfa parsed{mata::nfa::builder::parse_from_mata(printed)};
+			CHECK(parsed.delta.contains(1, EPSILON, 2));
+			CHECK(alphabet->get_number_of_symbols() == 1);
+		}
+	}
+
 	SECTION("larger automaton") {
 		Nfa nfa;
 		nfa.initial = {1, 2, 50};

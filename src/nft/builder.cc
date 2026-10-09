@@ -14,6 +14,25 @@ using namespace mata::nft;
 using mata::Symbol;
 using mata::nft::Nft;
 
+namespace {
+/// Maps the printed names of EPSILON and DONT_CARE back to their symbols; every other name goes to
+/// the alphabet, which never sees the special names (#505).
+Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) {
+	if (name == mata::EPSILON_NAME) { return EPSILON; }
+	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
+	return alphabet->translate_symb(name);
+}
+
+/// The per-level variant of @c translate_symbol_name.
+Symbol translate_symbol_name(
+	const std::shared_ptr<mata::AlphabetLevels>& alphabets, const std::string& name, const Level level
+) {
+	if (name == mata::EPSILON_NAME) { return EPSILON; }
+	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
+	return alphabets->translate_symb(name, level);
+}
+} // namespace
+
 Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
 	Nft aut;
 	MATA_ASSERT(nullptr != alphabet);
@@ -106,7 +125,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		}
 
 		const State source = get_state_name(body_line[0]);
-		const Symbol symbol = alphabet->translate_symb(body_line[1]);
+		const Symbol symbol = translate_symbol_name(alphabet, body_line[1]);
 		const State target = get_state_name(body_line[2]);
 		aut.delta.add(source, symbol, target);
 	}
@@ -151,7 +170,7 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 		}
 
 		const State source = get_state_name(formula_node.name);
-		const Symbol symbol = alphabet->translate_symb(formula_graph.children[0].node.name);
+		const Symbol symbol = translate_symbol_name(alphabet, formula_graph.children[0].node.name);
 		const State target = get_state_name(formula_graph.children[1].node.name);
 
 		aut.delta.add(source, symbol, target);
@@ -223,7 +242,7 @@ Nft builder::construct(
 		}
 
 		const State source = get_state_name(formula_node.name);
-		const Symbol symbol = alphabets->translate_symb(formula_graph.children[0].node.name, aut.levels[source]);
+		const Symbol symbol = translate_symbol_name(alphabets, formula_graph.children[0].node.name, aut.levels[source]);
 		const State target = get_state_name(formula_graph.children[1].node.name);
 		aut.delta.add(source, symbol, target);
 	}
