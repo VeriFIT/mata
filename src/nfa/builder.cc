@@ -169,7 +169,14 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 	const double final_state_density,
 	const std::optional<unsigned int>& seed
 ) {
-	if (num_of_states == 0) { return Nfa(); }
+	// Attach an alphabet holding exactly the symbols this generator uses. An empty alphabet would hide them from
+	//  `get_symbols_to_work_with()`, which prefers the attached alphabet over the symbols actually used, and would
+	//  thus break printing, completeness checks and completion.
+	std::vector<Symbol> alphabet_symbols(alphabet_size);
+	std::iota(alphabet_symbols.begin(), alphabet_symbols.end(), 0);
+	auto alphabet{std::make_shared<EnumAlphabet>(alphabet_symbols.begin(), alphabet_symbols.end())};
+
+	if (num_of_states == 0) { return Nfa{0, {}, {}, alphabet}; }
 	if (states_transitions_ratio_per_symbol < 0 ||
 		static_cast<size_t>(states_transitions_ratio_per_symbol) > num_of_states) {
 		// Maximum of num_of_states^2 unique transitions for one symbol can be created.
@@ -180,7 +187,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 		throw std::runtime_error("Final state density must be in range (0, 1]");
 	}
 
-	Nfa nfa{num_of_states, {0}, {0}, std::make_shared<OnTheFlyAlphabet>()};
+	Nfa nfa{num_of_states, {0}, {0}, alphabet};
 
 	// Initialize the random number generator
 	const unsigned int seed_value{seed.value_or(std::random_device{}())}; // Seed for the random number engine

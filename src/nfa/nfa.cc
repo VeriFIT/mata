@@ -49,49 +49,11 @@ Nfa mata::nfa::trim(
 	std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states,
 	std::optional<std::reference_wrapper<const SparseSet<State>>> final_states
 ) {
-	if (!initial_states) { initial_states = nfa.initial; }
-	if (!final_states) { final_states = nfa.final; }
-
-	// Compute useful states using Tarjan's algorithm.
-	// The result is a bool vector where true means the state is useful.
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-	useful_states.clear();
-	useful_states = nfa.get_useful_states(initial_states, final_states);
-#else
-	const BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-#endif
-	Nfa nfa_trimmed{};
-
-	const size_t useful_states_size{useful_states.size()};
-	std::vector<State> renaming(useful_states_size);
-	for (State new_state{0}, orig_state{0}; orig_state < useful_states_size; ++orig_state) {
-		if (useful_states[orig_state]) {
-			renaming[orig_state] = new_state;
-			++new_state;
-		}
-	}
-
-	nfa_trimmed.delta = defragment(nfa.delta, useful_states, renaming);
-
-	nfa_trimmed.initial = initial_states.value_or(nfa.initial);
-	nfa_trimmed.final = final_states.value_or(nfa.final);
-
-	auto is_state_useful = [&](const State q) { return q < useful_states.size() && useful_states[q]; };
-	nfa_trimmed.initial.filter(is_state_useful);
-	nfa_trimmed.final.filter(is_state_useful);
-	auto rename_state = [&](const State q) { return renaming[q]; };
-	nfa_trimmed.initial.rename(rename_state);
-	nfa_trimmed.final.rename(rename_state);
-	nfa_trimmed.initial.truncate();
-	nfa_trimmed.final.truncate();
-	if (state_renaming != nullptr) {
-		state_renaming->clear();
-		state_renaming->reserve(useful_states_size);
-		for (State q{0}; q < useful_states_size; ++q) {
-			if (useful_states[q]) { (*state_renaming)[q] = renaming[q]; }
-		}
-	}
+	Nfa nfa_trimmed{nfa};
+	// Inline the custom initial/final override logic before trimming in place.
+	if (initial_states) { nfa_trimmed.initial = initial_states->get(); }
+	if (final_states) { nfa_trimmed.final = final_states->get(); }
+	nfa_trimmed.trim(state_renaming);
 	return nfa_trimmed;
 }
 
