@@ -14,8 +14,9 @@ let
       "0.0.0+${lib.strings.sanitizeDerivationName version}";
 in
 python3Packages.buildPythonPackage (finalAttrs: {
-  pname = "mata-py";
-  inherit version;
+  # Both must match the wheel's .dist-info metadata, which pythonMetadataCheckHook verifies.
+  pname = "libmata";
+  version = pep440Version;
   pyproject = true;
 
   pythonImportsCheck = [
