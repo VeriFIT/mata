@@ -81,7 +81,9 @@
                     ))
                   ]
                   ++ (
-                    if pkgs.stdenv.hostPlatform.system != inputs.flake-utils.lib.system.aarch64-darwin then
+                    if
+                      pkgs.stdenv.hostPlatform.system != inputs.omniflake.unified.flake-utils.lib.system.aarch64-darwin
+                    then
                       [
                         gdb
                       ]
