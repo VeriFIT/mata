@@ -61,9 +61,9 @@ template <typename P> class PostMoves {
 	  public:
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = MoveType;
-		using difference_type = size_t;
-		using pointer = MoveType*;
-		using reference = MoveType&;
+		using difference_type = std::ptrdiff_t;
+		using pointer = const MoveType*;
+		using reference = const MoveType&;
 
 		/// Construct end iterator.
 		const_iterator() : is_end_{true} {}

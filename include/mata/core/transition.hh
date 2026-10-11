@@ -1,10 +1,8 @@
 /** @file
- * @brief One transition of a relation: what it is, how one is built, and how a relation's are visited.
- *
- * A transition type owes one thing, a static @c parts() that takes it apart into
- *  `(source, keys..., target)`. The hash, the formatter and the transition-shaped members of
- *  @c mata::posts::DeltaBase are all written against that, so a module's own transition type gets
- *  them without anything further.
+ * @brief Definition of a transition of a relation:
+ *  - what it is,
+ *  - how one is built, and
+ *  - how a relation's are visited.
  */
 
 #ifndef MATA_CORE_TRANSITION_HH
@@ -26,14 +24,16 @@
 
 namespace mata::posts {
 /**
- * @brief One transition: a source state, a key, and a target.
+ * @brief Transition with a source state, a key, and a target.
  *
- * The key field is spelled @c symbol, which suits an NFA. A relation that wants other names, or more
+ * The key field is spelled @c symbol. A relation that wants other names, or more
  *  than one key, passes its own traits to @c DeltaBase instead. @see DefaultTransitionTraits.
  *
- * An aggregate: `Transition{source, symbol, target}` builds one, and @c parts() takes it apart again
- *  in the same order -- which is all the generic hash, formatter and transition-shaped members need.
- *  @see TransitionLike.
+ * @note `Transition{source, symbol, target}` builds one, and
+ *  @c parts() takes it apart again in the same order.
+ * @tparam St The state type.
+ * @tparam K The key type.
+ * @tparam T The target type.
  */
 template <typename St, typename K, typename T> struct Transition {
 	St source{}; ///< Source state.
@@ -42,19 +42,32 @@ template <typename St, typename K, typename T> struct Transition {
 
 	auto operator<=>(const Transition&) const = default;
 
-	/// `(source, symbol, target)`, each by value or by reference as @c mata::utils::ArgOf decides.
+	/**
+	 * @brief Returns `(source, symbol, target)` as a tuple of references or values.
+	 *
+	 * @note References are used for large or non-trivially-copyable types, values otherwise.
+	 *  The @c utils::ArgOf decides.
+	 * @param t The transition to take apart.
+	 */
 	static auto parts(const Transition& t) {
 		return std::tuple<utils::ArgOf<St>, utils::ArgOf<K>, utils::ArgOf<T>>{t.source, t.symbol, t.target};
 	}
-	/// `"(source, symbol, target)"`, as the @c std::formatter below prints it.
+
+	// Returns `"(source, symbol, target)"`, as the @c std::formatter below prints it.
 	std::string to_string() const { return std::format("{}", *this); }
 };
 
 /**
- * @brief One transition of a relation with any number of keys: a source, the keys as a tuple, a target.
+ * @brief Transition with a source state, a tuple of keys, and a target.
  *
- * The default above arity 1, where a single named key field has no meaning. @c keys is
- *  `std::tuple<Key<0>, ..., Key<key_arity - 1>>`: one element per key, outermost first.
+ * The key field is spelled @c keys. A relation that wants other names, or only one key,
+ *  passes its own traits to @c DeltaBase instead. @see DefaultTransitionTraits.
+ *
+ * @note `KeyedTransition{source, keys, target}` builds one, and
+ *  @c parts() takes it apart again in the same order.
+ * @tparam St The state type.
+ * @tparam Keys The tuple of key types.
+ * @tparam T The target type.
  */
 template <typename St, typename Keys, typename T> struct KeyedTransition {
 	St source{}; ///< Source state.
@@ -63,7 +76,13 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 
 	auto operator<=>(const KeyedTransition&) const = default;
 
-	/// `(source, keys..., target)` with the keys spread out, so it forwards straight to a keyed overload.
+	/**
+	 * @brief Returns `(source, keys..., target)` as a tuple of references or values.
+	 *
+	 * @note References are used for large or non-trivially-copyable types, values otherwise.
+	 *  The @c utils::ArgOf decides.
+	 * @param t The transition to take apart.
+	 */
 	static auto parts(const KeyedTransition& t) {
 		return std::tuple_cat(std::tuple<utils::ArgOf<St>>{t.source}, t.keys, std::tuple<utils::ArgOf<T>>{t.target});
 	}
@@ -77,22 +96,25 @@ template <typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {}
 } // namespace mata::posts::detail.
 
 /**
- * @brief A transition type that can be taken apart: a static @c parts() giving `(source, keys..., target)` as a tuple.
- *
- * The one thing a transition type owes. Everything generic is written in terms of it -- the hash,
- *  the formatter, and the transition-shaped members of @c DeltaBase, which forward the tuple to the
- *  keyed overload of the matching arity.
+ * @brief Concept for a transition that has a static @c parts() returning a tuple of references or values.
  */
 template <typename T>
 concept TransitionLike = requires(const T& t) {
 	requires detail::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value;
 };
 
-/// A type @c std::hash is enabled for.
+/**
+ * @brief Concept for a type that can be hashed with @c std::hash.
+ */
 template <typename T>
 concept Hashable = std::is_default_constructible_v<std::hash<T>>;
 
-/// The hash of a transition, folded over its parts. The body behind every @c std::hash of one.
+/**
+ * The hash of a transition.
+ *
+ * @note The transition's @c parts() is used, so the hash is the same for any two transitions
+ *  that have the same source, keys and target, even if they are different types.
+ */
 template <TransitionLike T> size_t hash_of(const T& t) noexcept {
 	return std::apply(
 		[](const auto&... v) {
@@ -104,7 +126,13 @@ template <TransitionLike T> size_t hash_of(const T& t) noexcept {
 	);
 }
 
-/// A transition written as `(source, keys..., target)`. The body behind every @c std::formatter of one.
+/**
+ * @brief Formats a transition as `(source, keys..., target)`.
+ *
+ * @param out The output iterator to write to.
+ * @param t The transition to format.
+ * @return The output iterator after the last character written.
+ */
 template <TransitionLike T, typename Out> Out format_parts(Out out, const T& t) {
 	*out++ = '(';
 	std::apply(
@@ -119,11 +147,7 @@ template <TransitionLike T, typename Out> Out format_parts(Out out, const T& t) 
 }
 } // namespace mata::posts.
 
-/// @name Hashing and formatting the two shipped transition shapes
-///
-/// Partial specialisations over mata's own templates, which is what the standard permits. A module's
-///  own transition type adds an explicit one-liner for each, delegating to the same two bodies -- and
-///  declares them *before* the first use, or the primary template gets instantiated first.
+/// @name Hashing and formatting the two shipped transition shapes.
 ///@{
 template <typename St, typename K, typename T>
 	requires(mata::posts::Hashable<St> && mata::posts::Hashable<K> && mata::posts::Hashable<T>)
@@ -164,24 +188,28 @@ struct std::formatter<mata::posts::KeyedTransition<St, std::tuple<Ks...>, T>> {
 ///@}
 
 namespace mata::posts {
-/// Streams a transition through its @c std::formatter. Found by ADL for the shipped shapes; a
-///  module's own type in another namespace writes this same line there.
-template <TransitionLike T>
-	requires std::formattable<T, char>
+/**
+ * @brief Prints a transition to an output stream.
+ *
+ * @note The transition's @c std::formatter is used.
+ * @param os The output stream to write to.
+ * @param t The transition to print.
+ * @return The output stream after the last character written.
+ */
+template <TransitionLike T> requires std::formattable<T, char>
 std::ostream& operator<<(std::ostream& os, const T& t) {
 	return os << std::format("{}", t);
 }
 
 /**
- * @brief What one transition of a relation looks like and how to build one: the traits @c DeltaBase takes.
+ * @brief Traits for a transition type: how to build one and how to take it apart.
  *
- * A traits names a @c Type and builds one with `make(source, keys..., target)`, one key per post.
- *  The type itself owes a static @c parts() (@see TransitionLike), which is what lets the hash, the
- *  formatter and the transition-shaped members of @c DeltaBase work for it without anything further.
+ * A traits names a @c Type and builds transition with `make(source, keys..., target)`, one key per post.
+ *  The type itself owes a static @c parts(), which is what lets the hash,
+ *  the formatter and the transition-shaped members of @c DeltaBase work without knowing the type.
  *
  * Two are shipped. @c SymbolTransitionTraits yields the `{source, symbol, target}` triple and is the
- *  default at arity 1 -- the NFA and the NFT both use it, so `nfa::Transition` and `nft::Transition`
- *  stay one type. @c KeyedTransitionTraits yields `{source, keys, target}` with the keys as a tuple
+ *  default at arity 1. @c KeyedTransitionTraits yields `{source, keys, target}` with the keys as a tuple
  *  and is the default above arity 1. @c DefaultTransitionTraits picks between them.
  *
  * A module that wants its own field names writes a traits and passes it as the second argument of
@@ -225,8 +253,8 @@ template <typename P> struct SymbolTransitionTraits {
 template <typename P> struct KeyedTransitionTraits {
 	using State = typename TargetTraits<target_of<P>>::State;
 	using Type = KeyedTransition<State, KeysOf<P>, target_of<P>>;
-	/// `make(source, keys..., target)`. The target comes last, as in every keyed overload, so the keys
-	///  are peeled off the front of the pack.
+	// `make(source, keys..., target)`. The target comes last, as in every keyed overload, so the keys
+	//  are peeled off the front of the pack.
 	template <typename... Rest>
 		requires(sizeof...(Rest) == arity_of<P> + 1)
 	static Type make(utils::ArgOf<State> source, const Rest&... rest) {
@@ -248,20 +276,24 @@ template <typename P> struct DefaultTransitionTraitsOf<P, 1> {
 	using type = SymbolTransitionTraits<P>;
 };
 } // namespace mata::posts::detail.
-/// The traits a relation gets when it names none: symbol-named at arity 1, tuple-keyed above it.
+
+/** The default transition traits for a relation:
+ *   - @c SymbolTransitionTraits at arity 1,
+ *   - @c KeyedTransitionTraits otherwise.
+ *
+ * @tparam P The post type of the relation.
+ */
 template <typename P> using DefaultTransitionTraits = typename detail::DefaultTransitionTraitsOf<P>::type;
 ///@}
 
 /**
- * @brief The transitions of a relation: one @c TransitionType per (source, key path, target).
+ * @brief Iterator over the transitions of a relation.
  *
- * Generic in the arity. The visit is the relation's @c CursorType -- the hand-written per-arity
- *  successor cursor, which also reports the key path it is standing on -- and every step is one
- *  `TransitionTraits::make`. What @c mata::posts::DeltaBase::transitions() returns, named there
- *  @c DeltaBase::Transitions.
+ * A non-owning view: it must not outlive the relation, and changing the relation invalidates its
+ *  iterators. Transitions come by ascending source, then in the order of the relation's @c CursorType.
+ *  Each is built on the fly with `TransitionTraits::make`, so `*it` refers to a value held by the
+ *  iterator and is invalidated by `++it`.
  *
- * @tparam D The relation visited. Asked for @c State, @c CursorType, @c TransitionType,
- *  @c TransitionTraits, @c num_of_states() and @c state_post(), and nothing else.
  */
 template <typename D> class DeltaTransitions {
 	using State = typename D::State;
@@ -305,9 +337,9 @@ template <typename D> class DeltaTransitions {
 	  public:
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = TransitionType;
-		using difference_type = size_t;
-		using pointer = TransitionType*;
-		using reference = TransitionType&;
+		using difference_type = std::ptrdiff_t;
+		using pointer = const TransitionType*;
+		using reference = const TransitionType&;
 
 		const_iterator() = default; ///< The end.
 		explicit const_iterator(const D& delta) : const_iterator{delta, 0} {}
