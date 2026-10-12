@@ -32,6 +32,9 @@ For development:
 nix develop github:VeriFIT/mata
 ```
 
+The Python environment of the development shell is built from `uv.lock`, the same versions `uv sync` installs, with the
+bindings installed editable from the checkout. Build their extensions in place with `just bindings python build`.
+
 ### Download pre-built binaries from GitHub
 
 You can download pre-built binaries from the [releases](https://github.com/VeriFIT/mata/releases) page on GitHub.

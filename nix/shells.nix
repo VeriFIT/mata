@@ -5,6 +5,7 @@
     {
       devShells =
         let
+          pythonEnv = pkgs.callPackage ./python-env.nix { inherit inputs; };
           devShellEnv =
             {
               compiler ? "gcc",
@@ -25,13 +26,29 @@
 
                 LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.stdenv.cc.cc ];
 
+                env = {
+                  # `uv run` uses the Nix-built `pythonEnv` as the project environment. It is read-only, so uv must not
+                  #  sync it; re-entering the shell installs a changed uv.lock.
+                  UV_PROJECT_ENVIRONMENT = "${pythonEnv}";
+                  UV_NO_SYNC = "1";
+                  UV_PYTHON = pkgs.python3.interpreter;
+                  UV_PYTHON_DOWNLOADS = "never";
+                };
+
+                # The Python packages of the Nix build inputs would shadow the locked ones in `pythonEnv`.
+                shellHook = ''
+                  unset PYTHONPATH
+                  REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || jj root)"
+                  export REPO_ROOT
+                '';
+
                 inputsFrom = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
                   mata
-                  mataPy
-                  mataDocs
                 ];
 
+                # Ahead of `buildInputs` on PATH, whose tools bring their own bare `python3`.
                 packages = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
+                  pythonEnv
                   # mata
                   # mataPy
                 ];
@@ -51,10 +68,7 @@
                     pkgs.clang
 
                     # TODO: Enable building documentation through Nix.
-                    sphinx
                     sphinxygen
-                    python3Packages.myst-parser
-                    python3Packages.breathe
                     # lcov
                     # libgcc
 
@@ -68,17 +82,7 @@
                     prettier
                     prettierd
 
-                    (pkgs.python3.withPackages (
-                      ps: with ps; [
-                        pytest
-                        pytest-cov
-                        papermill
-                        jupytext
-                      ]
-                      #  ++ [
-                      #   inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.mataPy
-                      # ]
-                    ))
+                    uv
                   ]
                   ++ (
                     if

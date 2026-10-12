@@ -53,7 +53,8 @@ ci:
 help:
 	@just --list --list-submodules --justfile '{{ justfile() }}'
 
-# Update and synchronize the locked Python dependencies of the workspace.
+# Update and synchronize the locked Python dependencies of the workspace. The Nix development shell builds its
+# environment from uv.lock instead, so there, re-enter the shell.
 uv-update:
 	uv lock --upgrade
-	uv sync
+	{{ if env("UV_PROJECT_ENVIRONMENT", "") =~ '^/nix/store/' { "echo 'Re-enter the Nix development shell to install the updated uv.lock.'" } else { "uv sync" } }}
