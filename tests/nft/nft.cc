@@ -3798,6 +3798,17 @@ TEST_CASE("mata::nft:: create simple automata") {
 	CHECK(nft.is_in_lang({2, 2, 2}));
 	CHECK(nft.is_in_lang({0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1}));
 	CHECK(!nft.is_in_lang({3}));
+
+	// A null alphabet means no symbols, so only the empty string is accepted.
+	nft = builder::create_sigma_star_nft(nullptr, 1);
+	CHECK(nft.is_in_lang(Word{}));
+	CHECK(!nft.is_in_lang({0}));
+
+	// The alphabet overload has no default argument, so a call without arguments resolves to the DONT_CARE overload
+	//  instead of being ambiguous.
+	nft = builder::create_sigma_star_nft();
+	CHECK(nft.levels.num_of_levels == DEFAULT_NUM_OF_LEVELS);
+	CHECK(nft.is_in_lang({'a', 'b'}));
 }
 
 TEST_CASE("ISSUE #613 - mata::nft::nft::is_in_lang()") {

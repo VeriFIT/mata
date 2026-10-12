@@ -51,14 +51,12 @@ Nft create_sigma_star_nft(size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
 /**
  * Create automaton accepting sigma star over the passed alphabet.
  *
- * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
- *  alphabet is used, creating an automaton accepting only the empty string.
+ * @param[in] alphabet Alphabet to construct sigma star automaton with. A null alphabet means no symbols, creating an
+ *  automaton accepting only the empty string. The parameter has no default: with one, a call without arguments is
+ *  ambiguous with @c create_sigma_star_nft(size_t) and does not compile.
  * @param[in] num_of_levels Number of levels in the created NFT.
  */
-Nft create_sigma_star_nft(
-	std::shared_ptr<Alphabet> alphabet = std::make_shared<OnTheFlyAlphabet>(),
-	size_t num_of_levels = DEFAULT_NUM_OF_LEVELS
-);
+Nft create_sigma_star_nft(const std::shared_ptr<Alphabet>& alphabet, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
 
 /**
  * Loads an automaton from a single parsed section of the mata format.

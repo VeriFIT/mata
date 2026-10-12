@@ -379,4 +379,39 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 		CHECK(nfa1_1.is_identical(nfa1_2));
 		CHECK(!nfa1_2.is_identical(nfa2));
 	}
+	SECTION("random NFA attaches correct alphabet") {
+		const size_t num_of_states = 10;
+		const size_t alphabet_size = 4;
+		const double states_trans_ratio = 0.5;
+		const double final_state_density = 0.5;
+
+		Nfa nfa = builder::create_random_nfa_tabakov_vardi(
+			num_of_states, alphabet_size, states_trans_ratio, final_state_density, 42
+		);
+
+		// The alphabet holds exactly the symbols 0 .. alphabet_size - 1 that the generator uses.
+		REQUIRE(nfa.alphabet != nullptr);
+		const auto alphabet_symbols = nfa.alphabet->get_alphabet_symbols();
+		CHECK(alphabet_symbols.size() == alphabet_size);
+		for (size_t i = 0; i < alphabet_size; ++i) { CHECK(alphabet_symbols.contains(static_cast<Symbol>(i))); }
+		CHECK(nfa.get_symbols_to_work_with() == alphabet_symbols);
+
+		std::string mata_str;
+		REQUIRE_NOTHROW(mata_str = nfa.print_to_mata());
+		CHECK(!mata_str.empty());
+
+		bool is_complete_result{true};
+		REQUIRE_NOTHROW(is_complete_result = nfa.is_complete());
+		CHECK(!is_complete_result); // A sparse random NFA misses most of the alphabet in most states.
+
+		// make_complete() adds the missing transitions to a new sink state.
+		Nfa nfa_copy{nfa};
+		bool added{false};
+		REQUIRE_NOTHROW(added = nfa_copy.make_complete());
+		CHECK(added);
+		CHECK(nfa_copy.num_of_states() == num_of_states + 1);
+		CHECK(nfa_copy.is_complete());
+		const State sink{num_of_states};
+		for (const Symbol symbol : alphabet_symbols) { CHECK(nfa_copy.delta.contains(sink, symbol, sink)); }
+	}
 }

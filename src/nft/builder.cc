@@ -292,9 +292,10 @@ Nft builder::create_sigma_star_nft(const size_t num_of_levels) {
 	return nft;
 }
 
-Nft builder::create_sigma_star_nft(std::shared_ptr<mata::Alphabet> alphabet, const size_t num_of_levels) {
+Nft builder::create_sigma_star_nft(const std::shared_ptr<mata::Alphabet>& alphabet, const size_t num_of_levels) {
 	Nft nft{Nft::with_levels({num_of_levels, {0}}, 1, {0}, {0})};
-	nft.insert_identity(0, alphabet->get_alphabet_symbols().to_vector());
+	// A null alphabet means no symbols, like an empty one: the result then accepts only the empty string.
+	if (alphabet) { nft.insert_identity(0, alphabet->get_alphabet_symbols().to_vector()); }
 	return nft;
 }
 
