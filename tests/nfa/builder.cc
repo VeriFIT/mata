@@ -389,28 +389,29 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 			num_of_states, alphabet_size, states_trans_ratio, final_state_density, 42
 		);
 
-		// The alphabet should not be null and should contain exactly alphabet_size symbols.
+		// The alphabet holds exactly the symbols 0 .. alphabet_size - 1 that the generator uses.
 		REQUIRE(nfa.alphabet != nullptr);
 		const auto alphabet_symbols = nfa.alphabet->get_alphabet_symbols();
-		REQUIRE(alphabet_symbols.size() == alphabet_size);
-		// Symbols should be 0, 1, 2, 3 (in some order).
-		for (size_t i = 0; i < alphabet_size; ++i) { REQUIRE(alphabet_symbols.contains(static_cast<Symbol>(i))); }
+		CHECK(alphabet_symbols.size() == alphabet_size);
+		for (size_t i = 0; i < alphabet_size; ++i) { CHECK(alphabet_symbols.contains(static_cast<Symbol>(i))); }
+		CHECK(nfa.get_symbols_to_work_with() == alphabet_symbols);
 
-		// print_to_mata() should not throw.
 		std::string mata_str;
 		REQUIRE_NOTHROW(mata_str = nfa.print_to_mata());
-		REQUIRE(!mata_str.empty());
+		CHECK(!mata_str.empty());
 
-		// is_complete() should not throw.
-		bool is_complete_result;
-		REQUIRE_NOTHROW(is_complete_result = nfa.is_complete(nfa.alphabet.get()));
-		// The randomly generated NFA is typically not complete, but that's okay; we just need no exception.
+		bool is_complete_result{true};
+		REQUIRE_NOTHROW(is_complete_result = nfa.is_complete());
+		CHECK(!is_complete_result); // A sparse random NFA misses most of the alphabet in most states.
 
-		// make_complete() on a copy should work without throwing.
+		// make_complete() adds the missing transitions to a new sink state.
 		Nfa nfa_copy{nfa};
-		int added;
+		bool added{false};
 		REQUIRE_NOTHROW(added = nfa_copy.make_complete());
-		// After make_complete, is_complete should return true.
-		REQUIRE(nfa_copy.is_complete(nfa_copy.alphabet.get()));
+		CHECK(added);
+		CHECK(nfa_copy.num_of_states() == num_of_states + 1);
+		CHECK(nfa_copy.is_complete());
+		const State sink{num_of_states};
+		for (const Symbol symbol : alphabet_symbols) { CHECK(nfa_copy.delta.contains(sink, symbol, sink)); }
 	}
 }
