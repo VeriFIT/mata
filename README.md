@@ -112,6 +112,9 @@ Using `uv`:
 uv sync --python 3.13
 ```
 
+Besides the dependencies of the bindings, `uv sync` installs the `dev` dependency group: the tools to build the bindings
+in place, to sync the notebooks, and to render the documentation.
+
 Or using `pip`:
 
 ```shell

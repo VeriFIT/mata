@@ -35,6 +35,17 @@ Homepage = "https://github.com/VeriFIT/mata"
 [tool.setuptools]
 packages = ["libmata", "libmata.nfa", "libmata.nft"]
 
+# Tools for working on Mata, installed by `uv sync`: building the bindings in place (`just bindings python build`),
+#  syncing the notebooks, and rendering the documentation (`just docs`).
+[dependency-groups]
+dev = [
+  "breathe>=4.35.0",
+  "jupytext>=1.16.0",
+  "myst-parser>=4.0.0",
+  "setuptools>=77.0.0",
+  "sphinx>=8.0.0",
+]
+
 [build-system]
 requires = ["setuptools", "wheel", "Cython>=0.29.32"]
 build-backend = "setuptools.build_meta"
