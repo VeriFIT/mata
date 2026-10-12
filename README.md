@@ -32,6 +32,9 @@ For development:
 nix develop github:VeriFIT/mata
 ```
 
+The Python environment of the development shell is built from `uv.lock`, the same versions `uv sync` installs, with the
+bindings installed editable from the checkout. Build their extensions in place with `just bindings python build`.
+
 ### Download pre-built binaries from GitHub
 
 You can download pre-built binaries from the [releases](https://github.com/VeriFIT/mata/releases) page on GitHub.
@@ -111,6 +114,9 @@ Using `uv`:
 ```shell
 uv sync --python 3.13
 ```
+
+Besides the dependencies of the bindings, `uv sync` installs the `dev` dependency group: the tools to build the bindings
+in place, to sync the notebooks, and to render the documentation.
 
 Or using `pip`:
 
