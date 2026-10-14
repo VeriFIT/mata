@@ -586,6 +586,39 @@ TEST_CASE("mata::nfa::determinize()") {
 		auto complement_result{determinize(x)};
 	}
 
+	SECTION("subset map and discovery callback see every macrostate exactly once") {
+		Nfa nfa(4);
+		nfa.initial = {0};
+		nfa.final = {3};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'b', 3);
+		nfa.delta.add(2, 'b', 3);
+		nfa.delta.add(3, 'a', 1);
+		nfa.delta.add(3, 'a', 2);
+		std::vector<StateSet> discovered;
+		result = determinize(nfa, &subset_map, [&](const Nfa&, const State state, const StateSet& macrostate) {
+			CHECK(subset_map.at(macrostate) == state);
+			discovered.push_back(macrostate);
+			return true;
+		});
+		CHECK(result.num_of_states() == 3);
+		CHECK(subset_map == std::unordered_map<StateSet, State>{{{0}, 0}, {{1, 2}, 1}, {{3}, 2}});
+		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}, {3}});
+		CHECK(result.delta.contains(subset_map[{3}], 'a', subset_map[{1, 2}]));
+
+		subset_map.clear();
+		discovered.clear();
+		// Stopping on the first new macrostate leaves it in the result, without exploring it.
+		result = determinize(nfa, &subset_map, [&](const Nfa&, const State, const StateSet& macrostate) {
+			discovered.push_back(macrostate);
+			return discovered.size() < 2;
+		});
+		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}});
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.num_of_transitions() == 1);
+	}
+
 	SECTION("restricted to symbols, nondeterministic input") {
 		// 'z' leads to a macrostate of its own, which must not be constructed when 'z' is outside of the symbols.
 		const OrdVector<Symbol> symbols{'a', 'b'};
