@@ -188,29 +188,68 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	return {};
 }
 
+namespace {
+/// The minterms in the iteration order of @p minterms, which numbers them as symbols.
+std::vector<BDD> number_minterms(const std::unordered_set<BDD>& minterms) { return {minterms.begin(), minterms.end()}; }
+
+/// One leaf per minterm holding its symbol, copied into every transition over that symbol. A copied leaf has no
+///  children and so allocates nothing, unlike a graph constructed from a node, which reserves room for children.
+std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms) {
+	std::vector<mata::FormulaGraph> leaves{};
+	leaves.reserve(num_of_minterms);
+	for (size_t symbol{0}; symbol < num_of_minterms; ++symbol) {
+		const std::string name{std::to_string(symbol)};
+		leaves.emplace_back(
+			mata::FormulaNode{mata::FormulaNode::Type::Operand, name, name, mata::FormulaNode::OperandType::Symbol}
+		);
+	}
+	return leaves;
+}
+
+/// The numbers of the minterms that intersect @p bdd, in increasing order. Transitions often share their BDD, so
+///  each distinct BDD is intersected with the minterms only once and the result is kept in @p cache.
+const std::vector<size_t>& intersecting_minterms(
+	const BDD& bdd, const std::vector<BDD>& minterms, std::unordered_map<BDD, std::vector<size_t>>& cache
+) {
+	const auto [it, inserted]{cache.try_emplace(bdd)};
+	if (inserted) {
+		for (size_t symbol{0}; symbol < minterms.size(); ++symbol) {
+			if (!(bdd * minterms[symbol]).IsZero()) { it->second.push_back(symbol); }
+		}
+	}
+	return it->second;
+}
+} // namespace
+
 void mata::Mintermization::minterms_to_aut_nfa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::unordered_set<BDD>& minterms
 ) {
+	const std::vector<BDD> numbered_minterms{number_minterms(minterms)};
+	const std::vector<FormulaGraph> symbols{symbol_leaves(numbered_minterms.size())};
+	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
+	std::unordered_map<BDD, std::vector<size_t>> cache{};
+
+	// Two passes: the first one sizes the result, the second one fills it.
+	size_t num_of_transitions{0};
+	for (const auto& [formula_node, formula_graph] : aut.transitions) {
+		if (const auto bdd{trans_to_bddvar_.find(&formula_graph.children[0])}; bdd != trans_to_bddvar_.end()) {
+			num_of_transitions += intersecting_minterms(bdd->second, numbered_minterms, cache).size();
+		}
+	}
+	res.transitions.reserve(res.transitions.size() + num_of_transitions);
+
 	for (const auto& [formula_node, formula_graph] : aut.transitions) {
 		// for each t=(q1,s,q2)
-		const auto& symbol_part = formula_graph.children[0];
-
-		size_t symbol = 0;
-		if (!trans_to_bddvar_.contains(&symbol_part)) {
+		const auto bdd{trans_to_bddvar_.find(&formula_graph.children[0])};
+		if (bdd == trans_to_bddvar_.end()) {
 			continue; // Transition had zero bdd so it was not added to map
 		}
-		const BDD& bdd = trans_to_bddvar_[&symbol_part];
-
-		for (const auto& minterm : minterms) {
-			// for each minterm x:
-			if (!((bdd * minterm).IsZero())) {
-				// if for symbol s of t is BDD_s < x
-				// add q1,x,q2 to transitions
-				IntermediateAut::parse_transition(
-					res, {formula_node.raw, std::to_string(symbol), formula_graph.children[1].node.raw}
-				);
-			}
-			symbol++;
+		// For each minterm x with BDD_s ∧ x ≠ ∅, add q1,x,q2 to transitions.
+		for (const size_t symbol : intersecting_minterms(bdd->second, numbered_minterms, cache)) {
+			FormulaGraph graph{conjunction};
+			graph.children.push_back(symbols[symbol]);
+			graph.children.push_back(formula_graph.children[1]);
+			res.transitions.emplace_back(formula_node, std::move(graph));
 		}
 	}
 }
@@ -218,38 +257,34 @@ void mata::Mintermization::minterms_to_aut_nfa(
 void mata::Mintermization::minterms_to_aut_afa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::unordered_set<BDD>& minterms
 ) {
+	const std::vector<BDD> numbered_minterms{number_minterms(minterms)};
+	const std::vector<FormulaGraph> symbols{symbol_leaves(numbered_minterms.size())};
+	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
+	std::unordered_map<BDD, std::vector<size_t>> cache{};
 	for (const auto& formula_node : aut.transitions | std::views::keys) {
 		for (const auto& [disjunct, formula_graph] : lhs_to_disjuncts_and_states_[&formula_node]) {
 			// for each t=(q1,s,q2)
-			if (!trans_to_bddvar_.contains(disjunct)) {
+			const auto bdd{trans_to_bddvar_.find(disjunct)};
+			if (bdd == trans_to_bddvar_.end()) {
 				continue; // Transition had zero bdd so it was not added to map
 			}
-			const BDD& bdd = trans_to_bddvar_[disjunct];
-
-			size_t symbol = 0;
-			for (const auto& minterm : minterms) {
-				// for each minterm x:
-				if (!((bdd * minterm).IsZero())) {
-					// if for symbol s of t is BDD_s < x
-					// add q1,x,q2 to transitions
-					const auto str_symbol = std::to_string(symbol);
-					FormulaNode node_symbol(
-						FormulaNode::Type::Operand, str_symbol, str_symbol, FormulaNode::OperandType::Symbol
-					);
-					if (formula_graph != nullptr) {
-						res.add_transition(formula_node, node_symbol, *formula_graph);
-					} else { // transition without state on the right-handed side
-						res.add_transition(formula_node, node_symbol);
-					}
+			// For each minterm x with BDD_s ∧ x ≠ ∅, add q1,x,q2 to transitions.
+			for (const size_t symbol : intersecting_minterms(bdd->second, numbered_minterms, cache)) {
+				if (formula_graph != nullptr) {
+					FormulaGraph graph{conjunction};
+					graph.children.push_back(symbols[symbol]);
+					graph.children.push_back(*formula_graph);
+					res.transitions.emplace_back(formula_node, std::move(graph));
+				} else { // transition without state on the right-handed side
+					res.transitions.emplace_back(formula_node, symbols[symbol]);
 				}
-				++symbol;
 			}
 		}
 	}
 }
 
 mata::IntermediateAut mata::Mintermization::mintermize(const IntermediateAut& aut) {
-	return mintermize(std::vector<const IntermediateAut*>{&aut})[0];
+	return std::move(mintermize(std::vector<const IntermediateAut*>{&aut})[0]);
 }
 
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<const IntermediateAut*>& auts) {
@@ -276,7 +311,7 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 			minterms_to_aut_afa(mintermized_aut, *aut, minterms);
 		}
 
-		res.push_back(mintermized_aut);
+		res.push_back(std::move(mintermized_aut));
 	}
 
 	return res;
