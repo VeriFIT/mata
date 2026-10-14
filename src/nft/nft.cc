@@ -670,10 +670,31 @@ StateSet Nft::post(
 	}
 
 	StateSet result{};
+	const size_t num_of_tape_levels{tape_symbols.size()};
 
 	// End positions of the reading heads after all symbols on each word have been read.
-	std::vector<size_t> end_positions(tape_symbols.size());
-	for (size_t i = 0; i < tape_symbols.size(); ++i) { end_positions[i] = tape_symbols[i].size(); }
+	std::vector<size_t> end_positions(num_of_tape_levels);
+	for (size_t i = 0; i < num_of_tape_levels; ++i) { end_positions[i] = tape_symbols[i].size(); }
+
+	// A configuration's reading-head positions get a 32-bit id. When the number of position tuples, the product of
+	// (word length + 1) over the used levels, fits in 32 bits, the id is the mixed-radix rank of the tuple: a used
+	// level contributes position * stride, so advancing the levels a transition spans adds their strides, and no
+	// position vector is copied, hashed or stored. Projected-out levels never advance and have stride 0. Larger
+	// inputs intern the position vectors instead, and the id indexes them.
+	constexpr uint64_t NUM_OF_IDS{uint64_t{1} << 32U};
+	std::vector<uint32_t> strides(num_of_tape_levels, 0);
+	bool ranked{true};
+	uint64_t num_of_tuples{1};
+	for (size_t level{0}; level < num_of_tape_levels && ranked; ++level) {
+		if (!use_tape[level]) { continue; }
+		const uint64_t radix{end_positions[level] + 1};
+		if (radix > NUM_OF_IDS / num_of_tuples) {
+			ranked = false;
+		} else {
+			strides[level] = static_cast<uint32_t>(num_of_tuples);
+			num_of_tuples *= radix;
+		}
+	}
 
 	std::unordered_map<std::vector<size_t>, uint32_t, VectorHash<size_t>> position_ids;
 	std::vector<const std::vector<size_t>*> id_to_positions;
@@ -682,18 +703,59 @@ StateSet Nft::post(
 		if (inserted) { id_to_positions.push_back(&it->first); }
 		return it->second;
 	};
-	const std::vector<size_t> start_positions(tape_symbols.size(), 0);
-	const uint32_t start_id{intern(start_positions)};
-	const uint32_t end_id{intern(end_positions)};
+	// Decodes a rank into @p positions, which is resized to the number of levels.
+	auto decode = [&](const uint32_t rank, std::vector<size_t>& positions) {
+		positions.assign(num_of_tape_levels, 0);
+		for (size_t level{0}; level < num_of_tape_levels; ++level) {
+			if (strides[level] != 0) { positions[level] = rank / strides[level] % (end_positions[level] + 1); }
+		}
+	};
+
+	const std::vector<size_t> start_positions(num_of_tape_levels, 0);
+	uint32_t start_id{0};
+	uint32_t end_id{0};
+	// The end is never reached when a projected-out level has a word: its reading head never moves.
+	bool end_reachable{true};
+	if (ranked) {
+		for (size_t level{0}; level < num_of_tape_levels; ++level) {
+			end_id += static_cast<uint32_t>(end_positions[level]) * strides[level];
+			if (!use_tape[level] && end_positions[level] != 0) { end_reachable = false; }
+		}
+	} else {
+		start_id = intern(start_positions);
+		end_id = intern(end_positions);
+	}
 
 	// `visited` deduplicates configurations (so the search terminates even on cyclic inputs), keyed on the packed
 	// (positions_id, state) pair. States comfortably fit in 32 bits (asserted), so the pair packs losslessly into
-	// one uint64 and membership is a scalar hash/compare -- no per-config vector work.
+	// one uint64. When the ids are ranks, a search that keeps going moves to a bitmap over all (rank, state) pairs:
+	// no hashing and no allocation per configuration. It moves once the set holds 1/256 of the bitmap's bits, so a
+	// search that ends after a few configurations never pays for clearing the bitmap.
 	MATA_ASSERT(num_of_states() <= std::numeric_limits<uint32_t>::max());
 	const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
 		return (static_cast<uint64_t>(positions_id) << 32U) | static_cast<uint32_t>(state);
 	};
+	constexpr uint64_t MAX_VISITED_BITS{uint64_t{1} << 27U}; // 16 MiB.
+	const bool bitmap_fits{ranked && num_of_tuples <= MAX_VISITED_BITS / std::max<size_t>(num_of_states(), 1)};
+	const size_t bitmap_bits{bitmap_fits ? num_of_tuples * num_of_states() : 0};
 	std::unordered_set<uint64_t> visited;
+	std::vector<bool> visited_bitmap{};
+	auto mark_visited = [&](const uint32_t positions_id, const State state) {
+		if (visited_bitmap.empty()) {
+			if (!visited.insert(pack(positions_id, state)).second) { return false; }
+			if (!bitmap_fits || visited.size() < bitmap_bits / 256) { return true; }
+			visited_bitmap.resize(bitmap_bits);
+			for (const uint64_t packed : visited) {
+				visited_bitmap[(packed >> 32U) * num_of_states() + (packed & 0xFF'FF'FF'FFU)] = true;
+			}
+			visited = {};
+			return true;
+		}
+		auto bit{visited_bitmap[static_cast<size_t>(positions_id) * num_of_states() + state]};
+		if (bit) { return false; }
+		bit = true;
+		return true;
+	};
 
 	const bool best_first{static_cast<bool>(is_early_exit_config)};
 	struct QueueItem {
@@ -704,30 +766,33 @@ StateSet Nft::post(
 	};
 	std::priority_queue<QueueItem> best_first_queue; // used when best_first
 	std::vector<std::pair<uint32_t, State>> stack; // used otherwise
-	auto total_consumed = [](const std::vector<size_t>& positions) {
-		size_t sum{0};
-		for (const size_t position : positions) { sum += position; }
-		return sum;
-	};
+
+	// Positions of the configuration being expanded, and of a discovered one when the early-exit predicate needs
+	// them; both are filled only for ranked ids.
+	std::vector<size_t> decoded_positions{};
+	std::vector<size_t> discovered_positions{};
 
 	bool early_exit_reached{false};
 	// Registers a freshly reached configuration: deduplicates it, fires the optional early-exit predicate (which may
 	// halt the whole search, matching a final state as soon as it is generated rather than when it is later
-	// expanded), and otherwise queues it for expansion.
-	auto discover = [&](const uint32_t positions_id, const State target, const std::vector<size_t>& target_positions) {
-		if (early_exit_reached || !visited.insert(pack(positions_id, target)).second) { return; }
-		if (is_early_exit_config && is_early_exit_config(target, target_positions)) {
-			early_exit_reached = true;
-			return;
+	// expanded), and otherwise queues it for expansion. @p consumed counts the input symbols read to reach it.
+	auto discover = [&](const uint32_t positions_id, const State target, const size_t consumed) {
+		if (early_exit_reached || !mark_visited(positions_id, target)) { return; }
+		if (is_early_exit_config) {
+			if (ranked) { decode(positions_id, discovered_positions); }
+			if (is_early_exit_config(target, ranked ? discovered_positions : *id_to_positions[positions_id])) {
+				early_exit_reached = true;
+				return;
+			}
 		}
 		if (best_first) {
-			best_first_queue.push({total_consumed(target_positions), positions_id, target});
+			best_first_queue.push({consumed, positions_id, target});
 		} else {
 			stack.emplace_back(positions_id, target);
 		}
 	};
 
-	for (const State state : states) { discover(start_id, state, start_positions); }
+	for (const State state : states) { discover(start_id, state, 0); }
 
 	// Two symbols match iff they are equal, or one is DONT_CARE and neither is EPSILON.
 	// EPSILON matches only EPSILON. (The same relation as nft::symbols_match.)
@@ -740,18 +805,23 @@ StateSet Nft::post(
 		// Best-first (most input consumed) when short-circuiting, depth-first otherwise (see the worklist comment).
 		uint32_t current_positions_id;
 		State current_state;
+		size_t current_consumed{0};
 		if (best_first) {
 			const QueueItem top{best_first_queue.top()};
 			best_first_queue.pop();
 			current_positions_id = top.positions_id;
 			current_state = top.state;
+			current_consumed = top.consumed;
 		} else {
 			const std::pair<uint32_t, State> top{stack.back()};
 			stack.pop_back();
 			current_positions_id = top.first;
 			current_state = top.second;
 		}
-		const std::vector<size_t>& current_positions{*id_to_positions[current_positions_id]};
+		if (ranked) { decode(current_positions_id, decoded_positions); }
+		const std::vector<size_t>& current_positions{
+			ranked ? decoded_positions : *id_to_positions[current_positions_id]
+		};
 		const Level current_level{levels[current_state]};
 
 		if (current_level == 0) {
@@ -759,7 +829,7 @@ StateSet Nft::post(
 				// Keep track of visited zero level states. This is useful for the is_prefix_in_lang function.
 				visited_zero_level_states->insert(current_state);
 			}
-			if (current_positions_id == end_id) {
+			if (end_reachable && current_positions_id == end_id) {
 				// A zero-level state reached with all tape symbols consumed.
 				result.insert(current_state);
 				if (!epsilon_closure_after) {
@@ -782,9 +852,12 @@ StateSet Nft::post(
 				// Consuming step: check that one input symbol can be read on each used level of the span. A level
 				// with no input left cannot be read, so the step fails. Because exhaustion is detected by the
 				// reading-head position (not an EPSILON sentinel), a literal EPSILON symbol in an input word is
-				// matched and consumed here by an EPSILON transition. The position vector is built only once the
-				// whole span is known to be readable, so a mismatching transition costs no allocation.
+				// matched and consumed here by an EPSILON transition. A ranked id advances by the strides of the
+				// read levels; an interned position vector is built only once the whole span is known to be
+				// readable, so a mismatching transition costs no allocation.
 				bool consumed{true};
+				uint32_t stride_sum{0};
+				size_t num_of_read_levels{0};
 				for (size_t level = current_level; level < stop_level_idx; ++level) {
 					if (!use_tape[level]) { continue; } // Projected-out level: take the transition, read nothing.
 					const Symbol expected = (level == current_level || jump_mode != JumpMode::AppendDontCares)
@@ -795,13 +868,19 @@ StateSet Nft::post(
 						consumed = false;
 						break;
 					}
+					stride_sum += strides[level];
+					++num_of_read_levels;
 				}
 				if (consumed) {
-					std::vector<size_t> next_positions{current_positions};
-					for (size_t level = current_level; level < stop_level_idx; ++level) {
-						if (use_tape[level]) { ++next_positions[level]; }
+					uint32_t next_positions_id{current_positions_id + stride_sum};
+					if (!ranked) {
+						std::vector<size_t> next_positions{current_positions};
+						for (size_t level = current_level; level < stop_level_idx; ++level) {
+							if (use_tape[level]) { ++next_positions[level]; }
+						}
+						next_positions_id = intern(next_positions);
 					}
-					discover(intern(next_positions), target, next_positions);
+					discover(next_positions_id, target, current_consumed + num_of_read_levels);
 					if (early_exit_reached) { return; }
 				}
 
@@ -810,7 +889,7 @@ StateSet Nft::post(
 				// literal EPSILON in an input word can still be read there. Positions are unchanged, so the source
 				// id is reused directly -- no vector work.
 				if (transition_symbol == EPSILON) {
-					discover(current_positions_id, target, current_positions);
+					discover(current_positions_id, target, current_consumed);
 					if (early_exit_reached) { return; }
 				}
 			}
