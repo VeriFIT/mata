@@ -13,6 +13,8 @@
 #include "mata/utils/sparse-set.hh"
 
 #include <algorithm>
+#include <bit>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <stdexcept>
@@ -761,13 +763,44 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 		return result;
 	}
 
-	// Three or more posts: gather into the reused buffer, then sort and deduplicate once. A k-way merge
-	//  through a priority queue costs a heap operation per target and allocates the heap on every call.
-	unify_buffer_.clear();
+	// Three or more posts. Targets of one post are sorted, so the range of all targets is known up front.
 	size_t num_of_targets{0};
+	State min_target{Limits::max_state};
+	State max_target{0};
 	for (const StatePost::const_iterator& symbol_post_it : current) {
-		num_of_targets += symbol_post_it->num_of_targets();
+		const StateSet& targets{symbol_post_it->targets};
+		if (targets.empty()) { continue; }
+		num_of_targets += targets.size();
+		min_target = std::min(min_target, targets.front());
+		max_target = std::max(max_target, targets.back());
 	}
+	if (num_of_targets == 0) { return {}; }
+
+	// Dense targets: mark them in a bitset over the words spanning [min_target, max_target] and read them back in
+	//  order, which costs O(targets + words) instead of a sort.
+	const size_t first_word{min_target / 64};
+	const size_t num_of_words{max_target / 64 - first_word + 1};
+	if (num_of_words <= num_of_targets) {
+		unify_words_.assign(num_of_words, 0);
+		for (const StatePost::const_iterator& symbol_post_it : current) {
+			for (const State target : symbol_post_it->targets) {
+				unify_words_[target / 64 - first_word] |= uint64_t{1} << (target % 64);
+			}
+		}
+		size_t num_of_unique_targets{0};
+		for (const uint64_t word : unify_words_) { num_of_unique_targets += static_cast<size_t>(std::popcount(word)); }
+		StateSet result{StateSet::with_reserved(num_of_unique_targets)};
+		for (size_t word_idx{0}; word_idx < num_of_words; ++word_idx) {
+			const State word_base{static_cast<State>((first_word + word_idx) * 64)};
+			for (uint64_t word{unify_words_[word_idx]}; word != 0; word &= word - 1) {
+				result.push_back(word_base + static_cast<State>(std::countr_zero(word)));
+			}
+		}
+		return result;
+	}
+
+	// Sparse targets: gather into the reused buffer, then sort and deduplicate once.
+	unify_buffer_.clear();
 	unify_buffer_.reserve(num_of_targets);
 	for (const StatePost::const_iterator& symbol_post_it : current) {
 		for (const State target : symbol_post_it->targets) { unify_buffer_.push_back(target); }

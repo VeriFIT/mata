@@ -428,8 +428,11 @@ class SynchronizedExistentialSymbolPostIterator
 	bool synchronize_with(Symbol sync_symbol);
 
   private:
-	/// Scratch buffer reused by @c unify_targets() when three or more symbol posts are synchronized.
+	/// Scratch buffer reused by @c unify_targets() when three or more symbol posts with sparse targets are
+	///  synchronized.
 	mutable std::vector<State> unify_buffer_{};
+	/// Scratch bitset reused by @c unify_targets() when three or more symbol posts with dense targets are synchronized.
+	mutable std::vector<uint64_t> unify_words_{};
 }; // class SynchronizedExistentialSymbolPostIterator.
 
 /**
