@@ -11,16 +11,13 @@ using mata::OnTheFlyAlphabet;
 using mata::Symbol;
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
-	utils::OrdVector<Symbol> result;
-	for (const auto& symbol : symbol_map_ | std::views::values) { result.insert(symbol); }
-	return result;
+	// Gathered unsorted and sorted once: inserting one by one in hash order shifts the vector on every insertion.
+	const auto symbols{symbol_map_ | std::views::values};
+	return utils::OrdVector<Symbol>{symbols.begin(), symbols.end()};
 } // OnTheFlyAlphabet::get_alphabet_symbols.
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::utils::OrdVector<Symbol>& symbols) const {
-	mata::utils::OrdVector<Symbol> symbols_alphabet{};
-	symbols_alphabet.reserve(symbol_map_.size());
-	for (const auto& symbol : symbol_map_ | std::views::values) { symbols_alphabet.insert(symbol); }
-	return symbols_alphabet.difference(symbols);
+	return get_alphabet_symbols().difference(symbols);
 }
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
