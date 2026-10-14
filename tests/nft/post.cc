@@ -437,3 +437,46 @@ TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — JumpMode::RepeatSymbol dedic
 		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{Word{a}, Word{b}}));
 	}
 }
+
+TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — long words on three levels around the 32-bit position rank") {
+	// One zero-level state with a jump loop that reads 'a' on all three levels at once. With words of length n there
+	// are (n + 1)^3 reading-head tuples: 1601^3 still fits in 32 bits, 1701^3 does not.
+	Nft n{Nft::with_levels(3)};
+	const State q0{n.add_state_with_level(0)};
+	n.initial.insert(q0);
+	n.final.insert(q0);
+	n.delta.add(q0, a, q0);
+
+	for (const size_t length : {size_t{1'600}, size_t{1'700}}) {
+		const Word word(length, a);
+		const Word shorter(length - 1, a);
+		Word last_differs{word};
+		last_differs.back() = b;
+		CHECK(n.is_in_lang_by_levels(std::vector<Word>{word, word, word}));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{word, word, shorter}));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{word, last_differs, word}));
+	}
+}
+
+TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — a search over most reading-head positions") {
+	// q0 advances either reading head alone, so the search reaches nearly every pair of positions in q0 before it
+	// takes the final step, which reads 'c' on both levels at once.
+	Nft n{Nft::with_levels(2)};
+	const State q0{n.add_state_with_level(0)};
+	const State qf{n.add_state_with_level(0)};
+	n.initial.insert(q0);
+	n.final.insert(qf);
+	n.insert_word_by_levels(q0, {Word{DONT_CARE}, Word{}}, q0);
+	n.insert_word_by_levels(q0, {Word{}, Word{DONT_CARE}}, q0);
+	n.insert_word_by_levels(q0, {Word{c}, Word{c}}, qf);
+
+	Word ends_with_c(99, b);
+	ends_with_c.push_back(c);
+	const Word only_b(100, b);
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+		CHECK(n.is_in_lang_by_levels(std::vector<Word>{ends_with_c, ends_with_c}, false, jump_mode));
+		CHECK(n.is_in_lang_by_levels(std::vector<Word>{only_b, ends_with_c}, false, jump_mode) == false);
+		CHECK(n.read_word_by_levels(std::vector<Word>{ends_with_c, ends_with_c}, jump_mode) == StateSet{q0, qf});
+		CHECK(n.read_word_by_levels(std::vector<Word>{ends_with_c, only_b}, jump_mode) == StateSet{q0});
+	}
+}
