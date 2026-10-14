@@ -9,6 +9,7 @@
 
 // MATA headers
 #include <ranges>
+#include <span>
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/delta.hh"
@@ -206,67 +207,96 @@ void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 	}
 }
 
-void residual_recurse_coverable(
-	const std::vector<StateSet>& macrostate_vec, // vector of nfa macrostates
-	const std::vector<State>& covering_indexes, // sub-vector of macrostates indexes
-	std::vector<bool>& covered, // flags of covered states
-	std::vector<bool>& visited, // flags for visited states
-	const size_t start_index, // starting index for covering_indexes vec
-	std::unordered_map<StateSet, State>* subset_map, // mapping of indexes to macrostates
-	CoveredStates& covered_states
-) {
-	const StateSet& check_state = macrostate_vec[covering_indexes[start_index]];
-	StateSet covering_set; // doesn't contain duplicates
-	std::vector<State> sub_covering_indexes; // // indexes of covering states
+/**
+ * Coverage analysis of residual reduction "after" over the macrostates ordered from the largest.
+ *
+ * A macrostate is covered when it is the union of the uncovered smaller macrostates it contains. Membership in the
+ *  tested macrostate and in the union so far is marked by stamps over the states of the determinized NFA, so a
+ *  subset test costs at most the size of the candidate and a union test the total size of the candidates.
+ */
+class ResidualCoverage {
+  public:
+	ResidualCoverage(
+		std::vector<const StateSet*> macrostates, std::vector<State> result_states, const size_t num_of_nfa_states
+	)
+		: macrostates_{std::move(macrostates)},
+		  result_states_{std::move(result_states)},
+		  covered_(macrostates_.size(), false),
+		  visited_(macrostates_.size(), false),
+		  member_stamp_(num_of_nfa_states),
+		  union_stamp_(num_of_nfa_states) {}
 
-	for (auto i = covering_indexes.begin() + static_cast<long int>(start_index + 1), e = covering_indexes.end(); i != e;
-		 ++i) {
-		if (covered[*i]) { // was already processed
-			continue;
+	CoveredStates run() {
+		const size_t num_of_macrostates{macrostates_.size()};
+		for (size_t i{0}; i < num_of_macrostates - 1; ++i) {
+			if (macrostates_[i]->size() == 1) { break; } // Singletons are never covered.
+			if (visited_[i]) { continue; }
+			visited_[i] = true;
+			try_cover(i, std::views::iota(i + 1, num_of_macrostates));
 		}
-
-		if (macrostate_vec[*i].is_subset_of(check_state)) {
-			covering_set.insert(macrostate_vec[*i]); // is never covered
-			sub_covering_indexes.push_back(*i);
-		}
+		return std::move(covered_states_);
 	}
 
-	if (covering_set == check_state) { // can recurse even without covered :thinking:
+  private:
+	std::vector<const StateSet*> macrostates_;
+	std::vector<State> result_states_;
+	std::vector<bool> covered_;
+	std::vector<bool> visited_;
+	std::vector<size_t> member_stamp_;
+	std::vector<size_t> union_stamp_;
+	size_t stamp_{0};
+	CoveredStates covered_states_{};
 
-		const size_t covering_size = sub_covering_indexes.size() - 1;
-		for (size_t k = 0; k < covering_size; k++) {
-			if (macrostate_vec[sub_covering_indexes[k]].size() == 1) { // end on single-sized states
-				break;
-			}
+	/// Cover macrostate @p index by its uncovered subsets among @p candidates (ascending indexes after @p index),
+	///  first trying to cover each of them by its successors in that list.
+	template <class Candidates> void try_cover(const size_t index, const Candidates& candidates) {
+		std::vector<size_t> covering_indexes{};
+		if (!find_covering(index, candidates, covering_indexes)) { return; }
+		const size_t covering_size{covering_indexes.size() - 1};
+		for (size_t k{0}; k < covering_size; ++k) {
+			const size_t candidate{covering_indexes[k]};
+			if (macrostates_[candidate]->size() == 1) { break; }
+			if (visited_[candidate]) { continue; }
+			visited_[candidate] = true;
+			try_cover(candidate, std::span<const size_t>{covering_indexes}.subspan(k + 1));
+		}
 
-			if (visited[sub_covering_indexes[k]]) { // already processed
+		StateSet covering_set{};
+		for (const size_t covering_index : covering_indexes) {
+			if (!covered_[covering_index]) { covering_set.insert(result_states_[covering_index]); }
+		}
+		covered_states_.order.push_back(result_states_[index]);
+		covered_states_.covering_sets.push_back(std::move(covering_set));
+		covered_[index] = true;
+	}
+
+	/// Collect the uncovered @p candidates which are subsets of macrostate @p index into @p covering_indexes and
+	///  return whether their union is the macrostate.
+	template <class Candidates>
+	bool find_covering(const size_t index, const Candidates& candidates, std::vector<size_t>& covering_indexes) {
+		++stamp_;
+		const StateSet& macrostate{*macrostates_[index]};
+		for (const State state : macrostate) { member_stamp_[state] = stamp_; }
+		size_t num_of_united{0};
+		for (const size_t candidate : candidates) {
+			if (covered_[candidate]) { continue; }
+			const StateSet& candidate_macrostate{*macrostates_[candidate]};
+			if (!std::ranges::all_of(candidate_macrostate, [&](const State state) {
+					return member_stamp_[state] == stamp_;
+				})) {
 				continue;
 			}
-
-			visited[sub_covering_indexes[k]] = true;
-
-			residual_recurse_coverable(
-				macrostate_vec, sub_covering_indexes, covered, visited, k, subset_map, covered_states
-			);
-		}
-
-		covering_set.clear(); // clear variable to store only needed macrostates
-		for (const auto index : sub_covering_indexes) {
-			if (covered[index] == 0) {
-				auto macrostate_ptr = subset_map->find(macrostate_vec[index]);
-				if (macrostate_ptr == subset_map->end()) { // should never happen
-					throw std::runtime_error(std::to_string(__func__) + " couldn't find expected element in a map.");
+			covering_indexes.push_back(candidate);
+			for (const State state : candidate_macrostate) {
+				if (union_stamp_[state] != stamp_) {
+					union_stamp_[state] = stamp_;
+					++num_of_united;
 				}
-
-				covering_set.insert(macrostate_ptr->second);
 			}
 		}
-
-		covered_states.order.push_back(subset_map->find(check_state)->second);
-		covered_states.covering_sets.push_back(std::move(covering_set));
-		covered[covering_indexes[start_index]] = true;
+		return num_of_united == macrostate.size();
 	}
-}
+};
 } // namespace
 
 std::ostream& std::operator<<(std::ostream& os, const mata::nfa::Transition& trans) { // {{{
@@ -2005,90 +2035,25 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
 	Nfa result;
 	result = determinize(nfa, &subset_map);
 
-	std::vector<StateSet> macrostate_vec; // ordered vector of macrostates
-	macrostate_vec.reserve(subset_map.size());
-	for (const auto& state_set : subset_map | std::views::keys) {
-		// Ordered by size from largest to smallest.
-		macrostate_vec.insert(
-			std::ranges::upper_bound(
-				macrostate_vec, state_set, [](const StateSet& a, const StateSet& b) { return a.size() > b.size(); }
-			),
-			state_set
-		);
+	// Ordered by size from the largest; equal sizes keep the iteration order of the map.
+	std::vector<std::pair<const StateSet*, State>> macrostates{};
+	macrostates.reserve(subset_map.size());
+	for (const auto& [state_set, state] : subset_map) { macrostates.emplace_back(&state_set, state); }
+	std::ranges::stable_sort(macrostates, std::ranges::greater{}, [](const auto& macrostate) {
+		return macrostate.first->size();
+	});
+	std::vector<const StateSet*> macrostate_sets{};
+	std::vector<State> result_states{};
+	macrostate_sets.reserve(macrostates.size());
+	result_states.reserve(macrostates.size());
+	for (const auto& [state_set, state] : macrostates) {
+		macrostate_sets.push_back(state_set);
+		result_states.push_back(state);
 	}
 
-	std::vector<bool> covered(subset_map.size(), false); // flag of covered states, removed from nfa
-	std::vector<bool> visited(subset_map.size(), false); // flag of processed state
-
-	StateSet covering_set; // doesn't contain duplicates
-	std::vector<State> covering_indexes; // indexes of covering states
-	size_t macrostate_size = macrostate_vec.size();
 	// Coverage depends only on the macrostates; redirect all transitions in one pass at the end.
-	CoveredStates covered_states{};
-	for (size_t i = 0; i < macrostate_size - 1; i++) {
-		if (macrostate_vec[i].size() == 1) { // end searching on single-sized macrostates
-			break;
-		}
-
-		if (visited[i]) { // was already processed
-			continue;
-		}
-
-		covering_set.clear();
-		covering_indexes.clear();
-		visited[i] = true;
-
-		for (size_t j = i + 1; j < macrostate_size; j++) { // find covering macrostates
-			if (covered[j]) { // if covered there are smaller macrostates, skip
-				continue;
-			}
-
-			if (macrostate_vec[j].is_subset_of(macrostate_vec[i])) { // found covering state
-				covering_set.insert(macrostate_vec[j]); // is not covered
-				covering_indexes.push_back(j);
-			}
-		}
-
-		if (covering_set == macrostate_vec[i]) {
-			size_t covering_size = covering_indexes.size() - 1;
-			for (size_t k = 0; k < covering_size; k++) {
-				// check recurse coverability
-				if (macrostate_vec[covering_indexes[k]].size() == 1) {
-					// end on single-sized
-					break;
-				}
-
-				if (visited[covering_indexes[k]]) { // already processed
-					continue;
-				}
-
-				visited[covering_indexes[k]] = true;
-
-				residual_recurse_coverable(
-					macrostate_vec, covering_indexes, covered, visited, k, &subset_map, covered_states
-				);
-			}
-
-			covering_set.clear(); // clear variable to store only needed macrostates
-			for (auto index : covering_indexes) {
-				if (covered[index] == 0) {
-					auto macrostate_ptr = subset_map.find(macrostate_vec[index]);
-					if (macrostate_ptr == subset_map.end()) { // should never happen
-						throw std::runtime_error(
-							std::to_string(__func__) + " couldn't find expected element in a map."
-						);
-					}
-
-					covering_set.insert(macrostate_ptr->second);
-				}
-			}
-
-			covered_states.order.push_back(subset_map.find(macrostate_vec[i])->second);
-			covered_states.covering_sets.push_back(std::move(covering_set));
-			covered[i] = true;
-		}
-	}
-
-	redirect_covered_states(covered_states, result);
+	redirect_covered_states(
+		ResidualCoverage{std::move(macrostate_sets), std::move(result_states), nfa.num_of_states()}.run(), result
+	);
 	return result;
 }
