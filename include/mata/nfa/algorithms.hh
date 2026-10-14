@@ -184,6 +184,30 @@ Nfa concatenate_eps(
 Nfa reduce_simulation(const Nfa& nfa, StateRenaming& state_renaming);
 
 /**
+ * @brief Quotient an NFA, or a successor-closed part of it, by its forward simulation.
+ *
+ * Each class of states equivalent under @p sim_relation becomes one state; its transitions are those of the class
+ * representative, without targets simulated by another target over the same symbol. With @p states set, only
+ * those states are kept and the representative of a class is its smallest kept state. Since forward simulation
+ * does not depend on the initial states, one relation then serves every part reachable from a single state.
+ *
+ * @param[in] nfa NFA to quotient.
+ * @param[in] sim_relation Forward simulation of @p nfa, as computed by @c compute_relation().
+ * @param[in] quot_proj Projection of each state of @p nfa to the smallest state of its class, as computed by
+ *  @c get_quotient_projection() on the symmetric restriction of @p sim_relation.
+ * @param[in] states States to keep; all states if @c nullptr. Must be closed under successors.
+ * @param[out] state_renaming Map mapping the kept states to the reduced states, if not @c nullptr.
+ * @return The quotient of @p nfa restricted to @p states.
+ */
+Nfa quotient_by_simulation(
+	const Nfa& nfa,
+	const Simlib::Util::BinaryRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states = nullptr,
+	StateRenaming* state_renaming = nullptr
+);
+
+/**
  * @brief Reduce NFA using residual construction.
  *
  * @param[in] nfa NFA to reduce.

@@ -169,46 +169,77 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
 	return noodles;
 }
 
-// todo: is this taking all final times all initial?
-//  can it be done more efficiently? (only connected combinations through dfs)
+namespace {
+/**
+ * Calls @p emit with each initial state s of @p segment and reduce(trim(segment, {s}, final_states)), computing the
+ *  simulation once for all s instead of once per s.
+ *
+ * This is exact: forward simulation does not depend on the initial states, and trim(segment, {s}, final_states) is
+ *  the part reachable from s of useful = trim(segment, all initial states, final_states), which is closed under
+ *  successors. The simulation of that part is hence the simulation of useful restricted to it.
+ */
+template <class Emit>
+void reduce_per_initial_state(
+	const Nfa& segment,
+	const std::optional<std::reference_wrapper<const mata::utils::SparseSet<State>>> final_states,
+	Emit&& emit
+) {
+	mata::nfa::StateRenaming to_useful;
+	Nfa useful{trim(segment, &to_useful, std::nullopt, final_states)};
+	const auto sim_relation{mata::nfa::algorithms::compute_relation(useful)};
+	std::vector<size_t> quot_proj;
+	{
+		auto sim_relation_symmetric{sim_relation};
+		sim_relation_symmetric.restrict_to_symmetric();
+		sim_relation_symmetric.get_quotient_projection(quot_proj);
+	}
+
+	for (const State init_state : segment.initial) {
+		const auto useful_init{to_useful.find(init_state)};
+		if (useful_init == to_useful.end()) {
+			emit(init_state, Nfa{});
+			continue;
+		}
+		// The part reachable from init_state; every state of useful reaches a final state.
+		useful.initial = {useful_init->second};
+		const mata::BoolVector part{useful.get_useful_states()};
+		emit(init_state, mata::nfa::algorithms::quotient_by_simulation(useful, sim_relation, quot_proj, &part));
+	}
+}
+} // namespace
+
 void seg_nfa::segs_one_initial_final(
 	const std::vector<Nfa>& segments,
 	bool include_empty,
 	const State& unused_state,
 	std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out
 ) {
+	const auto insert = [&](const State init_state, const State final_state, Nfa&& segment_one_init_final) {
+		if (segment_one_init_final.num_of_states() > 0 || include_empty) {
+			out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(std::move(segment_one_init_final));
+		}
+	};
+
 	for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
 		if (iter == segments.begin()) { // first segment will always have all initial states in noodles
 			for (const State final_state : iter->final) {
-				if (Nfa segment_one_final = reduce(
-						trim(*iter, nullptr, std::nullopt, std::make_optional(utils::SparseSet<State>{final_state}))
-					);
-					segment_one_final.num_of_states() > 0 || include_empty) {
-					out[std::make_pair(unused_state, final_state)] =
-						std::make_shared<Nfa>(std::move(segment_one_final));
-				}
+				insert(
+					unused_state, final_state,
+					reduce(trim(*iter, nullptr, std::nullopt, std::make_optional(utils::SparseSet<State>{final_state})))
+				);
 			}
 		} else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
-			for (const State init_state : iter->initial) {
-				if (Nfa segment_one_init = reduce(
-						trim(*iter, nullptr, std::make_optional(utils::SparseSet<State>{init_state}), std::nullopt)
-					);
-					segment_one_init.num_of_states() > 0 || include_empty) {
-					out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(std::move(segment_one_init));
-				}
-			}
+			reduce_per_initial_state(*iter, std::nullopt, [&](const State init_state, Nfa&& segment_one_init) {
+				insert(init_state, unused_state, std::move(segment_one_init));
+			});
 		} else { // the segments in-between
-			for (const State init_state : iter->initial) {
-				for (const State final_state : iter->final) {
-					if (Nfa segment_one_init_final = reduce(trim(
-							*iter, nullptr, std::make_optional(utils::SparseSet<State>{init_state}),
-							std::make_optional(utils::SparseSet<State>{final_state})
-						));
-						segment_one_init_final.num_of_states() > 0 || include_empty) {
-						out[std::make_pair(init_state, final_state)] =
-							std::make_shared<Nfa>(std::move(segment_one_init_final));
+			for (const State final_state : iter->final) {
+				const utils::SparseSet<State> final_states{final_state};
+				reduce_per_initial_state(
+					*iter, final_states, [&](const State init_state, Nfa&& segment_one_init_final) {
+						insert(init_state, final_state, std::move(segment_one_init_final));
 					}
-				}
+				);
 			}
 		}
 	}
