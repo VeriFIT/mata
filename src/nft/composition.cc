@@ -690,17 +690,16 @@ Nft algorithms::compose_fast_no_jump(
 						// that will not be tracked in the composition_storage. We cannot use composition_storage
 						// because, while waiting in the stationary state, we are not exactly at that state,
 						// but rather in virtual (nonexistent) states of the waiting loop over it.
+						// A waiting state is expanded once: a cache hit only adds the transition.
 						State new_composition_state;
-						if (waiting_state_storage.contains(copy_target)) {
-							new_composition_state = waiting_state_storage[copy_target];
+						if (const auto it{waiting_state_storage.find(copy_target)}; it != waiting_state_storage.end()) {
+							new_composition_state = it->second;
 						} else {
 							new_composition_state = result.add_state_with_level(new_composition_state_level);
-							waiting_state_storage[copy_target] = new_composition_state;
+							waiting_state_storage.emplace(copy_target, new_composition_state);
+							waiting_worklist->push({new_composition_state, copy_target});
 						}
 						symbol_post.push_back(new_composition_state);
-						// Sometimes, the running root state gets pushed to the worklist again. We need to handle it
-						// during the pop.
-						waiting_worklist->push({new_composition_state, copy_target});
 					} else {
 						// Just copy this transition.
 						symbol_post.insert(create_composition_state(
@@ -879,16 +878,15 @@ Nft algorithms::compose_fast_no_jump(
 						// continue the waiting.
 						MATA_ASSERT(result.levels[composition_state] + 1 < result.levels.num_of_levels);
 						State new_composition_state;
-						if (waiting_state_storage.contains(running_epsilon_target)) {
-							new_composition_state = waiting_state_storage[running_epsilon_target];
+						if (const auto it{waiting_state_storage.find(running_epsilon_target)};
+							it != waiting_state_storage.end()) {
+							new_composition_state = it->second;
 						} else {
 							new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
-							waiting_state_storage[running_epsilon_target] = new_composition_state;
+							waiting_state_storage.emplace(running_epsilon_target, new_composition_state);
+							worklist.push({new_composition_state, running_epsilon_target});
 						}
-						// const State new_composition_state =
-						// result.add_state_with_level(result.levels[composition_state] + 1);
 						epsilon_symbol_post.push_back(new_composition_state);
-						worklist.push({new_composition_state, running_epsilon_target});
 					}
 				}
 				if (!epsilon_symbol_post.targets.empty()) {
