@@ -2,7 +2,7 @@
  * Benchmark: Email Filter (b-regex)
  *
  * The benchmark program reproduces the results of CADE'23 for benchmarks in directory
- * /nfa-bench/benchmarks/email_filter
+ * /nfa-bench/benchmarks/nfa/email_filter
  *
  * Optimal Inputs: inputs/bench-quintuple-email-filter.in
  *
