@@ -14,8 +14,7 @@ else ()
 			COMMAND "${MATA_GIT_EXECUTABLE}" describe --tags --abbrev=0
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			OUTPUT_VARIABLE MATA_VERSION_RAW
-			OUTPUT_STRIP_TRAILING_WHITESPACE
-			ERROR_QUIET
+			OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
 		)
 	endif ()
 endif ()
@@ -29,30 +28,44 @@ project (
 	libMATA
 	VERSION ${MATA_VERSION}
 	DESCRIPTION "A fast and simple automata library"
-	LANGUAGES C CXX) # C is needed for CUDD
+	LANGUAGES C CXX
+) # C is needed for CUDD
 
 if (EXISTS "${PROJECT_SOURCE_DIR}/VERSION")
-	set_property (DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/VERSION")
+	set_property (
+		DIRECTORY
+		APPEND
+		PROPERTY CMAKE_CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/VERSION"
+	)
 endif ()
 
 # Without this, a plain `cmake -B build && cmake --build build` compiles libmata with no
 #  optimisation and with asserts enabled. The Makefile always passes a type, so this only affects
 #  generic CMake workflows; `add_subdirectory()` consumers keep their own type.
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME
+	AND NOT CMAKE_CONFIGURATION_TYPES
+	AND NOT CMAKE_BUILD_TYPE
+)
 	message (STATUS "No build type selected, defaulting to Release")
-	set (CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+	set (
+		CMAKE_BUILD_TYPE
+		Release
+		CACHE STRING "Build type" FORCE
+	)
 endif ()
 
 # Mata uses C++23. Setting CMAKE_CXX_STANDARD to 23 is not enough. The compiler has to actually
 # implement the feature. Fail here with a readable message instead of letting it surface during compilation.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
-	message (FATAL_ERROR
-		"Mata requires GCC >= 14 (found ${CMAKE_CXX_COMPILER_VERSION}). "
-		"Install a newer compiler and select it, e.g. `CXX=g++-14 cmake ...`.")
+	message (FATAL_ERROR "Mata requires GCC >= 14 (found ${CMAKE_CXX_COMPILER_VERSION}). "
+						 "Install a newer compiler and select it, e.g. `CXX=g++-14 cmake ...`."
+	)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18)
-	message (FATAL_ERROR
-		"Mata requires Clang >= 18 (found ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}) for C++23. "
-		"Note AppleClang version numbers differ from upstream LLVM.")
+	message (
+		FATAL_ERROR
+			"Mata requires Clang >= 18 (found ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}) for C++23. "
+			"Note AppleClang version numbers differ from upstream LLVM."
+	)
 endif ()
 
 # 3rd party modules
@@ -72,15 +85,27 @@ option (MATA_ARCH_NATIVE "Optimize for the architecture of the building machine 
 # Profile-guided optimization, driven in two stages: a `generate` build writes a profile while it
 #  runs the training workload, a `use` build reads it back. A profile belongs to one exact compiler
 #  and source tree, so it is never installed and never committed. `just cpp::pgo` runs both stages.
-set (MATA_PGO "off" CACHE STRING "Profile-guided optimization stage: off, generate, or use")
+set (
+	MATA_PGO
+	"off"
+	CACHE STRING "Profile-guided optimization stage: off, generate, or use"
+)
 # Sanitizers: AddressSanitizer, UndefinedBehaviorSanitizer, and libstdc++ assertions. A comma-separated
 #  list of sanitizer names (e.g. "address,undefined"); empty disables all sanitizers. The flags apply to
 #  every build type, and force `-O1 -g`, so a sanitized build is a debugging build whatever
 #  CMAKE_BUILD_TYPE says. UBSAN and ASAN are supported on GCC and Clang; _GLIBCXX_ASSERTIONS
 #  is GCC/libstdc++ only but is safe to pass to Clang (which ignores unknown -D flags for compatibility).
-set (MATA_SANITIZE "" CACHE STRING "Comma-separated list of sanitizers to enable (e.g. address,undefined)")
+set (
+	MATA_SANITIZE
+	""
+	CACHE STRING "Comma-separated list of sanitizers to enable (e.g. address,undefined)"
+)
 set_property (CACHE MATA_PGO PROPERTY STRINGS off generate use)
-set (MATA_PGO_DIR "${CMAKE_BINARY_DIR}/pgo" CACHE PATH "Directory holding the profile data of MATA_PGO")
+set (
+	MATA_PGO_DIR
+	"${CMAKE_BINARY_DIR}/pgo"
+	CACHE PATH "Directory holding the profile data of MATA_PGO"
+)
 if (NOT MATA_PGO MATCHES "^(off|generate|use)$")
 	message (FATAL_ERROR "MATA_PGO must be one of off, generate, use; got '${MATA_PGO}'")
 endif ()
@@ -126,10 +151,10 @@ if (NOT MATA_PGO STREQUAL "off")
 	endif ()
 	message ("-- Building Mata with PGO stage '${MATA_PGO}', profile data in '${MATA_PGO_DIR}'")
 	if (MATA_PGO STREQUAL "generate")
-		message (WARNING
-			"MATA_PGO=generate produces an instrumented libmata that writes profile data while it "
-			"runs. It is a measurement artefact, not a deliverable: do not package it, and install "
-			"a MATA_PGO=use or MATA_PGO=off build instead.")
+		message (WARNING "MATA_PGO=generate produces an instrumented libmata that writes profile data while it "
+						 "runs. It is a measurement artefact, not a deliverable: do not package it, and install "
+						 "a MATA_PGO=use or MATA_PGO=off build instead."
+		)
 	endif ()
 endif ()
 
@@ -144,9 +169,7 @@ function (mata_add_optimizations TARGET)
 		endif ()
 	endif ()
 	if (MATA_ARCH_NATIVE)
-		target_compile_options (${TARGET} PRIVATE
-			"$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-march=native>"
-		)
+		target_compile_options (${TARGET} PRIVATE "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-march=native>")
 	endif ()
 	if (NOT MATA_PGO STREQUAL "off")
 		target_compile_options (${TARGET} PRIVATE ${MATA_PGO_FLAGS})
@@ -157,9 +180,8 @@ function (mata_add_optimizations TARGET)
 		#  carries no `=<dir>`: the output location is baked into the objects at compile time and a
 		#  build-local path means nothing in `mataTargets.cmake`. The `use` stage links plainly.
 		if (MATA_PGO STREQUAL "generate")
-			target_link_options (${TARGET} PUBLIC
-				"$<BUILD_INTERFACE:${MATA_PGO_FLAGS}>"
-				"$<INSTALL_INTERFACE:${MATA_PGO_LINK_FLAGS}>"
+			target_link_options (
+				${TARGET} PUBLIC "$<BUILD_INTERFACE:${MATA_PGO_FLAGS}>" "$<INSTALL_INTERFACE:${MATA_PGO_LINK_FLAGS}>"
 			)
 		endif ()
 	endif ()
@@ -169,8 +191,8 @@ function (mata_add_optimizations TARGET)
 		#  needs `-fsanitize` too; without it the unit tests, the benchmarks and the examples fail
 		#  with undefined `__asan_*`/`__ubsan_*` references. Only the `-fsanitize` part is exported:
 		#  `-O1`, `-g` and `-fno-omit-frame-pointer` shape this build, not a consumer's.
-		target_link_options (${TARGET} PUBLIC
-			"$<BUILD_INTERFACE:${MATA_SANITIZE_FLAGS}>"
+		target_link_options (
+			${TARGET} PUBLIC "$<BUILD_INTERFACE:${MATA_SANITIZE_FLAGS}>"
 			"$<INSTALL_INTERFACE:-fsanitize=${MATA_SANITIZE}>"
 		)
 		# -D_GLIBCXX_ASSERTIONS enables libstdc++ debug assertions; Clang ignores unknown -D flags
@@ -216,13 +238,13 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	### Doxygen - voluntary ###
 	find_package (Doxygen)
 	if (DOXYGEN_FOUND)
-		configure_file (${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-			${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY
-		)
-		add_custom_target (docs
+		configure_file (${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+		add_custom_target (
+			docs
 			${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
 			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-			COMMENT "Generating API documentation with Doxygen" VERBATIM
+			COMMENT "Generating API documentation with Doxygen"
+			VERBATIM
 		)
 	else ()
 		message (WARNING "Doxygen not found. Documentation will not be built")
@@ -236,12 +258,12 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 		if (FETCHCONTENT_FULLY_DISCONNECTED)
 			find_package (Catch2 REQUIRED)
 		else ()
-			fetchcontent_declare (
+			FetchContent_Declare (
 				Catch2
 				GIT_REPOSITORY https://github.com/catchorg/Catch2.git
 				GIT_TAG v3.16.0
 			)
-			fetchcontent_makeavailable (Catch2)
+			FetchContent_MakeAvailable (Catch2)
 			list (APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
 			get_target_property (catch2_includes Catch2 INTERFACE_INCLUDE_DIRECTORIES)
 			target_include_directories (Catch2 SYSTEM INTERFACE ${catch2_includes})
@@ -255,7 +277,8 @@ endif ()
 set (CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Common warnings compiler flags.
-set (MATA_COMMON_WARNINGS
+set (
+	MATA_COMMON_WARNINGS
 	-Wextra
 	-Wall
 	-Wfloat-equal
@@ -271,12 +294,7 @@ set (MATA_COMMON_WARNINGS
 	-Wreturn-type
 )
 # Clang-specific warnings compiler flags.
-set (MATA_CLANG_WARNINGS
-	-Winconsistent-missing-override
-	-Wgnu-anonymous-struct
-	-Wnested-anon-types
-	-Wno-system-headers
-)
+set (MATA_CLANG_WARNINGS -Winconsistent-missing-override -Wgnu-anonymous-struct -Wnested-anon-types -Wno-system-headers)
 
 # Set whether to treat warnings as errors.
 if (MATA_WERROR)
@@ -288,9 +306,8 @@ endif ()
 # Do not guard these with `$<CONFIG:DEBUG>`/`$<CONFIG:RELEASE>`: that silently drops the warnings
 #  (and `-Werror`) from `RelWithDebInfo`, `MinSizeRel` and from builds with no configuration set.
 function (mata_add_warnings TARGET)
-	target_compile_options (${TARGET} PRIVATE
-		${MATA_COMMON_WARNINGS}
-		"$<$<CXX_COMPILER_ID:Clang,AppleClang>:${MATA_CLANG_WARNINGS}>"
+	target_compile_options (
+		${TARGET} PRIVATE ${MATA_COMMON_WARNINGS} "$<$<CXX_COMPILER_ID:Clang,AppleClang>:${MATA_CLANG_WARNINGS}>"
 	)
 endfunction ()
 
@@ -305,7 +322,6 @@ endif ()
 # Get git hash (used in src/)
 include (GetGitRevisionDescription)
 get_git_head_revision (GIT_REFSPEC GIT_SHA1)
-
 
 ##### SUBDIRECTORIES #####
 add_subdirectory (src)
@@ -335,7 +351,6 @@ if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) AND BUILD_TESTING)
 	add_subdirectory (tests-integration)
 endif ()
 
-
 ##### INSTALLING AND UNINSTALLING #####
 if (MATA_INSTALL)
 	include (GNUInstallDirs)
@@ -360,33 +375,27 @@ if (MATA_INSTALL)
 		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
 	)
 
-	configure_package_config_file (cmake/mataConfig.cmake.in
-		"${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
+	configure_package_config_file (
+		cmake/mataConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
 		INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
 	)
 	# Without this file `find_package(mata 1 REQUIRED)` reports the installed package as
 	#  "version: unknown" and rejects it.
 	write_basic_package_version_file (
-		"${CMAKE_CURRENT_BINARY_DIR}/mataConfigVersion.cmake"
-		COMPATIBILITY SameMajorVersion
+		"${CMAKE_CURRENT_BINARY_DIR}/mataConfigVersion.cmake" COMPATIBILITY SameMajorVersion
 	)
-	install (
-		FILES
-			"${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake"
-			"${CMAKE_CURRENT_BINARY_DIR}/mataConfigVersion.cmake"
-		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
+	install (FILES "${CMAKE_CURRENT_BINARY_DIR}/mataConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/mataConfigVersion.cmake"
+			 DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mata
 	)
 endif ()
-
 
 # Uninstall target from https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#can-i-do-make-uninstall-with-cmake
 # Add it only if we are building mata as the main project
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND NOT TARGET uninstall)
 	configure_file (
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-		"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-		IMMEDIATE @ONLY)
+		"${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+		IMMEDIATE @ONLY
+	)
 
-	add_custom_target (uninstall
-		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+	add_custom_target (uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif ()
