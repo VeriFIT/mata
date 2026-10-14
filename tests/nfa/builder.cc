@@ -303,6 +303,22 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 		CHECK(nfa.delta.num_of_transitions() == 100'000);
 	}
 
+	SECTION("Sparse transitions in a large matrix") {
+		// 4'000 transitions per symbol out of 4'000'000 possible ones: every one must be distinct.
+		num_of_states = 2'000;
+		alphabet_size = 3;
+		states_trans_ratio_per_symbol = 2;
+		final_state_density = 0.5;
+
+		Nfa nfa = mata::nfa::builder::create_random_nfa_tabakov_vardi(
+			num_of_states, alphabet_size, states_trans_ratio_per_symbol, final_state_density, 750
+		);
+		CHECK(nfa.num_of_states() == num_of_states);
+		CHECK(nfa.final.size() == 1'000);
+		CHECK(nfa.delta.get_used_symbols().size() == alphabet_size);
+		CHECK(nfa.delta.num_of_transitions() == 12'000);
+	}
+
 	SECTION("Throw runtime_error. transition_density < 0") {
 		num_of_states = 10;
 		alphabet_size = 5;
