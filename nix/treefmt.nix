@@ -27,6 +27,17 @@
           };
 
           clang-format.enable = true;
+          cmake-format = {
+            enable = true;
+            # The default 'CMakeLists.txt' matches only the one at the root.
+            includes = [
+              "*.cmake"
+              "CMakeLists.txt"
+              "*/CMakeLists.txt"
+            ];
+            # Vendored, kept byte-identical to upstream.
+            excludes = [ "cmake/GetGitRevisionDescription.cmake" ];
+          };
           nixfmt.enable = true;
           yamlfmt.enable = true;
           taplo.enable = true;

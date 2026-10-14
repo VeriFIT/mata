@@ -38,6 +38,12 @@ includes = [
 ]
 options = ["-i"]
 
+[formatter.cmake-format]
+command = "cmake-format"
+excludes = ["cmake/GetGitRevisionDescription.cmake"]
+includes = ["*.cmake", "CMakeLists.txt", "*/CMakeLists.txt"]
+options = ["--in-place"]
+
 [formatter.just]
 command = "bash"
 excludes = []

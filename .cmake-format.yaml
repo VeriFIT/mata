@@ -1,0 +1,10 @@
+# Tabs, as .editorconfig prescribes for CMake files; the line width of .clang-format.
+format:
+  line_width: 120
+  tab_size: 4
+  use_tabchars: true
+  separate_ctrl_name_with_space: true
+  separate_fn_name_with_space: true
+  dangle_parens: true
+markup:
+  enable_markup: false
