@@ -11,6 +11,7 @@
 #include <cmath>
 #include <fstream>
 #include <random>
+#include <unordered_set>
 
 using namespace mata::nfa;
 using mata::Symbol;
@@ -213,24 +214,42 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 	};
 	for (size_t i = 0; i < num_of_final_states; ++i) { nfa.final.insert(states[i]); }
 
-	// Unique transition generator
-	std::vector<State> one_dimensional_transition_matrix(num_of_states * num_of_states);
-	std::iota(one_dimensional_transition_matrix.begin(), one_dimensional_transition_matrix.end(), 0);
-
-	// Create transitions
+	// The transitions of one symbol are distinct cells of the num_of_states x num_of_states matrix. Floyd's algorithm
+	//  samples them uniformly in time and memory proportional to their number instead of shuffling all the cells.
+	//  Cells already taken are kept in a bitmap over all cells when it is not much larger than the sample, otherwise
+	//  in a hash set.
+	const size_t num_of_cells{num_of_states * num_of_states};
 	// Using std::min because, in some universe, casting and rounding might cause the number of transitions to exceed
-	// the number of possible transitions by 1 and then an access to the non-existing element of
-	// one_dimensional_transition_matrix would occur.
+	// the number of possible transitions by 1.
 	const size_t num_of_transitions_per_symbol{std::min(
 		static_cast<size_t>(std::round(static_cast<double>(num_of_states) * states_transitions_ratio_per_symbol)),
-		one_dimensional_transition_matrix.size()
+		num_of_cells
 	)};
+	const bool use_bitmap{num_of_cells / 64 <= num_of_transitions_per_symbol};
+	std::vector<bool> taken_bitmap(use_bitmap ? num_of_cells : 0);
+	std::unordered_set<size_t> taken_set{};
+	if (!use_bitmap) { taken_set.reserve(num_of_transitions_per_symbol); }
+	std::vector<size_t> cells{};
+	cells.reserve(num_of_transitions_per_symbol);
 	for (Symbol symbol{0}; symbol < alphabet_size; ++symbol) {
-		std::ranges::shuffle(one_dimensional_transition_matrix, gen);
-		for (size_t i = 0; i < num_of_transitions_per_symbol; ++i) {
-			const State source{one_dimensional_transition_matrix[i] / num_of_states};
-			const State target{one_dimensional_transition_matrix[i] % num_of_states};
-			nfa.delta.add(source, symbol, target);
+		cells.clear();
+		taken_set.clear();
+		for (size_t upper{num_of_cells - num_of_transitions_per_symbol}; upper < num_of_cells; ++upper) {
+			const size_t candidate{std::uniform_int_distribution<size_t>{0, upper}(gen)};
+			const bool candidate_taken{use_bitmap ? taken_bitmap[candidate] : taken_set.contains(candidate)};
+			const size_t cell{candidate_taken ? upper : candidate};
+			if (use_bitmap) {
+				taken_bitmap[cell] = true;
+			} else {
+				taken_set.insert(cell);
+			}
+			cells.push_back(cell);
+		}
+		// Cells in increasing order append to the delta: sources, the symbol and targets all ascend.
+		std::ranges::sort(cells);
+		for (const size_t cell : cells) {
+			if (use_bitmap) { taken_bitmap[cell] = false; }
+			nfa.delta.add(cell / num_of_states, symbol, cell % num_of_states);
 		}
 	}
 	return nfa;
