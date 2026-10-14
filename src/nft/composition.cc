@@ -542,10 +542,9 @@ Nft algorithms::compose_fast_no_jump(
 			auto dont_care_sync_it = dont_care_nft.delta[dont_care_state].find(DONT_CARE);
 			if (dont_care_sync_it != dont_care_nft.delta[dont_care_state].end()) {
 				for (const SymbolPost& symbol_post : other_nft.delta[other_state]) {
-					if (symbol_post.symbol == EPSILON) {
-						// We don't want to synchronize DONT_CARE with EPSILON.
-						continue;
-					}
+					// DONT_CARE is not synchronized with EPSILON, and DONT_CARE with DONT_CARE has been synchronized
+					//  by the synchronized iterator already.
+					if (symbol_post.symbol == EPSILON || symbol_post.symbol == DONT_CARE) { continue; }
 					const Symbol symbol = reconnect ? reconnection_symbol : symbol_post.symbol;
 					if (is_dont_care_lhs) {
 						combine_targets(dont_care_sync_it->targets, symbol_post.targets, symbol);
