@@ -140,6 +140,72 @@ void check_covered_and_covering(
 	}
 }
 
+/// Covered states of residual reduction "after" in removal order, with their covering states.
+struct CoveredStates {
+	std::vector<State> order{};
+	std::vector<StateSet> covering_sets{};
+};
+
+/**
+ * Redirect all transitions and initial states from the covered states to their covering states and drop the covered
+ *  states' outgoing transitions and finality, as if remove_covered_state() was called for each in order.
+ *
+ * A covering set holds only states not covered at removal time, so states covered later are resolved first.
+ */
+void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
+	const size_t num_of_covered{covered_states.order.size()};
+	if (num_of_covered == 0) { return; }
+	constexpr size_t NOT_COVERED{std::numeric_limits<size_t>::max()};
+	std::vector<size_t> covered_index(nfa.num_of_states(), NOT_COVERED);
+	for (size_t i{0}; i < num_of_covered; ++i) { covered_index[covered_states.order[i]] = i; }
+
+	std::vector<StateSet> resolved(num_of_covered);
+	for (size_t i{num_of_covered}; i-- > 0;) {
+		for (const State covering : covered_states.covering_sets[i]) {
+			const size_t covering_index{covered_index[covering]};
+			if (covering_index == NOT_COVERED) {
+				resolved[i].insert(covering);
+			} else {
+				resolved[i].insert(resolved[covering_index]);
+			}
+		}
+	}
+
+	const auto is_covered{[&](const State state) { return covered_index[state] != NOT_COVERED; }};
+	for (State source{0}; source < nfa.delta.num_of_states(); ++source) {
+		if (is_covered(source)) {
+			nfa.delta.mutable_state_post(source).clear();
+			continue;
+		}
+		const StatePost& state_post{nfa.delta[source]};
+		if (std::ranges::none_of(state_post, [&](const SymbolPost& symbol_post) {
+				return std::ranges::any_of(symbol_post.targets, is_covered);
+			})) {
+			continue;
+		}
+		for (SymbolPost& symbol_post : nfa.delta.mutable_state_post(source)) {
+			if (std::ranges::none_of(symbol_post.targets, is_covered)) { continue; }
+			StateSet targets{};
+			for (const State target : symbol_post.targets) {
+				if (!is_covered(target)) { targets.push_back(target); }
+			}
+			for (const State target : symbol_post.targets) {
+				if (is_covered(target)) { targets.insert(resolved[covered_index[target]]); }
+			}
+			symbol_post.targets = std::move(targets);
+		}
+	}
+
+	for (size_t i{0}; i < num_of_covered; ++i) {
+		const State state{covered_states.order[i]};
+		nfa.final.erase(state);
+		if (nfa.initial.contains(state)) {
+			nfa.initial.erase(state);
+			for (const State covering : covered_states.covering_sets[i]) { nfa.initial.insert(covering); }
+		}
+	}
+}
+
 void residual_recurse_coverable(
 	const std::vector<StateSet>& macrostate_vec, // vector of nfa macrostates
 	const std::vector<State>& covering_indexes, // sub-vector of macrostates indexes
@@ -147,7 +213,7 @@ void residual_recurse_coverable(
 	std::vector<bool>& visited, // flags for visited states
 	const size_t start_index, // starting index for covering_indexes vec
 	std::unordered_map<StateSet, State>* subset_map, // mapping of indexes to macrostates
-	Nfa& nfa
+	CoveredStates& covered_states
 ) {
 	const StateSet& check_state = macrostate_vec[covering_indexes[start_index]];
 	StateSet covering_set; // doesn't contain duplicates
@@ -179,7 +245,9 @@ void residual_recurse_coverable(
 
 			visited[sub_covering_indexes[k]] = true;
 
-			residual_recurse_coverable(macrostate_vec, sub_covering_indexes, covered, visited, k, subset_map, nfa);
+			residual_recurse_coverable(
+				macrostate_vec, sub_covering_indexes, covered, visited, k, subset_map, covered_states
+			);
 		}
 
 		covering_set.clear(); // clear variable to store only needed macrostates
@@ -194,7 +262,8 @@ void residual_recurse_coverable(
 			}
 		}
 
-		remove_covered_state(covering_set, subset_map->find(check_state)->second, nfa);
+		covered_states.order.push_back(subset_map->find(check_state)->second);
+		covered_states.covering_sets.push_back(std::move(covering_set));
 		covered[covering_indexes[start_index]] = true;
 	}
 }
@@ -1954,6 +2023,8 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
 	StateSet covering_set; // doesn't contain duplicates
 	std::vector<State> covering_indexes; // indexes of covering states
 	size_t macrostate_size = macrostate_vec.size();
+	// Coverage depends only on the macrostates; redirect all transitions in one pass at the end.
+	CoveredStates covered_states{};
 	for (size_t i = 0; i < macrostate_size - 1; i++) {
 		if (macrostate_vec[i].size() == 1) { // end searching on single-sized macrostates
 			break;
@@ -1993,7 +2064,9 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
 
 				visited[covering_indexes[k]] = true;
 
-				residual_recurse_coverable(macrostate_vec, covering_indexes, covered, visited, k, &subset_map, result);
+				residual_recurse_coverable(
+					macrostate_vec, covering_indexes, covered, visited, k, &subset_map, covered_states
+				);
 			}
 
 			covering_set.clear(); // clear variable to store only needed macrostates
@@ -2010,10 +2083,12 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
 				}
 			}
 
-			remove_covered_state(covering_set, subset_map.find(macrostate_vec[i])->second, result);
+			covered_states.order.push_back(subset_map.find(macrostate_vec[i])->second);
+			covered_states.covering_sets.push_back(std::move(covering_set));
 			covered[i] = true;
 		}
 	}
 
+	redirect_covered_states(covered_states, result);
 	return result;
 }
