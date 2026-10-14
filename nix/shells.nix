@@ -40,6 +40,29 @@
                   unset PYTHONPATH
                   REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || jj root)"
                   export REPO_ROOT
+
+                  # Prepend a clangd allowed to query the dev shells' Nix cc-wrappers for system include
+                  # paths. Stock clangd refuses to execute the wrapper named in 'compile_commands.json',
+                  # so diagnostics in editors cannot resolve the compiler's bundled headers
+                  # (#include <memory>, etc.). Both wrappers are allowed, so a build directory configured
+                  # in either shell works; nothing else is, since clangd executes whatever allowed driver
+                  # any opened 'compile_commands.json' names. Both 'clang' (in the stdenv of the 'clang'
+                  # dev shell, ahead of buildInputs) and 'clang-tools' ship their own 'clangd', so an
+                  # entry in buildInputs cannot win; prepending in shellHook does.
+                  export PATH=${
+                    lib.makeBinPath [
+                      (pkgs.writeShellScriptBin "clangd" ''
+                        exec ${lib.getExe' pkgs.clang-tools "clangd"} --query-driver=${
+                          lib.escapeShellArg (
+                            lib.concatMapStringsSep "," (cc: "${cc}/bin/*") [
+                              pkgs.gccStdenv.cc
+                              pkgs.clangStdenv.cc
+                            ]
+                          )
+                        } "$@"
+                      '')
+                    ]
+                  }:$PATH
                 '';
 
                 inputsFrom = with inputs.self.packages.${pkgs.stdenv.hostPlatform.system}; [
