@@ -109,6 +109,24 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 		REQUIRE(!iu.advance());
 	}
 
+	SECTION("synchronized_universal_iterator, three inputs where input 0 moves past input 1 - issue #769") {
+		// All three inputs live in one buffer with input 0 first, so the outcome does not depend on where separate
+		//  containers happen to be allocated. Only 9 is common to all three.
+		const std::vector<int> buffer{1, 2, 5, 9, /* input 1 */ 2, 9, /* input 2 */ 5, 9};
+		SynchronizedUniversalIterator<std::vector<int>::const_iterator> sync_iterator;
+		sync_iterator.push_back(buffer.begin(), buffer.begin() + 4);
+		sync_iterator.push_back(buffer.begin() + 4, buffer.begin() + 6);
+		sync_iterator.push_back(buffer.begin() + 6, buffer.end());
+
+		REQUIRE(sync_iterator.advance());
+		const auto& current = sync_iterator.get_current();
+		REQUIRE(current.size() == 3);
+		CHECK(*current[0] == 9);
+		CHECK(*current[1] == 9);
+		CHECK(*current[2] == 9);
+		CHECK(!sync_iterator.advance());
+	}
+
 	SECTION("SynchronizedExistentialIterator, basic functionality") {
 		SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
 
