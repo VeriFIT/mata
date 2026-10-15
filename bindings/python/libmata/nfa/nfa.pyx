@@ -21,7 +21,7 @@ cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
-    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
+    CDelta, CRun, CTrans, CNfa, CSymbolPost, CSmallStateSet, CEPSILON
 
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CLazyWordGenerator
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation, CPairHash
@@ -32,6 +32,12 @@ cdef Symbol EPSILON = CEPSILON
 
 def epsilon():
     return EPSILON
+
+
+cdef list _targets_list(const CSmallStateSet& targets):
+    """Copy the targets of a symbol post into a list."""
+    cdef const State* data = targets.data()
+    return [data[i] for i in range(targets.size())]
 
 
 cdef class Run:
@@ -142,13 +148,12 @@ cdef class SymbolPost:
 
     @property
     def targets(self):
-        cdef vector[State] states_as_vector = self.thisptr.targets.to_vector()
-        return [s for s in states_as_vector]
+        return _targets_list(self.thisptr.targets)
 
     @targets.setter
     def targets(self, value):
         cdef StateSet targets = StateSet(value)
-        self.thisptr.targets = targets
+        self.thisptr.targets = CSmallStateSet(targets)
 
     def __cinit__(self, Symbol symbol, vector[State] states):
         cdef StateSet targets = StateSet(states)
@@ -303,7 +308,7 @@ cdef class Delta:
         """
         cdef CStatePost c_state_post = self.automaton_ptr.get().delta.state_post(state)
         cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
-        return [SymbolPost(symbol_post.symbol, symbol_post.targets.to_vector()) for symbol_post in c_symbol_posts]
+        return [SymbolPost(symbol_post.symbol, _targets_list(symbol_post.targets)) for symbol_post in c_symbol_posts]
 
     def __getitem__(self, State state) -> list[SymbolPost]:
         return self.state_post(state)
@@ -333,10 +338,8 @@ cdef class Delta:
         transitions = []
         cdef CStatePost c_state_post = self.automaton_ptr.get().delta[source]
         cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
-        cdef vector[State] c_targets
         for symbol_post in c_symbol_posts:
-            c_targets = symbol_post.targets.to_vector()
-            for target in c_targets:
+            for target in _targets_list(symbol_post.targets):
                 transitions.append(Transition(source, symbol_post.symbol, target))
         return transitions
 
@@ -643,7 +646,7 @@ cdef class Nfa:
         while it != end:
             t = SymbolPost(
                 dereference(it).symbol,
-                dereference(it).targets.to_vector()
+                _targets_list(dereference(it).targets)
             )
             postinc(it)
             transsymbols.append(t)
@@ -684,11 +687,11 @@ cdef class Nfa:
         cdef CStatePost c_state_post = self.thisptr.get().delta[source]
         cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
         cdef CSymbolPost c_symbol_post
-        cdef COrdVector[State].const_iterator c_symbol_post_it
+        cdef const State* c_symbol_post_it
         while c_state_post_it != c_state_post.cend():
             c_symbol_post = dereference(c_state_post_it)
-            c_symbol_post_it = c_symbol_post.begin()
-            while c_symbol_post_it != c_symbol_post.end():
+            c_symbol_post_it = c_symbol_post.cbegin()
+            while c_symbol_post_it != c_symbol_post.cend():
                 transitions.append(Transition(source, c_symbol_post.symbol, dereference(c_symbol_post_it)))
                 preinc(c_symbol_post_it)
             preinc(c_state_post_it)
@@ -957,7 +960,7 @@ cdef class Nfa:
             return None
 
         cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
-        return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.to_vector())
+        return SymbolPost(epsilon_transitions.symbol, _targets_list(epsilon_transitions.targets))
 
     def is_universal(self, alph.Alphabet alphabet, params = None):
         """Tests if NFA is universal with regard to the given alphabet.

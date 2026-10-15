@@ -6,6 +6,7 @@
 #define MATA_TYPES_HH
 
 #include "mata/alphabet.hh"
+#include "mata/utils/small-ord-vector.hh"
 
 #include <cstdint>
 #include <limits>
@@ -16,6 +17,8 @@ extern const std::string TYPE_NFA;
 
 using State = unsigned long;
 using StateSet = utils::OrdVector<State>;
+/// Target states of a @c SymbolPost: an ordered set that stores small sets inline.
+using SmallStateSet = utils::SmallOrdVector<State>;
 
 struct Run {
 	Word word{}; ///< A finite-length word.

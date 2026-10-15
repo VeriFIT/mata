@@ -482,7 +482,7 @@ Nft algorithms::compose_fast_no_jump(
 		const bool vanish_sync_level = !reconnect && project_out_sync_levels;
 
 		// Helper function to combine LHS and RHS targets over the given symbol.
-		auto combine_targets = [&](const StateSet& lhs_sync_targets, const StateSet& rhs_sync_targets,
+		auto combine_targets = [&](const SmallStateSet& lhs_sync_targets, const SmallStateSet& rhs_sync_targets,
 								   const Symbol symbol) {
 			if (!vanish_sync_level) {
 				// Do a standard combination of targets.
@@ -504,8 +504,10 @@ Nft algorithms::compose_fast_no_jump(
 			const bool is_remaining_transition_in_lhs = lhs_sync_level + 1 < lhs.levels.num_of_levels;
 			MATA_ASSERT(is_remaining_transition_in_lhs || rhs_sync_level + 1 < rhs.levels.num_of_levels);
 
-			const StateSet& moving_sync_targets = is_remaining_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
-			const StateSet& static_sync_targets = is_remaining_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
+			const SmallStateSet& moving_sync_targets =
+				is_remaining_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
+			const SmallStateSet& static_sync_targets =
+				is_remaining_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
 			const Nft& moving_nft = is_remaining_transition_in_lhs ? lhs : rhs;
 
 			mata::utils::SynchronizedExistentialIterator<mata::utils::OrdVector<SymbolPost>::const_iterator>

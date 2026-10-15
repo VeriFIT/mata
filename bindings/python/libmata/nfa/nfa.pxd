@@ -110,10 +110,18 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
+    # Target states of a symbol post; small sets are stored inline.
+    cdef cppclass CSmallStateSet "mata::nfa::SmallStateSet":
+        CSmallStateSet() except +
+        CSmallStateSet(StateSet&) except +
+        size_t size() const
+        bint empty() const
+        const State* data() const
+
     cdef cppclass CSymbolPost "mata::nfa::SymbolPost":
         # Public Attributes
         Symbol symbol
-        StateSet targets
+        CSmallStateSet targets
 
         # Constructors
         CSymbolPost() except +
@@ -126,8 +134,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool operator>(CSymbolPost)
         bool operator>=(CSymbolPost)
 
-        COrdVector[State].const_iterator begin()
-        COrdVector[State].const_iterator end()
+        const State* cbegin() const
+        const State* cend() const
 
     # Structural base shared by mata::nfa::Nfa and mata::nft::Nft.
     cdef cppclass CAutomaton "mata::Automaton":

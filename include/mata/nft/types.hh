@@ -23,6 +23,7 @@ using Level = mata::Level;
 
 using State = nfa::State;
 using StateSet = nfa::StateSet;
+using SmallStateSet = nfa::SmallStateSet;
 
 using Run = nfa::Run;
 using EpsilonClosureOpt = nfa::EpsilonClosureOpt;

@@ -577,7 +577,7 @@ Nfa Nfa::decode_utf8() const {
 	std::stack<State> worklist;
 
 	// Pushes a set of states to the worklist and marks them as used.
-	auto push_state_set = [&](const StateSet& set) {
+	auto push_state_set = [&](const std::span<const State> set) {
 		for (State state : set) {
 			if (used[state]) { continue; }
 			worklist.push(state);

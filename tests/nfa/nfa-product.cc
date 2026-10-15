@@ -299,7 +299,7 @@ TEST_CASE("mata::nfa::intersection() with product states revisited out of order"
 			CHECK(result.delta.contains(source, 'b', prod_map[{lhs_target, rhs_target}]));
 		}
 	}
-	CHECK(mata::utils::is_sorted(result.delta.state_post(source).find('b')->targets.to_vector()));
+	CHECK(std::ranges::is_sorted(result.delta.state_post(source).find('b')->targets));
 }
 
 TEST_CASE("mata::nfa::intersection() with epsilon self-loops on both sides") {
