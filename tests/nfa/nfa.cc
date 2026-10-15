@@ -3736,6 +3736,206 @@ TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
 	}
 }
 
+namespace {
+/**
+ * @brief Is @p dfa a minimal DFA of its language?
+ *
+ * Fills the table of distinguishable state pairs (Moore): a pair is distinguishable when exactly one of its
+ *  states is final, or when some symbol leads to an already distinguishable pair, where a missing transition
+ *  counts as a transition to an implicit dead state. A trimmed DFA is minimal when every pair of its states is
+ *  distinguishable. This is an oracle independent of the implementation; language equivalence alone would not
+ *  show that a result is minimal.
+ */
+bool is_minimal_dfa(const Nfa& dfa) {
+	const size_t num_of_states{dfa.num_of_states()};
+	if (num_of_states == 0) { return true; }
+	if (!dfa.is_deterministic()) { return false; }
+	// An automaton of the empty language is minimal exactly when it has one state: every one of its states is
+	//  equivalent to the implicit dead state, so the pairwise test below would reject even the canonical form.
+	if (dfa.final.empty()) { return num_of_states == 1; }
+
+	const OrdVector<Symbol> symbols{dfa.delta.get_used_symbols()};
+	// 'dead' is an implicit extra state standing for a missing transition.
+	const size_t dead{num_of_states};
+	const auto successor = [&](const size_t state, const Symbol symbol) -> size_t {
+		if (state == dead) { return dead; }
+		const StatePost& state_post{dfa.delta[state]};
+		const auto symbol_post_it{state_post.find(symbol)};
+		if (symbol_post_it == state_post.end() || symbol_post_it->targets.empty()) { return dead; }
+		return *symbol_post_it->targets.begin();
+	};
+	const auto is_final = [&](const size_t state) { return state != dead && dfa.final[state]; };
+
+	const size_t size{num_of_states + 1};
+	std::vector distinguishable(size, std::vector<bool>(size, false));
+	for (size_t lhs{0}; lhs < size; ++lhs) {
+		for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+			if (is_final(lhs) != is_final(rhs)) { distinguishable[lhs][rhs] = true; }
+		}
+	}
+	for (bool changed{true}; changed;) {
+		changed = false;
+		for (size_t lhs{0}; lhs < size; ++lhs) {
+			for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+				if (distinguishable[lhs][rhs]) { continue; }
+				for (const Symbol symbol : symbols) {
+					const size_t lhs_succ{successor(lhs, symbol)};
+					const size_t rhs_succ{successor(rhs, symbol)};
+					if (lhs_succ == rhs_succ) { continue; }
+					if (distinguishable[std::min(lhs_succ, rhs_succ)][std::max(lhs_succ, rhs_succ)]) {
+						distinguishable[lhs][rhs] = true;
+						changed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// Every pair of real states must be distinguishable, and no real state may be equivalent to the dead state:
+	//  'rhs' runs up to and including 'dead'.
+	for (size_t lhs{0}; lhs < num_of_states; ++lhs) {
+		for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+			if (!distinguishable[lhs][rhs]) { return false; }
+		}
+	}
+	return true;
+}
+} // namespace
+
+TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
+	SECTION("the minimality oracle rejects non-minimal DFAs") {
+		// A non-final state with no outgoing transitions is equivalent to the implicit dead state.
+		Nfa leftover_dead_state(2);
+		leftover_dead_state.initial.insert(0);
+		leftover_dead_state.final.insert(0);
+		leftover_dead_state.delta.add(0, 'a', 1);
+		CHECK(!is_minimal_dfa(leftover_dead_state));
+		CHECK(minimize(leftover_dead_state).num_of_states() == 1);
+
+		// States 1 and 2 are equivalent.
+		Nfa equivalent_states(3);
+		equivalent_states.initial.insert(0);
+		equivalent_states.final.insert(1);
+		equivalent_states.final.insert(2);
+		equivalent_states.delta.add(0, 'a', 1);
+		equivalent_states.delta.add(0, 'b', 2);
+		CHECK(!is_minimal_dfa(equivalent_states));
+		CHECK(is_minimal_dfa(minimize(equivalent_states)));
+	}
+
+	SECTION("the default no longer determinizes twice") {
+		// A trimmed, complete DFA: Brzozowski reverts and determinizes it twice, which is exponential in the
+		//  worst case, while "auto" sends it straight to Hopcroft.
+		Nfa dfa(4);
+		dfa.initial.insert(0);
+		dfa.final.insert(3);
+		for (State state{0}; state < 4; ++state) {
+			dfa.delta.add(state, 'a', (state + 1) % 4);
+			dfa.delta.add(state, 'b', state);
+		}
+		const Nfa minimized{minimize(dfa)};
+		CHECK(are_equivalent(dfa, minimized));
+		CHECK(is_minimal_dfa(minimized));
+		CHECK(minimized.num_of_states() == 4);
+	}
+
+	SECTION("a nondeterministic input is determinized first") {
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'a', 2);
+		const Nfa minimized{minimize(nfa)};
+		CHECK(are_equivalent(nfa, minimized));
+		CHECK(minimized.is_deterministic());
+		CHECK(is_minimal_dfa(minimized));
+	}
+
+	SECTION("an empty language becomes one non-final initial state") {
+		Nfa empty_language(5);
+		empty_language.initial.insert(0);
+		empty_language.delta.add(0, 'a', 1);
+		empty_language.delta.add(1, 'a', 2);
+		const Nfa minimized{minimize(empty_language)};
+		CHECK(minimized.is_lang_empty());
+		CHECK(minimized.num_of_states() == 1);
+		CHECK(minimized.initial.size() == 1);
+		CHECK(minimized.final.empty());
+		CHECK(minimized.delta.num_of_transitions() == 0);
+
+		Nfa no_states;
+		CHECK(minimize(no_states).is_lang_empty());
+	}
+
+	SECTION("the explicit algorithms are still reachable and agree") {
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, 'b', 2);
+		nfa.delta.add(0, 'a', 2);
+		const Nfa automatic{minimize(nfa, {{"algorithm", "auto"}})};
+		const Nfa brzozowski{minimize(nfa, {{"algorithm", "brzozowski"}})};
+		CHECK(are_equivalent(automatic, brzozowski));
+		CHECK(automatic.num_of_states() == brzozowski.num_of_states());
+		CHECK_THROWS_WITH(minimize(nfa, {{"algorithm", "moore"}}), Catch::Matchers::ContainsSubstring("unknown value"));
+	}
+
+	SECTION("auto agrees with Brzozowski on random automata") {
+		std::mt19937 gen{7};
+		std::uniform_int_distribution<size_t> state_dist{0, 4};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			Nfa nfa(5);
+			nfa.initial.insert(0);
+			for (State state{0}; state < 5; ++state) {
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					nfa.delta.add(state, symbol, static_cast<State>(state_dist(gen)));
+				}
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+			}
+			INFO("iteration " << iteration);
+			const Nfa automatic{minimize(nfa)};
+			CHECK(are_equivalent(nfa, automatic));
+			CHECK(is_minimal_dfa(automatic));
+			CHECK(automatic.num_of_states() == minimize(nfa, {{"algorithm", "brzozowski"}}).num_of_states());
+		}
+	}
+
+	SECTION("auto agrees with Brzozowski on random nondeterministic automata") {
+		// Several initial states, several targets per symbol, and missing transitions, so that "auto" takes the
+		//  determinize branch before trimming and Hopcroft.
+		std::mt19937 gen{11};
+		std::uniform_int_distribution<State> state_dist{0, 5};
+		std::uniform_int_distribution<size_t> num_of_targets_dist{0, 2};
+		size_t num_of_nondeterministic{0};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			Nfa nfa(6);
+			for (State state{0}; state < 6; ++state) {
+				if (gen() % 3 == 0) { nfa.initial.insert(state); }
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					for (size_t target_idx{num_of_targets_dist(gen)}; target_idx > 0; --target_idx) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+			if (!nfa.is_deterministic()) { ++num_of_nondeterministic; }
+			INFO("iteration " << iteration);
+			const Nfa automatic{minimize(nfa)};
+			CHECK(are_equivalent(nfa, automatic));
+			CHECK(is_minimal_dfa(automatic));
+			if (nfa.is_lang_empty()) {
+				CHECK(automatic.num_of_states() == 1);
+			} else {
+				CHECK(automatic.num_of_states() == minimize(nfa, {{"algorithm", "brzozowski"}}).num_of_states());
+			}
+		}
+		CHECK(num_of_nondeterministic > 30);
+	}
+}
+
 TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 	Nfa aut;
 	ParameterMap params_after, params_with;
