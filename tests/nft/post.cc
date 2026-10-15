@@ -11,6 +11,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
+#include <numeric>
+#include <random>
+#include <set>
+#include <string>
+
 #include "mata/nft/nft.hh"
 
 using namespace mata;
@@ -38,6 +44,234 @@ Nft make_ab_c() {
 	n.final.insert(qf);
 	n.insert_word_by_levels(q0, {Word{a, b}, Word{c}}, qf);
 	return n;
+}
+
+// A plain vector-tuple search over (state, reading-head positions) configurations, written directly from the
+// documented tape semantics. It keeps no rank encoding, arena or visited bitmap, and serves as the reference
+// strategy for the randomized differential checks of the optimized Nft::post() below.
+struct ReferencePost {
+	StateSet result{};
+	StateSet visited{};
+	// Whether a discover of a final zero-level state would halt the search of a match_prefix
+	// is_in_lang_by_levels(), and whether a discover of one at the very end of every word would halt a full
+	// membership query. The end additionally requires every projected-out word to be empty, like post() does.
+	bool hits_final{false};
+	bool hits_final_at_end{false};
+	// Every reached configuration: a state with the reading-head positions of all levels.
+	std::set<std::pair<State, std::vector<size_t>>> configurations{};
+};
+
+ReferencePost reference_post(
+	const Nft& nft,
+	const StateSet& states,
+	const std::vector<Word>& words,
+	const BoolVector& use_level,
+	const bool epsilon_closure_after,
+	const JumpMode jump_mode
+) {
+	ReferencePost out{};
+	if (nft.delta.empty()) {
+		// The only reachable configurations are the initial states at the start, so the input is fully consumed iff
+		// every word is empty. They halt a prefix membership query when one of them is final, a full one when the
+		// input is also consumed.
+		const bool all_input_consumed{std::ranges::all_of(words, [](const Word& word) { return word.empty(); })};
+		out.hits_final = std::ranges::any_of(states, [&](const State state) { return nft.final.contains(state); });
+		out.hits_final_at_end = out.hits_final && all_input_consumed;
+		if (all_input_consumed) { out.result = states; }
+		out.visited = states;
+		for (const State state : states) { out.configurations.emplace(state, std::vector<size_t>(words.size(), 0)); }
+		return out;
+	}
+	const size_t num_levels{words.size()};
+	std::vector<size_t> ends(num_levels);
+	for (size_t level{0}; level < num_levels; ++level) { ends[level] = words[level].size(); }
+
+	auto symbols_match = [](const Symbol first, const Symbol second) {
+		return (first == EPSILON || second == EPSILON) ? (first == EPSILON && second == EPSILON)
+													   : (first == second || first == DONT_CARE || second == DONT_CARE);
+	};
+
+	std::set<std::pair<State, std::vector<size_t>>>& seen{out.configurations};
+	std::vector<std::pair<State, std::vector<size_t>>> worklist{};
+	auto discover = [&](const State target, const std::vector<size_t>& positions) {
+		if (nft.levels[target] == 0 && nft.final.contains(target)) {
+			out.hits_final = true;
+			bool at_end{true};
+			for (size_t level{0}; level < num_levels && at_end; ++level) {
+				at_end = use_level[level] ? positions[level] == ends[level] : ends[level] == 0;
+			}
+			if (at_end) { out.hits_final_at_end = true; }
+		}
+		if (seen.insert({target, positions}).second) { worklist.emplace_back(target, positions); }
+	};
+	const std::vector<size_t> zero_positions(num_levels, 0);
+	for (const State state : states) { discover(state, zero_positions); }
+
+	while (!worklist.empty()) {
+		const auto [current, positions]{std::move(worklist.back())};
+		worklist.pop_back();
+		const Level current_level{nft.levels[current]};
+
+		if (current_level == 0) {
+			out.visited.insert(current);
+			// A projected-out level with a word can never be consumed; the other levels must be at their ends.
+			bool at_end{true};
+			for (size_t level{0}; level < num_levels && at_end; ++level) {
+				at_end = use_level[level] ? positions[level] == ends[level] : ends[level] == 0;
+			}
+			if (at_end) {
+				out.result.insert(current);
+				if (!epsilon_closure_after) { continue; }
+			}
+		}
+
+		for (const SymbolPost& symbol_post : nft.delta[current]) {
+			for (const State target : symbol_post.targets) {
+				const Level target_level{nft.levels[target]};
+				const size_t stop_level{target_level == 0 ? num_levels : target_level};
+				std::vector<size_t> next_positions{positions};
+				bool consumed{true};
+				for (size_t level = current_level; level < stop_level; ++level) {
+					if (!use_level[level]) { continue; }
+					const Symbol expected = (level == current_level || jump_mode != JumpMode::AppendDontCares)
+												? symbol_post.symbol
+												: DONT_CARE;
+					const Word& word{words[level]};
+					if (positions[level] >= word.size() || !symbols_match(expected, word[positions[level]])) {
+						consumed = false;
+						break;
+					}
+					next_positions[level] = positions[level] + 1;
+				}
+				if (consumed) { discover(target, next_positions); }
+				if (symbol_post.symbol == EPSILON) { discover(target, positions); }
+			}
+		}
+	}
+	return out;
+}
+
+size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
+
+// A random level-respecting NFT over @p num_of_symbols symbols, with jumps, DONT_CARE and EPSILON transitions.
+// A jump from a state on level l targets a state on level (l + d) % num_of_levels for a d in [1, num_of_levels],
+// keeping the transition well-formed: a whole cycle is only jumped from level 0, so the span is never empty.
+Nft random_post_nft(
+	std::mt19937& rng, const size_t num_of_states_per_level, const size_t num_of_symbols, const size_t num_of_levels
+) {
+	Nft nft{Nft::with_levels(num_of_levels)};
+	std::vector<std::vector<State>> states_by_level(num_of_levels);
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (size_t index{0}; index < num_of_states_per_level; ++index) {
+			states_by_level[level].push_back(nft.add_state_with_level(static_cast<Level>(level)));
+		}
+	}
+	for (const size_t initial : {size_t{0}, draw(rng, num_of_states_per_level)}) {
+		nft.initial.insert(states_by_level[0][initial]);
+	}
+	for (const State state : states_by_level[0]) {
+		if (draw(rng, 3) == 0) { nft.final.insert(state); }
+	}
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (const State source : states_by_level[level]) {
+			for (size_t transitions{0}, limit{draw(rng, 3)}; transitions < limit; ++transitions) {
+				size_t distance{};
+				do {
+					distance = 1 + draw(rng, num_of_levels);
+				} while ((level + distance) % num_of_levels != 0 && (level + distance) % num_of_levels <= level);
+				const State target{
+					states_by_level[(level + distance) % num_of_levels][draw(rng, num_of_states_per_level)]
+				};
+				Symbol symbol{static_cast<Symbol>(draw(rng, num_of_symbols))};
+				if (draw(rng, 4) == 0) { symbol = DONT_CARE; }
+				if (draw(rng, 5) == 0) { symbol = EPSILON; }
+				nft.delta.add(source, symbol, target);
+			}
+		}
+	}
+	return nft;
+}
+
+std::vector<Word> random_level_words(std::mt19937& rng, const size_t num_of_levels, const size_t max_length) {
+	std::vector<Word> words(num_of_levels);
+	for (Word& word : words) {
+		for (size_t length{draw(rng, max_length + 1)}; word.size() < length;) {
+			word.push_back(static_cast<Symbol>(draw(rng, 3)));
+		}
+	}
+	return words;
+}
+
+// A random level mask: all levels, one level, two levels, a scattered subset, or none.
+BoolVector random_use_level(std::mt19937& rng, const size_t num_of_levels) {
+	BoolVector use_level(num_of_levels, false);
+	switch (draw(rng, 5)) {
+		case 0:
+			std::ranges::fill(use_level, true);
+			break;
+		case 1:
+			use_level[draw(rng, num_of_levels)] = true;
+			break;
+		case 2: {
+			size_t remaining{num_of_levels >= 2 ? size_t{2} : size_t{1}};
+			for (size_t level{0}; level < num_of_levels && remaining > 0; ++level) {
+				if (draw(rng, num_of_levels - level) < remaining) {
+					use_level[level] = true;
+					--remaining;
+				}
+			}
+			break;
+		}
+		case 3:
+			for (size_t level{0}; level < num_of_levels; ++level) { use_level[level] = draw(rng, 2) == 0; }
+			break;
+		default:
+			break; // No levels at all.
+	}
+	return use_level;
+}
+
+// A BoolVector as text, for the failure dump.
+std::string describe(const BoolVector& bits) {
+	std::string description{"["};
+	for (const bool bit : bits) { description += bit ? "1" : "0"; }
+	return description + "]";
+}
+
+// Checks the public early-exit predicate of post() against the reference search. Never firing, it is called with
+// exactly the reached configurations, a projected-out level being at position zero. Firing at a chosen one of
+// them, it halts the search there.
+void check_early_exit_config(
+	const Nft& nft,
+	const StateSet& starts,
+	const std::vector<Word>& words,
+	const BoolVector& use_level,
+	const JumpMode jump_mode
+) {
+	const ReferencePost reference{reference_post(nft, starts, words, use_level, true, jump_mode)};
+	std::set<std::pair<State, std::vector<size_t>>> configurations{};
+	const auto record = [&](const State state, const std::vector<size_t>& positions) {
+		configurations.emplace(state, positions);
+		return false;
+	};
+	CHECK(nft.post(starts, words, use_level, nullptr, true, jump_mode, record) == reference.result);
+	CHECK(configurations == reference.configurations);
+
+	// Stop at a configuration that has read the most input.
+	const auto chosen{std::ranges::max_element(reference.configurations, {}, [](const auto& configuration) {
+		return std::accumulate(configuration.second.begin(), configuration.second.end(), size_t{0});
+	})};
+	REQUIRE(chosen != reference.configurations.end());
+	bool halted{false};
+	bool called_after_halt{false};
+	const auto stop_at_chosen = [&](const State state, const std::vector<size_t>& positions) {
+		called_after_halt = called_after_halt || halted;
+		halted = halted || (state == chosen->first && positions == chosen->second);
+		return halted;
+	};
+	nft.post(starts, words, use_level, nullptr, true, jump_mode, stop_at_chosen);
+	CHECK(halted);
+	CHECK_FALSE(called_after_halt);
 }
 
 } // namespace
@@ -478,5 +712,169 @@ TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — a search over most reading-h
 		CHECK(n.is_in_lang_by_levels(std::vector<Word>{only_b, ends_with_c}, false, jump_mode) == false);
 		CHECK(n.read_word_by_levels(std::vector<Word>{ends_with_c, ends_with_c}, jump_mode) == StateSet{q0, qf});
 		CHECK(n.read_word_by_levels(std::vector<Word>{ends_with_c, only_b}, jump_mode) == StateSet{q0});
+	}
+}
+
+TEST_CASE("mata::nft::Nft::post(words) — differential against a plain vector-tuple search") {
+	// Small randomized NFTs with jumps, DONT_CARE and EPSILON transitions, checked on small words under every
+	// level-mask shape (which selects the no-level, one-level, two-level and generic-rank paths of the position
+	// encoding), both jump modes and both epsilon-closure variants of post().
+	for (unsigned seed{0}; seed < 120; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_levels{1 + draw(rng, 5)};
+		const Nft nft{random_post_nft(rng, 1 + draw(rng, 3), 1 + draw(rng, 2), num_of_levels)};
+		const std::vector<Word> words{random_level_words(rng, num_of_levels, 4)};
+		const BoolVector use_level{random_use_level(rng, num_of_levels)};
+		const StateSet starts{nft.initial.begin(), nft.initial.end()};
+		INFO("seed " << seed << ", levels " << num_of_levels << ", use_level " << describe(use_level));
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const ReferencePost reference{reference_post(nft, starts, words, use_level, true, jump_mode)};
+			StateSet visited{};
+			CHECK(nft.post(starts, words, use_level, &visited, true, jump_mode) == reference.result);
+			CHECK(visited == reference.visited);
+			CHECK(
+				nft.post(starts, words, use_level, nullptr, false, jump_mode) ==
+				reference_post(nft, starts, words, use_level, false, jump_mode).result
+			);
+			// Membership and prefix membership ask for a final zero-level state, at any reading-head position or
+			// only with all input consumed.
+			CHECK(
+				nft.is_in_lang_by_levels(words, true, jump_mode, true) ==
+				reference_post(nft, starts, words, BoolVector(num_of_levels, true), true, jump_mode).hits_final
+			);
+			CHECK(
+				nft.is_in_lang_by_levels(words, false, jump_mode, true) ==
+				reference_post(nft, starts, words, BoolVector(num_of_levels, true), true, jump_mode).hits_final_at_end
+			);
+		}
+	}
+}
+
+TEST_CASE("mata::nft::Nft::post(words) — differential on 33 levels, past the 32-bit rank") {
+	// Words of length one on every level give 2^33 > 2^32 reading-head tuples: the position ids cannot be ranks,
+	// so post() interns the tuples in its arena instead. The same reference strategy checks the results.
+	for (unsigned seed{200}; seed < 212; ++seed) {
+		std::mt19937 rng{seed};
+		constexpr size_t num_of_levels{33};
+		const Nft nft{random_post_nft(rng, 1 + draw(rng, 2), 2, num_of_levels)};
+		std::vector<Word> words(num_of_levels, Word{a});
+		for (Word& word : words) { word.back() = static_cast<Symbol>(draw(rng, 2)); }
+		const StateSet starts{nft.initial.begin(), nft.initial.end()};
+		INFO("seed " << seed);
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const ReferencePost reference{
+				reference_post(nft, starts, words, BoolVector(num_of_levels, true), true, jump_mode)
+			};
+			StateSet visited{};
+			CHECK(
+				nft.post(starts, words, BoolVector(num_of_levels, true), &visited, true, jump_mode) == reference.result
+			);
+			CHECK(visited == reference.visited);
+			CHECK(nft.is_in_lang_by_levels(words, true, jump_mode, true) == reference.hits_final);
+			CHECK(nft.is_in_lang_by_levels(words, false, jump_mode, true) == reference.hits_final_at_end);
+		}
+		// Projecting out every second level leaves 17 used levels: 2^17 tuples, so the generic rank encoding
+		// answers the same questions without the arena.
+		BoolVector even_levels(num_of_levels, false);
+		for (size_t level{0}; level < num_of_levels; level += 2) { even_levels[level] = true; }
+		const ReferencePost reference{reference_post(nft, starts, words, even_levels, true, JumpMode::RepeatSymbol)};
+		StateSet visited{};
+		CHECK(nft.post(starts, words, even_levels, &visited, true, JumpMode::RepeatSymbol) == reference.result);
+		CHECK(visited == reference.visited);
+	}
+}
+
+TEST_CASE("mata::nft::Nft::post(words) — the early-exit predicate sees the positions of all levels") {
+	// Noncontiguous level masks with one, two and three used levels select the three rank encodings; the predicate
+	// gets back the positions of all five levels, zeros on the projected-out ones.
+	const std::vector<BoolVector> masks{{0, 0, 0, 1, 0}, {1, 0, 1, 0, 0}, {0, 1, 0, 1, 1}};
+	for (unsigned seed{0}; seed < 40; ++seed) {
+		std::mt19937 rng{seed};
+		constexpr size_t num_of_levels{5};
+		const Nft nft{random_post_nft(rng, 1 + draw(rng, 3), 1 + draw(rng, 2), num_of_levels)};
+		const std::vector<Word> words{random_level_words(rng, num_of_levels, 4)};
+		const StateSet starts{nft.initial.begin(), nft.initial.end()};
+		for (const BoolVector& use_level : masks) {
+			INFO("seed " << seed << ", use_level " << describe(use_level));
+			for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+				check_early_exit_config(nft, starts, words, use_level, jump_mode);
+			}
+		}
+	}
+	// 32 used levels of 33 with words of length one give 2^32 reading-head tuples, so the positions are interned;
+	// the projected-out level 1 sits between used ones.
+	for (unsigned seed{200}; seed < 206; ++seed) {
+		std::mt19937 rng{seed};
+		constexpr size_t num_of_levels{33};
+		const Nft nft{random_post_nft(rng, 1 + draw(rng, 2), 2, num_of_levels)};
+		std::vector<Word> words(num_of_levels, Word{a});
+		for (Word& word : words) { word.back() = static_cast<Symbol>(draw(rng, 2)); }
+		BoolVector use_level(num_of_levels, true);
+		use_level[1] = false;
+		const StateSet starts{nft.initial.begin(), nft.initial.end()};
+		INFO("seed " << seed);
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			check_early_exit_config(nft, starts, words, use_level, jump_mode);
+		}
+	}
+}
+
+TEST_CASE("mata::nft::Nft::is_in_lang_by_levels — the rank/arena boundary of a four-level jump") {
+	// A whole-cycle jump loop on four levels reads the words in lockstep: length 254 gives 255^4 tuples, below
+	// 2^32 (the mixed-radix rank), and length 255 gives 256^4 == 2^32 (the interned arena).
+	for (const size_t length : {size_t{254}, size_t{255}}) {
+		Nft n{Nft::with_levels(4)};
+		const State q0{n.add_state_with_level(0)};
+		n.initial.insert(q0);
+		n.final.insert(q0);
+		n.delta.add(q0, a, q0);
+
+		const Word word(length, a);
+		Word shorter(length - 1, a);
+		Word last_differs{word};
+		last_differs.back() = b;
+		CHECK(n.is_in_lang_by_levels(std::vector<Word>{word, word, word, word}));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{shorter, word, word, word}));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{word, word, word, last_differs}));
+	}
+}
+
+TEST_CASE("mata::nft::Nft::post(words) — the interned fallback over thousands of tuples") {
+	// A cycle of three states, each consuming one level: words of length 1'700 give 1'701^3 > 2^32 reading-head
+	// tuples, which do not fit the rank, so the positions are interned. The search visits some 5'000 of them.
+	Nft n{Nft::with_levels(3)};
+	const State q0{n.add_state_with_level(0)};
+	const State q1{n.add_state_with_level(1)};
+	const State q2{n.add_state_with_level(2)};
+	n.initial.insert(q0);
+	n.final.insert(q0);
+	n.delta.add(q0, a, q1);
+	n.delta.add(q1, a, q2);
+	n.delta.add(q2, a, q0);
+
+	const Word word(1'700, a);
+	Word shorter(1'699, a);
+	Word middle_differs{word};
+	middle_differs[800] = b;
+	Word last_differs{word};
+	last_differs.back() = b;
+	const StateSet starts{q0};
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+		CHECK(n.is_in_lang_by_levels(std::vector<Word>{word, word, word}, false, jump_mode, true));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{shorter, word, word}, false, jump_mode, true));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{word, middle_differs, word}, false, jump_mode, true));
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{word, word, last_differs}, false, jump_mode, true));
+		// The intermediate levels can never be at their ends.
+		CHECK_FALSE(n.is_in_lang_by_levels(std::vector<Word>{word, Word{a}, word}, false, jump_mode, true));
+
+		const ReferencePost reference{
+			reference_post(n, starts, std::vector<Word>{word, word, word}, BoolVector(3, true), true, jump_mode)
+		};
+		StateSet visited{};
+		CHECK(
+			n.post(starts, std::vector<Word>{word, word, word}, BoolVector(3, true), &visited, true, jump_mode) ==
+			reference.result
+		);
+		CHECK(visited == reference.visited);
 	}
 }

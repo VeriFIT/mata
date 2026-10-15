@@ -1617,6 +1617,15 @@ class Nft : public mata::Automaton {
 	 * The levels of the newly created inner states are assigned by @c insert_word(), which is the only caller.
 	 */
 	State insert_word_impl_(State source, const Word& word, State target);
+
+	/**
+	 * @brief Whether the general search of the multiword @c post() reaches a final zero-level state from the initial
+	 * states over @p level_words, with all of them consumed unless @p match_prefix.
+	 *
+	 * The stop test of @c is_in_lang_by_levels() compares position ids instead of passing the reading-head positions
+	 * to the public @c is_early_exit_config predicate, so no configuration is decoded for it.
+	 */
+	bool reaches_final_by_levels_(const std::vector<Word>& level_words, bool match_prefix, JumpMode jump_mode) const;
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.
