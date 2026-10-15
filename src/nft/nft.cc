@@ -7,6 +7,7 @@
 #include <fstream>
 #include <limits>
 #include <list>
+#include <map>
 #include <optional>
 #include <queue>
 #include <ranges>
@@ -191,6 +192,7 @@ void Nft::print_to_dot(
 		}
 	};
 
+	std::map<std::pair<Symbol, Level>, std::string> symbol_names{};
 	auto translate_symbol = [&](const Symbol symbol, const Level level) -> std::string {
 		switch (symbol) {
 			case EPSILON:
@@ -201,8 +203,17 @@ void Nft::print_to_dot(
 				break;
 		}
 		if (decode_ascii_chars) { return to_ascii(symbol); }
-		if (alphabet != nullptr) { return alphabet->reverse_translate_symbol(symbol); }
-		if (this->alphabets != nullptr) { return this->alphabets->reverse_translate_symbol(symbol, level); }
+		// Reverse lookups may scan the whole alphabet; translate each (symbol, level) once.
+		if (alphabet != nullptr || this->alphabets != nullptr) {
+			const auto key{std::pair{symbol, alphabet != nullptr ? Level{0} : level}};
+			if (const auto it{symbol_names.find(key)}; it != symbol_names.end()) { return it->second; }
+			return symbol_names
+				.emplace(
+					key, alphabet != nullptr ? alphabet->reverse_translate_symbol(symbol)
+											 : this->alphabets->reverse_translate_symbol(symbol, level)
+				)
+				.first->second;
+		}
 		return std::to_string(symbol);
 	};
 
@@ -361,6 +372,8 @@ void Nft::print_to_mata(std::ostream& output) const {
 	}
 	output << "%LevelsNum " << levels.num_of_levels << std::endl;
 
+	// Reverse lookups may scan the whole alphabet; translate each (symbol, level) once.
+	std::map<std::pair<Symbol, Level>, std::string> symbol_names{};
 	for (const Transition& trans : delta.transitions()) {
 		std::string symbol_label;
 		// EPSILON and DONT_CARE belong to no alphabet; print the names the parser maps back.
@@ -369,7 +382,12 @@ void Nft::print_to_mata(std::ostream& output) const {
 		} else if (trans.symbol == DONT_CARE) {
 			symbol_label = DONT_CARE_NAME;
 		} else if (alphabets != nullptr) {
-			symbol_label = alphabets->reverse_translate_symbol(trans.symbol, levels[trans.source]);
+			const auto key{std::pair{trans.symbol, levels[trans.source]}};
+			auto it{symbol_names.find(key)};
+			if (it == symbol_names.end()) {
+				it = symbol_names.emplace(key, alphabets->reverse_translate_symbol(key.first, key.second)).first;
+			}
+			symbol_label = it->second;
 		} else {
 			symbol_label = std::to_string(trans.symbol);
 		}

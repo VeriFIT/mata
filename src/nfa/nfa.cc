@@ -9,6 +9,7 @@
 #include <optional>
 #include <queue>
 #include <string>
+#include <unordered_map>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
@@ -160,6 +161,7 @@ void Nfa::print_to_dot(
 		}
 	};
 
+	std::unordered_map<Symbol, std::string> symbol_names{};
 	auto translate_symbol = [&](const Symbol symbol) -> std::string {
 		switch (symbol) {
 			case EPSILON:
@@ -167,12 +169,12 @@ void Nfa::print_to_dot(
 			default:
 				break;
 		}
-		if (decode_ascii_chars) {
-			return to_ascii(symbol);
-		} else if (alphabet != nullptr) {
-			return alphabet->reverse_translate_symbol(symbol);
-		} else if (this->alphabet != nullptr) {
-			return this->alphabet->reverse_translate_symbol(symbol);
+		if (decode_ascii_chars) { return to_ascii(symbol); }
+		const Alphabet* const used_alphabet{alphabet != nullptr ? alphabet : this->alphabet.get()};
+		if (used_alphabet != nullptr) {
+			// Reverse lookups may scan the whole alphabet; translate each symbol once.
+			if (const auto it{symbol_names.find(symbol)}; it != symbol_names.end()) { return it->second; }
+			return symbol_names.emplace(symbol, used_alphabet->reverse_translate_symbol(symbol)).first->second;
 		} else {
 			return std::to_string(symbol);
 		}
@@ -310,15 +312,20 @@ void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
 		output << std::endl;
 	}
 
+	const Alphabet* const used_alphabet{alphabet != nullptr ? alphabet : this->alphabet.get()};
+	// Reverse lookups may scan the whole alphabet; translate each symbol once.
+	std::unordered_map<Symbol, std::string> symbol_names{};
 	for (const Transition& trans : delta.transitions()) {
 		// EPSILON is not a member of any alphabet; print the name the parser maps back.
 		std::string symbol_name;
 		if (trans.symbol == EPSILON) {
 			symbol_name = EPSILON_NAME;
-		} else if (alphabet != nullptr) {
-			symbol_name = alphabet->reverse_translate_symbol(trans.symbol);
-		} else if (this->alphabet != nullptr) {
-			symbol_name = this->alphabet->reverse_translate_symbol(trans.symbol);
+		} else if (used_alphabet != nullptr) {
+			auto it{symbol_names.find(trans.symbol)};
+			if (it == symbol_names.end()) {
+				it = symbol_names.emplace(trans.symbol, used_alphabet->reverse_translate_symbol(trans.symbol)).first;
+			}
+			symbol_name = it->second;
 		} else {
 			symbol_name = std::to_string(trans.symbol);
 		}
