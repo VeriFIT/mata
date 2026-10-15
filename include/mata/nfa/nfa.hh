@@ -689,6 +689,10 @@ class Nfa : public Automaton {
 	 * If you have an automaton with finite language (can be checked using @ref is_acyclic),
 	 * you can get all words by calling
 	 *      get_words(aut.num_of_states())
+	 *
+	 * The search goes over words, not over paths: the states reachable by a word are kept together as one
+	 * macrostate, so the work is bounded by the number of distinct words of length <= @p max_length that have a
+	 * run in the automaton, no matter how many accepting paths each of them has.
 	 */
 	std::set<Word> get_words(size_t max_length) const;
 
@@ -701,8 +705,14 @@ class Nfa : public Automaton {
 	 * the language might be large (a big @p max_length on a highly branching automaton can make @ref get_words()
 	 * materialize a very large set before returning anything, whereas this can be iterated and stopped at will).
 	 *
-	 * Words are still deduplicated the same way @ref get_words() deduplicates them (the same word can be reachable
-	 * via more than one accepting path), so a duplicate is silently skipped rather than re-yielded.
+	 * Words are not deduplicated after the fact: the search goes over words rather than over paths, so each word
+	 * is reached exactly once even when several accepting paths spell it.
+	 *
+	 * Words are yielded in shortlex order: by increasing length, and words of the same length lexicographically.
+	 * Each length is searched in its own depth-first pass, which keeps only the current descent in memory and skips
+	 * the branches that cannot reach an accepted word of that length. Every word of an infinite language is thus
+	 * eventually yielded, and the generator finishes once no longer accepted word is possible, also for a finite
+	 * language with the default unbounded @p max_length. Searching each length anew repeats the shorter prefixes.
 	 *
 	 * Only available when @c MATA_HAS_GENERATOR_SUPPORT is set (i.e. the standard library actually implements
 	 * @c std::generator — some, like Apple's system libc++, do not, even under `-std=c++23`).

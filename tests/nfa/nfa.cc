@@ -5421,15 +5421,44 @@ TEST_CASE("mata::nfa::Nfa::get_words") {
 		aut.delta.add(0, 0, 1);
 		aut.delta.add(1, 1, 0);
 
-		// DFS descends fully into the first initial state (0) before ever trying the second (1); since 0's subtree
-		//  is an infinite cycle, the first words produced are 0's own ever-growing path, not an interleaving of both
-		//  initial states.
+		// Words come in shortlex order, so the cycles do not hide the other words of the same length.
 		std::vector<mata::Word> first_words;
 		for (mata::Word&& word : aut.get_words_lazy()) {
 			first_words.push_back(std::move(word));
 			if (first_words.size() == 3) { break; }
 		}
-		CHECK(first_words == std::vector<mata::Word>{{}, {0}, {0, 1}});
+		CHECK(first_words == std::vector<mata::Word>{{}, {0}, {1}});
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::get_words_lazy() - infinite branches do not starve other words") {
+	constexpr mata::Symbol a{0}, b{1}, c{2};
+
+	SECTION("a branch that cannot be accepted") {
+		// The loop on state 1 is never accepted; the only word, b, must come out, and the generator must end.
+		Nfa aut(3, {0, 1}, {2});
+		aut.delta.add(0, b, 2);
+		aut.delta.add(1, a, 1);
+
+		std::vector<mata::Word> words;
+		for (mata::Word&& word : aut.get_words_lazy()) { words.push_back(std::move(word)); }
+		CHECK(words == std::vector<mata::Word>{{b}});
+	}
+
+	SECTION("an infinite branch that can be accepted") {
+		// Every branch reaches a final state, but a, aa, aaa, ... are never accepted themselves; b must still come
+		//  out before the infinite language a*c is explored.
+		Nfa aut(3, {0, 1}, {2});
+		aut.delta.add(0, b, 2);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, c, 2);
+
+		std::vector<mata::Word> first_words;
+		for (mata::Word&& word : aut.get_words_lazy()) {
+			first_words.push_back(std::move(word));
+			if (first_words.size() == 4) { break; }
+		}
+		CHECK(first_words == std::vector<mata::Word>{{b}, {c}, {a, c}, {a, a, c}});
 	}
 }
 #else
@@ -5527,6 +5556,35 @@ TEST_CASE("mata::nfa::Nfa::get_words") {
 	}
 }
 #endif // MATA_HAS_GENERATOR_SUPPORT
+
+TEST_CASE("mata::nfa::Nfa::get_words() - diamond chain") {
+	// A chain of k "diamonds": each diamond spells 'a' and then 'b' through one of two middle states, so the whole
+	//  automaton accepts the single word (ab)^k while having 2^k accepting paths. Enumerating paths (which is what
+	//  get_words() used to do) is exponential in k here; the search over words visits one macrostate per prefix.
+	constexpr size_t k{40};
+	Nfa aut{3 * k + 1, {0}, {3 * k}};
+	for (size_t i{0}; i < k; ++i) {
+		aut.delta.add(3 * i, 'a', 3 * i + 1);
+		aut.delta.add(3 * i, 'a', 3 * i + 2);
+		aut.delta.add(3 * i + 1, 'b', 3 * (i + 1));
+		aut.delta.add(3 * i + 2, 'b', 3 * (i + 1));
+	}
+
+	mata::Word word_expected;
+	for (size_t i{0}; i < k; ++i) {
+		word_expected.push_back('a');
+		word_expected.push_back('b');
+	}
+	const std::set<mata::Word> words_expected{word_expected};
+
+	CHECK(aut.get_words(2 * k) == words_expected);
+	CHECK(aut.get_words(aut.num_of_states()) == words_expected);
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::set<mata::Word> words_lazy;
+	for (mata::Word&& word : aut.get_words_lazy(2 * k)) { words_lazy.insert(std::move(word)); }
+	CHECK(words_lazy == words_expected);
+#endif // MATA_HAS_GENERATOR_SUPPORT
+}
 
 TEST_CASE("mata::nfa::Nfa::get_word()") {
 	SECTION("empty") {
