@@ -7,6 +7,7 @@
 #include "mata/parser/mintermization.hh"
 #include "mata/utils/assert.hh"
 
+#include <algorithm>
 #include <ranges>
 
 namespace {
@@ -40,6 +41,13 @@ const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 	return nullptr;
 }
 } // namespace
+void mata::Mintermization::add_source_bdd(const BDD& bdd) {
+	if (source_bdd_to_index_.contains(bdd)) {
+		return; // Already registered
+	}
+	source_bdd_to_index_[bdd] = source_bdds_.size();
+	source_bdds_.push_back(bdd);
+}
 
 void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut& aut) {
 	MATA_ASSERT(aut.is_nfa());
@@ -53,7 +61,7 @@ void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut& aut) {
 		);
 		const BDD bdd = graph_to_bdd_nfa(symbol_part);
 		if (bdd.IsZero()) { continue; }
-		bdds_.insert(bdd);
+		add_source_bdd(bdd);
 		trans_to_bddvar_[&symbol_part] = bdd;
 	}
 }
@@ -96,7 +104,7 @@ void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut& aut) {
 			MATA_ASSERT(bdd.type == OptionalBdd::Type::BddE);
 			if (bdd.val.IsZero()) { continue; }
 			trans_to_bddvar_[disjunct_lhs] = bdd.val;
-			bdds_.insert(bdd.val);
+			add_source_bdd(bdd.val);
 		}
 	}
 }
@@ -118,6 +126,85 @@ std::unordered_set<BDD> mata::Mintermization::compute_minterms(const std::unorde
 	}
 
 	return stack;
+}
+
+mata::Mintermization::MintermPartition
+	mata::Mintermization::compute_minterms_with_incidence(const std::vector<BDD>& source_bdds) const {
+	if (source_bdds.empty()) { return {std::vector<BDD>{bdd_mng_.bddOne()}, std::vector<std::vector<size_t>>{}}; }
+
+	// Helper lambda to create an incidence representation
+	auto make_incidence = [&]() -> std::variant<uint64_t, std::vector<size_t>> {
+		if (source_bdds.size() <= 64) {
+			return uint64_t(0);
+		} else {
+			return std::vector<size_t>();
+		}
+	};
+
+	auto set_bit = [](auto& incidence, size_t idx) {
+		if (std::holds_alternative<uint64_t>(incidence)) {
+			std::get<uint64_t>(incidence) |= (1ULL << idx);
+		} else {
+			auto& vec = std::get<std::vector<size_t>>(incidence);
+			if (vec.empty() || vec.back() != idx) { vec.push_back(idx); }
+		}
+	};
+
+	auto get_mask = [](const auto& incidence) -> uint64_t {
+		if (std::holds_alternative<uint64_t>(incidence)) { return std::get<uint64_t>(incidence); }
+		return 0;
+	};
+
+	// Region: BDD value + incidence (which sources cover it)
+	struct Region {
+		BDD value;
+		std::variant<uint64_t, std::vector<size_t>> incidence;
+	};
+
+	std::vector<Region> current;
+	current.push_back({bdd_mng_.bddOne(), make_incidence()});
+
+	// Refinement loop
+	for (size_t i = 0; i < source_bdds.size(); ++i) {
+		const BDD& source = source_bdds[i];
+		std::vector<Region> next;
+
+		for (auto& region : current) {
+			// Positive child: inside source (covered by source i)
+			if (BDD b1 = region.value * source; !b1.IsZero()) {
+				auto new_incidence = region.incidence;
+				set_bit(new_incidence, i);
+				next.push_back({b1, std::move(new_incidence)});
+			}
+
+			// Negative child: outside source (incidence unchanged, moved: last use of the region)
+			if (BDD b0 = region.value * !source; !b0.IsZero()) { next.push_back({b0, std::move(region.incidence)}); }
+		}
+
+		current = std::move(next);
+	}
+
+	// Build result
+	MintermPartition result;
+	result.minterms = std::vector<BDD>();
+	result.minterms_of_source.resize(source_bdds.size());
+
+	for (size_t minterm_idx = 0; minterm_idx < current.size(); ++minterm_idx) {
+		result.minterms.push_back(current[minterm_idx].value);
+
+		// Invert incidence: for each source covered by this minterm, add minterm_idx to minterms_of_source[i]
+		if (source_bdds.size() <= 64) {
+			uint64_t mask = get_mask(current[minterm_idx].incidence);
+			for (size_t i = 0; i < source_bdds.size(); ++i) {
+				if ((mask & (1ULL << i)) != 0) { result.minterms_of_source[i].push_back(minterm_idx); }
+			}
+		} else {
+			const auto& vec = std::get<std::vector<size_t>>(current[minterm_idx].incidence);
+			for (size_t idx : vec) { result.minterms_of_source[idx].push_back(minterm_idx); }
+		}
+	}
+
+	return result;
 }
 
 mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const FormulaGraph& graph) {
@@ -189,9 +276,6 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 }
 
 namespace {
-/// The minterms in the iteration order of @p minterms, which numbers them as symbols.
-std::vector<BDD> number_minterms(const std::unordered_set<BDD>& minterms) { return {minterms.begin(), minterms.end()}; }
-
 /// One leaf per minterm holding its symbol, copied into every transition over that symbol. A copied leaf has no
 ///  children and so allocates nothing, unlike a graph constructed from a node, which reserves room for children.
 std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms) {
@@ -206,46 +290,55 @@ std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms) {
 	return leaves;
 }
 
-/// The numbers of the minterms that intersect @p bdd, in increasing order. Transitions often share their BDD, so
-///  each distinct BDD is intersected with the minterms only once and the result is kept in @p cache.
-const std::vector<size_t>& intersecting_minterms(
-	const BDD& bdd, const std::vector<BDD>& minterms, std::unordered_map<BDD, std::vector<size_t>>& cache
-) {
-	const auto [it, inserted]{cache.try_emplace(bdd)};
-	if (inserted) {
-		for (size_t symbol{0}; symbol < minterms.size(); ++symbol) {
-			if (!(bdd * minterms[symbol]).IsZero()) { it->second.push_back(symbol); }
-		}
+/// The number of minterms that lie below some source BDD, that is, the symbols a conversion can emit.
+size_t num_of_symbols(const std::vector<std::vector<size_t>>& minterms_of_source) {
+	size_t num_of_symbols{0};
+	for (const std::vector<size_t>& minterms : minterms_of_source) {
+		if (!minterms.empty()) { num_of_symbols = std::max(num_of_symbols, minterms.back() + 1); }
 	}
-	return it->second;
+	return num_of_symbols;
+}
+
+/// The ascending numbers of the minterms below the source BDD @p bdd, or @c nullptr if @p bdd is not a source BDD
+///  (should not happen).
+const std::vector<size_t>* minterms_below(
+	const BDD& bdd,
+	const std::unordered_map<BDD, size_t>& source_bdd_to_index,
+	const std::vector<std::vector<size_t>>& minterms_of_source
+) {
+	const auto source{source_bdd_to_index.find(bdd)};
+	return source == source_bdd_to_index.end() ? nullptr : &minterms_of_source[source->second];
 }
 } // namespace
 
 void mata::Mintermization::minterms_to_aut_nfa(
-	IntermediateAut& res, const IntermediateAut& aut, const std::unordered_set<BDD>& minterms
+	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
-	const std::vector<BDD> numbered_minterms{number_minterms(minterms)};
-	const std::vector<FormulaGraph> symbols{symbol_leaves(numbered_minterms.size())};
+	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source))};
 	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
-	std::unordered_map<BDD, std::vector<size_t>> cache{};
+	// The minterms below the BDD of the symbol part of a transition, or nullptr if the transition had a zero BDD and
+	//  so was not added to the map.
+	const auto minterms_of_transition{[&](const FormulaGraph& formula_graph) -> const std::vector<size_t>* {
+		const auto bdd{trans_to_bddvar_.find(&formula_graph.children[0])};
+		if (bdd == trans_to_bddvar_.end()) { return nullptr; }
+		return minterms_below(bdd->second, source_bdd_to_index_, minterms_of_source);
+	}};
 
 	// Two passes: the first one sizes the result, the second one fills it.
 	size_t num_of_transitions{0};
-	for (const auto& [formula_node, formula_graph] : aut.transitions) {
-		if (const auto bdd{trans_to_bddvar_.find(&formula_graph.children[0])}; bdd != trans_to_bddvar_.end()) {
-			num_of_transitions += intersecting_minterms(bdd->second, numbered_minterms, cache).size();
+	for (const FormulaGraph& formula_graph : aut.transitions | std::views::values) {
+		if (const std::vector<size_t>* minterms{minterms_of_transition(formula_graph)}; minterms != nullptr) {
+			num_of_transitions += minterms->size();
 		}
 	}
 	res.transitions.reserve(res.transitions.size() + num_of_transitions);
 
 	for (const auto& [formula_node, formula_graph] : aut.transitions) {
 		// for each t=(q1,s,q2)
-		const auto bdd{trans_to_bddvar_.find(&formula_graph.children[0])};
-		if (bdd == trans_to_bddvar_.end()) {
-			continue; // Transition had zero bdd so it was not added to map
-		}
-		// For each minterm x with BDD_s ∧ x ≠ ∅, add q1,x,q2 to transitions.
-		for (const size_t symbol : intersecting_minterms(bdd->second, numbered_minterms, cache)) {
+		const std::vector<size_t>* minterms{minterms_of_transition(formula_graph)};
+		if (minterms == nullptr) { continue; }
+		// For each minterm x below BDD_s, add q1,x,q2 to transitions.
+		for (const size_t symbol : *minterms) {
 			FormulaGraph graph{conjunction};
 			graph.children.push_back(symbols[symbol]);
 			graph.children.push_back(formula_graph.children[1]);
@@ -255,12 +348,10 @@ void mata::Mintermization::minterms_to_aut_nfa(
 }
 
 void mata::Mintermization::minterms_to_aut_afa(
-	IntermediateAut& res, const IntermediateAut& aut, const std::unordered_set<BDD>& minterms
+	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
-	const std::vector<BDD> numbered_minterms{number_minterms(minterms)};
-	const std::vector<FormulaGraph> symbols{symbol_leaves(numbered_minterms.size())};
+	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source))};
 	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
-	std::unordered_map<BDD, std::vector<size_t>> cache{};
 	for (const auto& formula_node : aut.transitions | std::views::keys) {
 		for (const auto& [disjunct, formula_graph] : lhs_to_disjuncts_and_states_[&formula_node]) {
 			// for each t=(q1,s,q2)
@@ -268,8 +359,10 @@ void mata::Mintermization::minterms_to_aut_afa(
 			if (bdd == trans_to_bddvar_.end()) {
 				continue; // Transition had zero bdd so it was not added to map
 			}
-			// For each minterm x with BDD_s ∧ x ≠ ∅, add q1,x,q2 to transitions.
-			for (const size_t symbol : intersecting_minterms(bdd->second, numbered_minterms, cache)) {
+			const std::vector<size_t>* minterms{minterms_below(bdd->second, source_bdd_to_index_, minterms_of_source)};
+			if (minterms == nullptr) { continue; }
+			// For each minterm x below BDD_s, add q1,x,q2 to transitions.
+			for (const size_t symbol : *minterms) {
 				if (formula_graph != nullptr) {
 					FormulaGraph graph{conjunction};
 					graph.children.push_back(symbols[symbol]);
@@ -288,6 +381,10 @@ mata::IntermediateAut mata::Mintermization::mintermize(const IntermediateAut& au
 }
 
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<const IntermediateAut*>& auts) {
+	// Initialize source BDD tracking structures
+	source_bdds_.clear();
+	source_bdd_to_index_.clear();
+
 	for (const IntermediateAut* aut : auts) {
 		if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::AlphabetType::Bitvector) {
 			throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
@@ -296,8 +393,8 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 		aut->is_nfa() ? trans_to_bdd_nfa(*aut) : trans_to_bdd_afa(*aut);
 	}
 
-	// Build minterm tree over BDDs
-	const auto minterms = compute_minterms(bdds_);
+	// Build minterm tree over BDDs with incidence tracking
+	const auto partition = compute_minterms_with_incidence(source_bdds_);
 
 	std::vector<IntermediateAut> res;
 	for (const IntermediateAut* aut : auts) {
@@ -306,9 +403,9 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 		mintermized_aut.transitions.clear();
 
 		if (aut->is_nfa()) {
-			minterms_to_aut_nfa(mintermized_aut, *aut, minterms);
+			minterms_to_aut_nfa(mintermized_aut, *aut, partition.minterms_of_source);
 		} else if (aut->is_afa()) {
-			minterms_to_aut_afa(mintermized_aut, *aut, minterms);
+			minterms_to_aut_afa(mintermized_aut, *aut, partition.minterms_of_source);
 		}
 
 		res.push_back(std::move(mintermized_aut));
