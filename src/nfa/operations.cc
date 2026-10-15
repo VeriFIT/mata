@@ -1005,8 +1005,8 @@ class RefinablePartition {
 } // namespace
 
 Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
-	// `empty()` stops at the first non-empty state post; the required trimmed DFA has no empty state post, so this
-	//  agrees with `num_of_transitions() == 0` here.
+	// `empty()` stops at the first non-empty state post. It differs from `num_of_transitions() == 0` only on a symbol
+	//  post without targets, which the required `trim()` drops.
 	if (dfa_trimmed.delta.empty()) {
 		// The automaton is trivially minimal.
 		return Nfa{dfa_trimmed};

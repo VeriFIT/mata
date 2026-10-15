@@ -285,8 +285,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	for (const State& fn : segments[0].final) {
 		SegItem new_item;
 		if (std::shared_ptr<Nfa> seg = segments_one_initial_final[{unused_state, fn}];
-			// `delta.empty()` stops at the first non-empty state post, `num_of_transitions()` walks all of them.
-			//  `segs_one_initial_final()` builds the segments through `trim()`, which leaves no empty state post.
+			// `delta.empty()` stops at the first non-empty state post, `num_of_transitions()` walks all of them. They
+			//  differ only on a symbol post without targets; `trim()` and the simulation quotient create none.
 			seg->final.size() != 1 || !seg->delta.empty()) { // L(seg_iter) != {epsilon}
 			new_item.noodle.emplace_back(seg, def_eps_vector);
 		}

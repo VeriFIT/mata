@@ -548,8 +548,8 @@ class Delta {
 	bool uses_state(const State state) const { return state < num_of_states(); }
 
 	/**
-	 * @note Walks every state post, so it is linear in the size of the delta. To test for transitions, use
-	 *  @c empty(), which stops at the first non-empty state post.
+	 * @note Walks every state post, so it is linear in the size of the delta. To test for transitions, use @c empty(),
+	 *  which stops at the first non-empty state post; the two differ only on a symbol post without targets.
 	 * @return Number of transitions in Delta.
 	 */
 	size_t num_of_transitions() const;
