@@ -180,6 +180,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         size_t num_of_states()
         bool is_lang_empty(CRun*)
         bool is_deterministic()
+        bool is_minimal()
         bool is_complete(CAlphabet*) except +
         bool is_complete() except +
         bool is_universal(CAlphabet&, ParameterMap&) except +

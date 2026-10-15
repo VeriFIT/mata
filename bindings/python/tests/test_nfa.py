@@ -693,8 +693,10 @@ def test_minimize(fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divi
     lhs.make_final_state(10)
     assert lhs.get_num_of_transitions() == 11
 
+    assert not lhs.is_minimal()
     minimized = mata_nfa.minimize(lhs)
     assert minimized.get_num_of_transitions() == 1
+    assert minimized.is_minimal()
 
     lhs.trim()
     minimized_hopcroft = mata_nfa.minimize(lhs, {"algorithm": "hopcroft"})

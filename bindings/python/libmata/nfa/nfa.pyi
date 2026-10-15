@@ -360,6 +360,11 @@ class Nfa:
 
         :return: true if the NFA is deterministic.
         """
+    def is_minimal(self) -> bool:
+        """Tests if the NFA is a minimal deterministic automaton of its language, as returned by minimize().
+
+        :return: true if the NFA is minimal.
+        """
     def is_complete(self, alphabet: alph.Alphabet = None) -> bool:
         """Test if automaton is complete.
 
