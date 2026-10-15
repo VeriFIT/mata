@@ -351,7 +351,8 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 		concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, true);
 	}
 
-	auto product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton).trim()};
+	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
+	product_pres_eps_trans.trim();
 	if (product_pres_eps_trans.is_lang_empty()) { return {}; }
 	if (utils::haskey(params, "reduce")) {
 		const std::string& reduce_value = params.at("reduce");
@@ -393,7 +394,8 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 		concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), true);
 	}
 
-	auto product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton).trim()};
+	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
+	product_pres_eps_trans.trim();
 	if (product_pres_eps_trans.is_lang_empty()) { return {}; }
 	if (!reduce_value.empty()) {
 		if (reduce_value == "forward" || reduce_value == "bidirectional") {
@@ -424,7 +426,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 	Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
 	Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON - 1);
 
-	auto product_pres_eps_trans{intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON - 1).trim()};
+	Nfa product_pres_eps_trans{intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON - 1)};
+	product_pres_eps_trans.trim();
 
 	if (product_pres_eps_trans.is_lang_empty()) { return {}; }
 	if (utils::haskey(params, "reduce")) {
@@ -535,7 +538,10 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 	MATA_ASSERT(!intersection.contains_jump_transitions());
 
 	if (reduce_intersection) {
-		intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim()).trim();
+		Nft without_epsilon{mata::nft::remove_epsilon(intersection)};
+		without_epsilon.trim();
+		intersection = mata::nft::reduce(without_epsilon);
+		intersection.trim();
 	}
 
 	// Delimiters are always on both tracks together, but we want it to become
