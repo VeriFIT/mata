@@ -555,6 +555,34 @@ TEST_CASE("mata::applications::strings::reluctant_nfa_with_marker()") {
 		)};
 		CHECK(nfa::are_equivalent(nfa, expected));
 	}
+
+	SECTION("no dead marker state after a final state - issue #795") {
+		for (const auto& [regex, num_of_states] :
+			 std::vector<std::pair<std::string, size_t>>{{"a", 2}, {"(a|b)*c(a|b)", 3}, {"cb+a+", 4}}) {
+			CAPTURE(regex);
+			const nfa::Nfa nfa{reluctant_replace.reluctant_nfa_with_marker(
+				nfa::builder::create_from_regex(regex), BEGIN_MARKER, &alphabet
+			)};
+			CHECK(nfa.num_of_states() == num_of_states);
+			CHECK(nfa::trim(nfa).num_of_states() == nfa.num_of_states());
+			CHECK(nfa.is_deterministic());
+		}
+		const nfa::Nfa nfa{
+			reluctant_replace.reluctant_nfa_with_marker(nfa::builder::create_from_regex("a"), BEGIN_MARKER, &alphabet)
+		};
+		CHECK(nfa.is_in_lang(Word{BEGIN_MARKER, BEGIN_MARKER, 'a'}));
+		CHECK(!nfa.is_in_lang(Word{'a', BEGIN_MARKER}));
+		CHECK(!nfa.is_in_lang(Word{'a', 'a'}));
+	}
+
+	SECTION("symbols outside the alphabet are dropped") {
+		const nfa::Nfa nfa{reluctant_replace.reluctant_nfa_with_marker(
+			nfa::builder::create_from_regex("a(d|b)"), BEGIN_MARKER, &alphabet
+		)};
+		CHECK(nfa.is_in_lang(Word{'a', BEGIN_MARKER, 'b'}));
+		CHECK(!nfa.is_in_lang(Word{'a', 'd'}));
+		CHECK(nfa::trim(nfa).num_of_states() == nfa.num_of_states());
+	}
 }
 
 TEST_CASE("mata::applications::strings::reluctant_leftmost_nft()") {
@@ -569,32 +597,53 @@ TEST_CASE("mata::applications::strings::reluctant_leftmost_nft()") {
 		);
 		expected = nft::builder::parse_from_mata(
 			std::string(
-				"@NFT-explicit\n%Alphabet-auto\n%Initial q13\n%Final q13\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:0 q6:1 "
-				"q7:1 q8:0 q9:1 q10:1 q11:0 q12:1 q13:0 q14:1 q15:1 q16:1 q17:1 q18:1 q19:0 q20:1 q21:0 q22:1 q23:0 "
-				"q24:1 q25:0\n%LevelsNum 2\nq0 99 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 98 q4\nq2 4294967195 "
-				"q6\nq3 4294967295 q0\nq4 4294967295 q5\nq5 97 q7\nq5 98 q9\nq5 4294967195 q10\nq6 4294967295 q2\nq7 "
-				"4294967295 q8\nq8 4294967295 q18\nq9 4294967295 q5\nq10 4294967295 q5\nq11 4294967195 q12\nq12 "
-				"4294967295 q11\nq13 97 q14\nq13 98 q15\nq13 99 q16\nq13 4294967195 q17\nq14 97 q13\nq15 98 q13\nq16 "
-				"99 q13\nq17 4294967295 q0\nq18 100 q19\nq19 4294967295 q20\nq20 100 q21\nq21 4294967295 q22\nq22 100 "
-				"q23\nq23 4294967295 q24\nq24 4294967295 q25\nq25 4294967295 q13\n"
+				"@NFT-explicit\n%Alphabet-auto\n%Initial q11\n%Final q11\n%Levels q0:0 q1:0 q2:0 q3:0 q4:1 q5:1 q6:1 "
+				"q7:1 q8:1 "
+				"q9:1 q10:1 q11:0 q12:1 q13:1 q14:1 q15:1 q16:1 q17:0 q18:1 q19:0 q20:1\n%LevelsNum 2\nq0 99 q4\nq0 "
+				"4294967195 "
+				"q5\nq1 98 q6\nq1 4294967195 q7\nq2 97 q8\nq2 98 q9\nq2 4294967195 q10\nq3 4294967295 q16\nq4 "
+				"4294967295 q1\nq5 "
+				"4294967295 q0\nq6 4294967295 q2\nq7 4294967295 q1\nq8 4294967295 q3\nq9 4294967295 q2\nq10 4294967295 "
+				"q2\nq11 97 "
+				"q12\nq11 98 q13\nq11 99 q14\nq11 4294967195 q15\nq12 97 q11\nq13 98 q11\nq14 99 q11\nq15 4294967295 "
+				"q0\nq16 100 "
+				"q17\nq17 4294967295 q18\nq18 100 q19\nq19 4294967295 q20\nq20 100 q11\n"
 			)
 		);
 		CHECK(nft::are_equivalent(nft, expected));
+		CHECK(nft.is_in_lang_by_levels({Word{'a', BEGIN_MARKER, 'c', 'b', 'a', 'b'}, Word{'a', 'd', 'd', 'd', 'b'}}));
+		CHECK(!nft.is_in_lang_by_levels({Word{'a', BEGIN_MARKER, 'c', 'b', 'a', 'b'}, Word{'a', 'c', 'b', 'a', 'b'}}));
+	}
+
+	SECTION("all 'a' replaced with 'f': no isolated state and no ε-chain after the replacement - issue #568") {
+		const EnumAlphabet alphabet_af{'a', 'f'};
+		nft = reluctant_replace.reluctant_leftmost_nft("a", &alphabet_af, BEGIN_MARKER, Word{'f'}, ReplaceMode::All);
+		// Regex DFA (2 states) with one intermediate state per transition (2), initial state with an identity loop
+		//  (1 + 2), the begin marker step (1), and the replacement 'f' going straight back to the initial state (1).
+		CHECK(nft.num_of_states() == 9);
+		CHECK(Nft{nft}.trim().num_of_states() == nft.num_of_states());
+		CHECK(nft.is_in_lang_by_levels({Word{BEGIN_MARKER, 'a', BEGIN_MARKER, 'a'}, Word{'f', 'f'}}));
+		CHECK(nft.is_in_lang_by_levels({Word{'f', BEGIN_MARKER, 'a', 'a'}, Word{'f', 'f', 'a'}}));
+		CHECK(!nft.is_in_lang_by_levels({Word{BEGIN_MARKER, 'a'}, Word{'a'}}));
 	}
 
 	SECTION("single 'a+b+c' replaced with '' (empty string)") {
 		nft = reluctant_replace.reluctant_leftmost_nft("a+b+c", &alphabet, BEGIN_MARKER, Word{}, ReplaceMode::Single);
 		expected = nft::builder::parse_from_mata(
 			std::string(
-				"@NFT-explicit\n%Alphabet-auto\n%Initial q14\n%Final q22 q14\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:1 "
-				"q6:0 q7:1 q8:1 q9:1 q10:0 q11:1 q12:0 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:1 q20:1 q21:0 q22:0 "
-				"q23:1 q24:1 q25:1 q26:1\n%LevelsNum 2\nq0 97 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 97 q4\nq2 98 "
-				"q5\nq2 4294967195 q7\nq3 4294967295 q0\nq4 4294967295 q2\nq5 4294967295 q6\nq6 98 q8\nq6 99 q9\nq6 "
-				"4294967195 q11\nq7 4294967295 q2\nq8 4294967295 q6\nq9 4294967295 q10\nq10 4294967295 q19\nq11 "
-				"4294967295 q6\nq12 4294967195 q13\nq13 4294967295 q12\nq14 97 q15\nq14 98 q16\nq14 99 q17\nq14 "
-				"4294967195 q18\nq15 97 q14\nq16 98 q14\nq17 99 q14\nq18 4294967295 q0\nq19 4294967295 q21\nq20 "
-				"4294967295 q22\nq21 4294967295 q20\nq22 97 q23\nq22 98 q24\nq22 99 q25\nq22 4294967195 q26\nq23 97 "
-				"q22\nq24 98 q22\nq25 99 q22\nq26 4294967295 q22\n"
+				"@NFT-explicit\n%Alphabet-auto\n%Initial q12\n%Final q18 q12\n%Levels q0:0 q1:0 q2:0 q3:0 q4:1 q5:1 "
+				"q6:1 q7:1 "
+				"q8:1 q9:1 q10:1 q11:1 q12:0 q13:1 q14:1 q15:1 q16:1 q17:1 q18:0 q19:1 q20:1 q21:1 q22:1\n%LevelsNum "
+				"2\nq0 97 "
+				"q4\nq0 4294967195 q5\nq1 97 q6\nq1 98 q7\nq1 4294967195 q8\nq2 98 q9\nq2 99 q10\nq2 4294967195 "
+				"q11\nq3 "
+				"4294967295 q17\nq4 4294967295 q1\nq5 4294967295 q0\nq6 4294967295 q1\nq7 4294967295 q2\nq8 4294967295 "
+				"q1\nq9 "
+				"4294967295 q2\nq10 4294967295 q3\nq11 4294967295 q2\nq12 97 q13\nq12 98 q14\nq12 99 q15\nq12 "
+				"4294967195 q16\nq13 "
+				"97 q12\nq14 98 q12\nq15 99 q12\nq16 4294967295 q0\nq17 4294967295 q18\nq18 97 q19\nq18 98 q20\nq18 99 "
+				"q21\nq18 "
+				"4294967195 q22\nq19 97 q18\nq20 98 q18\nq21 99 q18\nq22 4294967295 q18\n"
 			)
 		);
 		CHECK(nft::are_equivalent(nft, expected));
@@ -625,14 +674,17 @@ TEST_CASE("mata::applications::strings::reluctant_leftmost_nft()") {
 		nft = reluctant_replace.reluctant_leftmost_nft("a+b+c", &alphabet, BEGIN_MARKER, Word{'d'}, ReplaceMode::All);
 		expected = nft::builder::parse_from_mata(
 			std::string(
-				"@NFT-explicit\n%Alphabet-auto\n%Initial q14\n%Final q14\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:1 q6:0 "
-				"q7:1 q8:1 q9:1 q10:0 q11:1 q12:0 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:1 q20:0 q21:1 "
-				"q22:0\n%LevelsNum 2\nq0 97 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 97 q4\nq2 98 q5\nq2 4294967195 "
-				"q7\nq3 4294967295 q0\nq4 4294967295 q2\nq5 4294967295 q6\nq6 98 q8\nq6 99 q9\nq6 4294967195 q11\nq7 "
-				"4294967295 q2\nq8 4294967295 q6\nq9 4294967295 q10\nq10 4294967295 q19\nq11 4294967295 q6\nq12 "
-				"4294967195 q13\nq13 4294967295 q12\nq14 97 q15\nq14 98 q16\nq14 99 q17\nq14 4294967195 q18\nq15 97 "
-				"q14\nq16 98 q14\nq17 99 q14\nq18 4294967295 q0\nq19 100 q20\nq20 4294967295 q21\nq21 4294967295 "
-				"q22\nq22 4294967295 q14\n"
+				"@NFT-explicit\n%Alphabet-auto\n%Initial q12\n%Final q12\n%Levels q0:0 q1:0 q2:0 q3:0 q4:1 q5:1 q6:1 "
+				"q7:1 q8:1 "
+				"q9:1 q10:1 q11:1 q12:0 q13:1 q14:1 q15:1 q16:1 q17:1\n%LevelsNum 2\nq0 97 q4\nq0 4294967195 q5\nq1 97 "
+				"q6\nq1 98 "
+				"q7\nq1 4294967195 q8\nq2 98 q9\nq2 99 q10\nq2 4294967195 q11\nq3 4294967295 q17\nq4 4294967295 q1\nq5 "
+				"4294967295 "
+				"q0\nq6 4294967295 q1\nq7 4294967295 q2\nq8 4294967295 q1\nq9 4294967295 q2\nq10 4294967295 q3\nq11 "
+				"4294967295 "
+				"q2\nq12 97 q13\nq12 98 q14\nq12 99 q15\nq12 4294967195 q16\nq13 97 q12\nq14 98 q12\nq15 99 q12\nq16 "
+				"4294967295 "
+				"q0\nq17 100 q12\n"
 			)
 		);
 		CHECK(nft::are_equivalent(nft, expected));

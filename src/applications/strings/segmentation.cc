@@ -23,24 +23,26 @@ void seg_nfa::Segmentation::process_state_depth_pair(
 void seg_nfa::Segmentation::handle_epsilon_transitions(
 	const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
 ) {
-	/// TODO: Maybe we don't need to keep the transitions in both structures
-	this->epsilon_depth_transitions_.insert(std::make_pair(state_depth_pair.depth, std::vector<Transition>{}));
-	this->eps_depth_trans_map_.insert({state_depth_pair.depth, {{state_depth_pair.state, std::vector<Transition>{}}}});
+	const EpsilonDepth depth{state_depth_pair.depth};
+	if (depth >= epsilon_transitions_by_depth_.size()) { epsilon_transitions_by_depth_.resize(depth + 1); }
+	std::vector<Transition>& depth_transitions{epsilon_transitions_by_depth_[depth]};
+	// Each state is expanded once and all its ε-moves are handled in a row, so its ε-transitions are contiguous.
+	EpsilonTransitionSpan& span{epsilon_transitions_of_state_[state_depth_pair.state]};
+	if (span.begin == span.end) {
+		span = {.depth = depth, .begin = depth_transitions.size(), .end = depth_transitions.size()};
+	}
+	MATA_ASSERT(span.depth == depth);
+	MATA_ASSERT(span.end == depth_transitions.size());
 
 	std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
 	visited_eps_aux[move.symbol]++;
 
 	for (const State target_state : move.targets) {
-		// TODO: Use vector indexed by depths instead of a map.
-		this->epsilon_depth_transitions_[state_depth_pair.depth].emplace_back(
-			state_depth_pair.state, move.symbol, target_state
-		);
-		this->eps_depth_trans_map_[state_depth_pair.depth][state_depth_pair.state].emplace_back(
-			state_depth_pair.state, move.symbol, target_state
-		);
-		worklist.push_back({.state = target_state, .depth = state_depth_pair.depth + 1, .eps = visited_eps_aux});
+		depth_transitions.emplace_back(state_depth_pair.state, move.symbol, target_state);
+		worklist.push_back({.state = target_state, .depth = depth + 1, .eps = visited_eps_aux});
 		this->visited_eps_[target_state] = visited_eps_aux;
 	}
+	span.end = depth_transitions.size();
 }
 
 void seg_nfa::Segmentation::add_transitions_to_worklist(
@@ -69,15 +71,13 @@ std::unordered_map<State, bool> seg_nfa::Segmentation::initialize_visited_map() 
 }
 
 void seg_nfa::Segmentation::split_aut_into_segments() {
-	segments_raw_ = {epsilon_depth_transitions_.size() + 1, automaton_};
+	segments_raw_ = {epsilon_transitions_by_depth_.size() + 1, automaton_};
 	remove_inner_initial_and_final_states();
 
 	// Construct segment automata.
-	std::unique_ptr<const std::vector<Transition>> depth_transitions{};
-	for (size_t depth{0}; depth < epsilon_depth_transitions_.size(); ++depth) {
+	for (size_t depth{0}; depth < epsilon_transitions_by_depth_.size(); ++depth) {
 		// Split the left segment from automaton into a new segment.
-		depth_transitions = std::make_unique<const std::vector<Transition>>(epsilon_depth_transitions_[depth]);
-		for (const auto& transition : *depth_transitions) {
+		for (const Transition& transition : epsilon_transitions_by_depth_[depth]) {
 			update_current_segment(depth, transition);
 			update_next_segment(depth, transition);
 		}
@@ -116,7 +116,8 @@ void seg_nfa::Segmentation::update_next_segment(const size_t current_depth, cons
 const std::vector<Nfa>& seg_nfa::Segmentation::get_segments() {
 	if (segments_.empty()) {
 		get_untrimmed_segments();
-		for (const auto& seg_aut : segments_raw_) { segments_.push_back(nfa::Nfa{seg_aut}.trim()); }
+		segments_.reserve(segments_raw_.size());
+		for (const auto& seg_aut : segments_raw_) { segments_.push_back(nfa::trim(seg_aut)); }
 	}
 
 	return segments_;
@@ -129,6 +130,7 @@ const std::vector<Nfa>& seg_nfa::Segmentation::get_untrimmed_segments() {
 }
 
 void seg_nfa::Segmentation::compute_epsilon_depths() {
+	epsilon_transitions_of_state_.resize(automaton_.num_of_states());
 	std::unordered_map<State, bool> visited{initialize_visited_map()};
 	std::deque<StateDepthTuple> worklist{initialize_worklist()};
 
@@ -141,4 +143,31 @@ void seg_nfa::Segmentation::compute_epsilon_depths() {
 			process_state_depth_pair(state_depth_pair, worklist);
 		}
 	}
+}
+
+std::span<const Transition> seg_nfa::Segmentation::get_epsilon_transitions(const State state) const {
+	if (state >= epsilon_transitions_of_state_.size()) { return {}; }
+	const EpsilonTransitionSpan& span{epsilon_transitions_of_state_[state]};
+	if (span.begin == span.end) { return {}; }
+	return std::span{epsilon_transitions_by_depth_[span.depth]}.subspan(span.begin, span.end - span.begin);
+}
+
+const seg_nfa::Segmentation::EpsilonDepthTransitions& seg_nfa::Segmentation::get_epsilon_depths() const {
+	return epsilon_depth_transitions_.get([this](EpsilonDepthTransitions& depths) {
+		for (EpsilonDepth depth{0}; depth < epsilon_transitions_by_depth_.size(); ++depth) {
+			depths.emplace(depth, epsilon_transitions_by_depth_[depth]);
+		}
+	});
+}
+
+const seg_nfa::Segmentation::EpsilonDepthTransitionMap& seg_nfa::Segmentation::get_epsilon_depth_trans_map() const {
+	return eps_depth_trans_map_.get([this](EpsilonDepthTransitionMap& map) {
+		for (State state{0}; state < epsilon_transitions_of_state_.size(); ++state) {
+			const std::span<const Transition> transitions{get_epsilon_transitions(state)};
+			if (transitions.empty()) { continue; }
+			map[epsilon_transitions_of_state_[state].depth].emplace(
+				state, std::vector<Transition>{transitions.begin(), transitions.end()}
+			);
+		}
+	});
 }
