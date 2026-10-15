@@ -3,6 +3,7 @@
  */
 
 #include <ranges>
+#include <set>
 #include <unordered_set>
 
 #include "mata/applications/strings.hh"
