@@ -2527,6 +2527,73 @@ TEST_CASE("mata::nft::Nft::invert_levels()") {
 			CHECK(are_equivalent(invert_levels(aut_new, JumpMode::AppendDontCares), aut, JumpMode::AppendDontCares));
 		}
 	}
+
+	SECTION("branching tails do not share an inverted inner state") {
+		// h -a-> p, p -b-> q1, p -b-> q2, q1 -c-> t1, q2 -d-> t2. Only (a, b, c) reaches t1, so the inverted
+		//  transducer must read (c, b, a) into t1 and must not read (d, b, a) into it. One inverted state per
+		//  inner state would merge the two copies of p and accept the spurious tuple.
+		Nft aut(6);
+		aut.levels = {3, {0, 1, 2, 2, 0, 0}};
+		aut.initial.insert(0);
+		aut.final.insert(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(1, 'b', 3);
+		aut.delta.add(2, 'c', 4);
+		aut.delta.add(3, 'd', 5);
+		Nft aut_new = invert_levels(aut);
+
+		CHECK(aut_new.is_in_lang({Word{'c', 'b', 'a'}}));
+		CHECK(!aut_new.is_in_lang({Word{'d', 'b', 'a'}}));
+		CHECK(are_equivalent(invert_levels(aut_new), aut));
+	}
+
+	SECTION("layered diamond is inverted at the size of the input") {
+		// One head, two states on each of the k-1 inner levels fully connected to the next level, one tail:
+		//  2^(k-1) head -> tail paths, but a single (head, tail) context, so the result must stay input-sized.
+		constexpr size_t num_of_levels{8};
+		Nft aut{};
+		aut.levels.num_of_levels = num_of_levels;
+		const State head{aut.add_state_with_level(0)};
+		aut.initial.insert(head);
+		std::vector<std::vector<State>> layers(num_of_levels);
+		for (size_t level{1}; level < num_of_levels; ++level) {
+			layers[level].push_back(aut.add_state_with_level(static_cast<Level>(level)));
+			layers[level].push_back(aut.add_state_with_level(static_cast<Level>(level)));
+		}
+		const State tail{aut.add_state_with_level(0)};
+		aut.final.insert(tail);
+		for (const State target : layers[1]) { aut.delta.add(head, 'a', target); }
+		for (size_t level{1}; level + 1 < num_of_levels; ++level) {
+			for (const State source : layers[level]) {
+				for (const State target : layers[level + 1]) {
+					aut.delta.add(source, static_cast<Symbol>('a' + level), target);
+				}
+			}
+		}
+		for (const State source : layers[num_of_levels - 1]) {
+			aut.delta.add(source, static_cast<Symbol>('a' + num_of_levels - 1), tail);
+		}
+		Nft aut_new = invert_levels(aut);
+
+		CHECK(aut_new.num_of_states() == aut.num_of_states());
+		CHECK(aut_new.delta.num_of_transitions() == aut.delta.num_of_transitions());
+		CHECK(are_equivalent(invert_levels(aut_new), aut));
+	}
+
+	SECTION("a cycle through inner states is rejected") {
+		// h -a-> s, s -b-> s, s -c-> t: the self-loop makes the number of head -> tail paths infinite.
+		Nft aut(3);
+		aut.levels = {2, {0, 1, 0}};
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 1);
+		aut.delta.add(1, 'c', 2);
+
+		CHECK_THROWS_AS(invert_levels(aut), std::invalid_argument);
+		CHECK_THROWS_AS(invert_levels(aut, JumpMode::AppendDontCares), std::invalid_argument);
+	}
 }
 
 TEST_CASE("mata::nft::Nft::is_deterministic()") { // {{{

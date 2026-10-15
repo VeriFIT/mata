@@ -1998,11 +1998,20 @@ Nft somewhat_simple_revert(const Nft& aut);
  * The function inverts the levels of the transducer, i.e., the level 0 becomes the last level, level 1 becomes the
  * second last level, and so on.
  *
- * @param[in] aut The transducer for inverting levels.
+ * The segment between two level-zero states is read backwards, so an inner state is split by the context
+ *  @c (state, head, tail) it is used in: one inverted state per inner state that lies on some @c head -> @c tail
+ *  path. Sharing an inverted state across contexts would add tuples the original does not have (see the comment
+ *  at the construction), sharing inside one context cannot. The result therefore grows with the input and the
+ *  number of contexts, not with the number of paths.
+ *
+ * @param[in] aut The transducer for inverting levels. Must be layered: every transition out of a state with a
+ * nonzero level reaches a strictly higher level or level 0, and every level is below @c levels.num_of_levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE symbols.
  * @return A new transducer with inverted levels.
+ * @throws std::invalid_argument If @p aut is not layered, i.e., if some segment between two level-zero states
+ * contains a cycle or a transition that does not increase the level.
  */
 Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
