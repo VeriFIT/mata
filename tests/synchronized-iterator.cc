@@ -1,3 +1,7 @@
+#include <algorithm>
+#include <random>
+#include <vector>
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
@@ -29,9 +33,7 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 		REQUIRE(!iu.advance());
 
 		iu.reset();
-
-		// Empty after reset
-		REQUIRE(!iu.advance());
+		REQUIRE(iu.get_current().empty());
 
 		// Basic functionality, position[0] does not get emptied first
 		v1 = {1, 2, 3, 4, 5};
@@ -60,11 +62,13 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 	SECTION("synchronized_universal_iterator, corner cases") {
 		SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
 
-		// Empty iterator
+#ifdef NDEBUG
+		// Zero inputs are not a legal state (the release fallback returns false); debug builds assert.
 		REQUIRE(!iu.advance());
 		REQUIRE(!iu.advance());
-		auto current = iu.get_current();
-		REQUIRE(current.empty());
+		const auto& no_inputs = iu.get_current();
+		REQUIRE(no_inputs.empty());
+#endif // NDEBUG
 
 		OrdVector<int> v1{};
 		OrdVector<int> v2{1};
@@ -74,14 +78,13 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 		push_back(iu, v2);
 		push_back(iu, v3);
 
+		// Some inputs are empty: synchronization is impossible.
 		REQUIRE(!iu.advance());
 
 		// Empty after reset
 		iu.reset();
-		REQUIRE(!iu.advance());
-		REQUIRE(!iu.advance());
-		current = iu.get_current();
-		REQUIRE(current.empty());
+		const auto& after_empty_input = iu.get_current();
+		REQUIRE(after_empty_input.empty());
 
 		// Only empty vectors
 		push_back(iu, v1);
@@ -90,8 +93,7 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 
 		push_back(iu, v3);
 		iu.reset();
-
-		REQUIRE(!iu.advance());
+		REQUIRE(iu.get_current().empty());
 
 		// Insert the same vector twice
 		OrdVector<int> v4{1, 2};
@@ -102,7 +104,7 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 		push_back(iu, v5);
 
 		REQUIRE(iu.advance());
-		current = iu.get_current();
+		const auto& current = iu.get_current();
 		REQUIRE(*current[0] == 2);
 		REQUIRE(*current[1] == 2);
 		REQUIRE(*current[2] == 2);
@@ -213,5 +215,126 @@ TEST_CASE("mata::utils::SynchronizedIterator") {
 		REQUIRE(*current[1] == 2);
 		REQUIRE(*current[2] == 2);
 		REQUIRE(!ie.advance());
+	}
+}
+
+#ifdef NDEBUG
+TEST_CASE("mata::utils::SynchronizedUniversalIterator over zero inputs in release - issue #797") {
+	SynchronizedUniversalIterator<OrdVector<int>::const_iterator> sync_iterator;
+	// Zero inputs are a precondition violation asserted in debug builds; release keeps returning false.
+	REQUIRE(!sync_iterator.advance());
+	REQUIRE(sync_iterator.get_current().empty());
+}
+#endif // NDEBUG
+
+namespace {
+
+/// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.
+size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
+
+/// A sorted vector with unique random values in [0, @p universe).
+std::vector<int> random_sorted_unique(std::mt19937& rng, const size_t universe) {
+	std::vector<bool> present(universe, false);
+	for (size_t i{0}; i < 1 + draw(rng, universe); ++i) { present[draw(rng, universe)] = true; }
+	std::vector<int> values{};
+	for (size_t i{0}; i < universe; ++i) {
+		if (present[i]) { values.push_back(static_cast<int>(i)); }
+	}
+	return values;
+}
+
+} // namespace
+
+TEST_CASE("mata::utils::SynchronizedUniversalIterator against a brute-force intersection (randomized)") {
+	for (unsigned seed{0}; seed < 300; ++seed) {
+		std::mt19937 rng{seed};
+		INFO("seed " << seed);
+		const size_t num_inputs{2 + draw(rng, 4)};
+		const size_t universe{6 + draw(rng, 20)};
+		std::vector<std::vector<int>> inputs(num_inputs);
+		std::vector<int> intersection{};
+		for (size_t input{0}; input < num_inputs; ++input) {
+			inputs[input] = random_sorted_unique(rng, universe);
+			if (input == 0) {
+				intersection = inputs[0];
+			} else {
+				std::vector<int> smaller{};
+				std::ranges::set_intersection(intersection, inputs[input], std::back_inserter(smaller));
+				intersection = std::move(smaller);
+			}
+		}
+
+		SynchronizedUniversalIterator<std::vector<int>::const_iterator> sync_iterator;
+		for (const std::vector<int>& input : inputs) { push_back(sync_iterator, input); }
+
+		std::vector<int> synchronizations{};
+		while (sync_iterator.advance()) {
+			const auto& current{sync_iterator.get_current()};
+			REQUIRE(current.size() == num_inputs);
+			const int value{*current[0]};
+			for (const auto& position : current) { REQUIRE(*position == value); }
+			synchronizations.push_back(value);
+			REQUIRE(synchronizations.size() <= intersection.size());
+		}
+		CHECK(synchronizations == intersection);
+		// A reset followed by the same inputs must repeat the run.
+		sync_iterator.reset();
+		for (const std::vector<int>& input : inputs) { push_back(sync_iterator, input); }
+		std::vector<int> repeat{};
+		while (sync_iterator.advance()) {
+			repeat.push_back(*sync_iterator.get_current()[0]);
+			REQUIRE(repeat.size() <= intersection.size());
+		}
+		CHECK(repeat == intersection);
+	}
+}
+
+TEST_CASE("mata::utils::SynchronizedExistentialIterator against a brute-force merge (randomized)") {
+	for (unsigned seed{0}; seed < 300; ++seed) {
+		std::mt19937 rng{seed};
+		INFO("seed " << seed);
+		const size_t num_inputs{1 + draw(rng, 5)};
+		const size_t universe{6 + draw(rng, 20)};
+		std::vector<std::vector<int>> inputs(num_inputs);
+		std::vector<int> merged{};
+		for (size_t input{0}; input < num_inputs; ++input) {
+			inputs[input] = random_sorted_unique(rng, universe);
+			std::vector<int> next{};
+			std::ranges::set_union(merged, inputs[input], std::back_inserter(next));
+			merged = std::move(next);
+		}
+		// Skip the run when every input is empty: the existential iterator has no minimum then.
+		if (merged.empty()) { continue; }
+
+		SynchronizedExistentialIterator<std::vector<int>::const_iterator> sync_iterator;
+		for (const std::vector<int>& input : inputs) { push_back(sync_iterator, input); }
+
+		std::vector<int> minima{};
+		while (sync_iterator.advance()) {
+			const auto& synchronized{sync_iterator.get_current()};
+			REQUIRE(!synchronized.empty());
+			std::vector<int> current{};
+			for (const auto& position : synchronized) { current.push_back(*position); }
+			std::ranges::sort(current);
+			// One position per input whose minimum is hit; a brute-force count of the value in the inputs.
+			size_t expected_count{0};
+			for (const std::vector<int>& input : inputs) {
+				if (std::ranges::binary_search(input, current.front())) { ++expected_count; }
+			}
+			CHECK(current.size() == expected_count);
+			for (const int value : current) { CHECK(value == current.front()); }
+			minima.push_back(current.front());
+			REQUIRE(minima.size() <= merged.size());
+		}
+		CHECK(minima == merged);
+
+		sync_iterator.reset();
+		for (const std::vector<int>& input : inputs) { push_back(sync_iterator, input); }
+		std::vector<int> repeat{};
+		while (sync_iterator.advance()) {
+			repeat.push_back(*sync_iterator.get_current()[0]);
+			REQUIRE(repeat.size() <= merged.size());
+		}
+		CHECK(repeat == merged);
 	}
 }

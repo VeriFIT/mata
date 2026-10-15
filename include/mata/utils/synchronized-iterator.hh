@@ -5,6 +5,11 @@
 #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
 #define MATA_SYNCHRONIZED_ITERATOR_HH
 
+#include <cstddef>
+#include <vector>
+
+#include "assert.hh"
+
 namespace mata::utils {
 
 /** @page synchronized_iterator Synchronized Iterator
@@ -103,11 +108,13 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 	 *  advance further.
 	 * The general of the algorithm is to synchronize everybody with position[0].
 	 *
-	 * @note Over zero inputs this returns false, even though universal synchronization over no inputs is vacuously
-	 *  satisfied: an empty result is the only one the caller could read, and both callers (NFT intersection in
-	 *  @c src/nft/intersection.cc and composition in @c src/nft/composition.cc) push two inputs anyway.
+	 * @pre At least one input was pushed since construction or the last @c reset() (asserted in debug builds);
+	 *  universal synchronization over no inputs is not meaningful. In release builds this keeps returning false,
+	 *  and both callers (NFT intersection in @c src/nft/intersection.cc and composition in
+	 *  @c src/nft/composition.cc) push two inputs anyway.
 	 */
 	bool advance() override {
+		MATA_ASSERT(!this->positions.empty());
 		// Nothing to synchronize: there is no position to return.
 		if (this->positions.empty()) { return false; }
 
