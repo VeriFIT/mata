@@ -1,5 +1,6 @@
 // TODO: some header
 
+#include <random>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -143,6 +144,84 @@ TEST_CASE("mata::nfa::SegNfa::noodlify()") {
 		auto noodles{seg_nfa::noodlify(aut, 'e')};
 
 		CHECK(noodles.size() == 3);
+	}
+}
+
+TEST_CASE("mata::nfa::seg_nfa::segs_one_initial_final() matches reduce(trim()) per pair") {
+	// Reference: one simulation per (initial, final) pair. The implementation shares one simulation per final state,
+	//  so it must still produce the identical automaton for every pair, including the state numbering.
+	const State unused_state{1'000};
+	const auto expected_segments = [&](const std::vector<Nfa>& segments, const bool include_empty) {
+		std::map<std::pair<State, State>, Nfa> expected;
+		// std::nullopt for init or fin stands for all initial or final states of the segment, with key unused_state.
+		const auto add = [&](const Nfa& segment, const std::optional<State> init, const std::optional<State> fin) {
+			const SparseSet<State> inits{init.value_or(0)};
+			const SparseSet<State> fins{fin.value_or(0)};
+			std::optional<std::reference_wrapper<const SparseSet<State>>> inits_ref, fins_ref;
+			if (init) { inits_ref = inits; }
+			if (fin) { fins_ref = fins; }
+			if (Nfa reduced = reduce(trim(segment, nullptr, inits_ref, fins_ref));
+				reduced.num_of_states() > 0 || include_empty) {
+				expected[{init.value_or(unused_state), fin.value_or(unused_state)}] = std::move(reduced);
+			}
+		};
+		for (size_t i{0}; i < segments.size(); ++i) {
+			const Nfa& segment{segments[i]};
+			if (i == 0) {
+				for (const State fin : segment.final) { add(segment, std::nullopt, fin); }
+			} else if (i + 1 == segments.size()) {
+				for (const State init : segment.initial) { add(segment, init, std::nullopt); }
+			} else {
+				for (const State init : segment.initial) {
+					for (const State fin : segment.final) { add(segment, init, fin); }
+				}
+			}
+		}
+		return expected;
+	};
+
+	for (unsigned seed{0}; seed < 40; ++seed) {
+		std::mt19937 rng{seed};
+		std::vector<Nfa> segments;
+		for (size_t i{0}; i < 4; ++i) {
+			Nfa segment{create_random_nfa_tabakov_vardi(15, 2, 1.5, 0.3, seed * 4 + static_cast<unsigned>(i))};
+			segment.initial.clear();
+			segment.final.clear();
+			for (State q{0}; q < 15; ++q) {
+				if (rng() % 3 == 0) { segment.initial.insert(q); }
+				if (rng() % 3 == 0) { segment.final.insert(q); }
+			}
+			// Twins are simulation-equivalent to a smaller state, which a pair may reach without reaching the twin's
+			//  original: the class representative of the shared simulation then lies outside of the pair.
+			for (size_t twins{0}; twins < 4; ++twins) {
+				const State original{static_cast<State>(rng() % 15)};
+				const State twin{segment.add_state()};
+				const StatePost original_post{segment.delta[original]};
+				for (const SymbolPost& symbol_post : original_post) {
+					for (const State target : symbol_post.targets) {
+						segment.delta.add(twin, symbol_post.symbol, target);
+					}
+				}
+				if (segment.final.contains(original)) { segment.final.insert(twin); }
+				segment.delta.add(static_cast<State>(rng() % 15), static_cast<mata::Symbol>(rng() % 2), twin);
+				if (rng() % 2 == 0) { segment.initial.insert(twin); }
+			}
+			segments.push_back(std::move(segment));
+		}
+
+		for (const bool include_empty : {false, true}) {
+			const std::map<std::pair<State, State>, Nfa> expected{expected_segments(segments, include_empty)};
+			std::map<std::pair<State, State>, std::shared_ptr<Nfa>> actual;
+			seg_nfa::segs_one_initial_final(segments, include_empty, unused_state, actual);
+
+			REQUIRE(actual.size() == expected.size());
+			for (const auto& [key, expected_nfa] : expected) {
+				INFO("seed " << seed << ", pair (" << key.first << ", " << key.second << ")");
+				REQUIRE(actual.contains(key));
+				CHECK(actual.at(key)->num_of_states() == expected_nfa.num_of_states());
+				CHECK(actual.at(key)->is_identical(expected_nfa));
+			}
+		}
 	}
 }
 

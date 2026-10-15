@@ -1740,45 +1740,62 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa& nf
 }
 
 Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& state_renaming) {
-	Nfa result;
 	const auto sim_relation =
 		algorithms::compute_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
 
 	auto sim_relation_symmetric = sim_relation;
 	sim_relation_symmetric.restrict_to_symmetric();
-
-	// for State q, quot_proj[q] should be the representative state representing the symmetric class of states in
-	// simulation
 	std::vector<size_t> quot_proj;
 	sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-	const size_t num_of_states = aut.num_of_states();
+	return quotient_by_simulation(aut, sim_relation, quot_proj, nullptr, &state_renaming);
+}
 
-	// map each state q of aut to the state of the reduced automaton representing the simulation class of q
+Nfa mata::nfa::algorithms::quotient_by_simulation(
+	const Nfa& aut,
+	const Simlib::Util::BinaryRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states,
+	StateRenaming* state_renaming
+) {
+	const size_t num_of_states = aut.num_of_states();
+	const auto is_kept = [&](const State q) { return states == nullptr || (*states)[q]; };
+
+	// Kept representative of each class, indexed by the class's smallest state quot_proj[q], which may itself be
+	//  outside of the kept states.
+	std::vector<State> representative(num_of_states, Limits::max_state);
+	// The reduced state of each kept state.
+	std::vector<State> reduced(num_of_states, Limits::max_state);
+
+	Nfa result;
+	// Number the classes in the order of their smallest kept states, as reduce_simulation() does on the part alone.
 	for (State q = 0; q < num_of_states; ++q) {
-		if (const State q_repr_state = quot_proj[q]; !state_renaming.contains(q_repr_state)) {
-			// we need to map q's class to a new state in reducedAut
-			const State q_class = result.add_state();
-			state_renaming[q_repr_state] = q_class;
-			state_renaming[q] = q_class;
+		if (!is_kept(q)) { continue; }
+		if (State& q_repr = representative[quot_proj[q]]; q_repr == Limits::max_state) {
+			q_repr = q;
+			reduced[q] = result.add_state();
 		} else {
-			state_renaming[q] = state_renaming[q_repr_state];
+			reduced[q] = reduced[q_repr];
 		}
 	}
 
 	for (State q = 0; q < num_of_states; ++q) {
-		const State q_class_state = state_renaming.at(q);
+		if (!is_kept(q)) { continue; }
+		const State q_class_state = reduced[q];
 
 		if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
 			result.initial.insert(q_class_state);
 		}
 
-		if (quot_proj[q] ==
+		if (representative[quot_proj[q]] ==
 			q) { // we process only transitions starting from the representative state, this is enough for simulation
 			for (const auto& q_trans : aut.delta.state_post(q)) {
 				const StateSet representatives_of_states_to = [&] {
 					StateSet state_set;
-					for (const auto s : q_trans.targets) { state_set.insert(quot_proj[s]); }
+					for (const auto s : q_trans.targets) {
+						MATA_ASSERT(is_kept(s));
+						state_set.insert(representative[quot_proj[s]]);
+					}
 					return state_set;
 				}();
 
@@ -1794,7 +1811,7 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 							break;
 						}
 					}
-					if (is_state_important) { representatives_class_states.insert(state_renaming.at(s)); }
+					if (is_state_important) { representatives_class_states.insert(reduced[s]); }
 				}
 
 				// add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of
@@ -1810,6 +1827,13 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 		}
 	}
 
+	if (state_renaming != nullptr) {
+		state_renaming->clear();
+		state_renaming->reserve(num_of_states);
+		for (State q = 0; q < num_of_states; ++q) {
+			if (is_kept(q)) { (*state_renaming)[q] = reduced[q]; }
+		}
+	}
 	return result;
 }
 
