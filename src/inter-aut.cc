@@ -65,10 +65,6 @@ bool is_naming_auto(const mata::IntermediateAut::Naming naming) {
 	return naming == mata::IntermediateAut::Naming::Auto;
 }
 
-bool contains(const std::vector<std::string>& vec, const std::string& item) {
-	return std::ranges::find(vec, item) != vec.end();
-}
-
 bool no_operators(const std::vector<mata::FormulaNode>& nodes) {
 	return std::ranges::all_of(nodes, [](const mata::FormulaNode& node) { return !node.is_operator(); });
 }
@@ -114,11 +110,11 @@ mata::FormulaNode create_node(const mata::IntermediateAut& mata, const std::stri
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::True};
 	} else if (token == "\\false") {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::False};
-	} else if (is_naming_enum(mata.state_naming) && contains(mata.states_names, token)) {
+	} else if (is_naming_enum(mata.state_naming) && mata.states_names.contains(token)) {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::State};
-	} else if (is_naming_enum(mata.node_naming) && contains(mata.nodes_names, token)) {
+	} else if (is_naming_enum(mata.node_naming) && mata.nodes_names.contains(token)) {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::Node};
-	} else if (is_naming_enum(mata.symbol_naming) && contains(mata.symbols_names, token)) {
+	} else if (is_naming_enum(mata.symbol_naming) && mata.symbols_names.contains(token)) {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::Symbol};
 	} else if (is_naming_marker(mata.state_naming) && token[0] == 'q') {
 		return {mata::FormulaNode::Type::Operand, token, token.substr(1), mata::FormulaNode::OperandType::State};
@@ -314,19 +310,13 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 	for (const auto& [key, symbol_names] : section.dict) {
 		if (key.find("Alphabet") != std::string::npos) {
 			aut.symbol_naming = get_naming_type(key);
-			if (aut.are_symbols_enum_type()) {
-				aut.symbols_names.insert(aut.symbols_names.end(), symbol_names.begin(), symbol_names.end());
-			}
+			if (aut.are_symbols_enum_type()) { aut.symbols_names.insert(symbol_names.begin(), symbol_names.end()); }
 		} else if (key.find("States") != std::string::npos) {
 			aut.state_naming = get_naming_type(key);
-			if (aut.are_states_enum_type()) {
-				aut.states_names.insert(aut.states_names.end(), symbol_names.begin(), symbol_names.end());
-			}
+			if (aut.are_states_enum_type()) { aut.states_names.insert(symbol_names.begin(), symbol_names.end()); }
 		} else if (key.find("Nodes") != std::string::npos) {
 			aut.node_naming = get_naming_type(key);
-			if (aut.are_nodes_enum_type()) {
-				aut.nodes_names.insert(aut.nodes_names.end(), symbol_names.begin(), symbol_names.end());
-			}
+			if (aut.are_nodes_enum_type()) { aut.nodes_names.insert(symbol_names.begin(), symbol_names.end()); }
 		}
 	}
 
