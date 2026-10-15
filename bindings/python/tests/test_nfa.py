@@ -735,6 +735,50 @@ def test_to_str():
     assert str(lhs) == expected
 
 
+def test_to_mata_str():
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
+    header = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\n"
+    assert lhs.to_mata_str() == header + "q0 0 q0\nq0 1 q1\n"
+
+    alphabet = alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 0, "b": 1})
+    assert lhs.to_mata_str(alphabet) == header + "q0 a q0\nq0 b q1\n"
+    named = mata_nfa.Nfa(2, alphabet=alphabet)
+    named.make_initial_state(0)
+    named.make_final_state(1)
+    named.add_transition(0, 1, 1)
+    assert named.to_mata_str() == header + "q0 b q1\n"
+
+
+def test_copy_and_deepcopy(prepare_automaton_a):
+    """`copy.copy` and `copy.deepcopy` copy the automaton; only `deepcopy` copies the label as well."""
+    import copy
+
+    aut = prepare_automaton_a()
+    aut.label = ["original"]
+    shallow = copy.copy(aut)
+    deep = copy.deepcopy(aut)
+    for copied in (shallow, deep):
+        assert copied.num_of_states() == aut.num_of_states()
+        assert copied.initial_states == aut.initial_states
+        assert copied.final_states == aut.final_states
+        assert copied.delta == aut.delta
+    assert shallow.label is aut.label
+    assert deep.label == aut.label and deep.label is not aut.label
+
+    aut.add_transition(0, ord("z"), 0)
+    assert not shallow.has_transition(0, ord("z"), 0)
+    assert not deep.has_transition(0, ord("z"), 0)
+
+    # A label referring back to its automaton resolves to the copy through the memo.
+    aut.label = {"automaton": aut}
+    deep = copy.deepcopy(aut)
+    assert deep.label["automaton"] is deep
+
+
 def test_shortest(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     shortest = mata_strings.get_shortest_words(lhs)
