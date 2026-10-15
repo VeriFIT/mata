@@ -1371,3 +1371,73 @@ def test_transition_hashing():
     assert mapping[first] == "c"
     assert mapping[other] == "b"
     assert len(mapping) == 2
+
+
+def test_transitions_as_arrays_match_iterate(prepare_automaton_a):
+    """The columnar export holds exactly the transitions of `iterate()`, in the same order, as int64 arrays."""
+    aut = prepare_automaton_a()
+    sources, symbols, targets = aut.transitions_as_arrays()
+    assert (sources.typecode, symbols.typecode, targets.typecode) == ("q", "q", "q")
+    assert list(zip(sources, symbols, targets)) == [(t.source, t.symbol, t.target) for t in aut.iterate()]
+
+    empty_arrays = mata_nfa.Nfa(3).transitions_as_arrays()
+    assert [len(array) for array in empty_arrays] == [0, 0, 0]
+
+
+def test_to_dataframe_keeps_int64_columns(fa_one_divisible_by_two):
+    df = fa_one_divisible_by_two.to_dataframe()
+    assert list(df.columns) == ["source", "symbol", "target"]
+    assert [str(dtype) for dtype in df.dtypes] == ["int64", "int64", "int64"]
+
+
+def test_pickle_round_trip(prepare_automaton_a):
+    """Pickling keeps the states, the initial and final states, the transitions and the label."""
+    import pickle
+
+    aut = prepare_automaton_a()
+    aut.add_new_state()  # An isolated state must survive as well.
+    aut.label = ["automaton", "a"]
+    restored = pickle.loads(pickle.dumps(aut))
+    assert restored.num_of_states() == aut.num_of_states()
+    assert restored.initial_states == aut.initial_states
+    assert restored.final_states == aut.final_states
+    assert restored.delta == aut.delta
+    assert restored.label == aut.label
+    restored.add_transition(0, ord("z"), 0)
+    assert not aut.has_transition(0, ord("z"), 0)
+
+    empty = pickle.loads(pickle.dumps(mata_nfa.Nfa()))
+    assert empty.num_of_states() == 0 and empty.get_num_of_transitions() == 0
+
+
+def test_pickle_label_referring_to_the_automaton(prepare_automaton_a):
+    """A label that refers back to the automaton round-trips to the restored automaton."""
+    import pickle
+
+    aut = prepare_automaton_a()
+    aut.label = aut
+    restored = pickle.loads(pickle.dumps(aut))
+    assert restored.label is restored
+    assert restored.delta == aut.delta
+
+
+def test_pickle_refuses_an_unpicklable_alphabet():
+    """An attached alphabet is pickled with the automaton, so an alphabet that cannot be pickled raises."""
+    import pickle
+
+    aut = mata_nfa.Nfa(1, alphabet=alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 0}))
+    with pytest.raises(TypeError):
+        pickle.dumps(aut)
+
+
+def _summarise_nfa(aut):
+    return aut.num_of_states(), aut.get_num_of_transitions(), aut.initial_states, aut.final_states
+
+
+def test_nfa_passes_to_a_multiprocessing_worker(prepare_automaton_a):
+    """`multiprocessing` pickles the automaton into the worker."""
+    import multiprocessing
+
+    aut = prepare_automaton_a()
+    with multiprocessing.get_context("spawn").Pool(processes=1) as pool:
+        assert pool.apply(_summarise_nfa, (aut,)) == _summarise_nfa(aut)

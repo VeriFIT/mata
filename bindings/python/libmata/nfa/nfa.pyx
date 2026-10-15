@@ -4,7 +4,8 @@ import subprocess
 import pandas
 import networkx as nx
 
-from libc.stdint cimport uint8_t
+from cpython.array cimport array, clone as array_clone
+from libc.stdint cimport int64_t, uint8_t
 from libcpp cimport bool
 from libcpp.optional cimport make_optional
 from libcpp.list cimport list as clist
@@ -25,6 +26,23 @@ cdef extern from *:
     }
     """
     void __pyx_add_transitions_batch(CDelta&, vector[CTrans]&) except +
+
+cdef extern from *:
+    """
+    #include <cstdint>
+    static void __pyx_fill_transition_arrays(
+        const mata::nfa::Delta& delta, int64_t* sources, int64_t* symbols, int64_t* targets
+    ) {
+        size_t i = 0;
+        for (const mata::nfa::Transition& trans : delta.transitions()) {
+            sources[i] = static_cast<int64_t>(trans.source);
+            symbols[i] = static_cast<int64_t>(trans.symbol);
+            targets[i] = static_cast<int64_t>(trans.target);
+            ++i;
+        }
+    }
+    """
+    void __pyx_fill_transition_arrays(const CDelta&, int64_t*, int64_t*, int64_t*) noexcept
 
 cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.alphabets as alph
@@ -490,6 +508,15 @@ cdef class Delta:
         return str(self)
 
 
+def _rebuild_nfa(num_of_states, initial_states, final_states, sources, symbols, targets, alphabet):
+    """Rebuild an `Nfa` from the state pickled by `Nfa.__reduce__`; the label follows via `Nfa.__setstate__`."""
+    aut = Nfa(num_of_states, alphabet=alphabet)
+    aut.make_initial_states(initial_states)
+    aut.make_final_states(final_states)
+    aut.delta.add_transitions(sources, symbols, targets)
+    return aut
+
+
 cdef class Nfa:
     """Wrapper over NFA
 
@@ -539,6 +566,24 @@ cdef class Nfa:
     @label.setter
     def label(self, value):
         self.label = value
+
+    def __reduce__(self):
+        """Pickle the states, the initial and final states, the columnar transitions and the alphabet.
+
+        The label is pickled as state after the automaton is memoized, so it may refer back to the automaton.
+        """
+        return (
+            _rebuild_nfa,
+            (
+                self.thisptr.get().num_of_states(), self.initial_states, self.final_states,
+                *self.transitions_as_arrays(), self.alphabet,
+            ),
+            self.label,
+        )
+
+    def __setstate__(self, label):
+        """Restore the label pickled by `__reduce__`."""
+        self.label = label
 
     @property
     def initial_states(self):
@@ -1014,6 +1059,27 @@ cdef class Nfa:
             del output_stream
         return result.decode(encoding)
 
+    def transitions_as_arrays(self):
+        """Export all transitions as three parallel `array('q')` arrays: sources, symbols, targets.
+
+        One C++ pass fills typed int64 buffers instead of building one Python object per transition.
+        The order matches `iterate()` (source state, then symbol, then target).
+
+        :return: Tuple `(sources, symbols, targets)` of `array.array` with typecode 'q'.
+        """
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef Py_ssize_t num_of_transitions = c_delta.num_of_transitions()
+        cdef array int64_template = array('q')
+        cdef array sources = array_clone(int64_template, num_of_transitions, zero=False)
+        cdef array symbols = array_clone(int64_template, num_of_transitions, zero=False)
+        cdef array targets = array_clone(int64_template, num_of_transitions, zero=False)
+        cdef int64_t* c_sources = <int64_t*>sources.data.as_voidptr
+        cdef int64_t* c_symbols = <int64_t*>symbols.data.as_voidptr
+        cdef int64_t* c_targets = <int64_t*>targets.data.as_voidptr
+        # Keeps the GIL: a thread mutating the delta mid-pass would invalidate the iterators and overrun the buffers.
+        __pyx_fill_transition_arrays(dereference(c_delta), c_sources, c_symbols, c_targets)
+        return sources, symbols, targets
+
     def to_dataframe(self) -> pandas.DataFrame:
         """Transforms the automaton to DataFrame format.
 
@@ -1024,11 +1090,11 @@ cdef class Nfa:
 
         :return: automaton represented as a pandas dataframe
         """
-        columns = ['source', 'symbol', 'target']
-        data = [
-            [trans.source, trans.symbol, trans.target] for trans in self.iterate()
-        ]
-        return pandas.DataFrame(data, columns=columns)
+        # numpy comes with pandas. pandas copies an `array.array` element by element, an ndarray in one go.
+        import numpy
+
+        columns = zip(('source', 'symbol', 'target'), self.transitions_as_arrays())
+        return pandas.DataFrame({name: numpy.frombuffer(column, dtype=numpy.int64) for name, column in columns})
 
     def to_networkx_graph(self) -> nx.Graph:
         """Transforms the automaton into networkx.Graph

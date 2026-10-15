@@ -1,3 +1,4 @@
+from array import array
 from collections.abc import Iterable, Iterator
 from typing import Any, Literal, Required, Self, TypedDict, overload
 
@@ -162,6 +163,14 @@ class Nfa:
     def label(self) -> Any: ...
     @label.setter
     def label(self, value: Any) -> None: ...
+    def __reduce__(self) -> tuple:
+        """Pickle support: rebuild from the states, initial and final states and `transitions_as_arrays()`.
+
+        The alphabet and the label are pickled with the automaton, so they must be picklable themselves.
+        The label is pickled as state after the automaton, so it may refer back to the automaton.
+        """
+    def __setstate__(self, label: Any) -> None:
+        """Restore the label pickled by `__reduce__`."""
     @property
     def initial_states(self) -> list[State]: ...
     @initial_states.setter
@@ -449,6 +458,14 @@ class Nfa:
         :param bool use_intervals: whether to use intervals ([1-3] instead of [1,2,3])
         :param int max_label_lenght: maximum label length (-1 means no limit, 0 means no label)
         :return: string with dot representation of the automaton
+        """
+    def transitions_as_arrays(self) -> tuple[array, array, array]:
+        """Export all transitions as three parallel `array('q')` arrays: sources, symbols, targets.
+
+        One C++ pass fills typed int64 buffers instead of building one Python object per transition.
+        The order matches `iterate()` (source state, then symbol, then target).
+
+        :return: Tuple `(sources, symbols, targets)` of `array.array` with typecode 'q'.
         """
     def to_dataframe(self) -> pandas.DataFrame:
         """Transforms the automaton to DataFrame format.
