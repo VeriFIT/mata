@@ -3,7 +3,7 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 
 from libmata.nfa.nfa cimport CNfa
-from libmata.alphabets cimport CAlphabet
+from libmata.alphabets cimport CAlphabet, Symbol
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass istream:
@@ -15,8 +15,7 @@ cdef extern from "<fstream>" namespace "std":
         ifstream(const char*) except +
 
 cdef extern from "mata/parser/re2parser.hh" namespace "mata::parser":
-    cdef void create_nfa(CNfa*, string) except +
-    cdef void create_nfa(CNfa*, string, bool) except +
+    cdef void create_nfa(CNfa*, string, bool, Symbol, bool) except +
 
 cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
     cdef struct CInterAut "mata::IntermediateAut":

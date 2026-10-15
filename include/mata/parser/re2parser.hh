@@ -27,13 +27,16 @@ namespace mata::parser {
  *  2) The created automaton represents the language of the regex and
  *     is not expected to be used in regex matching. Therefore, stuff
  *     like ^, $, \b, etc. are ignored in the regex.
+ *  3) The created automaton is trimmed and, with @p use_reduce, reduced by simulation reduction. The reduction costs
+ *     seconds on regexes with a few thousand states, where the conversion itself takes milliseconds; turn it off
+ *     for large regexes and when the result is determinized anyway.
  *
  * @sa mata::nfa::builder::create_from_regex()
  *
  * @param pattern regex as a string
  * @param use_epsilon whether to keep epsilon transitions in created NFA
  * @param epsilon_value symbol representing epsilon
- * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
+ * @param use_reduce whether to reduce the result using simulation reduction
  * @param encoding encoding of the regex, default is Latin1
  * @return Nfa corresponding to pattern
  */

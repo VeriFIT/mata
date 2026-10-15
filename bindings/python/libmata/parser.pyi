@@ -3,13 +3,15 @@ from typing import overload
 import libmata.alphabets as alph
 import libmata.nfa.nfa as mata_nfa
 
-def from_regex(regex: str, encoding: str = "utf-8") -> mata_nfa.Nfa:
+def from_regex(regex: str, encoding: str = "utf-8", reduce: bool = True) -> mata_nfa.Nfa:
     """Creates automaton from the regular expression
 
     The format of the regex conforms to google RE2 regular expression library.
+    The automaton has no epsilon transitions and is trimmed.
 
     :param str regex: regular expression
     :param str encoding: encoding of the string
+    :param bool reduce: whether to reduce the automaton using simulation reduction; costly for large regexes
     :return: Nfa automaton
     """
 

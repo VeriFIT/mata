@@ -1,24 +1,26 @@
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 
-from libmata.nfa.nfa cimport CNfa
+from libmata.nfa.nfa cimport CNfa, CEPSILON
 
 cimport libmata.parser as parser
 cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.alphabets as alph
 
 # External Constructors
-def from_regex(regex, encoding='utf-8'):
+def from_regex(regex, encoding='utf-8', bool reduce=True):
     """Creates automaton from the regular expression
 
     The format of the regex conforms to google RE2 regular expression library.
+    The automaton has no epsilon transitions and is trimmed.
 
     :param str regex: regular expression
     :param str encoding: encoding of the string
+    :param bool reduce: whether to reduce the automaton using simulation reduction; costly for large regexes
     :return: Nfa automaton
     """
     result = mata_nfa.Nfa()
-    parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding))
+    parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding), False, CEPSILON, reduce)
     return result
 
 def from_mata(src: str | list[str], alph.Alphabet alphabet):

@@ -289,4 +289,6 @@ Nfa builder::parse_from_mata(const std::string& nfa_in_mata) {
 	return parse_from_mata(nfa_stream);
 }
 
-Nfa builder::create_from_regex(const std::string& regex) { return parser::create_nfa(regex); }
+Nfa builder::create_from_regex(const std::string& regex, const bool reduce) {
+	return parser::create_nfa(regex, false, EPSILON, reduce);
+}

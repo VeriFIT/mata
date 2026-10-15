@@ -127,7 +127,7 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 /**
  * @brief Create NFA from @p regex
  *
- * The created NFA does not contain epsilons, is trimmed and reduced.
+ * The created NFA does not contain epsilons and is trimmed; with @p reduce, it is also reduced by simulation reduction.
  * It uses the parser from RE2, see mata/parser/re2praser.hh for more
  * details and options.
  *
@@ -146,8 +146,9 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
  * @sa mata::parser::create_nfa()
  *
  * @param regex regular expression
+ * @param reduce whether to reduce the NFA using simulation reduction; costly for large regexes
  */
-Nfa create_from_regex(const std::string& regex);
+Nfa create_from_regex(const std::string& regex, bool reduce = true);
 
 } // namespace mata::nfa::builder.
 

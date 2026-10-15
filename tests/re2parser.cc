@@ -1879,3 +1879,35 @@ TEST_CASE("Foldcase") {
 		CHECK(are_equivalent(nfa, result));
 	}
 }
+
+TEST_CASE("mata::parser::create_nfa() optional simulation reduction") {
+	for (const std::string regex :
+		 {"a*b|c(de)*", "(?:[a-z]b|c[d-f]){20}", "(cd(abcde)*)|(a(aaa)*)", "((a+b)*a)*", "[abcd]*e+", ""}) {
+		CAPTURE(regex);
+		const Nfa plain{mata::parser::create_nfa(regex, false, 306, false)};
+		const Nfa reduced{mata::parser::create_nfa(regex)};
+		CHECK(are_equivalent(plain, reduced));
+		CHECK(reduced.num_of_states() <= plain.num_of_states());
+		Nfa trimmed{plain};
+		trimmed.trim();
+		CHECK(trimmed.num_of_states() == plain.num_of_states());
+
+		const Nfa built_plain{mata::nfa::builder::create_from_regex(regex, false)};
+		CHECK(built_plain.num_of_states() == plain.num_of_states());
+		CHECK(are_equivalent(built_plain, plain));
+		const Nfa built{mata::nfa::builder::create_from_regex(regex)};
+		CHECK(built.num_of_states() == reduced.num_of_states());
+		CHECK(are_equivalent(built, plain));
+	}
+
+	SECTION("Reduction merges simulation-equivalent states") {
+		CHECK(
+			mata::parser::create_nfa("a*b|c(de)*").num_of_states() <
+			mata::parser::create_nfa("a*b|c(de)*", false, 306, false).num_of_states()
+		);
+		CHECK(
+			mata::nfa::builder::create_from_regex("a*b|c(de)*").num_of_states() <
+			mata::nfa::builder::create_from_regex("a*b|c(de)*", false).num_of_states()
+		);
+	}
+}

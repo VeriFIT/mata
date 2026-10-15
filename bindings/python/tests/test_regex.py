@@ -31,3 +31,14 @@ def test_stars_concatenation():
     expected.add_transition(0, ord("a"), 1)
     expected.add_transition(1, ord("a"), 1)
     assert mata_nfa.equivalence_check(aut, expected)
+
+
+def test_optional_reduction():
+    for regex in ["a*b|c(de)*", "(?:[a-z]b|c[d-f]){20}", "((a+b)*a)*"]:
+        plain = parser.from_regex(regex, reduce=False)
+        reduced = parser.from_regex(regex)
+        assert mata_nfa.equivalence_check(plain, reduced)
+        assert reduced.num_of_states() <= plain.num_of_states()
+    assert (
+        parser.from_regex("a*b|c(de)*").num_of_states() < parser.from_regex("a*b|c(de)*", reduce=False).num_of_states()
+    )
