@@ -957,6 +957,64 @@ q1 \false q2
     }
     } // parse_mf }}}
 
+TEST_CASE("malformed formulas in the intermediate representation")
+{ // {{{
+	// Each of these used to read past the end of an operand or operator stack, which crashed Release builds.
+	const auto check_rejected = [](const std::string& file, const std::string& message) {
+		const Parsed parsed = parse_mf(file);
+		CHECK_THROWS_WITH(mata::IntermediateAut::parse_from_mf(parsed), Catch::Matchers::ContainsSubstring(message));
+	};
+
+	SECTION("'(' without a matching ')'")
+	{
+		check_rejected("@NFA-explicit\n%Alphabet-auto\n%Initial (q0\n%Final q1\nq0 a q1\n", "Unbalanced parentheses");
+	}
+
+	SECTION("')' without a matching '('")
+	{
+		check_rejected("@NFA-explicit\n%Alphabet-auto\n%Initial q0 )\n%Final q1\nq0 a q1\n", "Unbalanced parentheses");
+	}
+
+	SECTION("binary operator without two operands")
+	{
+		check_rejected("@NFA-explicit\n%Alphabet-auto\n%Initial & q0\n%Final q1\nq0 a q1\n", "needs two operands");
+		check_rejected("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 & & q1\n", "needs two operands");
+	}
+
+	SECTION("negation without an operand")
+	{
+		check_rejected("@NFA-explicit\n%Alphabet-auto\n%Initial !\n%Final q1\nq0 a q1\n", "without an operand");
+	}
+
+	SECTION("operands without an operator between them")
+	{
+		check_rejected(
+			"@NFA-explicit\n%Alphabet-auto\n%Initial q0 & q1 q2\n%Final q1\nq0 a q1\n", "without an operator"
+		);
+		check_rejected("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a0 a1 q1\n", "without an operator");
+		check_rejected("@NFA-bits\n%Alphabet-auto\n& \\true true a0\n", "without an operator");
+	}
+
+	SECTION("parenthesis as the target state")
+	{
+		check_rejected("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a (\n", "unexpected '('");
+	}
+
+	SECTION("transition without a target state")
+	{
+		mata::IntermediateAut aut;
+		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
+		const mata::FormulaNode source{
+			mata::FormulaNode::Type::Operand, "q0", "q0", mata::FormulaNode::OperandType::State
+		};
+		aut.transitions.emplace_back(source, mata::FormulaGraph{});
+		CHECK_THROWS_WITH(
+			aut.get_symbol_part_of_transition(aut.transitions.front()),
+			Catch::Matchers::ContainsSubstring("expected a symbol formula and a target state")
+		);
+	}
+} // }}}
+
 
 TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)")
 { // {{{
