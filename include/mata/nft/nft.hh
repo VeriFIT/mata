@@ -862,6 +862,9 @@ class Nft : public mata::Automaton {
 	 * @brief Prints the automaton to the output stream in mata format
 	 *
 	 * @see print_to_mata() for how symbols are printed.
+	 *
+	 * The whole transducer is written with '\n' line endings and @p output is flushed once before returning, so the
+	 *  transducer is on the stream when this returns.
 	 */
 	void print_to_mata(std::ostream& output) const;
 

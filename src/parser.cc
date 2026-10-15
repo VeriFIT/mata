@@ -13,7 +13,6 @@ using std::tie;
 
 using mata::parser::Parsed;
 using mata::parser::ParsedSection;
-using mata::utils::haskey;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
@@ -31,10 +30,22 @@ void eat_whites(std::istream& input) { // {{{
 
 /// Determines whether the character is a character of a string
 bool is_string_char(const char ch) { // {{{
-	return !std::isblank(ch) && !(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
+	switch (ch) {
+		case '"':
+		case '(':
+		case ')':
+		case '#':
+		case '%':
+		case '@':
+		case '\\':
+			return false;
+		default:
+			return !std::isblank(ch);
+	}
 } // is_string_char }}}
 
-bool is_logical_operator(const char ch) { return haskey(std::set<char>{'&', '|', '!'}, ch); }
+/// Determines whether the character is one of the logical operators of a transition formula.
+bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch == '!'; }
 
 /**
  * @brief  Gets a token from the input stream
@@ -147,8 +158,6 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 		std::string token = get_token_from_line(stream, &quoted);
 		if (!quoted && token.empty()) { break; }
 
-		result.emplace_back(token, quoted);
-
 		if (!first && !quoted) {
 			MATA_ASSERT(!token.empty());
 			if ('@' == token[0]) {
@@ -158,6 +167,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 			}
 		}
 
+		result.emplace_back(std::move(token), quoted);
 		first = false;
 	}
 
@@ -207,7 +217,9 @@ Parsed mata::parser::parse_mf(const std::string& input, const bool keep_quotes) 
 Parsed mata::parser::parse_mf(std::istream& input, const bool keep_quotes) {
 	Parsed result;
 	while (input.good()) {
-		if (ParsedSection parsec = parse_mf_section(input, keep_quotes); !parsec.empty()) { result.push_back(parsec); }
+		if (ParsedSection parsec = parse_mf_section(input, keep_quotes); !parsec.empty()) {
+			result.push_back(std::move(parsec));
+		}
 	}
 	return result;
 }
@@ -283,9 +295,12 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		if (temp_token_line.empty()) { continue; }
 
 		if (append_line) {
-			token_line.insert(token_line.end(), temp_token_line.begin(), temp_token_line.end());
+			token_line.insert(
+				token_line.end(), std::make_move_iterator(temp_token_line.begin()),
+				std::make_move_iterator(temp_token_line.end())
+			);
 		} else {
-			token_line = temp_token_line;
+			token_line = std::move(temp_token_line);
 		}
 
 		append_line = backslash_ending;
@@ -308,8 +323,9 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 
 			std::vector<std::string>& val_list = it->second;
 			std::transform(
-				token_line.begin() + 1, token_line.end(), std::back_inserter(val_list),
-				[](const std::pair<std::string, bool>& token) { return token.first; }
+				std::make_move_iterator(token_line.begin() + 1), std::make_move_iterator(token_line.end()),
+				std::back_inserter(val_list),
+				[](std::pair<std::string, bool>&& token) { return std::move(token.first); }
 			);
 		} else {
 			BodyLine stripped_token_line;
@@ -322,7 +338,7 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 					}
 				}
 			);
-			result.body.push_back(stripped_token_line);
+			result.body.push_back(std::move(stripped_token_line));
 		}
 	}
 

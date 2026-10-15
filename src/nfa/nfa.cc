@@ -222,18 +222,20 @@ void Nfa::print_to_dot(
 	};
 
 	BoolVector is_state_drawn(num_of_states(), false);
-	output << "digraph finiteAutomaton {" << std::endl << "node [shape=circle];" << std::endl;
+	output << "digraph finiteAutomaton {\n" << "node [shape=circle];\n";
 
 	// Double circle for final states
 	for (const State final_state : final) {
 		is_state_drawn[final_state] = true;
-		output << final_state << " [shape=doublecircle];" << std::endl;
+		output << final_state << " [shape=doublecircle];\n";
 	}
 
 	// Print transitions
 	const size_t delta_size = delta.num_of_states();
+	std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
 	for (State source = 0; source != delta_size; ++source) {
-		std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
+		// Reused across sources to keep the hash table allocated.
+		tgt_symbols_map.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
 			for (State target : move.targets) {
@@ -243,7 +245,7 @@ void Nfa::print_to_dot(
 		}
 		for (const auto& [target, symbols] : tgt_symbols_map) {
 			if (max_label_length == 0) {
-				output << source << " -> " << target << ";" << std::endl;
+				output << source << " -> " << target << ";\n";
 				continue;
 			}
 
@@ -258,23 +260,25 @@ void Nfa::print_to_dot(
 
 			if (is_shortened) {
 				output << source << " -> " << target << " [label=\"" << label << "\", tooltip=\"" << on_hover_label
-					   << "\"];" << std::endl;
+					   << "\"];\n";
 			} else {
-				output << source << " -> " << target << " [label=\"" << label << "\"];" << std::endl;
+				output << source << " -> " << target << " [label=\"" << label << "\"];\n";
 			}
 		}
 	}
 
 	// Circle for isolated states with no transitions
 	for (State state{0}; state < is_state_drawn.size(); ++state) {
-		if (!is_state_drawn[state]) { output << state << " [shape=circle];" << std::endl; }
+		if (!is_state_drawn[state]) { output << state << " [shape=circle];\n"; }
 	}
 
 	// Arrow for initial states
-	output << "node [shape=none, label=\"\"];" << std::endl;
-	for (const State init_state : initial) { output << "i" << init_state << " -> " << init_state << ";" << std::endl; }
+	output << "node [shape=none, label=\"\"];\n";
+	for (const State init_state : initial) { output << "i" << init_state << " -> " << init_state << ";\n"; }
 
-	output << "}" << std::endl;
+	// Lines end with '\n', not std::endl: flushing per line costs one write() per line. Flush once so the caller's
+	//  stream holds the whole automaton when this returns.
+	output << "}\n" << std::flush;
 }
 
 void Nfa::print_to_dot(
@@ -296,41 +300,44 @@ std::string Nfa::print_to_mata(const Alphabet* alphabet) const {
 }
 
 void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
-	output << "@NFA-explicit" << std::endl << "%Alphabet-auto" << std::endl;
+	output << "@NFA-explicit\n" << "%Alphabet-auto\n";
 	// TODO should be this, but we cannot parse %Alphabet-numbers yet
-	//<< "%Alphabet-numbers" << std::endl;
+	//<< "%Alphabet-numbers\n";
 
 	if (!initial.empty()) {
 		output << "%Initial";
 		for (const State init_state : initial) { output << " q" << init_state; }
-		output << std::endl;
+		output << '\n';
 	}
 
 	if (!final.empty()) {
 		output << "%Final";
 		for (const State final_state : final) { output << " q" << final_state; }
-		output << std::endl;
+		output << '\n';
 	}
 
 	const Alphabet* const used_alphabet{alphabet != nullptr ? alphabet : this->alphabet.get()};
 	// Reverse lookups may scan the whole alphabet; translate each symbol once.
 	std::unordered_map<Symbol, std::string> symbol_names{};
 	for (const Transition& trans : delta.transitions()) {
+		output << "q" << trans.source << " ";
 		// EPSILON is not a member of any alphabet; print the name the parser maps back.
-		std::string symbol_name;
 		if (trans.symbol == EPSILON) {
-			symbol_name = EPSILON_NAME;
+			output << EPSILON_NAME;
 		} else if (used_alphabet != nullptr) {
 			auto it{symbol_names.find(trans.symbol)};
 			if (it == symbol_names.end()) {
 				it = symbol_names.emplace(trans.symbol, used_alphabet->reverse_translate_symbol(trans.symbol)).first;
 			}
-			symbol_name = it->second;
+			output << it->second;
 		} else {
-			symbol_name = std::to_string(trans.symbol);
+			// Plain decimal, independent of the stream's format flags: the parser reads it back as decimal.
+			output << std::to_string(trans.symbol);
 		}
-		output << "q" << trans.source << " " << symbol_name << " q" << trans.target << std::endl;
+		output << " q" << trans.target << '\n';
 	}
+	// See print_to_dot(): one flush per call instead of one per line.
+	output.flush();
 }
 
 void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) const {
