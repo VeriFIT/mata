@@ -623,6 +623,86 @@ q3 0 q4
 	}
 }
 
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() reports each noodle once") {
+	// Shapes that finish the same noodle more than once. The result is one noodle per shape, in completion order.
+	const auto segment_shapes = [](const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& noodles) {
+		std::vector<std::vector<std::pair<size_t, seg_nfa::VisitedEpsilonsCounterVector>>> shapes{};
+		for (const auto& noodle : noodles) {
+			auto& shape{shapes.emplace_back()};
+			for (const auto& [segment, counters] : noodle) {
+				shape.emplace_back(segment->delta.num_of_transitions(), counters);
+			}
+		}
+		return shapes;
+	};
+
+	SECTION("two epsilon transitions with different symbols between the same states") {
+		Nfa aut{4};
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(1, EPSILON - 1, 2);
+		aut.delta.add(2, 'b', 3);
+
+		const auto noodles{seg_nfa::noodlify_mult_eps(aut, {EPSILON, EPSILON - 1}, false)};
+		REQUIRE(noodles.size() == 1);
+		CHECK(
+			segment_shapes(noodles) ==
+			std::vector<std::vector<std::pair<size_t, seg_nfa::VisitedEpsilonsCounterVector>>>{
+				{{1, {0, 0}}, {1, {1, 0}}}
+			}
+		);
+	}
+
+	SECTION("two routes through segments whose language is {epsilon}") {
+		// The segments { 2 } and { 3 } accept only epsilon and are left out of the noodle, so both routes from
+		// state 1 to state 4 finish the same two-segment noodle.
+		Nfa aut{6};
+		aut.initial.insert(0);
+		aut.final.insert(5);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(1, EPSILON, 3);
+		aut.delta.add(2, EPSILON, 4);
+		aut.delta.add(3, EPSILON, 4);
+		aut.delta.add(4, 'b', 5);
+
+		const auto noodles{seg_nfa::noodlify_mult_eps(aut, {EPSILON}, false)};
+		REQUIRE(noodles.size() == 1);
+		CHECK(
+			segment_shapes(noodles) ==
+			std::vector<std::vector<std::pair<size_t, seg_nfa::VisitedEpsilonsCounterVector>>>{{{1, {0}}, {1, {2}}}}
+		);
+	}
+
+	SECTION("distinct noodles are all reported, in completion order") {
+		// Two branches that stay distinct: both noodles survive the deduplication.
+		Nfa aut{6};
+		aut.initial.insert(0);
+		aut.final.insert(5);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 2);
+		aut.delta.add(1, EPSILON, 3);
+		aut.delta.add(2, EPSILON, 3);
+		aut.delta.add(3, 'c', 5);
+
+		const auto noodles{seg_nfa::noodlify_mult_eps(aut, {EPSILON}, false)};
+		REQUIRE(noodles.size() == 2);
+		// The 'a' branch completes first, then the 'b' branch; each noodle keeps its own branch.
+		const std::vector<std::pair<mata::Word, mata::Word>> branches{{{'a'}, {'b'}}, {{'b'}, {'a'}}};
+		for (size_t i{0}; i < noodles.size(); ++i) {
+			const auto& [taken, other] = branches[i];
+			REQUIRE(noodles[i].size() == 2);
+			CHECK(noodles[i][0].first->is_in_lang(taken));
+			CHECK(!noodles[i][0].first->is_in_lang(other));
+			CHECK(noodles[i][0].second == seg_nfa::VisitedEpsilonsCounterVector{0});
+			CHECK(noodles[i][1].first->is_in_lang(mata::Word{'c'}));
+			CHECK(noodles[i][1].second == seg_nfa::VisitedEpsilonsCounterVector{1});
+		}
+	}
+}
+
 TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
 	Nfa left1{3};
 	left1.initial.insert(0);
