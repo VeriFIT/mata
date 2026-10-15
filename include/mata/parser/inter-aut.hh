@@ -168,10 +168,10 @@ class IntermediateAut {
 	AlphabetType alphabet_type{};
 	AutomatonType automaton_type{};
 
-	// The vectors represent the given sets when enumeration is used.
-	std::vector<std::string> states_names{};
-	std::vector<std::string> symbols_names{};
-	std::vector<std::string> nodes_names{};
+	// The sets of names of the given kind when enumeration is used.
+	std::unordered_set<std::string> states_names{};
+	std::unordered_set<std::string> symbols_names{};
+	std::unordered_set<std::string> nodes_names{};
 
 	FormulaGraph initial_formula{};
 	FormulaGraph final_formula{};
