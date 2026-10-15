@@ -30,7 +30,8 @@ target_link_libraries (libmata PUBLIC cudd_headers simlib_headers)
 
 target_include_directories (
 	libmata
-	PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+	PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+		   $<INSTALL_INTERFACE:include>
 	# we need to add include files from the libraries
 	PRIVATE $<TARGET_PROPERTY:cudd,INTERFACE_INCLUDE_DIRECTORIES>
 			$<TARGET_PROPERTY:simlib,INTERFACE_INCLUDE_DIRECTORIES>

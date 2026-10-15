@@ -159,7 +159,7 @@ void builder::construct(Nfa* result, const IntermediateAut& inter_aut, Alphabet*
 
 Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
 	const size_t word_size{word.size()};
-	Nfa nfa{word_size + 1, {0}, {word_size}};
+	Nfa nfa{word_size + 1, {0}, {to_state(word_size)}};
 
 	for (State state{0}; state < word_size; ++state) { nfa.delta.add(state, word[state], state + 1); }
 	return nfa;
@@ -168,7 +168,7 @@ Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
 Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, std::shared_ptr<Alphabet> alphabet) {
 	if (!alphabet) { alphabet = std::make_shared<OnTheFlyAlphabet>(word); }
 	const size_t word_size{word.size()};
-	Nfa nfa{word_size + 1, {0}, {word_size}, alphabet};
+	Nfa nfa{word_size + 1, {0}, {to_state(word_size)}, alphabet};
 
 	for (State state{0}; state < word_size; ++state) {
 		nfa.delta.add(state, alphabet->translate_symb(word[state]), state + 1);
@@ -261,7 +261,7 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 		std::ranges::sort(cells);
 		for (const size_t cell : cells) {
 			if (use_bitmap) { taken_bitmap[cell] = false; }
-			nfa.delta.add(cell / num_of_states, symbol, cell % num_of_states);
+			nfa.delta.add(static_cast<State>(cell / num_of_states), symbol, static_cast<State>(cell % num_of_states));
 		}
 	}
 	return nfa;

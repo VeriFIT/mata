@@ -49,13 +49,18 @@ cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
-    CDelta, CRun, CTrans, CNfa, CSymbolPost, CSmallStateSet, CEPSILON
+    CDelta, CRun, CTrans, CNfa, CSymbolPost, CSmallStateSet, CEPSILON, CMAX_STATE, CSTATE_BITS
 
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CLazyWordGenerator
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation, CPairHash
 
 
 cdef Symbol EPSILON = CEPSILON
+
+#: Width of a state in bits that Mata was built with (CMake option MATA_STATE_BITS).
+STATE_BITS = CSTATE_BITS
+#: The "no state" sentinel; states are 0 to MAX_STATE - 1. Creating MAX_STATE or above raises OverflowError.
+MAX_STATE = CMAX_STATE
 
 
 def epsilon():

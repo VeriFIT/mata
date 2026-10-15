@@ -1078,7 +1078,9 @@ TEST_CASE("mata::nft::make_complete()") {
 		// CHECK(not result.make_complete(alphabet.get(), std::vector<State>{ sinks }));
 		for (auto sinks_val{sinks.value_or(std::vector<State>{})}; const State sink : sinks_val) {
 			for (const auto symbol : alphabet_symbols()) {
-				CHECK(result.delta.contains(sink, symbol, ((sink + 1) % sinks_val.size()) + *sinks_val.begin()));
+				CHECK(result.delta.contains(
+					sink, symbol, static_cast<State>(((sink + 1) % sinks_val.size()) + *sinks_val.begin())
+				));
 			}
 		}
 	};
@@ -4420,7 +4422,7 @@ TEST_CASE("mata::nft::Nft::get_words() - diamond chain") {
 		levels[3 * i + 2] = 1;
 	}
 	Nft nft{3 * k + 1, {0}, {3 * k}, Levels{2, levels}};
-	for (size_t i{0}; i < k; ++i) {
+	for (State i{0}; i < k; ++i) {
 		nft.delta.add(3 * i, 'a', 3 * i + 1);
 		nft.delta.add(3 * i, 'a', 3 * i + 2);
 		nft.delta.add(3 * i + 1, 'b', 3 * (i + 1));
@@ -4453,7 +4455,7 @@ TEST_CASE("mata::nft::Nft::get_words() - diamond chain split by jumps") {
 		levels[3 * i + 2] = 2;
 	}
 	Nft nft{3 * k + 1, {0}, {3 * k}, Levels{3, levels}};
-	for (size_t i{0}; i < k; ++i) {
+	for (State i{0}; i < k; ++i) {
 		nft.delta.add(3 * i, 'a', 3 * i + 1);
 		nft.delta.add(3 * i + 1, 'a', 3 * (i + 1));
 		nft.delta.add(3 * i, 'a', 3 * i + 2);

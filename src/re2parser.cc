@@ -85,7 +85,7 @@ class RegexParser {
 		const mata::Symbol epsilon_value,
 		const bool trim_result
 	) {
-		const auto start_state = static_cast<size_t>(prog->start());
+		const auto start_state = static_cast<State>(prog->start());
 		const auto prog_size = static_cast<size_t>(prog->size());
 		// The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
 		std::vector<mata::Symbol> symbols;
@@ -329,7 +329,7 @@ class RegexParser {
 			// has_state_incoming_edge holds true for states with an incoming edge, false for the rest
 			.has_state_incoming_edge = default_false_vec,
 		};
-		const auto start_state = static_cast<size_t>(prog->start());
+		const auto start_state = static_cast<mata::nfa::State>(prog->start());
 		const auto prog_size = static_cast<size_t>(prog->size());
 
 		// Used for the first loop through states

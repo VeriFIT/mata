@@ -227,20 +227,20 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
     cdef bool c_has_epsilon_cycle "mata::nft::has_epsilon_cycle" (CNft&)
 
 cdef extern from "mata/nft/algorithms.hh" namespace "mata::nft::algorithms":
-    cdef CBinaryRelation& c_nft_compute_relation "mata::nft::algorithms::compute_relation" (CNft&, ParameterMap&)
+    cdef CBinaryRelation c_nft_compute_relation "mata::nft::algorithms::compute_relation" (CNft&, ParameterMap&) except +
 
 cdef extern from "mata/nft/plumbing.hh" namespace "mata::nft::plumbing":
-    cdef void c_nft_union_nondet "mata::nft::plumbing::union_nondet" (CNft*, CNft&, CNft&)
+    cdef void c_nft_union_nondet "mata::nft::plumbing::union_nondet" (CNft*, CNft&, CNft&) except +
     cdef void c_nft_intersection "mata::nft::plumbing::intersection" (
         CNft*, CNft&, CNft&, umap[pair[State, State], State, CPairHash[State, State]]*, CJumpMode, State, State
-    )
+    ) except +
     cdef void c_nft_concatenate "mata::nft::plumbing::concatenate" (
         CNft*, CNft&, CNft&, bool, StateRenaming*, StateRenaming*
-    )
+    ) except +
     cdef void c_nft_complement "mata::nft::plumbing::complement" (CNft*, CNft&, CAlphabet&, ParameterMap&) except +
-    cdef void c_nft_determinize "mata::nft::plumbing::determinize" (CNft*, CNft&, umap[StateSet, State]*)
-    cdef void c_nft_reduce "mata::nft::plumbing::reduce" (CNft*, CNft&, StateRenaming*, ParameterMap&)
-    cdef void c_nft_revert "mata::nft::plumbing::revert" (CNft*, CNft&)
+    cdef void c_nft_determinize "mata::nft::plumbing::determinize" (CNft*, CNft&, umap[StateSet, State]*) except +
+    cdef void c_nft_reduce "mata::nft::plumbing::reduce" (CNft*, CNft&, StateRenaming*, ParameterMap&) except +
+    cdef void c_nft_revert "mata::nft::plumbing::revert" (CNft*, CNft&) except +
     cdef void c_nft_remove_epsilon "mata::nft::plumbing::remove_epsilon" (CNft*, CNft&, Symbol) except +
     cdef CLazyWordGenerator* c_nft_get_words_lazy_ptr "mata::nft::plumbing::get_words_lazy_ptr" (
         CNft&, size_t, CJumpMode

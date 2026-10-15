@@ -830,3 +830,45 @@ TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
 		CHECK(batched == delta_from_adds({{1, 'a', 7}}));
 	}
 }
+
+TEST_CASE("mata::nfa::State width and state overflow checks") {
+	CHECK(sizeof(State) * 8 == MATA_STATE_BITS);
+	// The largest value is the "no state" sentinel, so states are 0, ..., max_state - 1.
+	CHECK(Limits::max_num_of_states == Limits::max_state);
+
+	SECTION("conversions to State") {
+		CHECK(to_state(0) == 0);
+		CHECK(to_state(Limits::max_state - 1) == Limits::max_state - 1);
+		CHECK_THROWS_AS(to_state(Limits::max_state), std::overflow_error);
+		CHECK(num_of_states_for(Limits::max_state - 1) == Limits::max_num_of_states);
+		CHECK_THROWS_AS(num_of_states_for(Limits::max_state), std::overflow_error);
+		CHECK_NOTHROW(check_num_of_states(Limits::max_num_of_states));
+		if constexpr (sizeof(State) < sizeof(size_t)) {
+			CHECK_THROWS_AS(to_state(size_t{1} << MATA_STATE_BITS), std::overflow_error);
+			CHECK_THROWS_AS(check_num_of_states(Limits::max_num_of_states + 1), std::overflow_error);
+			CHECK_THROWS_AS(Delta(Limits::max_num_of_states + 1), std::overflow_error);
+		}
+	}
+
+	SECTION("the sentinel cannot become a state") {
+		Delta delta{};
+		CHECK_THROWS_AS(delta.add(Limits::max_state, 0, 0), std::overflow_error);
+		CHECK_THROWS_AS(delta.add(0, 0, Limits::max_state), std::overflow_error);
+		CHECK_THROWS_AS(delta.mutable_state_post(Limits::max_state), std::overflow_error);
+		CHECK(delta.num_of_states() == 0);
+
+		Nfa nfa{};
+		CHECK_THROWS_AS(nfa.add_state(Limits::max_state), std::overflow_error);
+		CHECK(nfa.num_of_states() == 0);
+	}
+
+	SECTION("{symbol, state} of equal integer types builds a symbol post") {
+		// With a 32-bit State, Symbol and State are the same type. The pair must not be taken for an iterator range.
+		StatePost state_post{};
+		state_post.insert({Symbol{7}, State{3}});
+		REQUIRE(state_post.size() == 1);
+		CHECK(state_post.front().symbol == 7);
+		CHECK(state_post.front().targets == StateSet{3});
+		CHECK(!std::is_constructible_v<StateSet, State, State>);
+	}
+}

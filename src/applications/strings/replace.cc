@@ -141,7 +141,7 @@ void add_generic_literal_transitions(
 						is_subsequence(subsubword, literal)) {
 						// it...end is a valid literal subvector. Transition should therefore lead to the corresponding
 						//  subvector init_state.
-						target_state = subsubword.size();
+						target_state = static_cast<State>(subsubword.size());
 						break;
 					}
 					++subword_next_symbol_it;
@@ -464,7 +464,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(
 	nft_reluctant_leftmost.insert_identity(initial, alphabet_symbols.to_vector());
 
 	// Move to replace mode when begin marker is encountered.
-	State curr_state{nft_reluctant_leftmost.num_of_states()};
+	auto curr_state{static_cast<State>(nft_reluctant_leftmost.num_of_states())};
 	nft_reluctant_leftmost.delta.add(initial, begin_marker, curr_state);
 	nft_reluctant_leftmost.delta.mutable_state_post(curr_state)
 		.push_back(SymbolPost{EPSILON, StateSet{nft_reluctant_leftmost.initial}});

@@ -1280,8 +1280,8 @@ Nft algorithms::compose_general(
 	Nft rhs_synced = insert_levels(rhs, rhs_new_levels_mask, {}, jump_mode);
 
 	// Two auxiliary states (states from inserted loops) can not create a product state.
-	const State lhs_first_aux_state = lhs_synced.num_of_states();
-	const State rhs_first_aux_state = rhs_synced.num_of_states();
+	const auto lhs_first_aux_state{static_cast<State>(lhs_synced.num_of_states())};
+	const auto rhs_first_aux_state{static_cast<State>(rhs_synced.num_of_states())};
 
 	// Insert self-loops into lhs and rhs to ensure synchronization on epsilon transitions.
 	insert_self_loops(lhs_synced, lhs_new_levels_mask);

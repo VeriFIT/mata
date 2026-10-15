@@ -183,9 +183,9 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 	resize_for_states(source, target);
 
 	if (StatePost& state_transitions{state_posts_[source]}; state_transitions.empty()) {
-		state_transitions.insert({symbol, target});
+		state_transitions.insert(SymbolPost{symbol, target});
 	} else if (state_transitions.back().symbol < symbol) {
-		state_transitions.insert({symbol, target});
+		state_transitions.insert(SymbolPost{symbol, target});
 	} else {
 		if (const auto symbol_transitions{state_transitions.find(SymbolPost{symbol})};
 			symbol_transitions != state_transitions.end()) {
@@ -333,7 +333,7 @@ bool Delta::empty() const {
 
 Delta::Transitions::const_iterator::const_iterator(const Delta& delta) : delta_{&delta} {
 	const size_t post_size = delta_->num_of_states();
-	for (size_t i = 0; i < post_size; ++i) {
+	for (State i = 0; i < post_size; ++i) {
 		if (!(*delta_)[i].empty()) {
 			current_state_ = i;
 			state_post_it_ = (*delta_)[i].begin();
@@ -555,8 +555,8 @@ Delta Delta::reverted(const size_t num_of_states) const {
 
 StatePost& Delta::mutable_state_post(const State source) {
 	if (source >= state_posts_.size()) {
+		const size_t new_size{num_of_states_for(source)};
 		utils::reserve_on_insert(state_posts_, source);
-		const size_t new_size{source + 1};
 		state_posts_.resize(new_size);
 	}
 

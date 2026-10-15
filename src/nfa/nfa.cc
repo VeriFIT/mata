@@ -27,6 +27,13 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 const std::string mata::nfa::TYPE_NFA = "NFA";
 
+void mata::nfa::throw_state_overflow() {
+	throw std::overflow_error(
+		"mata: state numbers have to stay below Limits::max_state (" + std::to_string(Limits::max_state) +
+		"); rebuild Mata with MATA_STATE_BITS=64 for more states"
+	);
+}
+
 void Nfa::remove_epsilon(const Symbol epsilon) { *this = mata::nfa::remove_epsilon(*this, epsilon); }
 
 Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
@@ -488,13 +495,14 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 	const size_t num_of_states_this{this->num_of_states()};
 	const size_t num_of_states_aut{nfa.num_of_states()};
 	const size_t num_of_states_result{num_of_states_this + num_of_states_aut};
+	check_num_of_states(num_of_states_result);
 
 	this->delta.reserve(num_of_states_result);
 	// Allocate space for initial and final states from 'this' which might be missing in Delta.
 	// This ensures that the next state appended to Delta will have the correct index for the first state of 'aut'.
 	this->delta.allocate(num_of_states_this);
 
-	auto renumber_states{[&](const State state) { return num_of_states_this + state; }};
+	auto renumber_states{[&](const State state) { return static_cast<State>(num_of_states_this + state); }};
 	this->delta.append_shifted(nfa.delta, num_of_states_this);
 
 	// Set accepting states.
@@ -526,19 +534,22 @@ Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
 
 	const size_t num_of_states_this{this->num_of_states()};
 	const size_t num_of_states_aut{nfa.num_of_states()};
+	const size_t num_of_states_result{num_of_states_this + num_of_states_aut};
+	check_num_of_states(num_of_states_result);
+	const auto renumber_states{[&](const State state) { return static_cast<State>(num_of_states_this + state); }};
 
-	this->delta.reserve(num_of_states_this + num_of_states_aut);
+	this->delta.reserve(num_of_states_result);
 	this->delta.allocate(num_of_states_this);
 
 	// Use append_shifted to move the rhs state posts without copying.
-	this->delta.append_shifted(std::move(nfa.delta), num_of_states_this);
+	this->delta.append_shifted(std::move(nfa.delta), static_cast<State>(num_of_states_this));
 
 	// Set accepting states.
-	this->final.reserve(num_of_states_this + num_of_states_aut);
-	for (const State& aut_fin : nfa.final) { this->final.insert(num_of_states_this + aut_fin); }
+	this->final.reserve(num_of_states_result);
+	for (const State& aut_fin : nfa.final) { this->final.insert(renumber_states(aut_fin)); }
 	// Set initial states.
-	this->initial.reserve(num_of_states_this + num_of_states_aut);
-	for (const State& aut_ini : nfa.initial) { this->initial.insert(num_of_states_this + aut_ini); }
+	this->initial.reserve(num_of_states_result);
+	for (const State& aut_ini : nfa.initial) { this->initial.insert(renumber_states(aut_ini)); }
 
 	// Reset `nfa` to leave it valid and empty; `clear()` keeps the state domain of the sparse sets.
 	nfa = Nfa{};

@@ -16,7 +16,7 @@ Nfa build_chain(const size_t num_of_states, const mata::Symbol symbol) {
 	Nfa chain{num_of_states};
 	chain.initial.insert(0);
 	for (State source{0}; source + 1 < num_of_states; ++source) { chain.delta.add(source, symbol, source + 1); }
-	chain.final.insert(num_of_states - 1);
+	chain.final.insert(static_cast<State>(num_of_states - 1));
 	return chain;
 }
 

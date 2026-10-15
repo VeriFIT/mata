@@ -39,9 +39,10 @@ Nfa concatenate_eps_consuming(
 		return Nfa{};
 	}
 
-	const unsigned long lhs_states_num{lhs.num_of_states()};
-	const unsigned long rhs_states_num{rhs.num_of_states()};
+	const size_t lhs_states_num{lhs.num_of_states()};
+	const size_t rhs_states_num{rhs.num_of_states()};
 	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
+	check_num_of_states(result_num_of_states);
 
 	StateRenaming lhs_states_renaming{}; // Map mapping lhs states to result states.
 	StateRenaming rhs_states_renaming{}; // Map mapping rhs states to result states.
@@ -129,12 +130,13 @@ Nfa concatenate(
 
 Nfa& Nfa::concatenate(const Nfa& aut) {
 	const size_t n = this->num_of_states();
-	auto upd_fnc = [&](const State st) { return st + n; };
+	const size_t aut_n = aut.num_of_states();
+	check_num_of_states(n + aut_n);
+	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// copy the information about aut to save the case when this is the same object as aut.
 	utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
 	utils::SparseSet<mata::nfa::State> aut_final = aut.final;
-	const size_t aut_n = aut.num_of_states();
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, n);
@@ -170,15 +172,16 @@ Nfa& Nfa::concatenate(Nfa&& aut) {
 	}
 
 	const size_t n = this->num_of_states();
-	auto upd_fnc = [&](const State st) { return st + n; };
+	const size_t aut_n = aut.num_of_states();
+	check_num_of_states(n + aut_n);
+	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// The state sets of `aut` are still read after its delta has been consumed.
 	const utils::SparseSet<State> aut_initial{aut.initial};
 	const utils::SparseSet<State> aut_final{aut.final};
-	const size_t aut_n = aut.num_of_states();
 
 	// Move the operand's state posts in; the shift by `n` is the renumbering the lvalue path copies for.
-	this->delta.append_shifted(std::move(aut.delta), n);
+	this->delta.append_shifted(std::move(aut.delta), static_cast<State>(n));
 
 	// set accepting states
 	utils::SparseSet<State> new_fin{};

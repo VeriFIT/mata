@@ -2257,7 +2257,7 @@ namespace {
  */
 Nfa reference_complement(const Nfa& aut, const OrdVector<Symbol>& symbols) {
 	const Nfa det{determinize(aut)};
-	const State sink{det.num_of_states()};
+	const auto sink{static_cast<State>(det.num_of_states())};
 	Nfa result{sink + 1};
 	result.initial = det.initial;
 	for (const Transition& transition : det.delta.transitions()) {
@@ -3943,12 +3943,12 @@ bool is_minimal_dfa(const Nfa& dfa) {
 	const size_t dead{num_of_states};
 	const auto successor = [&](const size_t state, const Symbol symbol) -> size_t {
 		if (state == dead) { return dead; }
-		const StatePost& state_post{dfa.delta[state]};
+		const StatePost& state_post{dfa.delta[static_cast<State>(state)]};
 		const auto symbol_post_it{state_post.find(symbol)};
 		if (symbol_post_it == state_post.end() || symbol_post_it->targets.empty()) { return dead; }
 		return *symbol_post_it->targets.begin();
 	};
-	const auto is_final = [&](const size_t state) { return state != dead && dfa.final[state]; };
+	const auto is_final = [&](const size_t state) { return state != dead && dfa.final[static_cast<State>(state)]; };
 
 	const size_t size{num_of_states + 1};
 	std::vector distinguishable(size, std::vector<bool>(size, false));
@@ -5747,7 +5747,7 @@ TEST_CASE("mata::nfa::Nfa::get_words() - diamond chain") {
 	//  get_words() used to do) is exponential in k here; the search over words visits one macrostate per prefix.
 	constexpr size_t k{40};
 	Nfa aut{3 * k + 1, {0}, {3 * k}};
-	for (size_t i{0}; i < k; ++i) {
+	for (State i{0}; i < k; ++i) {
 		aut.delta.add(3 * i, 'a', 3 * i + 1);
 		aut.delta.add(3 * i, 'a', 3 * i + 2);
 		aut.delta.add(3 * i + 1, 'b', 3 * (i + 1));

@@ -73,6 +73,28 @@ def test_adding_states():
         rhs.add_state(-10)
 
 
+def test_state_width():
+    """States are limited by the width Mata was built with; out-of-range values raise OverflowError."""
+    assert mata_nfa.STATE_BITS in (32, 64)
+    # The width requested from the build (the Makefile reads the same variable): a wide CI job must not test a narrow build.
+    if "MATA_STATE_BITS" in os.environ:
+        assert mata_nfa.STATE_BITS == int(os.environ["MATA_STATE_BITS"])
+    assert mata_nfa.MAX_STATE == 2**mata_nfa.STATE_BITS - 1
+
+    nfa = mata_nfa.Nfa()
+    # The largest state converts into the C++ type at the full width.
+    assert not nfa.has_final_state(mata_nfa.MAX_STATE - 1)
+    # Too large for the C++ type: rejected by the conversion, before any C++ code runs.
+    with pytest.raises(OverflowError):
+        nfa.add_state(mata_nfa.MAX_STATE + 1)
+    with pytest.raises(OverflowError):
+        nfa.delta.add(0, 0, 2**mata_nfa.STATE_BITS)
+    # The "no state" sentinel fits into the type, but Mata refuses to create it.
+    with pytest.raises(OverflowError):
+        nfa.add_state(mata_nfa.MAX_STATE)
+    assert nfa.num_of_states() == 0
+
+
 def test_making_initial_and_final_states():
     """Test making states in the automaton initial and final."""
     nfa = mata_nfa.Nfa(10)
@@ -224,6 +246,30 @@ def test_encode_word():
         0,
         1,
     ]
+
+
+def test_operation_errors_raise():
+    """A C++ exception thrown inside an operation must surface as a Python exception, not terminate the process.
+
+    All of these calls go through a `cdef extern` declaration: without `except +`, a C++ throw would call
+    `std::terminate` under Cython 3 and kill the interpreter instead of raising.
+    """
+    nfa = mata_nfa.Nfa(2)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+    nfa.add_transition(0, 0, 1)
+
+    # encode_word -> translate_word throws on a symbol missing from the alphabet.
+    with pytest.raises(RuntimeError, match="Unknown symbol"):
+        mata_nfa.encode_word(alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 1}), "b")
+
+    # minimize throws on an unknown algorithm.
+    with pytest.raises(RuntimeError, match="unknown value of the .algorithm. key"):
+        mata_nfa.minimize(nfa, {"algorithm": "unknown"})
+
+    # compute_relation throws on an unknown relation type.
+    with pytest.raises(RuntimeError, match="unknown value of the .relation. key"):
+        mata_nfa.compute_relation(nfa, {"relation": "unknown", "direction": "forward"})
 
 
 def test_language_emptiness(fa_one_divisible_by_two):

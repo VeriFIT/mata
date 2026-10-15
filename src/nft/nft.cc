@@ -74,7 +74,7 @@ Levels& Levels::operator=(std::vector<Level>&& levels) {
 
 Levels& Levels::set(const State state, const Level level) {
 	MATA_ASSERT(level < num_of_levels, "Levels::set: level is out of range of the set number of levels.");
-	if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
+	if (size() <= state) { resize(nfa::num_of_states_for(state), DEFAULT_LEVEL); }
 	(*this)[state] = level;
 	return *this;
 }
@@ -780,11 +780,15 @@ StateSet Nft::post(
 	}
 
 	// `visited` deduplicates configurations (so the search terminates even on cyclic inputs), keyed on the packed
-	// (positions_id, state) pair. States comfortably fit in 32 bits (asserted), so the pair packs losslessly into
-	// one uint64. When the ids are ranks, a search that keeps going moves to a bitmap over all (rank, state) pairs:
-	// no hashing and no allocation per configuration. It moves once the set holds 1/256 of the bitmap's bits, so a
-	// search that ends after a few configurations never pays for clearing the bitmap.
-	MATA_ASSERT(num_of_states() <= std::numeric_limits<uint32_t>::max());
+	// (positions_id, state) pair. With 32-bit states the pair packs losslessly into one uint64; a 64-bit build
+	// checks that the states fit. When the ids are ranks, a search that keeps going moves to a bitmap over all
+	// (rank, state) pairs: no hashing and no allocation per configuration. It moves once the set holds 1/256 of the
+	// bitmap's bits, so a search that ends after a few configurations never pays for clearing the bitmap.
+	if constexpr (sizeof(State) > sizeof(uint32_t)) {
+		if (num_of_states() > std::numeric_limits<uint32_t>::max()) {
+			throw std::overflow_error("Nft::post: the NFT has more states than fit into 32 bits");
+		}
+	}
 	const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
 		return (static_cast<uint64_t>(positions_id) << 32U) | static_cast<uint32_t>(state);
 	};
@@ -1009,7 +1013,7 @@ State Nft::add_state() {
 
 State Nft::add_state(const State state) {
 	// Do not reset the level of a state that is already in this NFT; only newly added states get the default level.
-	if (state >= levels.size()) { levels.resize(state + 1, DEFAULT_LEVEL); }
+	if (state >= levels.size()) { levels.resize(nfa::num_of_states_for(state), DEFAULT_LEVEL); }
 	return Automaton::add_state(state);
 }
 
@@ -1059,7 +1063,7 @@ State Nft::insert_word(const State source, const Word& word, const State target)
 		throw std::invalid_argument{"Inserting word between source and target states with different levels."};
 	}
 
-	const State first_new_state{num_of_states()};
+	const auto first_new_state{static_cast<State>(num_of_states())};
 	const State word_target{insert_word_impl_(source, word, target)};
 	const size_t num_of_states_after{num_of_states()};
 	const Level source_level{levels[source]};
@@ -1383,7 +1387,7 @@ bool Nft::is_deterministic() const {
 	if (delta.empty()) { return true; }
 
 	const size_t aut_size{num_of_states()};
-	for (size_t i = 0; i < aut_size; ++i) {
+	for (State i = 0; i < aut_size; ++i) {
 		const StatePost& state_post{delta[i]};
 		bool has_dont_care{false};
 		State dont_care_target{};

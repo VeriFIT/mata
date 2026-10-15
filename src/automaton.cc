@@ -90,11 +90,11 @@ Automaton& Automaton::operator=(Automaton&& other) noexcept {
 State Automaton::add_state() {
 	const size_t num_of_states{this->num_of_states()};
 	delta.allocate(num_of_states + 1);
-	return num_of_states;
+	return static_cast<State>(num_of_states);
 }
 
 State Automaton::add_state(const State state) {
-	if (state >= delta.num_of_states()) { delta.allocate(state + 1); }
+	if (state >= delta.num_of_states()) { delta.allocate(nfa::num_of_states_for(state)); }
 	return state;
 }
 

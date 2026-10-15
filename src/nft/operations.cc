@@ -96,7 +96,7 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 
 	// map each state q of aut to the state of the reduced automaton representing the simulation class of q
 	for (State q = 0; q < num_of_states; ++q) {
-		if (const State q_repr_state = quot_proj[q]; !state_renaming.contains(q_repr_state)) {
+		if (const auto q_repr_state{static_cast<State>(quot_proj[q])}; !state_renaming.contains(q_repr_state)) {
 			// we need to map q's class to a new state in reducedAut
 			MATA_ASSERT(aut.levels[q] == aut.levels[q_repr_state]);
 			const State q_class = result.add_state_with_level(aut.levels[q_repr_state]);
@@ -119,7 +119,7 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 			for (const auto& q_trans : aut.delta.state_post(q)) {
 				const StateSet representatives_of_states_to = [&] {
 					StateSet state_set;
-					for (const auto s : q_trans.targets) { state_set.insert(quot_proj[s]); }
+					for (const auto s : q_trans.targets) { state_set.insert(static_cast<State>(quot_proj[s])); }
 					return state_set;
 				}();
 
@@ -1073,7 +1073,7 @@ Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
 	}
 
 	// sorting the targets
-	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
+	for (State q = 0, states_num = static_cast<State>(result.delta.num_of_states()); q < states_num; ++q) {
 		// Post & post = result.delta.get_mutable_post(q);
 		// utils::sort_and_rmdupl(post);
 		for (SymbolPost& m : result.delta.mutable_state_post(q)) { m.targets.sort_and_rmdupl(); }
@@ -1572,13 +1572,14 @@ Nft& Nft::unite_nondet_with(const Nft& nft) {
 	const size_t num_of_states_this{this->num_of_states()};
 	const size_t num_of_states_nft{nft.num_of_states()};
 	const size_t num_of_states_result{num_of_states_this + num_of_states_nft};
+	nfa::check_num_of_states(num_of_states_result);
 
 	this->delta.reserve(num_of_states_result);
 	// Allocate space for initial and final states from 'this' which might be missing in Delta.
 	// This ensures that the next state appended to Delta will have the correct index for the first state of 'nft'.
 	this->delta.allocate(num_of_states_this);
 
-	auto renumber_states{[&](const State state) { return num_of_states_this + state; }};
+	auto renumber_states{[&](const State state) { return static_cast<State>(num_of_states_this + state); }};
 	this->delta.append_shifted(nft.delta, num_of_states_this);
 
 	// Set accepting states.
