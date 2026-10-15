@@ -131,7 +131,7 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 }
 
 /// Get targets of the epsilon transitions of @p state.
-[[maybe_unused]] const StateSet* epsilon_targets(const Nft& aut, const State state) {
+[[maybe_unused]] const SmallStateSet* epsilon_targets(const Nft& aut, const State state) {
 	static_assert(nft::EPSILON == Limits::max_symbol, "epsilon is expected to sort last in a state post");
 	const StatePost& state_post{aut.delta[state]};
 	if (state_post.empty() || state_post.back().symbol != nft::EPSILON) { return nullptr; }
@@ -368,7 +368,7 @@ bool mata::nft::has_epsilon_cycle(const Nft& nft) {
 	std::vector<State> epsilon_sources{};
 	std::vector<size_t> num_of_epsilon_predecessors{};
 	for (State source{0}; source < num_of_states; ++source) {
-		const StateSet* const targets{epsilon_targets(nft, source)};
+		const SmallStateSet* const targets{epsilon_targets(nft, source)};
 		if (targets == nullptr) { continue; }
 		if (num_of_epsilon_predecessors.empty()) { num_of_epsilon_predecessors.assign(num_of_states, 0); }
 		epsilon_sources.push_back(source);
@@ -398,7 +398,7 @@ bool mata::nft::has_epsilon_cycle(const Nft& nft) {
 		const State state{peelable.back()};
 		peelable.pop_back();
 		++num_of_peeled_states;
-		if (const StateSet* const targets{epsilon_targets(nft, state)}; targets != nullptr) {
+		if (const SmallStateSet* const targets{epsilon_targets(nft, state)}; targets != nullptr) {
 			for (const State target : *targets) {
 				if (--num_of_epsilon_predecessors[target] == 0) { peelable.push_back(target); }
 			}
@@ -1045,7 +1045,7 @@ Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
 	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
 		// Post & post = result.delta.get_mutable_post(q);
 		// utils::sort_and_rmdupl(post);
-		for (SymbolPost& m : result.delta.mutable_state_post(q)) { sort_and_rmdupl(m.targets); }
+		for (SymbolPost& m : result.delta.mutable_state_post(q)) { m.targets.sort_and_rmdupl(); }
 	}
 
 	return result;

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <iterator>
 #include <span>
+#include <utility>
 
 namespace mata::nfa {
 
@@ -52,16 +53,21 @@ class Move {
  * Structure represents a post of a single @c symbol: a set of target states in transitions.
  *
  * A set of @c SymbolPost, called @c StatePost, is describing the automata transitions from a single source state.
+ *
+ * The targets are a @c SmallStateSet, which keeps small sets inline. @c symbol is declared after it so that it fills
+ *  the tail padding of @c targets: a post with a single target takes 16 bytes and no allocation.
  */
 class SymbolPost {
   public:
+	[[no_unique_address]] SmallStateSet targets{};
 	Symbol symbol{};
-	StateSet targets{};
 
 	SymbolPost() = default;
 	explicit SymbolPost(const Symbol symbol) : symbol{symbol} {}
-	SymbolPost(const Symbol symbol, const State state_to) : symbol{symbol}, targets{state_to} {}
-	SymbolPost(const Symbol symbol, StateSet states_to) : symbol{symbol}, targets{std::move(states_to)} {}
+	SymbolPost(const Symbol symbol, const State state_to) : targets{state_to}, symbol{symbol} {}
+	/// @p states_to are sorted and duplicate-free, such as a @c StateSet.
+	SymbolPost(const Symbol symbol, const std::span<const State> states_to) : targets{states_to}, symbol{symbol} {}
+	SymbolPost(const Symbol symbol, SmallStateSet states_to) : targets{std::move(states_to)}, symbol{symbol} {}
 
 	SymbolPost(SymbolPost&& rhs) noexcept = default;
 	SymbolPost(const SymbolPost& rhs) = default;
@@ -74,18 +80,19 @@ class SymbolPost {
 	std::weak_ordering operator<=>(const SymbolPost& other) const { return symbol <=> other.symbol; }
 	bool operator==(const SymbolPost& other) const { return symbol == other.symbol; }
 
-	StateSet::iterator begin() { return targets.begin(); }
-	StateSet::iterator end() { return targets.end(); }
+	SmallStateSet::iterator begin() { return targets.begin(); }
+	SmallStateSet::iterator end() { return targets.end(); }
 
-	StateSet::const_iterator cbegin() const { return targets.cbegin(); }
-	StateSet::const_iterator cend() const { return targets.cend(); }
+	SmallStateSet::const_iterator cbegin() const { return targets.cbegin(); }
+	SmallStateSet::const_iterator cend() const { return targets.cend(); }
 
 	size_t count(const State s) const { return targets.count(s); }
 	bool empty() const { return targets.empty(); }
 	size_t num_of_targets() const { return targets.size(); }
 
-	void insert(State s);
-	void insert(const StateSet& states);
+	void insert(const State s) { targets.insert(s); }
+	/// Insert the sorted, duplicate-free @p states, such as a @c StateSet or another post's targets.
+	void insert(const std::span<const State> states) { targets.insert(states); }
 
 	// THIS BREAKS THE SORTEDNESS INVARIANT,
 	// dangerous,
@@ -93,15 +100,14 @@ class SymbolPost {
 	// random order)
 	void push_back(const State s) { targets.push_back(s); }
 
-	template <typename... Args> StateSet& emplace_back(Args&&... args) {
-		// Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
+	template <typename... Args> State& emplace_back(Args&&... args) {
 		return targets.emplace_back(std::forward<Args>(args)...);
 	}
 
 	void erase(const State s) { targets.erase(s); }
 
-	std::vector<State>::const_iterator find(const State s) const { return targets.find(s); }
-	std::vector<State>::iterator find(const State s) { return targets.find(s); }
+	SmallStateSet::const_iterator find(const State s) const { return targets.find(s); }
+	SmallStateSet::iterator find(const State s) { return targets.find(s); }
 
 	/**
 	 * @brief Apply @p fn to every target state of this symbol post.
@@ -119,16 +125,36 @@ class SymbolPost {
 	 * @param[in] target Target state to check.
 	 * @return True if @p target is among the targets of this symbol post, false otherwise.
 	 */
-	bool has_target(const State target) const { return targets.find(target) != targets.end(); }
+	bool has_target(const State target) const { return targets.contains(target); }
 
 	/**
 	 * @brief The targets as a contiguous range.
 	 *
 	 * Used to build a flat successor cursor without exposing storage.
 	 */
-	std::span<const State> target_span() const {
-		const std::vector<State>& v{targets.to_vector()};
-		return {v.data(), v.size()};
+	std::span<const State> target_span() const { return targets.span(); }
+
+	// Structured bindings keep the `[symbol, targets]` order although `targets` is declared first.
+	template <std::size_t I> auto& get() & {
+		if constexpr (I == 0) {
+			return symbol;
+		} else {
+			return targets;
+		}
+	}
+	template <std::size_t I> const auto& get() const& {
+		if constexpr (I == 0) {
+			return symbol;
+		} else {
+			return targets;
+		}
+	}
+	template <std::size_t I> auto&& get() && {
+		if constexpr (I == 0) {
+			return std::move(symbol);
+		} else {
+			return std::move(targets);
+		}
 	}
 }; // class mata::nfa::SymbolPost.
 
@@ -206,7 +232,7 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @param symbol Symbol to get the successors for.
 	 * @return Set of target states for the given symbol.
 	 */
-	const StateSet& get_successors(Symbol symbol) const;
+	const SmallStateSet& get_successors(Symbol symbol) const;
 
 	/**
 	 * @brief Iterator over moves represented as @c Move instances.
@@ -363,7 +389,7 @@ class SuccessorCursor {
 class StatePost::Moves::const_iterator {
   private:
 	StatePost::const_iterator symbol_post_it_{};
-	StateSet::const_iterator target_it_{};
+	SmallStateSet::const_iterator target_it_{};
 	StatePost::const_iterator symbol_post_end_{};
 	bool is_end_{false};
 	/// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
@@ -632,9 +658,13 @@ class Delta {
 	 *
 	 * @param source From
 	 * @param symbol Symbol
-	 * @param targets Set of states to
+	 * @param targets Sorted, duplicate-free states to, such as a @c StateSet or another post's targets.
 	 */
-	void add(State source, Symbol symbol, const StateSet& targets);
+	void add(State source, Symbol symbol, std::span<const State> targets);
+	/// Overload for a braced list of targets, such as @c add(q, a, {r, s}).
+	void add(const State source, const Symbol symbol, const StateSet& targets) {
+		add(source, symbol, std::span<const State>{targets});
+	}
 
 	/**
 	 * @brief Apply @p fn to every target state reachable from @p source, over any symbol.
@@ -730,7 +760,7 @@ class Delta {
 	 */
 	StateSet get_successors(State state) const;
 
-	const StateSet& get_successors(State state, Symbol symbol) const;
+	const SmallStateSet& get_successors(State state, Symbol symbol) const;
 
 	// TODO(nfa): Implement.
 	StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
@@ -825,7 +855,7 @@ class Delta::Transitions::const_iterator {
 	const Delta* delta_ = nullptr;
 	size_t current_state_{};
 	StatePost::const_iterator state_post_it_{};
-	StateSet::const_iterator symbol_post_it_{};
+	SmallStateSet::const_iterator symbol_post_it_{};
 	bool is_end_{false};
 	Transition transition_{};
 
@@ -858,5 +888,13 @@ class Delta::Transitions::const_iterator {
 }; // class Delta::Transitions::const_iterator.
 
 } // namespace mata::nfa.
+
+template <> struct std::tuple_size<mata::nfa::SymbolPost> : std::integral_constant<std::size_t, 2> {};
+template <> struct std::tuple_element<0, mata::nfa::SymbolPost> {
+	using type = mata::Symbol;
+};
+template <> struct std::tuple_element<1, mata::nfa::SymbolPost> {
+	using type = mata::nfa::SmallStateSet;
+};
 
 #endif // MATA_DELTA_HH

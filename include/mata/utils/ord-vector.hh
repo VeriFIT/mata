@@ -5,6 +5,7 @@
 #define MATA_ORD_VECTOR_HH_
 
 #include <algorithm>
+#include <span>
 #include <vector>
 
 #include "assert.hh"
@@ -227,13 +228,20 @@ template <class Key> class OrdVector {
 		return {pos, inserted};
 	}
 
-	bool insert(const OrdVector& vec) {
+	/// Insert the sorted, duplicate-free @p keys, such as another @c OrdVector or a @c SmallOrdVector.
+	bool insert(const std::span<const Key> keys) {
 		static OrdVector tmp{};
 		MATA_ASSERT(is_sorted());
-		MATA_ASSERT(vec.is_sorted());
+		MATA_ASSERT(std::ranges::is_sorted(keys));
+		if (keys.empty()) { return false; }
+		if (empty() || vec_.back() < keys.front()) {
+			vec_.insert(vec_.end(), keys.begin(), keys.end());
+			return true;
+		}
 		tmp.clear();
-
-		const auto inserted{set_union(*this, vec, tmp)};
+		tmp.reserve(size() + keys.size());
+		std::ranges::set_union(vec_, keys, std::back_inserter(tmp.vec_));
+		const bool inserted{tmp.size() > size()};
 		vec_ = tmp.vec_;
 		/*
 		 * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.

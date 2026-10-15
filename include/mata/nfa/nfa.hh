@@ -467,7 +467,9 @@ class Nfa : public Automaton {
 	 * @param symbol Symbol to compute the post set for.
 	 * @return Set of states reachable from the given state over the given symbol.
 	 */
-	const StateSet& post(const State state, const Symbol symbol) const { return delta.get_successors(state, symbol); }
+	const SmallStateSet& post(const State state, const Symbol symbol) const {
+		return delta.get_successors(state, symbol);
+	}
 
 	/**
 	 * Check whether the language of NFA is empty.

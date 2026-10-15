@@ -156,7 +156,7 @@ Nft mata::nft::algorithms::product(
 			}
 			// Unlike in the NFA product, a side can wait in its source state, so two combinations of targets can give
 			//  the same product state within one symbol post: deduplicate, do not only sort.
-			utils::sort_and_rmdupl(product_symbol_post.targets);
+			product_symbol_post.targets.sort_and_rmdupl();
 			if (product_symbol_post.empty()) { continue; }
 			StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
 			const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
@@ -249,7 +249,7 @@ Nft mata::nft::algorithms::product(
 						create_product_state_and_symbol_post(lhs_state, rhs_state, product_symbol_post);
 					}
 				}
-				utils::sort_and_rmdupl(product_symbol_post.targets);
+				product_symbol_post.targets.sort_and_rmdupl();
 				if (product_symbol_post.empty()) { continue; }
 				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
 				// Here we are sure that we are working with the largest symbol so far, since we iterate through
@@ -266,7 +266,7 @@ Nft mata::nft::algorithms::product(
 				for (const State target : symbol_post.targets) {
 					create_product_state_and_symbol_post(target, rhs_source, product_symbol_post);
 				}
-				utils::sort_and_rmdupl(product_symbol_post.targets);
+				product_symbol_post.targets.sort_and_rmdupl();
 				if (product_symbol_post.empty()) { continue; }
 				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
 				product_state_post.push_back(std::move(product_symbol_post));
@@ -278,7 +278,7 @@ Nft mata::nft::algorithms::product(
 				for (const State target : symbol_post.targets) {
 					create_product_state_and_symbol_post(lhs_source, target, product_symbol_post);
 				}
-				utils::sort_and_rmdupl(product_symbol_post.targets);
+				product_symbol_post.targets.sort_and_rmdupl();
 				if (product_symbol_post.empty()) { continue; }
 				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
 				product_state_post.push_back(std::move(product_symbol_post));

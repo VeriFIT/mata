@@ -592,7 +592,7 @@ StateSet Nft::post(
 	for (const State state : from_states) { stack.push(state); }
 
 	// Adds states (with zero level) to the result or enqueues them for further processing.
-	auto add_to_result_or_enqueue = [&](const StateSet& targets) {
+	auto add_to_result_or_enqueue = [&](const SmallStateSet& targets) {
 		for (const State target : targets) {
 			if (levels[target] == 0) {
 				result.insert(target);

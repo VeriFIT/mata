@@ -26,34 +26,6 @@ using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-void SymbolPost::insert(const State s) {
-	if (targets.empty() || targets.back() < s) {
-		targets.push_back(s);
-		return;
-	}
-	// Find the place where to put the element (if not present).
-	// Insert to OrdVector without the searching of a proper position inside insert(const Key&x).
-	if (const auto it = std::ranges::lower_bound(targets, s); it == targets.end() || *it != s) {
-		targets.insert(it, s);
-	}
-}
-
-void SymbolPost::insert(const StateSet& states) {
-	if (states.empty()) { return; }
-	if (targets.empty()) {
-		targets = states;
-		return;
-	}
-	if (targets.back() < states.front()) { // The sets are disjoint and in order: append without any comparison.
-		targets.reserve(targets.size() + states.size());
-		for (const State s : states) { targets.push_back(s); }
-		return;
-	}
-	StateSet merged{};
-	StateSet::set_union(targets, states, merged);
-	targets = std::move(merged);
-}
-
 StatePost::const_iterator Delta::epsilon_symbol_posts(const State state, const Symbol epsilon) const {
 	return epsilon_symbol_posts(state_post(state), epsilon);
 }
@@ -75,10 +47,10 @@ StateSet StatePost::get_successors() const {
 	return successors;
 }
 
-const StateSet& StatePost::get_successors(const Symbol symbol) const {
+const SmallStateSet& StatePost::get_successors(const Symbol symbol) const {
 	const auto symbol_post_it = find(symbol);
 	if (symbol_post_it == this->end()) {
-		static StateSet empty_set{};
+		static const SmallStateSet empty_set{};
 		return empty_set;
 	}
 	return symbol_post_it->targets;
@@ -86,7 +58,7 @@ const StateSet& StatePost::get_successors(const Symbol symbol) const {
 
 StateSet Delta::get_successors(const State state) const { return state_post(state).get_successors(); }
 
-const StateSet& Delta::get_successors(const State state, const Symbol symbol) const {
+const SmallStateSet& Delta::get_successors(const State state, const Symbol symbol) const {
 	return state_post(state).get_successors(symbol);
 }
 
@@ -135,7 +107,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 	}
 }
 
-void Delta::add(const State source, const Symbol symbol, const StateSet& targets) {
+void Delta::add(const State source, const Symbol symbol, const std::span<const State> targets) {
 	if (targets.empty()) { return; }
 	resize_for_states(source, targets.back());
 
@@ -307,9 +279,10 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 		StatePost copied_state_post;
 		copied_state_post.reserve(state_post.size());
 		for (const SymbolPost& symbol_post : state_post) {
-			StateSet copied_targets;
+			SmallStateSet copied_targets;
 			copied_targets.reserve(symbol_post.num_of_targets());
 			for (const State& state : symbol_post.targets) { copied_targets.push_back(target_renumberer(state)); }
+			copied_targets.sort_and_rmdupl();
 			copied_state_post.push_back(SymbolPost(symbol_post.symbol, std::move(copied_targets)));
 		}
 		copied_state_posts.emplace_back(std::move(copied_state_post));
@@ -408,9 +381,10 @@ Delta& Delta::defragment(const BoolVector& is_staying, const std::vector<State>&
 		if (!is_staying[source_orig]) { continue; } // Skip source states not staying.
 		StatePost& state_post = state_posts_[source_orig];
 		for (auto state_post_it{state_post.begin()}; state_post_it != state_post.end();) {
-			StateSet& targets{state_post_it->targets};
+			SmallStateSet& targets{state_post_it->targets};
 			targets.erase_if([&is_staying](const State& target) { return !is_staying[target]; });
-			targets.rename(renaming);
+			// The renaming is monotone on the staying states, so the targets stay sorted.
+			for (State& target : targets) { target = renaming[target]; }
 			if (targets.empty()) {
 				state_post_it = state_post.erase(state_post_it);
 			} else {
@@ -752,12 +726,17 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 	const std::vector<StatePost::const_iterator>& current{get_current()};
 
 	// One synchronized post contributes all its targets, already sorted and deduplicated.
-	if (current.size() == 1) { return current[0]->targets; }
+	if (current.size() == 1) {
+		const SmallStateSet& targets{current[0]->targets};
+		StateSet result{StateSet::with_reserved(targets.size())};
+		std::ranges::copy(targets, std::back_inserter(result));
+		return result;
+	}
 
 	// Two posts merge with one linear pass over both sorted target sets.
 	if (current.size() == 2) {
-		const StateSet& lhs{current[0]->targets};
-		const StateSet& rhs{current[1]->targets};
+		const SmallStateSet& lhs{current[0]->targets};
+		const SmallStateSet& rhs{current[1]->targets};
 		StateSet result{StateSet::with_reserved(lhs.size() + rhs.size())};
 		std::ranges::set_union(lhs, rhs, std::back_inserter(result));
 		return result;
@@ -768,7 +747,7 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 	State min_target{Limits::max_state};
 	State max_target{0};
 	for (const StatePost::const_iterator& symbol_post_it : current) {
-		const StateSet& targets{symbol_post_it->targets};
+		const SmallStateSet& targets{symbol_post_it->targets};
 		if (targets.empty()) { continue; }
 		num_of_targets += targets.size();
 		min_target = std::min(min_target, targets.front());

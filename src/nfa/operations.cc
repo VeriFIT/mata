@@ -594,7 +594,7 @@ Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
 	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
 		// Post & post = result.delta.get_mutable_post(q);
 		// utils::sort_and_rmdupl(post);
-		for (SymbolPost& m : result.delta.mutable_state_post(q)) { sort_and_rmdupl(m.targets); }
+		for (SymbolPost& m : result.delta.mutable_state_post(q)) { m.targets.sort_and_rmdupl(); }
 	}
 
 	return result;
@@ -711,7 +711,7 @@ std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
 	State current_post = *initial.begin();
 
 	for (const Symbol sym : run.word) {
-		const StateSet& successors = delta.get_successors(current_post, sym);
+		const SmallStateSet& successors = delta.get_successors(current_post, sym);
 		if (successors.empty()) { return std::nullopt; }
 		current_post = *successors.begin();
 	}
@@ -1145,7 +1145,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 		for (const SymbolPost& symbol_post : dfa_trimmed.delta[q]) {
 			MATA_ASSERT(symbol_post.targets.size() == 1);
 			const State target = brp.set_idx[*symbol_post.targets.begin()];
-			mut_state_post.push_back(SymbolPost{symbol_post.symbol, StateSet{target}});
+			mut_state_post.push_back(SymbolPost{symbol_post.symbol, target});
 		}
 	}
 
@@ -1623,7 +1623,8 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 	if (initial.intersects_with(final)) { return Word{}; }
 
 	/// Current state state post iterator, its end iterator, and iterator in the current symbol post to target states.
-	std::vector<std::tuple<StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
+	std::vector<std::tuple<StatePost::const_iterator, StatePost::const_iterator, SmallStateSet::const_iterator>>
+		worklist{};
 	std::vector<bool> searched(num_of_states(), false);
 	bool final_found{};
 	for (const State initial_state : initial) {

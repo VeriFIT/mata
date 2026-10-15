@@ -269,7 +269,7 @@ std::optional<std::vector<mata::Word>>
 		bool tape_full;
 		StatePost::const_iterator symbol_post;
 		StatePost::const_iterator symbol_post_end;
-		StateSet::const_iterator target;
+		SmallStateSet::const_iterator target;
 	};
 	std::vector<Frame> stack{};
 	auto enter = [&](const size_t config) {
