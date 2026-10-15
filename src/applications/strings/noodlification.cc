@@ -3,7 +3,7 @@
  */
 
 #include <ranges>
-#include <set>
+#include <unordered_set>
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/algorithms.hh"
@@ -278,8 +278,20 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	std::vector<NoodleWithEpsilonsCounter> noodles{};
 	// Duplicates do occur: a segment whose language is {epsilon} is skipped, and two epsilon transitions with
 	//  different epsilon symbols between the same pair of states finish the same noodle twice. Comparing every
-	//  finished noodle with all noodles found so far is quadratic in their number.
-	std::set<NoodleWithEpsilonsCounter> seen_noodles{};
+	//  finished noodle with all noodles found so far is quadratic in their number, and an ordered set of the
+	//  noodles themselves still compares whole noodles log-many times per insertion and keeps a second copy of
+	//  every noodle. The finished noodles are therefore indexed by a hash over the segment pointers and the
+	//  epsilon counters, and the set holds only positions in `noodles`.
+	const auto hash_noodle = [&](const size_t index) {
+		size_t accum{utils::hash_combine(utils::HASH_SEED, noodles[index].size())};
+		for (const auto& [segment, counters] : noodles[index]) {
+			accum = utils::hash_combine(accum, segment.get());
+			for (const unsigned counter : counters) { accum = utils::hash_combine(accum, counter); }
+		}
+		return accum;
+	};
+	const auto same_noodle = [&](const size_t lhs, const size_t rhs) { return noodles[lhs] == noodles[rhs]; };
+	std::unordered_set<size_t, decltype(hash_noodle), decltype(same_noodle)> seen_noodles{0, hash_noodle, same_noodle};
 	std::deque<SegItem> lifo;
 
 	for (const State& fn : segments[0].final) {
@@ -303,8 +315,10 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 		lifo.pop_front();
 
 		if (item.seg_id + 1 == segments.size()) {
-			// Appended in completion order, so the output order is the one the quadratic scan produced.
-			if (seen_noodles.insert(item.noodle).second) { noodles.push_back(std::move(item.noodle)); }
+			// Appended in completion order, so the output order is the one the quadratic scan produced. The
+			//  noodle has to live in `noodles` before it can be hashed, so a duplicate is popped again.
+			noodles.push_back(std::move(item.noodle));
+			if (!seen_noodles.insert(noodles.size() - 1).second) { noodles.pop_back(); }
 			continue;
 		}
 
