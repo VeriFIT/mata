@@ -2,7 +2,7 @@
  * Benchmark: Automata Inclusion (b-armc-incl)
  *
  * The benchmark program reproduces the results of CADE'23 for benchmarks in directory
- * /nfa-bench/benchmarks/automata_inclusion
+ * /nfa-bench/benchmarks/nfa/automata_inclusion
  *
  * Optimal Inputs: inputs/bench-double-automata-inclusion.in
  *
