@@ -486,12 +486,9 @@ mata::nfa::Nfa mata::parser::create_nfa(
 
 	// TODO: should this really be done implicitly?
 	if (!use_epsilon) { result = mata::nfa::remove_epsilon(result, epsilon_value); }
-	// TODO: in fact, maybe parser should not do trimming and reducing, maybe these operations should be done
-	// transparently.
-	if (use_reduce) {
-		// TODO: trimming might be unnecessary, regex->nfa construction should not produce useless states. Or does it?
-		result = mata::nfa::reduce(result.trim());
-	}
+	// The RE2 program and epsilon removal leave useless states behind (roughly half of the states on the test regexes).
+	result.trim();
+	if (use_reduce) { result = mata::nfa::reduce(result); }
 
 	return result;
 }

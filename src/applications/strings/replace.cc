@@ -272,8 +272,10 @@ Nft mata::applications::strings::replace::replace_reluctant_regex(
 	const ReplaceMode replace_mode,
 	const Symbol begin_marker
 ) {
+	// No simulation reduction: before determinization, it costs more than it saves (here and below).
 	return replace_reluctant_regex(
-		nfa::determinize(nfa::builder::create_from_regex(regex)), replacement, alphabet, replace_mode, begin_marker
+		nfa::determinize(nfa::builder::create_from_regex(regex, false)), replacement, alphabet, replace_mode,
+		begin_marker
 	);
 }
 
@@ -321,7 +323,7 @@ Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, const Symbol marker
 }
 
 nfa::Nfa ReluctantReplace::generic_marker_dfa(const std::string& regex, const Alphabet* const alphabet) {
-	return generic_marker_dfa(nfa::determinize(nfa::builder::create_from_regex(regex)), alphabet);
+	return generic_marker_dfa(nfa::determinize(nfa::builder::create_from_regex(regex, false)), alphabet);
 }
 
 nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, const Alphabet* const alphabet) {
@@ -358,7 +360,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, const Alphabet* co
 }
 
 nfa::Nfa ReluctantReplace::begin_marker_nfa(const std::string& regex, const Alphabet* const alphabet) {
-	return begin_marker_nfa(nfa::determinize(nfa::builder::create_from_regex(regex)), alphabet);
+	return begin_marker_nfa(nfa::determinize(nfa::builder::create_from_regex(regex, false)), alphabet);
 }
 
 nfa::Nfa ReluctantReplace::begin_marker_nfa(nfa::Nfa regex, const Alphabet* const alphabet) {
@@ -415,7 +417,8 @@ Nft ReluctantReplace::reluctant_leftmost_nft(
 	const ReplaceMode replace_mode
 ) {
 	return reluctant_leftmost_nft(
-		nfa::determinize(nfa::builder::create_from_regex(regex)), alphabet, begin_marker, replacement, replace_mode
+		nfa::determinize(nfa::builder::create_from_regex(regex, false)), alphabet, begin_marker, replacement,
+		replace_mode
 	);
 }
 
