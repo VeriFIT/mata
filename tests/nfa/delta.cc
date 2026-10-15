@@ -10,6 +10,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <random>
+#include <set>
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -648,5 +651,36 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		REQUIRE(sync_it.synchronize_with('b'));
 		REQUIRE(sync_it.get_current().size() == 3);
 		CHECK(sync_it.unify_targets() == StateSet{1, 2});
+	}
+
+	SECTION("k >= 3: dense and sparse target sets, repeated calls on one iterator") {
+		// Each round synchronizes 3-6 posts with targets drawn either from a narrow window at a random offset (bitset
+		//  path) or from a range much wider than the number of targets (sort path). Rounds reuse one iterator, so stale
+		//  scratch content from a previous round would show.
+		std::mt19937 gen{752};
+		constexpr State num_of_states{4'096};
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		for (size_t round{0}; round < 200; ++round) {
+			const bool dense{round % 2 == 0};
+			const size_t num_of_posts{3 + round % 4};
+			const State window{dense ? State{130} : num_of_states};
+			const State window_start{std::uniform_int_distribution<State>{0, num_of_states - window}(gen)};
+			Delta delta{};
+			std::set<State> expected{};
+			for (State source{0}; source < num_of_posts; ++source) {
+				const size_t num_of_targets{dense ? size_t{40} : size_t{4}};
+				for (size_t i{0}; i < num_of_targets; ++i) {
+					const State target{window_start + std::uniform_int_distribution<State>{0, window - 1}(gen)};
+					delta.add(source, 'a', target);
+					expected.insert(target);
+				}
+			}
+			sync_it.reset(num_of_posts);
+			for (State source{0}; source < num_of_posts; ++source) {
+				sync_it.push_back(delta.state_post(source).cbegin(), delta.state_post(source).cend());
+			}
+			REQUIRE(sync_it.synchronize_with('a'));
+			CHECK(sync_it.unify_targets() == StateSet{expected.begin(), expected.end()});
+		}
 	}
 }
