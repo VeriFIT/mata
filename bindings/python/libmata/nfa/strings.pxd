@@ -44,8 +44,8 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
         ctypedef umap[EpsilonDepth, vector[CTrans]] EpsilonDepthTransitions
 
         EpsilonDepthTransitions get_epsilon_depths()
-        vector[CNfa] get_segments()
-        vector[CNfa] get_untrimmed_segments()
+        const vector[CNfa]& get_segments() except +
+        const vector[CNfa]& get_untrimmed_segments() except +
 
     cdef vector[vector[shared_ptr[CNfa]]] c_noodlify "mata::applications::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_mult_eps \

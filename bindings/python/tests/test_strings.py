@@ -63,6 +63,26 @@ def test_segmentation_untrimmed_segments():
     assert untrimmed_segments[0].num_of_states() >= segments[0].num_of_states()
 
 
+def test_segments_keep_the_alphabet_and_are_independent_copies():
+    alphabet = alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 1, "b": 2})
+    epsilon = mata_nfa.epsilon()
+    nfa = mata_nfa.Nfa(4, alphabet=alphabet)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(3)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, epsilon, 2)
+    nfa.add_transition(2, 2, 3)
+
+    segmentation = mata_strings.Segmentation(nfa, {epsilon})
+    for segments in (segmentation.get_segments(), segmentation.get_untrimmed_segments()):
+        for segment in segments:
+            assert segment.alphabet is not None
+            assert segment.alphabet.translate_symbol("b") == 2
+    first = segmentation.get_segments()[0]
+    first.add_transition(0, 2, 0)
+    assert not segmentation.get_segments()[0].has_transition(0, 2, 0)
+
+
 def test_noodlify_mult_eps():
     e1, e2 = 100, 101
     nfa = mata_nfa.Nfa(4)

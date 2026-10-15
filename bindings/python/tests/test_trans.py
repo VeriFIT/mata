@@ -166,6 +166,24 @@ def test_delta_views(prepare_automaton_a):
     assert nfa.delta[1] == nfa.get_transitions_from_state(1)
 
 
+def test_delta_posts_of_states_without_transitions():
+    nfa = mata_nfa.Nfa(3)
+    nfa.delta.add(0, ord("a"), 1)
+    nfa.delta.add(0, ord("a"), 2)
+    nfa.delta.add(0, ord("b"), 2)
+    assert [(post.symbol, post.targets) for post in nfa.delta.state_post(0)] == [(ord("a"), [1, 2]), (ord("b"), [2])]
+    assert [(t.source, t.symbol, t.target) for t in nfa.delta.get_transitions_from(0)] == [
+        (0, ord("a"), 1),
+        (0, ord("a"), 2),
+        (0, ord("b"), 2),
+    ]
+    # A state with no outgoing transitions, and one past the states that Delta stores.
+    for state in (1, 100):
+        assert nfa.delta.state_post(state) == []
+        assert nfa.delta.get_transitions_from(state) == []
+        assert nfa.get_transitions_from_state(state) == []
+
+
 def test_delta_survives_nfa_deletion():
     """Tests that a kept Delta reference stays valid after the owning Nfa is garbage collected."""
     nfa = mata_nfa.Nfa(2)
