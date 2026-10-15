@@ -8,19 +8,26 @@ cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.alphabets as alph
 
 # External Constructors
-def from_regex(regex, encoding='utf-8', bool reduce=True):
+def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool keep_epsilon=False):
     """Creates automaton from the regular expression
 
     The format of the regex conforms to google RE2 regular expression library.
-    The automaton has no epsilon transitions and is trimmed.
+    By default, the automaton has no epsilon transitions, is trimmed and reduced.
 
     :param str regex: regular expression
     :param str encoding: encoding of the string
     :param bool reduce: whether to reduce the automaton using simulation reduction; costly for large regexes
+    :param bool trim: whether to trim the automaton
+    :param bool keep_epsilon: whether to keep epsilon transitions (labelled with EPSILON) in the automaton
     :return: Nfa automaton
     """
+    cdef parser.CRe2Options options
+    options.keep_epsilon = keep_epsilon
+    options.epsilon = CEPSILON
+    options.trim = trim
+    options.reduce = reduce
     result = mata_nfa.Nfa()
-    parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding), False, CEPSILON, reduce)
+    parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding), options)
     return result
 
 def from_mata(src: str | list[str], alph.Alphabet alphabet):

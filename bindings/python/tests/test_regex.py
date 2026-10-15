@@ -42,3 +42,18 @@ def test_optional_reduction():
     assert (
         parser.from_regex("a*b|c(de)*").num_of_states() < parser.from_regex("a*b|c(de)*", reduce=False).num_of_states()
     )
+
+
+def test_post_processing_options():
+    with_epsilon = parser.from_regex("(a)(b)", reduce=False, keep_epsilon=True)
+    assert mata_nfa.epsilon() in with_epsilon.get_symbols()
+    without_epsilon = parser.from_regex("(a)(b)", reduce=False)
+    assert mata_nfa.epsilon() not in without_epsilon.get_symbols()
+    with_epsilon.remove_epsilon_inplace()
+    assert mata_nfa.equivalence_check(with_epsilon, without_epsilon)
+
+    # The 'a' transition leads to a state that cannot reach a final state.
+    untrimmed = parser.from_regex("a[^\\x00-\\xff]", reduce=False, trim=False)
+    assert untrimmed.num_of_states() > 0
+    assert untrimmed.is_lang_empty()
+    assert parser.from_regex("a[^\\x00-\\xff]", reduce=False).num_of_states() == 0

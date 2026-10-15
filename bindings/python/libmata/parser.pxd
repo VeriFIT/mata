@@ -15,7 +15,14 @@ cdef extern from "<fstream>" namespace "std":
         ifstream(const char*) except +
 
 cdef extern from "mata/parser/re2parser.hh" namespace "mata::parser":
+    cdef cppclass CRe2Options "mata::parser::Re2Options":
+        bool keep_epsilon
+        Symbol epsilon
+        bool trim
+        bool reduce
+
     cdef void create_nfa(CNfa*, string, bool, Symbol, bool) except +
+    cdef void create_nfa(CNfa*, string, const CRe2Options&) except +
 
 cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
     cdef struct CInterAut "mata::IntermediateAut":

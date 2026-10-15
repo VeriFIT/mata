@@ -7,6 +7,7 @@
 #define LIBMATA_BUILDER_HH
 
 #include "mata/parser/inter-aut.hh"
+#include "mata/parser/re2parser.hh"
 #include "nfa.hh"
 
 #include <filesystem>
@@ -149,6 +150,16 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
  * @param reduce whether to reduce the NFA using simulation reduction; costly for large regexes
  */
 Nfa create_from_regex(const std::string& regex, bool reduce = true);
+
+/**
+ * @brief Create NFA from @p regex with the conversion and post-processing steps chosen by @p options
+ *
+ * @sa create_from_regex(const std::string&, bool) for the syntax and mata::parser::create_nfa() for the options.
+ *
+ * @param regex regular expression
+ * @param options conversion and post-processing options
+ */
+Nfa create_from_regex(const std::string& regex, const parser::Re2Options& options);
 
 } // namespace mata::nfa::builder.
 

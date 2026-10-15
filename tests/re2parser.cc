@@ -1955,3 +1955,63 @@ TEST_CASE("mata::parser::create_nfa() instructions without a consuming transitio
 		CHECK(are_equivalent(without_epsilon, epsilon_removed));
 	}
 }
+
+TEST_CASE("mata::parser::create_nfa() post-processing options") {
+	using mata::parser::Re2Options;
+	constexpr Symbol epsilon{500};
+	const auto uses_symbol = [](const Nfa& nfa, const Symbol symbol) {
+		for (const Transition& transition : nfa.delta.transitions()) {
+			if (transition.symbol == symbol) { return true; }
+		}
+		return false;
+	};
+
+	SECTION("Defaults reproduce the overload with individual parameters") {
+		for (const std::string regex : {"a*b|c(de)*", "(a+)|(e)(w*)+(b*)", "[abcd]*e+", "", "(?s)a.*"}) {
+			CAPTURE(regex);
+			const Nfa options{mata::parser::create_nfa(regex, Re2Options{})};
+			const Nfa individual{mata::parser::create_nfa(regex)};
+			CHECK(options.num_of_states() == individual.num_of_states());
+			CHECK(are_equivalent(options, individual));
+			const Nfa built{mata::nfa::builder::create_from_regex(regex, Re2Options{})};
+			CHECK(built.num_of_states() == individual.num_of_states());
+			const Nfa unreduced{mata::parser::create_nfa(regex, Re2Options{.reduce = false})};
+			CHECK(unreduced.num_of_states() == mata::parser::create_nfa(regex, false, 306, false).num_of_states());
+			CHECK(are_equivalent(unreduced, individual));
+		}
+	}
+
+	SECTION("Epsilon transitions are kept with the requested symbol") {
+		const Nfa with_epsilon{
+			mata::parser::create_nfa("(a)(b)", Re2Options{.keep_epsilon = true, .epsilon = epsilon, .reduce = false})
+		};
+		CHECK(uses_symbol(with_epsilon, epsilon));
+		CHECK(!uses_symbol(with_epsilon, 306));
+		const Nfa without_epsilon{mata::parser::create_nfa("(a)(b)", Re2Options{.epsilon = epsilon})};
+		CHECK(!uses_symbol(without_epsilon, epsilon));
+		CHECK(are_equivalent(remove_epsilon(with_epsilon, epsilon), without_epsilon));
+	}
+
+	SECTION("Trimming is optional") {
+		// The 'a' transition leads to a state that cannot reach a final state.
+		const Nfa untrimmed{mata::parser::create_nfa("a[^\\x00-\\xff]", Re2Options{.trim = false, .reduce = false})};
+		CHECK(untrimmed.num_of_states() > 0);
+		CHECK(untrimmed.is_lang_empty());
+		const Nfa trimmed{mata::parser::create_nfa("a[^\\x00-\\xff]", Re2Options{.reduce = false})};
+		CHECK(trimmed.num_of_states() == 0);
+		for (const std::string regex : {"a*b|c(de)*", "(a+)|(e)(w*)+(b*)", "a(b|[^\\x00-\\xff])"}) {
+			CAPTURE(regex);
+			Nfa raw{mata::parser::create_nfa(regex, Re2Options{.trim = false, .reduce = false})};
+			CHECK(are_equivalent(raw, mata::parser::create_nfa(regex)));
+			raw.trim();
+			CHECK(raw.num_of_states() == mata::parser::create_nfa(regex, Re2Options{.reduce = false}).num_of_states());
+		}
+	}
+
+	SECTION("Encoding") {
+		// U+0100 is the two bytes c4 80 in UTF-8 and not a Latin1 character.
+		const Nfa utf8{mata::parser::create_nfa("\\x{100}", Re2Options{.encoding = Encoding::Utf8})};
+		CHECK(utf8.is_in_lang(Word{0xc4, 0x80}));
+		CHECK_THROWS(mata::parser::create_nfa("\\x{100}", Re2Options{.encoding = Encoding::Latin1}));
+	}
+}
