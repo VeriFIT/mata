@@ -86,6 +86,10 @@ TEST_CASE("mata::nfa::union_nondet() rvalue overloads") {
 		Nfa in_place{tangled_nfa()};
 		plumbing::union_nondet(&in_place, std::move(in_place), in_place);
 		CHECK(in_place.is_identical(expected));
+
+		Nfa lvalue_in_place{tangled_nfa()};
+		plumbing::union_nondet(&lvalue_in_place, lvalue_in_place, lvalue_in_place);
+		CHECK(lvalue_in_place.is_identical(expected));
 	}
 
 	SECTION("plumbing routes the consuming overload, including the in-place result") {
@@ -106,6 +110,20 @@ TEST_CASE("mata::nfa::union_nondet() rvalue overloads") {
 		Nfa both_moved_rhs{rhs};
 		plumbing::union_nondet(&result, std::move(both_moved_lhs), std::move(both_moved_rhs));
 		CHECK(result.is_identical(expected));
+	}
+
+	SECTION("the lvalue plumbing unites in place when the result is the left operand") {
+		const std::vector<std::pair<Nfa, Nfa>> operands{
+			{chain_nfa(3), chain_nfa(2)},
+			{tangled_nfa(), chain_nfa(4)},
+			{Nfa{}, chain_nfa(3)},
+			{chain_nfa(3), Nfa{}},
+		};
+		for (const auto& [lhs, rhs] : operands) {
+			Nfa in_place{lhs};
+			plumbing::union_nondet(&in_place, in_place, rhs);
+			CHECK(in_place.is_identical(union_nondet(lhs, rhs)));
+		}
 	}
 
 	SECTION("the consumed operand is empty and reusable") {
@@ -226,6 +244,73 @@ TEST_CASE("mata::nfa::concatenate() rvalue overloads") {
 		CHECK(algorithms::concatenate_eps(std::move(aut), aut, EPSILON, true).is_identical(expected));
 	}
 
+	SECTION("the overloads consuming both operands agree with the copying one") {
+		for (const bool use_epsilon : {false, true}) {
+			for (const auto& [lhs, rhs] : operands) {
+				StateRenaming expected_lhs_renaming{};
+				StateRenaming expected_rhs_renaming{};
+				const Nfa expected{concatenate(lhs, rhs, use_epsilon, &expected_lhs_renaming, &expected_rhs_renaming)};
+
+				StateRenaming lhs_renaming{};
+				StateRenaming rhs_renaming{};
+				Nfa moved_lhs{lhs};
+				Nfa moved_rhs{rhs};
+				CHECK(concatenate(std::move(moved_lhs), std::move(moved_rhs), use_epsilon, &lhs_renaming, &rhs_renaming)
+						  .is_identical(expected));
+				CHECK(lhs_renaming == expected_lhs_renaming);
+				CHECK(rhs_renaming == expected_rhs_renaming);
+
+				const Nfa expected_eps{algorithms::concatenate_eps(lhs, rhs, 'e', use_epsilon)};
+				Nfa eps_lhs{lhs};
+				Nfa eps_rhs{rhs};
+				CHECK(
+					algorithms::concatenate_eps(std::move(eps_lhs), std::move(eps_rhs), 'e', use_epsilon)
+						.is_identical(expected_eps)
+				);
+			}
+		}
+	}
+
+	SECTION("aliased operands consumed twice keep both copies") {
+		const Nfa copy{tangled_nfa()};
+		for (const bool use_epsilon : {false, true}) {
+			Nfa aut{tangled_nfa()};
+			CHECK(concatenate(std::move(aut), std::move(aut), use_epsilon)
+					  .is_identical(concatenate(copy, copy, use_epsilon)));
+
+			Nfa eps_aut{tangled_nfa()};
+			CHECK(
+				algorithms::concatenate_eps(std::move(eps_aut), std::move(eps_aut), 'e', use_epsilon)
+					.is_identical(algorithms::concatenate_eps(copy, copy, 'e', use_epsilon))
+			);
+
+			Nfa lvalue_in_place{tangled_nfa()};
+			plumbing::concatenate(&lvalue_in_place, lvalue_in_place, lvalue_in_place, use_epsilon);
+			CHECK(lvalue_in_place.is_identical(concatenate(copy, copy, use_epsilon)));
+		}
+	}
+
+	SECTION("the lvalue plumbing concatenates in place when the result is the left operand") {
+		for (const auto& [lhs, rhs] : operands) {
+			StateRenaming expected_lhs_renaming{};
+			StateRenaming expected_rhs_renaming{};
+			const Nfa expected{concatenate(lhs, rhs, false, &expected_lhs_renaming, &expected_rhs_renaming)};
+
+			StateRenaming lhs_renaming{};
+			StateRenaming rhs_renaming{};
+			Nfa in_place{lhs};
+			plumbing::concatenate(&in_place, in_place, rhs, false, &lhs_renaming, &rhs_renaming);
+			CHECK(in_place.is_identical(expected));
+			CHECK(lhs_renaming == expected_lhs_renaming);
+			CHECK(rhs_renaming == expected_rhs_renaming);
+
+			Nfa both_in_place{lhs};
+			Nfa moved_rhs{rhs};
+			plumbing::concatenate(&both_in_place, std::move(both_in_place), std::move(moved_rhs));
+			CHECK(both_in_place.is_identical(expected));
+		}
+	}
+
 	SECTION("plumbing accepts two moved operands and two temporaries") {
 		for (const auto& [lhs, rhs] : operands) {
 			const Nfa expected{concatenate(lhs, rhs)};
@@ -255,6 +340,23 @@ TEST_CASE("mata::nfa::concatenate() rvalue overloads") {
 		member_lhs.concatenate(std::move(operand));
 		CHECK(operand.num_of_states() == 0);
 		CHECK(operand.delta.empty());
+
+		Nfa both_lhs{chain_nfa(3)};
+		Nfa both_rhs{chain_nfa(2)};
+		concatenate(std::move(both_lhs), std::move(both_rhs));
+		CHECK(both_lhs.num_of_states() == 0);
+		CHECK(both_rhs.num_of_states() == 0);
+		CHECK(both_rhs.initial.empty());
+		CHECK(both_rhs.final.empty());
+		CHECK(both_rhs.delta.empty());
+
+		Nfa lhs_of_empty{chain_nfa(3)};
+		Nfa no_final{chain_nfa(2)};
+		no_final.final.clear();
+		CHECK(concatenate(std::move(lhs_of_empty), std::move(no_final)).num_of_states() == 0);
+		CHECK(lhs_of_empty.num_of_states() == 0);
+		CHECK(no_final.num_of_states() == 0);
+		CHECK(no_final.delta.empty());
 	}
 }
 

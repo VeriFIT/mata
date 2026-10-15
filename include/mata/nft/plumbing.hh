@@ -73,7 +73,29 @@ void construct(
 }
 
 inline void union_nondet(Nft* union_automaton, const Nft& lhs, const Nft& rhs) {
-	*union_automaton = union_nondet(lhs, rhs);
+	// In place when the result is `lhs`; a fully aliased call keeps the copying path, which doubles the automaton.
+	if (union_automaton == &lhs && &lhs != &rhs) {
+		union_automaton->unite_nondet_with(rhs);
+	} else {
+		*union_automaton = union_nondet(lhs, rhs);
+	}
+}
+
+inline void union_nondet(Nft* union_automaton, Nft&& lhs, const Nft& rhs) {
+	// `lhs` aliased with `rhs`: the free function snapshots `rhs` before consuming `lhs`.
+	if (union_automaton == &lhs && &lhs != &rhs) {
+		union_automaton->unite_nondet_with(rhs);
+	} else {
+		*union_automaton = union_nondet(std::move(lhs), rhs);
+	}
+}
+
+inline void union_nondet(Nft* union_automaton, Nft&& lhs, Nft&& rhs) {
+	if (union_automaton == &lhs) {
+		union_automaton->unite_nondet_with(std::move(rhs));
+	} else {
+		*union_automaton = union_nondet(std::move(lhs), std::move(rhs));
+	}
 }
 
 /**
@@ -126,7 +148,35 @@ inline void concatenate(
 	StateRenaming* lhs_result_state_renaming = nullptr,
 	StateRenaming* rhs_result_state_renaming = nullptr
 ) {
-	*res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+	// The result is `lhs`: consume it instead of copying; an aliased `rhs` is snapshotted by the consuming overload.
+	if (res == &lhs) {
+		*res = concatenate(std::move(*res), rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+	} else {
+		*res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+	}
+}
+
+inline void concatenate(
+	Nft* res,
+	Nft&& lhs,
+	const Nft& rhs,
+	const bool use_epsilon = false,
+	StateRenaming* lhs_result_state_renaming = nullptr,
+	StateRenaming* rhs_result_state_renaming = nullptr
+) {
+	*res = concatenate(std::move(lhs), rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
+}
+
+inline void concatenate(
+	Nft* res,
+	Nft&& lhs,
+	Nft&& rhs,
+	const bool use_epsilon = false,
+	StateRenaming* lhs_result_state_renaming = nullptr,
+	StateRenaming* rhs_result_state_renaming = nullptr
+) {
+	*res =
+		concatenate(std::move(lhs), std::move(rhs), use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
 /**

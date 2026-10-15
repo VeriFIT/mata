@@ -720,6 +720,14 @@ class Nft : public mata::Automaton {
 	 * @brief In-place concatenation.
 	 */
 	Nft& concatenate(const Nft& aut);
+	/**
+	 * @brief In-place concatenation, consuming @p aut.
+	 *
+	 * The state posts of @p aut are moved into @c this. If @c this and @p aut are aliased,
+	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
+	 * @p aut is left valid but empty after the operation, with its number of levels.
+	 */
+	Nft& concatenate(Nft&& aut);
 
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nft.
@@ -730,6 +738,18 @@ class Nft : public mata::Automaton {
 	 * @return @c this after uniting with @p nft.
 	 */
 	Nft& unite_nondet_with(const Nft& nft);
+	/**
+	 * @brief In-place nondeterministic union of @c this with @p nft, consuming @p nft.
+	 *
+	 * Does not add epsilon transitions, just unites initial and final states.
+	 * The state posts of @p nft are moved into @c this, so no deep copy of the operand occurs.
+	 * If @c this and @p nft are aliased, a controlled snapshot is taken and the operation falls back to the lvalue
+	 * path. @p nft is left valid but empty after the operation, with its number of levels.
+	 *
+	 * @param[in] nft The NFT to unite with @c this.
+	 * @return @c this after uniting with @p nft.
+	 */
+	Nft& unite_nondet_with(Nft&& nft);
 
 	/**
 	 * @brief Get NFT where transitions of @c this are replaced with transitions over one symbol @p abstract_symbol
@@ -1641,6 +1661,27 @@ utils::OrdVector<Symbol> get_symbols_to_work_with(
 Nft union_nondet(const Nft& lhs, const Nft& rhs);
 
 /**
+ * @brief Compute non-deterministic union, consuming @p lhs.
+ *
+ * The left operand's state posts are moved into the result, so no deep copy of @p lhs occurs.
+ * The right operand is copied normally. If @p lhs and @p rhs are aliased, a snapshot of @p rhs
+ * is taken before @p lhs is consumed, so the result holds both copies.
+ * @p lhs is left valid but empty after the operation.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nft union_nondet(Nft&& lhs, const Nft& rhs);
+
+/**
+ * @brief Compute non-deterministic union, consuming both operands.
+ *
+ * Both operands' state posts are moved into the result. If @p lhs and @p rhs are aliased,
+ * a snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both copies.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nft union_nondet(Nft&& lhs, Nft&& rhs);
+
+/**
  * @brief Compute intersection of two NFTs.
  *
  * Both automata can contain ε-transitions. Epsilons will be handled as alphabet symbols.
@@ -1804,6 +1845,36 @@ inline Nft compose(
 Nft concatenate(
 	const Nft& lhs,
 	const Nft& rhs,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
+ * @brief Concatenate two NFTs, consuming the left operand.
+ *
+ * The left operand's state posts are moved into the result. The right operand is copied normally.
+ * If @p lhs and @p rhs are aliased, a controlled snapshot of @p rhs is taken before @p lhs is consumed.
+ * @p lhs is left valid but empty after the operation.
+ */
+Nft concatenate(
+	Nft&& lhs,
+	const Nft& rhs,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
+ * @brief Concatenate two NFTs, consuming both operands.
+ *
+ * The state posts of both operands are moved into the result. If @p lhs and @p rhs are aliased, a controlled
+ * snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both copies.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ */
+Nft concatenate(
+	Nft&& lhs,
+	Nft&& rhs,
 	bool use_epsilon = false,
 	StateRenaming* lhs_state_renaming = nullptr,
 	StateRenaming* rhs_state_renaming = nullptr

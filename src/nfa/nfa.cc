@@ -521,7 +521,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 	this->delta.allocate(num_of_states_this);
 
 	auto renumber_states{[&](const State state) { return num_of_states_this + state; }};
-	this->delta.append(nfa.delta.renumber_targets(renumber_states));
+	this->delta.append_shifted(nfa.delta, num_of_states_this);
 
 	// Set accepting states.
 	this->final.reserve(num_of_states_result);
