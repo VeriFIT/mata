@@ -3043,3 +3043,59 @@ TEST_CASE("mata::nft::compose() validates the synchronization level vectors - is
 	const OrdVector<Level> empty_levels{};
 	CHECK_THROWS_AS(compose(lhs, rhs, empty_levels, empty_levels), std::invalid_argument);
 }
+
+TEST_CASE("mata::nft::compose_fast_no_jump() expands each waiting state once - issue #813") {
+	// The LHS waits while the RHS runs through k diamonds to an EPSILON on its synchronization level. Every path
+	//  through the diamonds used to expand the shared waiting states again, doubling the result per diamond.
+	constexpr size_t NUM_OF_DIAMONDS{12};
+	Nft lhs{Nft::with_levels(3)};
+	const State lhs_root{lhs.add_state_with_level(0)};
+	const State lhs_x{lhs.add_state_with_level(1)};
+	const State lhs_y{lhs.add_state_with_level(2)};
+	const State lhs_final{lhs.add_state_with_level(0)};
+	lhs.delta.add(lhs_root, 'x', lhs_x);
+	lhs.delta.add(lhs_x, 'y', lhs_y);
+	lhs.delta.add(lhs_y, 'z', lhs_final);
+	lhs.initial.insert(lhs_root);
+	lhs.final.insert(lhs_final);
+
+	Nft rhs{Nft::with_levels(2 * NUM_OF_DIAMONDS + 1)};
+	State diamond_root{rhs.add_state_with_level(0)};
+	rhs.initial.insert(diamond_root);
+	for (size_t i{0}; i < NUM_OF_DIAMONDS; ++i) {
+		const State over_a{rhs.add_state_with_level(static_cast<Level>(2 * i + 1))};
+		const State over_b{rhs.add_state_with_level(static_cast<Level>(2 * i + 1))};
+		const State merge{rhs.add_state_with_level(static_cast<Level>(2 * i + 2))};
+		rhs.delta.add(diamond_root, 'a', over_a);
+		rhs.delta.add(over_a, 'a', merge);
+		rhs.delta.add(diamond_root, 'b', over_b);
+		rhs.delta.add(over_b, 'b', merge);
+		diamond_root = merge;
+	}
+	// The LHS waits on its first level through the diamond round, ended by the EPSILON; a second RHS round of 'c's then
+	//  reads its 'y', so every word of the relation passes through the shared waiting states.
+	State second_round{rhs.add_state_with_level(0)};
+	rhs.delta.add(diamond_root, EPSILON, second_round);
+	for (Level level{1}; level <= 2 * NUM_OF_DIAMONDS; ++level) {
+		const State next{rhs.add_state_with_level(level)};
+		rhs.delta.add(second_round, 'c', next);
+		second_round = next;
+	}
+	const State rhs_final{rhs.add_state_with_level(0)};
+	rhs.delta.add(second_round, 'y', rhs_final);
+	rhs.final.insert(rhs_final);
+
+	const Level rhs_sync_level{static_cast<Level>(2 * NUM_OF_DIAMONDS)};
+	const Nft fast{algorithms::compose_fast_no_jump(lhs, rhs, 1, rhs_sync_level, false)};
+	CHECK(fast.num_of_states() < 8 * NUM_OF_DIAMONDS);
+	std::set<mata::Word> expected_words{};
+	for (size_t branches{0}; branches < size_t{1} << NUM_OF_DIAMONDS; ++branches) {
+		mata::Word word{EPSILON};
+		for (size_t i{0}; i < NUM_OF_DIAMONDS; ++i) { word.insert(word.end(), 2, (branches >> i) & 1 ? 'b' : 'a'); }
+		word.insert(word.end(), {EPSILON, EPSILON, 'x'});
+		word.insert(word.end(), 2 * NUM_OF_DIAMONDS, 'c');
+		word.insert(word.end(), {'y', 'z'});
+		expected_words.insert(std::move(word));
+	}
+	CHECK(fast.get_words(2 * fast.levels.num_of_levels) == expected_words);
+}
