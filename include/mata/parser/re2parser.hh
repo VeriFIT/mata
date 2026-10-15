@@ -21,10 +21,14 @@ namespace mata::parser {
  *  the result trimmed and reduced by simulation reduction.
  */
 struct Re2Options {
-	bool keep_epsilon{false}; ///< Keep epsilon transitions in the created NFA.
+	/// Translate every instruction of the regex program to a state, with an @c epsilon transition for each step that
+	///  consumes no symbol. Otherwise, the regex is converted directly to an NFA without epsilon transitions.
+	bool keep_epsilon{false};
 	Symbol epsilon{306}; ///< Symbol representing epsilon transitions.
 	Encoding encoding{Encoding::Latin1}; ///< Encoding of the regex.
-	bool trim{true}; ///< Trim the created NFA.
+	/// Trim the created NFA. Without epsilon transitions, the conversion only creates states reachable from the initial
+	///  state, and only a branch that can never match, such as '[^\x00-\xff]' in Latin1, leaves useless states behind.
+	bool trim{true};
 	/// Reduce the created NFA by simulation reduction. The reduction costs seconds on regexes with a few thousand
 	///  states, where the conversion itself takes milliseconds; turn it off for large regexes and when the result is
 	///  determinized anyway.
