@@ -50,7 +50,10 @@ bool mata::nfa::algorithms::is_included_antichains(
 ) { // {{{
 	(void) alphabet;
 
-	using ProdStateType = std::tuple<State, StateSet, size_t>;
+	/// A pair (q, S) of a state of the smaller automaton and a macrostate of the bigger one, carrying the distance
+	///  lower bound of @c S and its 64-bit signature. Both are functions of the first two components, so they do
+	///  not change how the tuples order each other as keys of @c paths.
+	using ProdStateType = std::tuple<State, StateSet, size_t, uint64_t>;
 	using ProdStatesType = std::vector<ProdStateType>;
 
 	/**
@@ -63,6 +66,8 @@ bool mata::nfa::algorithms::is_included_antichains(
 	 *  - @c succ ⊆ @c d requires @c |d| ≥ @c |succ|, so pruning reads nothing below @c |succ|;
 	 *  - at equal cardinality both reduce to equality, which is one comparison of two sorted vectors, and an entry
 	 *    equal to @c succ subsumes it, so pruning never has to consider that bucket.
+	 * Inside a bucket the stored signature rejects most of the remaining pairs in O(1), before the two sorted
+	 *  vectors are merged; see @c algorithms::macrostate_signature().
 	 *
 	 * Only cardinalities that actually hold an entry get a bucket, kept in increasing order: the macrostates of one
 	 *  run occupy few distinct cardinalities out of the @c |bigger| possible ones, so indexing by cardinality would
@@ -70,30 +75,36 @@ bool mata::nfa::algorithms::is_included_antichains(
 	 */
 	class ProcessedAntichain {
 	  public:
-		/// Is some stored macrostate a subset of @p succ, and therefore dominates it?
-		bool subsumes(const StateSet& succ) const {
-			const size_t cardinality{succ.size()};
+		/// Is some stored macrostate a subset of the macrostate of @p succ, and therefore dominates it?
+		bool subsumes(const ProdStateType& succ) const {
+			const StateSet& succ_set{std::get<1>(succ)};
+			const uint64_t succ_signature{std::get<3>(succ)};
+			const size_t cardinality{succ_set.size()};
 			for (const Bucket& bucket : buckets_) {
 				if (bucket.cardinality > cardinality) { break; }
 				if (bucket.cardinality == cardinality) {
 					// A subset of the same cardinality is the set itself.
 					return std::ranges::any_of(bucket.entries, [&](const ProdStateType& anti) {
-						return std::get<1>(anti) == succ;
+						return std::get<3>(anti) == succ_signature && std::get<1>(anti) == succ_set;
 					});
 				}
 				for (const ProdStateType& anti : bucket.entries) {
-					if (std::get<1>(anti).is_subset_of(succ)) { return true; }
+					if ((std::get<3>(anti) & ~succ_signature) != 0) { continue; }
+					if (std::get<1>(anti).is_subset_of(succ_set)) { return true; }
 				}
 			}
 			return false;
 		}
 
-		/// Removes every stored macrostate that @p succ dominates, that is, every strict superset of @p succ.
-		void prune(const StateSet& succ) {
-			auto bucket{std::ranges::upper_bound(buckets_, succ.size(), {}, &Bucket::cardinality)};
+		/// Removes every stored macrostate that @p succ dominates, that is, every strict superset of its macrostate.
+		void prune(const ProdStateType& succ) {
+			const StateSet& succ_set{std::get<1>(succ)};
+			const uint64_t succ_signature{std::get<3>(succ)};
+			auto bucket{std::ranges::upper_bound(buckets_, succ_set.size(), {}, &Bucket::cardinality)};
 			while (bucket != buckets_.end()) {
 				std::erase_if(bucket->entries, [&](const ProdStateType& stored) {
-					return succ.is_subset_of(std::get<1>(stored));
+					if ((succ_signature & ~std::get<3>(stored)) != 0) { return false; }
+					return succ_set.is_subset_of(std::get<1>(stored));
 				});
 				bucket = bucket->entries.empty() ? buckets_.erase(bucket) : bucket + 1;
 			}
@@ -122,9 +133,15 @@ bool mata::nfa::algorithms::is_included_antichains(
 	//  antichain would not work without changes).
 	using ProcessedType = std::vector<ProcessedAntichain>;
 
+	// Does @p lhs dominate @p rhs? Unlike in @c ProcessedAntichain the two entries need not agree on the state of
+	//  the smaller automaton, so that is the first thing compared; the size and the signature follow.
 	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
 		if (std::get<0>(lhs) != std::get<0>(rhs)) { return false; }
-		return std::get<1>(lhs).is_subset_of(std::get<1>(rhs));
+		const StateSet& subset_candidate{std::get<1>(lhs)};
+		const StateSet& superset_candidate{std::get<1>(rhs)};
+		if (subset_candidate.size() > superset_candidate.size()) { return false; }
+		if ((std::get<3>(lhs) & ~std::get<3>(rhs)) != 0) { return false; }
+		return subset_candidate.is_subset_of(superset_candidate);
 	};
 
 	// initialize
@@ -184,7 +201,9 @@ bool mata::nfa::algorithms::is_included_antichains(
 		}
 
 		StateSet bigger_state_set{bigger.initial};
-		const ProdStateType st = std::tuple(state, bigger_state_set, min_dst(bigger_state_set));
+		const ProdStateType st = std::tuple(
+			state, bigger_state_set, min_dst(bigger_state_set), algorithms::macrostate_signature(bigger_state_set)
+		);
 		insert_to_pairs(worklist, st);
 		processed[state].insert(st);
 
@@ -212,9 +231,12 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 			StateSet bigger_succ = {};
 			if (sync_iterator.synchronize_with(smaller_move)) { bigger_succ = sync_iterator.unify_targets(); }
+			// Both are functions of `bigger_succ`, which all the targets of this move share.
+			const size_t bigger_succ_min_dst{min_dst(bigger_succ)};
+			const uint64_t bigger_succ_signature{algorithms::macrostate_signature(bigger_succ)};
 
 			for (const State& smaller_succ : smaller_move.targets) {
-				const ProdStateType succ = {smaller_succ, bigger_succ, min_dst(bigger_succ)};
+				const ProdStateType succ = {smaller_succ, bigger_succ, bigger_succ_min_dst, bigger_succ_signature};
 
 				if (lengths_incompatible(succ) ||
 					(smaller.final[smaller_succ] && !bigger.final.intersects_with(bigger_succ))) {
@@ -244,11 +266,11 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 				// Is some already processed macrostate of smaller_succ a subset of bigger_succ, and therefore
 				//  dominates it?
-				if (processed[smaller_succ].subsumes(bigger_succ)) { continue; }
+				if (processed[smaller_succ].subsumes(succ)) { continue; }
 
 				// Pruning: drop every stored pair that succ dominates, in the processed antichain and in the
 				//  worklist, and store succ in both.
-				processed[smaller_succ].prune(bigger_succ);
+				processed[smaller_succ].prune(succ);
 				processed[smaller_succ].insert(succ);
 				std::erase_if(worklist, [&](const ProdStateType& d) { return subsumes(succ, d); });
 				insert_to_pairs(worklist, succ);

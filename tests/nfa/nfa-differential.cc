@@ -12,6 +12,7 @@
 #include <random>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "mata/alphabet.hh"
@@ -54,6 +55,51 @@ Nfa random_nfa(
 		if (epsilon.has_value()) {
 			if (draw(rng, 4) == 0) { nfa.delta.add(state, *epsilon, draw(rng, num_of_states)); }
 			if (state + 1 < num_of_states && draw(rng, 3) == 0) { nfa.delta.add(state, *epsilon, state + 1); }
+		}
+	}
+	return nfa;
+}
+
+/// A partial deterministic automaton over the alphabet {0, ..., num_of_symbols - 1}: every (state, symbol) has at
+///  most one target. A union of @c k such automata determinizes into at most the product of (|component| + 1)
+///  macrostates, which keeps the naive reference algorithms affordable, while the reachable macrostates still
+///  vary in cardinality between 0 and @c k.
+Nfa random_partial_dfa(
+	std::mt19937& rng,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const std::shared_ptr<EnumAlphabet>& alphabet
+) {
+	Nfa nfa{num_of_states};
+	nfa.alphabet = alphabet;
+	nfa.initial.insert(draw(rng, num_of_states));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 2) == 0) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			if (draw(rng, 5) != 0) { nfa.delta.add(state, symbol, draw(rng, num_of_states)); }
+		}
+	}
+	return nfa;
+}
+
+/// A dense random NFA: half of the states final and @c 1.75 * num_of_states transitions per symbol, placed
+///  uniformly at random. This is the shape that keeps the antichains of the inclusion check deep.
+Nfa random_dense_nfa(
+	std::mt19937& rng,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const std::shared_ptr<EnumAlphabet>& alphabet
+) {
+	Nfa nfa{num_of_states};
+	nfa.alphabet = alphabet;
+	nfa.initial.insert(draw(rng, num_of_states));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 2) == 0) { nfa.final.insert(state); }
+	}
+	const size_t num_of_transitions{7 * num_of_states / 4};
+	for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+		for (size_t transition{0}; transition < num_of_transitions; ++transition) {
+			nfa.delta.add(draw(rng, num_of_states), symbol, draw(rng, num_of_states));
 		}
 	}
 	return nfa;
@@ -277,5 +323,173 @@ TEST_CASE("mata::nfa differential: larger sweep", "[.differential-sweep]") {
 		check_nfa_properties(seed, 2 + seed % 7, 1 + seed % 3, 6);
 		check_epsilon_removal(seed, 2 + seed % 7, 1 + seed % 2, 6, EPSILON);
 		check_epsilon_removal(seed, 2 + seed % 7, 1 + seed % 2, 6, 100);
+	}
+}
+
+TEST_CASE(
+	"mata::nfa differential: the antichain filters stay sound on macrostates wider than 64 states", "[differential]"
+) {
+	// The antichain algorithms filter their subsumption tests with a 64-bit signature of the macrostate, so states
+	//  that are congruent modulo 64 share a bit and two different macrostates can carry the same signature. The
+	//  bigger automaton here is a union of three partial DFAs: that bounds determinization (and with it the naive
+	//  reference algorithms) by the product of the components, pushes the state indices past 64, and still makes
+	//  the reachable macrostates vary in cardinality, which is what reaches the strict-subset buckets of the
+	//  processed antichain.
+	constexpr size_t COMPONENT_STATES{23};
+	constexpr size_t COMPONENTS{3};
+	for (unsigned seed{0}; seed < 20; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_symbols{1 + seed % 2};
+		auto alphabet{std::make_shared<EnumAlphabet>()};
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+
+		Nfa bigger{random_partial_dfa(rng, COMPONENT_STATES, num_of_symbols, alphabet)};
+		for (size_t component{1}; component < COMPONENTS; ++component) {
+			bigger =
+				union_nondet(std::move(bigger), random_partial_dfa(rng, COMPONENT_STATES, num_of_symbols, alphabet));
+		}
+		bigger.alphabet = alphabet;
+		REQUIRE(bigger.num_of_states() == COMPONENTS * COMPONENT_STATES);
+		REQUIRE(bigger.num_of_states() > 64);
+		const Nfa smaller{random_nfa(rng, 2 + seed % 4, num_of_symbols, alphabet)};
+		INFO(describe(seed, bigger));
+		INFO(describe(seed, smaller));
+
+		// Macrostates of the bigger automaton drive the subsumption tests, so both directions are checked: the
+		//  one where the antichain runs over the wide automaton, and the one where the naive reference does.
+		CHECK(
+			is_included(smaller, bigger, alphabet.get(), {{"algorithm", "naive"}}) ==
+			is_included(smaller, bigger, alphabet.get(), {{"algorithm", "antichains"}})
+		);
+		CHECK(
+			is_included(bigger, smaller, alphabet.get(), {{"algorithm", "naive"}}) ==
+			is_included(bigger, smaller, alphabet.get(), {{"algorithm", "antichains"}})
+		);
+
+		CHECK(
+			bigger.is_universal(*alphabet, {{"algorithm", "naive"}}) ==
+			bigger.is_universal(*alphabet, {{"algorithm", "antichains"}})
+		);
+
+		// A pair whose inclusion holds, so the antichain runs to its fixpoint instead of stopping at the first
+		//  counterexample: an intersection with @c bigger accepts only words that @c bigger accepts.
+		const Nfa included{intersection(smaller, bigger)};
+		CHECK(is_included(included, bigger, alphabet.get(), {{"algorithm", "antichains"}}));
+		CHECK(
+			is_included(bigger, included, alphabet.get(), {{"algorithm", "naive"}}) ==
+			is_included(bigger, included, alphabet.get(), {{"algorithm", "antichains"}})
+		);
+
+		// A reported counterexample is a word of the smaller language that the bigger one rejects.
+		Run cex{};
+		if (!is_included(smaller, bigger, &cex, alphabet.get(), {{"algorithm", "antichains"}})) {
+			CHECK(reference_accepts(smaller, cex.word));
+			CHECK(!reference_accepts(bigger, cex.word));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: equal antichain signatures never prove a subset", "[differential]") {
+	// The states 0, 64 and 65 put {0} and {64} on the same signature, and the signature of {0} inside that of
+	//  {64, 65}, yet neither set is a subset of the other. Initial state 1 branches into a live and a dead one of
+	//  these sets; the dead one is the only way to a counterexample, so a filter that takes a signature match for a
+	//  subset drops it and reports success. Reaching the dead set first or second puts the collision into the
+	//  subsumption test of a new macrostate or into the pruning of the stored ones, respectively.
+	using SetPair = std::pair<std::vector<mata::nfa::State>, std::vector<mata::nfa::State>>;
+	const std::vector<SetPair> live_and_dead{{{0}, {64}}, {{64}, {0}}, {{0}, {64, 65}}, {{64, 65}, {0}}};
+	constexpr size_t NUM_OF_STATES{66};
+	for (const auto& [live, dead] : live_and_dead) {
+		for (const bool dead_first : {false, true}) {
+			const Symbol live_symbol{dead_first ? Symbol{1} : Symbol{0}};
+			const Symbol dead_symbol{dead_first ? Symbol{0} : Symbol{1}};
+			INFO("live " << live.size() << " state(s) from " << live.front() << ", dead_first " << dead_first);
+
+			// Inclusion: smaller accepts {0 2, 1 2}; bigger reads 2 from the live set only. Symbol 3 takes both sets
+			//  to the final state 2, so the distance bound does not short-cut the dead branch.
+			auto inclusion_alphabet{std::make_shared<EnumAlphabet>()};
+			for (Symbol symbol{0}; symbol < 4; ++symbol) { inclusion_alphabet->add_new_symbol(std::to_string(symbol)); }
+			Nfa smaller{3};
+			smaller.alphabet = inclusion_alphabet;
+			smaller.initial.insert(0);
+			smaller.final.insert(2);
+			smaller.delta.add(0, 0, 1);
+			smaller.delta.add(0, 1, 1);
+			smaller.delta.add(1, 2, 2);
+			Nfa bigger{NUM_OF_STATES};
+			bigger.alphabet = inclusion_alphabet;
+			bigger.initial.insert(1);
+			bigger.final.insert(2);
+			for (const mata::nfa::State state : live) {
+				bigger.delta.add(1, live_symbol, state);
+				bigger.delta.add(state, 2, 2);
+				bigger.delta.add(state, 3, 2);
+			}
+			for (const mata::nfa::State state : dead) {
+				bigger.delta.add(1, dead_symbol, state);
+				bigger.delta.add(state, 3, 2);
+			}
+			REQUIRE(!is_included(smaller, bigger, inclusion_alphabet.get(), NAIVE));
+			Run inclusion_cex{};
+			CHECK(!is_included(smaller, bigger, &inclusion_cex, inclusion_alphabet.get(), ANTICHAINS));
+			CHECK(inclusion_cex.word == Word{dead_symbol, 2});
+
+			// Universality over {0, 1}: every set is final, the live one loops on both symbols, the dead one on 0
+			//  only, so the dead set followed by 1 is the only rejected word.
+			auto universality_alphabet{std::make_shared<EnumAlphabet>()};
+			for (Symbol symbol{0}; symbol < 2; ++symbol) {
+				universality_alphabet->add_new_symbol(std::to_string(symbol));
+			}
+			Nfa aut{NUM_OF_STATES};
+			aut.alphabet = universality_alphabet;
+			aut.initial.insert(1);
+			aut.final.insert(1);
+			for (const mata::nfa::State state : live) {
+				aut.final.insert(state);
+				aut.delta.add(1, live_symbol, state);
+				aut.delta.add(state, 0, state);
+				aut.delta.add(state, 1, state);
+			}
+			for (const mata::nfa::State state : dead) {
+				aut.final.insert(state);
+				aut.delta.add(1, dead_symbol, state);
+				aut.delta.add(state, 0, state);
+			}
+			REQUIRE(!aut.is_universal(*universality_alphabet, NAIVE));
+			Run universality_cex{};
+			CHECK(!aut.is_universal(*universality_alphabet, &universality_cex, ANTICHAINS));
+			CHECK(!reference_accepts(aut, universality_cex.word));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with more than 64 states", "[differential]") {
+	// Dense automata keep the processed antichains deep, which is where the cardinality buckets and the signature
+	//  filter of the subsumption test actually decide something. Complementing them is out of reach, so the
+	//  answers are pinned against a construction that fixes one of them and against the words of a bounded length.
+	constexpr size_t NUM_OF_SYMBOLS{2};
+	for (unsigned seed{0}; seed < 8; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{65 + seed % 6};
+		auto alphabet{std::make_shared<EnumAlphabet>()};
+		for (Symbol symbol{0}; symbol < NUM_OF_SYMBOLS; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+		const Nfa lhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		const Nfa rhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		const Nfa united{union_nondet(lhs, rhs)};
+		const std::vector<Word> words{all_words(NUM_OF_SYMBOLS, MAX_WORD_LENGTH)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+
+		// L(lhs) is included in L(lhs) ∪ L(rhs) by construction, so this check runs the antichain to its fixpoint.
+		CHECK(is_included(lhs, united, alphabet.get(), {{"algorithm", "antichains"}}));
+
+		// The converse normally fails. Either answer has to agree with the words: a reported inclusion admits no
+		//  witness among them, a reported counterexample is one.
+		Run cex{};
+		if (is_included(united, lhs, &cex, alphabet.get(), {{"algorithm", "antichains"}})) {
+			CHECK(included_on(united, lhs, words));
+		} else {
+			CHECK(reference_accepts(united, cex.word));
+			CHECK(!reference_accepts(lhs, cex.word));
+		}
 	}
 }
