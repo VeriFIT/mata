@@ -494,6 +494,16 @@ class Nfa : public Automaton {
 	bool is_deterministic() const;
 
 	/**
+	 * @brief Test whether the automaton is a minimal deterministic automaton of its language.
+	 *
+	 * Minimal in the sense of the result of 'minimize()': deterministic, trimmed (every state reachable and
+	 *  co-reachable, so the transition function may be partial and a sink state counts as redundant), and with no
+	 *  two equivalent states. The empty language is minimal only as a single non-final initial state without
+	 *  transitions. Runs in O(a*n*log(n)) by Hopcroft partition refinement.
+	 */
+	bool is_minimal() const;
+
+	/**
 	 * @brief Test for automaton completeness with regard to an alphabet.
 	 *
 	 * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.

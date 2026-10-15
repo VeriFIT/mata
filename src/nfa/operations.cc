@@ -616,6 +616,14 @@ bool mata::nfa::Nfa::is_deterministic() const {
 	return true;
 }
 
+bool mata::nfa::Nfa::is_minimal() const {
+	if (!is_deterministic()) { return false; }
+	if (final.empty()) { return num_of_states() == 1 && delta.num_of_transitions() == 0; }
+	if (get_useful_states().count() != num_of_states()) { return false; }
+	// Hopcroft merges exactly the equivalent states of a trimmed DFA.
+	return algorithms::minimize_hopcroft(*this).num_of_states() == num_of_states();
+}
+
 bool Nfa::is_complete(const Alphabet* const alphabet) const { return is_complete(get_symbols_to_work_with(alphabet)); }
 
 bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {

@@ -777,6 +777,16 @@ cdef class Nfa:
         """
         return self.thisptr.get().is_deterministic()
 
+    def is_minimal(self):
+        """Tests if the NFA is a minimal deterministic automaton of its language, as returned by minimize().
+
+        Deterministic, trimmed (a sink state counts as redundant) and without equivalent states. The empty language is
+          minimal only as a single non-final initial state without transitions.
+
+        :return: true if the NFA is minimal.
+        """
+        return self.thisptr.get().is_minimal()
+
     def is_complete(self, alph.Alphabet alphabet = None):
         """Test if automaton is complete.
 

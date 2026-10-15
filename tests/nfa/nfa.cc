@@ -3936,6 +3936,88 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 	}
 }
 
+TEST_CASE("mata::nfa::Nfa::is_minimal()") {
+	SECTION("fixed automata") {
+		Nfa minimal(2);
+		minimal.initial.insert(0);
+		minimal.final.insert(1);
+		minimal.delta.add(0, 'a', 1);
+		minimal.delta.add(1, 'a', 0);
+		CHECK(minimal.is_minimal());
+
+		Nfa nondeterministic{minimal};
+		nondeterministic.delta.add(0, 'a', 0);
+		CHECK(!nondeterministic.is_minimal());
+
+		Nfa unreachable{minimal};
+		unreachable.add_state(2);
+		unreachable.final.insert(2);
+		CHECK(!unreachable.is_minimal());
+
+		Nfa with_sink{minimal};
+		with_sink.add_state(2);
+		with_sink.delta.add(0, 'b', 2);
+		with_sink.delta.add(1, 'b', 2);
+		with_sink.delta.add(2, 'a', 2);
+		with_sink.delta.add(2, 'b', 2);
+		CHECK(!with_sink.is_minimal());
+
+		Nfa equivalent_states(3);
+		equivalent_states.initial.insert(0);
+		equivalent_states.final.insert(1);
+		equivalent_states.final.insert(2);
+		equivalent_states.delta.add(0, 'a', 1);
+		equivalent_states.delta.add(0, 'b', 2);
+		CHECK(!equivalent_states.is_minimal());
+	}
+
+	SECTION("the empty language and trivial automata") {
+		CHECK(!Nfa{}.is_minimal());
+
+		Nfa empty_language(1);
+		empty_language.initial.insert(0);
+		CHECK(empty_language.is_minimal());
+		empty_language.delta.add(0, 'a', 0);
+		CHECK(!empty_language.is_minimal());
+
+		Nfa epsilon_only(1);
+		epsilon_only.initial.insert(0);
+		epsilon_only.final.insert(0);
+		CHECK(epsilon_only.is_minimal());
+	}
+
+	SECTION("agrees with the table-filling oracle") {
+		std::mt19937 gen{13};
+		std::uniform_int_distribution<State> state_dist{0, 5};
+		std::uniform_int_distribution<size_t> num_of_targets_dist{0, 2};
+		size_t num_of_minimal{0};
+		size_t num_of_non_minimal{0};
+		for (size_t iteration{0}; iteration < 60; ++iteration) {
+			Nfa nfa(6);
+			for (State state{0}; state < 6; ++state) {
+				if (gen() % 4 == 0) { nfa.initial.insert(state); }
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					for (size_t target_idx{num_of_targets_dist(gen)}; target_idx > 0; --target_idx) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+			INFO("iteration " << iteration);
+			// A trimmed determinization is usually not minimal; its minimization always is.
+			Nfa trimmed_dfa{determinize(nfa)};
+			trimmed_dfa.trim();
+			if (trimmed_dfa.num_of_states() > 0) {
+				CHECK(trimmed_dfa.is_minimal() == is_minimal_dfa(trimmed_dfa));
+				++(trimmed_dfa.is_minimal() ? num_of_minimal : num_of_non_minimal);
+			}
+			CHECK(minimize(nfa).is_minimal());
+		}
+		CHECK(num_of_minimal > 5);
+		CHECK(num_of_non_minimal > 5);
+	}
+}
+
 TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 	Nfa aut;
 	ParameterMap params_after, params_with;
