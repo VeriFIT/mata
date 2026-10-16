@@ -792,15 +792,17 @@ TEST_CASE("mata::Parser basic_parsing") {
 	}
 
 	SECTION("b\\w+?") {
+		// The non-greedy repetition matches as few characters as possible, but its language is the same as of 'b\w+'.
 		aut = mata::parser::create_nfa("b\\w+?");
 		CHECK(!aut.delta.empty());
 		CHECK(!aut.is_lang_empty());
 		CHECK(!aut.is_in_lang(Word{}));
 		CHECK(!aut.is_in_lang(Word{'b'}));
 		CHECK(aut.is_in_lang(Word{'b', 'e'}));
-		CHECK(!aut.is_in_lang(Word{'b', 'e', 'e'}));
-		CHECK(!aut.is_in_lang(Word{'b', 'e', 'e', 'r'}));
-		CHECK(!aut.is_in_lang(Word{'b', 'e', 'e', 'r', 's'}));
+		CHECK(aut.is_in_lang(Word{'b', 'e', 'e'}));
+		CHECK(aut.is_in_lang(Word{'b', 'e', 'e', 'r'}));
+		CHECK(aut.is_in_lang(Word{'b', 'e', 'e', 'r', 's'}));
+		CHECK(!aut.is_in_lang(Word{'b', 'e', ' '}));
 	}
 
 	SECTION("b(a|e|i)d") {
@@ -1909,5 +1911,47 @@ TEST_CASE("mata::parser::create_nfa() optional simulation reduction") {
 			mata::nfa::builder::create_from_regex("a*b|c(de)*").num_of_states() <
 			mata::nfa::builder::create_from_regex("a*b|c(de)*", false).num_of_states()
 		);
+	}
+}
+
+TEST_CASE("mata::parser::create_nfa() instructions without a consuming transition of their own") {
+	// Non-greedy repetitions put a match before the repeated part in the same instruction list, '(?s).*' and
+	//  '[\x00-\xff]*' compile to an AltMatch, and '[^\x00-\xff]' to a fail instruction.
+	struct Case {
+		std::string regex;
+		std::vector<Word> accepted;
+		std::vector<Word> rejected;
+	};
+	const std::vector<Case> cases{
+		{"a*?", {{}, {'a'}, {'a', 'a', 'a'}}, {{'b'}, {'a', 'b'}}},
+		{"a+?", {{'a'}, {'a', 'a'}, {'a', 'a', 'a'}}, {{}, {'b'}}},
+		{"a??b", {{'b'}, {'a', 'b'}}, {{}, {'a'}, {'a', 'a', 'b'}}},
+		{"(ab)*?c", {{'c'}, {'a', 'b', 'c'}, {'a', 'b', 'a', 'b', 'c'}}, {{}, {'a', 'b'}, {'a', 'c'}}},
+		{"(?s)a.*", {{'a'}, {'a', 'b'}, {'a', '\n'}, {'a', 0xff, 0x00}}, {{}, {'b'}, {'b', 'a'}}},
+		{"a[\\x00-\\xff]*", {{'a'}, {'a', 'a'}, {'a', 0x00}, {'a', 0xff}}, {{}, {'b'}, {0xff, 'a'}}},
+		{"(?s).*", {{}, {'a'}, {0x00}, {0xff, '\n', 'b'}}, {}},
+		{"(?s).*?b", {{'b'}, {'a', 'b'}, {0xff, 'b'}}, {{}, {'a'}, {'b', 'a'}}},
+		{"[^\\x00-\\xff]", {}, {{}, {'a'}, {0x00}, {0xff}}},
+		{"a|[^\\x00-\\xff]", {{'a'}}, {{}, {'b'}, {'a', 'a'}}},
+	};
+	for (const auto& [regex, accepted, rejected] : cases) {
+		CAPTURE(regex);
+		const Nfa without_epsilon{mata::parser::create_nfa(regex)};
+		const Nfa unreduced{mata::parser::create_nfa(regex, false, 306, false)};
+		const Nfa with_epsilon{mata::parser::create_nfa(regex, true, 306, false)};
+		const Nfa epsilon_removed{remove_epsilon(with_epsilon, 306)};
+		for (const Word& word : accepted) {
+			CAPTURE(word);
+			CHECK(without_epsilon.is_in_lang(word));
+			CHECK(unreduced.is_in_lang(word));
+			CHECK(epsilon_removed.is_in_lang(word));
+		}
+		for (const Word& word : rejected) {
+			CAPTURE(word);
+			CHECK(!without_epsilon.is_in_lang(word));
+			CHECK(!unreduced.is_in_lang(word));
+			CHECK(!epsilon_removed.is_in_lang(word));
+		}
+		CHECK(are_equivalent(without_epsilon, epsilon_removed));
 	}
 }

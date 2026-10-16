@@ -5,6 +5,8 @@
 
 #include <iostream>
 #include <ranges>
+#include <stdexcept>
+#include <string>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
@@ -145,12 +147,22 @@ class RegexParser {
 			}
 			switch (inst->opcode()) {
 				default:
-					LOG(DFATAL) << "unhandled " << inst->opcode() << " in convertProgToNfa";
-					break;
+					throw std::runtime_error{
+						"create_nfa: unsupported RE2 instruction opcode " +
+						std::to_string(static_cast<int>(inst->opcode()))
+					};
 
+				// The kInstMatch type of state is a final state, but all final states are handled before the switch
+				//  statement above. A match can be a non-last entry of its list, e.g., in the non-greedy 'a*?'.
 				case re2::kInstMatch:
-					// The kInstMatch type of state is a final state,
-					// but all final states are handled before the switch statement above
+				// A fail instruction never matches, so it has no transitions of its own.
+				case re2::kInstFail:
+				// RE2 rewrites the alternation of a '[\x00-\xff]*' loop and a match, e.g., in '(?s)a.*', to an
+				//  AltMatch. In a flattened program, both alternatives follow as the next entries of the same list.
+				case re2::kInstAltMatch:
+					if (use_epsilon && !this->state_cache.is_last[re2_state]) {
+						explicit_nfa.delta.add(re2_state, epsilon_value, re2_state + 1);
+					}
 					break;
 
 				case re2::kInstNop:
