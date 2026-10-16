@@ -841,6 +841,41 @@ q1 \false q2
 
 		REQUIRE(exception);
 	}
+	SECTION("malformed transition with one token (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("malformed transition with two tokens (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 1\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("malformed transition with four tokens (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q2\nq0 1 q1 q2\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("bad alphabet type suffix (#761)") {
+		std::string file = "@NFA-bitz\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 1 q1\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("bad naming suffix (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%States-numbers\n%Initial q0\n%Final q1\nq0 1 q1\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("ParsedSection operator[] on missing key (#761)") {
+		std::string file = "@NFA-explicit\n%Initial q0\n";
+		const auto sec = mata::parser::parse_mf_section(file);
+		CHECK_THROWS_AS((void)sec["Final"], std::runtime_error);
+	}
 } // parse_mf }}}
 
 TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)") { // {{{
