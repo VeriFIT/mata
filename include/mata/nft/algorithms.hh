@@ -166,6 +166,38 @@ Nft concatenate_eps(
 );
 
 /**
+ * @brief Concatenate two NFTs with epsilon transitions, consuming the left operand.
+ *
+ * Same result as the copying overload. The left operand's state posts are moved into the result; the right
+ * operand is copied normally. If @p lhs and @p rhs are aliased, a controlled snapshot of @p rhs is taken before
+ * @p lhs is consumed. @p lhs is left valid but empty after the operation.
+ */
+Nft concatenate_eps(
+	Nft&& lhs,
+	const Nft& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
+ * @brief Concatenate two NFTs with epsilon transitions, consuming both operands.
+ *
+ * Same result as the copying overload. The state posts of both operands are moved into the result. If @p lhs and
+ * @p rhs are aliased, a controlled snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both
+ * copies. Both @p lhs and @p rhs are left valid but empty after the operation.
+ */
+Nft concatenate_eps(
+	Nft&& lhs,
+	Nft&& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
  * @brief Composes two NFTs.
  *
  * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.

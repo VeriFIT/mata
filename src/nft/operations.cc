@@ -1508,6 +1508,22 @@ Nft mata::nft::union_nondet(const Nft& lhs, const Nft& rhs) {
 	return union_nft;
 }
 
+Nft mata::nft::union_nondet(Nft&& lhs, const Nft& rhs) {
+	// Aliased operands: snapshot `rhs` before `lhs` is consumed.
+	if (&lhs == &rhs) { return union_nondet(std::move(lhs), Nft{rhs}); }
+	Nft union_nft{std::move(lhs)};
+	union_nft.unite_nondet_with(rhs);
+	return union_nft;
+}
+
+Nft mata::nft::union_nondet(Nft&& lhs, Nft&& rhs) {
+	// Aliased operands: snapshot `rhs` before `lhs` is consumed.
+	if (&lhs == &rhs) { return union_nondet(std::move(lhs), Nft{rhs}); }
+	Nft union_nft{std::move(lhs)};
+	union_nft.unite_nondet_with(std::move(rhs));
+	return union_nft;
+}
+
 void Nft::assert_num_of_levels_match_(const Nft& nft) const {
 	MATA_ASSERT(
 		this->levels.num_of_levels == nft.levels.num_of_levels,
@@ -1538,7 +1554,7 @@ Nft& Nft::unite_nondet_with(const Nft& nft) {
 	this->delta.allocate(num_of_states_this);
 
 	auto renumber_states{[&](const State state) { return num_of_states_this + state; }};
-	this->delta.append(nft.delta.renumber_targets(renumber_states));
+	this->delta.append_shifted(nft.delta, num_of_states_this);
 
 	// Set accepting states.
 	this->final.reserve(num_of_states_result);
@@ -1551,6 +1567,49 @@ Nft& Nft::unite_nondet_with(const Nft& nft) {
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft.levels.num_of_levels);
 	this->levels.append(nft.levels);
 
+	return *this;
+}
+
+Nft& Nft::unite_nondet_with(Nft&& nft) {
+	assert_num_of_levels_match_(nft);
+	if (this == &nft) {
+		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
+		const Nft snapshot{nft};
+		return unite_nondet_with(snapshot);
+	}
+
+	// The consumed operand is left valid and empty, with its number of levels.
+	const size_t nft_num_of_levels{nft.levels.num_of_levels};
+	if (final.empty() || initial.empty()) {
+		*this = std::move(nft);
+		nft = Nft::with_levels(nft_num_of_levels);
+		return *this;
+	}
+	if (nft.final.empty() || nft.initial.empty()) {
+		nft = Nft::with_levels(nft_num_of_levels);
+		return *this;
+	}
+
+	const size_t num_of_states_this{this->num_of_states()};
+	const size_t num_of_states_nft{nft.num_of_states()};
+	const size_t num_of_states_result{num_of_states_this + num_of_states_nft};
+
+	this->delta.reserve(num_of_states_result);
+	this->delta.allocate(num_of_states_this);
+	this->delta.append_shifted(std::move(nft.delta), num_of_states_this);
+
+	// Set accepting states.
+	this->final.reserve(num_of_states_result);
+	for (const State& nft_final : nft.final) { this->final.insert(num_of_states_this + nft_final); }
+	// Set initial states.
+	this->initial.reserve(num_of_states_result);
+	for (const State& nft_initial : nft.initial) { this->initial.insert(num_of_states_this + nft_initial); }
+
+	// Combine the levels of both NFTs.
+	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft_num_of_levels);
+	this->levels.append(nft.levels);
+
+	nft = Nft::with_levels(nft_num_of_levels);
 	return *this;
 }
 

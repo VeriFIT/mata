@@ -1036,6 +1036,21 @@ Nfa concatenate(
 );
 
 /**
+ * @brief Concatenate two NFAs, consuming both operands.
+ *
+ * The state posts of both operands are moved into the result. If @p lhs and @p rhs are aliased, a controlled
+ * snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both copies.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ */
+Nfa concatenate(
+	Nfa&& lhs,
+	Nfa&& rhs,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
  * @brief Compute NFA by concatenating @p nfa_to_concatenate with itself @p power times.
  *
  * Uses exponentiation by squaring for efficiency. The result accepts the language L^power,
