@@ -372,13 +372,17 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 	//  appending the merged state post instead of inserting every missing symbol into the middle of the old one.
 	StatePost completed_post{};
 	for (State state{0}; state < num_of_states; ++state) {
-		StatePost& state_post{delta.mutable_state_post(state)};
+		// Probed through the constant accessor: 'mutable_state_post()' allocates the posts of all states up to
+		//  'state' (the delta may be shorter than the automaton), so a state that turns out to be complete must
+		//  not reach it.
+		const StatePost& post{delta[state]};
 
-		// Both the state post and @p symbols are sorted by symbol, so a single merge finds the missing symbols.
-		//  Symbols outside @p symbols are simply skipped over, they complete nothing.
+		// Both the state post and @p symbols are sorted by symbol, so a single merge decides whether the post
+		//  contains all of @p symbols. Comparing sizes would not decide it: a post may hold symbols outside
+		//  @p symbols (e.g., EPSILON), which complete nothing and are only skipped over here.
 		auto symbols_it{symbols_begin};
-		auto post_it{state_post.begin()};
-		const auto post_end{state_post.end()};
+		auto post_it{post.begin()};
+		const auto post_end{post.end()};
 		while (symbols_it != symbols_end) {
 			while (post_it != post_end && post_it->symbol < *symbols_it) { ++post_it; }
 			if (post_it == post_end || post_it->symbol != *symbols_it) { break; } // '*symbols_it' is missing.
@@ -387,11 +391,15 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 		}
 		if (symbols_it == symbols_end) { continue; } // The state is already complete.
 		transition_added = true;
+		// Upper bound on the missing symbols: everything from the first missing one on. 'post' dangles from here,
+		//  'mutable_state_post()' may reallocate the state posts.
+		const size_t num_of_missing_at_most{static_cast<size_t>(symbols_end - symbols_it)};
 
 		// Rebuild the state post as the merge of the original symbol posts with the missing symbols. Both sequences
 		//  are sorted, so the merged state post is created by appending only, with no sorted insert in the middle.
+		StatePost& state_post{delta.mutable_state_post(state)};
 		completed_post.clear();
-		completed_post.reserve(state_post.size() + static_cast<size_t>(symbols_end - symbols_it));
+		completed_post.reserve(state_post.size() + num_of_missing_at_most);
 		symbols_it = symbols_begin;
 		for (SymbolPost& symbol_post : state_post) {
 			while (symbols_it != symbols_end && *symbols_it < symbol_post.symbol) {
@@ -406,9 +414,13 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 	}
 
 	if (transition_added && num_of_states <= sink_state_val) {
+		// 'sink_state_val' is at least 'num_of_states', hence beyond every allocated state post: the sink post is
+		//  empty and the self-loops over the sorted @p symbols are appended in order, without the search and the
+		//  shifting that 'Delta::add()' pays per symbol.
 		StatePost& sink_post{delta.mutable_state_post(sink_state_val)};
-		sink_post.reserve(sink_post.size() + symbols.size());
-		for (const Symbol symbol : symbols) { delta.add(sink_state_val, symbol, sink_state_val); }
+		MATA_ASSERT(sink_post.empty(), "Nfa::make_complete: the post of a fresh sink state must be empty.");
+		sink_post.reserve(symbols.size());
+		for (const Symbol symbol : symbols) { sink_post.emplace_back(symbol, sink_state_val); }
 	}
 
 	return transition_added;
