@@ -182,6 +182,17 @@ bool included_on(const Nfa& lhs, const Nfa& rhs, const std::vector<Word>& words)
 	}
 	return true;
 }
+
+/// Is @p run an accepting run of @p nfa: a path from an initial to a final state that reads the word of @p run?
+bool is_accepting_run(const Nfa& nfa, const Run& run) {
+	if (run.path.size() != run.word.size() + 1) { return false; }
+	if (!nfa.initial.contains(run.path.front()) || !nfa.final.contains(run.path.back())) { return false; }
+	for (size_t i{0}; i < run.word.size(); ++i) {
+		if (!nfa.delta.contains(run.path[i], run.word[i], run.path[i + 1])) { return false; }
+	}
+	return true;
+}
+
 /// Dump the automaton without the alphabet: print_to_mata() rejects symbols outside the attached
 ///  alphabet, and the generated automata use EPSILON.
 std::string describe(const unsigned seed, const Nfa& nfa) {
@@ -387,10 +398,11 @@ TEST_CASE(
 			is_included(bigger, included, alphabet.get(), {{"algorithm", "antichains"}})
 		);
 
-		// A reported counterexample is a word of the smaller language that the bigger one rejects.
+		// A reported counterexample is a run of the smaller automaton over a word that the bigger one rejects.
 		Run cex{};
 		if (!is_included(smaller, bigger, &cex, alphabet.get(), {{"algorithm", "antichains"}})) {
 			CHECK(reference_accepts(smaller, cex.word));
+			CHECK(is_accepting_run(smaller, cex));
 			CHECK(!reference_accepts(bigger, cex.word));
 		}
 	}
@@ -496,6 +508,7 @@ TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with mo
 			CHECK(included_on(united, lhs, words));
 		} else {
 			CHECK(reference_accepts(united, cex.word));
+			CHECK(is_accepting_run(united, cex));
 			CHECK(!reference_accepts(lhs, cex.word));
 		}
 	}
