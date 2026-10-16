@@ -233,7 +233,6 @@ template <class Key> class OrdVector {
 
 	/// Insert the sorted, duplicate-free @p keys, such as another @c OrdVector or a @c SmallOrdVector.
 	bool insert(const std::span<const Key> keys) {
-		static OrdVector tmp{};
 		MATA_ASSERT(is_sorted());
 		MATA_ASSERT(std::ranges::is_sorted(keys));
 		if (keys.empty()) { return false; }
@@ -241,17 +240,14 @@ template <class Key> class OrdVector {
 			vec_.insert(vec_.end(), keys.begin(), keys.end());
 			return true;
 		}
-		tmp.clear();
-		tmp.reserve(size() + keys.size());
-		std::ranges::set_union(vec_, keys, std::back_inserter(tmp.vec_));
-		const bool inserted{tmp.size() > size()};
-		vec_ = tmp.vec_;
-		/*
-		 * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
-		 * But it defeats the idea of having tmp vector shared between all the unions and allocated only once.
-		 * It would be good to try it with removing epsilon transitions or determinization.
-		 */
-		// std::swap(tmp.vec_,vec_);
+
+		// The merge buffer is local. It used to be a function-local `static` shared by every thread in
+		//  the process, which corrupted the result of concurrent unions over unrelated containers.
+		VectorType merged{};
+		merged.reserve(vec_.size() + keys.size());
+		std::ranges::set_union(vec_, keys, std::back_inserter(merged));
+		const bool inserted{merged.size() > vec_.size()};
+		vec_ = std::move(merged);
 		MATA_ASSERT(is_sorted());
 		return inserted;
 	}
