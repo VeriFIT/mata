@@ -1375,18 +1375,9 @@ bool Nft::is_in_lang_by_levels(
 	// consumed, unless this is a prefix query) and records the hit in `accepted`; post() then stops at the first
 	// accepting configuration. A non-accepting query still has to exhaust the space (and dedup full
 	// (head-positions, state) configurations to stay terminating on cycles).
-	std::vector<size_t> end_positions(level_words.size());
-	for (size_t i{0}; i < level_words.size(); ++i) { end_positions[i] = level_words[i].size(); }
-	bool accepted{false};
-	const auto stop_at_final = [&](const State state, const std::vector<size_t>& reading_head_positions) {
-		if (levels[state] == 0 && (match_prefix || reading_head_positions == end_positions) && final.contains(state)) {
-			accepted = true;
-			return true;
-		}
-		return false;
-	};
-	post(StateSet{initial.begin(), initial.end()}, level_words, nullptr, true, jump_mode, stop_at_final);
-	return accepted;
+	// The stop condition is the internal one of the multiword post(): it compares position ids instead of decoding
+	// every discovered configuration for the public early-exit predicate.
+	return reaches_final_by_levels_(level_words, match_prefix, jump_mode);
 }
 
 StateSet Nft::read_word(const Run& run, const JumpMode jump_mode) const {
