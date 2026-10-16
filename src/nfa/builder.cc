@@ -37,14 +37,15 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	// a lambda for translating state names to identifiers
+	// a lambda for translating state names to identifiers; a name mapped by the caller allocates its state, so that
+	//  a new name never gets its identifier while the transitions are only gathered
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
 			State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
 		} else {
-			return (*state_map)[str];
+			return aut.add_state((*state_map)[str]);
 		}
 	};
 
@@ -58,6 +59,10 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		for (const auto& str : it->second) { aut.final.insert(get_state_name(str)); }
 	}
 
+	// The transitions arrive in file order, so they are gathered and imported in one batch instead of being
+	//  inserted one by one, each with its own search and vector shift.
+	std::vector<Transition> transitions;
+	transitions.reserve(parsec.body.size());
 	for (const auto& body_line : parsec.body) {
 		if (body_line.size() != 3) {
 			if (body_line.size() == 2) {
@@ -67,10 +72,13 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 			}
 		}
 
-		aut.delta.add(
-			get_state_name(body_line[0]), translate_symbol_name(alphabet, body_line[1]), get_state_name(body_line[2])
-		);
+		// Sequenced, so that a mapped source is allocated before a new target gets an identifier.
+		const State src_state{get_state_name(body_line[0])};
+		const Symbol symbol{translate_symbol_name(alphabet, body_line[1])};
+		const State tgt_state{get_state_name(body_line[2])};
+		transitions.emplace_back(src_state, symbol, tgt_state);
 	}
+	aut.delta.add(std::move(transitions));
 
 	return aut;
 }
@@ -86,14 +94,14 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	// a lambda for translating state names to identifiers
+	// a lambda for translating state names to identifiers, see the ParsedSection overload above
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
 			State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
 		} else {
-			return (*state_map)[str];
+			return aut.add_state((*state_map)[str]);
 		}
 	};
 
@@ -102,6 +110,9 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 		aut.initial.insert(state);
 	}
 
+	// Gathered and imported in one batch, see the ParsedSection overload above.
+	std::vector<Transition> transitions;
+	transitions.reserve(inter_aut.transitions.size());
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) {
@@ -111,12 +122,13 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 			}
 		}
 
-		State src_state = get_state_name(formula_node.name);
-		Symbol symbol = translate_symbol_name(alphabet, formula_graph.children[0].node.name);
-		State tgt_state = get_state_name(formula_graph.children[1].node.name);
+		const State src_state{get_state_name(formula_node.name)};
+		const Symbol symbol{translate_symbol_name(alphabet, formula_graph.children[0].node.name)};
+		const State tgt_state{get_state_name(formula_graph.children[1].node.name)};
 
-		aut.delta.add(src_state, symbol, tgt_state);
+		transitions.emplace_back(src_state, symbol, tgt_state);
 	}
+	aut.delta.add(std::move(transitions));
 
 	std::unordered_set<std::string> final_formula_nodes;
 	if (!(inter_aut.final_formula.node.is_constant())) {

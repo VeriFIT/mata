@@ -1929,6 +1929,36 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls") { // {{{
 	}
 } // }}}
 
+TEST_CASE("mata::nfa::construct() with a partly filled state map") { // {{{
+	// The mapped names are first mentioned by transitions; a new name must still get an unused identifier.
+	//  The parser of IntermediateAut drops the prefix "q" of the state names.
+	OnTheFlyAlphabet alphabet;
+	nfa::builder::NameStateMap state_map{{"0", 0}, {"1", 1}, {"3", 3}};
+	Nfa aut;
+	SECTION("from ParsedSection") {
+		mata::parser::ParsedSection parsec;
+		parsec.type = nfa::TYPE_NFA;
+		parsec.body = {{"0", "a", "1"}, {"1", "b", "2"}, {"3", "c", "4"}};
+		aut = builder::construct(parsec, &alphabet, &state_map);
+	}
+	SECTION("from IntermediateAut") {
+		const std::string file = "@NFA-explicit\n"
+								 "%Alphabet-auto\n"
+								 "q0 a q1\n"
+								 "q1 b q2\n"
+								 "q3 c q4\n";
+		aut = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(file))[0], &alphabet, &state_map);
+	}
+
+	CHECK(state_map.at("2") == 2);
+	CHECK(state_map.at("4") == 4);
+	CHECK(aut.num_of_states() == 5);
+	CHECK(aut.delta.num_of_transitions() == 3);
+	CHECK(aut.delta.contains(0, alphabet.translate_symb("a"), 1));
+	CHECK(aut.delta.contains(1, alphabet.translate_symb("b"), 2));
+	CHECK(aut.delta.contains(3, alphabet.translate_symb("c"), 4));
+} // }}}
+
 TEST_CASE("mata::nfa::make_complete()") { // {{{
 	Nfa aut{};
 
