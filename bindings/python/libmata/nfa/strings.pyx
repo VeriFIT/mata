@@ -9,6 +9,8 @@ from libcpp.map cimport map as cmap
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.optional cimport optional
 from libcpp.pair cimport pair
+from libcpp.string cimport string
+from libcpp.unordered_map cimport unordered_map as umap
 
 from cython.operator import dereference, postincrement as postinc
 
@@ -121,9 +123,12 @@ def noodlify(mata_nfa.Nfa aut, Symbol symbol, include_empty = False):
     :return: List of automata: A list of all (non-empty) noodles.
     """
     noodle_segments = []
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments = mata_strings.c_noodlify(
-        dereference(aut.thisptr.get()), symbol, include_empty
-    )
+    cdef CNfa* c_aut = aut.thisptr.get()
+    cdef Symbol c_symbol = symbol
+    cdef bool c_include_empty = include_empty
+    cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments
+    with nogil:
+        c_noodle_segments = mata_strings.c_noodlify(dereference(c_aut), c_symbol, c_include_empty)
     for c_noodle in c_noodle_segments:
         noodle = []
         for c_noodle_segment in c_noodle:
@@ -210,10 +215,24 @@ def noodlify_mult_eps(mata_nfa.Nfa aut, epsilons, include_empty = False):
     :return: A list of noodles, each a list of (segment, visited-epsilons-counter-vector) pairs.
     """
     cdef cset[Symbol] c_epsilons = epsilons
-    cdef vector[mata_strings.CNoodleWithEpsilonsCounter] c_noodles = mata_strings.c_noodlify_mult_eps(
-        dereference(aut.thisptr.get()), c_epsilons, include_empty
-    )
+    cdef CNfa* c_aut = aut.thisptr.get()
+    cdef bool c_include_empty = include_empty
+    cdef vector[mata_strings.CNoodleWithEpsilonsCounter] c_noodles
+    with nogil:
+        c_noodles = mata_strings.c_noodlify_mult_eps(dereference(c_aut), c_epsilons, c_include_empty)
     return [_wrap_noodle_with_epsilons_counter(c_noodle) for c_noodle in c_noodles]
+
+
+cdef shared_ptr[CNfa] _unification_input(mata_nfa.Nfa aut):
+    """Return `aut` for a C++ noodlification that unifies the initial and final states of its inputs in place.
+
+    Automata that the unification would change are copied, so that the call, which runs without the GIL, never writes
+    an automaton shared with the caller or with concurrent calls.
+    """
+    cdef CNfa* c_aut = aut.thisptr.get()
+    if c_aut.initial.size() > 1 or c_aut.final.size() > 1:
+        return make_shared[CNfa](dereference(c_aut))
+    return aut.thisptr
 
 
 def noodlify_for_equation_sides(left_side_automata, right_side_automata, include_empty = False, params = None):
@@ -228,17 +247,17 @@ def noodlify_for_equation_sides(left_side_automata, right_side_automata, include
     cdef vector[shared_ptr[CNfa]] c_left_side_automata
     cdef vector[shared_ptr[CNfa]] c_right_side_automata
     for lhs_aut in left_side_automata:
-        c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr)
+        c_left_side_automata.push_back(_unification_input(lhs_aut))
     for rhs_aut in right_side_automata:
-        c_right_side_automata.push_back((<mata_nfa.Nfa>rhs_aut).thisptr)
+        c_right_side_automata.push_back(_unification_input(rhs_aut))
     params = params or {}
-    cdef vector[mata_strings.CNoodleWithEpsilonsCounter] c_noodles = mata_strings.c_noodlify_for_equation_sides(
-        c_left_side_automata, c_right_side_automata, include_empty,
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        },
-    )
+    cdef umap[string, string] c_params = mata_nfa.encode_params(params)
+    cdef bool c_include_empty = include_empty
+    cdef vector[mata_strings.CNoodleWithEpsilonsCounter] c_noodles
+    with nogil:
+        c_noodles = mata_strings.c_noodlify_for_equation_sides(
+            c_left_side_automata, c_right_side_automata, c_include_empty, c_params
+        )
     return [_wrap_noodle_with_epsilons_counter(c_noodle) for c_noodle in c_noodles]
 
 
@@ -256,12 +275,16 @@ def noodlify_for_transducer(
     cdef vector[shared_ptr[CNfa]] c_input_automata
     cdef vector[shared_ptr[CNfa]] c_output_automata
     for input_aut in input_automata:
-        c_input_automata.push_back((<mata_nfa.Nfa>input_aut).thisptr)
+        c_input_automata.push_back(_unification_input(input_aut))
     for output_aut in output_automata:
-        c_output_automata.push_back((<mata_nfa.Nfa>output_aut).thisptr)
-    cdef vector[mata_strings.CTransducerNoodle] c_noodles = mata_strings.c_noodlify_for_transducer(
-        c_nft, c_input_automata, c_output_automata, reduce_intersection, use_homomorphic_heuristic
-    )
+        c_output_automata.push_back(_unification_input(output_aut))
+    cdef bool c_reduce_intersection = reduce_intersection
+    cdef bool c_use_homomorphic_heuristic = use_homomorphic_heuristic
+    cdef vector[mata_strings.CTransducerNoodle] c_noodles
+    with nogil:
+        c_noodles = mata_strings.c_noodlify_for_transducer(
+            c_nft, c_input_automata, c_output_automata, c_reduce_intersection, c_use_homomorphic_heuristic
+        )
     noodles = []
     cdef mata_strings.CTransducerNoodle c_noodle
     cdef size_t i

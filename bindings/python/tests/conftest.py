@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import sys
 import tempfile
+import threading
 
 import libmata.nfa.nfa as mata_nfa
 import pytest
@@ -22,6 +24,38 @@ def cleandir():
     finally:
         os.chdir(original_path)
         shutil.rmtree(temp_path)
+
+
+@pytest.fixture(scope="function")
+def runs_without_the_gil():
+    """Returns whether the main thread runs Python code while a given callable runs in another thread."""
+    if not getattr(sys, "_is_gil_enabled", lambda: True)():
+        pytest.skip("the interpreter has no GIL")
+
+    def _runs_without_the_gil(operation):
+        entered = threading.Event()
+        finished = []
+
+        def run():
+            entered.set()
+            operation()
+            finished.append(True)
+
+        switch_interval = sys.getswitchinterval()
+        # Threads then switch only where one blocks or releases the GIL: the worker holds it from `entered.set()`
+        #  into `operation()`, so the main thread wakes before the worker finishes only if that call releases it.
+        sys.setswitchinterval(60)
+        try:
+            worker = threading.Thread(target=run)
+            worker.start()
+            entered.wait()
+            ran_during_the_operation = not finished
+            worker.join()
+        finally:
+            sys.setswitchinterval(switch_interval)
+        return ran_during_the_operation
+
+    return _runs_without_the_gil
 
 
 @pytest.fixture(scope="function")

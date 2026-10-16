@@ -47,14 +47,16 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
         const vector[CNfa]& get_segments() except +
         const vector[CNfa]& get_untrimmed_segments() except +
 
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodlify "mata::applications::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool) except +
+    # The noodlify entry points run without the GIL; see the note on the plumbing externs in nfa.pxd.
+    cdef vector[vector[shared_ptr[CNfa]]] c_noodlify "mata::applications::strings::seg_nfa::noodlify" \
+        (CNfa&, Symbol, bool) except + nogil
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_mult_eps \
-        "mata::applications::strings::seg_nfa::noodlify_mult_eps" (CNfa&, cset[Symbol]&, bool) except +
+        "mata::applications::strings::seg_nfa::noodlify_mult_eps" (CNfa&, cset[Symbol]&, bool) except + nogil
     cdef vector[vector[shared_ptr[CNfa]]] c_noodlify_for_equation "mata::applications::strings::seg_nfa::noodlify_for_equation" \
         (const vector[CNfa*]&, CNfa&, bool, ParameterMap&) except +
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_for_equation_sides \
         "mata::applications::strings::seg_nfa::noodlify_for_equation" \
-        (vector[shared_ptr[CNfa]]&, vector[shared_ptr[CNfa]]&, bool, ParameterMap&) except +
+        (vector[shared_ptr[CNfa]]&, vector[shared_ptr[CNfa]]&, bool, ParameterMap&) except + nogil
 
     cdef cppclass CTransducerNoodleElement "mata::applications::strings::seg_nfa::TransducerNoodleElement":
         shared_ptr[CNft] transducer
@@ -69,7 +71,7 @@ ctypedef vector[CTransducerNoodleElement] CTransducerNoodle
 cdef extern from "mata/applications/strings.hh" namespace "mata::applications::strings::seg_nfa":
     cdef vector[CTransducerNoodle] c_noodlify_for_transducer \
         "mata::applications::strings::seg_nfa::noodlify_for_transducer" \
-        (shared_ptr[CNft]&, vector[shared_ptr[CNfa]]&, vector[shared_ptr[CNfa]]&, bool, bool) except +
+        (shared_ptr[CNft]&, vector[shared_ptr[CNfa]]&, vector[shared_ptr[CNfa]]&, bool, bool) except + nogil
 
     cdef CVisitedEpsilonsCounterVector c_process_eps_map "mata::applications::strings::seg_nfa::process_eps_map" \
         (CVisitedEpsilonsCounterMap&)

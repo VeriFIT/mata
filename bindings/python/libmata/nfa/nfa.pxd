@@ -212,10 +212,10 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         string print_to_mata(const CAlphabet*) except +
 
     # Automata tests
-    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except +
-    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
-    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except +
-    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&) except +
+    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except + nogil
+    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except + nogil
+    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except + nogil
+    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&) except + nogil
 
     # Automata operations
     cdef void compute_fw_direct_simulation(const CNfa&) except +
@@ -224,21 +224,24 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     cdef CRun c_encode_word "mata::nfa::encode_word" (CAlphabet*, vector[string]) except +
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
-    cdef CBinaryRelation c_compute_relation "mata::nfa::algorithms::compute_relation" (CNfa&, ParameterMap&) except +
+    cdef CBinaryRelation c_compute_relation "mata::nfa::algorithms::compute_relation" (CNfa&, ParameterMap&) except + nogil
 
+# The long-running entry points are declared `except + nogil` so that the callers can run them without the GIL.
+# The C++ library does not synchronise anything: concurrent calls may only read the automata and alphabets they
+# are given, and no other thread may mutate them meanwhile (`OnTheFlyAlphabet::translate_symb` mutates).
 cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void get_elements(StateSet*, CBoolVector) except +
-    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*) except +
-    cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&) except +
-    cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State, CPairHash[State, State]]*) except +
-    cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*) except +
-    cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
-    cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&) except +
-    cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
-    cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&) except +
-    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&) except +
-    cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&) except +
-    cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&) except +
+    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*) except + nogil
+    cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&) except + nogil
+    cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State, CPairHash[State, State]]*) except + nogil
+    cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*) except + nogil
+    cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except + nogil
+    cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&) except + nogil
+    cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except + nogil
+    cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&) except + nogil
+    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&) except + nogil
+    cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&) except + nogil
+    cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&) except + nogil
     cdef CLazyWordGenerator* c_get_words_lazy_ptr "mata::nfa::plumbing::get_words_lazy_ptr" (CNfa&, size_t) except +
 
 
@@ -279,3 +282,5 @@ cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr)
 
 cdef extern from "mata/config.hh":
     cdef int CSTATE_BITS "MATA_STATE_BITS"
+
+cdef umap[string, string] encode_params(params) except *
