@@ -319,10 +319,10 @@ class OnTheFlyAlphabet : public Alphabet {
 	using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
 
 	explicit OnTheFlyAlphabet(const Symbol init_symbol = 0) : next_symbol_value_(init_symbol) {};
-	OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet) = default;
+	OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet);
 	OnTheFlyAlphabet(OnTheFlyAlphabet&& alphabet) = default;
 	explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet) : OnTheFlyAlphabet(*alphabet) {}
-	explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
+	explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map);
 
 	/**
 	 * Create alphabet from a list of symbol names.
@@ -348,7 +348,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	std::string reverse_translate_symbol(Symbol symbol) const override;
 
   public:
-	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
+	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 	OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
 
 	/**
@@ -406,7 +406,9 @@ class OnTheFlyAlphabet : public Alphabet {
 		if (is_reserved_symbol_name(key)) {
 			throw std::runtime_error{"Cannot register the reserved special-symbol name '" + key + "'."};
 		}
-		return symbol_map_.insert({key, value});
+		const InsertionResult insertion_result{symbol_map_.try_emplace(key, value)};
+		if (insertion_result.second) { index_name(insertion_result.first); }
+		return insertion_result;
 	}
 
 	/**
@@ -430,8 +432,27 @@ class OnTheFlyAlphabet : public Alphabet {
 	bool empty() const override { return symbol_map_.empty(); }
 
   private:
+	/// Name reported for a symbol and the number of names mapped to it.
+	struct SymbolNames {
+		const std::string* name{nullptr}; ///< Key of a node of @c symbol_map_; nodes are stable until erased.
+		size_t num_of_names{0}; ///< 0 for a symbol without a name.
+	};
+
 	StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
+	/// Reverse index of @c symbol_map_, indexed by symbol; symbols are usually numbered densely from 0. When several
+	///  names share a symbol, the first one registered is reported.
+	std::vector<SymbolNames> dense_names_{};
+	/// Reverse index for symbols at or above @c dense_names_.size().
+	std::unordered_map<Symbol, SymbolNames> sparse_names_{};
+	size_t num_of_dense_symbols_{0}; ///< Number of named symbols in @c dense_names_.
 	Symbol next_symbol_value_{}; ///< Next value to be used for a newly added symbol.
+
+	const SymbolNames* find_names(Symbol symbol) const;
+	void index_name(StringToSymbolMap::const_iterator name_it);
+	/// Remove @p name_it from the reverse index; call before erasing it from @c symbol_map_.
+	void unindex_name(StringToSymbolMap::const_iterator name_it);
+	/// Redirect the name pointers of the reverse index copied from another alphabet into our @c symbol_map_.
+	void redirect_copied_index();
 
   public:
 	/**
@@ -446,7 +467,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Remove a symbol name value pair specified by its @p symbol from the alphabet.
 	 *
-	 * @warning Complexity: O(n), where n is the number of symbols in the alphabet.
+	 * When several names share @p symbol, the one reported by @c reverse_translate_symbol() is removed.
 	 * @return Number of symbols removed (0 or 1).
 	 */
 	size_t erase(Symbol symbol);
@@ -460,17 +481,27 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Remove a symbol name value pair from the position @p pos from the alphabet.
 	 */
-	void erase(const StringToSymbolMap::const_iterator pos) { symbol_map_.erase(pos); }
+	void erase(const StringToSymbolMap::const_iterator pos) {
+		unindex_name(pos);
+		symbol_map_.erase(pos);
+	}
 
 	/**
 	 * @brief Remove a symbol name value pair from the positions between @p first and @p last from the alphabet.
 	 */
 	void erase(const StringToSymbolMap::const_iterator first, const StringToSymbolMap::const_iterator last) {
-		symbol_map_.erase(first, last);
+		// One by one: unindexing may promote another name of the same symbol, which may itself lie in the range.
+		for (auto it{first}; it != last;) {
+			unindex_name(it);
+			it = symbol_map_.erase(it);
+		}
 	}
 
 	void clear() override {
 		symbol_map_.clear();
+		dense_names_.clear();
+		sparse_names_.clear();
+		num_of_dense_symbols_ = 0;
 		next_symbol_value_ = 0;
 	}
 }; // class OnTheFlyAlphabet.
