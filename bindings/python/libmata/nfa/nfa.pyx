@@ -50,6 +50,16 @@ cdef list _targets_list(const CSmallStateSet& targets):
     return [data[i] for i in range(targets.size())]
 
 
+cdef list _symbol_posts_list(const CStatePost& state_post):
+    """Copy the symbol posts of a state post, read in place, into a list of `SymbolPost`."""
+    cdef COrdVector[CSymbolPost].const_iterator it = state_post.cbegin()
+    symbol_posts = []
+    while it != state_post.cend():
+        symbol_posts.append(SymbolPost(dereference(it).symbol, _targets_list(dereference(it).targets)))
+        preinc(it)
+    return symbol_posts
+
+
 cdef class Run:
     """Wrapper over the run in NFA."""
     cdef mata_nfa.CRun *thisptr
@@ -391,9 +401,7 @@ cdef class Delta:
         :param State state: Source state to get the outgoing transitions of.
         :return: List of `SymbolPost` for `state`.
         """
-        cdef CStatePost c_state_post = self.automaton_ptr.get().delta.state_post(state)
-        cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
-        return [SymbolPost(symbol_post.symbol, _targets_list(symbol_post.targets)) for symbol_post in c_symbol_posts]
+        return _symbol_posts_list(self.automaton_ptr.get().delta[state])
 
     def __getitem__(self, State state) -> list[SymbolPost]:
         return self.state_post(state)
@@ -440,11 +448,15 @@ cdef class Delta:
         :return: List of `Transition` instances leading from `source`.
         """
         transitions = []
-        cdef CStatePost c_state_post = self.automaton_ptr.get().delta[source]
-        cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
-        for symbol_post in c_symbol_posts:
-            for target in _targets_list(symbol_post.targets):
-                transitions.append(Transition(source, symbol_post.symbol, target))
+        cdef const CStatePost* c_state_post = &self.automaton_ptr.get().delta[source]
+        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef const State* c_targets
+        cdef size_t i
+        while c_state_post_it != c_state_post.cend():
+            c_targets = dereference(c_state_post_it).targets.data()
+            for i in range(dereference(c_state_post_it).targets.size()):
+                transitions.append(Transition(source, dereference(c_state_post_it).symbol, c_targets[i]))
+            preinc(c_state_post_it)
         return transitions
 
     def get_transitions_to(self, State target) -> list[Transition]:
@@ -757,20 +769,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: SymbolPost
         """
-        cdef mata_nfa.CStatePost transitions = self.thisptr.get().delta.state_post(state)
-        cdef vector[mata_nfa.CSymbolPost] transitions_list = transitions.to_vector()
-
-        cdef vector[mata_nfa.CSymbolPost].iterator it = transitions_list.begin()
-        cdef vector[mata_nfa.CSymbolPost].iterator end = transitions_list.end()
-        transsymbols = []
-        while it != end:
-            t = SymbolPost(
-                dereference(it).symbol,
-                _targets_list(dereference(it).targets)
-            )
-            postinc(it)
-            transsymbols.append(t)
-        return transsymbols
+        return _symbol_posts_list(self.thisptr.get().delta[state])
 
     def get_transitions_to_state(self, State state_to):
         """Get transitions leading to state_to (state_to is their target state).

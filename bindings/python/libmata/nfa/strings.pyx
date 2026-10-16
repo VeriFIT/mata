@@ -67,13 +67,14 @@ cdef class Segmentation:
         return _wrap_segments(self.thisptr.get_untrimmed_segments())
 
 
-cdef _wrap_segments(vector[CNfa] c_segments):
+cdef list _wrap_segments(const vector[CNfa]& c_segments):
+    """Wrap each segment in an `Nfa` holding one copy of it, with its alphabet."""
+    cdef const CNfa* c_segment_data = c_segments.const_data()
+    cdef size_t i
     segments = []
-    for c_segment in c_segments:
-        segment = mata_nfa.Nfa(c_segment.num_of_states())
-        (<mata_nfa.Nfa>segment).thisptr.get().initial = c_segment.initial
-        (<mata_nfa.Nfa>segment).thisptr.get().final = c_segment.final
-        (<mata_nfa.Nfa>segment).thisptr.get().delta = c_segment.delta
+    for i in range(c_segments.size()):
+        segment = mata_nfa.Nfa.__new__(mata_nfa.Nfa)
+        (<mata_nfa.Nfa>segment).thisptr = make_shared[CNfa](c_segment_data[i])
         segments.append(segment)
     return segments
 
