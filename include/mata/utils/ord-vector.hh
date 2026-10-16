@@ -353,10 +353,10 @@ template <class Key> class OrdVector {
 	inline bool empty() const { return vec_.empty(); }
 
 	// Indexes which ar staying are shifted left to take place of those that are not staying.
-	template <typename Fun> void filter_indexes(const Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
+	template <typename Fun> void filter_indexes(Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
 
 	// Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
-	template <typename Fun> void filter(const Fun&& is_staying) { utils::filter(vec_, is_staying); }
+	template <typename Fun> void filter(Fun&& is_staying) { utils::filter(vec_, is_staying); }
 
 	inline const_reference back() const { return vec_.back(); }
 

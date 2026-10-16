@@ -331,7 +331,7 @@ template <class Vector, typename Index> void rename(Vector& vec, const std::vect
 	}
 }
 
-template <class Vector, typename Fun> void filter_indexes(Vector& vec, const Fun&& is_staying) {
+template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun&& is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -340,10 +340,11 @@ template <class Vector, typename Fun> void filter_indexes(Vector& vec, const Fun
 			last++;
 		}
 	}
-	vec.reserve(last);
+	// Only the first @c last elements stay: erase the rest. resize() would also demand a default constructor.
+	vec.erase(vec.begin() + static_cast<typename Vector::difference_type>(last), vec.end());
 }
 
-template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_staying) {
+template <class Vector, typename Fun> void filter(Vector& vec, Fun&& is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -352,7 +353,8 @@ template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_st
 			last++;
 		}
 	}
-	vec.reserve(last);
+	// Only the first @c last elements stay: erase the rest. resize() would also demand a default constructor.
+	vec.erase(vec.begin() + static_cast<typename Vector::difference_type>(last), vec.end());
 }
 
 /**

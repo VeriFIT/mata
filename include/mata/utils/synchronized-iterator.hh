@@ -126,6 +126,10 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 			if (this->positions[i] == this->ends[i]) { return false; }
 
 			//  Advance position[i] and position[0] to the closest equal values.
+			// Remember where position[0] was: when it moves, every earlier position has to be re-synchronized.
+			//  Only position[0] is compared with its own earlier value; comparing positions of different containers
+			//  (the former 'positions[0] > positions[1]') depended on where the containers lay in memory.
+			const Iterator position_0_before{this->positions[0]};
 			while (*this->positions[i] != *this->positions[0]) {
 				// Advance position[i] to or beyond position[0].
 				while (*this->positions[i] < *this->positions[0]) {
@@ -139,13 +143,11 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 					if (this->positions[0] == this->ends[0]) { return false; }
 				}
 
-				// If position[0] changed, start from position 1 again.
-				// (note that
-				// i gets incremented at the end of the for-loop body,
-				// and that,
-				// since we are inside the for, there are at least two positions
-				// as the for starts with i=1.)
-				if (this->positions[0] > this->positions[1]) { i = 0; }
+				// If position[0] moved, start from position 1 again (i is incremented by the for-loop).
+				if (this->positions[0] != position_0_before) {
+					i = 0;
+					break;
+				}
 			}
 		}
 		this->synchronized_at_current_minimum = true;

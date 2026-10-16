@@ -216,3 +216,55 @@ TEST_CASE("mata::utils::OrdVector should not be polymorphic") {
 	CHECK(!std::is_polymorphic_v<OrdVector<char>>);
 	CHECK(sizeof(OrdVector<int>) == sizeof(std::vector<int>));
 }
+
+TEST_CASE("mata::utils::filter() and filter_indexes() drop the elements that do not stay - issue #769") {
+	std::vector<int> values{1, 2, 3, 4, 5};
+	filter(values, [](const int value) { return value % 2 == 1; });
+	CHECK(values == std::vector<int>{1, 3, 5});
+
+	std::vector<int> indexed{10, 20, 30, 40};
+	filter_indexes(indexed, [](const size_t index) { return index != 1; });
+	CHECK(indexed == std::vector<int>{10, 30, 40});
+
+	std::vector<int> nothing_stays{1, 2, 3};
+	filter(nothing_stays, [](const int) { return false; });
+	CHECK(nothing_stays.empty());
+}
+
+TEST_CASE("mata::utils::filter() and filter_indexes() work for elements without a default constructor - issue #769") {
+	struct NoDefault {
+		int value;
+		explicit NoDefault(const int value) : value(value) {}
+		bool operator==(const NoDefault& other) const { return value == other.value; }
+	};
+
+	std::vector<NoDefault> values;
+	for (const int value : {1, 2, 3, 4, 5}) { values.emplace_back(value); }
+	filter(values, [](const NoDefault& element) { return element.value % 2 == 1; });
+	REQUIRE(values.size() == 3);
+	CHECK(values[0] == NoDefault{1});
+	CHECK(values[1] == NoDefault{3});
+	CHECK(values[2] == NoDefault{5});
+
+	std::vector<NoDefault> indexed;
+	for (const int value : {10, 20, 30, 40}) { indexed.emplace_back(value); }
+	filter_indexes(indexed, [](const size_t index) { return index != 1; });
+	REQUIRE(indexed.size() == 3);
+	CHECK(indexed[0] == NoDefault{10});
+	CHECK(indexed[1] == NoDefault{30});
+	CHECK(indexed[2] == NoDefault{40});
+}
+
+TEST_CASE("mata::utils::OrdVector::filter() and filter_indexes() with a named predicate - issue #769") {
+	OrdVector<int> vec{1, 2, 3, 4, 5};
+	const auto is_odd = [](const int value) { return value % 2 == 1; };
+	vec.filter(is_odd);
+	CHECK(vec == OrdVector<int>{1, 3, 5});
+	CHECK(vec.size() == 3);
+
+	OrdVector<int> indexed{10, 20, 30, 40};
+	const auto keeps_first_two = [](const size_t index) { return index < 2; };
+	indexed.filter_indexes(keeps_first_two);
+	CHECK(indexed == OrdVector<int>{10, 20});
+	CHECK(indexed.size() == 2);
+}
