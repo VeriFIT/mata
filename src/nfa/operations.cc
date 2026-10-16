@@ -1458,17 +1458,19 @@ Nfa mata::nfa::determinize(
 
 	Nfa result{};
 	// assuming all sets targets are non-empty
-	std::vector<std::pair<State, StateSet>> worklist{};
+	// Macrostates are owned by the subset map; its nodes never move, so the worklist points to their keys.
+	std::vector<std::pair<State, const StateSet*>> worklist{};
 	std::unordered_map<StateSet, State> subset_map_local{};
 	if (subset_map == nullptr) { subset_map = &subset_map_local; }
 
-	const StateSet initial_states_orig{aut.initial};
 	const State initial_state_res{result.add_state()};
 	result.initial.insert(initial_state_res);
+	const StateSet& initial_states_orig{
+		subset_map->insert_or_assign(StateSet{aut.initial}, initial_state_res).first->first
+	};
 
 	if (aut.final.intersects_with(initial_states_orig)) { result.final.insert(initial_state_res); }
-	worklist.emplace_back(initial_state_res, initial_states_orig);
-	(*subset_map)[mata::utils::OrdVector<State>(initial_states_orig)] = initial_state_res;
+	worklist.emplace_back(initial_state_res, &initial_states_orig);
 	if (aut.delta.empty()) { return result; }
 	if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_state_res, initial_states_orig)) {
 		return result;
@@ -1478,8 +1480,9 @@ Nfa mata::nfa::determinize(
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
 	while (!worklist.empty()) {
-		const auto [state_res, states_orig]{std::move(worklist.back())};
+		const auto [state_res, states_orig_ptr]{worklist.back()};
 		worklist.pop_back();
+		const StateSet& states_orig{*states_orig_ptr};
 		if (states_orig.empty()) {
 			// This should not happen assuming all sets targets are non-empty.
 			break;
@@ -1496,21 +1499,18 @@ Nfa mata::nfa::determinize(
 			// Skipping before the targets are unified keeps the macrostates reachable only over a foreign symbol
 			//  from ever being constructed.
 			if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, current_symbol)) { continue; }
-			StateSet targets_orig = synchronized_iterator.unify_targets();
 
-			const auto existing_target_it = subset_map->find(targets_orig);
-			State target_res;
-			if (existing_target_it != subset_map->end()) {
-				target_res = existing_target_it->second;
-			} else {
-				target_res = result.add_state();
-				(*subset_map)[mata::utils::OrdVector<State>(targets_orig)] = target_res;
-				if (aut.final.intersects_with(targets_orig)) { result.final.insert(target_res); }
-				worklist.emplace_back(target_res, targets_orig);
+			// One hash per macrostate; an existing key is left untouched, so a known macrostate is not copied.
+			const auto [target_it, inserted]{subset_map->try_emplace(synchronized_iterator.unify_targets(), 0)};
+			if (inserted) {
+				target_it->second = result.add_state();
+				if (aut.final.intersects_with(target_it->first)) { result.final.insert(target_it->second); }
+				worklist.emplace_back(target_it->second, &target_it->first);
 			}
+			const State target_res{target_it->second};
 			result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
-			if (macrostate_discover.has_value() && existing_target_it == subset_map->end() &&
-				!(*macrostate_discover)(result, target_res, targets_orig)) {
+			if (inserted && macrostate_discover.has_value() &&
+				!(*macrostate_discover)(result, target_res, target_it->first)) {
 				return result;
 			}
 		}
@@ -2287,7 +2287,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
 	while (!worklist.empty()) {
-		const auto [state_res, states_orig] = worklist.back();
+		const auto [state_res, states_orig] = std::move(worklist.back());
 		worklist.pop_back();
 		if (states_orig.empty()) {
 			// This should not happen assuming all sets targets are non-empty.
