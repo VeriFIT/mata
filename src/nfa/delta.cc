@@ -848,8 +848,12 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
 			symbols.push_back(symbol_post.symbol);
 		}
 	}
-	utils::OrdVector<Symbol> sorted_symbols(symbols);
-	return sorted_symbols;
+#ifdef _STATIC_STRUCTURES_
+	// The buffer is reused across calls, so its contents have to be copied out.
+	return utils::OrdVector<Symbol>{symbols};
+#else
+	return utils::OrdVector<Symbol>{std::move(symbols)};
+#endif
 }
 
 // returns symbols appearing in Delta, inserts to a std::set

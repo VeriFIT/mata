@@ -73,6 +73,11 @@ set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option (MATA_WERROR "Warnings should be handled as errors" OFF)
 option (MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
+# Whole-container assertions (`MATA_EXPENSIVE_ASSERT`), e.g. `OrdVector::is_sorted()` on every lookup.
+#  Off even in Debug builds: with them on, a container lookup is O(n) in Debug and O(log n) in Release,
+#  so a Debug run no longer has the complexity the code is written for. It is a PUBLIC definition: the
+#  checks sit in inline header code shared with every consumer, so both sides must agree on it.
+option (MATA_EXPENSIVE_ASSERTS "Enable the whole-container assertions of the Debug builds" OFF)
 
 # Interprocedural (link-time) optimization. Off by default: an IPO build of the static `libmata.a`
 #  holds compiler bytecode, so every consumer has to link with the matching compiler's LTO plugin.

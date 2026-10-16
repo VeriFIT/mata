@@ -394,6 +394,36 @@ jobs:
         uses: ./.github/workflows/actions/compile-python-src
       - name: Test the Python bindings
         run: make -C bindings/python test
+  expensive-asserts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ubuntu-latest
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: expensive-asserts-ubuntu-latest
+          max-size: 500M
+      # The whole-container checks are off in every other job, so this is the one run that proves the
+      #  containers really keep their invariants instead of only being used as if they did.
+      - name: Configure with the whole-container assertions
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DMATA_EXPENSIVE_ASSERTS=ON \
+            -DMATA_BUILD_EXAMPLES=OFF
+      - name: Build unit tests
+        run: cmake --build build --target tests --parallel 4
+      - name: Run unit tests with the whole-container assertions
+        run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
   build-docs:
     runs-on: ${{ matrix.os }}
     strategy:
