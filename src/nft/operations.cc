@@ -1580,7 +1580,7 @@ Nft& Nft::unite_nondet_with(const Nft& nft) {
 	this->delta.allocate(num_of_states_this);
 
 	auto renumber_states{[&](const State state) { return static_cast<State>(num_of_states_this + state); }};
-	this->delta.append_shifted(nft.delta, num_of_states_this);
+	this->delta.append_shifted(nft.delta, static_cast<State>(num_of_states_this));
 
 	// Set accepting states.
 	this->final.reserve(num_of_states_result);
@@ -1619,17 +1619,19 @@ Nft& Nft::unite_nondet_with(Nft&& nft) {
 	const size_t num_of_states_this{this->num_of_states()};
 	const size_t num_of_states_nft{nft.num_of_states()};
 	const size_t num_of_states_result{num_of_states_this + num_of_states_nft};
+	nfa::check_num_of_states(num_of_states_result);
+	const auto renumber_states{[&](const State state) { return static_cast<State>(num_of_states_this + state); }};
 
 	this->delta.reserve(num_of_states_result);
 	this->delta.allocate(num_of_states_this);
-	this->delta.append_shifted(std::move(nft.delta), num_of_states_this);
+	this->delta.append_shifted(std::move(nft.delta), static_cast<State>(num_of_states_this));
 
 	// Set accepting states.
 	this->final.reserve(num_of_states_result);
-	for (const State& nft_final : nft.final) { this->final.insert(num_of_states_this + nft_final); }
+	for (const State& nft_final : nft.final) { this->final.insert(renumber_states(nft_final)); }
 	// Set initial states.
 	this->initial.reserve(num_of_states_result);
-	for (const State& nft_initial : nft.initial) { this->initial.insert(num_of_states_this + nft_initial); }
+	for (const State& nft_initial : nft.initial) { this->initial.insert(renumber_states(nft_initial)); }
 
 	// Combine the levels of both NFTs.
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft_num_of_levels);

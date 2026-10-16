@@ -72,11 +72,11 @@ Nfa concatenate_eps_consuming(
 	// Append the rhs transitions, shifted by the number of lhs states, before any state beyond lhs is allocated.
 	result.delta.allocate(lhs_states_num);
 	if constexpr (consume_rhs) {
-		result.delta.append_shifted(std::move(rhs.delta), lhs_states_num);
+		result.delta.append_shifted(std::move(rhs.delta), static_cast<State>(lhs_states_num));
 	} else {
-		result.delta.append_shifted(rhs.delta, lhs_states_num);
+		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
 	}
-	result.add_state(result_num_of_states - 1);
+	result.add_state(static_cast<State>(result_num_of_states - 1));
 
 	// Add epsilon transitions connecting lhs and rhs automata.
 	// The epsilon transitions lead from lhs original final states to rhs original initial states.
@@ -139,7 +139,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 	utils::SparseSet<mata::nfa::State> aut_final = aut.final;
 
 	this->delta.allocate(n);
-	this->delta.append_shifted(aut.delta, n);
+	this->delta.append_shifted(aut.delta, static_cast<State>(n));
 
 	// set accepting states
 	utils::SparseSet<State> new_fin{};

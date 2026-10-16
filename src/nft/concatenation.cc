@@ -63,11 +63,11 @@ Nft concatenate_eps_consuming(
 	// Append the rhs transitions, shifted by the number of lhs states, before any state beyond lhs is allocated.
 	result.delta.allocate(lhs_states_num);
 	if constexpr (consume_rhs) {
-		result.delta.append_shifted(std::move(rhs.delta), lhs_states_num);
+		result.delta.append_shifted(std::move(rhs.delta), static_cast<State>(lhs_states_num));
 	} else {
-		result.delta.append_shifted(rhs.delta, lhs_states_num);
+		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
 	}
-	result.add_state(result_num_of_states - 1);
+	result.add_state(static_cast<State>(result_num_of_states - 1));
 
 	// Map lhs states to result states.
 	lhs_states_renaming.reserve(lhs_states_num);
@@ -139,16 +139,16 @@ Nft concatenate(
 Nft& Nft::concatenate(const Nft& aut) {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	const size_t n = this->num_of_states();
+	const size_t aut_n = aut.num_of_states();
+	nfa::check_num_of_states(n + aut_n);
 	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// copy the information about aut to save the case when this is the same object as aut.
 	utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
 	utils::SparseSet<mata::nft::State> aut_final = aut.final;
-	const size_t aut_n = aut.num_of_states();
-	nfa::check_num_of_states(n + aut_n);
 
 	this->delta.allocate(n);
-	this->delta.append_shifted(aut.delta, n);
+	this->delta.append_shifted(aut.delta, static_cast<State>(n));
 	this->levels.append(aut.levels);
 
 	// set accepting states
@@ -183,14 +183,15 @@ Nft& Nft::concatenate(Nft&& aut) {
 	}
 
 	const size_t n = this->num_of_states();
-	auto upd_fnc = [&](const State st) { return st + n; };
-
 	const size_t aut_n = aut.num_of_states();
+	nfa::check_num_of_states(n + aut_n);
+	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
+
 	const utils::SparseSet<State> aut_initial{std::move(aut.initial)};
 	const utils::SparseSet<State> aut_final{std::move(aut.final)};
 
 	this->delta.allocate(n);
-	this->delta.append_shifted(std::move(aut.delta), n);
+	this->delta.append_shifted(std::move(aut.delta), static_cast<State>(n));
 	this->levels.append(aut.levels);
 
 	// set accepting states
