@@ -5,6 +5,9 @@
 #ifndef MATA_STRING_SOLVING_HH_
 #define MATA_STRING_SOLVING_HH_
 
+#include <mutex>
+#include <span>
+
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/nft.hh"
 
@@ -182,17 +185,38 @@ class Segmentation {
 	}
 
 	/**
+	 * Get the ε-transitions grouped by their depth.
+	 * @return Vector indexed by depth; element @c i lists the ε-transitions of depth @c i.
+	 */
+	const std::vector<std::vector<Transition>>& get_epsilon_transitions_by_depth() const {
+		return epsilon_transitions_by_depth_;
+	}
+
+	/**
+	 * Get the ε-transitions leaving @p state.
+	 *
+	 * All ε-transitions of one state lie consecutively at a single depth, so they are a view into
+	 *  @c get_epsilon_transitions_by_depth().
+	 * @return The ε-transitions leaving @p state; empty if there are none.
+	 */
+	std::span<const Transition> get_epsilon_transitions(State state) const;
+
+	/**
 	 * Get segmentation depths for ε-transitions.
+	 *
+	 * Built from @c get_epsilon_transitions_by_depth() on the first call.
 	 * @return Map of depths to lists of ε-transitions.
 	 */
-	const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions_; }
+	const EpsilonDepthTransitions& get_epsilon_depths() const;
 
 	/**
 	 * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
 	 *
+	 * Built from @c get_epsilon_transitions_by_depth() on the first call.
 	 * @return Map of depths to a map of states to transitions
 	 */
-	const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map_; }
+	[[deprecated("Use get_epsilon_transitions(state), which needs no copy of the ε-transitions.")]]
+	const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const;
 
 	/**
 	 * Get segment automata.
@@ -215,8 +239,37 @@ class Segmentation {
 	const std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
 	/// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
 	const SegNfa& automaton_;
-	EpsilonDepthTransitions epsilon_depth_transitions_{}; ///< Epsilon depths.
-	EpsilonDepthTransitionMap eps_depth_trans_map_{}; /// Epsilon depths with mapping of states to epsilon transitions
+	/// ε-transitions indexed by their depth; each ε-transition is stored once.
+	std::vector<std::vector<Transition>> epsilon_transitions_by_depth_{};
+	/// Position of the ε-transitions of a state in @c epsilon_transitions_by_depth_, indexed by the state.
+	struct EpsilonTransitionSpan {
+		EpsilonDepth depth{};
+		size_t begin{};
+		size_t end{};
+	};
+	std::vector<EpsilonTransitionSpan> epsilon_transitions_of_state_{};
+	/// Value built on the first call of @c get(), safely for concurrent @c const calls. A copied or moved-from
+	///  @c Segmentation copies the ε-transition index, so the copy starts unbuilt and builds its own view on demand.
+	template <typename T> class LazyView {
+	  public:
+		LazyView() = default;
+		LazyView(const LazyView&) {}
+		LazyView(LazyView&&) noexcept {}
+		LazyView& operator=(const LazyView&) = delete;
+		LazyView& operator=(LazyView&&) = delete;
+		~LazyView() = default;
+
+		template <typename Build> const T& get(Build&& build) const {
+			std::call_once(built_, [&] { std::forward<Build>(build)(value_); });
+			return value_;
+		}
+
+	  private:
+		mutable std::once_flag built_{};
+		mutable T value_{};
+	};
+	LazyView<EpsilonDepthTransitions> epsilon_depth_transitions_{}; ///< View for @c get_epsilon_depths().
+	LazyView<EpsilonDepthTransitionMap> eps_depth_trans_map_{}; ///< View for @c get_epsilon_depth_trans_map().
 	std::vector<SegNfa> segments_{}; ///< Segments for @p automaton.
 	std::vector<SegNfa> segments_raw_{}; ///< Raw segments for @p automaton.
 	VisitedEpsMap visited_eps_{}; /// number of visited eps for each state
@@ -318,8 +371,9 @@ using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
  * and the created automaton takes this segment, sets initial={init}, final={final}
  * and trims it; also segments_one_initial_final[unused_state, final] is used for the first
  * segment (where we always want all initial states, only final state changes) and
- * segments_one_initial_final[init, unused_state] is similarly for the last segment
- * TODO: should we use unordered_map? then we need hash
+ * segments_one_initial_final[init, unused_state] is similarly for the last segment.
+ * The map is ordered so that all pairs of one initial state are contiguous: noodlify_mult_eps() visits them with one
+ *  range scan instead of probing every final state.
  */
 void segs_one_initial_final(
 	const std::vector<Nfa>& segments,

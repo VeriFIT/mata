@@ -22,11 +22,9 @@ namespace {
  * @param[in] epsilon_depths Computed list of epsilon transitions for each depth.
  * @return Number of permutations.
  */
-size_t get_num_of_permutations(const seg_nfa::Segmentation::EpsilonDepthTransitions& epsilon_depths) {
+size_t get_num_of_permutations(const std::vector<std::vector<Transition>>& epsilon_depths) {
 	size_t num_of_permutations{1};
-	for (const auto& transitions_at_depth : epsilon_depths | std::views::values) {
-		num_of_permutations *= transitions_at_depth.size();
-	}
+	for (const auto& transitions_at_depth : epsilon_depths) { num_of_permutations *= transitions_at_depth.size(); }
 	return num_of_permutations;
 }
 
@@ -112,7 +110,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
 	std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
-	const auto& epsilon_depths{segmentation.get_epsilon_depths()};
+	const auto& epsilon_depths{segmentation.get_epsilon_transitions_by_depth()};
 
 	// Compute number of all combinations of ε-transitions with one ε-transitions from each depth.
 	const size_t num_of_permutations{get_num_of_permutations(epsilon_depths)};
@@ -126,10 +124,10 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
 	for (size_t index{0}; index < num_of_permutations; ++index) {
 		size_t temp{index};
 		for (size_t depth{0}; depth < epsilon_depths_size; ++depth) {
-			const size_t num_of_trans_at_cur_depth = epsilon_depths.at(depth).size();
+			const size_t num_of_trans_at_cur_depth = epsilon_depths[depth].size();
 			const size_t computed_index = temp % num_of_trans_at_cur_depth;
 			temp /= num_of_trans_at_cur_depth;
-			epsilon_noodle[depth] = epsilon_depths.at(depth)[computed_index];
+			epsilon_noodle[depth] = epsilon_depths[depth][computed_index];
 		}
 
 		Noodle noodle;
@@ -268,8 +266,6 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
-	const auto& epsilon_depths_map{segmentation.get_epsilon_depth_trans_map()};
-
 	struct SegItem {
 		NoodleWithEpsilonsCounter noodle{};
 		State fin{};
@@ -310,7 +306,16 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	/// Number of visited epsilons for each state.
 	auto visited_eps = segmentation.get_visited_eps();
 
-	const mata::utils::SparseSet<mata::nfa::State> last_segment_finals{unused_state};
+	// Position of every final state in the final states of its segment. The final states of the inner segments are
+	//  disjoint, as every state lies at a single depth; the auxiliary final state of the last segment gets position 0.
+	std::vector<size_t> final_position(unused_state + 1, 0);
+	for (size_t seg_id{1}; seg_id + 1 < segments.size(); ++seg_id) {
+		size_t position{0};
+		for (const State fin : segments[seg_id].final) { final_position[fin] = position++; }
+	}
+	using SegmentsIter = decltype(segments_one_initial_final)::const_iterator;
+	std::vector<SegmentsIter> next_segments{};
+
 	while (!lifo.empty()) {
 		SegItem item = std::move(lifo.front());
 		lifo.pop_front();
@@ -323,15 +328,25 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 			continue;
 		}
 
-		// Final states of the segment; the last segment ends in the single auxiliary state.
-		const mata::utils::SparseSet<mata::nfa::State>& fins{
-			item.seg_id + 1 == segments.size() - 1 ? last_segment_finals : segments[item.seg_id + 1].final
-		};
-		for (const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
-			for (const State& fn : fins) {
-				auto seg_iter = segments_one_initial_final.find({tr.target, fn});
-				if (seg_iter == segments_one_initial_final.end()) { continue; }
+		for (const Transition& tr : segmentation.get_epsilon_transitions(item.fin)) {
+			// The pairs of one initial state are contiguous in the ordered map, so one scan finds exactly the final
+			//  states of the next segment connected to tr.target instead of probing every final state.
+			next_segments.clear();
+			for (auto seg_iter{segments_one_initial_final.lower_bound({tr.target, 0})};
+				 seg_iter != segments_one_initial_final.end() && seg_iter->first.first == tr.target; ++seg_iter) {
+				MATA_ASSERT(
+					item.seg_id + 2 == segments.size()
+						? seg_iter->first.second == unused_state
+						: segments[item.seg_id + 1].final.contains(seg_iter->first.second)
+				);
+				next_segments.push_back(seg_iter);
+			}
+			// Visit them in the order of the final states of the segment, which fixes the order of the noodles.
+			std::ranges::sort(next_segments, {}, [&](const SegmentsIter seg_iter) {
+				return final_position[seg_iter->first.second];
+			});
 
+			for (const SegmentsIter seg_iter : next_segments) {
 				SegItem new_item = item; // deep copy
 				new_item.seg_id++;
 				// do not include segments with trivial epsilon language
@@ -339,7 +354,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 					// L(seg_iter) != {epsilon}
 					new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
 				}
-				new_item.fin = fn;
+				new_item.fin = seg_iter->first.second;
 				lifo.push_back(new_item);
 			}
 		}

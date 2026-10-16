@@ -1,6 +1,8 @@
 /* tests-nfa-segmentation.cc -- Tests for segmentation of NFAs
  */
 
+#include <optional>
+#include <type_traits>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -94,6 +96,87 @@ TEST_CASE("mata::nfa::Segmentation::get_epsilon_depths()") {
 										 }
 		);
 	}
+}
+
+TEST_CASE("mata::nfa::Segmentation::get_epsilon_transitions()") {
+	constexpr Symbol epsilon{'c'};
+	constexpr Symbol epsilon2{'d'};
+	Nfa aut{};
+	aut.initial = {1};
+	aut.final = {6};
+	aut.delta.add(1, epsilon, 2);
+	aut.delta.add(1, epsilon, 3);
+	aut.delta.add(1, epsilon2, 4);
+	aut.delta.add(2, 'a', 5);
+	aut.delta.add(5, epsilon, 6);
+	const seg_nfa::Segmentation segmentation{aut, {epsilon, epsilon2}};
+
+	CHECK(
+		segmentation.get_epsilon_transitions_by_depth() == std::vector<std::vector<Transition>>{
+															   {{1, epsilon, 2}, {1, epsilon, 3}, {1, epsilon2, 4}},
+															   {{5, epsilon, 6}},
+														   }
+	);
+	// All ε-transitions of one state, over several ε symbols, form one view.
+	const auto state_1_transitions{segmentation.get_epsilon_transitions(1)};
+	CHECK(
+		std::vector<Transition>{state_1_transitions.begin(), state_1_transitions.end()} ==
+		std::vector<Transition>{{1, epsilon, 2}, {1, epsilon, 3}, {1, epsilon2, 4}}
+	);
+	const auto state_5_transitions{segmentation.get_epsilon_transitions(5)};
+	CHECK(
+		std::vector<Transition>{state_5_transitions.begin(), state_5_transitions.end()} ==
+		std::vector<Transition>{{5, epsilon, 6}}
+	);
+	CHECK(segmentation.get_epsilon_transitions(2).empty());
+	CHECK(segmentation.get_epsilon_transitions(6).empty());
+	CHECK(segmentation.get_epsilon_transitions(1'000).empty());
+	CHECK(
+		segmentation.get_epsilon_depths() ==
+		seg_nfa::Segmentation::EpsilonDepthTransitions{
+			{0, std::vector<Transition>{{1, epsilon, 2}, {1, epsilon, 3}, {1, epsilon2, 4}}},
+			{1, std::vector<Transition>{{5, epsilon, 6}}},
+		}
+	);
+}
+
+TEST_CASE("mata::nfa::Segmentation copies and moves") {
+	static_assert(std::is_copy_constructible_v<seg_nfa::Segmentation>);
+	static_assert(std::is_move_constructible_v<seg_nfa::Segmentation>);
+	constexpr Symbol epsilon{'c'};
+	Nfa aut{};
+	aut.initial = {1};
+	aut.final = {6};
+	aut.delta.add(1, epsilon, 2);
+	aut.delta.add(1, epsilon, 3);
+	aut.delta.add(2, 'a', 5);
+	aut.delta.add(3, 'b', 5);
+	aut.delta.add(5, epsilon, 6);
+	const seg_nfa::Segmentation::EpsilonDepthTransitions expected_depths{
+		{0, std::vector<Transition>{{1, epsilon, 2}, {1, epsilon, 3}}},
+		{1, std::vector<Transition>{{5, epsilon, 6}}},
+	};
+	const std::vector<Transition> expected_state_1{{1, epsilon, 2}, {1, epsilon, 3}};
+
+	// The source is destroyed before the copy is queried, so the copy must not refer to its storage.
+	const auto check = [&](const bool query_source_first, const bool move) {
+		CAPTURE(query_source_first, move);
+		std::optional<seg_nfa::Segmentation> source{std::in_place, aut, std::set<Symbol>{epsilon}};
+		if (query_source_first) {
+			CHECK(source->get_epsilon_depths() == expected_depths);
+			CHECK(source->get_segments().size() == 3);
+		}
+		seg_nfa::Segmentation copy{move ? seg_nfa::Segmentation{std::move(*source)} : seg_nfa::Segmentation{*source}};
+		source.reset();
+		CHECK(copy.get_epsilon_depths() == expected_depths);
+		const auto state_1_transitions{copy.get_epsilon_transitions(1)};
+		CHECK(std::vector<Transition>{state_1_transitions.begin(), state_1_transitions.end()} == expected_state_1);
+		CHECK(copy.get_segments().size() == 3);
+	};
+	check(false, false);
+	check(true, false);
+	check(false, true);
+	check(true, true);
 }
 
 TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
