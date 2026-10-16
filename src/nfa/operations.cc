@@ -387,7 +387,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
 	// TODO: grossly inefficient
 	// first we compute the epsilon closure
 	const size_t num_of_states{aut.num_of_states()};
-	for (size_t i{0}; i < num_of_states; ++i) {
+	for (State i{0}; i < num_of_states; ++i) {
 		for (const auto& trans : aut.delta[i]) {
 			const auto [it, inserted] = epsilon_closure.insert({i, {i}});
 			if (trans.symbol == epsilon) {
@@ -402,7 +402,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
 	bool changed = true;
 	while (changed) { // Compute the fixpoint.
 		changed = false;
-		for (size_t i = 0; i < num_of_states; ++i) {
+		for (State i = 0; i < num_of_states; ++i) {
 			const StatePost& post{aut.delta[i]};
 			// TODO: make faster if default epsilon
 			if (const auto eps_move_it{post.find(epsilon)}; eps_move_it != post.end()) {
@@ -602,7 +602,7 @@ Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
 	}
 
 	// sorting the targets
-	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
+	for (State q = 0, states_num = static_cast<State>(result.delta.num_of_states()); q < states_num; ++q) {
 		// Post & post = result.delta.get_mutable_post(q);
 		// utils::sort_and_rmdupl(post);
 		for (SymbolPost& m : result.delta.mutable_state_post(q)) { m.targets.sort_and_rmdupl(); }
@@ -626,7 +626,7 @@ bool mata::nfa::Nfa::is_deterministic() const {
 	if (delta.empty()) { return true; }
 
 	const size_t aut_size{num_of_states()};
-	for (size_t i = 0; i < aut_size; ++i) {
+	for (State i = 0; i < aut_size; ++i) {
 		for (const auto& symbol_post : delta[i]) {
 			if (symbol_post.num_of_targets() != 1) { return false; }
 		}
@@ -1023,9 +1023,9 @@ class RefinablePartition {
 		const size_t e_set_mid = mid_[e_set];
 		if (e_loc >= e_set_mid) {
 			elems_[e_loc] = elems_[e_set_mid];
-			location_[elems_[e_loc]] = e_loc;
+			location_[elems_[e_loc]] = static_cast<T>(e_loc);
 			elems_[e_set_mid] = e;
-			location_[e] = e_set_mid;
+			location_[e] = static_cast<T>(e_set_mid);
 			mid_[e_set] = e_set_mid + 1;
 		}
 	}
@@ -1172,14 +1172,14 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 
 	// Construct the minimized automaton using equivalence classes (BRP).
 	MATA_ASSERT(dfa_trimmed.initial.size() == 1);
-	Nfa result(brp.num_of_sets, {brp.set_idx[*dfa_trimmed.initial.begin()]}, {});
-	for (size_t block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
+	Nfa result(brp.num_of_sets, {static_cast<State>(brp.set_idx[*dfa_trimmed.initial.begin()])}, {});
+	for (State block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
 		const State q = brp.get_first(block_idx);
 		if (dfa_trimmed.final.contains(q)) { result.final.insert(block_idx); }
 		StatePost& mut_state_post = result.delta.mutable_state_post(block_idx);
 		for (const SymbolPost& symbol_post : dfa_trimmed.delta[q]) {
 			MATA_ASSERT(symbol_post.targets.size() == 1);
-			const State target = brp.set_idx[*symbol_post.targets.begin()];
+			const auto target{static_cast<State>(brp.set_idx[*symbol_post.targets.begin()])};
 			mut_state_post.push_back(SymbolPost{symbol_post.symbol, target});
 		}
 	}

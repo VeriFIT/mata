@@ -25,11 +25,13 @@ using namespace mata::nfa::builder;
  */
 namespace mata::nfa::plumbing {
 
+/// @throws std::overflow_error If @p bool_vec has more entries than there can be states.
 inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
+	check_num_of_states(bool_vec.size());
 	element_set->clear();
 	element_set->reserve(bool_vec.count());
 	for (size_t i{0}; i < bool_vec.size(); ++i) {
-		if (bool_vec[i] == 1) { element_set->push_back(i); }
+		if (bool_vec[i] == 1) { element_set->push_back(static_cast<State>(i)); }
 	}
 }
 

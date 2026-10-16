@@ -33,7 +33,7 @@ namespace {
 /// NFA over {0, 1} accepting the words whose @p k-th last symbol is 1. Its minimal NFA has k + 1 states and its
 ///  minimal DFA 2^k states.
 Nfa kth_last_symbol_is_one(const size_t k, const Symbol zero = 0, const Symbol one = 1) {
-	Nfa aut{k + 1, {0}, {k}};
+	Nfa aut{k + 1, {0}, {static_cast<State>(k)}};
 	aut.delta.add(0, zero, 0);
 	aut.delta.add(0, one, 0);
 	aut.delta.add(0, one, 1);

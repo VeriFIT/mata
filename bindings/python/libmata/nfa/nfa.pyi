@@ -11,6 +11,11 @@ from libmata.utils import BinaryRelation
 
 State = int
 
+STATE_BITS: int
+"""Width of a state in bits that Mata was built with (CMake option MATA_STATE_BITS)."""
+MAX_STATE: State
+"""The "no state" sentinel; states are 0 to MAX_STATE - 1."""
+
 def epsilon() -> Symbol: ...
 
 class Run:

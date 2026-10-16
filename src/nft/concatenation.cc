@@ -44,9 +44,10 @@ Nft concatenate_eps_consuming(
 		return Nft::with_levels(num_of_levels);
 	}
 
-	const unsigned long lhs_states_num{lhs.num_of_states()};
-	const unsigned long rhs_states_num{rhs.num_of_states()};
+	const size_t lhs_states_num{lhs.num_of_states()};
+	const size_t rhs_states_num{rhs.num_of_states()};
 	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
+	nfa::check_num_of_states(result_num_of_states);
 	StateRenaming lhs_states_renaming{}; // Map mapping lhs states to result states.
 	StateRenaming rhs_states_renaming{}; // Map mapping rhs states to result states.
 
@@ -138,12 +139,13 @@ Nft concatenate(
 Nft& Nft::concatenate(const Nft& aut) {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	const size_t n = this->num_of_states();
-	auto upd_fnc = [&](const State st) { return st + n; };
+	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// copy the information about aut to save the case when this is the same object as aut.
 	utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
 	utils::SparseSet<mata::nft::State> aut_final = aut.final;
 	const size_t aut_n = aut.num_of_states();
+	nfa::check_num_of_states(n + aut_n);
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, n);

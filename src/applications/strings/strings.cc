@@ -273,7 +273,7 @@ std::optional<std::vector<mata::Word>>
 	};
 	std::vector<Frame> stack{};
 	auto enter = [&](const size_t config) {
-		const State source{config / num_of_counts};
+		const auto source{static_cast<State>(config / num_of_counts)};
 		const size_t counts{config % num_of_counts};
 		const nft::Level level{nft.levels[source]};
 		const StatePost& state_post{nft.delta[source]};

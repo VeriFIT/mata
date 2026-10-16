@@ -43,6 +43,8 @@ with open(os.path.join(src_dir, "README.md")) as readme_handle:
 
 project_includes = [
     os.path.join(src_dir, "include"),
+    # The generated `mata/config.hh`.
+    os.path.join(src_dir, mata_build_dir, "include"),
     os.path.join(src_dir, "3rdparty"),
     os.path.join(src_dir, "3rdparty", "re2"),
     os.path.join(src_dir, "3rdparty", "simlib", "include"),

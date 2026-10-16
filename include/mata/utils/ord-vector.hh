@@ -5,6 +5,7 @@
 #define MATA_ORD_VECTOR_HH_
 
 #include <algorithm>
+#include <iterator>
 #include <span>
 #include <vector>
 
@@ -95,7 +96,9 @@ template <class Key> class OrdVector {
 	OrdVector(const OrdVector& rhs) = default;
 	OrdVector(OrdVector&& other) noexcept : vec_{std::move(other.vec_)} {}
 	explicit OrdVector(const Key& key) : vec_(1, key) { MATA_ASSERT(is_sorted()); }
-	template <class InputIterator> explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) {
+	// Constrained: `{symbol, state}` with two equally typed integers must not pick this constructor.
+	template <std::input_iterator InputIterator>
+	explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) {
 		utils::sort_and_rmdupl(vec_);
 	}
 

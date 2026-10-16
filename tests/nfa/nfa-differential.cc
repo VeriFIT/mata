@@ -43,17 +43,19 @@ Nfa random_nfa(
 ) {
 	Nfa nfa{num_of_states};
 	nfa.alphabet = alphabet;
-	nfa.initial.insert(draw(rng, num_of_states));
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
 	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
 		if (draw(rng, 3) == 0) { nfa.final.insert(state); }
 		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
 			// Each (state, symbol) gets zero, one or two targets.
 			for (size_t transition{0}, transitions{draw(rng, 3)}; transition < transitions; ++transition) {
-				nfa.delta.add(state, symbol, draw(rng, num_of_states));
+				nfa.delta.add(state, symbol, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
 			}
 		}
 		if (epsilon.has_value()) {
-			if (draw(rng, 4) == 0) { nfa.delta.add(state, *epsilon, draw(rng, num_of_states)); }
+			if (draw(rng, 4) == 0) {
+				nfa.delta.add(state, *epsilon, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+			}
 			if (state + 1 < num_of_states && draw(rng, 3) == 0) { nfa.delta.add(state, *epsilon, state + 1); }
 		}
 	}
@@ -72,11 +74,13 @@ Nfa random_partial_dfa(
 ) {
 	Nfa nfa{num_of_states};
 	nfa.alphabet = alphabet;
-	nfa.initial.insert(draw(rng, num_of_states));
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
 	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
 		if (draw(rng, 2) == 0) { nfa.final.insert(state); }
 		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
-			if (draw(rng, 5) != 0) { nfa.delta.add(state, symbol, draw(rng, num_of_states)); }
+			if (draw(rng, 5) != 0) {
+				nfa.delta.add(state, symbol, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+			}
 		}
 	}
 	return nfa;
@@ -92,14 +96,17 @@ Nfa random_dense_nfa(
 ) {
 	Nfa nfa{num_of_states};
 	nfa.alphabet = alphabet;
-	nfa.initial.insert(draw(rng, num_of_states));
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
 	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
 		if (draw(rng, 2) == 0) { nfa.final.insert(state); }
 	}
 	const size_t num_of_transitions{7 * num_of_states / 4};
 	for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
 		for (size_t transition{0}; transition < num_of_transitions; ++transition) {
-			nfa.delta.add(draw(rng, num_of_states), symbol, draw(rng, num_of_states));
+			nfa.delta.add(
+				static_cast<mata::nfa::State>(draw(rng, num_of_states)), symbol,
+				static_cast<mata::nfa::State>(draw(rng, num_of_states))
+			);
 		}
 	}
 	return nfa;
@@ -523,14 +530,14 @@ TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differen
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 4};
 		Nfa nfa{num_of_states};
-		nfa.initial.insert(draw(rng, num_of_states));
+		nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
 		for (mata::nfa::State state{0}; state < num_of_states; ++state) {
 			if (draw(rng, 3) == 0) { nfa.final.insert(state); }
 			// Symbols from {0, 1} and right below and at EPSILON, so both ordinary and special symbols mix
 			//  in one state post.
 			for (const Symbol symbol : {Symbol{0}, Symbol{1}, EPSILON - 2, EPSILON - 1, EPSILON}) {
 				for (size_t transition{0}, transitions{draw(rng, 3)}; transition < transitions; ++transition) {
-					nfa.delta.add(state, symbol, draw(rng, num_of_states));
+					nfa.delta.add(state, symbol, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
 				}
 			}
 		}

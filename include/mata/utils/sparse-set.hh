@@ -102,7 +102,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 
 		if (!contains(val)) {
-			if (static_cast<size_t>(val) >= domain_size_) { reserve(val + 1); }
+			if (static_cast<size_t>(val) >= domain_size_) { reserve(static_cast<size_t>(val) + 1); }
 			dense_[size_] = val;
 			sparse_[val] = static_cast<Number>(size_);
 			++size_;
@@ -244,16 +244,17 @@ template <typename Number> class SparseSet {
 	/*
 	 * Complements the set with respect to a given number of elements = the maximum number + 1.
 	 */
-	void complement(Number new_domain_size) {
-		Number old_domain_size = domain_size_;
-		for (Number i = 0; i < new_domain_size; ++i) {
-			if (contains(i)) {
-				erase_nocheck(i);
+	void complement(const size_t new_domain_size) {
+		const size_t old_domain_size = domain_size_;
+		for (size_t i = 0; i < new_domain_size; ++i) {
+			const auto number{static_cast<Number>(i)};
+			if (contains(number)) {
+				erase_nocheck(number);
 			} else {
-				insert(i);
+				insert(number);
 			}
 		}
-		for (Number i = new_domain_size; i < old_domain_size; ++i) { erase(i); }
+		for (size_t i = new_domain_size; i < old_domain_size; ++i) { erase(static_cast<Number>(i)); }
 
 		MATA_ASSERT(consistent());
 	}
@@ -277,7 +278,7 @@ template <typename Number> class SparseSet {
 		for (Number i = 0; i < size_; ++i) {
 			if (dense_[i] != renaming(dense_[i])) {
 				dense_[i] = renaming(dense_[i]);
-				if (dense_[i] >= domain_size_) { reserve(dense_[i] + 1); }
+				if (dense_[i] >= domain_size_) { reserve(static_cast<size_t>(dense_[i]) + 1); }
 				sparse_[dense_[i]] = i;
 			}
 		}

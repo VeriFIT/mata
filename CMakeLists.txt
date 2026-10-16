@@ -110,6 +110,20 @@ if (NOT MATA_PGO MATCHES "^(off|generate|use)$")
 	message (FATAL_ERROR "MATA_PGO must be one of off, generate, use; got '${MATA_PGO}'")
 endif ()
 
+# Width of `mata::nfa::State`. It is written into the generated, installed `mata/config.hh`, so a
+#  consumer always compiles against the width the library was built with. 64 is the escape hatch for
+#  automata with more than 2^32 - 1 states (the largest value is reserved as the "no state" sentinel).
+set (
+	MATA_STATE_BITS
+	"32"
+	CACHE STRING "Width of mata::nfa::State in bits: 32 or 64"
+)
+set_property (CACHE MATA_STATE_BITS PROPERTY STRINGS 32 64)
+if (NOT MATA_STATE_BITS MATCHES "^(32|64)$")
+	message (FATAL_ERROR "MATA_STATE_BITS must be 32 or 64; got '${MATA_STATE_BITS}'")
+endif ()
+configure_file ("${PROJECT_SOURCE_DIR}/cmake/config.hh.in" "${PROJECT_BINARY_DIR}/include/mata/config.hh" @ONLY)
+
 if (NOT MATA_SANITIZE STREQUAL "")
 	if (NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
 		message (FATAL_ERROR "MATA_SANITIZE is not supported for compiler '${CMAKE_CXX_COMPILER_ID}'")
@@ -367,6 +381,7 @@ if (MATA_INSTALL)
 			${PROJECT_SOURCE_DIR}/include/
 			${PROJECT_SOURCE_DIR}/3rdparty/cudd/include/ # TODO remove this after we remove PUBLIC dependency on CUDD
 			${PROJECT_SOURCE_DIR}/3rdparty/simlib/include/ # TODO remove this after we remove PUBLIC dependency on simlib
+			${PROJECT_BINARY_DIR}/include/ # Generated `mata/config.hh`.
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	)
 	install (

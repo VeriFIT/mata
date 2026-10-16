@@ -286,7 +286,7 @@ void add_rejected_word_by_universal_runs(Formula& formula, const AutomatonVariab
 	// state[j][q]: the chosen run is in state q after reading j symbols. States 0, ..., num_of_states - 2 are chosen
 	//  by their binary codes, state num_of_states - 1 by all the remaining codes.
 	const auto state{new_variable_table(formula, word.size() + 1, num_of_states, Quantifier::InnerExists)};
-	const State last_state{num_of_states - 1};
+	const auto last_state{static_cast<State>(num_of_states - 1)};
 	for (size_t position{0}; position <= word.size(); ++position) {
 		std::vector<Literal> bits(num_of_bits);
 		for (Literal& bit : bits) { bit = formula.new_variable(Quantifier::ForAll); }

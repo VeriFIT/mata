@@ -362,6 +362,38 @@ jobs:
           ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
+  # The default build has 32-bit states; the 64-bit escape hatch has to keep building and passing too.
+  state-bits-64:
+    runs-on: ubuntu-latest
+    env:
+      # Also read by the Makefile target that builds the library for the Python binding, and by its tests.
+      MATA_STATE_BITS: "64"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ubuntu-latest
+      - name: Configure with 64-bit states
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DMATA_STATE_BITS=64
+      - name: Build unit tests
+        run: cmake --build build --target tests --parallel 4
+      - name: Run unit tests
+        run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
+      - name: Set up Python and its dependencies
+        uses: ./.github/workflows/actions/setup-python
+        with:
+          os: ubuntu-latest
+          python-version: "3.13"
+      - name: Compile the Python bindings from the source
+        uses: ./.github/workflows/actions/compile-python-src
+      - name: Test the Python bindings
+        run: make -C bindings/python test
   build-docs:
     runs-on: ${{ matrix.os }}
     strategy:

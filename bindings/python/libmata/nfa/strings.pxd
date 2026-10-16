@@ -29,11 +29,11 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
         cset[vector[Symbol]] get_shortest_words_from(StateSet&) except +
         cset[vector[Symbol]] get_shortest_words_from(State) except +
 
-    cdef cset[vector[Symbol]] c_get_shortest_words "mata::applications::strings::get_shortest_words" (CNfa&)
+    cdef cset[vector[Symbol]] c_get_shortest_words "mata::applications::strings::get_shortest_words" (CNfa&) except +
     cdef optional[vector[vector[Symbol]]] c_get_words_of_lengths \
         "mata::applications::strings::get_words_of_lengths" (CNft&, const vector[unsigned]&) except +
     cdef cset[Symbol] c_get_accepted_symbols "mata::applications::strings::get_accepted_symbols" (CNfa&)
-    cdef cset[pair[int, int]] c_get_word_lengths "mata::applications::strings::get_word_lengths" (CNfa&)
+    cdef cset[pair[int, int]] c_get_word_lengths "mata::applications::strings::get_word_lengths" (CNfa&) except +
     cdef bool c_is_lang_eps "mata::applications::strings::is_lang_eps" (CNfa&)
 
 cdef extern from "mata/applications/strings.hh" namespace "mata::applications::strings::seg_nfa":
@@ -47,11 +47,11 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
         const vector[CNfa]& get_segments() except +
         const vector[CNfa]& get_untrimmed_segments() except +
 
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodlify "mata::applications::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
+    cdef vector[vector[shared_ptr[CNfa]]] c_noodlify "mata::applications::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool) except +
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_mult_eps \
         "mata::applications::strings::seg_nfa::noodlify_mult_eps" (CNfa&, cset[Symbol]&, bool) except +
     cdef vector[vector[shared_ptr[CNfa]]] c_noodlify_for_equation "mata::applications::strings::seg_nfa::noodlify_for_equation" \
-        (const vector[CNfa*]&, CNfa&, bool, ParameterMap&)
+        (const vector[CNfa*]&, CNfa&, bool, ParameterMap&) except +
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_for_equation_sides \
         "mata::applications::strings::seg_nfa::noodlify_for_equation" \
         (vector[shared_ptr[CNfa]]&, vector[shared_ptr[CNfa]]&, bool, ParameterMap&) except +

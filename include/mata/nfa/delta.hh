@@ -498,7 +498,7 @@ class Delta {
 	Delta() : state_posts_{} {}
 	Delta(const Delta& other) = default;
 	Delta(Delta&& other) = default;
-	explicit Delta(const size_t n) : state_posts_{n} {}
+	explicit Delta(const size_t n) : state_posts_{} { allocate(n); }
 
 	Delta& operator=(const Delta& other) = default;
 	Delta& operator=(Delta&& other) = default;
@@ -577,9 +577,11 @@ class Delta {
 	 *
 	 * @param[in] num_of_states Number of states in @c Delta to allocate state posts for. Have to be at least
 	 *  num_of_states() + 1.
+	 * @throws std::overflow_error If @p num_of_states exceeds @c Limits::max_num_of_states.
 	 */
 	void allocate(const size_t num_of_states) {
 		MATA_ASSERT(num_of_states >= this->num_of_states());
+		check_num_of_states(num_of_states);
 		state_posts_.resize(num_of_states);
 	}
 
@@ -800,8 +802,9 @@ class Delta {
 	Delta& resize_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
+				const size_t new_size{num_of_states_for(max_state)};
 				reserve_on_insert(state_posts_, max_state);
-				state_posts_.resize(max_state + 1);
+				state_posts_.resize(new_size);
 			}
 		}
 		return *this;
@@ -1029,7 +1032,7 @@ class Delta::Transitions {
 class Delta::Transitions::const_iterator {
   private:
 	const Delta* delta_ = nullptr;
-	size_t current_state_{};
+	State current_state_{};
 	StatePost::const_iterator state_post_it_{};
 	SmallStateSet::const_iterator symbol_post_it_{};
 	bool is_end_{false};

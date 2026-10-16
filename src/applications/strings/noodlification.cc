@@ -106,7 +106,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
 		}
 	}
 
-	State unused_state = aut.num_of_states(); // get some State not used in aut
+	auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
 	std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
@@ -262,7 +262,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 		}
 	}
 
-	State unused_state = aut.num_of_states(); // get some State not used in aut
+	auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
 	std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
