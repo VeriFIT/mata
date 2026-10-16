@@ -721,6 +721,26 @@ std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
 
 // TODO: this is not efficient
 bool Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+	if (!use_epsilon && !match_prefix && initial.size() == 1) {
+		// Scalar walk: while every visited symbol post has at most one target, the run is unique. On the first
+		//  nondeterministic post, the subset walk continues from the state reached, keeping the answer exact.
+		State state{*initial.begin()};
+		size_t prefix_len{0};
+		const size_t word_len{run.word.size()};
+		for (; prefix_len < word_len; ++prefix_len) {
+			const SmallStateSet& successors{delta.get_successors(state, run.word[prefix_len])};
+			if (successors.empty()) { return false; }
+			if (successors.size() > 1) { break; }
+			state = successors.front();
+		}
+		if (prefix_len == word_len) { return final.contains(state); }
+		StateSet current_post{state};
+		for (; prefix_len < word_len; ++prefix_len) {
+			current_post = post(current_post, run.word[prefix_len]);
+			if (current_post.empty()) { return false; }
+		}
+		return final.intersects_with(current_post);
+	}
 	if (match_prefix) {
 		StateSet current_post(this->initial);
 
@@ -1195,10 +1215,12 @@ Nfa mata::nfa::union_nondet(const Nfa& lhs, const Nfa& rhs) {
 }
 
 Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
-	MATA_ASSERT(lhs.is_deterministic());
-	MATA_ASSERT(rhs.is_deterministic());
-	MATA_ASSERT(lhs.is_complete());
-	MATA_ASSERT(rhs.is_complete());
+	if (!lhs.is_deterministic() || !rhs.is_deterministic()) {
+		throw std::invalid_argument{"union_det_complete requires deterministic automata."};
+	}
+	if (!lhs.is_complete() || !rhs.is_complete()) {
+		throw std::invalid_argument{"union_det_complete requires complete automata."};
+	}
 	return product(lhs, rhs, ProductFinalStateCondition::Or, EPSILON);
 }
 
@@ -1322,6 +1344,53 @@ Nfa mata::nfa::determinize(
 	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
 	const OrdVector<Symbol>* const restrict_to_symbols
 ) {
+	// DFA fast path: a scalar depth-first renumbering reproduces the numbering of the generic subset
+	//  construction below exactly (same stack discipline, same increasing-symbol visit order) without
+	//  hashing one-element macrostates.
+	if (aut.is_deterministic()) {
+		std::unordered_map<StateSet, State> subset_map_local{};
+		if (subset_map == nullptr) { subset_map = &subset_map_local; }
+		Nfa result{};
+		const State initial_res{result.add_state()};
+		result.initial.insert(initial_res);
+		const State initial_orig{*aut.initial.begin()};
+		if (aut.final.contains(initial_orig)) { result.final.insert(initial_res); }
+		(*subset_map)[StateSet{initial_orig}] = initial_res;
+		if (aut.delta.empty()) { return result; }
+		if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_res, StateSet{initial_orig})) {
+			return result;
+		}
+		constexpr State kUnseen{std::numeric_limits<State>::max()};
+		std::vector<State> renaming(aut.num_of_states(), kUnseen);
+		renaming[initial_orig] = initial_res;
+		std::vector<State> worklist{initial_orig};
+		while (!worklist.empty()) {
+			const State state_orig{worklist.back()};
+			worklist.pop_back();
+			const State state_res{renaming[state_orig]};
+			for (const SymbolPost& symbol_post : aut.delta[state_orig]) {
+				if (symbol_post.targets.empty()) { continue; }
+				if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, symbol_post.symbol)) { continue; }
+				const State target_orig{symbol_post.targets.front()};
+				State target_res{renaming[target_orig]};
+				const bool target_is_new{target_res == kUnseen};
+				if (target_is_new) {
+					target_res = result.add_state();
+					renaming[target_orig] = target_res;
+					(*subset_map)[StateSet{target_orig}] = target_res;
+					if (aut.final.contains(target_orig)) { result.final.insert(target_res); }
+					worklist.push_back(target_orig);
+				}
+				result.delta.mutable_state_post(state_res).insert(SymbolPost(symbol_post.symbol, target_res));
+				if (target_is_new && macrostate_discover.has_value() &&
+					!(*macrostate_discover)(result, target_res, StateSet{target_orig})) {
+					return result;
+				}
+			}
+		}
+		return result;
+	}
+
 	Nfa result{};
 	// assuming all sets targets are non-empty
 	std::vector<std::pair<State, StateSet>> worklist{};
@@ -1382,6 +1451,13 @@ Nfa mata::nfa::determinize(
 		}
 	}
 	return result;
+}
+
+Nfa mata::nfa::as_dfa(const Nfa& aut) { return aut.is_deterministic() ? aut : determinize(aut); }
+
+Nfa mata::nfa::as_dfa(Nfa&& aut) {
+	if (aut.is_deterministic()) { return std::move(aut); }
+	return determinize(aut);
 }
 
 std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
