@@ -6501,3 +6501,99 @@ TEST_CASE("mata::nfa::union_det_complete() validates preconditions instead of as
 		REQUIRE_THROWS_AS(union_det_complete(incomplete_dfa, lhs), std::invalid_argument);
 	}
 }
+
+TEST_CASE("mata::nfa::Nfa::post() with epsilon closure options") {
+	// 0 -ε-> 1 -a-> 2 -ε-> 3, the example of the EpsilonClosureOpt truth table.
+	Nfa aut(4);
+	aut.initial.insert(0);
+	aut.final.insert(3);
+	aut.delta.add(0, EPSILON, 1);
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(2, EPSILON, 3);
+
+	SECTION("the four options differ as the truth table says") {
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::None) == StateSet{});
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::Before) == StateSet{2});
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::After) == StateSet{});
+		// Used to return {} because BeforeAndAfter is Before|After and was compared for equality.
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{2, 3});
+
+		CHECK(aut.post(StateSet{1}, 'a', EpsilonClosureOpt::After) == StateSet{2, 3});
+		CHECK(aut.post(StateSet{1}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{2, 3});
+	}
+
+	SECTION("a step over epsilon keeps the source states when a closure is requested") {
+		CHECK(aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::None) == StateSet{1});
+		CHECK(aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::Before) == StateSet{0, 1});
+		CHECK(aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::BeforeAndAfter) == StateSet{0, 1});
+	}
+
+	SECTION("Delta::get_successors agrees with Nfa::post") {
+		// The three-argument overload was declared but never defined, so any call failed to link.
+		for (const EpsilonClosureOpt opt :
+			 {EpsilonClosureOpt::None, EpsilonClosureOpt::Before, EpsilonClosureOpt::After,
+			  EpsilonClosureOpt::BeforeAndAfter}) {
+			for (State state{0}; state < aut.num_of_states(); ++state) {
+				CHECK(aut.delta.get_successors(state, 'a', opt) == aut.post(StateSet{state}, 'a', opt));
+			}
+		}
+	}
+
+	SECTION("an epsilon cycle terminates and closes over every state of the cycle") {
+		Nfa cyclic(3);
+		cyclic.delta.add(0, EPSILON, 1);
+		cyclic.delta.add(1, EPSILON, 2);
+		cyclic.delta.add(2, EPSILON, 0);
+		cyclic.delta.add(1, 'a', 2);
+		CHECK(cyclic.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1, 2});
+		CHECK(cyclic.post(StateSet{0}, 'a', EpsilonClosureOpt::Before) == StateSet{2});
+		CHECK(cyclic.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{0, 1, 2});
+	}
+
+	SECTION("closures over several epsilon symbols") {
+		Nfa multi(4);
+		multi.delta.add(0, EPSILON, 1);
+		multi.delta.add(1, EPSILON - 1, 2);
+		multi.delta.add(2, 'a', 3);
+		CHECK(multi.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1});
+		CHECK(multi.mk_epsilon_closure(StateSet{0}, {EPSILON, EPSILON - 1}) == StateSet{0, 1, 2});
+	}
+
+	SECTION("a closure from several states follows every path and the cycles back into its sources") {
+		// 0 has no epsilon post; 4 -> 6 -> {1, 5} -> 7 -> {3, 4}, and 3 -> 6 closes a second cycle.
+		Nfa paths(8);
+		paths.delta.add(4, EPSILON, 6);
+		paths.delta.add(6, EPSILON, 1);
+		paths.delta.add(6, EPSILON, 5);
+		paths.delta.add(1, EPSILON, 7);
+		paths.delta.add(5, EPSILON, 7);
+		paths.delta.add(7, EPSILON, 3);
+		paths.delta.add(7, EPSILON, 4);
+		paths.delta.add(3, EPSILON, 6);
+		paths.delta.add(2, 'a', 4);
+		CHECK(paths.mk_epsilon_closure(StateSet{0, 4}) == StateSet{0, 1, 3, 4, 5, 6, 7});
+		CHECK(paths.post(StateSet{2}, 'a', EpsilonClosureOpt::After) == StateSet{1, 3, 4, 5, 6, 7});
+		CHECK(paths.post(StateSet{0, 4}, EPSILON, EpsilonClosureOpt::Before) == StateSet{0, 1, 3, 4, 5, 6, 7});
+	}
+
+	SECTION("a closure of many states with colliding identifiers") {
+		// The visited states are hashed into a table that grows with the closure; the stride makes states collide.
+		constexpr State num_of_cycle_states{100};
+		constexpr State stride{1'024};
+		Nfa cycle(num_of_cycle_states * stride);
+		StateSet expected{};
+		for (State i{0}; i < num_of_cycle_states; ++i) {
+			cycle.delta.add(i * stride, EPSILON, ((i + 1) % num_of_cycle_states) * stride);
+			expected.insert(i * stride);
+		}
+		CHECK(cycle.mk_epsilon_closure(StateSet{stride}) == expected);
+		CHECK(cycle.post(StateSet{0}, EPSILON, EpsilonClosureOpt::Before) == expected);
+	}
+
+	SECTION("an empty delta returns the source states only for an epsilon step with a closure") {
+		const Nfa empty_aut(3);
+		CHECK(empty_aut.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{});
+		CHECK(empty_aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::Before) == StateSet{0});
+		CHECK(empty_aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::None) == StateSet{});
+	}
+}

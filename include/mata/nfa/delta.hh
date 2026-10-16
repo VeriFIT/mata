@@ -462,6 +462,23 @@ class SynchronizedExistentialSymbolPostIterator
 }; // class SynchronizedExistentialSymbolPostIterator.
 
 /**
+ * @brief Reusable scratch buffers of the successor and epsilon-closure computations.
+ *
+ * The buffers only ever hold states the call reaches, so a call costs time proportional to what it visits, never to
+ *  the number of states of the automaton. A fresh workspace per call is therefore cheap; reusing one across calls
+ *  also saves the buffer allocations.
+ *
+ * A workspace belongs to one call or to one explicit caller context. It must never be shared between threads, and
+ *  in particular it must never be a function-local @c static: that is the data race of #731.
+ */
+struct PostWorkspace {
+	std::vector<State> sources{}; ///< Epsilon closure of the source states of a step.
+	std::vector<State> gathered{}; ///< Targets of a step, or the closure being built.
+	std::vector<State> worklist{}; ///< Closure states whose epsilon posts are still unread.
+	std::vector<State> visited{}; ///< Open-addressed hash table of the states of the closure being built.
+};
+
+/**
  * @brief Delta is a data structure for representing transition relation.
  *
  * Transition is represented as a triple Transition(source state, symbol, target state). Move is the part (symbol,
@@ -799,8 +816,36 @@ class Delta {
 
 	const SmallStateSet& get_successors(State state, Symbol symbol) const;
 
-	// TODO(nfa): Implement.
+	/**
+	 * @brief Get the successors of @p state over @p symbol, with an epsilon closure as asked by
+	 *  @p epsilon_closure_opt.
+	 *
+	 * Equivalent to @c post({state}, symbol, epsilon_closure_opt) and computed by the same routine, so the two
+	 *  cannot disagree.
+	 */
 	StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
+
+	/**
+	 * @brief Get the states reachable from @p states over @p symbol, with an epsilon closure as asked by
+	 *  @p epsilon_closure_opt.
+	 *
+	 * @param[in] states Source states.
+	 * @param[in] symbol Symbol of the transition step.
+	 * @param[in] epsilon_closure_opt Where to apply the epsilon closure; see @c EpsilonClosureOpt.
+	 * @param[in] epsilons Symbols treated as epsilon by the closure.
+	 * @param[in,out] workspace Scratch space reused across calls; see @c PostWorkspace.
+	 */
+	StateSet post(
+		const StateSet& states,
+		Symbol symbol,
+		EpsilonClosureOpt epsilon_closure_opt,
+		const std::vector<Symbol>& epsilons,
+		PostWorkspace& workspace
+	) const;
+
+	/// @brief Get the epsilon closure of @p states over @p epsilons, reusing @p workspace.
+	StateSet
+		epsilon_closure(const StateSet& states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace) const;
 
 	/**
 	 * Iterate over @p epsilon symbol posts under the given @p state.

@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
@@ -60,6 +61,97 @@ StateSet Delta::get_successors(const State state) const { return state_post(stat
 
 const SmallStateSet& Delta::get_successors(const State state, const Symbol symbol) const {
 	return state_post(state).get_successors(symbol);
+}
+
+namespace {
+/// Empty slot of the visited table; no delta can reach it, as that would take max_state + 1 state posts.
+constexpr State NO_STATE{Limits::max_state};
+
+/// Slot of @p state in the open-addressed @p table (power-of-two size, at most half full): the slot holding
+///  @p state, or the empty slot where it belongs.
+size_t slot_of(const std::vector<State>& table, const State state) {
+	const auto shift{std::numeric_limits<uint64_t>::digits - std::countr_zero(table.size())};
+	const size_t mask{table.size() - 1};
+	size_t slot{static_cast<size_t>((static_cast<uint64_t>(state) * 0x9E'37'79'B9'7F'4A'7C'15ULL) >> shift)};
+	while (table[slot] != NO_STATE && table[slot] != state) { slot = (slot + 1) & mask; }
+	return slot;
+}
+
+/// Appends to @p closure every state reachable from it over @p epsilons that it does not hold yet. Visited states are
+///  kept in a hash table sized to the closure, so the cost follows the closure, not the number of states of @p delta.
+void close_over_epsilons(
+	const Delta& delta, const std::vector<Symbol>& epsilons, std::vector<State>& closure, PostWorkspace& workspace
+) {
+	std::vector<State>& visited{workspace.visited};
+	std::vector<State>& worklist{workspace.worklist};
+	const auto rebuild_visited{[&](const size_t num_of_slots) {
+		visited.assign(num_of_slots, NO_STATE);
+		for (const State state : closure) { visited[slot_of(visited, state)] = state; }
+	}};
+	rebuild_visited(std::bit_ceil(std::max<size_t>(16, 2 * closure.size())));
+	worklist.assign(closure.begin(), closure.end());
+	while (!worklist.empty()) {
+		const State state{worklist.back()};
+		worklist.pop_back();
+		const StatePost& state_post{delta[state]};
+		for (const Symbol epsilon : epsilons) {
+			const auto symbol_post_it{state_post.find(epsilon)};
+			if (symbol_post_it == state_post.end()) { continue; }
+			for (const State target : symbol_post_it->targets) {
+				const size_t slot{slot_of(visited, target)};
+				if (visited[slot] == target) { continue; }
+				visited[slot] = target;
+				closure.push_back(target);
+				worklist.push_back(target);
+				if (2 * closure.size() > visited.size()) { rebuild_visited(2 * visited.size()); }
+			}
+		}
+	}
+}
+} // namespace
+
+StateSet Delta::epsilon_closure(
+	const StateSet& states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
+) const {
+	std::vector<State>& closure{workspace.gathered};
+	closure.assign(states.begin(), states.end());
+	close_over_epsilons(*this, epsilons, closure, workspace);
+	return StateSet{closure};
+}
+
+StateSet Delta::post(
+	const StateSet& states,
+	const Symbol symbol,
+	const EpsilonClosureOpt epsilon_closure_opt,
+	const std::vector<Symbol>& epsilons,
+	PostWorkspace& workspace
+) const {
+	if (closes_before(epsilon_closure_opt)) {
+		workspace.sources.assign(states.begin(), states.end());
+		close_over_epsilons(*this, epsilons, workspace.sources, workspace);
+	}
+	const std::vector<State>& sources{closes_before(epsilon_closure_opt) ? workspace.sources : states.to_vector()};
+
+	std::vector<State>& gathered{workspace.gathered};
+	gathered.clear();
+	// Stepping over epsilon with a closure requested means the source states are reachable as well.
+	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
+		gathered.assign(states.begin(), states.end());
+	}
+	for (const State state : sources) {
+		const StatePost& state_post{(*this)[state]};
+		const auto symbol_post_it{state_post.find(symbol)};
+		if (symbol_post_it == state_post.end()) { continue; }
+		gathered.insert(gathered.end(), symbol_post_it->targets.begin(), symbol_post_it->targets.end());
+	}
+	if (closes_after(epsilon_closure_opt)) { close_over_epsilons(*this, epsilons, gathered, workspace); }
+	return StateSet{gathered};
+}
+
+StateSet
+	Delta::get_successors(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+	PostWorkspace workspace{};
+	return post(StateSet{state}, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
 std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
