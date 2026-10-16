@@ -603,6 +603,7 @@ TEST_CASE("mata::nft::Bug with epsilon transitions") {
 
 	Nft expected{nft1};
 	assert(expected.levels.num_of_levels == nft1.levels.num_of_levels);
+	expected.levels.set(4);
 	expected.delta.add(3, EPSILON, 4);
 	expected.delta.add(4, 97, 4);
 	expected.delta.add(4, 98, 4);
