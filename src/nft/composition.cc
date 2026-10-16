@@ -52,8 +52,8 @@ using namespace mata::nft;
  */
 enum class SynchronizationType : uint8_t {
 	UNDEFINED = 0b0000'0000, ///< Default value. Or used if we are past the synchronization.
-	ONLY_ON_SYMBOL = 0b0000'0001, ///< Synchronization on EPSILON.
-	ONLY_ON_EPSILON = 0b0000'0010, ///< Synchronization on symbol.
+	ONLY_ON_SYMBOL = 0b0000'0001, ///< Synchronization on symbol.
+	ONLY_ON_EPSILON = 0b0000'0010, ///< Synchronization on EPSILON.
 	ON_EPSILON_AND_SYMBOL = 0b0000'0011, ///< Synchronization on EPSILON and symbol.
 	UNDER_COMPUTATION = 0b0000'0100 ///< The synchronization is being computed (only a helper value).
 };
