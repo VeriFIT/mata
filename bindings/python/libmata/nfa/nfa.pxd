@@ -205,6 +205,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void make_complete(CAlphabet*, optional[State]) except +
         shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
         COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +
+        string print_to_mata(const CAlphabet*) except +
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)

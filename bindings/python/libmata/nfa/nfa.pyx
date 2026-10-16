@@ -1,3 +1,4 @@
+import copy
 import shlex
 import subprocess
 import pandas
@@ -517,6 +518,20 @@ cdef class Nfa:
         new.thisptr = make_shared[CNfa](mata_nfa.CNfa(dereference(orig)))
         return new
 
+    def __copy__(self):
+        """Copy the automaton with the C++ copy constructor; the copy shares the label and the alphabet."""
+        cdef Nfa result = Nfa.__new__(Nfa)
+        result.thisptr = make_shared[CNfa](dereference(self.thisptr.get()))
+        result.label = self.label
+        return result
+
+    def __deepcopy__(self, memo):
+        """Copy the automaton with the C++ copy constructor and deep-copy the label; the alphabet stays shared."""
+        cdef Nfa result = self.__copy__()
+        memo[id(self)] = result
+        result.label = copy.deepcopy(self.label, memo)
+        return result
+
     @property
     def label(self):
         return self.label
@@ -944,6 +959,16 @@ cdef class Nfa:
 
     def __repr__(self):
         return str(self)
+
+    def to_mata_str(self, alph.Alphabet alphabet = None, encoding='utf-8') -> str:
+        """Transforms the automaton to a mata-format string.
+
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :param str encoding: Encoding of the produced string.
+        :return: The automaton in the mata format.
+        """
+        cdef string result = self.thisptr.get().print_to_mata(alph.unwrap_alphabet_or_null(alphabet))
+        return result.decode(encoding)
 
     def to_dot_file(self, output_file='aut.dot', output_format='pdf', decode_ascii_chars=False, use_intervals=False, max_label_length=-1):
         """Transforms the automaton to dot format.

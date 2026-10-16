@@ -154,6 +154,10 @@ class Nfa:
         """
     def deepcopy(self) -> Self:
         """Deepcopy Nfa using C++ copy constructor."""
+    def __copy__(self) -> Self:
+        """Copy the automaton with the C++ copy constructor; the copy shares the label and the alphabet."""
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
+        """Copy the automaton with the C++ copy constructor and deep-copy the label; the alphabet stays shared."""
     @property
     def label(self) -> Any: ...
     @label.setter
@@ -403,6 +407,13 @@ class Nfa:
 
         :param Symbol symbol: The symbol to check.
         :return: True if the passed symbol is epsilon symbol, False otherwise.
+        """
+    def to_mata_str(self, alphabet: alph.Alphabet | None = None, encoding: str = "utf-8") -> str:
+        """Transforms the automaton to a mata-format string.
+
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :param str encoding: Encoding of the produced string.
+        :return: The automaton in the mata format.
         """
     def to_dot_file(
         self,
