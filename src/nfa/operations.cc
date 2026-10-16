@@ -74,15 +74,49 @@ Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
 	return lts_for_simulation.compute_simulation(partition, relation, state_num);
 }
 
-void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
+/// Incoming transitions `(source, symbol)` of each state of the result of residual reduction "with", recorded when
+///  a transition is added. A removed transition leaves its entry behind, so users check the delta.
+class Predecessors {
+  public:
+	void add(Nfa& nfa, const State source, const Symbol symbol, const State target) {
+		nfa.delta.add(source, symbol, target);
+		record(source, symbol, target);
+	}
+
+	void record(const State source, const Symbol symbol, const State target) {
+		if (target >= predecessors_.size()) { predecessors_.resize(target + 1); }
+		predecessors_[target].emplace_back(source, symbol);
+	}
+
+	/// The transitions to @p target present in @p nfa, each once; forgets the recorded entries.
+	std::vector<std::pair<State, Symbol>> take_transitions_to(const Nfa& nfa, const State target) {
+		if (target >= predecessors_.size()) { return {}; }
+		std::vector<std::pair<State, Symbol>> transitions{std::move(predecessors_[target])};
+		predecessors_[target].clear();
+		std::ranges::sort(transitions);
+		const auto [first, last]{std::ranges::unique(transitions)};
+		transitions.erase(first, last);
+		std::erase_if(transitions, [&](const std::pair<State, Symbol>& transition) {
+			const StatePost& state_post{nfa.delta[transition.first]};
+			const auto symbol_post{state_post.find(transition.second)};
+			return symbol_post == state_post.end() || !symbol_post->targets.contains(target);
+		});
+		return transitions;
+	}
+
+  private:
+	std::vector<std::vector<std::pair<State, Symbol>>> predecessors_{};
+};
+
+void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa, Predecessors& predecessors) {
 	// Remove all transitions from the covered state.
 	nfa.delta.mutable_state_post(remove).clear();
 
 	// Redirect transitions to the covered state to the covering set instead.
-	for (const auto remove_transitions = nfa.delta.get_transitions_to(remove); const auto& move : remove_transitions) {
+	for (const auto& [source, symbol] : predecessors.take_transitions_to(nfa, remove)) {
 		// transfer transitions from covered state to covering set
-		for (const State switch_target : covering_set) { nfa.delta.add(move.source, move.symbol, switch_target); }
-		nfa.delta.remove(move);
+		for (const State switch_target : covering_set) { predecessors.add(nfa, source, symbol, switch_target); }
+		nfa.delta.remove(source, symbol, remove);
 	}
 
 	// check final and initial states
@@ -100,7 +134,8 @@ void check_covered_and_covering(
 	std::unordered_map<StateSet, State>& subset_map, // map of non-covered states
 	const State target_res,
 	const StateSet& targets_orig, // current state to check
-	Nfa& result
+	Nfa& result,
+	Predecessors& predecessors
 ) {
 	auto it = subset_map.begin();
 
@@ -142,7 +177,7 @@ void check_covered_and_covering(
 				}
 
 				// remove covered state from the automaton, replace with covering set
-				remove_covered_state(covering_indexes[erase_state], erase_state, result);
+				remove_covered_state(covering_indexes[erase_state], erase_state, result, predecessors);
 
 				auto temp = it++;
 				// move state from subset_map to covered
@@ -2217,6 +2252,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 	std::vector<StateSet> covering_states; // check covering set
 	std::vector<StateSet> covering_indexes; // indexes of covering macrostates
 	std::unordered_map<StateSet, State> covered; // map of covered states for transferring new transitions
+	Predecessors predecessors{};
 
 	result.clear();
 	const StateSet initials_orig = StateSet(nfa.initial);
@@ -2265,7 +2301,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 			} else { // add new state
 				target_res = result.add_state();
 				check_covered_and_covering(
-					covering_states, covering_indexes, covered, subset_map, target_res, targets, result
+					covering_states, covering_indexes, covered, subset_map, target_res, targets, result, predecessors
 				);
 
 				if (targets != covering_states[target_res]) { // new state is not covered, replace transitions
@@ -2289,9 +2325,10 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 			if (add) {
 				result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
+				predecessors.record(state_res, current_symbol, target_res);
 			} else {
 				for (State switch_target : covering_indexes[target_res]) {
-					result.delta.add(state_res, current_symbol, switch_target);
+					predecessors.add(result, state_res, current_symbol, switch_target);
 				}
 			}
 		}
