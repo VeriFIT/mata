@@ -385,7 +385,8 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 
 	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
 	product_pres_eps_trans.trim();
-	if (product_pres_eps_trans.is_lang_empty()) { return {}; }
+	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
+	if (product_pres_eps_trans.initial.empty()) { return {}; }
 	if (utils::haskey(params, "reduce")) {
 		const std::string& reduce_value = params.at("reduce");
 		if (reduce_value == "forward" || reduce_value == "bidirectional") {
@@ -428,7 +429,8 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 
 	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
 	product_pres_eps_trans.trim();
-	if (product_pres_eps_trans.is_lang_empty()) { return {}; }
+	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
+	if (product_pres_eps_trans.initial.empty()) { return {}; }
 	if (!reduce_value.empty()) {
 		if (reduce_value == "forward" || reduce_value == "bidirectional") {
 			product_pres_eps_trans = reduce(product_pres_eps_trans);
@@ -461,7 +463,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 	Nfa product_pres_eps_trans{intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON - 1)};
 	product_pres_eps_trans.trim();
 
-	if (product_pres_eps_trans.is_lang_empty()) { return {}; }
+	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
+	if (product_pres_eps_trans.initial.empty()) { return {}; }
 	if (utils::haskey(params, "reduce")) {
 		const std::string& reduce_value = params.at("reduce");
 		if (reduce_value == "forward" || reduce_value == "bidirectional") {
