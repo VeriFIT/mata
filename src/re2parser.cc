@@ -75,10 +75,16 @@ class RegexParser {
 	 * @param prog Prog* to create Nfa from
 	 * @param use_epsilon whether to create NFA with epsilon transitions or not
 	 * @param epsilon_value value, that will represent epsilon on transitions
+	 * @param trim_result whether to trim the created Nfa
 	 * @return Nfa created from prog
 	 */
-	void
-		convert_pro_to_nfa(Nfa* output_nfa, re2::Prog* prog, const bool use_epsilon, const mata::Symbol epsilon_value) {
+	void convert_pro_to_nfa(
+		Nfa* output_nfa,
+		re2::Prog* prog,
+		const bool use_epsilon,
+		const mata::Symbol epsilon_value,
+		const bool trim_result
+	) {
 		const auto start_state = static_cast<size_t>(prog->start());
 		const auto prog_size = static_cast<size_t>(prog->size());
 		// The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
@@ -243,7 +249,7 @@ class RegexParser {
 				}
 			}
 		}
-		explicit_nfa.trim();
+		if (trim_result) { explicit_nfa.trim(); }
 		*output_nfa = std::move(explicit_nfa);
 	}
 
@@ -478,6 +484,30 @@ class RegexParser {
 };
 } // namespace
 
+mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Options& options) {
+	mata::nfa::Nfa result;
+	RegexParser regex_parser{};
+	const auto parsed_regex = regex_parser.parse_regex_string(pattern, options.encoding);
+	const auto program = parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3);
+	// FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
+	//  pass the argument use_epsilon to convert_pro_to_nfa().
+	regex_parser.convert_pro_to_nfa(&result, program, true, options.epsilon, options.trim);
+	delete program;
+	// Decrements reference count and deletes object if the count reaches 0
+	parsed_regex->Decref();
+
+	if (!options.keep_epsilon) { result = mata::nfa::remove_epsilon(result, options.epsilon); }
+	// The RE2 program and epsilon removal leave useless states behind (roughly half of the states on the test regexes).
+	if (options.trim) { result.trim(); }
+	if (options.reduce) { result = mata::nfa::reduce(result); }
+
+	return result;
+}
+
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, const Re2Options& options) {
+	*nfa = create_nfa(pattern, options);
+}
+
 mata::nfa::Nfa mata::parser::create_nfa(
 	const std::string& pattern,
 	const bool use_epsilon,
@@ -485,24 +515,13 @@ mata::nfa::Nfa mata::parser::create_nfa(
 	const bool use_reduce,
 	const Encoding encoding
 ) {
-	mata::nfa::Nfa result;
-	RegexParser regex_parser{};
-	const auto parsed_regex = regex_parser.parse_regex_string(pattern, encoding);
-	const auto program = parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3);
-	// FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
-	//  pass the argument use_epsilon to convert_pro_to_nfa().
-	regex_parser.convert_pro_to_nfa(&result, program, true, epsilon_value);
-	delete program;
-	// Decrements reference count and deletes object if the count reaches 0
-	parsed_regex->Decref();
-
-	// TODO: should this really be done implicitly?
-	if (!use_epsilon) { result = mata::nfa::remove_epsilon(result, epsilon_value); }
-	// The RE2 program and epsilon removal leave useless states behind (roughly half of the states on the test regexes).
-	result.trim();
-	if (use_reduce) { result = mata::nfa::reduce(result); }
-
-	return result;
+	return create_nfa(
+		pattern, {.keep_epsilon = use_epsilon,
+				  .epsilon = epsilon_value,
+				  .encoding = encoding,
+				  .trim = true,
+				  .reduce = use_reduce}
+	);
 }
 
 void mata::parser::create_nfa(
