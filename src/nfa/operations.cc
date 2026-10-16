@@ -601,9 +601,13 @@ Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
 }
 
 Nfa mata::nfa::revert(const Nfa& aut) {
-	return simple_revert(aut);
-	// return fragile_revert(aut);
-	// return somewhat_simple_revert(aut);
+	// The counting sort of Delta::reverted is much faster than the insertion-based variants below
+	//  (kept for benchmarking) and does not allocate any symbol-indexed arrays as fragile_revert does.
+	Nfa result{};
+	result.delta = aut.delta.reverted(aut.num_of_states());
+	result.initial = aut.final;
+	result.final = aut.initial;
+	return result;
 }
 
 bool mata::nfa::Nfa::is_deterministic() const {

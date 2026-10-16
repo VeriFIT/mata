@@ -493,3 +493,54 @@ TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with mo
 		}
 	}
 }
+
+TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transitions", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 5};
+		const size_t num_of_symbols{1 + seed % 3};
+		auto alphabet{std::make_shared<EnumAlphabet>()};
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+		const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		INFO(describe(seed, nfa));
+
+		// Epsilon is the largest symbol, so the symbol-indexed fragile_revert has to keep it out of its
+		//  arrays while the counting sort of revert() does not see any difference.
+		const Nfa reverted{revert(nfa)};
+		CHECK(reverted.delta == simple_revert(nfa).delta);
+		CHECK(reverted.delta == fragile_revert(nfa).delta);
+		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
+		CHECK(reverted.initial == simple_revert(nfa).initial);
+		CHECK(reverted.final == simple_revert(nfa).final);
+		CHECK(revert(reverted).delta == nfa.delta);
+	}
+}
+
+TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differential]") {
+	// fragile_revert is excluded on purpose: it allocates two vectors per symbol value up to the largest
+	//  one (EPSILON-1 here), which is exactly the flaw #751 removes from revert().
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 4};
+		Nfa nfa{num_of_states};
+		nfa.initial.insert(draw(rng, num_of_states));
+		for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+			if (draw(rng, 3) == 0) { nfa.final.insert(state); }
+			// Symbols from {0, 1} and right below and at EPSILON, so both ordinary and special symbols mix
+			//  in one state post.
+			for (const Symbol symbol : {Symbol{0}, Symbol{1}, EPSILON - 2, EPSILON - 1, EPSILON}) {
+				for (size_t transition{0}, transitions{draw(rng, 3)}; transition < transitions; ++transition) {
+					nfa.delta.add(state, symbol, draw(rng, num_of_states));
+				}
+			}
+		}
+		INFO(describe(seed, nfa));
+
+		const Nfa reverted{revert(nfa)};
+		CHECK(reverted.delta == simple_revert(nfa).delta);
+		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
+		CHECK(reverted.initial == simple_revert(nfa).initial);
+		CHECK(reverted.final == simple_revert(nfa).final);
+		CHECK(revert(reverted).delta == nfa.delta);
+	}
+}
