@@ -116,19 +116,6 @@ TEST_CASE("mata::nfa concurrent lookups and unions on unrelated automata - issue
 	CHECK(wrong_union == 0);
 }
 
-TEST_CASE("mata::nfa::Delta::get_used_symbols_set() starts empty on every call - issue #731") {
-	// The set was a function-local `static` the default branch never cleared, so a second call
-	//  returned the union of everything seen so far, on this `Delta` and on every other one.
-	Nfa first{2, {0}, {1}};
-	first.delta.add(0, 'a', 1);
-	Nfa second{2, {0}, {1}};
-	second.delta.add(0, 'b', 1);
-
-	CHECK(first.delta.get_used_symbols_set() == std::set<Symbol>{'a'});
-	CHECK(second.delta.get_used_symbols_set() == std::set<Symbol>{'b'});
-	CHECK(first.delta.get_used_symbols_set() == std::set<Symbol>{'a'});
-}
-
 TEST_CASE("mata::nfa::Delta::state_post()") {
 	Nfa aut{};
 
@@ -917,4 +904,24 @@ TEST_CASE("mata::nfa::State width and state overflow checks") {
 		CHECK(state_post.front().targets == StateSet{3});
 		CHECK(!std::is_constructible_v<StateSet, State, State>);
 	}
+}
+
+TEST_CASE("mata::nfa::Delta::get_used_symbols()") {
+	Delta delta{};
+	CHECK(delta.get_used_symbols().empty());
+
+	delta.add(0, 3, 1);
+	delta.add(1, 1, 2);
+	delta.add(2, 3, 0);
+	CHECK(delta.get_used_symbols() == mata::utils::OrdVector<Symbol>{1, 3});
+
+	// `EPSILON` is the maximal symbol: a bit-vector indexed by the symbol would have to allocate the whole symbol
+	//  range, and `EPSILON + 1` wraps around to 0 in 32-bit arithmetic.
+	delta.add(0, EPSILON, 2);
+	CHECK(delta.get_used_symbols() == mata::utils::OrdVector<Symbol>{1, 3, EPSILON});
+
+	// Repeated calls must not accumulate the symbols of previous calls.
+	const Delta other{delta};
+	CHECK(other.get_used_symbols() == mata::utils::OrdVector<Symbol>{1, 3, EPSILON});
+	CHECK(Delta{}.get_used_symbols().empty());
 }

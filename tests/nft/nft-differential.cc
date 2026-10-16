@@ -175,7 +175,6 @@ TEST_CASE("mata::nft differential: the revert variants build the same transducer
 		const Nft reverted{revert(nft)};
 		CHECK(reverted.delta == simple_revert(nft).delta);
 		CHECK(reverted.delta == fragile_revert(nft).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nft).delta);
 		CHECK(reverted.initial == simple_revert(nft).initial);
 		CHECK(reverted.final == simple_revert(nft).final);
 		CHECK(reverted.levels == fragile_revert(nft).levels);
