@@ -2950,6 +2950,157 @@ TEST_CASE("mata::nft::compose_fast_no_jump()") {
 	}
 }
 
+TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #812)") {
+	// The three operand shapes of the issue's table: n silent EPSILON moves on each side followed
+	// by one matching symbol X on the synchronization level, so the accepted relation is a single
+	// tuple. The EPSILON-composition filter must keep the raw result linear in n instead of
+	// quadratic while accepting that same tuple.
+	//
+	// The correctness reference is the relation the UNFILTERED composer accepts on these shapes:
+	// for each shape the unfiltered composer accepts exactly the single tuple built into the
+	// explicit reference NFTs below. Equivalence is checked after trim() + remove_epsilon().
+	// (Comparing the normalized filtered output against a normalized UNFILTERED output is not a
+	// usable criterion: remove_epsilon() cannot eliminate the cross-level EPSILON residue the
+	// unfiltered composer builds in shape B, although both accept the same relation; the filtered
+	// and unfiltered raw outputs of A and B are equivalent directly, and for C they only differ
+	// in the diagonal simultaneous-move paths the filter drops deliberately.)
+	const mata::Symbol x{7};
+	const mata::Symbol a{1};
+	const mata::Symbol b{2};
+
+	// 2-level NFT with the synchronization on level 0: n fast-EPSILON moves, then X (0 -> 1),
+	// then B back to a final zero-level state.
+	auto two_level_sync_at_0 = [&](const State n) {
+		Nft nft{n + 3, {0}, {n + 2}, Levels(2, n + 3)};
+		nft.levels[n + 1] = 1;
+		for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+		nft.delta.add(n, x, n + 1);
+		nft.delta.add(n + 1, b, n + 2);
+		return nft;
+	};
+	// 2-level NFT with the synchronization on level 1: n fast-EPSILON moves, then A (0 -> 1),
+	// then X back to a final zero-level state.
+	auto two_level_sync_at_1 = [&](const State n) {
+		Nft nft{n + 3, {0}, {n + 2}, Levels(2, n + 3)};
+		nft.levels[n + 1] = 1;
+		for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+		nft.delta.add(n, a, n + 1);
+		nft.delta.add(n + 1, x, n + 2);
+		return nft;
+	};
+	// 1-level NFT: n EPSILON moves, then X to a final state.
+	auto one_level = [&](const State n) {
+		Nft nft{n + 2, {0}, {n + 1}, Levels(1, n + 2)};
+		for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+		nft.delta.add(n, x, n + 1);
+		return nft;
+	};
+	// 1-level reference NFT accepting exactly the word {symbol}.
+	auto ref_1track = [](const mata::Symbol symbol) {
+		Nft nft{2, {0}, {1}, Levels(1, 2)};
+		nft.delta.add(0, symbol, 1);
+		return nft;
+	};
+	// 2-level reference NFT accepting exactly the tuple (first, second).
+	auto ref_2track = [](const mata::Symbol first, const mata::Symbol second) {
+		Nft nft{3, {0}, {2}, Levels(2, 3)};
+		nft.levels[1] = 1;
+		nft.delta.add(0, first, 1);
+		nft.delta.add(1, second, 2);
+		return nft;
+	};
+
+	auto check_shape = [&](const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level,
+						   const bool project_out_sync_levels, const Nft& reference, const size_t expected_states,
+						   const size_t expected_transitions) {
+		const Nft result{
+			algorithms::compose_fast_no_jump(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels)
+		};
+		CHECK(result.num_of_states() == expected_states);
+		CHECK(result.delta.num_of_transitions() == expected_transitions);
+
+		Nft result_normalized{result};
+		result_normalized.trim();
+		result_normalized.remove_epsilon();
+		CHECK(are_equivalent(result_normalized, reference));
+	};
+
+	SECTION("A: 2-level o 1-level, sync 0/0, projected") {
+		for (const State n : {State{16}, State{32}, State{64}}) {
+			check_shape(two_level_sync_at_0(n), one_level(n), 0, 0, true, ref_1track(b), 2 * n + 2, 2 * n + 1);
+		}
+	}
+	SECTION("B: 1-level o 2-level, sync 0/0, kept") {
+		for (const State n : {State{16}, State{32}, State{64}}) {
+			check_shape(one_level(n), two_level_sync_at_0(n), 0, 0, false, ref_2track(x, b), 4 * n + 3, 4 * n + 2);
+		}
+	}
+	SECTION("C: 2-level o 2-level, sync 1/0, projected") {
+		for (const State n : {State{16}, State{32}, State{64}}) {
+			check_shape(
+				two_level_sync_at_1(n), two_level_sync_at_0(n), 1, 0, true, ref_2track(a, b), 4 * n + 3, 4 * n + 2
+			);
+		}
+	}
+
+	// Shapes A-C never enter RHS_MOVED_ALONE: while the LHS can move silently it has no other
+	// move, so a silent RHS-only move is refused. Here the LHS branches in its initial state 0
+	// into a silent move and X, so the silent RHS move 0 -> 1 switches the filter. From (0, 1)
+	// the silent LHS move is refused (its canonical counterpart is the LHS-first route through
+	// (1, 0) to (1, 1)), and the only accepted tuple synchronizes on X from (0, 1) and needs the
+	// silent LHS move 2 -> 3 afterwards, so synchronization must reset the filter.
+	SECTION("D: 1-level o 1-level, sync 0/0, kept, filter switched and reset by synchronization") {
+		// Words: {b, x b}.
+		Nft lhs{5, {0}, {4}, Levels(1, 5)};
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(0, x, 2);
+		lhs.delta.add(1, b, 4);
+		lhs.delta.add(2, EPSILON, 3);
+		lhs.delta.add(3, b, 4);
+		// Words: {x b}.
+		Nft rhs{4, {0}, {3}, Levels(1, 4)};
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 2);
+		rhs.delta.add(2, b, 3);
+		Nft reference{3, {0}, {2}, Levels(1, 3)};
+		reference.delta.add(0, x, 1);
+		reference.delta.add(1, b, 2);
+		check_shape(lhs, rhs, 0, 0, false, reference, 7, 6);
+	}
+	SECTION("E: 2-level o 2-level, sync 0/0, kept, filter switched and reset by synchronization") {
+		// The shape of D with fast EPSILON moves, kept so that trim() does not hide the dead
+		// configurations. Tuples: (x, a) (b, a) and (b, a).
+		Nft lhs{8, {0}, {4}, Levels(2, 8)};
+		for (const State s : {State{5}, State{6}, State{7}}) { lhs.levels[s] = 1; }
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(0, x, 5);
+		lhs.delta.add(5, a, 2);
+		lhs.delta.add(1, b, 6);
+		lhs.delta.add(6, a, 4);
+		lhs.delta.add(2, EPSILON, 3);
+		lhs.delta.add(3, b, 7);
+		lhs.delta.add(7, a, 4);
+		// (x, b) (b, b).
+		Nft rhs{6, {0}, {3}, Levels(2, 6)};
+		for (const State s : {State{4}, State{5}}) { rhs.levels[s] = 1; }
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 4);
+		rhs.delta.add(4, b, 2);
+		rhs.delta.add(2, b, 5);
+		rhs.delta.add(5, b, 3);
+		Nft reference{7, {0}, {6}, Levels(3, 7)};
+		for (const State s : {State{1}, State{4}}) { reference.levels[s] = 1; }
+		for (const State s : {State{2}, State{5}}) { reference.levels[s] = 2; }
+		reference.delta.add(0, x, 1);
+		reference.delta.add(1, a, 2);
+		reference.delta.add(2, b, 3);
+		reference.delta.add(3, b, 4);
+		reference.delta.add(4, a, 5);
+		reference.delta.add(5, b, 6);
+		check_shape(lhs, rhs, 0, 0, false, reference, 17, 16);
+	}
+}
+
 TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 	auto lhs_alphabet = std::make_shared<mata::IntAlphabet>();
 	auto sync_alphabet = std::make_shared<mata::IntAlphabet>();
