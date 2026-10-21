@@ -6,6 +6,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <random>
 #include <set>
 #include <string>
@@ -183,6 +184,67 @@ TEST_CASE("mata::nft differential: the revert variants build the same transducer
 		// Reverting twice gives the original transition relation back.
 		CHECK(revert(reverted).delta == nft.delta);
 	}
+}
+
+TEST_CASE("mata::nft differential: remove_epsilon() keeps the relation", "[differential]") {
+	size_t shared_epsilon_successors{0};
+	for (unsigned seed{0}; seed < 1'000; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_symbols{1 + seed % 2};
+		const size_t num_of_levels{2 + seed % 2};
+		const size_t num_of_states_per_level{2 + seed % 2};
+		// random_nft() gives the inner states transitions over every symbol, which no ε-run passes. Here
+		//  every transition is EPSILON with probability 1/2, so states reached only by ε from several
+		//  predecessors, the shape remove_epsilon() used to cut (#728), are common.
+		Nft nft{Nft::with_levels(num_of_levels)};
+		for (size_t level{0}; level < num_of_levels; ++level) {
+			for (size_t index{0}; index < num_of_states_per_level; ++index) {
+				nft.add_state_with_level(static_cast<Level>(level));
+			}
+		}
+		nft.initial.insert(static_cast<State>(draw(rng, num_of_states_per_level)));
+		for (State state{0}; state < num_of_states_per_level; ++state) {
+			if (draw(rng, 2) == 0) { nft.final.insert(state); }
+		}
+		for (State source{0}; source < nft.num_of_states(); ++source) {
+			const size_t next_level{(nft.levels[source] + 1) % num_of_levels};
+			for (size_t transition{0}, transitions{1 + draw(rng, 2)}; transition < transitions; ++transition) {
+				const Symbol symbol{draw(rng, 2) == 0 ? EPSILON : static_cast<Symbol>(draw(rng, num_of_symbols))};
+				nft.delta.add(
+					source, symbol,
+					static_cast<State>(next_level * num_of_states_per_level + draw(rng, num_of_states_per_level))
+				);
+			}
+		}
+		std::vector<size_t> in_degree(nft.num_of_states(), 0);
+		std::vector<bool> only_epsilon_in(nft.num_of_states(), true);
+		for (const Transition& transition : nft.delta.transitions()) {
+			++in_degree[transition.target];
+			if (transition.symbol != EPSILON) { only_epsilon_in[transition.target] = false; }
+		}
+		for (State state{0}; state < nft.num_of_states(); ++state) {
+			if (in_degree[state] > 1 && only_epsilon_in[state]) {
+				++shared_epsilon_successors;
+				break;
+			}
+		}
+		INFO(describe(seed, nft));
+
+		const Nft result{remove_epsilon(nft)};
+		CHECK(result.levels.num_of_levels == num_of_levels);
+		// Every tuple of words up to length 2, one word per level, is accepted by both or by neither.
+		const std::vector<Word> words{all_level_words(num_of_symbols, 2, 1)};
+		std::vector<Word> tuple(num_of_levels);
+		std::vector<size_t> indices(num_of_levels, 0);
+		while (true) {
+			for (size_t level{0}; level < num_of_levels; ++level) { tuple[level] = words[indices[level]]; }
+			CHECK(nft.is_in_lang_by_levels(tuple) == result.is_in_lang_by_levels(tuple));
+			size_t level{0};
+			while (level < num_of_levels && ++indices[level] == words.size()) { indices[level++] = 0; }
+			if (level == num_of_levels) { break; }
+		}
+	}
+	CHECK(shared_epsilon_successors > 0);
 }
 
 // Only DONT_CARE is drawn into the operands below: with an EPSILON transition in an operand,
