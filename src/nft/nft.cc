@@ -1765,32 +1765,56 @@ bool Nft::make_complete(const OrdVector<Symbol>& symbols, const std::optional<st
 		return (levels.num_of_levels == 1) ? level : (level + 1) % static_cast<Level>(levels.num_of_levels);
 	};
 
-	// Add missing transitions from original states to sink states.
-	OrdVector<Symbol> used_symbols{};
+	// Add missing transitions from original states to sink states. Both a state post and @p symbols are sorted, so one
+	//  merge finds the missing symbols, and the completed post is built by appending, not by a sorted insert per
+	//  missing symbol. A post may hold symbols outside @p symbols (e.g., EPSILON), which complete nothing.
 	bool transition_added{false};
+	const auto symbols_begin{symbols.begin()};
+	const auto symbols_end{symbols.end()};
+	StatePost completed_post{}; // Scratch buffer, swapped with each rebuilt state post.
 	for (State state{0}; state < num_of_states_orig; ++state) {
-		used_symbols.clear();
-		for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
+		// The constant accessor first: 'mutable_state_post()' allocates the posts up to 'state', which a complete
+		//  state must not cause.
+		const StatePost& post{delta[state]};
+		auto symbols_it{symbols_begin};
+		auto post_it{post.begin()};
+		const auto post_end{post.end()};
+		while (symbols_it != symbols_end) {
+			while (post_it != post_end && post_it->symbol < *symbols_it) { ++post_it; }
+			if (post_it == post_end || post_it->symbol != *symbols_it) { break; } // '*symbols_it' is missing.
+			++post_it;
+			++symbols_it;
+		}
+		if (symbols_it == symbols_end) { continue; }
+		transition_added = true;
+		const size_t num_of_missing_at_most{static_cast<size_t>(symbols_end - symbols_it)};
 
-		auto add_transitions_to_sinks = [&](const auto& symbols_to_add) {
-			for (const Symbol symbol : symbols_to_add) {
-				delta.add(state, symbol, sinks[next_level(levels[state])]);
-				transition_added = true;
+		const State sink{sinks[next_level(levels[state])]};
+		StatePost& state_post{delta.mutable_state_post(state)}; // 'post' dangles from here.
+		completed_post.clear();
+		completed_post.reserve(state_post.size() + num_of_missing_at_most);
+		symbols_it = symbols_begin;
+		for (SymbolPost& symbol_post : state_post) {
+			while (symbols_it != symbols_end && *symbols_it < symbol_post.symbol) {
+				completed_post.emplace_back(*symbols_it, sink);
+				++symbols_it;
 			}
-		};
-		add_transitions_to_sinks(symbols.difference(used_symbols));
+			if (symbols_it != symbols_end && *symbols_it == symbol_post.symbol) { ++symbols_it; }
+			completed_post.emplace_back(std::move(symbol_post));
+		}
+		for (; symbols_it != symbols_end; ++symbols_it) { completed_post.emplace_back(*symbols_it, sink); }
+		std::swap(state_post, completed_post);
 	}
 
-	// Add loops on sink states (from sink to a sink of the next level).
+	// Add loops on sink states (from sink to a sink of the next level). They were created above, after every original
+	//  state, so their posts are empty and the sorted @p symbols are appended in order.
 	if (transition_added && num_of_states_orig < this->num_of_states()) {
-		auto add_transitions_between_sinks = [&](const auto& symbols_to_add) {
-			for (Level level{0}; level < levels.num_of_levels; ++level) {
-				for (const Symbol symbol : symbols_to_add) {
-					delta.add(sinks[level], symbol, sinks[next_level(level)]);
-				}
-			}
-		};
-		add_transitions_between_sinks(symbols);
+		for (Level level{0}; level < levels.num_of_levels; ++level) {
+			StatePost& sink_post{delta.mutable_state_post(sinks[level])};
+			MATA_ASSERT(sink_post.empty(), "Nft::make_complete: the post of a fresh sink state must be empty.");
+			sink_post.reserve(symbols.size());
+			for (const Symbol symbol : symbols) { sink_post.emplace_back(symbol, sinks[next_level(level)]); }
+		}
 	}
 
 	return transition_added;

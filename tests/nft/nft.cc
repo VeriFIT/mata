@@ -1173,6 +1173,71 @@ TEST_CASE("mata::nft::make_complete()") {
 		result.make_complete(alphabet.get(), sinks);
 		CHECK_SHARED();
 	}
+
+	SECTION("posts with symbols outside the alphabet") {
+		constexpr Symbol OUT_OF_ALPHABET{'z'}; // Above every symbol of the alphabet, below EPSILON.
+		nft.levels.num_of_levels = 2;
+		nft.levels.set({0, 1, 0, 1});
+		nft.initial = {0};
+		nft.final = {2};
+		nft.delta.add(0, EPSILON, 1); // Only a foreign symbol: nothing of the alphabet is covered.
+		nft.delta.add(1, 'a', 2);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(1, OUT_OF_ALPHABET, 2); // As many symbols as the alphabet has, yet 'c' is missing.
+		nft.delta.add(2, 'a', 3);
+		nft.delta.add(2, 'b', 3);
+		nft.delta.add(2, 'c', 3);
+		nft.delta.add(2, EPSILON, 1); // Complete over the alphabet, with a foreign symbol on top.
+		nft.delta.add(3, 'a', 0);
+		nft.delta.add(3, 'b', 0);
+		nft.delta.add(3, 'c', 0);
+
+		result = nft;
+		CHECK(result.make_complete(alphabet.get()));
+		REQUIRE(result.num_of_states() == 6);
+		constexpr State SINK_0{4};
+		constexpr State SINK_1{5};
+
+		// The foreign symbols survive, complete nothing, and the posts stay sorted.
+		auto post_symbols = [&result](const State state) {
+			std::vector<Symbol> symbols_of_post{};
+			for (const SymbolPost& symbol_post : result.delta[state]) { symbols_of_post.push_back(symbol_post.symbol); }
+			return symbols_of_post;
+		};
+		CHECK(post_symbols(0) == std::vector<Symbol>{'a', 'b', 'c', EPSILON});
+		CHECK(post_symbols(1) == std::vector<Symbol>{'a', 'b', 'c', OUT_OF_ALPHABET});
+		CHECK(post_symbols(2) == std::vector<Symbol>{'a', 'b', 'c', EPSILON});
+		CHECK(post_symbols(3) == std::vector<Symbol>{'a', 'b', 'c'});
+		CHECK(result.delta.contains(0, EPSILON, 1));
+		CHECK(result.delta.contains(0, 'a', SINK_1));
+		CHECK(result.delta.contains(1, OUT_OF_ALPHABET, 2));
+		CHECK(result.delta.contains(1, 'c', SINK_0));
+		CHECK(result.delta.contains(2, EPSILON, 1));
+		for (const Symbol symbol : symbols) {
+			CHECK(result.delta.contains(SINK_0, symbol, SINK_1));
+			CHECK(result.delta.contains(SINK_1, symbol, SINK_0));
+		}
+		CHECK(result.delta.num_of_transitions() == nft.delta.num_of_transitions() + 4 + 2 * symbols.size());
+		CHECK(are_equivalent(nft, result));
+	}
+
+	SECTION("complete transducer is not modified") {
+		nft.levels.num_of_levels = 2;
+		nft.levels.set({0, 1});
+		nft.initial = {0};
+		nft.final = {0};
+		for (const Symbol symbol : symbols) {
+			nft.delta.add(0, symbol, 1);
+			nft.delta.add(1, symbol, 0);
+		}
+		nft.delta.add(1, EPSILON, 0);
+
+		result = nft;
+		CHECK(!result.make_complete(alphabet.get()));
+		CHECK(result.delta.num_of_transitions() == nft.delta.num_of_transitions());
+		CHECK(result.delta[0] == nft.delta[0]);
+		CHECK(result.delta[1] == nft.delta[1]);
+	}
 }
 
 TEST_CASE("mata::nft::is_universal()") {
