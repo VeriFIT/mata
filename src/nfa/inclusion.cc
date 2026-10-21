@@ -50,11 +50,20 @@ bool mata::nfa::algorithms::is_included_antichains(
 ) { // {{{
 	(void) alphabet;
 
-	/// A pair (q, S) of a state of the smaller automaton and a macrostate of the bigger one, carrying the distance
-	///  lower bound of @c S and its 64-bit signature. Both are functions of the first two components, so they do
-	///  not change how the tuples order each other as keys of @c paths.
-	using ProdStateType = std::tuple<State, StateSet, size_t, uint64_t>;
-	using ProdStatesType = std::vector<ProdStateType>;
+	/// A pair (q, S) of a state of the smaller automaton and a macrostate of the bigger one, as a node of the search.
+	///  Nodes are never removed from @c nodes, so their indices stay valid as the parents a counterexample is read
+	///  back through.
+	struct Node {
+		State smaller_state;
+		StateSet bigger_set;
+		uint64_t signature;
+		/// The node this one was reached from, or the node itself for an initial one.
+		size_t parent;
+		/// The symbol read on the transition from @c parent.
+		Symbol symbol;
+		/// A later node dominates this one: the worklist skips it and its macrostate is released.
+		bool dominated;
+	};
 
 	/**
 	 * @brief The macrostates already processed for one state of the smaller automaton, bucketed by cardinality.
@@ -66,63 +75,72 @@ bool mata::nfa::algorithms::is_included_antichains(
 	 *  - @c succ ⊆ @c d requires @c |d| ≥ @c |succ|, so pruning reads nothing below @c |succ|;
 	 *  - at equal cardinality both reduce to equality, which is one comparison of two sorted vectors, and an entry
 	 *    equal to @c succ subsumes it, so pruning never has to consider that bucket.
-	 * Inside a bucket the stored signature rejects most of the remaining pairs in O(1), before the two sorted
-	 *  vectors are merged; see @c algorithms::macrostate_signature().
+	 * Inside a bucket the stored signature rejects most of the remaining pairs in O(1), before the node is read and
+	 *  the two sorted vectors are merged; see @c algorithms::macrostate_signature().
 	 *
 	 * Only cardinalities that actually hold an entry get a bucket, kept in increasing order: the macrostates of one
 	 *  run occupy few distinct cardinalities out of the @c |bigger| possible ones, so indexing by cardinality would
 	 *  pay for (and scan) a bucket header per unused size.
+	 *
+	 * Every node on the worklist is stored here as well, so marking the pruned nodes as dominated also removes them
+	 *  from the worklist, without scanning it.
 	 */
 	class ProcessedAntichain {
 	  public:
-		/// Is some stored macrostate a subset of the macrostate of @p succ, and therefore dominates it?
-		bool subsumes(const ProdStateType& succ) const {
-			const StateSet& succ_set{std::get<1>(succ)};
-			const uint64_t succ_signature{std::get<3>(succ)};
+		/// Is some stored macrostate a subset of @p succ_set, and therefore dominates it?
+		bool subsumes(const std::vector<Node>& nodes, const StateSet& succ_set, const uint64_t succ_signature) const {
 			const size_t cardinality{succ_set.size()};
 			for (const Bucket& bucket : buckets_) {
 				if (bucket.cardinality > cardinality) { break; }
 				if (bucket.cardinality == cardinality) {
 					// A subset of the same cardinality is the set itself.
-					return std::ranges::any_of(bucket.entries, [&](const ProdStateType& anti) {
-						return std::get<3>(anti) == succ_signature && std::get<1>(anti) == succ_set;
+					return std::ranges::any_of(bucket.entries, [&](const Entry& anti) {
+						return anti.signature == succ_signature && nodes[anti.node].bigger_set == succ_set;
 					});
 				}
-				for (const ProdStateType& anti : bucket.entries) {
-					if ((std::get<3>(anti) & ~succ_signature) != 0) { continue; }
-					if (std::get<1>(anti).is_subset_of(succ_set)) { return true; }
+				for (const Entry& anti : bucket.entries) {
+					if ((anti.signature & ~succ_signature) != 0) { continue; }
+					if (nodes[anti.node].bigger_set.is_subset_of(succ_set)) { return true; }
 				}
 			}
 			return false;
 		}
 
-		/// Removes every stored macrostate that @p succ dominates, that is, every strict superset of its macrostate.
-		void prune(const ProdStateType& succ) {
-			const StateSet& succ_set{std::get<1>(succ)};
-			const uint64_t succ_signature{std::get<3>(succ)};
+		/// Removes every stored macrostate that @p succ_set dominates, that is, every strict superset of it, and
+		///  marks its node as dominated.
+		void prune(std::vector<Node>& nodes, const StateSet& succ_set, const uint64_t succ_signature) {
 			auto bucket{std::ranges::upper_bound(buckets_, succ_set.size(), {}, &Bucket::cardinality)};
 			while (bucket != buckets_.end()) {
-				std::erase_if(bucket->entries, [&](const ProdStateType& stored) {
-					if ((succ_signature & ~std::get<3>(stored)) != 0) { return false; }
-					return succ_set.is_subset_of(std::get<1>(stored));
+				std::erase_if(bucket->entries, [&](const Entry& stored) {
+					if ((succ_signature & ~stored.signature) != 0) { return false; }
+					Node& node{nodes[stored.node]};
+					if (!succ_set.is_subset_of(node.bigger_set)) { return false; }
+					node.dominated = true;
+					node.bigger_set = StateSet{};
+					return true;
 				});
 				bucket = bucket->entries.empty() ? buckets_.erase(bucket) : bucket + 1;
 			}
 		}
 
-		void insert(const ProdStateType& pair) {
-			const size_t cardinality{std::get<1>(pair).size()};
+		void insert(const std::vector<Node>& nodes, const size_t node_idx) {
+			const Node& node{nodes[node_idx]};
+			const size_t cardinality{node.bigger_set.size()};
 			auto bucket{std::ranges::lower_bound(buckets_, cardinality, {}, &Bucket::cardinality)};
 			if (bucket == buckets_.end() || bucket->cardinality != cardinality) {
 				bucket = buckets_.insert(bucket, Bucket{.cardinality = cardinality, .entries = {}});
 			}
-			bucket->entries.push_back(pair);
+			bucket->entries.push_back(Entry{.signature = node.signature, .node = node_idx});
 		}
 
 	  private:
+		struct Entry {
+			uint64_t signature;
+			size_t node;
+		};
 		struct Bucket {
 			size_t cardinality;
-			ProdStatesType entries;
+			std::vector<Entry> entries;
 		};
 
 		/// The occupied cardinalities only, ordered by increasing cardinality, never holding an empty bucket.
@@ -133,45 +151,21 @@ bool mata::nfa::algorithms::is_included_antichains(
 	//  antichain would not work without changes).
 	using ProcessedType = std::vector<ProcessedAntichain>;
 
-	// Does @p lhs dominate @p rhs? Unlike in @c ProcessedAntichain the two entries need not agree on the state of
-	//  the smaller automaton, so that is the first thing compared; the size and the signature follow.
-	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
-		if (std::get<0>(lhs) != std::get<0>(rhs)) { return false; }
-		const StateSet& subset_candidate{std::get<1>(lhs)};
-		const StateSet& superset_candidate{std::get<1>(rhs)};
-		if (subset_candidate.size() > superset_candidate.size()) { return false; }
-		if ((std::get<3>(lhs) & ~std::get<3>(rhs)) != 0) { return false; }
-		return subset_candidate.is_subset_of(superset_candidate);
-	};
-
 	// initialize
-	ProdStatesType worklist{}; // Pairs (q,S) to be processed.
+	std::vector<Node> nodes{};
+	std::vector<size_t> worklist{}; // Indices of the nodes to be processed.
 	ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
 
-	// Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
-	//  auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() <
-	//  std::get<1>(b).size(); };
+	const std::vector<State> distances_smaller = smaller.distances_to_final();
+	const std::vector<State> distances_bigger = bigger.distances_to_final();
 
-	std::vector<State> distances_smaller = smaller.distances_to_final();
-	std::vector<State> distances_bigger = bigger.distances_to_final();
-
-	// auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
-	//     return distances_smaller[a.first] < distances_smaller[b.first];
-	// };
-
-	// auto closer_smaller = [&](const ProdStateType & a, const ProdStateType & b) {
-	//     if (distances_smaller[a.first] != distances_smaller[b.first])
-	//         return distances_smaller[a.first] < distances_smaller[b.first];
-	//     else
-	//         return a.second.size() < b.second.size();
-	// };
-
-	// auto smaller_closer = [&](const ProdStateType & a, const ProdStateType & b) {
-	//     if (a.second.size() != b.second.size())
-	//         return a.second.size() < b.second.size();
-	//     else
-	//         return distances_smaller[a.first] < distances_smaller[b.first];
-	// };
+	// A state of either automaton that cannot reach a final state contributes no word. Such states of the smaller
+	//  automaton are not explored, and such states of the bigger one are dropped from the macrostates, which only
+	//  makes the macrostates smaller and the subsumption more frequent. Final states have distance 0, so neither
+	//  hides a counterexample.
+	auto drop_useless_bigger_states = [&](StateSet& set) {
+		set.erase_if([&](const State state) { return distances_bigger[state] == Limits::max_state; });
+	};
 
 	auto min_dst = [&](const StateSet& set) {
 		if (set.empty()) { return Limits::max_state; }
@@ -179,16 +173,6 @@ bool mata::nfa::algorithms::is_included_antichains(
 			return distances_bigger[a] < distances_bigger[b];
 		})];
 	};
-
-	auto lengths_incompatible = [&](const ProdStateType& pair) {
-		return distances_smaller[std::get<0>(pair)] < std::get<2>(pair);
-	};
-
-	auto insert_to_pairs = [](ProdStatesType& pairs, const ProdStateType& pair) { pairs.push_back(pair); };
-
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
 	// check initial states first // TODO: this would be done in the main loop as the first thing anyway?
 	for (const auto& state : smaller.initial) {
@@ -199,15 +183,24 @@ bool mata::nfa::algorithms::is_included_antichains(
 			}
 			return false;
 		}
+		if (distances_smaller[state] == Limits::max_state) { continue; }
 
 		StateSet bigger_state_set{bigger.initial};
-		const ProdStateType st = std::tuple(
-			state, bigger_state_set, min_dst(bigger_state_set), algorithms::macrostate_signature(bigger_state_set)
+		drop_useless_bigger_states(bigger_state_set);
+		const uint64_t signature{algorithms::macrostate_signature(bigger_state_set)};
+		const size_t node_idx{nodes.size()};
+		nodes.push_back(
+			Node{
+				.smaller_state = state,
+				.bigger_set = std::move(bigger_state_set),
+				.signature = signature,
+				.parent = node_idx,
+				.symbol = 0,
+				.dominated = false,
+			}
 		);
-		insert_to_pairs(worklist, st);
-		processed[state].insert(st);
-
-		if (cex != nullptr) { paths.insert({st, {st, 0}}); }
+		worklist.push_back(node_idx);
+		processed[state].insert(nodes, node_idx);
 	}
 
 	// For synchronised iteration over the set of states
@@ -216,14 +209,15 @@ bool mata::nfa::algorithms::is_included_antichains(
 	// We use DFS strategy for the worklist processing
 	while (!worklist.empty()) {
 		// get a next product state
-		ProdStateType prod_state = *worklist.rbegin();
+		const size_t node_idx{worklist.back()};
 		worklist.pop_back();
+		if (nodes[node_idx].dominated) { continue; }
 
-		const State& smaller_state = std::get<0>(prod_state);
-		const StateSet& bigger_set = std::get<1>(prod_state);
+		// Read by value: new nodes are appended below and may move the node.
+		const State smaller_state{nodes[node_idx].smaller_state};
 
 		sync_iterator.reset();
-		for (State q : bigger_set) { mata::utils::push_back(sync_iterator, bigger.delta[q]); }
+		for (State q : nodes[node_idx].bigger_set) { mata::utils::push_back(sync_iterator, bigger.delta[q]); }
 
 		// process transitions leaving smaller_state
 		for (const auto& smaller_move : smaller.delta[smaller_state]) {
@@ -231,30 +225,32 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 			StateSet bigger_succ = {};
 			if (sync_iterator.synchronize_with(smaller_move)) { bigger_succ = sync_iterator.unify_targets(); }
-			// Both are functions of `bigger_succ`, which all the targets of this move share.
+			drop_useless_bigger_states(bigger_succ);
+			// Functions of `bigger_succ`, which all the targets of this move share.
 			const size_t bigger_succ_min_dst{min_dst(bigger_succ)};
 			const uint64_t bigger_succ_signature{algorithms::macrostate_signature(bigger_succ)};
 
 			for (const State& smaller_succ : smaller_move.targets) {
-				const ProdStateType succ = {smaller_succ, bigger_succ, bigger_succ_min_dst, bigger_succ_signature};
+				const State smaller_succ_dst{distances_smaller[smaller_succ]};
+				if (smaller_succ_dst == Limits::max_state) { continue; }
 
-				if (lengths_incompatible(succ) ||
-					(smaller.final[smaller_succ] && !bigger.final.intersects_with(bigger_succ))) {
+				// Exactly the final states have distance 0, so this also catches a final smaller_succ whose
+				//  bigger_succ holds no final state.
+				if (smaller_succ_dst < bigger_succ_min_dst) {
 					if (cex != nullptr) {
 						cex->word.push_back(smaller_symbol);
 						cex->path.push_back(smaller_state);
-						auto next_on_path = paths.find(prod_state);
-						while (next_on_path->second.first != next_on_path->first) { // go back until initial state
-							cex->word.push_back(next_on_path->second.second);
-							cex->path.push_back(std::get<0>(next_on_path->second.first));
-							next_on_path = paths.find(next_on_path->second.first);
+						for (size_t on_path{node_idx}; nodes[on_path].parent != on_path;
+							 on_path = nodes[on_path].parent) { // go back until initial state
+							cex->word.push_back(nodes[on_path].symbol);
+							cex->path.push_back(nodes[nodes[on_path].parent].smaller_state);
 						}
 
 						std::ranges::reverse(cex->word);
 						std::ranges::reverse(cex->path);
 
-						// it is possible that lengths_incompatible(succ) was true, which means that cex is not
-						// finished, we need to add some shortest accepting run from smaller_suc
+						// The successor may only be too far from a final state, so the counterexample is completed
+						//  by a shortest accepting run from smaller_succ.
 						auto [word, path] =
 							smaller.get_shortest_accepting_run_from_state(smaller_succ, distances_smaller);
 						cex->word.insert(cex->word.end(), word.begin(), word.end());
@@ -266,19 +262,24 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 				// Is some already processed macrostate of smaller_succ a subset of bigger_succ, and therefore
 				//  dominates it?
-				if (processed[smaller_succ].subsumes(succ)) { continue; }
+				if (processed[smaller_succ].subsumes(nodes, bigger_succ, bigger_succ_signature)) { continue; }
 
-				// Pruning: drop every stored pair that succ dominates, in the processed antichain and in the
+				// Pruning: drop every stored node that succ dominates, in the processed antichain and thereby in the
 				//  worklist, and store succ in both.
-				processed[smaller_succ].prune(succ);
-				processed[smaller_succ].insert(succ);
-				std::erase_if(worklist, [&](const ProdStateType& d) { return subsumes(succ, d); });
-				insert_to_pairs(worklist, succ);
-
-				if (cex != nullptr) {
-					// also set that succ was accessed from state
-					paths[succ] = {prod_state, smaller_symbol};
-				}
+				processed[smaller_succ].prune(nodes, bigger_succ, bigger_succ_signature);
+				const size_t succ_idx{nodes.size()};
+				nodes.push_back(
+					Node{
+						.smaller_state = smaller_succ,
+						.bigger_set = bigger_succ,
+						.signature = bigger_succ_signature,
+						.parent = node_idx,
+						.symbol = smaller_symbol,
+						.dominated = false,
+					}
+				);
+				processed[smaller_succ].insert(nodes, succ_idx);
+				worklist.push_back(succ_idx);
 			}
 		}
 	}
