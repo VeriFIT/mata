@@ -259,7 +259,7 @@ void check_nfa_properties(
 	//  the original delta back.
 	const Nfa reverted{revert(nfa)};
 	CHECK(reverted.delta == fragile_revert(nfa).delta);
-	CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
+	CHECK(reverted.delta == simple_revert(nfa).delta);
 	CHECK(revert(reverted).delta == nfa.delta);
 
 	// Intersection accepts exactly the words both operands accept.
@@ -529,7 +529,6 @@ TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transi
 		const Nfa reverted{revert(nfa)};
 		CHECK(reverted.delta == simple_revert(nfa).delta);
 		CHECK(reverted.delta == fragile_revert(nfa).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
 		CHECK(reverted.initial == simple_revert(nfa).initial);
 		CHECK(reverted.final == simple_revert(nfa).final);
 		CHECK(revert(reverted).delta == nfa.delta);
@@ -558,7 +557,6 @@ TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differen
 
 		const Nfa reverted{revert(nfa)};
 		CHECK(reverted.delta == simple_revert(nfa).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
 		CHECK(reverted.initial == simple_revert(nfa).initial);
 		CHECK(reverted.final == simple_revert(nfa).final);
 		CHECK(revert(reverted).delta == nfa.delta);

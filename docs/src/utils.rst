@@ -1,10 +1,6 @@
 Utils
 ===================================
 
-Closed Set
-----------
-.. doxygenfile:: utils/closed-set.hh
-
 Sparse Set
 ----------
 .. doxygenfile:: utils/sparse-set.hh
