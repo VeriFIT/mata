@@ -426,60 +426,66 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 	return transition_added;
 }
 
-// TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
-	// cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-	std::unordered_map<State, StateSet> epsilon_closure;
-
-	// TODO: grossly inefficient
-	// first we compute the epsilon closure
 	const size_t num_of_states{aut.num_of_states()};
-	for (State i{0}; i < num_of_states; ++i) {
-		for (const auto& trans : aut.delta[i]) {
-			const auto [it, inserted] = epsilon_closure.insert({i, {i}});
-			if (trans.symbol == epsilon) {
-				StateSet& closure = it->second;
-				// TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to
-				// resize each time);
-				closure.insert(trans.targets);
-			}
+	Nfa result{Delta{}, aut.initial, aut.final, aut.alphabet};
+	std::vector<StatePost> posts(num_of_states);
+	// The result delta ends at its last source or target state, as when it was built transition by transition.
+	size_t num_of_delta_states{0};
+	const auto cover{[&](const State state, const StatePost& post) {
+		if (post.empty()) { return; }
+		num_of_delta_states = std::max(num_of_delta_states, size_t{state} + 1);
+		for (const SymbolPost& symbol_post : post) {
+			num_of_delta_states = std::max(num_of_delta_states, size_t{symbol_post.targets.back()} + 1);
 		}
-	}
+	}};
 
-	bool changed = true;
-	while (changed) { // Compute the fixpoint.
-		changed = false;
-		for (State i = 0; i < num_of_states; ++i) {
-			const StatePost& post{aut.delta[i]};
-			// TODO: make faster if default epsilon
-			if (const auto eps_move_it{post.find(epsilon)}; eps_move_it != post.end()) {
-				StateSet& src_eps_cl = epsilon_closure[i];
-				for (const State tgt : eps_move_it->targets) {
-					const StateSet& tgt_eps_cl = epsilon_closure[tgt];
-					for (const State st : tgt_eps_cl) {
-						if (src_eps_cl.count(st) == 0) {
-							changed = true;
-							break;
-						}
-					}
-					src_eps_cl.insert(tgt_eps_cl);
+	const std::vector<Symbol> epsilons{epsilon};
+	PostWorkspace workspace{};
+	SynchronizedExistentialSymbolPostIterator sync_iterator{};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& post{aut.delta[state]};
+		StatePost& result_post{posts[state]};
+		if (post.find(epsilon) == post.end()) {
+			// An epsilon-free post stays as it is, without the symbol posts that have no target.
+			if (std::ranges::none_of(post, &SymbolPost::empty)) {
+				result_post = post;
+			} else {
+				for (const SymbolPost& symbol_post : post) {
+					if (!symbol_post.empty()) { result_post.push_back(symbol_post); }
 				}
 			}
+			cover(state, result_post);
+			continue;
 		}
-	}
 
-	// Construct the automaton without epsilon transitions.
-	Nfa result{Delta{}, aut.initial, aut.final, aut.alphabet};
-	for (const auto& [state, closure_states] : epsilon_closure) {
-		for (const State eps_cl_state : closure_states) {
-			if (aut.final[eps_cl_state]) { result.final.insert(state); }
-			for (const SymbolPost& move : aut.delta[eps_cl_state]) {
-				if (move.symbol == epsilon) { continue; }
-				// TODO: this could be done more efficiently if we had a better add method
-				for (const State tgt_state : move.targets) { result.delta.add(state, move.symbol, tgt_state); }
+		// The state takes over the finality and the non-epsilon posts of every state of its epsilon closure. Symbols
+		//  above a non-default epsilon are ordinary, so the posts around the epsilon one are merged on both sides.
+		sync_iterator.reset();
+		for (const State closure_state : aut.delta.epsilon_closure(StateSet{state}, epsilons, workspace)) {
+			if (aut.final[closure_state]) { result.final.insert(state); }
+			const StatePost& closure_post{aut.delta[closure_state]};
+			const auto epsilon_it{closure_post.find(epsilon)};
+			if (epsilon_it == closure_post.end()) {
+				sync_iterator.push_back(closure_post.begin(), closure_post.end());
+			} else {
+				sync_iterator.push_back(closure_post.begin(), epsilon_it);
+				sync_iterator.push_back(std::next(epsilon_it), closure_post.end());
 			}
 		}
+		while (sync_iterator.advance()) {
+			const StateSet targets{sync_iterator.unify_targets()};
+			if (targets.empty()) { continue; }
+			// The iterator yields the symbols in increasing order, so appending keeps the post sorted.
+			result_post.push_back(
+				SymbolPost{sync_iterator.get_current_minimum()->symbol, std::span<const State>{targets}}
+			);
+		}
+		cover(state, result_post);
 	}
+
+	result.delta.reserve(num_of_delta_states);
+	for (size_t state{0}; state < num_of_delta_states; ++state) { result.delta.emplace_back(std::move(posts[state])); }
 	return result;
 }
 

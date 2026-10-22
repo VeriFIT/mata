@@ -4945,6 +4945,70 @@ TEST_CASE("mata::nfa::remove_epsilon()") {
 	REQUIRE(aut.delta.contains(5, 'a', 9));
 }
 
+TEST_CASE("mata::nfa::remove_epsilon() merges the posts of whole epsilon closures") {
+	// SparseSet::operator== also compares the insertion order, which the result does not promise.
+	const auto sorted{[](const SparseSet<State>& states) { return StateSet{states.begin(), states.end()}; }};
+	SECTION("a non-default epsilon between ordinary symbols") {
+		// The symbols 1 and 3 surround the epsilon 2, so the posts on both sides of it are ordinary. Only the post of
+		//  state 1, which also holds the epsilon, reaches state 3.
+		Nfa aut{4};
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 1, 0);
+		aut.delta.add(0, 2, 1);
+		aut.delta.add(1, 1, 2);
+		aut.delta.add(1, 2, 2);
+		aut.delta.add(1, 3, 3);
+		aut.delta.add(2, 3, 0);
+		const Nfa result{remove_epsilon(aut, 2)};
+		const Delta::Transitions transitions{result.delta.transitions()};
+		CHECK(
+			std::vector<Transition>{transitions.begin(), transitions.end()} ==
+			std::vector<Transition>{
+				{0, 1, 0}, {0, 1, 2}, {0, 3, 0}, {0, 3, 3}, {1, 1, 2}, {1, 3, 0}, {1, 3, 3}, {2, 3, 0}
+			}
+		);
+		CHECK(sorted(result.final) == StateSet{3});
+		CHECK(sorted(result.initial) == StateSet{0});
+	}
+
+	SECTION("finality and posts spread around an epsilon cycle over several steps") {
+		Nfa aut{4};
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 0);
+		aut.delta.add(1, 'a', 3);
+		const Nfa result{remove_epsilon(aut)};
+		const Delta::Transitions transitions{result.delta.transitions()};
+		CHECK(
+			std::vector<Transition>{transitions.begin(), transitions.end()} ==
+			std::vector<Transition>{{0, 'a', 3}, {1, 'a', 3}, {2, 'a', 3}}
+		);
+		CHECK(sorted(result.final) == StateSet{0, 1, 2});
+	}
+
+	SECTION("a long forward epsilon chain") {
+		// Every state reaches all later ones over epsilon. A fixpoint over the states in index order needed a sweep
+		//  per state here (#240).
+		constexpr State num_of_states{1'000};
+		Nfa aut{num_of_states};
+		aut.initial.insert(0);
+		aut.final.insert(num_of_states - 1);
+		for (State state{0}; state < num_of_states; ++state) {
+			aut.delta.add(state, 'a', state);
+			if (state + 1 < num_of_states) { aut.delta.add(state, EPSILON, state + 1); }
+		}
+		const Nfa result{remove_epsilon(aut)};
+		CHECK(result.delta.num_of_transitions() == size_t{num_of_states} * (num_of_states + 1) / 2);
+		CHECK(result.delta.contains(0, 'a', num_of_states - 1));
+		CHECK(!result.delta.contains(num_of_states - 1, 'a', 0));
+		CHECK(result.final.size() == num_of_states);
+		CHECK(!result.delta.get_used_symbols().contains(EPSILON));
+	}
+}
+
 TEST_CASE("Profile mata::nfa::remove_epsilon()", "[.profiling]") {
 	for (size_t n{}; n < 100'000; ++n) {
 		Nfa aut{20};
