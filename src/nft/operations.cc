@@ -1411,8 +1411,7 @@ std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {
 	for (size_t i = 1; i < run.path.size(); ++i) {
 		const State state_next = run.path[i];
 		bool found = false;
-		// `delta[state_curr]` already yields nothing for an empty or unallocated state post, while
-		//  `Delta::empty()` walks state posts until it finds a nonempty one.
+		// `delta[state_curr]` already yields nothing for an empty or unallocated state post.
 		for (const auto& symbol_map : delta[state_curr]) {
 			for (const State target : symbol_map.targets) {
 				const Level level_next{levels[target]};
