@@ -84,6 +84,84 @@ TEST_CASE("mata::OnTheFlyAlphabet::add_symbols_from()") {
 	CHECK(alphabet.get_number_of_symbols() == 0);
 }
 
+TEST_CASE("mata::OnTheFlyAlphabet::reverse_translate_symbol()") {
+	SECTION("follows insertions, erasures and clear") {
+		OnTheFlyAlphabet alphabet{{"a", 4}, {"b", 2}};
+		CHECK(alphabet.reverse_translate_symbol(4) == "a");
+		CHECK(alphabet.reverse_translate_symbol(alphabet.translate_symb("c")) == "c");
+		CHECK(alphabet.erase(Symbol{4}) == 1);
+		CHECK_THROWS(alphabet.reverse_translate_symbol(4));
+		CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap{{"b", 2}, {"c", 5}});
+		alphabet.erase(alphabet.get_symbol_map().find("b"));
+		CHECK_THROWS(alphabet.reverse_translate_symbol(2));
+		alphabet.erase(alphabet.get_symbol_map().begin(), alphabet.get_symbol_map().end());
+		CHECK(alphabet.get_alphabet_symbols().empty());
+		alphabet.add_new_symbol("d", 2);
+		CHECK(alphabet.reverse_translate_symbol(2) == "d");
+		alphabet.clear();
+		CHECK_THROWS(alphabet.reverse_translate_symbol(2));
+	}
+
+	SECTION("copies and moves own their index") {
+		OnTheFlyAlphabet copy{};
+		OnTheFlyAlphabet assigned{{"z", 0}};
+		{
+			OnTheFlyAlphabet original{{"a", 0}, {"b", 1}};
+			copy = OnTheFlyAlphabet{original};
+			assigned = original;
+			original.erase("a");
+			original.add_new_symbol("x", 0);
+		}
+		CHECK(copy.reverse_translate_symbol(0) == "a");
+		CHECK(assigned.reverse_translate_symbol(0) == "a");
+		CHECK(assigned.reverse_translate_symbol(1) == "b");
+		const OnTheFlyAlphabet moved{std::move(copy)};
+		CHECK(moved.reverse_translate_symbol(1) == "b");
+	}
+
+	SECTION("names sharing a symbol") {
+		OnTheFlyAlphabet alphabet{{"a", 3}, {"b", 3}, {"c", 3}};
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{3});
+		CHECK(alphabet.reverse_translate_symbol(3) == "a");
+		const OnTheFlyAlphabet copy{alphabet};
+		CHECK(copy.reverse_translate_symbol(3) == "a");
+		alphabet.erase("a");
+		const std::string promoted{alphabet.reverse_translate_symbol(3)};
+		const bool promoted_another_name{promoted == "b" || promoted == "c"};
+		CHECK(promoted_another_name);
+		CHECK(alphabet.erase(Symbol{3}) == 1);
+		CHECK(alphabet.get_symbol_map().size() == 1);
+		CHECK(alphabet.reverse_translate_symbol(3) != promoted);
+		alphabet.erase(Symbol{3});
+		CHECK_THROWS(alphabet.reverse_translate_symbol(3));
+		CHECK(alphabet.get_alphabet_symbols().empty());
+	}
+
+	SECTION("symbols far above the number of names") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("x", 1'000);
+		alphabet.add_new_symbol("far", 2'000);
+		OrdVector<Symbol> expected{};
+		for (Symbol symbol{0}; symbol < 500; ++symbol) {
+			alphabet.add_new_symbol("s" + std::to_string(symbol), symbol);
+			expected.push_back(symbol);
+		}
+		// Enough names now for the index to cover 1000 densely: "x" keeps being reported.
+		alphabet.add_new_symbol("y", 1'000);
+		CHECK(alphabet.reverse_translate_symbol(1'000) == "x");
+		CHECK(alphabet.reverse_translate_symbol(2'000) == "far");
+		expected.push_back(1'000);
+		expected.push_back(2'000);
+		CHECK(alphabet.get_alphabet_symbols() == expected);
+		alphabet.erase("x");
+		CHECK(alphabet.reverse_translate_symbol(1'000) == "y");
+		alphabet.erase(Symbol{1'000});
+		CHECK_THROWS(alphabet.reverse_translate_symbol(1'000));
+		expected.erase(1'000);
+		CHECK(alphabet.get_alphabet_symbols() == expected);
+	}
+}
+
 TEST_CASE("mata::OnTheFlyAlphabet reserved special-symbol names (#794)") {
 	OnTheFlyAlphabet alphabet{};
 	// The reserved names translate straight to the special symbols and are never registered, so a
