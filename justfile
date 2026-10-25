@@ -26,6 +26,7 @@ alias f := nix::fmt
 alias r := release
 alias rd := release-debuginfo
 alias l := lint
+alias u := update
 alias c := clean
 alias h := help
 
@@ -52,6 +53,13 @@ ci:
 # List all recipes, including the recipes of all modules.
 help:
 	@just --list --list-submodules --justfile '{{ justfile() }}'
+
+# Update everything that can be updated: flake inputs, Python dependencies, and Git submodules.
+update: nix::update uv-update submodules-update
+
+# Update the Git submodules to the current tip of their tracked upstream branch.
+submodules-update:
+	git submodule update --init --remote --recursive
 
 # Update and synchronize the locked Python dependencies of the workspace. The Nix development shell builds its
 # environment from uv.lock instead, so there, re-enter the shell.
