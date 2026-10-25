@@ -20,13 +20,14 @@
 namespace mata::posts {
 
 /**
- * @brief Apply @p fn to every target below @p post, at any nesting depth.
+ * @brief Apply @p fn to every target under @p post, at any nesting depth.
  *
- * Replaces the hand-unrolled descent the posts used to carry. `if constexpr` on @c key_arity turns
- *  the recursion into the same nested loops a caller would write by hand — measured at 0.99-1.01x of
- *  hand-written loops at every arity from 1 to 9, with no trend against depth, so depth genericity
- *  here is free. @p Fn is a template parameter and never a @c std::function: routing the same visit
- *  through one costs 1.08x to 2.18x.
+ * @note `if constexpr` on @c key_arity turns the recursion into nested loops (same as a caller would write by hand),
+ *  making this depth-generic visit free: measured at 0.99-1.01x of hand-written loops at every arity from 1 to 9.
+ *  @p Fn is a template parameter and never a @c std::function: routing the same visit through one would cost 1.08x to 2.18x.
+
+ * @param post The post to visit. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param fn The callable to apply to each target. It must accept a single argument of type @c target_of<P>.
  */
 template <typename P, typename Fn> void visit_targets(const P& post, Fn&& fn) {
 	if constexpr (arity_of<P> == 0) {
@@ -37,12 +38,12 @@ template <typename P, typename Fn> void visit_targets(const P& post, Fn&& fn) {
 }
 
 /**
- * @brief Does any target below @p post satisfy @p pred? Stops at the first that does.
+ * @brief Does any target under @p post satisfy @p pred?
  *
- * The short-circuiting counterpart to @c visit_targets. Needed rather than merely nice: @c has_target
- *  feeds @c is_successor and @c has_self_loop, which @c mata::AutomatonBase::is_acyclic() calls once
- *  per SCC. Expressing it as a full visit that sets a flag is a real regression on that path, and one
- *  the delta-access benchmark does not cover.
+ * @note Stops at the first that does.
+ * @param post The post to visit. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param pred The predicate to apply to each target. It must accept a single argument of type @c target_of<P> and return a @c bool.
+ * @return @c true if any target satisfies @p pred, @c false otherwise.
  */
 template <typename P, typename Pred> bool any_target(const P& post, Pred&& pred) {
 	if constexpr (arity_of<P> == 0) {
@@ -58,10 +59,11 @@ template <typename P, typename Pred> bool any_target(const P& post, Pred&& pred)
 }
 
 /**
- * @brief How many targets are below @p post?
+ * @brief Returns number of targets under @p post.
  *
- * Recurses to the innermost post and takes its @c size() rather than counting targets one by one, so
- *  it stays O(entries) instead of O(targets).
+ * @note Recurses to the innermost post and takes its @c size() rather than counting targets one by one.
+ * @param post The post to visit. @c mata::arity_of is used to recurse down to the innermost post.
+ * @return The number of targets under @p post.
  */
 template <typename P> size_t count_targets(const P& post) {
 	if constexpr (arity_of<P> == 0) {
@@ -74,11 +76,14 @@ template <typename P> size_t count_targets(const P& post) {
 }
 
 /**
- * @brief Apply @p fn to every move below @p post, as `fn(keys..., target)`.
+ * @brief Apply @p fn to every move under @p post, as `fn(keys..., target)`.
  *
- * The keys accumulate down the nesting and arrive as a pack, so at @c key_arity 1 this expands to
- *  exactly `fn(key, target)` — the signature every existing call site and lambda already binds. A
- *  deeper relation simply passes more key arguments; nothing at depth 2 changes shape.
+ * @note The keys accumulate down the nesting and arrive as a pack, so at @c key_arity 1 this expands to
+ *  exactly `fn(key, target)`. A deeper relation simply passes more key arguments.
+ * @param post The post to visit. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param fn The callable to apply to each move. It must accept a parameter pack of
+ *  the keys followed by a single argument of type @c target_of<P>.
+ * @param keys The keys accumulated down the nesting, passed to @p fn along with each target.
  */
 template <typename P, typename Fn, typename... Keys>
 void visit_moves(const P& post, Fn&& fn, const Keys&... keys) {
@@ -90,22 +95,25 @@ void visit_moves(const P& post, Fn&& fn, const Keys&... keys) {
 }
 
 /**
- * @brief Insert @p target under the key path @p keys, creating posts along the way.
+ * @brief Insert @p target into @p post, which must be the innermost post.
  *
- * The write-side counterpart to @c visit_moves, and the pair of them is all reverting needs: visit out
- *  the moves of one relation, write each back into another with the source and target exchanged and
- *  **the keys in the same order**.
- *
- * Declared as a free function with the keys *last* on purpose. A member `add(source, keys..., target)`
- *  cannot be written — a parameter pack has to be last for deduction — which is what made reverting
- *  look like it needed a variadic @c DeltaBase::add and a shape change to every call site. It does not:
- *  the target simply comes first here.
+ * @param post The post to insert into. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param target The target to insert.
  */
 template <typename P> void insert_target(P& post, const target_of<P>& target) {
 	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
 	post.insert(target);
 }
 
+/**
+ * @brief Insert @p target under the key path @p k0, @p rest, creating posts along the way.
+ *
+ * @param post The post to insert into. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param target The target to insert.
+ * @param k0 The first key to descend through.
+ * @param rest The remaining keys to descend through, one per post.
+ *  The number of keys must match the @c key_arity of @p post minus one.
+ */
 template <typename P, typename K0, typename... Rest>
 void insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
 	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
@@ -118,16 +126,27 @@ void insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest
 }
 
 /**
- * @brief Is @p target reachable from @p post down exactly the key path @p k0, @p rest?
+ * @brief Returns whether @p target is reachable in the innermost post @p post.
  *
- * Pure descent, short-circuiting on the first key that is not there. The counterpart of
- *  @c insert_target, and like it, the keys come *last* so the pack can be deduced.
+ * @param post The post to search in. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param target The target to search for.
+ * @return @c true if @p target is reachable, @c false otherwise.
  */
 template <typename P> bool has_target_at(const P& post, const target_of<P>& target) {
 	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
 	return post.contains(target);
 }
 
+/**
+ * @brief Returns whether @p target is reachable from @p post down exactly the key path @p k0, @p rest.
+ *
+ * @param post The post to search in. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param target The target to search for.
+ * @param k0 The first key to descend through.
+ * @param rest The remaining keys to descend through, one per post.
+ *  The number of keys must match the @c key_arity of @p post minus one.
+ * @return @c true if @p target is reachable down the key path, @c false otherwise.
+ */
 template <typename P, typename K0, typename... Rest>
 bool has_target_at(const P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
 	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
@@ -136,20 +155,11 @@ bool has_target_at(const P& post, const target_of<P>& target, const K0& k0, cons
 }
 
 /**
- * @brief Erase @p target from under the key path @p k0, @p rest, pruning every post it empties.
+ * @brief Erase @p target from the innermost post @p post.
  *
- * The only one of the three key-path visits that does its work on the way back *up*. It descends to
- *  the innermost post, erases there, and then each post asks whether the post beneath it has just
- *  become empty and drops its own entry if so — so a path that held the last target disappears
- *  entirely rather than leaving a chain of empty posts behind. The return value **is** that
- *  question ("am I now empty?"), which is why no extra state is needed to carry it back up.
- *
- * Generalises what the @c key_arity 1 @c mata::posts::DeltaBase::remove does by hand at a single post.
- *
- * @throws std::invalid_argument if any key on the path is missing. The message does not name the
- *  keys, unlike the arity-1 member's: a key here may be an interval or anything else ordered, and
- *  naming it would take @c mata::utils::format_or_unprintable at every post, for an error path.
- * @return Whether @p post is empty once the erase and any pruning below it are done.
+ * @param post The post to erase from. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param target The target to erase.
+ * @return Whether @p post is empty once the erase is done.
  */
 template <typename P> bool erase_target(P& post, const target_of<P>& target) {
 	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
@@ -157,6 +167,17 @@ template <typename P> bool erase_target(P& post, const target_of<P>& target) {
 	return post.empty();
 }
 
+/**
+ * @brief Erase @p target from under the key path @p k0, @p rest, pruning every post it empties.
+ *
+ * @param post The post to erase from. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param target The target to erase.
+ * @param k0 The first key to descend through.
+ * @param rest The remaining keys to descend through, one per post.
+ *  The number of keys must match the @c key_arity of @p post minus one.
+ * @return Whether @p post is empty once the erase and any pruning below it are done.
+ * @throws std::invalid_argument if any key on the path is missing.
+ */
 template <typename P, typename K0, typename... Rest>
 bool erase_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
 	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
@@ -167,22 +188,22 @@ bool erase_target(P& post, const target_of<P>& target, const K0& k0, const Rest&
 }
 
 /**
- * @brief Are @p a and @p b structurally equal, keys and targets alike?
+ * @brief Returns whether @p a and @p b structurally equal, including every target under them.
  *
- * @warning Not `a == b`. An entry's @c operator== compares **only its key** — deliberately, because
- *  the post is an ordered map and @c OrdVector orders and searches by that key — so comparing posts
- *  with @c operator== silently ignores every difference in their targets. This is why the older
- *  @c DeltaBase::operator== compared transition *sequences* rather than posts, and why the recursion here
- *  has to descend into @c nested() explicitly.
+ * @note This is a deep comparison, not a shallow one.
+ *  Standard @c operator== on a post compares only the keys of its entries, so it ignores every difference in the targets.
+ *  To properly compare two posts, you need to use this function.
+ *
+ * @param a The first post to compare.
+ * @param b The second post to compare.
+ * @return @c true if @p a and @p b are structurally equal, @c false otherwise.
  */
 template <typename P> bool posts_equal(const P& a, const P& b) {
 	if constexpr (arity_of<P> == 0) {
 		return std::ranges::equal(a, b);
 	} else {
 		if (a.size() != b.size()) { return false; }
-		auto it_a{a.begin()};
-		auto it_b{b.begin()};
-		for (; it_a != a.end(); ++it_a, ++it_b) {
+		for (auto it_a{a.begin()}, it_b{b.begin()}; it_a != a.end(); ++it_a, ++it_b) {
 			if (!(it_a->key() == it_b->key())) { return false; }
 			if (!posts_equal(it_a->nested(), it_b->nested())) { return false; }
 		}
@@ -191,11 +212,12 @@ template <typename P> bool posts_equal(const P& a, const P& b) {
 }
 
 /**
- * @brief Rebuild @p post with every target renamed by @p rename.
+ * @brief Rebuild @p post with every target renamed by fnction @p rename.
  *
- * Recurses to the innermost post and rebuilds by appending, so it works at any depth. @p rename must
- *  be **monotonic** — the order of targets must not change — because appending is what preserves
- *  sortedness. The callers (renumbering, trimming) both rename densely in ascending order.
+ * @param post The post to rebuild. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param rename The callable to apply to each target's state. It must accept a single argument
+ *  of type @c state_of<target_of<P>>, return a new state of the same type, and be monotonic with respect to the ordering of states.
+ * @return A new post with the same structure as @p post, but with every target's state renamed by @p rename.
  */
 template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 	P out{};
@@ -213,15 +235,15 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 }
 
 /**
- * @brief Rebuild @p post keeping only the targets @p is_staying admits, renamed by @p renaming.
+ * @brief Rebuild @p post keeping only the targets @p is_staying admits, and renaming their states.
  *
- * The write-side mirror of @c visit_targets, and the reason it is written this way: each post knows
- *  only its own job — the innermost one filters and renames, every post above drops the entries
- *  whose nested post came back empty — so trimming generalises with the nesting instead of assuming
- *  two steps of descent, which is what the hand-unrolled version did.
- *
- * Rebuilds rather than mutating, so an implementer owes only @c push_back and not a filter-and-rename
- *  pair. @see @ref sortedness for why appending is safe here.
+ * @param post The post to rebuild. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param is_staying A boolean vector indicating which states are staying.
+ *  Its size must be equal to the number of states in the innermost post.
+ * @param renaming A vector indicating the new state for each staying state.
+ *  Its size must be equal to the number of states in the innermost post.
+ * @return A new post with the same structure as @p post, but with only the targets whose states are staying,
+ *  and with their states renamed according to @p renaming.
  */
 template <typename P, typename Renaming>
 P defragmented(const P& post, const BoolVector& is_staying, const Renaming& renaming) {
