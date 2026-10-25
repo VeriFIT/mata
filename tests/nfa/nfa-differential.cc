@@ -313,6 +313,92 @@ void check_epsilon_removal(
 	CHECK(same_language_on(determinize(without_epsilon), nfa, words, epsilon));
 }
 
+/// The forward direct simulation as a naive greatest fixpoint: @c result[p][q] iff @c q simulates @c p. A final
+///  state is simulated only by a final state, and every transition p -a-> p' needs some q -a-> q' with q'
+///  simulating p'.
+std::vector<std::vector<bool>> reference_simulation(const Nfa& nfa, const size_t num_of_symbols) {
+	const size_t num_of_states{nfa.num_of_states()};
+	std::vector<std::vector<std::vector<mata::nfa::State>>> post(
+		num_of_states, std::vector<std::vector<mata::nfa::State>>(num_of_symbols)
+	);
+	for (const Transition& transition : nfa.delta.transitions()) {
+		post[transition.source][transition.symbol].push_back(transition.target);
+	}
+	std::vector<std::vector<bool>> simulated(num_of_states, std::vector<bool>(num_of_states));
+	for (mata::nfa::State p{0}; p < num_of_states; ++p) {
+		for (mata::nfa::State q{0}; q < num_of_states; ++q) { simulated[p][q] = !nfa.final[p] || nfa.final[q]; }
+	}
+	for (bool changed{true}; changed;) {
+		changed = false;
+		// matched[a][p'][q]: some q -a-> q' simulates p'.
+		std::vector<std::vector<std::vector<bool>>> matched(
+			num_of_symbols, std::vector<std::vector<bool>>(num_of_states, std::vector<bool>(num_of_states))
+		);
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			for (mata::nfa::State p_target{0}; p_target < num_of_states; ++p_target) {
+				for (mata::nfa::State q{0}; q < num_of_states; ++q) {
+					for (const mata::nfa::State q_target : post[q][symbol]) {
+						if (simulated[p_target][q_target]) {
+							matched[symbol][p_target][q] = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		for (mata::nfa::State p{0}; p < num_of_states; ++p) {
+			for (mata::nfa::State q{0}; q < num_of_states; ++q) {
+				if (!simulated[p][q]) { continue; }
+				for (Symbol symbol{0}; symbol < num_of_symbols && simulated[p][q]; ++symbol) {
+					for (const mata::nfa::State p_target : post[p][symbol]) {
+						if (!matched[symbol][p_target][q]) {
+							simulated[p][q] = false;
+							changed = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	return simulated;
+}
+
+/// compute_relation() gives the reference simulation on a random NFA whose density and share of final states
+///  vary with @p seed. The dense ones make the engine erase relation pairs through the columns of the removed
+///  blocks, the sparse ones through the rows of their predecessors (#964).
+void check_simulation(const unsigned seed) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{1 + seed % 29};
+	const size_t num_of_symbols{1 + seed % 3};
+	const size_t density{1 + (seed / 3) % 7}; // of 8, the chance of each transition
+	const size_t final_share{(seed / 2) % 5}; // of 4, the chance of each state to be final
+	Nfa nfa{num_of_states};
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 4) < final_share) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			for (mata::nfa::State target{0}; target < num_of_states; ++target) {
+				if (draw(rng, 8) < density) { nfa.delta.add(state, symbol, target); }
+			}
+		}
+	}
+	INFO(describe(seed, nfa));
+
+	const Simlib::Util::BinaryRelation relation{algorithms::compute_relation(nfa)};
+	const std::vector<std::vector<bool>> expected{reference_simulation(nfa, num_of_symbols)};
+	REQUIRE(relation.size() == num_of_states);
+	std::string differences{};
+	for (mata::nfa::State p{0}; p < num_of_states; ++p) {
+		for (mata::nfa::State q{0}; q < num_of_states; ++q) {
+			if (relation.get(p, q) != expected[p][q]) {
+				differences += " (" + std::to_string(p) + ", " + std::to_string(q) + ")";
+			}
+		}
+	}
+	INFO("pairs the engine gets wrong:" << differences);
+	CHECK(differences.empty());
+}
+
 } // Anonymous namespace.
 
 TEST_CASE("mata::nfa differential: the algorithms agree with the reference acceptor", "[differential]") {
@@ -328,6 +414,10 @@ TEST_CASE("mata::nfa differential: epsilon removal keeps the language", "[differ
 		//  assume the default one, and the ordinary symbols must survive it.
 		check_epsilon_removal(seed, 2 + seed % 5, 1 + seed % 2, MAX_WORD_LENGTH, 100);
 	}
+}
+
+TEST_CASE("mata::nfa differential: the forward simulation is the greatest fixpoint", "[differential]") {
+	for (unsigned seed{0}; seed < 400; ++seed) { check_simulation(seed); }
 }
 
 // No randomized check of minimize(nfa, hopcroft) on a raw NFA (#734): minimize_hopcroft() guards its

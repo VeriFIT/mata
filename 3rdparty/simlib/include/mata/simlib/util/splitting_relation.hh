@@ -43,6 +43,8 @@ class Simlib::Util::SplittingRelation {
 
 	std::vector<std::pair<Element*, Element*>> columns_;
 	std::vector<std::pair<Element*, Element*>> rows_;
+	std::vector<size_t> columnSizes_;
+	std::vector<size_t> rowSizes_;
 	size_t size_;
 
 	CachingAllocator<Element> allocator_;
@@ -76,6 +78,7 @@ class Simlib::Util::SplittingRelation {
 		assert(i < this->size_);
 
 		auto tmp = this->columns_[i].first;
+		size_t size = 0;
 
 		while (tmp != this->columns_[i].second->down_) {
 
@@ -90,11 +93,12 @@ class Simlib::Util::SplittingRelation {
 			if (tmp->row_ >= this->size_)
 				return false;
 
+			++size;
 			tmp = tmp->down_;
 
 		}
 
-		return true;
+		return size == this->columnSizes_[i];
 
 	}
 
@@ -103,6 +107,7 @@ class Simlib::Util::SplittingRelation {
 		assert(i < this->size_);
 
 		auto tmp = this->rows_[i].first;
+		size_t size = 0;
 
 		while (tmp != this->rows_[i].second->right_) {
 
@@ -117,11 +122,12 @@ class Simlib::Util::SplittingRelation {
 			if (tmp->col_ >= this->size_)
 				return false;
 
+			++size;
 			tmp = tmp->right_;
 
 		}
 
-		return true;
+		return size == this->rowSizes_[i];
 
 	}
 
@@ -218,7 +224,8 @@ public:
 
 public:
 
-	explicit SplittingRelation(size_t maxSize) : columns_(maxSize), rows_(maxSize), size_(), allocator_() {}
+	explicit SplittingRelation(size_t maxSize) : columns_(maxSize), rows_(maxSize), columnSizes_(maxSize),
+		rowSizes_(maxSize), size_(), allocator_() {}
 
 	~SplittingRelation() {
 
@@ -267,6 +274,9 @@ public:
 
 				last->right_ = el;
 				last = el;
+
+				++this->rowSizes_[i];
+				++this->columnSizes_[j];
 
 			}
 
@@ -319,6 +329,8 @@ public:
 
 			tmp->col_ = newIndex;
 			tmp->row_ = el->row_;
+			++this->rowSizes_[el->row_];
+			++this->columnSizes_[newIndex];
 
 			last = tmp;
 
@@ -338,6 +350,8 @@ public:
 		el->right_ = this->row_end(newIndex);
 		el->col_ = newIndex;
 		el->row_ = newIndex;
+		++this->rowSizes_[newIndex];
+		++this->columnSizes_[newIndex];
 
 		// copy row
 
@@ -364,6 +378,8 @@ public:
 
 			tmp->col_ = el->col_;
 			tmp->row_ = newIndex;
+			++this->rowSizes_[newIndex];
+			++this->columnSizes_[el->col_];
 
 			last = tmp;
 
@@ -405,6 +421,18 @@ public:
 
 	}
 
+	size_t column_size(size_t index) const {
+
+		return this->columnSizes_[index];
+
+	}
+
+	size_t row_size(size_t index) const {
+
+		return this->rowSizes_[index];
+
+	}
+
 	void erase(const IteratorBase& iter) {
 
 		auto& el = iter.el_;
@@ -413,6 +441,8 @@ public:
 		el->down_->up_ = el->up_;
 		el->left_->right_ = el->right_;
 		el->right_->left_ = el->left_;
+		--this->rowSizes_[el->row_];
+		--this->columnSizes_[el->col_];
 
 		this->allocator_.reclaim(el);
 
