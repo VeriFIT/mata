@@ -57,12 +57,15 @@ bool mata::nfa::algorithms::is_included_antichains(
 		State smaller_state;
 		StateSet bigger_set;
 		uint64_t signature;
+		/// A later node dominates this one: the worklist skips it and its macrostate is released.
+		bool dominated;
+	};
+	/// How a node was reached, recorded only when a counterexample is requested.
+	struct Step {
 		/// The node this one was reached from, or the node itself for an initial one.
 		size_t parent;
 		/// The symbol read on the transition from @c parent.
 		Symbol symbol;
-		/// A later node dominates this one: the worklist skips it and its macrostate is released.
-		bool dominated;
 	};
 
 	/**
@@ -153,6 +156,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 	// initialize
 	std::vector<Node> nodes{};
+	std::vector<Step> steps{}; // Indexed like @c nodes; empty unless @p cex is requested.
 	std::vector<size_t> worklist{}; // Indices of the nodes to be processed.
 	ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
 
@@ -194,11 +198,10 @@ bool mata::nfa::algorithms::is_included_antichains(
 				.smaller_state = state,
 				.bigger_set = std::move(bigger_state_set),
 				.signature = signature,
-				.parent = node_idx,
-				.symbol = 0,
 				.dominated = false,
 			}
 		);
+		if (cex != nullptr) { steps.push_back(Step{.parent = node_idx, .symbol = 0}); }
 		worklist.push_back(node_idx);
 		processed[state].insert(nodes, node_idx);
 	}
@@ -230,7 +233,9 @@ bool mata::nfa::algorithms::is_included_antichains(
 			const size_t bigger_succ_min_dst{min_dst(bigger_succ)};
 			const uint64_t bigger_succ_signature{algorithms::macrostate_signature(bigger_succ)};
 
-			for (const State& smaller_succ : smaller_move.targets) {
+			const auto& smaller_targets{smaller_move.targets};
+			for (size_t target_idx{0}; target_idx < smaller_targets.size(); ++target_idx) {
+				const State smaller_succ{smaller_targets[target_idx]};
 				const State smaller_succ_dst{distances_smaller[smaller_succ]};
 				if (smaller_succ_dst == Limits::max_state) { continue; }
 
@@ -240,10 +245,10 @@ bool mata::nfa::algorithms::is_included_antichains(
 					if (cex != nullptr) {
 						cex->word.push_back(smaller_symbol);
 						cex->path.push_back(smaller_state);
-						for (size_t on_path{node_idx}; nodes[on_path].parent != on_path;
-							 on_path = nodes[on_path].parent) { // go back until initial state
-							cex->word.push_back(nodes[on_path].symbol);
-							cex->path.push_back(nodes[nodes[on_path].parent].smaller_state);
+						for (size_t on_path{node_idx}; steps[on_path].parent != on_path;
+							 on_path = steps[on_path].parent) { // go back until initial state
+							cex->word.push_back(steps[on_path].symbol);
+							cex->path.push_back(nodes[steps[on_path].parent].smaller_state);
 						}
 
 						std::ranges::reverse(cex->word);
@@ -268,16 +273,17 @@ bool mata::nfa::algorithms::is_included_antichains(
 				//  worklist, and store succ in both.
 				processed[smaller_succ].prune(nodes, bigger_succ, bigger_succ_signature);
 				const size_t succ_idx{nodes.size()};
+				// The last target of the move is the last reader of bigger_succ.
+				const bool last_target{target_idx + 1 == smaller_targets.size()};
 				nodes.push_back(
 					Node{
 						.smaller_state = smaller_succ,
-						.bigger_set = bigger_succ,
+						.bigger_set = last_target ? std::move(bigger_succ) : bigger_succ,
 						.signature = bigger_succ_signature,
-						.parent = node_idx,
-						.symbol = smaller_symbol,
 						.dominated = false,
 					}
 				);
+				if (cex != nullptr) { steps.push_back(Step{.parent = node_idx, .symbol = smaller_symbol}); }
 				processed[smaller_succ].insert(nodes, succ_idx);
 				worklist.push_back(succ_idx);
 			}
