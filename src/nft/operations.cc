@@ -84,13 +84,10 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 	const auto sim_relation =
 		algorithms::compute_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
 
-	auto sim_relation_symmetric = sim_relation;
-	sim_relation_symmetric.restrict_to_symmetric();
-
 	// for State q, quot_proj[q] should be the representative state representing the symmetric class of states in
 	// simulation
 	std::vector<size_t> quot_proj;
-	sim_relation_symmetric.get_quotient_projection(quot_proj);
+	sim_relation.get_symmetric_quotient_projection(quot_proj);
 
 	const size_t num_of_states = aut.num_of_states();
 

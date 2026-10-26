@@ -4029,6 +4029,37 @@ TEST_CASE("mata::nfa::fw-direct-simulation()") { // {{{
 	}
 } // }}
 
+TEST_CASE("Simlib::Util::BinaryRelation::get_symmetric_quotient_projection()") {
+	Nfa aut(9);
+	aut.initial = {1, 2};
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(1, 'a', 3);
+	aut.delta.add(1, 'b', 4);
+	aut.delta.add(2, 'a', 2);
+	aut.delta.add(2, 'b', 2);
+	aut.delta.add(2, 'a', 3);
+	aut.delta.add(2, 'b', 4);
+	aut.delta.add(3, 'b', 4);
+	aut.delta.add(3, 'c', 7);
+	aut.delta.add(3, 'b', 2);
+	aut.delta.add(5, 'c', 3);
+	aut.delta.add(6, 'c', 3);
+	aut.delta.add(7, 'a', 8);
+	aut.final = {3};
+	const Simlib::Util::BinaryRelation relation{compute_relation(aut)};
+
+	std::vector<size_t> projection;
+	relation.get_symmetric_quotient_projection(projection);
+	// The states without transitions, 0, 4 and 8, simulate each other, and so do 5 and 6.
+	CHECK(projection == std::vector<size_t>{0, 1, 2, 3, 0, 5, 5, 7, 0});
+
+	Simlib::Util::BinaryRelation symmetric{relation};
+	symmetric.restrict_to_symmetric();
+	std::vector<size_t> restricted_projection;
+	symmetric.get_quotient_projection(restricted_projection);
+	CHECK(projection == restricted_projection);
+}
+
 TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 	Nfa aut;
 	StateRenaming state_renaming;
