@@ -188,11 +188,7 @@ void reduce_per_initial_state(
 	Nfa useful{trim(segment, &to_useful, std::nullopt, final_states)};
 	const auto sim_relation{mata::nfa::algorithms::compute_relation(useful)};
 	std::vector<size_t> quot_proj;
-	{
-		auto sim_relation_symmetric{sim_relation};
-		sim_relation_symmetric.restrict_to_symmetric();
-		sim_relation_symmetric.get_quotient_projection(quot_proj);
-	}
+	sim_relation.get_symmetric_quotient_projection(quot_proj);
 
 	for (const State init_state : segment.initial) {
 		const auto useful_init{to_useful.find(init_state)};

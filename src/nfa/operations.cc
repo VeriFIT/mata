@@ -2139,10 +2139,8 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 	const auto sim_relation =
 		algorithms::compute_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
 
-	auto sim_relation_symmetric = sim_relation;
-	sim_relation_symmetric.restrict_to_symmetric();
 	std::vector<size_t> quot_proj;
-	sim_relation_symmetric.get_quotient_projection(quot_proj);
+	sim_relation.get_symmetric_quotient_projection(quot_proj);
 
 	return quotient_by_simulation(aut, sim_relation, quot_proj, nullptr, &state_renaming);
 }

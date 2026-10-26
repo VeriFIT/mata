@@ -259,7 +259,7 @@ Nfa reduce_simulation(const Nfa& nfa, StateRenaming& state_renaming);
  * @param[in] nfa NFA to quotient.
  * @param[in] sim_relation Forward simulation of @p nfa, as computed by @c compute_relation().
  * @param[in] quot_proj Projection of each state of @p nfa to the smallest state of its class, as computed by
- *  @c get_quotient_projection() on the symmetric restriction of @p sim_relation.
+ *  @c get_symmetric_quotient_projection() of @p sim_relation.
  * @param[in] states States to keep; all states if @c nullptr. Must be closed under successors.
  * @param[out] state_renaming Map mapping the kept states to the reduced states, if not @c nullptr.
  * @return The quotient of @p nfa restricted to @p states.
