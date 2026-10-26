@@ -10,6 +10,7 @@
 
 // Standard library headers
 #include <cmath>
+#include <deque>
 #include <ostream>
 #include <vector>
 #include <algorithm>
@@ -77,7 +78,10 @@ typedef SharedList<std::vector<size_t>> RemoveList;
 typedef CachingAllocator<RemoveList, SharedListInitF> RemoveAllocator;
 
 typedef std::pair<struct Block*, size_t> RemoveQueueElement;
-typedef std::vector<RemoveQueueElement> RemoveQueue;
+// A new remove set waits at the back and keeps collecting states until it is processed; the copy of a set made
+//  for a block split off is processed first (see split()). Processed as a stack, the sets of a dense automaton
+//  were mostly processed with one state each (#964).
+typedef std::deque<RemoveQueueElement> RemoveQueue;
 
 struct Block
 {
@@ -397,8 +401,9 @@ protected:
 
 	template <class T>
 	void split(
-		std::vector<bool>&   removeMask,
-		const T&             remove)
+		std::vector<bool>&     removeMask,
+		std::vector<size_t>&   removedBlocks,
+		const T&               remove)
 	{
 		std::vector<Block*> modifiedBlocks;
         this->internal_split(modifiedBlocks, remove);
@@ -412,6 +417,7 @@ protected:
 			if (!p.first)
 			{
 				removeMask[block->index_] = true;
+				removedBlocks.push_back(block->index_);
 
 				continue;
 			}
@@ -423,6 +429,7 @@ protected:
 			this->partition_.push_back(newBlock);
 			this->relation_.split(block->index_);
 			removeMask[newBlock->index_] = true;
+			removedBlocks.push_back(newBlock->index_);
 			newBlock->counter_.copy_labels(newBlock->inset_, block->counter_);
 
 			for (auto& a : newBlock->inset_)
@@ -432,9 +439,46 @@ protected:
 					continue;
 				}
 
-				this->queue_.push_back(std::make_pair(newBlock, a));
+				// processed next, before the new block is split again and needs another copy
+				this->queue_.push_front(std::make_pair(newBlock, a));
 				newBlock->remove_[a] = block->remove_[a]->copy();
 			}
+		}
+	}
+
+	// erases (b1, b2) from the relation and decrements the counters of b1 for the predecessors of b2
+	template <class Iterator>
+	void erase_related(
+		Block*            b1,
+		Block*            b2,
+		const Iterator&   element)
+	{
+		assert(b1->index_ != b2->index_);
+		this->relation_.erase(element);
+
+		for (auto a : b2->inset_)
+		{
+			if (!b1->inset_.contains(a))
+			{
+				continue;
+			}
+
+			auto elem = b2->states_;
+
+			do
+			{
+				assert(elem);
+
+				for (auto& pre : this->lts_.pre(a)[elem->index_])
+				{
+					if (!b1->counter_.decr(a, pre))
+					{
+                        this->enqueue_to_remove(b1, a, pre);
+					}
+				}
+
+				elem = elem->next_;
+			} while (elem != b2->states_);
 		}
 	}
 
@@ -451,8 +495,9 @@ protected:
 
 		std::vector<Block*> preList;
 		std::vector<bool> removeMask(this->lts_.states());
+		std::vector<size_t> removedBlocks;
 		this->build_pre(preList, block->states_, label);
-		this->split(removeMask, *remove);
+		this->split(removeMask, removedBlocks, *remove);
 
 		remove->unsafe_release(
 		[this](RemoveList *list) {
@@ -461,44 +506,56 @@ protected:
 				 }
         );
 
+		// The pairs to erase are (b1, b2) with b1 in preList and b2 removed: walk the rows of preList or the
+		//  columns of the removed blocks, whichever is shorter. On a dense automaton, preList holds most
+		//  blocks while a remove set holds a few states.
+		size_t rowsSize = 0;
+		size_t columnsSize = 0;
+
+		for (auto& b1 : preList)
+		{
+			rowsSize += this->relation_.row_size(b1->index_);
+		}
+
+		for (auto& b2 : removedBlocks)
+		{
+			columnsSize += this->relation_.column_size(b2);
+		}
+
+		if (columnsSize < rowsSize)
+		{
+			std::vector<bool> preMask(this->partition_.size());
+
+			for (auto& b1 : preList)
+			{
+				preMask[b1->index_] = true;
+			}
+
+			for (auto& b2 : removedBlocks)
+			{
+				SplittingRelation::Column column = this->relation_.column(b2);
+
+				for (auto row = column.begin(); row != column.end(); ++row)
+				{
+					if (preMask[*row])
+					{
+						this->erase_related(this->partition_[*row], this->partition_[b2], row);
+					}
+				}
+			}
+
+			return;
+		}
+
 		for (auto& b1 : preList)
 		{
 			SplittingRelation::Row row = this->relation_.row(b1->index_);
 
 			for (auto col = row.begin(); col != row.end(); ++col)
 			{
-				if (!removeMask[*col])
+				if (removeMask[*col])
 				{
-					continue;
-				}
-
-				assert(b1->index_ != *col);
-				this->relation_.erase(col);
-				auto b2 = this->partition_[*col];
-
-				for (auto a : b2->inset_)
-				{
-					if (!b1->inset_.contains(a))
-					{
-						continue;
-					}
-
-					auto elem = b2->states_;
-
-					do
-					{
-						assert(elem);
-
-						for (auto& pre : this->lts_.pre(a)[elem->index_])
-						{
-							if (!b1->counter_.decr(a, pre))
-							{
-                                this->enqueue_to_remove(b1, a, pre);
-							}
-						}
-
-						elem = elem->next_;
-					} while (elem != b2->states_);
+					this->erase_related(b1, this->partition_[*col], col);
 				}
 			}
 		}
@@ -792,8 +849,8 @@ public:
 	{
 		while (!this->queue_.empty())
 		{
-			std::pair<Block*, size_t> tmp(this->queue_.back());
-			this->queue_.pop_back();
+			std::pair<Block*, size_t> tmp(this->queue_.front());
+			this->queue_.pop_front();
             this->process_remove(tmp.first, tmp.second);
 		}
 	}
