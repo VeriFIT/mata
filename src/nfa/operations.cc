@@ -6,6 +6,7 @@
 #include <deque>
 #include <limits>
 #include <list>
+#include <numeric>
 #include <optional>
 #include <queue>
 #include <type_traits>
@@ -80,6 +81,186 @@ template <class Relation> Relation compute_fw_direct_simulation(const Nfa& aut) 
 	} else {
 		return lts_for_simulation.compute_simulation(partition, relation, state_num);
 	}
+}
+
+/**
+ * @brief Classes of states that have the same finality and, over every symbol, successors in the same classes.
+ *
+ * Starts from the identity and merges states with identical successors, then states whose successors became
+ *  identical by the merge, until nothing merges. Every merge joins classes with the same successors, so the
+ *  partition stays a bisimulation and the quotient keeps the forward simulation of every state. It is far cheaper
+ *  than the simulation itself: the first pass hashes each state post once, and after it only the classes of the
+ *  predecessors of the states of an absorbed class are hashed again. The classes are numbered in the order of
+ *  their smallest states.
+ *
+ * @return The class of each state; the number of classes is one past the largest class.
+ */
+std::vector<State> identical_successor_classes(const Nfa& aut) {
+	const size_t num_of_states{aut.num_of_states()};
+	std::vector<State> class_of(num_of_states);
+	std::vector<State> next_class_of(num_of_states);
+	// Numbers the classes of the states equal by `equal` in the order of their smallest states into next_class_of.
+	const auto merge_round = [&](const auto& hash, const auto& equal) {
+		std::unordered_set<State, std::decay_t<decltype(hash)>, std::decay_t<decltype(equal)>> first_of_class{
+			num_of_states, hash, equal
+		};
+		size_t num_of_classes{0};
+		for (State q{0}; q < num_of_states; ++q) {
+			if (const auto [first, inserted]{first_of_class.insert(q)}; inserted) {
+				next_class_of[q] = static_cast<State>(num_of_classes++);
+			} else {
+				next_class_of[q] = next_class_of[*first];
+			}
+		}
+		return num_of_classes;
+	};
+
+	// A whole signature is hashed by one multiply per value and mixed once: the per-value finalizer of
+	//  `hash_combine()` made the hashing most of the cost of this function.
+	const auto hash_step = [](const size_t accum, const size_t value) {
+		constexpr size_t multiplier{
+			sizeof(size_t) == 8 ? static_cast<size_t>(0x9e'37'79'b9'7f'4a'7c'15ULL)
+								: static_cast<size_t>(0x9e'37'79'b9UL)
+		};
+		return (accum ^ value) * multiplier;
+	};
+
+	// In the first round every state is its own class, so the state posts themselves are compared. Most automata
+	//  merge nothing and are done after this round, without copying their transitions.
+	size_t num_of_classes{merge_round(
+		[&](const State q) {
+			size_t accum{hash_step(HASH_SEED, aut.final[q])};
+			for (const SymbolPost& symbol_post : aut.delta[q]) {
+				accum = hash_step(accum, symbol_post.symbol);
+				for (const State target : symbol_post.targets) { accum = hash_step(accum, target); }
+			}
+			return hash_mix(accum);
+		},
+		[&](const State lhs, const State rhs) {
+			return aut.final[lhs] == aut.final[rhs] && aut.delta[lhs] == aut.delta[rhs];
+		}
+	)};
+	class_of.swap(next_class_of);
+	if (num_of_classes == num_of_states) { return class_of; }
+
+	// Later merges come from a worklist: rescanning every state until nothing merges takes a round per level of
+	//  two copies of a chain. A class is absorbed into the larger one, so a state changes its class O(log n) times.
+	std::vector<size_t> pred_begin(num_of_states + 1, 0);
+	for (State q{0}; q < num_of_states; ++q) {
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			for (const State target : symbol_post.targets) { ++pred_begin[target + 1]; }
+		}
+	}
+	std::partial_sum(pred_begin.begin(), pred_begin.end(), pred_begin.begin());
+	std::vector<State> preds(pred_begin[num_of_states]);
+	{
+		std::vector<size_t> pred_end(pred_begin.begin(), pred_begin.end() - 1);
+		for (State q{0}; q < num_of_states; ++q) {
+			for (const SymbolPost& symbol_post : aut.delta[q]) {
+				for (const State target : symbol_post.targets) { preds[pred_end[target]++] = q; }
+			}
+		}
+	}
+
+	// The states of each class are linked through next_member.
+	constexpr State no_state{std::numeric_limits<State>::max()};
+	std::vector<State> next_member(num_of_states, no_state);
+	std::vector<State> first_member(num_of_classes, no_state);
+	std::vector<State> last_member(num_of_classes);
+	std::vector<size_t> class_size(num_of_classes, 0);
+	for (State q{0}; q < num_of_states; ++q) {
+		const State cls{class_of[q]};
+		if (first_member[cls] == no_state) {
+			first_member[cls] = q;
+		} else {
+			next_member[last_member[cls]] = q;
+		}
+		last_member[cls] = q;
+		++class_size[cls];
+	}
+
+	// The signature of a class, shared by all its states: the finality, then for each symbol post the symbol, the
+	//  number of target classes and the sorted target classes. A stored signature is stale only while its class is
+	//  in the worklist; it then names an absorbed class, so it never equals a fresh one.
+	std::vector<std::vector<State>> signature(num_of_classes);
+	std::vector<State> targets;
+	const auto compute_signature = [&](const State cls) {
+		std::vector<State>& sig{signature[cls]};
+		sig.clear();
+		const State q{first_member[cls]};
+		sig.push_back(aut.final[q] ? 1 : 0);
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			targets.clear();
+			for (const State target : symbol_post.targets) { targets.push_back(class_of[target]); }
+			std::ranges::sort(targets);
+			targets.erase(std::ranges::unique(targets).begin(), targets.end());
+			sig.push_back(symbol_post.symbol);
+			sig.push_back(static_cast<State>(targets.size()));
+			sig.insert(sig.end(), targets.begin(), targets.end());
+		}
+	};
+	const auto signature_hash = [&](const State cls) {
+		size_t accum{HASH_SEED};
+		for (const State value : signature[cls]) { accum = hash_step(accum, value); }
+		return hash_mix(accum);
+	};
+	const auto signature_equal = [&](const State lhs, const State rhs) { return signature[lhs] == signature[rhs]; };
+	std::unordered_set<State, decltype(signature_hash), decltype(signature_equal)> class_of_signature{
+		num_of_classes, signature_hash, signature_equal
+	};
+
+	std::vector<bool> is_hashed(num_of_classes, false);
+	std::vector<bool> is_queued(num_of_classes, true);
+	std::vector<State> worklist(num_of_classes);
+	std::iota(worklist.begin(), worklist.end(), State{0});
+	while (!worklist.empty()) {
+		const State cls{worklist.back()};
+		worklist.pop_back();
+		is_queued[cls] = false;
+		if (class_size[cls] == 0) { continue; } // Absorbed.
+		if (is_hashed[cls]) { class_of_signature.erase(cls); }
+		compute_signature(cls);
+		const auto [same_signature, inserted]{class_of_signature.insert(cls)};
+		if (inserted) {
+			is_hashed[cls] = true;
+			continue;
+		}
+
+		State kept{*same_signature};
+		State absorbed{cls};
+		if (class_size[absorbed] > class_size[kept]) {
+			std::swap(kept, absorbed);
+			class_of_signature.erase(same_signature);
+			class_of_signature.insert(kept);
+		}
+		is_hashed[kept] = true;
+		is_hashed[absorbed] = false;
+		signature[absorbed] = {};
+		for (State q{first_member[absorbed]}; q != no_state; q = next_member[q]) { class_of[q] = kept; }
+		// Relabel first, so that a predecessor inside the absorbed class queues the kept one.
+		for (State q{first_member[absorbed]}; q != no_state; q = next_member[q]) {
+			for (size_t pred{pred_begin[q]}; pred < pred_begin[q + 1]; ++pred) {
+				if (const State pred_class{class_of[preds[pred]]}; !is_queued[pred_class]) {
+					is_queued[pred_class] = true;
+					worklist.push_back(pred_class);
+				}
+			}
+		}
+		next_member[last_member[kept]] = first_member[absorbed];
+		last_member[kept] = last_member[absorbed];
+		class_size[kept] += class_size[absorbed];
+		class_size[absorbed] = 0;
+	}
+
+	// Renumber the classes in the order of their smallest states.
+	std::ranges::fill(next_class_of, no_state);
+	State next_number{0};
+	for (State q{0}; q < num_of_states; ++q) {
+		State& number{next_class_of[class_of[q]]};
+		if (number == no_state) { number = next_number++; }
+		class_of[q] = number;
+	}
+	return class_of;
 }
 
 /// Incoming transitions `(source, symbol)` of each state of the result of residual reduction "with", recorded when
@@ -2155,13 +2336,49 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa& nf
 }
 
 Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& state_renaming) {
-	const auto sim_relation =
-		algorithms::compute_partition_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
+	const auto reduce_by_simulation = [](const Nfa& nfa, StateRenaming& renaming) {
+		const auto sim_relation = algorithms::compute_partition_relation(
+			nfa, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}}
+		);
+		std::vector<size_t> quot_proj;
+		sim_relation.get_symmetric_quotient_projection(quot_proj);
+		return quotient_by_simulation(nfa, sim_relation, quot_proj, nullptr, &renaming);
+	};
 
-	std::vector<size_t> quot_proj;
-	sim_relation.get_symmetric_quotient_projection(quot_proj);
+	// The simulation costs the product of the numbers of states and transitions, so the classes of states with
+	//  identical successors, often half of an automaton built by a union or a loop, are merged first. They are
+	//  simulation equivalent and numbered by their smallest states, so the quotient by the simulation of the
+	//  merged automaton is the quotient of `aut` itself, with the same numbering.
+	const std::vector<State> class_of{identical_successor_classes(aut)};
+	const size_t num_of_states{aut.num_of_states()};
+	const size_t num_of_classes{num_of_states == 0 ? 0 : static_cast<size_t>(std::ranges::max(class_of)) + 1};
+	if (num_of_classes == num_of_states) { return reduce_by_simulation(aut, state_renaming); }
 
-	return quotient_by_simulation(aut, sim_relation, quot_proj, nullptr, &state_renaming);
+	Nfa merged{num_of_classes};
+	std::vector<bool> is_built(num_of_classes, false);
+	std::vector<State> targets;
+	for (State q{0}; q < num_of_states; ++q) {
+		const State merged_q{class_of[q]};
+		if (aut.initial[q]) { merged.initial.insert(merged_q); }
+		if (is_built[merged_q]) { continue; }
+		is_built[merged_q] = true;
+		if (aut.final[q]) { merged.final.insert(merged_q); }
+		StatePost& merged_post{merged.delta.mutable_state_post(merged_q)};
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			targets.clear();
+			for (const State target : symbol_post.targets) { targets.push_back(class_of[target]); }
+			std::ranges::sort(targets);
+			targets.erase(std::ranges::unique(targets).begin(), targets.end());
+			merged_post.push_back(SymbolPost{symbol_post.symbol, std::span<const State>{targets}});
+		}
+	}
+
+	StateRenaming merged_renaming;
+	Nfa result{reduce_by_simulation(merged, merged_renaming)};
+	state_renaming.clear();
+	state_renaming.reserve(num_of_states);
+	for (State q{0}; q < num_of_states; ++q) { state_renaming[q] = merged_renaming.at(class_of[q]); }
+	return result;
 }
 
 namespace {
