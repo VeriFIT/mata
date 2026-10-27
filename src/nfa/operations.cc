@@ -710,8 +710,7 @@ bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 	// Breadth-first search over the reachable states, with a vector used as a FIFO queue and a byte array in place
 	//  of a hash set of visited states. Both a state post and @p symbols are sorted by symbol, so a state is decided
 	//  by a single two-pointer merge instead of one binary search per outgoing symbol.
-	// No `delta.empty()` guard: `delta[state]` of an empty or unallocated state post already yields nothing, while
-	//  `Delta::empty()` walks state posts until it finds a nonempty one and so costs O(|Q|) per worklist item.
+	// No `delta.empty()` guard: `delta[state]` of an empty or unallocated state post already yields nothing.
 	std::vector<State> worklist(initial.begin(), initial.end());
 	std::vector<char> visited(num_of_states(), 0);
 	const auto visit = [&visited](const State state) -> bool {
@@ -1143,8 +1142,6 @@ class RefinablePartition {
 } // namespace
 
 Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
-	// `empty()` stops at the first non-empty state post. It differs from `num_of_transitions() == 0` only on a symbol
-	//  post without targets, which the required `trim()` drops.
 	if (dfa_trimmed.delta.empty()) {
 		// The automaton is trivially minimal.
 		return Nfa{dfa_trimmed};
