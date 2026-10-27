@@ -385,18 +385,32 @@ void check_simulation(const unsigned seed) {
 	INFO(describe(seed, nfa));
 
 	const Simlib::Util::BinaryRelation relation{algorithms::compute_relation(nfa)};
+	const Simlib::Util::PartitionRelation blocks{algorithms::compute_partition_relation(nfa)};
 	const std::vector<std::vector<bool>> expected{reference_simulation(nfa, num_of_symbols)};
 	REQUIRE(relation.size() == num_of_states);
+	REQUIRE(blocks.size() == num_of_states);
 	std::string differences{};
+	std::string block_differences{};
 	for (mata::nfa::State p{0}; p < num_of_states; ++p) {
 		for (mata::nfa::State q{0}; q < num_of_states; ++q) {
 			if (relation.get(p, q) != expected[p][q]) {
 				differences += " (" + std::to_string(p) + ", " + std::to_string(q) + ")";
 			}
+			if (blocks.get(p, q) != expected[p][q]) {
+				block_differences += " (" + std::to_string(p) + ", " + std::to_string(q) + ")";
+			}
 		}
 	}
 	INFO("pairs the engine gets wrong:" << differences);
 	CHECK(differences.empty());
+	INFO("pairs the partition relation gets wrong:" << block_differences);
+	CHECK(block_differences.empty());
+
+	std::vector<size_t> projection;
+	relation.get_symmetric_quotient_projection(projection);
+	std::vector<size_t> block_projection;
+	blocks.get_symmetric_quotient_projection(block_projection);
+	CHECK(block_projection == projection);
 }
 
 } // Anonymous namespace.

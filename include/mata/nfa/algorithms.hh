@@ -16,6 +16,7 @@
 #include <string>
 
 #include "mata/simlib/util/binary_relation.hh"
+#include "mata/simlib/util/partition_relation.hh"
 #include "nfa.hh"
 
 /**
@@ -161,6 +162,16 @@ Simlib::Util::BinaryRelation compute_relation(
 );
 
 /**
+ * @brief The relation of @c compute_relation() as the partition of the states and the relation on its blocks.
+ *
+ * Its memory is linear in the states and the related pairs of blocks, where @c compute_relation() takes a bit for
+ * every pair of states, so prefer it on large automata.
+ */
+Simlib::Util::PartitionRelation compute_partition_relation(
+	const Nfa& aut, const ParameterMap& params = {{"relation", "simulation"}, {"direction", "forward"}}
+);
+
+/**
  * @brief Compute product of two NFAs, final condition is to be specified, with a possibility of using multiple
  * epsilons.
  *
@@ -267,6 +278,15 @@ Nfa reduce_simulation(const Nfa& nfa, StateRenaming& state_renaming);
 Nfa quotient_by_simulation(
 	const Nfa& nfa,
 	const Simlib::Util::BinaryRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states = nullptr,
+	StateRenaming* state_renaming = nullptr
+);
+
+/// The same quotient, with @p sim_relation and @p quot_proj computed by @c compute_partition_relation().
+Nfa quotient_by_simulation(
+	const Nfa& nfa,
+	const Simlib::Util::PartitionRelation& sim_relation,
 	const std::vector<size_t>& quot_proj,
 	const BoolVector* states = nullptr,
 	StateRenaming* state_renaming = nullptr
