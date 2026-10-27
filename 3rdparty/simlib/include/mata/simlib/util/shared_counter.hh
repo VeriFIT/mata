@@ -11,7 +11,10 @@
 #ifndef _SIMLIB_SHARED_COUNTER_HH_
 #define _SIMLIB_SHARED_COUNTER_HH_
 
+#include <cassert>
+#include <cstdint>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #include <mata/simlib/util/caching_allocator.hh>
@@ -24,7 +27,10 @@ class Simlib::Util::SharedCounter
 {
 public:
 
-	typedef CachingArrayAllocator<size_t> Allocator;
+	/// A count of successors, or the number of counters sharing a row: both are below the number of states, and
+	///  32 bits halve the rows, which dominate the memory of the simulation engine on large automata.
+	typedef std::uint32_t Count;
+	typedef CachingArrayAllocator<Count> Allocator;
 	typedef std::vector<size_t> Key;
 	typedef std::vector<std::pair<size_t, size_t>> LabelMap;
 
@@ -33,7 +39,7 @@ private:
 	struct Row {
 
 		size_t master_;
-		size_t* data_;
+		Count* data_;
 
 		Row() : master_(0), data_(nullptr) {}
 
@@ -127,13 +133,17 @@ public:
 			assert(row.data_);
 			assert((row.data_[this->rowSize_] == 0) || (row.data_[this->rowSize_] == 1));
 
+			assert(count <= std::numeric_limits<Count>::max());
+
 			row.master_ += count;
-			row.data_[colIndex] = count;
+			row.data_[colIndex] = static_cast<Count>(count);
 			row.data_[this->rowSize_] = 1; // refCount
 
 			return;
 
 		}
+
+		assert(count <= std::numeric_limits<Count>::max());
 
 		row.master_ = count;
 		row.data_ = this->allocator_();
@@ -143,7 +153,7 @@ public:
 //		assert(row.data_[colIndex] == 0);
 
 		row.data_[this->rowSize_] = 0; // exploit refCount
-		row.data_[colIndex] = count;
+		row.data_[colIndex] = static_cast<Count>(count);
 
 	}
 
@@ -187,7 +197,7 @@ public:
 
 			auto newData = this->allocator_();
 
-			std::memcpy(newData, row.data_, this->rowSize_*sizeof(size_t));
+			std::memcpy(newData, row.data_, this->rowSize_*sizeof(Count));
 
 			assert(newData[colIndex] == row.data_[colIndex]);
 
