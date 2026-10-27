@@ -2948,6 +2948,26 @@ TEST_CASE("mata::nft::compose_fast_no_jump()") {
 		const Nft composed_fast_no_jump{algorithms::compose_fast_no_jump(lhs, rhs, 0, 1)};
 		CHECK(are_equivalent(composed_normal, composed_fast_no_jump));
 	}
+
+	// The LHS waits on its synchronization level, its last one, while the one-level RHS moves on EPSILON; with the
+	//  synchronization level projected out, the move replaces the synchronization by no EPSILON, and the composer
+	//  used to assert on that.
+	SECTION("a one-level RHS moves on EPSILON while the LHS waits on its projected last level") {
+		const mata::Symbol x{7};
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{3, {0}, {2}, Levels(1, 3)};
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 2);
+		const Nft composed{algorithms::compose_fast_no_jump(lhs, rhs, 1, 0, true)};
+		CHECK(composed.levels.num_of_levels == 1);
+		CHECK(composed.is_in_lang_by_levels({mata::Word{x}}));
+		CHECK(!composed.is_in_lang_by_levels({mata::Word{}}));
+		CHECK(!composed.is_in_lang_by_levels({mata::Word{x, x}}));
+	}
 }
 
 TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #812)") {

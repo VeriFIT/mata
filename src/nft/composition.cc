@@ -1005,7 +1005,9 @@ Nft compose_fast_no_jump_with(
 		// we can and need to simply add EPSILON transitions to the targets
 		// of the EPSILON transitions from the running root state.
 		if (running_num_of_levels == 1) {
-			MATA_ASSERT(num_of_epsilons_to_replace_sync > 0);
+			// The EPSILON move of a one-level operand is a whole round of EPSILON in the result, however many
+			//  EPSILONs would replace a synchronization elsewhere; none, e.g., when the LHS waits on its last
+			//  level, which is the projected synchronization level.
 			const auto epsilon_target_it = running_delta[running_root_state].find(EPSILON);
 			// There has to be some EPSILON transition. Otherwise, there would be no reason to wait.
 			MATA_ASSERT(epsilon_target_it != running_delta[running_root_state].end());
