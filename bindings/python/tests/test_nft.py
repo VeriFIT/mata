@@ -121,6 +121,44 @@ def test_nft_compose():
     assert composed.levels.num_of_levels == 2
 
 
+def test_nft_compose_normalization():
+    """The generated EPSILON rounds of the fast composition close without changing the relation."""
+    n = 8
+    lhs_levels = [0] * (n + 3)
+    lhs_levels[n + 1] = 1
+    lhs = mata_nft.Nft.with_levels(mata_nft.Levels(2, lhs_levels), n + 3)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(n + 2)
+    for state in range(n):
+        lhs.delta.add(state, mata_nft.epsilon(), state + 1)
+    lhs.delta.add(n, 7, n + 1)
+    lhs.delta.add(n + 1, 7, n + 2)
+    rhs = mata_nft.Nft.with_levels(mata_nft.Levels(1, [0] * (n + 2)), n + 2)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(n + 1)
+    for state in range(n):
+        rhs.delta.add(state, mata_nft.epsilon(), state + 1)
+    rhs.delta.add(n, 7, n + 1)
+
+    def compose(normalization):
+        return mata_nft.compose(
+            lhs,
+            rhs,
+            1,
+            0,
+            True,
+            mata_nft.JumpMode.NoJump,
+            mata_nft.CompositionMode.FastNoJump,
+            normalization,
+        )
+
+    raw = compose(mata_nft.CompositionNormalization.None_)
+    normalized = compose(mata_nft.CompositionNormalization.GeneratedOnly)
+    assert raw.num_of_states() == 2 * n + 2
+    assert normalized.num_of_states() == 2
+    assert normalized.is_in_lang([7])
+
+
 def test_nft_compose_rejects_invalid_requests():
     """Invalid synchronization levels raise instead of exhausting memory or dividing by zero."""
     lhs = mata_nft.Nft(1, num_of_levels=2)

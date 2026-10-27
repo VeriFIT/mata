@@ -18,7 +18,7 @@ cimport libmata.alphabets as alph
 
 from libmata.nft.nft cimport (
     Symbol, State, StateSet, StateRenaming, Level,
-    CLevels, CNft, CJumpMode, CCompositionMode,
+    CLevels, CNft, CJumpMode, CCompositionMode, CCompositionNormalization,
     CAutomaton, CDelta, CRun, CTrans, CSymbolPost, CNfa,
     CAlphabet, CConstAlphabet, CAlphabetLevels,
 )
@@ -69,12 +69,24 @@ class CompositionMode(IntEnum):
     Auto = <int>mata_nft.CompositionModeAuto
 
 
+class CompositionNormalization(IntEnum):
+    """How `compose()` normalizes its result; every mode keeps the relation and the level of every state."""
+    None_ = <int>mata_nft.CompositionNormalizationNone
+    GeneratedOnly = <int>mata_nft.CompositionNormalizationGeneratedOnly
+    Full = <int>mata_nft.CompositionNormalizationFull
+    Auto = <int>mata_nft.CompositionNormalizationAuto
+
+
 cdef CJumpMode _c_jump_mode(jump_mode):
     return <CJumpMode><int>jump_mode
 
 
 cdef CCompositionMode _c_composition_mode(composition_mode):
     return <CCompositionMode><int>composition_mode
+
+
+cdef CCompositionNormalization _c_composition_normalization(normalization):
+    return <CCompositionNormalization><int>normalization
 
 
 cdef StateSet _c_state_set(states):
@@ -947,12 +959,14 @@ def intersection_with_product_map(
 
 def compose(
     Nft lhs, Nft rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels = True,
-    jump_mode = JumpMode.RepeatSymbol, composition_mode = CompositionMode.Auto
+    jump_mode = JumpMode.RepeatSymbol, composition_mode = CompositionMode.Auto,
+    normalization = CompositionNormalization.Auto
 ) -> Nft:
     """Compose `lhs` and `rhs` by aligning their synchronization levels.
 
     :param lhs_sync_levels: A single level, or an ordered iterable of synchronization levels of `lhs`.
     :param rhs_sync_levels: A single level, or an ordered iterable of synchronization levels of `rhs`.
+    :param normalization: How to normalize the result after the construction; see `CompositionNormalization`.
     :raises ValueError: If the two level lists differ in size or are empty, if a level is not below its
         transducer's `num_of_levels`, or if the composition would leave no levels.
     """
@@ -966,7 +980,8 @@ def compose(
     result.thisptr = make_shared[CNft](
         mata_nft.c_compose(
             dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), c_lhs_sync_levels, c_rhs_sync_levels,
-            project_out_sync_levels, _c_jump_mode(jump_mode), _c_composition_mode(composition_mode)
+            project_out_sync_levels, _c_jump_mode(jump_mode), _c_composition_mode(composition_mode),
+            _c_composition_normalization(normalization)
         )
     )
     return result

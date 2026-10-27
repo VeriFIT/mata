@@ -1758,6 +1758,7 @@ Nft intersection(
  *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
  *                             mode is optimized for NFTs without jump transitions and with only one synchronization
  * level.
+ * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @pre The synchronization level vectors are non-empty, of equal size and strictly increasing, every level is below
  *  its operand's @c levels.num_of_levels, and the composition leaves at least one level; otherwise
@@ -1775,7 +1776,8 @@ Nft compose(
 	const utils::OrdVector<Level>& rhs_sync_levels,
 	bool project_out_sync_levels = true,
 	JumpMode jump_mode = JumpMode::RepeatSymbol,
-	CompositionMode composition_mode = CompositionMode::Auto
+	CompositionMode composition_mode = CompositionMode::Auto,
+	CompositionNormalization normalization = CompositionNormalization::Auto
 );
 
 /**
@@ -1828,6 +1830,7 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
  *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
  *                             mode is optimized for NFTs without jump transitions and with only one synchronization
  * level.
+ * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @return A new NFT after the composition.
  */
@@ -1838,11 +1841,12 @@ inline Nft compose(
 	const Level rhs_sync_level = 0,
 	const bool project_out_sync_levels = true,
 	const JumpMode jump_mode = JumpMode::RepeatSymbol,
-	const CompositionMode composition_mode = CompositionMode::Auto
+	const CompositionMode composition_mode = CompositionMode::Auto,
+	const CompositionNormalization normalization = CompositionNormalization::Auto
 ) {
 	return compose(
 		lhs, rhs, utils::OrdVector<Level>{lhs_sync_level}, utils::OrdVector<Level>{rhs_sync_level},
-		project_out_sync_levels, jump_mode, composition_mode
+		project_out_sync_levels, jump_mode, composition_mode, normalization
 	);
 }
 

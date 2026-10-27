@@ -298,6 +298,65 @@ TEST_CASE("mata::nft differential: composing with an empty operand keeps the lev
 	}
 }
 
+// The normalization of the composition result rewrites EPSILON runs and duplicate states only. Fast EPSILON moves
+//  (zero-level to zero-level) and one-level operands with EPSILON make the composer generate them; EPSILON
+//  transitions inside the rounds are left out because of #902.
+TEST_CASE("mata::nft differential: compose() normalization keeps the relation and never grows", "[differential]") {
+	size_t num_of_shrunk{0};
+	for (unsigned seed{0}; seed < 120; ++seed) {
+		std::mt19937 lhs_rng{seed};
+		std::mt19937 rhs_rng{seed + 2'100};
+		const size_t num_of_symbols{1 + seed % 2};
+		const size_t num_of_states_per_level{1 + seed % 3};
+		Nft lhs{random_nft(lhs_rng, num_of_states_per_level, num_of_symbols, 2)};
+		const size_t rhs_num_of_levels{1 + (seed / 2) % 2};
+		Nft rhs{random_nft(rhs_rng, num_of_states_per_level, num_of_symbols, rhs_num_of_levels)};
+		// Fast EPSILON moves between the zero-level states, cycles included.
+		for (Nft* const nft : {&lhs, &rhs}) {
+			std::mt19937& rng{nft == &lhs ? lhs_rng : rhs_rng};
+			for (State source{0}; source < nft->num_of_states(); ++source) {
+				if (nft->levels[source] != 0 || draw(rng, 2) != 0) { continue; }
+				State target{static_cast<State>(draw(rng, nft->num_of_states()))};
+				while (nft->levels[target] != 0) { target = static_cast<State>(draw(rng, nft->num_of_states())); }
+				if (target != source) { nft->delta.add(source, EPSILON, target); }
+			}
+		}
+		INFO(describe(seed, lhs) + "\n---\n" + describe(seed + 2'100, rhs));
+
+		for (const bool project_out : {true, false}) {
+			const Nft raw{compose(
+				lhs, rhs, 1, 0, project_out, JumpMode::NoJump, CompositionMode::FastNoJump,
+				CompositionNormalization::None
+			)};
+			const Nft normalized{compose(
+				lhs, rhs, 1, 0, project_out, JumpMode::NoJump, CompositionMode::FastNoJump,
+				CompositionNormalization::GeneratedOnly
+			)};
+			INFO("project_out " << project_out);
+			REQUIRE(raw.levels.num_of_levels == normalized.levels.num_of_levels);
+			CHECK(normalized.num_of_states() <= raw.num_of_states());
+			CHECK(normalized.delta.num_of_transitions() <= raw.delta.num_of_transitions());
+			if (normalized.num_of_states() < raw.num_of_states()) { ++num_of_shrunk; }
+			for (const State state : normalized.initial) { CHECK(normalized.levels[state] == 0); }
+			for (const State state : normalized.final) { CHECK(normalized.levels[state] == 0); }
+
+			// Every tuple of words up to length 2, one word per level, is accepted by both or by neither.
+			const size_t num_of_levels{raw.levels.num_of_levels};
+			const std::vector<Word> words{all_level_words(num_of_symbols, 2, 1)};
+			std::vector<Word> tuple(num_of_levels);
+			std::vector<size_t> indices(num_of_levels, 0);
+			while (true) {
+				for (size_t level{0}; level < num_of_levels; ++level) { tuple[level] = words[indices[level]]; }
+				CHECK(raw.is_in_lang_by_levels(tuple) == normalized.is_in_lang_by_levels(tuple));
+				size_t level{0};
+				while (level < num_of_levels && ++indices[level] == words.size()) { indices[level++] = 0; }
+				if (level == num_of_levels) { break; }
+			}
+		}
+	}
+	CHECK(num_of_shrunk > 0);
+}
+
 // is_universal() carries the NFA antichain algorithm over unchanged: it demands a final state after
 //  every single symbol, while a transducer with n levels can only be final after a multiple of n
 //  symbols. On genuine multi-level transducers it therefore answers false even for the complete one
