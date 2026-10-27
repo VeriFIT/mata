@@ -227,6 +227,8 @@ Nft concatenate_eps(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE.
+ * @param[in] normalization Only @c CompositionNormalization::Full changes the result: the general composition
+ *  generates no states of its own for @c GeneratedOnly to rewrite.
  *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When the request is invalid; the same checks as @c nft::compose() runs, so calling
@@ -238,7 +240,8 @@ Nft compose_general(
 	const utils::OrdVector<Level>& lhs_sync_levels,
 	const utils::OrdVector<Level>& rhs_sync_levels,
 	bool project_out_sync_levels = true,
-	JumpMode jump_mode = JumpMode::RepeatSymbol
+	JumpMode jump_mode = JumpMode::RepeatSymbol,
+	CompositionNormalization normalization = CompositionNormalization::Auto
 );
 
 /**
@@ -256,6 +259,7 @@ Nft compose_general(
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
  * @param[in] rhs_sync_level The synchronization level of the @p rhs.
  * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
+ * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When a synchronization level is out of range for its operand, or when the
@@ -266,7 +270,8 @@ Nft compose_fast_no_jump(
 	const Nft& rhs,
 	Level lhs_sync_level = 1,
 	Level rhs_sync_level = 0,
-	bool project_out_sync_levels = true
+	bool project_out_sync_levels = true,
+	CompositionNormalization normalization = CompositionNormalization::Auto
 );
 
 } // namespace mata::nft::algorithms

@@ -2948,6 +2948,26 @@ TEST_CASE("mata::nft::compose_fast_no_jump()") {
 		const Nft composed_fast_no_jump{algorithms::compose_fast_no_jump(lhs, rhs, 0, 1)};
 		CHECK(are_equivalent(composed_normal, composed_fast_no_jump));
 	}
+
+	// The LHS waits on its synchronization level, its last one, while the one-level RHS moves on EPSILON; with the
+	//  synchronization level projected out, the move replaces the synchronization by no EPSILON, and the composer
+	//  used to assert on that.
+	SECTION("a one-level RHS moves on EPSILON while the LHS waits on its projected last level") {
+		const mata::Symbol x{7};
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{3, {0}, {2}, Levels(1, 3)};
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 2);
+		const Nft composed{algorithms::compose_fast_no_jump(lhs, rhs, 1, 0, true)};
+		CHECK(composed.levels.num_of_levels == 1);
+		CHECK(composed.is_in_lang_by_levels({mata::Word{x}}));
+		CHECK(!composed.is_in_lang_by_levels({mata::Word{}}));
+		CHECK(!composed.is_in_lang_by_levels({mata::Word{x, x}}));
+	}
 }
 
 TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #812)") {
@@ -3098,6 +3118,229 @@ TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #
 		reference.delta.add(4, a, 5);
 		reference.delta.add(5, b, 6);
 		check_shape(lhs, rhs, 0, 0, false, reference, 17, 16);
+	}
+}
+
+TEST_CASE("mata::nft::compose() normalization of the generated states (issue #815)") {
+	const mata::Symbol a{1};
+	const mata::Symbol b{2};
+	const mata::Symbol c{3};
+	const mata::Symbol d{4};
+	const mata::Symbol x{7};
+
+	const auto compose_with = [](const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level,
+								 const bool project_out_sync_levels, const CompositionNormalization normalization) {
+		return compose(
+			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, JumpMode::NoJump,
+			CompositionMode::FastNoJump, normalization
+		);
+	};
+	const auto check_same_relation = [](const Nft& raw, const Nft& normalized) {
+		REQUIRE(raw.levels.num_of_levels == normalized.levels.num_of_levels);
+		Nft raw_normalized{raw};
+		raw_normalized.trim();
+		raw_normalized.remove_epsilon();
+		Nft normalized_normalized{normalized};
+		normalized_normalized.trim();
+		normalized_normalized.remove_epsilon();
+		CHECK(are_equivalent(raw_normalized, normalized_normalized));
+	};
+
+	// The family of the issue: n fast EPSILON moves on both sides before the only tuple. The raw result is a
+	//  chain of whole-round EPSILON runs through padding states; closing them leaves the tuple alone.
+	SECTION("whole-round EPSILON runs of the EPSILON-prefix family close completely") {
+		const auto two_level = [](const State n, const mata::Symbol first, const mata::Symbol second) {
+			Nft nft{n + 3, {0}, {n + 2}, Levels(2, n + 3)};
+			nft.levels[n + 1] = 1;
+			for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+			nft.delta.add(n, first, n + 1);
+			nft.delta.add(n + 1, second, n + 2);
+			return nft;
+		};
+		const auto one_level = [](const State n, const mata::Symbol symbol) {
+			Nft nft{n + 2, {0}, {n + 1}, Levels(1, n + 2)};
+			for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+			nft.delta.add(n, symbol, n + 1);
+			return nft;
+		};
+		for (const State n : {State{16}, State{64}}) {
+			const Nft lhs{two_level(n, x, x)};
+			const Nft rhs{one_level(n, x)};
+			const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+			CHECK(raw.num_of_states() == 2 * n + 2);
+			CHECK(raw.delta.num_of_transitions() == 2 * n + 1);
+			const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+			CHECK(normalized.num_of_states() == 2);
+			CHECK(normalized.delta.num_of_transitions() == 1);
+			CHECK(normalized.is_in_lang_by_levels({mata::Word{x}}));
+			check_same_relation(raw, normalized);
+
+			// The 3-level variant keeps the synchronization level, so each run has two padding states. Without the
+			//  projection there is no trim either, so the n configurations that read x on the LHS before the RHS has
+			//  finished its EPSILON moves stay as dead ends.
+			const Nft rhs_two_level{two_level(n, x, b)};
+			const Nft raw_kept{compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::None)};
+			CHECK(raw_kept.num_of_states() == 7 * n + 4);
+			CHECK(raw_kept.delta.num_of_transitions() == 7 * n + 3);
+			Nft normalized_kept{compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::GeneratedOnly)};
+			CHECK(normalized_kept.num_of_states() == n + 4);
+			CHECK(normalized_kept.delta.num_of_transitions() == n + 3);
+			check_same_relation(raw_kept, normalized_kept);
+			normalized_kept.trim();
+			CHECK(normalized_kept.num_of_states() == 4);
+			CHECK(normalized_kept.delta.num_of_transitions() == 3);
+		}
+	}
+
+	// A forwarder into a final configuration: the source of the run takes over its finality.
+	SECTION("closing a run into a final state makes its source final") {
+		Nft lhs{2, {0}, {1}, Levels(2, 2)};
+		lhs.delta.add(0, EPSILON, 1);
+		const Nft rhs{1, {0}, {0}, Levels(1, 1)};
+		const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 2);
+		CHECK(raw.final.size() == 1);
+		CHECK(!raw.final.contains(*raw.initial.begin()));
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 1);
+		CHECK(normalized.delta.num_of_transitions() == 0);
+		CHECK(normalized.final.contains(*normalized.initial.begin()));
+		CHECK(normalized.is_in_lang_by_levels({mata::Word{}}));
+	}
+
+	// Negative: the run ends in the initial configuration, which stays initial; its source gets a copy of its
+	//  transitions, since the copy is smaller than the run it replaces.
+	SECTION("the end of a run stays when it is initial") {
+		Nft lhs{3, {0}, {0}, Levels(2, 3)};
+		lhs.levels[1] = 1;
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, EPSILON, 0);
+		Nft rhs{2, {0}, {0}, Levels(2, 2)};
+		rhs.levels[1] = 1;
+		rhs.delta.add(0, x, 1);
+		rhs.delta.add(1, b, 0);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 6);
+		CHECK(raw.delta.num_of_transitions() == 6);
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 4);
+		CHECK(normalized.delta.num_of_transitions() == 4);
+		REQUIRE(normalized.initial.size() == 1);
+		const State initial{*normalized.initial.begin()};
+		CHECK(normalized.final.contains(initial));
+		CHECK(!normalized.delta[initial].empty());
+		CHECK(normalized.is_in_lang_by_levels({mata::Word{a, a}, mata::Word{x, x}, mata::Word{b, b}}));
+		check_same_relation(raw, normalized);
+	}
+
+	// Negative: the generated waiting state inside the run also reads b, so the run is not EPSILON on every
+	//  level and nothing is closed.
+	SECTION("a run whose inner state branches stays") {
+		Nft lhs{3, {0}, {2}, Levels(2, 3)};
+		lhs.levels[1] = 1;
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(1, x, 2);
+		Nft rhs{8, {0}, {5, 7}, Levels(2, 8)};
+		for (const State state : {State{1}, State{4}, State{6}}) { rhs.levels[state] = 1; }
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, b, 2);
+		rhs.delta.add(1, EPSILON, 3);
+		rhs.delta.add(2, x, 4);
+		rhs.delta.add(4, c, 5);
+		rhs.delta.add(3, x, 6);
+		rhs.delta.add(6, d, 7);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 8);
+		CHECK(raw.delta.num_of_transitions() == 7);
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 8);
+		CHECK(normalized.delta.num_of_transitions() == 7);
+		check_same_relation(raw, normalized);
+	}
+
+	// Negative: the runs of an EPSILON cycle are left alone, and the normalization terminates.
+	SECTION("runs on an EPSILON cycle stay") {
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, EPSILON, 0);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{2, {0}, {1}, Levels(1, 2)};
+		rhs.delta.add(0, x, 1);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::None)};
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::GeneratedOnly)};
+		CHECK(raw.num_of_states() == 6);
+		CHECK(raw.delta.num_of_transitions() == 6);
+		CHECK(normalized.num_of_states() == raw.num_of_states());
+		CHECK(normalized.delta.num_of_transitions() == raw.delta.num_of_transitions());
+		CHECK(normalized.is_in_lang_by_levels({mata::Word{x}, mata::Word{x}}));
+	}
+
+	// Two initial configurations wait the same LHS state through the same RHS state, so their generated waiting
+	//  states read the same continuation and become one. The two initial configurations have the same transitions
+	//  then too, but they are configurations of the operands and stay.
+	SECTION("identical generated states merge, identical semantic states stay") {
+		Nft lhs{3, {0}, {2}, Levels(2, 3)};
+		lhs.levels[1] = 1;
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(1, x, 2);
+		Nft rhs{6, {0, 1}, {5}, Levels(2, 6)};
+		for (const State state : {State{2}, State{4}}) { rhs.levels[state] = 1; }
+		rhs.delta.add(0, EPSILON, 2);
+		rhs.delta.add(1, EPSILON, 2);
+		rhs.delta.add(2, c, 3);
+		rhs.delta.add(3, x, 4);
+		rhs.delta.add(4, d, 5);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 7);
+		CHECK(raw.delta.num_of_transitions() == 6);
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 6);
+		CHECK(normalized.delta.num_of_transitions() == 5);
+		const std::vector<State> initial(normalized.initial.begin(), normalized.initial.end());
+		REQUIRE(initial.size() == 2);
+		CHECK(normalized.delta[initial[0]] == normalized.delta[initial[1]]);
+		check_same_relation(raw, normalized);
+	}
+
+	SECTION("Full also runs the generic reductions") {
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		lhs.delta.add(0, x, 2);
+		Nft rhs{2, {0}, {1}, Levels(1, 2)};
+		rhs.delta.add(0, x, 1);
+		const Nft generated_only{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		const Nft full{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::Full)};
+		CHECK(full.num_of_states() <= generated_only.num_of_states());
+		CHECK(full.delta.num_of_transitions() <= generated_only.delta.num_of_transitions());
+		check_same_relation(generated_only, full);
+		const Nft general_full{
+			compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General, CompositionNormalization::Full)
+		};
+		check_same_relation(general_full, full);
+	}
+
+	// The general composition generates no states of its own.
+	SECTION("GeneratedOnly leaves the general composition as constructed") {
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{2, {0}, {1}, Levels(1, 2)};
+		rhs.delta.add(0, x, 1);
+		const Nft raw{
+			compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General, CompositionNormalization::None)
+		};
+		const Nft normalized{compose(
+			lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General, CompositionNormalization::GeneratedOnly
+		)};
+		CHECK(raw.is_identical(normalized));
 	}
 }
 

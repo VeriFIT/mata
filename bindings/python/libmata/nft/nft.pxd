@@ -28,6 +28,12 @@ cdef extern from "mata/nft/types.hh" namespace "mata::nft":
         CompositionModeFastNoJump "mata::nft::CompositionMode::FastNoJump"
         CompositionModeAuto "mata::nft::CompositionMode::Auto"
 
+    cdef enum CCompositionNormalization "mata::nft::CompositionNormalization":
+        CompositionNormalizationNone "mata::nft::CompositionNormalization::None"
+        CompositionNormalizationGeneratedOnly "mata::nft::CompositionNormalization::GeneratedOnly"
+        CompositionNormalizationFull "mata::nft::CompositionNormalization::Full"
+        CompositionNormalizationAuto "mata::nft::CompositionNormalization::Auto"
+
     cdef const Symbol CNFT_EPSILON "mata::nft::EPSILON"
     cdef const Symbol CDONT_CARE "mata::nft::DONT_CARE"
     cdef const size_t CDEFAULT_NUM_OF_LEVELS "mata::nft::DEFAULT_NUM_OF_LEVELS"
@@ -189,7 +195,8 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
         CNft&, CNft&, umap[pair[State, State], State, CPairHash[State, State]]*, CJumpMode, State, State
     ) except +
     cdef CNft c_compose "mata::nft::compose" (
-        CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool, CJumpMode, CCompositionMode
+        CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool, CJumpMode, CCompositionMode,
+        CCompositionNormalization
     ) except +
     cdef shared_ptr[CAlphabetLevels] c_compose_alphabets "mata::nft::compose_alphabets" (
         CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool

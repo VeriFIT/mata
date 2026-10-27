@@ -27,6 +27,14 @@ class CompositionMode(IntEnum):
     FastNoJump = 1
     Auto = 2
 
+class CompositionNormalization(IntEnum):
+    """How `compose()` normalizes its result; every mode keeps the relation and the level of every state."""
+
+    None_ = 0
+    GeneratedOnly = 1
+    Full = 2
+    Auto = 3
+
 class Levels:
     """Wrapper over the per-state levels of an NFT (`mata::nft::Levels`)."""
     def __init__(
@@ -361,6 +369,7 @@ def compose(
     project_out_sync_levels: bool = True,
     jump_mode: JumpMode = JumpMode.RepeatSymbol,
     composition_mode: CompositionMode = CompositionMode.Auto,
+    normalization: CompositionNormalization = CompositionNormalization.Auto,
 ) -> Nft:
     """Compose `lhs` and `rhs` by aligning their synchronization levels."""
 

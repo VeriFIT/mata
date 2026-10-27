@@ -11,6 +11,8 @@
 #include <ranges>
 #include <stdexcept>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
@@ -419,6 +421,445 @@ void validate_composition_request(
 	check_sync_levels(caller, "rhs", rhs, rhs_sync_levels);
 	check_result_num_of_levels(caller, lhs, rhs, lhs_sync_levels.size(), project_out_sync_levels);
 }
+
+/// Why the fast composer created a result state. Both normalization rules treat the generated kinds alike.
+enum class GeneratedKind : uint8_t {
+	Semantic, ///< A configuration of the two operands. No normalization rule eliminates it.
+	Padding, ///< An inner state of an EPSILON chain padding a one-sided move to a whole round.
+	ProjectedBridge, ///< An inner state of the EPSILON chain replacing an EPSILON synchronization while waiting.
+	Waiting, ///< A state of the waiting loop over a stationary operand state.
+};
+
+/**
+ * @brief What the fast composer records about its result, for the normalization of the result.
+ *
+ * The builder keeps these invariants: a generated state has a nonzero level, it is neither initial nor final, and
+ *  it gets an incoming transition when it is created. @c in_degree of a state is at least the number of its
+ *  incoming transitions: every insertion of a target counts, a repeated one too, which only makes the
+ *  normalization more conservative.
+ */
+struct GeneratedStates {
+	std::vector<GeneratedKind> kind{}; ///< Indexed by state; the states past its end are @c Semantic.
+	/// Indexed by state; the states past its end have none. An eliminated generated state has 0.
+	std::vector<State> in_degree{};
+	std::vector<State> states{}; ///< The generated states in the order of their creation.
+	std::vector<State> epsilon_sources{}; ///< Zero-level states that got an EPSILON transition, possibly repeated.
+
+	void add(const State state, const GeneratedKind generated_kind) {
+		MATA_ASSERT(generated_kind != GeneratedKind::Semantic);
+		if (state >= kind.size()) { kind.resize(state + 1, GeneratedKind::Semantic); }
+		kind[state] = generated_kind;
+		states.push_back(state);
+	}
+
+	bool is_generated(const State state) const { return state < kind.size() && kind[state] != GeneratedKind::Semantic; }
+
+	State in_degree_of(const State state) const { return state < in_degree.size() ? in_degree[state] : 0; }
+
+	/// Count one more incoming transition of each of @p targets.
+	void link(const SmallStateSet& targets) {
+		if (const State max_target{targets.back()}; max_target >= in_degree.size()) {
+			in_degree.resize(std::max<size_t>(max_target + 1, in_degree.size() * 2), 0);
+		}
+		for (const State target : targets) { ++in_degree[target]; }
+	}
+};
+
+/// A whole-round EPSILON run: @c source -EPSILON-> @c head -EPSILON-> ... -EPSILON-> @c end, with zero-level
+///  @c source and @c end and generated inner states, each with exactly one incoming and one outgoing transition.
+///  In a one-level result, @c head is @c end and there are no inner states.
+struct EpsilonRound {
+	State source;
+	State head;
+	State end;
+};
+
+/**
+ * @brief Normalizes the result of the fast composer on the states it generated.
+ *
+ * Rule "close a whole-round EPSILON run": the zero-level source of an @c EpsilonRound takes over the outgoing
+ *  transitions and the finality of the run's end, and the run's transitions and inner states go away.
+ *  Invariant: the run reads EPSILON on every level, so the source accepts after it exactly what the end accepts,
+ *  and the inner states are reachable through the run only, so nothing else loses them. If the run is the only way
+ *  into a non-initial end, the end's transitions move to the source and the end is left unreachable; otherwise the
+ *  source gets a copy, and the run is closed only if the copy does not outgrow the run. The runs are closed in
+ *  reverse topological order, so the transitions an end hands over are final; the runs inside nontrivial strongly
+ *  connected components (EPSILON cycles), and the runs into them, are left unchanged.
+ *
+ * Rule "merge identical generated states": generated states of the same level whose outgoing transitions are the
+ *  same, after the targets merged already are replaced by their representatives, become one state. Invariant: such
+ *  states are neither initial nor final and read the same continuations of the same tuples, so redirecting their
+ *  incoming transitions to the representative keeps the relation and the level of every remaining state. The rule
+ *  runs after the construction ends, when every state is complete, from the last level down, so the targets of a
+ *  state are merged before the state is compared.
+ *
+ * Neither rule eliminates a @c GeneratedKind::Semantic state, it can only leave one unreachable. The compaction
+ *  removes the eliminated states and those, or, if the result is to be trimmed anyway, every useless state.
+ */
+class GeneratedStatesNormalizer {
+  public:
+	GeneratedStatesNormalizer(Nft& result, GeneratedStates& generated) : result_{result}, generated_{generated} {}
+
+	void run(const bool trim_result) {
+		close_epsilon_rounds();
+		merge_identical_states();
+		compact(trim_result);
+	}
+
+  private:
+	struct Node {
+		State state;
+		State low_link;
+		size_t rounds_begin;
+		size_t rounds_end;
+		bool on_stack;
+		bool in_cycle;
+	};
+
+	Nft& result_;
+	GeneratedStates& generated_;
+	size_t num_of_closed_rounds_{0};
+	std::vector<State> dead_ends_{}; ///< The zero-level ends of closed runs that lost their only predecessor.
+	/// The representative of each merged generated state; @c Limits::max_state for the others.
+	std::vector<State> representative_{};
+	size_t num_of_merged_states_{0};
+
+	/// The zero-level end of the whole-round EPSILON run entered by an EPSILON transition to @p head, or
+	///  @c Limits::max_state if an inner state is not a generated state with exactly one incoming and one outgoing
+	///  transition, both over EPSILON.
+	State end_of_private_epsilon_round(const State head) const {
+		State state{head};
+		while (result_.levels[state] != 0) {
+			if (!generated_.is_generated(state) || generated_.in_degree_of(state) != 1) { return Limits::max_state; }
+			const StatePost& state_post{result_.delta[state]};
+			if (state_post.size() != 1 || state_post.front().symbol != EPSILON ||
+				state_post.front().targets.size() != 1) {
+				return Limits::max_state;
+			}
+			const State next{state_post.front().targets.front()};
+			// No jumps: the levels increase by one until the run wraps around to level 0, so the walk ends.
+			MATA_ASSERT(result_.levels[next] == 0 || result_.levels[next] == result_.levels[state] + 1);
+			state = next;
+		}
+		return state;
+	}
+
+	void collect_rounds(const State source, std::vector<EpsilonRound>& rounds) const {
+		const StatePost& state_post{result_.delta[source]};
+		// EPSILON is the greatest symbol.
+		if (state_post.empty() || state_post.back().symbol != EPSILON) { return; }
+		for (const State head : state_post.back().targets) {
+			if (const State end{end_of_private_epsilon_round(head)}; end != Limits::max_state) {
+				rounds.push_back({source, head, end});
+			}
+		}
+	}
+
+	/// Tarjan's algorithm over the graph of the runs: it finishes the components in reverse topological order,
+	///  which is the order in which the runs can be closed, and a run never waits for its own cycle.
+	void close_epsilon_rounds() {
+		if (generated_.epsilon_sources.empty()) { return; }
+		// A node is identified by its index in `nodes`, which is also its Tarjan index.
+		std::vector<State> node_of(result_.num_of_states(), Limits::max_state);
+		std::vector<Node> nodes{};
+		std::vector<EpsilonRound> rounds{};
+		std::vector<State> component_stack{};
+		std::vector<std::pair<State, size_t>> call_stack{}; // A node and its next round to follow.
+
+		const auto visit = [&](const State state) {
+			const auto node{static_cast<State>(nodes.size())};
+			const size_t rounds_begin{rounds.size()};
+			collect_rounds(state, rounds);
+			nodes.push_back(Node{state, node, rounds_begin, rounds.size(), true, false});
+			node_of[state] = node;
+			component_stack.push_back(node);
+			call_stack.emplace_back(node, rounds_begin);
+		};
+
+		for (const State source : generated_.epsilon_sources) {
+			if (node_of[source] != Limits::max_state) { continue; }
+			visit(source);
+			while (!call_stack.empty()) {
+				const State node{call_stack.back().first};
+				if (const size_t round_index{call_stack.back().second}; round_index < nodes[node].rounds_end) {
+					++call_stack.back().second;
+					const State end{rounds[round_index].end};
+					if (const State end_node{node_of[end]}; end_node == Limits::max_state) {
+						visit(end);
+					} else if (nodes[end_node].on_stack) {
+						nodes[node].low_link = std::min(nodes[node].low_link, end_node);
+					}
+					continue;
+				}
+				call_stack.pop_back();
+				if (!call_stack.empty()) {
+					State& parent_low_link{nodes[call_stack.back().first].low_link};
+					parent_low_link = std::min(parent_low_link, nodes[node].low_link);
+				}
+				if (nodes[node].low_link != node) { continue; }
+
+				// `node` is the root of a finished component, the top of the stack down to it.
+				const auto component_begin{
+					std::ranges::find(component_stack.rbegin(), component_stack.rend(), node).base() - 1
+				};
+				const auto node_rounds{std::ranges::subrange(
+					rounds.begin() + static_cast<std::ptrdiff_t>(nodes[node].rounds_begin),
+					rounds.begin() + static_cast<std::ptrdiff_t>(nodes[node].rounds_end)
+				)};
+				const bool in_cycle{
+					component_stack.end() - component_begin > 1 ||
+					std::ranges::any_of(node_rounds, [&](const EpsilonRound& round) {
+						return round.end == nodes[node].state;
+					})
+				};
+				for (auto member_it{component_begin}; member_it != component_stack.end(); ++member_it) {
+					Node& member{nodes[*member_it]};
+					member.on_stack = false;
+					member.in_cycle = in_cycle;
+				}
+				if (!in_cycle) {
+					for (size_t i{nodes[node].rounds_begin}; i < nodes[node].rounds_end; ++i) {
+						if (!nodes[node_of[rounds[i].end]].in_cycle) { close_round(rounds[i]); }
+					}
+				}
+				component_stack.erase(component_begin, component_stack.end());
+			}
+		}
+	}
+
+	void close_round(const EpsilonRound& round) {
+		MATA_ASSERT(round.source != round.end);
+		MATA_ASSERT(end_of_private_epsilon_round(round.head) == round.end);
+		size_t num_of_inner_states{0};
+		for (State state{round.head}; state != round.end; state = result_.delta[state].front().targets.front()) {
+			++num_of_inner_states;
+		}
+		// The end dies with the run iff the run is its only way in; its transitions then move to the source.
+		const bool end_dies{generated_.in_degree_of(round.end) == 1 && !result_.initial.contains(round.end)};
+		if (!end_dies) {
+			// Otherwise the source gets a copy of them, which must not grow the result.
+			size_t num_of_copied{0};
+			for (const SymbolPost& symbol_post : result_.delta[round.end]) {
+				num_of_copied += symbol_post.targets.size();
+			}
+			const size_t num_of_removed{num_of_inner_states + 1};
+			if (num_of_copied > num_of_removed || (num_of_copied == num_of_removed && num_of_inner_states == 0)) {
+				return;
+			}
+		}
+
+		StatePost& source_post{result_.delta.mutable_state_post(round.source)};
+		MATA_ASSERT(!source_post.empty() && source_post.back().symbol == EPSILON);
+		source_post.back().targets.erase(round.head);
+		if (source_post.back().targets.empty()) { source_post.erase(std::prev(source_post.end())); }
+		for (State state{round.head}; state != round.end;) {
+			MATA_ASSERT(generated_.is_generated(state), "No rule eliminates a semantic state.");
+			StatePost& state_post{result_.delta.mutable_state_post(state)};
+			const State next{state_post.front().targets.front()};
+			state_post.clear();
+			generated_.in_degree[state] = 0;
+			state = next;
+		}
+		--generated_.in_degree[round.end];
+		if (end_dies) { dead_ends_.push_back(round.end); }
+
+		take_over_post(round.source, round.end, end_dies);
+		if (result_.final.contains(round.end)) { result_.final.insert(round.source); }
+		++num_of_closed_rounds_;
+	}
+
+	/// Add the transitions of @p from to @p to, merging the two posts in one pass; with @p move, @p from loses them.
+	void take_over_post(const State to, const State from, const bool move) {
+		if (from >= result_.delta.num_of_states() || result_.delta[from].empty()) { return; }
+		// Neither call grows the delta: `to` had an EPSILON transition, `from` has some transition.
+		StatePost& to_post{result_.delta.mutable_state_post(to)};
+		StatePost& from_post{result_.delta.mutable_state_post(from)};
+		if (!move) {
+			for (const SymbolPost& symbol_post : from_post) { generated_.link(symbol_post.targets); }
+		}
+		if (to_post.empty() && move) {
+			to_post = std::move(from_post);
+		} else if (to_post.empty()) {
+			to_post = from_post;
+		} else {
+			std::vector<SymbolPost> merged{};
+			merged.reserve(to_post.size() + from_post.size());
+			auto to_it{to_post.begin()};
+			auto from_it{from_post.begin()};
+			while (to_it != to_post.end() || from_it != from_post.end()) {
+				if (from_it == from_post.end() || (to_it != to_post.end() && to_it->symbol < from_it->symbol)) {
+					merged.push_back(std::move(*to_it++));
+				} else if (to_it == to_post.end() || from_it->symbol < to_it->symbol) {
+					merged.push_back(move ? std::move(*from_it++) : *from_it++);
+				} else {
+					to_it->targets.insert(from_it->targets);
+					merged.push_back(std::move(*to_it++));
+					++from_it;
+				}
+			}
+			to_post = StatePost{utils::sorted_unique, std::move(merged)};
+		}
+		if (move) { from_post.clear(); }
+	}
+
+	struct FlatPostHash {
+		size_t operator()(const std::vector<State>& flat_post) const {
+			size_t hash{flat_post.size()};
+			for (const State value : flat_post) {
+				hash ^= std::hash<State>{}(value) + 0x9e'37'79'b9'7f'4a'7c'15ULL + (hash << 6) + (hash >> 2);
+			}
+			return hash;
+		}
+	};
+
+	State representative_of(const State state) const {
+		if (!generated_.is_generated(state) || representative_.empty()) { return state; }
+		const State representative{representative_[state]};
+		return representative == Limits::max_state ? state : representative;
+	}
+
+	void merge_identical_states() {
+		const size_t num_of_levels{result_.levels.num_of_levels};
+		if (num_of_levels < 2) { return; }
+		// Bucket the live generated states by level.
+		std::vector<size_t> level_begin(num_of_levels + 1, 0);
+		for (const State state : generated_.states) {
+			if (generated_.in_degree_of(state) != 0) { ++level_begin[result_.levels[state] + 1]; }
+		}
+		for (size_t level{1}; level <= num_of_levels; ++level) { level_begin[level] += level_begin[level - 1]; }
+		if (level_begin[num_of_levels] < 2) { return; }
+		std::vector<State> by_level(level_begin[num_of_levels]);
+		{
+			std::vector<size_t> position{level_begin.begin(), level_begin.end() - 1};
+			for (const State state : generated_.states) {
+				if (generated_.in_degree_of(state) != 0) { by_level[position[result_.levels[state]]++] = state; }
+			}
+		}
+
+		representative_.assign(result_.num_of_states(), Limits::max_state);
+		// Most generated states forward one symbol to one target: those are grouped by sorting, the rest by hashing.
+		struct SingleTransition {
+			Symbol symbol;
+			State target;
+			State state;
+			auto operator<=>(const SingleTransition&) const = default;
+		};
+		std::vector<SingleTransition> single_transitions{};
+		std::unordered_map<std::vector<State>, State, FlatPostHash> by_flat_post{};
+		std::vector<State> flat_post{};
+		const auto merge{[&](const State state, const State representative) {
+			if (representative == state) { return; }
+			representative_[state] = representative;
+			++num_of_merged_states_;
+		}};
+		for (size_t level{num_of_levels - 1}; level >= 1; --level) {
+			single_transitions.clear();
+			by_flat_post.clear();
+			for (size_t i{level_begin[level]}; i < level_begin[level + 1]; ++i) {
+				const State state{by_level[i]};
+				MATA_ASSERT(!result_.initial.contains(state) && !result_.final.contains(state));
+				const StatePost& state_post{result_.delta[state]};
+				if (state_post.size() == 1 && state_post.front().targets.size() == 1) {
+					single_transitions.push_back(
+						{state_post.front().symbol, representative_of(state_post.front().targets.front()), state}
+					);
+					continue;
+				}
+				flat_post.clear();
+				for (const SymbolPost& symbol_post : state_post) {
+					flat_post.push_back(symbol_post.symbol);
+					flat_post.push_back(static_cast<State>(symbol_post.targets.size()));
+					const size_t targets_begin{flat_post.size()};
+					for (const State target : symbol_post.targets) { flat_post.push_back(representative_of(target)); }
+					std::sort(flat_post.begin() + static_cast<std::ptrdiff_t>(targets_begin), flat_post.end());
+				}
+				// Targets merged into one representative are counted twice, which only misses a merge.
+				merge(state, by_flat_post.try_emplace(flat_post, state).first->second);
+			}
+			// The smallest state of a group represents it.
+			std::ranges::sort(single_transitions);
+			for (size_t group_begin{0}, i{0}; i < single_transitions.size(); ++i) {
+				const SingleTransition& transition{single_transitions[i]};
+				const SingleTransition& first{single_transitions[group_begin]};
+				if (transition.symbol != first.symbol || transition.target != first.target) {
+					group_begin = i;
+				} else {
+					merge(transition.state, first.state);
+				}
+			}
+		}
+	}
+
+	/// Point every transition into a merged state at its representative.
+	void redirect_to_representatives() {
+		for (State source{0}; source < result_.delta.num_of_states(); ++source) {
+			for (SymbolPost& symbol_post : result_.delta.mutable_state_post(source)) {
+				bool redirected{false};
+				for (State& target : symbol_post.targets) {
+					if (const State representative{representative_of(target)}; representative != target) {
+						target = representative;
+						redirected = true;
+					}
+				}
+				if (redirected) { symbol_post.targets.sort_and_rmdupl(); }
+			}
+		}
+	}
+
+	/// Remove the eliminated states: the inner states of the closed runs, the ends that died, and the merged states.
+	///  With @p trim_result, the useless states too, which include all the eliminated ones, as nothing reaches them.
+	void compact(const bool trim_result) {
+		if (num_of_merged_states_ > 0) { redirect_to_representatives(); }
+		if (trim_result) {
+			result_.trim();
+			return;
+		}
+		if (num_of_closed_rounds_ == 0 && num_of_merged_states_ == 0) { return; }
+
+		const size_t num_of_states{result_.num_of_states()};
+		BoolVector staying(num_of_states, true);
+		for (const State state : generated_.states) {
+			if (generated_.in_degree_of(state) == 0 || representative_of(state) != state) { staying[state] = false; }
+		}
+		for (const State state : dead_ends_) { staying[state] = false; }
+		std::vector<State> renaming(num_of_states, Limits::max_state);
+		for (State state{0}, num_of_staying{0}; state < num_of_states; ++state) {
+			if (staying[state]) { renaming[state] = num_of_staying++; }
+		}
+		result_.delta.allocate(num_of_states);
+		result_.delta.defragment(staying, renaming);
+		State moved{0};
+		// `levels` may hold more entries than there are states.
+		result_.levels.erase(
+			std::ranges::remove_if(
+				result_.levels,
+				[&](Level&) {
+					const State state{moved++};
+					return state >= num_of_states || !staying[state];
+				}
+			).begin(),
+			result_.levels.end()
+		);
+		const auto is_staying{[&](const State state) { return static_cast<bool>(staying[state]); }};
+		const auto rename{[&](const State state) { return renaming[state]; }};
+		result_.initial.filter(is_staying);
+		result_.final.filter(is_staying);
+		result_.initial.rename(rename);
+		result_.final.rename(rename);
+		result_.initial.truncate();
+		result_.final.truncate();
+	}
+};
+
+/// The generic part of @c CompositionNormalization::Full, run after the composer's own normalization.
+void normalize_fully(Nft& result, const JumpMode jump_mode) {
+	std::shared_ptr<AlphabetLevels> alphabets{result.alphabets};
+	// `remove_epsilon()` takes every transition for one level long.
+	if (jump_mode == JumpMode::NoJump) { result = remove_epsilon(result); }
+	result.trim();
+	result = reduce(result);
+	result.alphabets = std::move(alphabets);
+}
 } // namespace
 
 std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
@@ -489,7 +930,8 @@ Nft compose(
 	const utils::OrdVector<Level>& rhs_sync_levels,
 	const bool project_out_sync_levels,
 	const JumpMode jump_mode,
-	const CompositionMode composition_mode
+	const CompositionMode composition_mode,
+	const CompositionNormalization normalization
 ) {
 	validate_composition_request("compose", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
 	switch (composition_mode) {
@@ -503,19 +945,19 @@ Nft compose(
 				);
 			}
 			return algorithms::compose_fast_no_jump(
-				lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels
+				lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels, normalization
 			);
 		case CompositionMode::Auto:
 			if (jump_mode == JumpMode::NoJump && lhs_sync_levels.size() == 1) {
 				return algorithms::compose_fast_no_jump(
-					lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels
+					lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels, normalization
 				);
 			}
 			[[fallthrough]];
 		case CompositionMode::General:
 		default:
 			return algorithms::compose_general(
-				lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode
+				lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode, normalization
 			);
 	}
 }
@@ -523,14 +965,16 @@ Nft compose(
 namespace algorithms {
 namespace {
 /// The body of @c compose_fast_no_jump(), with the EPSILON-composition filter compiled in only when @p UseFilter is
-/// set; the inputs are validated by the caller.
+/// set; the inputs are validated by the caller. With @p normalize_generated, the builder records the states it
+/// generates and normalizes the result on them (@c CompositionNormalization::GeneratedOnly).
 template <bool UseFilter>
 Nft compose_fast_no_jump_with(
 	const Nft& lhs,
 	const Nft& rhs,
 	const Level lhs_sync_level,
 	const Level rhs_sync_level,
-	const bool project_out_sync_levels
+	const bool project_out_sync_levels,
+	const bool normalize_generated
 ) {
 	// Number of Levels and States.
 	const size_t lhs_num_of_states = lhs.num_of_states();
@@ -565,6 +1009,7 @@ Nft compose_fast_no_jump_with(
 		}
 	}};
 	std::unordered_map<State, State> waiting_state_storage;
+	GeneratedStates generated{};
 
 	// I use a queue for the worklist to process states in a breadth-first manner.
 	// This helps the branch prediction in the CPU because all processed states
@@ -579,6 +1024,12 @@ Nft compose_fast_no_jump_with(
 	 */
 	auto insert_symbol_post_to_delta = [&](const State source, const SymbolPost& symbol_post) {
 		MATA_ASSERT(not symbol_post.targets.empty());
+		if (normalize_generated) {
+			if (symbol_post.symbol == EPSILON && result.levels[source] == 0) {
+				generated.epsilon_sources.push_back(source);
+			}
+			generated.link(symbol_post.targets);
+		}
 		auto& mutable_state_post = result.delta.mutable_state_post(source);
 		if (const auto symbol_post_it = mutable_state_post.find(symbol_post.symbol);
 			symbol_post_it != mutable_state_post.end()) {
@@ -601,15 +1052,18 @@ Nft compose_fast_no_jump_with(
 	 *
 	 * @param source The source state from which the EPSILON transitions will start.
 	 * @param common_path_length The length of the EPSILON transition chain to create.
+	 * @param kind Why the chain is created.
 	 * @return The last state in the created EPSILON transition chain.
 	 */
-	auto create_epsilon_transition_with_common_path = [&](const State source, const size_t common_path_length) {
+	auto create_epsilon_transition_with_common_path = [&](const State source, const size_t common_path_length,
+														  const GeneratedKind kind = GeneratedKind::Padding) {
 		MATA_ASSERT(source < result.num_of_states());
 		State current_source = source;
 		Level current_level = result.levels[current_source];
 		for (size_t i = 0; i < common_path_length; ++i) {
 			SymbolPost symbol_post{EPSILON};
 			const State new_composition_state = result.add_state_with_level(++current_level);
+			if (normalize_generated) { generated.add(new_composition_state, kind); }
 			MATA_ASSERT(current_level < result.levels.num_of_levels);
 			symbol_post.push_back(new_composition_state);
 			insert_symbol_post_to_delta(current_source, symbol_post);
@@ -927,6 +1381,7 @@ Nft compose_fast_no_jump_with(
 							new_composition_state = it->second;
 						} else {
 							new_composition_state = result.add_state_with_level(new_composition_state_level);
+							if (normalize_generated) { generated.add(new_composition_state, GeneratedKind::Waiting); }
 							waiting_state_storage.emplace(copy_target, new_composition_state);
 							waiting_worklist->push({new_composition_state, copy_target});
 						}
@@ -1005,7 +1460,9 @@ Nft compose_fast_no_jump_with(
 		// we can and need to simply add EPSILON transitions to the targets
 		// of the EPSILON transitions from the running root state.
 		if (running_num_of_levels == 1) {
-			MATA_ASSERT(num_of_epsilons_to_replace_sync > 0);
+			// The EPSILON move of a one-level operand is a whole round of EPSILON in the result, however many
+			//  EPSILONs would replace a synchronization elsewhere; none, e.g., when the LHS waits on its last
+			//  level, which is the projected synchronization level.
 			const auto epsilon_target_it = running_delta[running_root_state].find(EPSILON);
 			// There has to be some EPSILON transition. Otherwise, there would be no reason to wait.
 			MATA_ASSERT(epsilon_target_it != running_delta[running_root_state].end());
@@ -1071,7 +1528,7 @@ Nft compose_fast_no_jump_with(
 					// we can add N-1 EPSILON transitions now, and then use the last one to connect
 					// to the adequate target state, where N is num_of_epsilons_to_replace_sync.
 					composition_state = create_epsilon_transition_with_common_path(
-						composition_state, num_of_epsilons_to_replace_sync - 1
+						composition_state, num_of_epsilons_to_replace_sync - 1, GeneratedKind::ProjectedBridge
 					);
 				}
 
@@ -1120,6 +1577,7 @@ Nft compose_fast_no_jump_with(
 							new_composition_state = it->second;
 						} else {
 							new_composition_state = result.add_state_with_level(result.levels[composition_state] + 1);
+							if (normalize_generated) { generated.add(new_composition_state, GeneratedKind::Waiting); }
 							waiting_state_storage.emplace(running_epsilon_target, new_composition_state);
 							worklist.push({new_composition_state, running_epsilon_target});
 						}
@@ -1394,8 +1852,13 @@ Nft compose_fast_no_jump_with(
 		}
 	}
 
-	// TODO: Make trim on demand.
-	if (project_out_sync_levels) { result.trim(); }
+	if (normalize_generated) {
+		// One compaction serves both the normalization and the trim.
+		GeneratedStatesNormalizer{result, generated}.run(project_out_sync_levels);
+	} else if (project_out_sync_levels) {
+		// TODO: Make trim on demand.
+		result.trim();
+	}
 
 	result.alphabets = compose_alphabets(
 		lhs, rhs, OrdVector<Level>{lhs_sync_level}, OrdVector<Level>{rhs_sync_level}, project_out_sync_levels
@@ -1411,7 +1874,8 @@ Nft algorithms::compose_fast_no_jump(
 	const Nft& rhs,
 	const Level lhs_sync_level,
 	const Level rhs_sync_level,
-	const bool project_out_sync_levels
+	const bool project_out_sync_levels,
+	const CompositionNormalization normalization
 ) {
 	check_sync_level_in_range("compose_fast_no_jump", "lhs", lhs, lhs_sync_level);
 	check_sync_level_in_range("compose_fast_no_jump", "rhs", rhs, rhs_sync_level);
@@ -1445,10 +1909,20 @@ Nft algorithms::compose_fast_no_jump(
 
 	// The filter switches only on a silent move of the RHS alone. Without one it keeps every configuration in the
 	//  LHS_MAY_MOVE_ALONE mode and refuses nothing, so the composition runs without its bookkeeping.
-	if (can_move_alone_silently(rhs)) {
-		return compose_fast_no_jump_with<true>(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels);
-	}
-	return compose_fast_no_jump_with<false>(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels);
+	const bool normalize_generated{
+		normalization == CompositionNormalization::GeneratedOnly || normalization == CompositionNormalization::Full
+	};
+	Nft result{
+		can_move_alone_silently(rhs)
+			? compose_fast_no_jump_with<true>(
+				  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+			  )
+			: compose_fast_no_jump_with<false>(
+				  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+			  )
+	};
+	if (normalization == CompositionNormalization::Full) { normalize_fully(result, JumpMode::NoJump); }
+	return result;
 }
 
 Nft algorithms::compose_general(
@@ -1457,7 +1931,8 @@ Nft algorithms::compose_general(
 	const OrdVector<Level>& lhs_sync_levels,
 	const OrdVector<Level>& rhs_sync_levels,
 	bool project_out_sync_levels,
-	const JumpMode jump_mode
+	const JumpMode jump_mode,
+	const CompositionNormalization normalization
 ) {
 	validate_composition_request(
 		"compose_general", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
@@ -1567,6 +2042,8 @@ Nft algorithms::compose_general(
 	}
 
 	result.alphabets = compose_alphabets(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
+	// The general composer generates no states of its own, so only `Full` has anything to do.
+	if (normalization == CompositionNormalization::Full) { normalize_fully(result, jump_mode); }
 
 	return result;
 }

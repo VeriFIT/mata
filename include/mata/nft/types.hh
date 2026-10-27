@@ -69,6 +69,29 @@ enum class CompositionMode {
 	Auto ///< Automatically select the best composition mode based on the parameters.
 };
 
+/**
+ * How @c compose() normalizes its result after the construction.
+ *
+ * Every mode keeps the relation and the level of every state; state numbering is not part of the contract, and
+ *  neither is the placement of EPSILON, which @c are_equivalent() reads as a letter.
+ */
+enum class CompositionNormalization {
+	None, ///< Return the result as constructed (trimmed when the synchronization levels are projected out).
+	/// Rewrite only the states the fast composer generated itself (EPSILON padding, bridges over a replaced
+	///  synchronization, and waiting states): close the whole-round EPSILON runs through generated states with exactly
+	///  one incoming and one outgoing transition, outside EPSILON cycles and where the result does not grow, then
+	///  merge generated states of the same level with the same outgoing transitions. Near-linear in the generated
+	///  states and their transitions. The general composition generates no such states and is left as constructed.
+	GeneratedOnly,
+	/// @c GeneratedOnly, then the generic @c remove_epsilon() (with @c JumpMode::NoJump only, as it reads every
+	///  transition as one level long), @c Nft::trim() and simulation-based @c reduce(). Far more expensive than the
+	///  composition itself; only for callers who want the smallest result.
+	Full,
+	/// @c None: @c GeneratedOnly costs more in the composition than it saves in a following composition on the
+	///  transducers of string constraints, whose results it shrinks by a few percent.
+	Auto
+};
+
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
