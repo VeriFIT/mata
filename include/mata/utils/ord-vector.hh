@@ -176,8 +176,6 @@ template <class Key> class OrdVector {
 	std::pair<iterator, bool> insert(const Key& x) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
-		reserve_on_insert(vec_);
-
 		// Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
@@ -234,8 +232,6 @@ template <class Key> class OrdVector {
 	 */
 	std::pair<iterator, bool> insert(Key&& x) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
-
-		reserve_on_insert(vec_);
 
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
