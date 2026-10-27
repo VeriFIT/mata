@@ -13,12 +13,19 @@ from libmata.nfa.nfa cimport CNfa, CTrans, State, StateSet
 from libmata.nft.nft cimport CNft
 from libmata.alphabets cimport CAlphabet, Symbol
 
+cdef extern from "mata/applications/strings.hh" namespace "mata::applications::strings::seg_nfa":
+    cdef cppclass CNoodleSegment "mata::applications::strings::seg_nfa::NoodleSegment":
+        shared_ptr[const CNfa] automaton
+        State initial
+        CNfa to_nfa() except +
+
 # Pure Cython-side aliases (no corresponding "using" declaration in the C++ header to bind against), so these must
 #  live outside any `cdef extern from` block.
 ctypedef vector[unsigned] CVisitedEpsilonsCounterVector
 ctypedef cmap[Symbol, unsigned] CVisitedEpsilonsCounterMap
-ctypedef pair[shared_ptr[CNfa], CVisitedEpsilonsCounterVector] CSegmentWithEpsilonsCounter
+ctypedef pair[CNoodleSegment, CVisitedEpsilonsCounterVector] CSegmentWithEpsilonsCounter
 ctypedef vector[CSegmentWithEpsilonsCounter] CNoodleWithEpsilonsCounter
+ctypedef vector[CNoodleSegment] CNoodle
 
 cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     ctypedef umap[string, string] ParameterMap
@@ -48,11 +55,11 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
         const vector[CNfa]& get_untrimmed_segments() except +
 
     # The noodlify entry points run without the GIL; see the note on the plumbing externs in nfa.pxd.
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodlify "mata::applications::strings::seg_nfa::noodlify" \
+    cdef vector[CNoodle] c_noodlify "mata::applications::strings::seg_nfa::noodlify" \
         (CNfa&, Symbol, bool) except + nogil
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_mult_eps \
         "mata::applications::strings::seg_nfa::noodlify_mult_eps" (CNfa&, cset[Symbol]&, bool) except + nogil
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodlify_for_equation "mata::applications::strings::seg_nfa::noodlify_for_equation" \
+    cdef vector[CNoodle] c_noodlify_for_equation "mata::applications::strings::seg_nfa::noodlify_for_equation" \
         (const vector[CNfa*]&, CNfa&, bool, ParameterMap&) except +
     cdef vector[CNoodleWithEpsilonsCounter] c_noodlify_for_equation_sides \
         "mata::applications::strings::seg_nfa::noodlify_for_equation" \

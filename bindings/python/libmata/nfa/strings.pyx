@@ -110,6 +110,19 @@ cdef class ShortestWordsMap:
             result = self.thisptr.get_shortest_words_from(StateSet(c_states_vec))
         return {tuple(word) for word in result}
 
+cdef _wrap_noodle_segment(mata_strings.CNoodleSegment& c_segment, dict wrapped):
+    """Wrap a trimmed copy of `c_segment`, once per (automaton, initial state) in `wrapped`.
+
+    Noodles share segments: the copy is made once per call and the same `Nfa` returned for every occurrence.
+    """
+    key = (<size_t>c_segment.automaton.get(), c_segment.initial)
+    segment = wrapped.get(key)
+    if segment is None:
+        segment = mata_nfa.Nfa()
+        (<mata_nfa.Nfa>segment).thisptr = make_shared[CNfa](c_segment.to_nfa())
+        wrapped[key] = segment
+    return segment
+
 
 def noodlify(mata_nfa.Nfa aut, Symbol symbol, include_empty = False):
     """Create noodles from segment automaton.
@@ -123,18 +136,17 @@ def noodlify(mata_nfa.Nfa aut, Symbol symbol, include_empty = False):
     :return: List of automata: A list of all (non-empty) noodles.
     """
     noodle_segments = []
+    wrapped = {}
     cdef CNfa* c_aut = aut.thisptr.get()
     cdef Symbol c_symbol = symbol
     cdef bool c_include_empty = include_empty
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments
+    cdef vector[mata_strings.CNoodle] c_noodle_segments
     with nogil:
         c_noodle_segments = mata_strings.c_noodlify(dereference(c_aut), c_symbol, c_include_empty)
     for c_noodle in c_noodle_segments:
         noodle = []
         for c_noodle_segment in c_noodle:
-            noodle_segment = mata_nfa.Nfa()
-            (<mata_nfa.Nfa>noodle_segment).thisptr = c_noodle_segment
-            noodle.append(noodle_segment)
+            noodle.append(_wrap_noodle_segment(c_noodle_segment, wrapped))
 
         noodle_segments.append(noodle)
 
@@ -177,8 +189,9 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     for lhs_aut in left_side_automata:
         c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr.get())
     noodle_segments = []
+    wrapped = {}
     params = params or {}
-    cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments = mata_strings.c_noodlify_for_equation(
+    cdef vector[mata_strings.CNoodle] c_noodle_segments = mata_strings.c_noodlify_for_equation(
         c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
         {
             k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
@@ -188,22 +201,24 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     for c_noodle in c_noodle_segments:
         noodle = []
         for c_noodle_segment in c_noodle:
-            noodle_segment = mata_nfa.Nfa()
-            (<mata_nfa.Nfa>noodle_segment).thisptr = c_noodle_segment
-            noodle.append(noodle_segment)
+            noodle.append(_wrap_noodle_segment(c_noodle_segment, wrapped))
 
         noodle_segments.append(noodle)
 
     return noodle_segments
 
 
-cdef _wrap_noodle_with_epsilons_counter(mata_strings.CNoodleWithEpsilonsCounter c_noodle):
-    noodle = []
-    for c_segment_with_counter in c_noodle:
-        segment = mata_nfa.Nfa()
-        (<mata_nfa.Nfa>segment).thisptr = c_segment_with_counter.first
-        noodle.append((segment, list(c_segment_with_counter.second)))
-    return noodle
+cdef _wrap_noodles_with_epsilons_counter(vector[mata_strings.CNoodleWithEpsilonsCounter]& c_noodles):
+    wrapped = {}
+    noodles = []
+    for c_noodle in c_noodles:
+        noodle = []
+        for c_segment_with_counter in c_noodle:
+            noodle.append(
+                (_wrap_noodle_segment(c_segment_with_counter.first, wrapped), list(c_segment_with_counter.second))
+            )
+        noodles.append(noodle)
+    return noodles
 
 
 def noodlify_mult_eps(mata_nfa.Nfa aut, epsilons, include_empty = False):
@@ -220,7 +235,7 @@ def noodlify_mult_eps(mata_nfa.Nfa aut, epsilons, include_empty = False):
     cdef vector[mata_strings.CNoodleWithEpsilonsCounter] c_noodles
     with nogil:
         c_noodles = mata_strings.c_noodlify_mult_eps(dereference(c_aut), c_epsilons, c_include_empty)
-    return [_wrap_noodle_with_epsilons_counter(c_noodle) for c_noodle in c_noodles]
+    return _wrap_noodles_with_epsilons_counter(c_noodles)
 
 
 cdef shared_ptr[CNfa] _unification_input(mata_nfa.Nfa aut):
@@ -258,7 +273,7 @@ def noodlify_for_equation_sides(left_side_automata, right_side_automata, include
         c_noodles = mata_strings.c_noodlify_for_equation_sides(
             c_left_side_automata, c_right_side_automata, c_include_empty, c_params
         )
-    return [_wrap_noodle_with_epsilons_counter(c_noodle) for c_noodle in c_noodles]
+    return _wrap_noodles_with_epsilons_counter(c_noodles)
 
 
 def noodlify_for_transducer(

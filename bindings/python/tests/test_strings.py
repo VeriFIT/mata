@@ -101,6 +101,29 @@ def test_noodlify_mult_eps():
         assert isinstance(counters, list)
 
 
+def test_noodles_share_the_wrapped_segments():
+    nfa = mata_nfa.Nfa(5)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(4)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 200, 2)
+    nfa.add_transition(1, 200, 3)
+    nfa.add_transition(2, 2, 4)
+    nfa.add_transition(3, 3, 4)
+
+    noodles = mata_strings.noodlify(nfa, 200)
+    mult_eps_noodles = [[segment for segment, _ in noodle] for noodle in mata_strings.noodlify_mult_eps(nfa, {200})]
+    for result in (noodles, mult_eps_noodles):
+        assert len(result) == 2
+        # Both noodles take the first segment up to state 1: one wrapped copy serves both.
+        assert result[0][0] is result[1][0]
+        assert result[0][0].is_in_lang([1])
+        assert {(noodle[1].is_in_lang([2]), noodle[1].is_in_lang([3])) for noodle in result} == {
+            (True, False),
+            (False, True),
+        }
+
+
 def test_noodlify_for_equation_sides():
     left = mata_nfa.Nfa(2)
     left.make_initial_state(0)
