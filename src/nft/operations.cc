@@ -12,6 +12,7 @@
 #include <queue>
 #include <ranges>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 #include "mata/nft/algorithms.hh"
@@ -40,8 +41,11 @@ namespace {
  *  symbols whenever @c EPSILON or @c DONT_CARE was present (#727), which silently related states that
  *  must not be related. The same constraints are the initial partition of the states by
  *  `(level, final)` with the block relation `level(B) == level(B') && (final(B) -> final(B'))`.
+ *
+ * @tparam Relation @c Simlib::Util::BinaryRelation, or @c Simlib::Util::PartitionRelation, which keeps the
+ *  partition-relation pair of the engine instead of expanding it to a bit for every pair of states.
  */
-Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nft& aut) {
+template <class Relation> Relation compute_fw_direct_simulation(const Nft& aut) {
 	const size_t state_num{aut.num_of_states()};
 	Simlib::ExplicitLTS lts_for_simulation(state_num);
 
@@ -75,14 +79,17 @@ Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nft& aut) {
 		}
 	}
 
-	return lts_for_simulation.compute_simulation(partition, relation, state_num);
+	if constexpr (std::is_same_v<Relation, Simlib::Util::PartitionRelation>) {
+		return lts_for_simulation.compute_block_simulation(partition, relation, state_num);
+	} else {
+		return lts_for_simulation.compute_simulation(partition, relation, state_num);
+	}
 }
 
 Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 	Nft result;
 	result.levels.num_of_levels = aut.levels.num_of_levels;
-	const auto sim_relation =
-		algorithms::compute_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
+	const auto sim_relation{compute_fw_direct_simulation<Simlib::Util::PartitionRelation>(aut)};
 
 	// for State q, quot_proj[q] should be the representative state representing the symmetric class of states in
 	// simulation
@@ -1653,7 +1660,7 @@ Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& 
 
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
-		return compute_fw_direct_simulation(aut);
+		return compute_fw_direct_simulation<Simlib::Util::BinaryRelation>(aut);
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation

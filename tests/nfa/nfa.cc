@@ -4058,6 +4058,10 @@ TEST_CASE("Simlib::Util::BinaryRelation::get_symmetric_quotient_projection()") {
 	std::vector<size_t> restricted_projection;
 	symmetric.get_quotient_projection(restricted_projection);
 	CHECK(projection == restricted_projection);
+
+	std::vector<size_t> block_projection;
+	compute_partition_relation(aut).get_symmetric_quotient_projection(block_projection);
+	CHECK(block_projection == projection);
 }
 
 TEST_CASE("mata::nfa::reduce_size_by_simulation()") {

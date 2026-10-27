@@ -21,6 +21,7 @@
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/simlib/util/binary_relation.hh>
 #include <mata/simlib/util/convert.hh>
+#include <mata/simlib/util/partition_relation.hh>
 #include <mata/simlib/util/smart_set.hh>
 #include <mata/simlib/util/simlib.hh>
 
@@ -37,6 +38,7 @@ using Simlib::Util::CachingAllocator;
 using Simlib::Util::SharedList;
 using Simlib::Util::SharedCounter;
 using Simlib::Util::Convert;
+using Simlib::Util::PartitionRelation;
 
 typedef CachingAllocator<std::vector<size_t>> VectorAllocator;
 
@@ -896,6 +898,39 @@ public:
 		}
 	}
 
+	/// The result on the states below @p size, as the final partition and the relation on its blocks.
+	PartitionRelation build_partition_result(
+		size_t             size) const
+	{
+		std::vector<size_t> blockOf(size);
+
+		for (size_t i = 0; i < this->partition_.size(); ++i)
+		{
+			auto elem = this->partition_[i]->states_;
+
+			do
+			{
+				if (elem->index_ < size)
+				{
+					blockOf[elem->index_] = i;
+				}
+
+				elem = elem->next_;
+
+			} while (elem != this->partition_[i]->states_);
+		}
+
+		PartitionRelation result(std::move(blockOf));
+
+		for (size_t i = 0; i < this->relation_.size(); ++i)
+		{
+			auto row = const_cast<SplittingRelation*>(&this->relation_)->row(i);
+			result.add_row(row.begin(), row.end());
+		}
+
+		return result;
+	}
+
 	friend std::ostream& operator<<(
 		std::ostream&              os,
 		const SimulationEngine&    engine)
@@ -935,6 +970,25 @@ BinaryRelation Simlib::ExplicitLTS::compute_simulation(
     engine.build_result(result, outputSize);
 
 	return result;
+}
+
+
+PartitionRelation Simlib::ExplicitLTS::compute_block_simulation(
+	const std::vector<std::vector<size_t>>&   partition,
+	const BinaryRelation&                     relation,
+	size_t                                    outputSize)
+{
+	if (0 == outputSize)
+	{
+		return PartitionRelation{};
+	}
+
+	SimulationEngine engine(*this);
+
+	engine.init(partition, relation);
+	engine.run();
+
+	return engine.build_partition_result(outputSize);
 }
 
 

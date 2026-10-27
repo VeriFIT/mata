@@ -8,6 +8,7 @@
 #include <list>
 #include <optional>
 #include <queue>
+#include <type_traits>
 #include <unordered_set>
 
 // MATA headers
@@ -38,8 +39,11 @@ namespace {
  *  @c Symbol range was taken. The same constraint is the initial partition `{non-final, final}` with the
  *  block relation `final(B) -> final(B')`, which the engine accepts directly and does not have to refine
  *  the single block `{Q}` down to.
+ *
+ * @tparam Relation @c Simlib::Util::BinaryRelation, or @c Simlib::Util::PartitionRelation, which keeps the
+ *  partition-relation pair of the engine instead of expanding it to a bit for every pair of states.
  */
-Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
+template <class Relation> Relation compute_fw_direct_simulation(const Nfa& aut) {
 	const size_t state_num{aut.num_of_states()};
 	Simlib::ExplicitLTS lts_for_simulation(state_num);
 
@@ -71,7 +75,11 @@ Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
 	for (size_t block{0}; block < partition.size(); ++block) { relation.set(block, block, true); }
 	if (partition.size() == 2) { relation.set(non_final_block, final_block, true); }
 
-	return lts_for_simulation.compute_simulation(partition, relation, state_num);
+	if constexpr (std::is_same_v<Relation, Simlib::Util::PartitionRelation>) {
+		return lts_for_simulation.compute_block_simulation(partition, relation, state_num);
+	} else {
+		return lts_for_simulation.compute_simulation(partition, relation, state_num);
+	}
 }
 
 /// Incoming transitions `(source, symbol)` of each state of the result of residual reduction "with", recorded when
@@ -1323,10 +1331,13 @@ Nfa mata::nfa::union_nondet(Nfa&& lhs, Nfa&& rhs) {
 	return result;
 }
 
-Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
+namespace {
+/// compute_relation() as @p Relation; @p caller names the function in the errors.
+template <class Relation>
+Relation compute_relation_as(const Nfa& aut, const ParameterMap& params, const std::string& caller) {
 	if (!haskey(params, "relation")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			caller +
 			" requires setting the \"relation\" key in the \"params\" argument; "
 			"received: " +
 			std::to_string(params)
@@ -1334,7 +1345,7 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 	}
 	if (!haskey(params, "direction")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			caller +
 			" requires setting the \"direction\" key in the \"params\" argument; "
 			"received: " +
 			std::to_string(params)
@@ -1343,12 +1354,20 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
-		return compute_fw_direct_simulation(aut);
+		return compute_fw_direct_simulation<Relation>(aut);
 	} else {
-		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
-		);
+		throw std::runtime_error(caller + " received an unknown value of the \"relation\" key: " + relation);
 	}
+}
+} // namespace
+
+Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
+	return compute_relation_as<Simlib::Util::BinaryRelation>(aut, params, __func__);
+}
+
+Simlib::Util::PartitionRelation
+	mata::nfa::algorithms::compute_partition_relation(const Nfa& aut, const ParameterMap& params) {
+	return compute_relation_as<Simlib::Util::PartitionRelation>(aut, params, __func__);
 }
 
 Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const ParameterMap& params) {
@@ -2137,7 +2156,7 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa& nf
 
 Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& state_renaming) {
 	const auto sim_relation =
-		algorithms::compute_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
+		algorithms::compute_partition_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
 
 	std::vector<size_t> quot_proj;
 	sim_relation.get_symmetric_quotient_projection(quot_proj);
@@ -2145,11 +2164,13 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 	return quotient_by_simulation(aut, sim_relation, quot_proj, nullptr, &state_renaming);
 }
 
-Nfa mata::nfa::algorithms::quotient_by_simulation(
+namespace {
+template <class Relation>
+Nfa quotient_by(
 	const Nfa& aut,
-	const Simlib::Util::BinaryRelation& sim_relation,
+	const Relation& sim_relation,
 	const std::vector<size_t>& quot_proj,
-	const BoolVector* states,
+	const mata::BoolVector* states,
 	StateRenaming* state_renaming
 ) {
 	const size_t num_of_states = aut.num_of_states();
@@ -2229,6 +2250,27 @@ Nfa mata::nfa::algorithms::quotient_by_simulation(
 		}
 	}
 	return result;
+}
+} // namespace
+
+Nfa mata::nfa::algorithms::quotient_by_simulation(
+	const Nfa& aut,
+	const Simlib::Util::BinaryRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states,
+	StateRenaming* state_renaming
+) {
+	return quotient_by(aut, sim_relation, quot_proj, states, state_renaming);
+}
+
+Nfa mata::nfa::algorithms::quotient_by_simulation(
+	const Nfa& aut,
+	const Simlib::Util::PartitionRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states,
+	StateRenaming* state_renaming
+) {
+	return quotient_by(aut, sim_relation, quot_proj, states, state_renaming);
 }
 
 Nfa mata::nfa::algorithms::reduce_residual(

@@ -186,7 +186,7 @@ void reduce_per_initial_state(
 ) {
 	mata::nfa::StateRenaming to_useful;
 	Nfa useful{trim(segment, &to_useful, std::nullopt, final_states)};
-	const auto sim_relation{mata::nfa::algorithms::compute_relation(useful)};
+	const auto sim_relation{mata::nfa::algorithms::compute_partition_relation(useful)};
 	std::vector<size_t> quot_proj;
 	sim_relation.get_symmetric_quotient_projection(quot_proj);
 
