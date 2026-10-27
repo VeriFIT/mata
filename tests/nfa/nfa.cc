@@ -16,6 +16,7 @@
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/plumbing.hh"
+#include "mata/simlib/util/splitting_relation.hh"
 #include "mata/utils/sparse-set.hh"
 
 using namespace mata;
@@ -4062,6 +4063,89 @@ TEST_CASE("Simlib::Util::BinaryRelation::get_symmetric_quotient_projection()") {
 	std::vector<size_t> block_projection;
 	compute_partition_relation(aut).get_symmetric_quotient_projection(block_projection);
 	CHECK(block_projection == projection);
+}
+
+TEST_CASE("Simlib::Util::SplittingRelation keeps its pairs across 64-bit words") {
+	// The relation stores each row and column as 64-bit words; the simulation tests above stay below 30 blocks,
+	//  inside one word. A reference matrix follows splits that cross the words at 64 and 128 and erasures that
+	//  empty whole words, and both directions are compared after every step.
+	constexpr size_t MAX_SIZE{200};
+	Simlib::Util::SplittingRelation relation{MAX_SIZE};
+	std::vector<std::vector<bool>> expected(MAX_SIZE, std::vector<bool>(MAX_SIZE, false));
+	const std::vector<std::vector<size_t>> index{{0, 1, 2}, {1}, {0, 2}};
+	relation.init(index);
+	for (size_t row{0}; row < index.size(); ++row) {
+		for (const size_t col : index[row]) { expected[row][col] = true; }
+	}
+
+	const auto check = [&]() {
+		const size_t size{relation.size()};
+		for (size_t i{0}; i < size; ++i) {
+			std::vector<size_t> row_expected, col_expected, row_actual, col_actual;
+			for (size_t j{0}; j < size; ++j) {
+				if (expected[i][j]) { row_expected.push_back(j); }
+				if (expected[j][i]) { col_expected.push_back(j); }
+			}
+			for (const size_t col : relation.row(i)) { row_actual.push_back(col); }
+			for (const size_t row : relation.column(i)) { col_actual.push_back(row); }
+			INFO("block " << i << " of " << size);
+			REQUIRE(row_actual == row_expected);
+			REQUIRE(col_actual == col_expected);
+			REQUIRE(relation.row_size(i) == row_expected.size());
+			REQUIRE(relation.column_size(i) == col_expected.size());
+		}
+	};
+	const auto split = [&](const size_t block) {
+		const size_t added{relation.split(block)};
+		REQUIRE(added == relation.size() - 1);
+		for (size_t other{0}; other < added; ++other) {
+			expected[other][added] = expected[other][block];
+			expected[added][other] = expected[block][other];
+		}
+		expected[added][added] = true;
+		check();
+	};
+	// Erases the off-diagonal pairs of row (column) @p block that @p erase selects, while iterating it.
+	const auto erase_row = [&](const size_t block, const auto& erase) {
+		const auto row{relation.row(block)};
+		for (auto it{row.begin()}; it != row.end(); ++it) {
+			if (*it != block && erase(*it)) {
+				expected[block][*it] = false;
+				relation.erase(it);
+			}
+		}
+		check();
+	};
+	const auto erase_column = [&](const size_t block, const auto& erase) {
+		const auto column{relation.column(block)};
+		for (auto it{column.begin()}; it != column.end(); ++it) {
+			if (*it != block && erase(*it)) {
+				expected[*it][block] = false;
+				relation.erase(it);
+			}
+		}
+		check();
+	};
+
+	std::mt19937 rng{7};
+	while (relation.size() < 140) {
+		split(rng() % relation.size());
+		if (relation.size() % 9 == 0) {
+			erase_row(rng() % relation.size(), [&](size_t) { return rng() % 3 == 0; });
+			erase_column(rng() % relation.size(), [&](size_t) { return rng() % 3 == 0; });
+		}
+	}
+	// Blocks on both sides of each word boundary.
+	for (const size_t block : std::vector<size_t>{63, 64, 127, 128}) { split(block); }
+	// Row 0 and column 0 lose their whole second word, then splits append past it.
+	erase_row(0, [](const size_t col) { return col / 64 == 1; });
+	erase_column(0, [](const size_t row) { return row / 64 == 1; });
+	for (const size_t block : std::vector<size_t>{0, 64, 100, 0}) { split(block); }
+	// Every pair except the diagonal: the lines keep only empty words around it.
+	for (size_t block{0}; block < relation.size(); ++block) {
+		erase_row(block, [](size_t) { return true; });
+	}
+	split(130);
 }
 
 TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
