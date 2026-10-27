@@ -2204,7 +2204,11 @@ Nfa quotient_by(
 
 		if (representative[quot_proj[q]] ==
 			q) { // we process only transitions starting from the representative state, this is enough for simulation
-			for (const auto& q_trans : aut.delta.state_post(q)) {
+			const StatePost& q_post{aut.delta.state_post(q)};
+			// Sized exactly: insert() would reserve 32 symbol posts for every state, most of them unused.
+			StatePost& q_class_post{result.delta.mutable_state_post(q_class_state)};
+			q_class_post.reserve(q_post.size());
+			for (const auto& q_trans : q_post) {
 				const StateSet representatives_of_states_to = [&] {
 					StateSet state_set;
 					for (const auto s : q_trans.targets) {
@@ -2229,11 +2233,8 @@ Nfa quotient_by(
 					if (is_state_important) { representatives_class_states.insert(reduced[s]); }
 				}
 
-				// add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of
-				// transition list of transitions starting from q_class_state as the q_trans.symbol should be the
-				// largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-				result.delta.mutable_state_post(q_class_state)
-					.insert(SymbolPost(q_trans.symbol, representatives_class_states));
+				// q_trans.symbol is larger than the symbols added so far, as the state post of q is ordered.
+				q_class_post.push_back(SymbolPost(q_trans.symbol, representatives_class_states));
 			}
 
 			if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
