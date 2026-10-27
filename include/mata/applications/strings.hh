@@ -7,6 +7,10 @@
 
 #include <mutex>
 #include <span>
+#include <version>
+#ifdef __cpp_lib_generator
+	#include <generator>
+#endif
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/nft.hh"
@@ -534,6 +538,63 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 	bool reduce_intersection = true,
 	bool use_homomorphic_heuristic = true
 );
+
+/// The order in which the noodlify_*_lazy() functions emit the noodles.
+enum class NoodleOrder {
+	Forward, ///< The order of the functions returning a vector.
+	Reverse, ///< The reverse of that order.
+};
+
+#ifdef __cpp_lib_generator
+/**
+ * @brief Emit the noodles of noodlify_mult_eps() one at a time.
+ *
+ * The search over the segments runs only as far as the consumer takes noodles, keeping one noodle and the search
+ *  stack in memory instead of all noodles, and the shared automaton of a final state (see NoodleSegment) is built
+ *  when the search first reaches the final state. A consumer that stops early skips the rest of the work.
+ *
+ * With NoodleOrder::Reverse, the noodles come in the reverse order of NoodleOrder::Forward. A noodle that the search
+ *  finishes more than once (possible only when segments with the language {ε} are left out) is emitted where it is
+ *  finished first in the given order, so the reverse order may place such a noodle elsewhere.
+ *
+ * The generator owns @p aut. Without the C++23 <generator> header, this function and the other noodlify_*_lazy()
+ *  functions are not declared.
+ */
+std::generator<NoodleWithEpsilonsCounter> noodlify_mult_eps_lazy(
+	SegNfa aut, std::set<Symbol> epsilons, bool include_empty = false, NoodleOrder order = NoodleOrder::Forward
+);
+
+/**
+ * @brief Emit the noodles of noodlify_for_equation() for both sides given as sequences of automata one at a time.
+ *
+ * The product of the sides is computed (and the automata of the sides unified) in the call, the noodles when they
+ *  are taken from the generator; see noodlify_mult_eps_lazy().
+ */
+std::generator<NoodleWithEpsilonsCounter> noodlify_for_equation_lazy(
+	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+	bool include_empty = false,
+	const ParameterMap& params = {{"reduce", "false"}},
+	NoodleOrder order = NoodleOrder::Forward
+);
+
+/**
+ * @brief Emit the noodles of noodlify_for_transducer() one at a time.
+ *
+ * The composition with the transducer is computed (and the input and output automata unified) in the call, the
+ *  noodles when they are taken from the generator; see noodlify_mult_eps_lazy(). The transducer and the projections
+ *  of a segment are built once while the consumer holds any of them, and again when it is reached after they were
+ *  all released.
+ */
+std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
+	const std::shared_ptr<Nft>& nft,
+	const std::vector<std::shared_ptr<Nfa>>& input_automata,
+	const std::vector<std::shared_ptr<Nfa>>& output_automata,
+	bool reduce_intersection = true,
+	bool use_homomorphic_heuristic = true,
+	NoodleOrder order = NoodleOrder::Forward
+);
+#endif
 
 /**
  * @brief Process epsilon map to a sequence of values (sorted according to key desc)

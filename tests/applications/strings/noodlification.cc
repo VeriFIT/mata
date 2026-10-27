@@ -1,7 +1,10 @@
 // TODO: some header
 
+#include <algorithm>
+#include <functional>
 #include <random>
 #include <ranges>
+#include <set>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -935,3 +938,219 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
 		CHECK(noodles.empty());
 	}
 }
+
+namespace {
+using mata::Symbol;
+using SegmentAndCounters = std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>;
+
+/// A random automaton of @p num_of_segments segments of 6 states, connected by ε-transitions over @p epsilons, some
+///  of them parallel with different symbols, trimmed.
+Nfa random_segment_automaton(const unsigned seed, const size_t num_of_segments, const std::vector<Symbol>& epsilons) {
+	std::mt19937 rng{seed};
+	constexpr State size{6};
+	const auto random_state = [&](const State base) { return static_cast<State>(base + rng() % size); };
+	Nfa aut{size * num_of_segments};
+	for (size_t seg_id{0}; seg_id < num_of_segments; ++seg_id) {
+		const State base{static_cast<State>(seg_id * size)};
+		for (State q{base}; q < base + size; ++q) {
+			for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+				if (rng() % 2 == 0) { aut.delta.add(q, symbol, random_state(base)); }
+			}
+			for (size_t i{0}; seg_id + 1 < num_of_segments && i < 2; ++i) {
+				if (rng() % 3 == 0) { continue; }
+				const State target{random_state(base + size)};
+				aut.delta.add(q, epsilons[rng() % epsilons.size()], target);
+				if (rng() % 4 == 0) { aut.delta.add(q, epsilons[rng() % epsilons.size()], target); }
+			}
+		}
+	}
+	aut.initial.insert(random_state(0));
+	aut.initial.insert(random_state(0));
+	const State last{static_cast<State>((num_of_segments - 1) * size)};
+	for (size_t i{0}; i < 3; ++i) { aut.final.insert(random_state(last)); }
+	aut.trim();
+	return aut;
+}
+
+/// The noodles of @p aut by brute force: every route through the segments in the order of the ε-transitions and the
+///  final states, one reduced automaton per (initial, final) pair, segments with the language {ε} left out, and of
+///  noodles with the same pairs only the first.
+std::vector<std::vector<SegmentAndCounters>> reference_noodles(const Nfa& aut, const std::set<Symbol>& epsilons) {
+	seg_nfa::Segmentation segmentation{aut, epsilons};
+	const std::vector<Nfa>& segments{segmentation.get_untrimmed_segments()};
+	const seg_nfa::VisitedEpsilonsCounterVector zeros(epsilons.size(), 0);
+	const State unused_state{static_cast<State>(aut.num_of_states())};
+
+	std::vector<std::vector<SegmentAndCounters>> result{};
+	if (segments.size() == 1) {
+		if (Nfa whole{trim(segments[0])}; whole.num_of_states() > 0) { result.push_back({{std::move(whole), zeros}}); }
+		return result;
+	}
+	std::set<std::vector<std::pair<State, State>>> seen{};
+	std::vector<SegmentAndCounters> noodle{};
+	std::vector<std::pair<State, State>> keys{};
+	const std::function<void(size_t, State)> visit = [&](const size_t seg_id, const State init) {
+		const Nfa& segment{segments[seg_id]};
+		const bool last{seg_id + 1 == segments.size()};
+		std::vector<State> finals{unused_state};
+		if (!last) { finals.assign(segment.final.begin(), segment.final.end()); }
+		for (const State fin : finals) {
+			const SparseSet<State> inits{init}, fins{fin};
+			std::optional<std::reference_wrapper<const SparseSet<State>>> inits_ref, fins_ref;
+			if (seg_id > 0) { inits_ref = inits; }
+			if (!last) { fins_ref = fins; }
+			Nfa part{reduce(trim(segment, nullptr, inits_ref, fins_ref))};
+			if (part.num_of_states() == 0) { continue; }
+			const bool kept{!is_lang_eps(part)};
+			if (kept) {
+				seg_nfa::VisitedEpsilonsCounterVector counters{zeros};
+				if (seg_id > 0) {
+					const auto visited{segmentation.get_visited_eps().find(init)};
+					counters = visited == segmentation.get_visited_eps().end()
+								   ? seg_nfa::VisitedEpsilonsCounterVector{}
+								   : seg_nfa::process_eps_map(visited->second);
+				}
+				noodle.emplace_back(std::move(part), std::move(counters));
+				keys.emplace_back(init, fin);
+			}
+			if (last) {
+				if (seen.insert(keys).second) { result.push_back(noodle); }
+			} else {
+				for (const Transition& transition : segmentation.get_epsilon_transitions(fin)) {
+					visit(seg_id + 1, transition.target);
+				}
+			}
+			if (kept) {
+				noodle.pop_back();
+				keys.pop_back();
+			}
+		}
+	};
+	visit(0, unused_state);
+	return result;
+}
+
+void check_noodles(
+	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& actual,
+	const std::vector<std::vector<SegmentAndCounters>>& expected
+) {
+	REQUIRE(actual.size() == expected.size());
+	for (size_t i{0}; i < actual.size(); ++i) {
+		INFO("noodle " << i);
+		REQUIRE(actual[i].size() == expected[i].size());
+		for (size_t j{0}; j < actual[i].size(); ++j) {
+			CHECK(actual[i][j].second == expected[i][j].second);
+			CHECK(are_equivalent(actual[i][j].first.to_nfa(), expected[i][j].first));
+		}
+	}
+}
+
+/// Whether @p actual holds the noodles of @p expected in some order.
+bool same_noodles_in_any_order(
+	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& actual,
+	const std::vector<std::vector<SegmentAndCounters>>& expected
+) {
+	if (actual.size() != expected.size()) { return false; }
+	std::vector<bool> used(expected.size(), false);
+	for (const auto& noodle : actual) {
+		bool found{false};
+		for (size_t i{0}; i < expected.size() && !found; ++i) {
+			if (used[i] || expected[i].size() != noodle.size()) { continue; }
+			found = std::ranges::all_of(std::views::iota(size_t{0}, noodle.size()), [&](const size_t j) {
+				return noodle[j].second == expected[i][j].second &&
+					   are_equivalent(noodle[j].first.to_nfa(), expected[i][j].first);
+			});
+			used[i] = found;
+		}
+		if (!found) { return false; }
+	}
+	return true;
+}
+} // namespace
+
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() matches a brute-force enumeration") {
+	const std::vector<Symbol> epsilons{EPSILON, EPSILON - 1};
+	const std::set<Symbol> epsilon_set{epsilons.begin(), epsilons.end()};
+	size_t num_of_noodles{0}, num_with_left_out{0};
+	for (unsigned seed{0}; seed < 300; ++seed) {
+		const size_t num_of_segments{1 + seed % 4};
+		const Nfa aut{random_segment_automaton(seed, num_of_segments, epsilons)};
+		if (aut.num_of_states() == 0) { continue; }
+		INFO("seed " << seed);
+		const std::vector<std::vector<SegmentAndCounters>> expected{reference_noodles(aut, epsilon_set)};
+		const std::vector<seg_nfa::NoodleWithEpsilonsCounter> actual{seg_nfa::noodlify_mult_eps(aut, epsilon_set)};
+		check_noodles(actual, expected);
+		num_of_noodles += expected.size();
+		const bool has_left_out{std::ranges::any_of(expected, [&](const auto& noodle) {
+			return noodle.size() < seg_nfa::Segmentation{aut, epsilon_set}.get_untrimmed_segments().size();
+		})};
+		num_with_left_out += has_left_out;
+
+#ifdef __cpp_lib_generator
+		std::vector<seg_nfa::NoodleWithEpsilonsCounter> forward{};
+		for (auto&& noodle : seg_nfa::noodlify_mult_eps_lazy(aut, epsilon_set)) {
+			forward.push_back(std::move(noodle));
+		}
+		check_noodles(forward, expected);
+
+		std::vector<seg_nfa::NoodleWithEpsilonsCounter> reverse{};
+		for (auto&& noodle : seg_nfa::noodlify_mult_eps_lazy(aut, epsilon_set, false, seg_nfa::NoodleOrder::Reverse)) {
+			reverse.push_back(std::move(noodle));
+		}
+		if (has_left_out) {
+			CHECK(same_noodles_in_any_order(reverse, expected));
+		} else {
+			check_noodles(reverse, {expected.rbegin(), expected.rend()});
+		}
+
+		// Stopping early leaves the rest of the search undone.
+		for (auto&& noodle : seg_nfa::noodlify_mult_eps_lazy(aut, epsilon_set)) {
+			check_noodles({std::move(noodle)}, {expected.front()});
+			break;
+		}
+#endif
+	}
+	// The automata exercise the search: many noodles, some with left out segments.
+	CHECK(num_of_noodles > 1'000);
+	CHECK(num_with_left_out > 10);
+}
+
+#ifdef __cpp_lib_generator
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer_lazy() emits the noodles of noodlify_for_transducer()") {
+	Nft t{Nft::with_levels(2, 1, {0}, {0})};
+	t.add_transition_by_levels(0, {'a', 'a'}, 0);
+	t.add_transition_by_levels(0, {'b', 'b'}, 0);
+	t.add_transition_by_levels(0, {'b', 'a'}, 0);
+	const auto inputs = [] {
+		return std::vector{
+			std::make_shared<Nfa>(create_from_regex("(a|b)*")), std::make_shared<Nfa>(create_from_regex("a*b"))
+		};
+	};
+	const auto outputs = [] {
+		return std::vector{
+			std::make_shared<Nfa>(create_from_regex("a*")), std::make_shared<Nfa>(create_from_regex("(a|b)*"))
+		};
+	};
+	const auto eager{seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), inputs(), outputs())};
+	REQUIRE(eager.size() > 1);
+	for (const seg_nfa::NoodleOrder order : {seg_nfa::NoodleOrder::Forward, seg_nfa::NoodleOrder::Reverse}) {
+		std::vector<seg_nfa::TransducerNoodle> lazy{};
+		for (auto&& noodle :
+			 seg_nfa::noodlify_for_transducer_lazy(std::make_shared<Nft>(t), inputs(), outputs(), true, true, order)) {
+			lazy.push_back(std::move(noodle));
+		}
+		if (order == seg_nfa::NoodleOrder::Reverse) { std::ranges::reverse(lazy); }
+		REQUIRE(lazy.size() == eager.size());
+		for (size_t i{0}; i < lazy.size(); ++i) {
+			REQUIRE(lazy[i].size() == eager[i].size());
+			for (size_t j{0}; j < lazy[i].size(); ++j) {
+				CHECK(lazy[i][j].input_index == eager[i][j].input_index);
+				CHECK(lazy[i][j].output_index == eager[i][j].output_index);
+				CHECK(mata::nft::are_equivalent(*lazy[i][j].transducer, *eager[i][j].transducer));
+				CHECK(are_equivalent(*lazy[i][j].input_aut, *eager[i][j].input_aut));
+				CHECK(are_equivalent(*lazy[i][j].output_aut, *eager[i][j].output_aut));
+			}
+		}
+	}
+}
+#endif
