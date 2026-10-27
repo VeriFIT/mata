@@ -4230,6 +4230,66 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 		Nfa result = reduce(aut.trim(), &state_renaming);
 		CHECK(are_equivalent(result, aut));
 	}
+
+	SECTION("states with identical successors give the quotient by the simulation of the whole automaton") {
+		// Each automaton is a random part and a copy whose transitions lead into either part. Some copied states
+		//  merge before the simulation; others, such as copied cycles, may merge only in the simulation. The
+		//  result, its numbering, and the state renaming must still be those of the plain simulation quotient.
+		std::mt19937 gen{7};
+		constexpr State part_size{6};
+		std::uniform_int_distribution<State> state_dist{0, part_size - 1};
+		for (size_t iteration{0}; iteration < 50; ++iteration) {
+			Nfa nfa(2 * part_size);
+			for (State state{0}; state < part_size; ++state) {
+				if (gen() % 4 == 0) { nfa.initial.insert(state); }
+				if (gen() % 3 == 0) {
+					nfa.final.insert(state);
+					nfa.final.insert(state + part_size);
+				}
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					for (size_t num_of_targets{gen() % 3}; num_of_targets > 0; --num_of_targets) {
+						const State target{state_dist(gen)};
+						nfa.delta.add(state, symbol, target);
+						nfa.delta.add(state + part_size, symbol, gen() % 2 == 0 ? target : target + part_size);
+					}
+				}
+			}
+			nfa.initial.insert(part_size + state_dist(gen));
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+			CHECK(result.num_of_states() <= part_size);
+		}
+	}
+
+	SECTION("two copies of a chain merge level by level into one chain") {
+		constexpr State length{200};
+		Nfa nfa(2 * length);
+		nfa.initial = {0, length};
+		nfa.final = {length - 1, 2 * length - 1};
+		for (State state{0}; state + 1 < length; ++state) {
+			nfa.delta.add(state, 'a', state + 1);
+			nfa.delta.add(length + state, 'a', length + state + 1);
+		}
+
+		const Nfa result{reduce(nfa, &state_renaming)};
+		CHECK(result.num_of_states() == length);
+		for (State state{0}; state < length; ++state) {
+			CHECK(state_renaming.at(state) == state);
+			CHECK(state_renaming.at(length + state) == state);
+		}
+		CHECK(are_equivalent(result, nfa));
+	}
 }
 
 TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
