@@ -4290,6 +4290,38 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 		}
 		CHECK(are_equivalent(result, nfa));
 	}
+
+	SECTION("automata with one target per symbol post give the quotient by the simulation") {
+		// Partial, possibly with several initial states, dead and unreachable states: none of it may change the
+		//  result, its numbering, or the state renaming.
+		std::mt19937 gen{11};
+		for (size_t iteration{0}; iteration < 200; ++iteration) {
+			const State num_of_states{static_cast<State>(2 + gen() % 14)};
+			std::uniform_int_distribution<State> state_dist{0, num_of_states - 1};
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(state_dist(gen));
+			if (gen() % 4 == 0) { nfa.initial.insert(state_dist(gen)); }
+			for (State state{0}; state < num_of_states; ++state) {
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}, Symbol{'c'}}) {
+					if (gen() % 3 != 0) { nfa.delta.add(state, symbol, state_dist(gen)); }
+				}
+			}
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+		}
+	}
 }
 
 TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {

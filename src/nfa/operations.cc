@@ -1321,24 +1321,22 @@ class RefinablePartition {
 		}
 	}
 };
-} // namespace
 
-Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
-	// `empty()` stops at the first non-empty state post. It differs from `num_of_transitions() == 0` only on a symbol
-	//  post without targets, which the required `trim()` drops.
-	if (dfa_trimmed.delta.empty()) {
-		// The automaton is trivially minimal.
-		return Nfa{dfa_trimmed};
-	}
-	MATA_ASSERT(dfa_trimmed.is_deterministic());
-	MATA_ASSERT(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
-
+/**
+ * @brief Coarsest partition of the states of @p aut that separates the final states from the others and in which the
+ *  states of a block have, over every symbol, a transition to the same block or none.
+ *
+ * Hopcroft's algorithm with every splitter queued initially, which is correct on partial transition functions. On a
+ *  deterministic @p aut, the partition is the bisimulation equivalence.
+ * @pre Every symbol post of @p aut has at most one target, and @p aut has a transition.
+ */
+RefinablePartition<State> refine_by_hopcroft(const Nfa& aut) {
 	// Initialize equivalence classes. The initial partition is {Q}.
-	RefinablePartition<State> brp(dfa_trimmed.num_of_states());
+	RefinablePartition<State> brp(aut.num_of_states());
 	// Initialize splitters. A splitter is a set of transitions
 	// over a common symbol incoming to an equivalence class. Initially,
 	// the partition has m splitters, where m is the alphabet size.
-	RefinablePartition<size_t> trp(dfa_trimmed.delta);
+	RefinablePartition<size_t> trp(aut.delta);
 
 	// Initialize vector of incoming transitions for each state. Transitions
 	// are represented only by their indices in the (flattened) delta.
@@ -1346,7 +1344,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	std::vector<State> trans_source_map(trp.size());
 	std::vector<std::vector<size_t>> incoming_trans_idxs(brp.size(), std::vector<size_t>());
 	size_t trans_idx = 0;
-	for (const auto& trans : dfa_trimmed.delta.transitions()) {
+	for (const auto& trans : aut.delta.transitions()) {
 		trans_source_map[trans_idx] = trans.source;
 		incoming_trans_idxs[trans.target].push_back(trans_idx);
 		++trans_idx;
@@ -1402,7 +1400,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	}
 
 	// In the first refinement, we split the equivalence classes according to the final states.
-	for (const State q : dfa_trimmed.final) { brp.mark(q); }
+	for (const State q : aut.final) { brp.mark(q); }
 	split_block(0);
 
 	// Main loop of the Hopcroft's algorithm.
@@ -1426,6 +1424,72 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 			split_block(b);
 		}
 	}
+	return brp;
+}
+
+/// Every symbol post has exactly one target, and there is at least one transition.
+bool has_one_target_posts(const Nfa& aut) {
+	bool has_transition{false};
+	for (State q{0}, num_of_states{static_cast<State>(aut.num_of_states())}; q < num_of_states; ++q) {
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			if (symbol_post.targets.size() != 1) { return false; }
+			has_transition = true;
+		}
+	}
+	return has_transition;
+}
+
+/**
+ * @brief Quotient of @p aut by the bisimulation, with the classes numbered in the order of their smallest states.
+ *
+ * When every symbol post has one target, mutual forward simulation is bisimulation, and no target of a symbol post
+ *  is subsumed by another, so this is exactly the result of the quotient by the simulation.
+ * @pre has_one_target_posts(aut)
+ */
+Nfa quotient_by_bisimulation(const Nfa& aut, StateRenaming& state_renaming) {
+	const RefinablePartition<State> brp{refine_by_hopcroft(aut)};
+	const size_t num_of_states{aut.num_of_states()};
+	std::vector<State> reduced_of_block(brp.num_of_sets, Limits::max_state);
+	std::vector<State> reduced(num_of_states);
+	Nfa result;
+	for (State q{0}; q < num_of_states; ++q) {
+		State& reduced_q{reduced_of_block[brp.set_idx[q]]};
+		if (reduced_q == Limits::max_state) { reduced_q = result.add_state(); }
+		reduced[q] = reduced_q;
+	}
+
+	std::vector<bool> is_built(brp.num_of_sets, false);
+	state_renaming.clear();
+	state_renaming.reserve(num_of_states);
+	for (State q{0}; q < num_of_states; ++q) {
+		const State reduced_q{reduced[q]};
+		state_renaming[q] = reduced_q;
+		if (aut.initial[q]) { result.initial.insert(reduced_q); }
+		if (is_built[reduced_q]) { continue; }
+		is_built[reduced_q] = true;
+		if (aut.final[q]) { result.final.insert(reduced_q); }
+		const StatePost& q_post{aut.delta[q]};
+		StatePost& reduced_post{result.delta.mutable_state_post(reduced_q)};
+		reduced_post.reserve(q_post.size());
+		for (const SymbolPost& symbol_post : q_post) {
+			reduced_post.push_back(SymbolPost{symbol_post.symbol, reduced[*symbol_post.targets.begin()]});
+		}
+	}
+	return result;
+}
+} // namespace
+
+Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
+	// `empty()` stops at the first non-empty state post. It differs from `num_of_transitions() == 0` only on a symbol
+	//  post without targets, which the required `trim()` drops.
+	if (dfa_trimmed.delta.empty()) {
+		// The automaton is trivially minimal.
+		return Nfa{dfa_trimmed};
+	}
+	MATA_ASSERT(dfa_trimmed.is_deterministic());
+	MATA_ASSERT(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
+
+	const RefinablePartition<State> brp{refine_by_hopcroft(dfa_trimmed)};
 
 	// Construct the minimized automaton using equivalence classes (BRP).
 	MATA_ASSERT(dfa_trimmed.initial.size() == 1);
@@ -2337,6 +2401,9 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa& nf
 
 Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& state_renaming) {
 	const auto reduce_by_simulation = [](const Nfa& nfa, StateRenaming& renaming) {
+		// The simulation engine costs the product of the numbers of states and transitions even when it finds no
+		//  pair to merge; Hopcroft's refinement gives the same quotient in O(m log n) here.
+		if (has_one_target_posts(nfa)) { return quotient_by_bisimulation(nfa, renaming); }
 		const auto sim_relation = algorithms::compute_partition_relation(
 			nfa, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}}
 		);
