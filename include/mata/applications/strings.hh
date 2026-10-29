@@ -539,10 +539,31 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 	bool use_homomorphic_heuristic = true
 );
 
-/// The order in which the noodlify_*_lazy() functions emit the noodles.
-enum class NoodleOrder {
-	Forward, ///< The order of the functions returning a vector.
-	Reverse, ///< The reverse of that order.
+/**
+ * @brief The order in which the noodlify_*_lazy() functions emit the noodles.
+ *
+ * The search is depth-first over the segments; at every node it orders the candidates for the next segment (the pairs
+ *  of an initial and a final state of it). The order is greedy: a candidate ranked first leads to the next noodle, not
+ *  necessarily to the best noodle overall.
+ */
+struct NoodleOrder {
+	enum class Kind {
+		Forward, ///< The order of the functions returning a vector.
+		Reverse, ///< The reverse of that order.
+		/// The candidate whose segment has the fewest states reachable from its initial state first (segments with the
+		///  language {ε} hence first), ties in the forward order. Builds the shared automata of all candidates of a
+		///  node when the search reaches the node.
+		SmallestFirst,
+		/// The candidate whose segment has the most states first, ties in the forward order; see SmallestFirst.
+		LargestFirst,
+		/// The candidates of every node shuffled by a generator seeded with @c seed.
+		Random,
+	};
+	Kind kind{Kind::Forward};
+	/// The seed of Kind::Random.
+	uint64_t seed{0};
+
+	bool operator==(const NoodleOrder&) const = default;
 };
 
 #ifdef __cpp_lib_generator
@@ -553,16 +574,15 @@ enum class NoodleOrder {
  *  stack in memory instead of all noodles, and the shared automaton of a final state (see NoodleSegment) is built
  *  when the search first reaches the final state. A consumer that stops early skips the rest of the work.
  *
- * With NoodleOrder::Reverse, the noodles come in the reverse order of NoodleOrder::Forward. A noodle that the search
- *  finishes more than once (possible only when segments with the language {ε} are left out) is emitted where it is
- *  finished first in the given order, so the reverse order may place such a noodle elsewhere.
+ * With NoodleOrder::Kind::Reverse, the noodles come in the reverse order of NoodleOrder::Kind::Forward. A noodle that
+ *  the search finishes more than once (possible only when segments with the language {ε} are left out) is emitted
+ *  where it is finished first in the given order, so another order may place such a noodle elsewhere.
  *
  * The generator owns @p aut. Without the C++23 <generator> header, this function and the other noodlify_*_lazy()
  *  functions are not declared.
  */
-std::generator<NoodleWithEpsilonsCounter> noodlify_mult_eps_lazy(
-	SegNfa aut, std::set<Symbol> epsilons, bool include_empty = false, NoodleOrder order = NoodleOrder::Forward
-);
+std::generator<NoodleWithEpsilonsCounter>
+	noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty = false, NoodleOrder order = {});
 
 /**
  * @brief Emit the noodles of noodlify_for_equation() for both sides given as sequences of automata one at a time.
@@ -575,7 +595,7 @@ std::generator<NoodleWithEpsilonsCounter> noodlify_for_equation_lazy(
 	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
 	bool include_empty = false,
 	const ParameterMap& params = {{"reduce", "false"}},
-	NoodleOrder order = NoodleOrder::Forward
+	NoodleOrder order = {}
 );
 
 /**
@@ -592,7 +612,7 @@ std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 	const std::vector<std::shared_ptr<Nfa>>& output_automata,
 	bool reduce_intersection = true,
 	bool use_homomorphic_heuristic = true,
-	NoodleOrder order = NoodleOrder::Forward
+	NoodleOrder order = {}
 );
 #endif
 

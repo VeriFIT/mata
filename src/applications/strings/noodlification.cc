@@ -3,6 +3,8 @@
  */
 
 #include <algorithm>
+#include <map>
+#include <random>
 #include <ranges>
 #include <set>
 #include <unordered_set>
@@ -280,10 +282,11 @@ using mata::nfa::Limits;
  * Depth-first search for the noodles of a segment automaton, one noodle per call of next().
  *
  * A node of the search at depth k is a pair (initial, final) of segment k, its children the pairs of segment k + 1
- *  whose initial state is a target of an ε-transition from its final state. Leaves are noodles. The children are
- *  ordered by the ε-transitions and then by the final states of the segment, so the forward order of the leaves is
- *  the order in which the breadth-first search that preceded this one completed them, and the stack of the search
- *  holds one path instead of a whole level of partial noodles.
+ *  whose initial state is a target of an ε-transition from its final state. Leaves are noodles. In the forward order,
+ *  the children are ordered by the ε-transitions and then by the final states of the segment, so the forward order of
+ *  the leaves is the order in which the breadth-first search that preceded this one completed them; the other orders
+ *  (seg_nfa::NoodleOrder) reorder the children of every node. The stack of the search holds one path instead of a
+ *  whole level of partial noodles.
  *
  * The shared automaton of a final state (see seg_nfa::NoodleSegment) is built when the search first reaches the
  *  final state, the final states that an initial state reaches when the search first reaches the initial state.
@@ -306,6 +309,7 @@ class NoodleEnumerator {
 		  segments_{segmentation_.get_untrimmed_segments()},
 		  include_empty_{include_empty},
 		  order_{order},
+		  rng_{order.seed},
 		  unused_state_{static_cast<State>(aut.num_of_states())} {
 		seg_nfa::VisitedEpsilonsCounterMap def_eps_map;
 		for (const Symbol eps : epsilons) { def_eps_map[eps] = 0; }
@@ -328,6 +332,7 @@ class NoodleEnumerator {
 		for (const State fin : segments_[0].final) {
 			if (include_empty_ || reached[fin]) { first.children.emplace_back(unused_state_, fin); }
 		}
+		order_children(first);
 		frames_.push_back(std::move(first));
 	}
 
@@ -349,9 +354,7 @@ class NoodleEnumerator {
 				if (!frames_.empty()) { pop_segment(); } // The pair whose children the frame held.
 				continue;
 			}
-			const size_t index{
-				order_ == seg_nfa::NoodleOrder::Forward ? frame.next : frame.children.size() - 1 - frame.next
-			};
+			const size_t index{frame.next};
 			++frame.next;
 			const size_t seg_id{frame.segment};
 			const auto [init, fin]{frame.children[index]};
@@ -402,6 +405,7 @@ class NoodleEnumerator {
 	const std::vector<Nfa>& segments_;
 	const bool include_empty_;
 	const seg_nfa::NoodleOrder order_;
+	std::mt19937_64 rng_;
 	/// A state not in the automaton: the initial state of the pairs of the first segment, the final of the last.
 	const State unused_state_;
 	seg_nfa::VisitedEpsilonsCounterVector def_eps_vector_{};
@@ -427,6 +431,8 @@ class NoodleEnumerator {
 	std::vector<bool> kept_{};
 	size_t num_of_left_out_{0};
 	std::unordered_set<std::vector<SegmentKey>, KeysHash> seen_{};
+	/// The number of states of a shared automaton reachable from a state of it, for the orders by size.
+	std::map<std::pair<const Nfa*, State>, size_t> segment_sizes_{};
 
 	static mata::BoolVector reached_states(const Nfa& segment, const mata::utils::SparseSet<State>& from) {
 		mata::BoolVector reached(segment.num_of_states(), false);
@@ -483,7 +489,47 @@ class NoodleEnumerator {
 			is_target_[target] = false;
 			for (const State fin : finals_reached_from(seg_id, target)) { frame.children.emplace_back(target, fin); }
 		}
+		order_children(frame);
 		return frame;
+	}
+
+	size_t segment_size(const seg_nfa::NoodleSegment& seg) {
+		const auto [iter, inserted]{segment_sizes_.try_emplace({seg.automaton.get(), seg.initial})};
+		if (inserted) {
+			const mata::BoolVector reached{reached_states(*seg.automaton, mata::utils::SparseSet<State>{seg.initial})};
+			iter->second = static_cast<size_t>(std::ranges::count(reached, true));
+		}
+		return iter->second;
+	}
+
+	void order_children(Frame& frame) {
+		using Kind = seg_nfa::NoodleOrder::Kind;
+		std::vector<SegmentKey>& children{frame.children};
+		switch (order_.kind) {
+			case Kind::Forward:
+				return;
+			case Kind::Reverse:
+				std::ranges::reverse(children);
+				return;
+			case Kind::Random:
+				std::ranges::shuffle(children, rng_);
+				return;
+			case Kind::SmallestFirst:
+			case Kind::LargestFirst: {
+				std::vector<std::pair<size_t, SegmentKey>> sized{};
+				sized.reserve(children.size());
+				for (const auto& [init, fin] : children) {
+					sized.emplace_back(segment_size(segment(frame.segment, init, fin)), SegmentKey{init, fin});
+				}
+				if (order_.kind == Kind::SmallestFirst) {
+					std::ranges::stable_sort(sized, std::less{}, &std::pair<size_t, SegmentKey>::first);
+				} else {
+					std::ranges::stable_sort(sized, std::greater{}, &std::pair<size_t, SegmentKey>::first);
+				}
+				for (size_t i{0}; i < sized.size(); ++i) { children[i] = sized[i].second; }
+				return;
+			}
+		}
 	}
 
 	const Part& part(const size_t seg_id, const State fin) {
@@ -562,7 +608,7 @@ template <class T> std::generator<T> no_noodles() { co_return; }
 
 std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	seg_nfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
-	NoodleEnumerator enumerator{aut, epsilons, include_empty, NoodleOrder::Forward};
+	NoodleEnumerator enumerator{aut, epsilons, include_empty, NoodleOrder{}};
 	std::vector<NoodleWithEpsilonsCounter> noodles{};
 	while (auto noodle{enumerator.next()}) { noodles.push_back(std::move(*noodle)); }
 	return noodles;
@@ -950,7 +996,7 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 		transducer_product(nft, input_automata, output_automata, reduce_intersection, use_homomorphic_heuristic)
 	};
 	if (!product) { return {}; }
-	NoodleEnumerator noodles{*product, {input_delimiter, output_delimiter}, false, NoodleOrder::Forward};
+	NoodleEnumerator noodles{*product, {input_delimiter, output_delimiter}, false, NoodleOrder{}};
 	TransducerElements elements{};
 	std::vector<TransducerNoodle> result;
 	while (auto noodle{noodles.next()}) { result.push_back(elements.make(*noodle)); }
