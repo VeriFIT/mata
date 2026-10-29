@@ -355,23 +355,44 @@ class Segmentation {
 	void remove_inner_initial_and_final_states();
 }; // Class Segmentation.
 
-/// A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly
-///  one ε-transition between each two consecutive segments.
-using Noodle = std::vector<std::shared_ptr<SegNfa>>;
+/**
+ * @brief A segment of a noodle: the part of a segment automaton between one of its initial states and one of its final
+ *  states.
+ *
+ * @c automaton is the reduced part of the segment automaton that reaches the final state, shared by all segments that
+ *  end in that final state; the segment is the language of @c initial in it. The initial states of @c automaton itself
+ *  are hence not those of the segment. The parts of one final state overlap almost completely, so sharing them keeps
+ *  one automaton per final state instead of one per pair of an initial and a final state.
+ */
+struct NoodleSegment {
+	std::shared_ptr<const Nfa> automaton;
+	State initial;
+
+	/// The segment as an automaton of its own: @c automaton trimmed to the states reachable from @c initial.
+	Nfa to_nfa() const;
+	/// Whether the language of the segment is {ε}.
+	bool is_epsilon_only() const;
+
+	bool operator==(const NoodleSegment&) const = default;
+};
+
+/// A noodle is represented as a sequence of segments created as if there was exactly one ε-transition between each two
+///  consecutive segments.
+using Noodle = std::vector<NoodleSegment>;
 /// Segment with a counter of visited epsilons.
-using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<Nfa>, VisitedEpsilonsCounterVector>;
+using SegmentWithEpsilonsCounter = std::pair<NoodleSegment, VisitedEpsilonsCounterVector>;
 /// Noodles as segments enriched with EpsCntMap
 using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
 
 /**
  * @brief segs_one_initial_final
  *
- * segments_one_initial_final[init, final] is the pointer to automaton created from one of
- * the segments such that init and final are one of the initial and final states of the segment
- * and the created automaton takes this segment, sets initial={init}, final={final}
- * and trims it; also segments_one_initial_final[unused_state, final] is used for the first
- * segment (where we always want all initial states, only final state changes) and
- * segments_one_initial_final[init, unused_state] is similarly for the last segment.
+ * segments_one_initial_final[init, final] is the segment of one of the segments such that init and final are one of
+ *  the initial and final states of the segment, i.e. the language from init to final in the segment; also
+ *  segments_one_initial_final[unused_state, final] is used for the first segment (where we always want all initial
+ *  states, only final state changes) and segments_one_initial_final[init, unused_state] is similarly for the last
+ *  segment. All pairs of one final state share one automaton (see NoodleSegment); the first segment, whose pairs
+ *  differ in the final state only, gets a single initial state by unifying its initial states.
  * The map is ordered so that all pairs of one initial state are contiguous: noodlify_mult_eps() visits them with one
  *  range scan instead of probing every final state.
  */
@@ -379,7 +400,7 @@ void segs_one_initial_final(
 	const std::vector<Nfa>& segments,
 	bool include_empty,
 	const State& unused_state,
-	std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out
+	std::map<std::pair<State, State>, NoodleSegment>& out
 );
 
 /**

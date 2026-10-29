@@ -1,6 +1,7 @@
 // TODO: some header
 
 #include <random>
+#include <ranges>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -73,12 +74,12 @@ TEST_CASE("mata::nfa::SegNfa::noodlify()") {
 		auto result{seg_nfa::noodlify(aut, 'c')};
 		REQUIRE(result.size() == 1);
 		REQUIRE(result[0].size() == 1);
-		CHECK(are_equivalent(*result[0][0], noodle));
+		CHECK(are_equivalent(result[0][0].to_nfa(), noodle));
 
 		auto result_segments{seg_nfa::noodlify_for_equation({aut}, aut)};
 		REQUIRE(result_segments.size() == 1);
 		REQUIRE(result_segments[0].size() == 1);
-		CHECK(are_equivalent(*result_segments[0][0], noodle));
+		CHECK(are_equivalent(result_segments[0][0].to_nfa(), noodle));
 	}
 
 	SECTION("1-2-3 epsilon transitions") {
@@ -147,9 +148,9 @@ TEST_CASE("mata::nfa::SegNfa::noodlify()") {
 	}
 }
 
-TEST_CASE("mata::nfa::seg_nfa::segs_one_initial_final() matches reduce(trim()) per pair") {
-	// Reference: one simulation per (initial, final) pair. The implementation shares one simulation per final state,
-	//  so it must still produce the identical automaton for every pair, including the state numbering.
+TEST_CASE("mata::nfa::seg_nfa::segs_one_initial_final() keeps the language of reduce(trim()) per pair") {
+	// Reference: one automaton per (initial, final) pair. The implementation shares one automaton per final state and
+	//  gives each pair its state in it, so every pair must still have the language of its reference automaton.
 	const State unused_state{1'000};
 	const auto expected_segments = [&](const std::vector<Nfa>& segments, const bool include_empty) {
 		std::map<std::pair<State, State>, Nfa> expected;
@@ -211,16 +212,29 @@ TEST_CASE("mata::nfa::seg_nfa::segs_one_initial_final() matches reduce(trim()) p
 
 		for (const bool include_empty : {false, true}) {
 			const std::map<std::pair<State, State>, Nfa> expected{expected_segments(segments, include_empty)};
-			std::map<std::pair<State, State>, std::shared_ptr<Nfa>> actual;
+			std::map<std::pair<State, State>, seg_nfa::NoodleSegment> actual;
 			seg_nfa::segs_one_initial_final(segments, include_empty, unused_state, actual);
 
 			REQUIRE(actual.size() == expected.size());
 			for (const auto& [key, expected_nfa] : expected) {
 				INFO("seed " << seed << ", pair (" << key.first << ", " << key.second << ")");
 				REQUIRE(actual.contains(key));
-				CHECK(actual.at(key)->num_of_states() == expected_nfa.num_of_states());
-				CHECK(actual.at(key)->is_identical(expected_nfa));
+				const seg_nfa::NoodleSegment& segment{actual.at(key)};
+				const Nfa segment_nfa{segment.to_nfa()};
+				CHECK(segment_nfa.initial.size() == (expected_nfa.num_of_states() > 0 ? 1 : 0));
+				CHECK(are_equivalent(segment_nfa, expected_nfa));
+				CHECK(segment.is_epsilon_only() == (expected_nfa.num_of_states() > 0 && is_lang_eps(expected_nfa)));
 			}
+
+			// One automaton per final state of the first and the inner segments, one for the last segment and one
+			//  for the empty pairs, instead of one per pair.
+			std::unordered_set<const Nfa*> automata;
+			for (const seg_nfa::NoodleSegment& segment : actual | std::views::values) {
+				automata.insert(segment.automaton.get());
+			}
+			size_t num_of_finals{0};
+			for (size_t i{0}; i + 1 < segments.size(); ++i) { num_of_finals += segments[i].final.size(); }
+			CHECK(automata.size() <= num_of_finals + 2);
 		}
 	}
 }
@@ -330,7 +344,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 		auto result{seg_nfa::noodlify_for_equation({left}, right_side)};
 		REQUIRE(result.size() == 1);
 		REQUIRE(result[0].size() == 1);
-		CHECK(are_equivalent(*result[0][0], left));
+		CHECK(are_equivalent(result[0][0].to_nfa(), left));
 	}
 
 	SECTION("Larger automata with separate noodles") {
@@ -399,18 +413,18 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 				std::make_shared<Nfa>(noodle2_segment3)
 			};
 
-			std::vector<seg_nfa::Noodle> expected{noodle1_segments, noodle2_segments};
+			std::vector<std::vector<std::shared_ptr<Nfa>>> expected{noodle1_segments, noodle2_segments};
 
 			auto result{seg_nfa::noodlify_for_equation({left1, left2, left3}, right_side)};
 			REQUIRE(result.size() == 2);
 
-			CHECK(are_equivalent(*result[0][0], *expected[0][0]));
-			CHECK(are_equivalent(*result[0][1], *expected[0][1]));
-			CHECK(are_equivalent(*result[0][2], *expected[0][2]));
+			CHECK(are_equivalent(result[0][0].to_nfa(), *expected[0][0]));
+			CHECK(are_equivalent(result[0][1].to_nfa(), *expected[0][1]));
+			CHECK(are_equivalent(result[0][2].to_nfa(), *expected[0][2]));
 
-			CHECK(are_equivalent(*result[1][0], *expected[1][0]));
-			CHECK(are_equivalent(*result[1][1], *expected[1][1]));
-			CHECK(are_equivalent(*result[1][2], *expected[1][2]));
+			CHECK(are_equivalent(result[1][0].to_nfa(), *expected[1][0]));
+			CHECK(are_equivalent(result[1][1].to_nfa(), *expected[1][1]));
+			CHECK(are_equivalent(result[1][2].to_nfa(), *expected[1][2]));
 		}
 
 		SECTION("Partial intersection") {
@@ -426,9 +440,9 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 
 			auto result{seg_nfa::noodlify_for_equation({left1, left2, left3}, right_side)};
 			REQUIRE(result.size() == 1);
-			CHECK(are_equivalent(*result[0][0], *noodle1_segments[0]));
-			CHECK(are_equivalent(*result[0][1], *noodle1_segments[1]));
-			CHECK(are_equivalent(*result[0][2], *noodle1_segments[2]));
+			CHECK(are_equivalent(result[0][0].to_nfa(), *noodle1_segments[0]));
+			CHECK(are_equivalent(result[0][1].to_nfa(), *noodle1_segments[1]));
+			CHECK(are_equivalent(result[0][2].to_nfa(), *noodle1_segments[2]));
 		}
 	}
 }
@@ -458,8 +472,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -486,8 +500,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -511,8 +525,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -537,8 +551,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -562,8 +576,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -618,8 +632,8 @@ q3 0 q4
 		);
 		CHECK(noodles.size() == 1);
 		mata::Word word{0, 0};
-		CHECK(noodles[0][0].first->get_word().value() == word);
-		CHECK(noodles[0][1].first->get_word().value() == word);
+		CHECK(noodles[0][0].first.to_nfa().get_word().value() == word);
+		CHECK(noodles[0][1].first.to_nfa().get_word().value() == word);
 	}
 }
 
@@ -630,7 +644,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() reports each noodle once") {
 		for (const auto& noodle : noodles) {
 			auto& shape{shapes.emplace_back()};
 			for (const auto& [segment, counters] : noodle) {
-				shape.emplace_back(segment->delta.num_of_transitions(), counters);
+				shape.emplace_back(segment.to_nfa().delta.num_of_transitions(), counters);
 			}
 		}
 		return shapes;
@@ -694,10 +708,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() reports each noodle once") {
 		for (size_t i{0}; i < noodles.size(); ++i) {
 			const auto& [taken, other] = branches[i];
 			REQUIRE(noodles[i].size() == 2);
-			CHECK(noodles[i][0].first->is_in_lang(taken));
-			CHECK(!noodles[i][0].first->is_in_lang(other));
+			CHECK(noodles[i][0].first.to_nfa().is_in_lang(taken));
+			CHECK(!noodles[i][0].first.to_nfa().is_in_lang(other));
 			CHECK(noodles[i][0].second == seg_nfa::VisitedEpsilonsCounterVector{0});
-			CHECK(noodles[i][1].first->is_in_lang(mata::Word{'c'}));
+			CHECK(noodles[i][1].first.to_nfa().is_in_lang(mata::Word{'c'}));
 			CHECK(noodles[i][1].second == seg_nfa::VisitedEpsilonsCounterVector{1});
 		}
 	}
