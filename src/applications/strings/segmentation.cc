@@ -71,46 +71,71 @@ std::unordered_map<State, bool> seg_nfa::Segmentation::initialize_visited_map() 
 }
 
 void seg_nfa::Segmentation::split_aut_into_segments() {
-	segments_raw_ = {epsilon_transitions_by_depth_.size() + 1, automaton_};
-	remove_inner_initial_and_final_states();
-
-	// Construct segment automata.
-	for (size_t depth{0}; depth < epsilon_transitions_by_depth_.size(); ++depth) {
-		// Split the left segment from automaton into a new segment.
-		for (const Transition& transition : epsilon_transitions_by_depth_[depth]) {
-			update_current_segment(depth, transition);
-			update_next_segment(depth, transition);
+	const size_t num_of_segments{epsilon_transitions_by_depth_.size() + 1};
+	segments_raw_.clear();
+	segments_raw_.reserve(num_of_segments);
+	BoolVector reached(automaton_.num_of_states(), false);
+	std::vector<State> worklist{};
+	for (EpsilonDepth depth{0}; depth < num_of_segments; ++depth) {
+		utils::SparseSet<State> initial{};
+		if (depth == 0) {
+			initial = automaton_.initial;
+		} else {
+			initial = utils::SparseSet<State>(static_cast<State>(automaton_.initial.domain_size()));
+			for (const Transition& transition : epsilon_transitions_by_depth_[depth - 1]) {
+				initial.insert(transition.target);
+			}
 		}
+		utils::SparseSet<State> final{};
+		if (depth + 1 == num_of_segments) {
+			final = automaton_.final;
+		} else {
+			final = utils::SparseSet<State>(static_cast<State>(automaton_.final.domain_size()));
+			for (const Transition& transition : epsilon_transitions_by_depth_[depth]) {
+				final.insert(transition.source);
+			}
+		}
+
+		// Copy only the part reachable from the segment's initial states, without the ε-transitions of this depth
+		//  (they lead to the next segment). States out of reach keep empty posts, so state ids stay those of the
+		//  automaton.
+		Delta delta(automaton_.delta.num_of_states());
+		std::ranges::fill(reached, false);
+		for (const State state : initial) {
+			if (!reached[state]) {
+				reached[state] = true;
+				worklist.push_back(state);
+			}
+		}
+		while (!worklist.empty()) {
+			const State state{worklist.back()};
+			worklist.pop_back();
+			const StatePost& state_post{automaton_.delta[state]};
+			if (state_post.empty()) { continue; }
+			StatePost& segment_state_post{delta.mutable_state_post(state)};
+			// All ε-transitions of a state have the same depth.
+			if (!get_epsilon_transitions(state).empty() && epsilon_transitions_of_state_[state].depth == depth) {
+				segment_state_post.reserve(state_post.size());
+				for (const SymbolPost& symbol_post : state_post) {
+					if (!epsilons_.contains(symbol_post.symbol)) { segment_state_post.push_back(symbol_post); }
+				}
+			} else {
+				segment_state_post = state_post;
+			}
+			for (const SymbolPost& symbol_post : segment_state_post) {
+				for (const State target : symbol_post.targets) {
+					if (!reached[target]) {
+						reached[target] = true;
+						worklist.push_back(target);
+					}
+				}
+			}
+		}
+		Nfa& segment{
+			segments_raw_.emplace_back(std::move(delta), std::move(initial), std::move(final), automaton_.alphabet)
+		};
+		segment.attributes = automaton_.attributes;
 	}
-}
-
-void seg_nfa::Segmentation::remove_inner_initial_and_final_states() {
-	const auto segments_begin{segments_raw_.begin()};
-	const auto segments_end{segments_raw_.end()};
-	for (auto iter{segments_begin}; iter != segments_end; ++iter) {
-		if (iter != segments_begin) { iter->initial.clear(); }
-		if (iter + 1 != segments_end) { iter->final.clear(); }
-	}
-}
-
-void seg_nfa::Segmentation::update_current_segment(const size_t current_depth, const Transition& transition) {
-	MATA_ASSERT(this->epsilons_.contains(transition.symbol));
-	MATA_ASSERT(segments_raw_[current_depth].delta.contains(transition.source, transition.symbol, transition.target));
-
-	segments_raw_[current_depth].final.insert(transition.source);
-	// we need to remove this transition so that the language of the current segment does not accept too much
-	segments_raw_[current_depth].delta.remove(transition);
-}
-
-void seg_nfa::Segmentation::update_next_segment(const size_t current_depth, const Transition& transition) {
-	const size_t next_depth = current_depth + 1;
-
-	MATA_ASSERT(epsilons_.contains(transition.symbol));
-	MATA_ASSERT(segments_raw_[next_depth].delta.contains(transition.source, transition.symbol, transition.target));
-
-	// we do not need to remove epsilon transitions in current_depth from the next segment (or the
-	// segments after) as the initial states are after these transitions
-	segments_raw_[next_depth].initial.insert(transition.target);
 }
 
 const std::vector<Nfa>& seg_nfa::Segmentation::get_segments() {

@@ -233,7 +233,8 @@ class Segmentation {
 	 * Get raw segment automata.
 	 * @return A vector of segments for the segment automaton in the order from the left (initial state in segment
 	 * automaton) to the right (final states of segment automaton) without trimming (the states are same as in the
-	 * original automaton).
+	 * original automaton). A segment holds only the transitions reachable from its initial states; the posts of the
+	 * other states are empty.
 	 */
 	const std::vector<Nfa>& get_untrimmed_segments();
 
@@ -298,20 +299,6 @@ class Segmentation {
 	void split_aut_into_segments();
 
 	/**
-	 * Propagate changes to the current segment automaton to the next segment automaton.
-	 * @param[in] current_depth Current depth.
-	 * @param[in] transition Current epsilon transition.
-	 */
-	void update_next_segment(size_t current_depth, const Transition& transition);
-
-	/**
-	 * Update current segment automaton.
-	 * @param[in] current_depth Current depth.
-	 * @param[in] transition Current epsilon transition.
-	 */
-	void update_current_segment(size_t current_depth, const Transition& transition);
-
-	/**
 	 * Initialize map of visited states.
 	 * @return Map of visited states.
 	 */
@@ -349,14 +336,6 @@ class Segmentation {
 	void handle_epsilon_transitions(
 		const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
 	);
-
-	/**
-	 * @brief Remove inner initial and final states.
-	 *
-	 * Remove all initial states for all segments but the first one and all final states for all segments but the
-	 *  last one.
-	 */
-	void remove_inner_initial_and_final_states();
 }; // Class Segmentation.
 
 /**
