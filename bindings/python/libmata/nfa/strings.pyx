@@ -170,14 +170,22 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     :param: bool include_empty: Whether to also include empty noodles.
     :param: dict params: Additional parameters for the noodlification:
         - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
-                    minimization before noodlification.
+                    minimization before noodlification. When "reduce" is set, the caller's left-side automata are not mutated.
     :return: List of automata: A list of all (non-empty) noodles.
     """
+    params = params or {}
+    # When reducing, the C++ side unifies the initial and final states of the left side automata in place; pass it
+    #  copies instead. `lhs_copies` keeps the copies alive while C++ holds their raw pointers.
+    copy_lhs = params.get("reduce", "false") != "false"
+    lhs_copies = []
     cdef vector[CNfa*] c_left_side_automata
     for lhs_aut in left_side_automata:
+        if copy_lhs:
+            lhs_aut = (<mata_nfa.Nfa>lhs_aut).__copy__()
+            lhs_copies.append(lhs_aut)
         c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr.get())
+
     noodle_segments = []
-    params = params or {}
     cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments = mata_strings.c_noodlify_for_equation(
         c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
         {
