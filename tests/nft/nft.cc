@@ -3211,6 +3211,37 @@ TEST_CASE("mata::nft::reduce_size_by_simulation()") {
 		CHECK(result.levels[middle_state] == 1);
 	}
 
+	SECTION("states with identical successors on different levels stay apart") {
+		// State 1 reads `a` on the second tape only; state 2 jumps over both tapes with it.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0, 0}}, 4, {0}, {3})};
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'c', 2);
+		nft.delta.add(1, 'a', 3);
+		nft.delta.add(2, 'a', 3);
+
+		const Nft reduced{reduce(nft, &state_renaming)};
+		CHECK(state_renaming.at(1) != state_renaming.at(2));
+		CHECK(reduced.levels[state_renaming.at(1)] == 1);
+		CHECK(reduced.levels[state_renaming.at(2)] == 0);
+		CHECK(are_equivalent(nft, reduced));
+	}
+
+	SECTION("states whose successors become identical by a merge on different levels stay apart") {
+		// States 3 and 4 are merged first; only then do states 1 and 2 have identical successors.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0, 0, 0}}, 5, {0}, {3, 4})};
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'c', 2);
+		nft.delta.add(1, 'a', 3);
+		nft.delta.add(2, 'a', 4);
+
+		const Nft reduced{reduce(nft, &state_renaming)};
+		CHECK(state_renaming.at(3) == state_renaming.at(4));
+		CHECK(state_renaming.at(1) != state_renaming.at(2));
+		CHECK(reduced.levels[state_renaming.at(1)] == 1);
+		CHECK(reduced.levels[state_renaming.at(2)] == 0);
+		CHECK(are_equivalent(nft, reduced));
+	}
+
 	// The marker self-loops that encoded "final" and "level" were derived from the largest used symbol
 	//  in `Symbol` arithmetic. EPSILON is the largest `Symbol`, so an NFT using it wrapped the final
 	//  marker onto symbol 0 and the level markers onto 1 + level; with DONT_CARE (EPSILON - 1) as the
