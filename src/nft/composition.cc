@@ -1341,7 +1341,8 @@ Nft compose_fast_no_jump_with(
 						// We are waiting in the stationary state.
 						// During this, only EPSILON synchronizations are allowed.
 						const auto& copy_eps_symbol_post = copy_nft.delta[copy_target].find(EPSILON);
-						MATA_ASSERT(copy_eps_symbol_post != copy_nft.delta[copy_target].end());
+						// A dead end has no EPSILON transition to synchronize on.
+						if (copy_eps_symbol_post == copy_nft.delta[copy_target].end()) { continue; }
 						for (const State sync_target : copy_eps_symbol_post->targets) {
 							MATA_ASSERT(copy_nft.levels[sync_target] == 0);
 							symbol_post.insert(create_composition_state(
@@ -1522,6 +1523,13 @@ Nft compose_fast_no_jump_with(
 					(!is_lhs_waiting && waiting_sync_props.num_of_levels_before_sync > 0)
 				);
 
+				// Do the EPSILON synchronization.
+				// We cannot use the synchronize function here, because we want to
+				// focus only on the EPSILON transitions.
+				const auto& running_epsilon_post_it = running_delta[running_state].find(EPSILON);
+				// A dead end keeps the type UNDEFINED and has no EPSILON transition to synchronize on.
+				if (running_epsilon_post_it == running_delta[running_state].end()) { continue; }
+
 				if (num_of_epsilons_to_replace_sync > 1) {
 					// The synchronization will be replaced by an EPSILON transition anyway.
 					// To reduce the number of redundant EPSILON transitions in the resulting NFT,
@@ -1532,12 +1540,6 @@ Nft compose_fast_no_jump_with(
 					);
 				}
 
-				// Do the EPSILON synchronization.
-				// We cannot use the synchronize function here, because we want to
-				// focus only on the EPSILON transitions.
-				const auto& running_epsilon_post_it = running_delta[running_state].find(EPSILON);
-				// There should be an EPSILON transition. It has been told by the SynchronizationType.
-				MATA_ASSERT(running_epsilon_post_it != running_delta[running_state].end());
 				SymbolPost epsilon_symbol_post{EPSILON};
 				for (const State running_epsilon_target : running_epsilon_post_it->targets) {
 					if (running_state_level == 0 && running_num_of_levels != 1 &&

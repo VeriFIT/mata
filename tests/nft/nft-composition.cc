@@ -3559,3 +3559,22 @@ TEST_CASE("mata::nft::compose() validates the whole request - issue #818") {
 		CHECK_THROWS_AS(compose_alphabets(three_levels, two_levels, {0, 1}, {0}), std::invalid_argument);
 	}
 }
+
+TEST_CASE("mata::nft::compose() with FastNoJump and a dead end on the synchronization level") {
+	// 4 -DONT_CARE-> 2 ends on the synchronization level in state 2, which has no outgoing transitions.
+	Nft rhs = Nft::with_levels({2, {0, 1, 1, 0, 0, 0, 1, 1}}, 8, {0}, {});
+	rhs.delta.add(0, EPSILON, 6);
+	rhs.delta.add(6, EPSILON, 3);
+	rhs.delta.add(3, 2, 7);
+	rhs.delta.add(7, 2, 4);
+	rhs.delta.add(4, 2, 1);
+	rhs.delta.add(1, EPSILON, 5);
+	rhs.delta.add(4, DONT_CARE, 2);
+	Nft lhs = Nft::with_levels({1, {0}}, 1, {0}, {});
+	lhs.delta.add(0, 2, 0);
+
+	const Nft result = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump, CompositionMode::FastNoJump);
+	CHECK(result.is_lang_empty());
+	const Nft projected = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump, CompositionMode::FastNoJump);
+	CHECK(projected.is_lang_empty());
+}
