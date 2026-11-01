@@ -868,7 +868,7 @@ StateSet search_by_words(const Nft& nft, const PostQuery& query, Positions& posi
 	const bool bitmap_fits{
 		Positions::RANKED && positions.num_of_ids() <= MAX_VISITED_BITS / std::max<size_t>(num_of_states, 1)
 	};
-	const size_t bitmap_bits{bitmap_fits ? positions.num_of_ids() * num_of_states : 0};
+	const size_t bitmap_bits{bitmap_fits ? static_cast<size_t>(positions.num_of_ids() * num_of_states) : 0};
 	std::unordered_set<uint64_t> visited;
 	std::vector<bool> visited_bitmap{};
 	auto mark_visited = [&](const uint32_t positions_id, const State state) {
