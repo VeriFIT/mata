@@ -2036,3 +2036,9 @@ TEST_CASE("mata::parser::create_nfa() post-processing options") {
 		CHECK_THROWS(mata::parser::create_nfa("\\x{100}", Re2Options{.encoding = Encoding::Latin1}));
 	}
 }
+
+TEST_CASE("mata::parser::create_nfa() regex beyond RE2's memory budget") {
+	std::string regex = "";
+	for (int i = 0; i < 1'000; ++i) { regex += "[a-z]{1000}"; }
+	CHECK_THROWS_WITH(mata::parser::create_nfa(regex), Catch::Matchers::ContainsSubstring("memory budget"));
+}

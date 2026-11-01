@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -228,15 +229,19 @@ class RegexParser {
 
 mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Options& options) {
 	RegexParser regex_parser{};
-	const auto parsed_regex = regex_parser.parse_regex_string(pattern, options.encoding);
-	const auto program = parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3);
+	// Own RE2's raw pointers, so they are also freed when the conversion below throws.
+	const auto parsed_regex = std::unique_ptr<re2::Regexp, decltype([](re2::Regexp* regex) { regex->Decref(); })>(
+		regex_parser.parse_regex_string(pattern, options.encoding)
+	);
+	const auto program =
+		std::unique_ptr<re2::Prog>(parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3));
+	if (program == nullptr) {
+		throw std::invalid_argument("Error compiling the regular expression: it exceeds RE2's memory budget");
+	}
 	mata::nfa::Nfa result{
-		options.keep_epsilon ? RegexParser::convert_prog_with_epsilon(program, options.epsilon)
-							 : RegexParser::convert_prog_without_epsilon(program)
+		options.keep_epsilon ? RegexParser::convert_prog_with_epsilon(program.get(), options.epsilon)
+							 : RegexParser::convert_prog_without_epsilon(program.get())
 	};
-	delete program;
-	// Decrements reference count and deletes object if the count reaches 0
-	parsed_regex->Decref();
 
 	if (options.trim) { result.trim(); }
 	if (options.reduce) { result = mata::nfa::reduce(result); }
