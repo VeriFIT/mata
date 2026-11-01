@@ -11,10 +11,12 @@
 #include <optional>
 #include <queue>
 #include <ranges>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 
+#include "mata/nfa/algorithms.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/delta.hh"
 #include "mata/nft/nft.hh"
@@ -157,6 +159,51 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 		}
 	}
 
+	return result;
+}
+
+/**
+ * @brief Reduce @p aut by simulation after merging the states with identical successors.
+ *
+ * The simulation costs the product of the numbers of states and transitions. States with the same level, finality
+ *  and successors are simulation equivalent and numbered by their smallest states, so the quotient by the
+ *  simulation of the merged transducer is the quotient of @p aut itself.
+ */
+Nft reduce_by_merge_and_simulation(const Nft& aut, StateRenaming& state_renaming) {
+	const size_t num_of_states{aut.num_of_states()};
+	const std::vector<State> class_of{nfa::algorithms::identical_successor_classes(
+		aut, num_of_states, std::span<const Level>{aut.levels.data(), aut.levels.size()}
+	)};
+	const size_t num_of_classes{num_of_states == 0 ? 0 : static_cast<size_t>(std::ranges::max(class_of)) + 1};
+	if (num_of_classes == num_of_states) { return reduce_size_by_simulation(aut, state_renaming); }
+
+	Nft merged{Nft::with_levels(aut.levels.num_of_levels)};
+	std::vector<State> targets;
+	State num_of_built{0};
+	for (State q{0}; q < num_of_states; ++q) {
+		const State merged_q{class_of[q]};
+		if (aut.initial[q]) { merged.initial.insert(merged_q); }
+		// The classes are numbered in the order of their smallest states, so a new class is the next state.
+		if (merged_q < num_of_built) { continue; }
+		MATA_ASSERT(merged_q == num_of_built);
+		++num_of_built;
+		merged.add_state_with_level(merged_q, aut.levels[q]);
+		if (aut.final[q]) { merged.final.insert(merged_q); }
+		StatePost& merged_post{merged.delta.mutable_state_post(merged_q)};
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			targets.clear();
+			for (const State target : symbol_post.targets) { targets.push_back(class_of[target]); }
+			std::ranges::sort(targets);
+			targets.erase(std::ranges::unique(targets).begin(), targets.end());
+			merged_post.push_back(SymbolPost{symbol_post.symbol, std::span<const State>{targets}});
+		}
+	}
+
+	StateRenaming merged_renaming;
+	Nft result{reduce_size_by_simulation(merged, merged_renaming)};
+	state_renaming.clear();
+	state_renaming.reserve(num_of_states);
+	for (State q{0}; q < num_of_states; ++q) { state_renaming[q] = merged_renaming.at(class_of[q]); }
 	return result;
 }
 
@@ -1682,7 +1729,7 @@ Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const Param
 	Nft result;
 	std::unordered_map<State, State> reduced_state_map;
 	if (const std::string& algorithm = params.at("algorithm"); "simulation" == algorithm) {
-		result = reduce_size_by_simulation(aut, reduced_state_map);
+		result = reduce_by_merge_and_simulation(aut, reduced_state_map);
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + algorithm

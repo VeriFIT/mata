@@ -83,20 +83,12 @@ template <class Relation> Relation compute_fw_direct_simulation(const Nfa& aut) 
 	}
 }
 
-/**
- * @brief Classes of states that have the same finality and, over every symbol, successors in the same classes.
- *
- * Starts from the identity and merges states with identical successors, then states whose successors became
- *  identical by the merge, until nothing merges. Every merge joins classes with the same successors, so the
- *  partition stays a bisimulation and the quotient keeps the forward simulation of every state. It is far cheaper
- *  than the simulation itself: the first pass hashes each state post once, and after it only the classes of the
- *  predecessors of the states of an absorbed class are hashed again. The classes are numbered in the order of
- *  their smallest states.
- *
- * @return The class of each state; the number of classes is one past the largest class.
- */
-std::vector<State> identical_successor_classes(const Nfa& aut) {
-	const size_t num_of_states{aut.num_of_states()};
+} // namespace
+
+std::vector<State> mata::nfa::algorithms::identical_successor_classes(
+	const Automaton& aut, const size_t num_of_states, const std::span<const Level> levels
+) {
+	const auto level_of = [&](const State q) -> size_t { return q < levels.size() ? levels[q] : 0; };
 	std::vector<State> class_of(num_of_states);
 	std::vector<State> next_class_of(num_of_states);
 	// Numbers the classes of the states equal by `equal` in the order of their smallest states into next_class_of.
@@ -129,7 +121,7 @@ std::vector<State> identical_successor_classes(const Nfa& aut) {
 	//  merge nothing and are done after this round, without copying their transitions.
 	size_t num_of_classes{merge_round(
 		[&](const State q) {
-			size_t accum{hash_step(HASH_SEED, aut.final[q])};
+			size_t accum{hash_step(hash_step(HASH_SEED, aut.final[q]), level_of(q))};
 			for (const SymbolPost& symbol_post : aut.delta[q]) {
 				accum = hash_step(accum, symbol_post.symbol);
 				for (const State target : symbol_post.targets) { accum = hash_step(accum, target); }
@@ -137,7 +129,8 @@ std::vector<State> identical_successor_classes(const Nfa& aut) {
 			return hash_mix(accum);
 		},
 		[&](const State lhs, const State rhs) {
-			return aut.final[lhs] == aut.final[rhs] && aut.delta[lhs] == aut.delta[rhs];
+			return aut.final[lhs] == aut.final[rhs] && level_of(lhs) == level_of(rhs) &&
+				   aut.delta[lhs] == aut.delta[rhs];
 		}
 	)};
 	class_of.swap(next_class_of);
@@ -189,6 +182,7 @@ std::vector<State> identical_successor_classes(const Nfa& aut) {
 		sig.clear();
 		const State q{first_member[cls]};
 		sig.push_back(aut.final[q] ? 1 : 0);
+		sig.push_back(static_cast<State>(level_of(q)));
 		for (const SymbolPost& symbol_post : aut.delta[q]) {
 			targets.clear();
 			for (const State target : symbol_post.targets) { targets.push_back(class_of[target]); }
@@ -262,6 +256,8 @@ std::vector<State> identical_successor_classes(const Nfa& aut) {
 	}
 	return class_of;
 }
+
+namespace {
 
 /// Incoming transitions `(source, symbol)` of each state of the result of residual reduction "with", recorded when
 ///  a transition is added. A removed transition leaves its entry behind, so users check the delta.
@@ -2416,7 +2412,7 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 	//  identical successors, often half of an automaton built by a union or a loop, are merged first. They are
 	//  simulation equivalent and numbered by their smallest states, so the quotient by the simulation of the
 	//  merged automaton is the quotient of `aut` itself, with the same numbering.
-	const std::vector<State> class_of{identical_successor_classes(aut)};
+	const std::vector<State> class_of{identical_successor_classes(aut, aut.num_of_states())};
 	const size_t num_of_states{aut.num_of_states()};
 	const size_t num_of_classes{num_of_states == 0 ? 0 : static_cast<size_t>(std::ranges::max(class_of)) + 1};
 	if (num_of_classes == num_of_states) { return reduce_by_simulation(aut, state_renaming); }

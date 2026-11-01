@@ -12,8 +12,10 @@
 #define MATA_NFA_INTERNALS_HH_
 
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "mata/simlib/util/binary_relation.hh"
 #include "mata/simlib/util/partition_relation.hh"
@@ -52,6 +54,26 @@ Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
  * @return Minimal deterministic automaton.
  */
 Nfa minimize_auto(const Nfa& aut);
+
+/**
+ * @brief Classes of states that have the same finality, the same level, and, over every symbol, successors in the
+ *  same classes.
+ *
+ * Starts from the identity and merges states with identical successors, then states whose successors became
+ *  identical by the merge, until nothing merges. Every merge joins classes with the same successors, so the
+ *  partition stays a bisimulation and the quotient keeps the forward simulation of every state. It is far cheaper
+ *  than the simulation itself: the first pass hashes each state post once, and after it only the classes of the
+ *  predecessors of the states of an absorbed class are hashed again. The classes are numbered in the order of
+ *  their smallest states.
+ *
+ * @param[in] aut Automaton whose states to classify.
+ * @param[in] num_of_states Number of states of @p aut.
+ * @param[in] levels Level of each state of a transducer. States past its end, and all states of an NFA, for which it
+ *  is empty, are on level 0.
+ * @return The class of each state; the number of classes is one past the largest class.
+ */
+std::vector<State>
+	identical_successor_classes(const Automaton& aut, size_t num_of_states, std::span<const Level> levels = {});
 
 /**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
