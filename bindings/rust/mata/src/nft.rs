@@ -631,8 +631,6 @@ impl Nft {
 
 	/// Restricts level `level` to the words of `nfa` and projects that level out: for a two-level
 	/// transducer and `level` 0, the image of the language of `nfa` (use [`Nft::to_nfa`] on the result).
-	/// The levels before `level` end up after the level that was synchronized, as in
-	/// [`Nft::compose_on`](crate::nft::Nft::compose_on) with `self` as the other side.
 	///
 	/// # Errors
 	///
@@ -652,9 +650,7 @@ impl Nft {
 		))))
 	}
 
-	/// Restricts level `level` to the words of `nfa`, keeping all levels. The levels before `level` end
-	/// up after the level that was synchronized, as in
-	/// [`Nft::compose_on`](crate::nft::Nft::compose_on) with `self` as the other side.
+	/// Restricts level `level` to the words of `nfa`, keeping all levels.
 	///
 	/// # Errors
 	///
