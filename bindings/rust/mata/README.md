@@ -3,6 +3,9 @@
 [![crates.io](https://img.shields.io/crates/v/mata.svg)](https://crates.io/crates/mata)
 [![docs.rs](https://img.shields.io/docsrs/mata)](https://docs.rs/mata)
 
+The crates.io and docs.rs links above are for the first published release, which is in preparation;
+until then, use this crate from the repository.
+
 Safe Rust bindings to [Mata](https://github.com/VeriFIT/mata), the finite automata library of the VeriFIT group at FIT BUT.
 
 ```rust

@@ -38,8 +38,9 @@ _with-sources COMMAND ARGS:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	# Cargo counts the copied sources as uncommitted changes, so it gets '--allow-dirty' and this check instead.
-	if [[ -n "$(git status --porcelain -- .)" ]]; then
-		echo "The bindings have uncommitted changes. Commit them first." >&2
+	# The whole repository: the package carries the C++ sources, so uncommitted changes anywhere ship stale ones.
+	if [[ -n "$(git -C '{{ ROOT }}' status --porcelain)" ]]; then
+		echo "The repository has uncommitted changes. Commit them first." >&2
 		exit 1
 	fi
 	sources=mata-sys/mata
