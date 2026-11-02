@@ -113,6 +113,67 @@ jobs:
         uses: ./.github/workflows/actions/compile-python-tarball
       - name: Test the Python bindings
         uses: ./.github/workflows/actions/test-python
+  run-tests-rust:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      # Rust links the C++ runtime itself, so it has to be pointed at Homebrew's libc++ as well.
+      - name: Link against Homebrew's libc++ (macOS)
+        if: ${{ matrix.os == 'macos-latest' }}
+        shell: sh
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          echo "RUSTFLAGS=-L $LLVM_PREFIX/lib/c++ -C link-arg=-Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Check the formatting of the Rust bindings
+        run: cargo fmt --all --check
+      - name: Lint the Rust bindings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test the Rust bindings
+        run: cargo test --workspace --all-features
+      - name: Build the documentation of the Rust bindings
+        run: cargo doc --workspace --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+  run-tests-rust-wasm:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-emscripten
+      # The latest release, as Rust's CI uses for the standard library of the target.
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install latest
+          "$HOME/emsdk/emsdk" activate latest
+      # Runs the tests under Node (bindings/rust/.cargo/config.toml).
+      - name: Test the Rust bindings on WebAssembly
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          cargo test --workspace --all-features --target wasm32-unknown-emscripten
   # run-test-performance-base:
   #   runs-on: ${{ matrix.os }}
   #   strategy:

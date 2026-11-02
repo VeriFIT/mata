@@ -1,0 +1,32 @@
+[package]
+name = "mata"
+version = "0.1.0"
+description = "Safe, idiomatic Rust bindings to Mata, the VeriFIT library for finite automata"
+readme = "README.md"
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[features]
+## Serialize and deserialize automata, alphabets and the id types with serde.
+serde = ["dep:serde"]
+
+[dependencies]
+mata-sys.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -5,10 +5,11 @@
 [![Python-Binding (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=master)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml)
 [![codecov](https://codecov.io/gh/VeriFIT/mata/branch/master/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 
-Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:
+Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers three interfaces:
 
-1. An efficient library implemented in C/C++, and
-2. A flexible wrapper implemented in Python that uses the efficient library.
+1. An efficient library implemented in C/C++,
+2. A flexible wrapper implemented in Python that uses the efficient library, and
+3. Rust bindings with a safe API over the efficient library.
 
 ## Installation
 
@@ -138,6 +139,27 @@ Finally, you can verify the binding woks as expected by running the test suite:
 
 ```shell
 make -C bindings/python test
+```
+
+## Rust binding
+
+Mata offers bindings of its library to Rust in [`bindings/rust`](./bindings/rust/): the crate [`mata`](https://crates.io/crates/mata) with a safe API, and the crate [`mata-sys`](https://crates.io/crates/mata-sys), which builds the library. They need Rust 1.88 or newer besides the requirements of the library.
+
+### Installation from crates.io
+
+To add the latest version to a Cargo project, run:
+
+```shell
+cargo add mata
+```
+
+### Building from sources
+
+To build the bindings and run their tests:
+
+```shell
+cd bindings/rust
+cargo test --workspace --all-features
 ```
 
 ## Getting started
@@ -275,6 +297,28 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 ```
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
+
+### Using the Rust binding
+
+The API documentation of the Rust binding is on [docs.rs](https://docs.rs/mata). Its usage follows the C++ library:
+
+```rust
+use mata::{Error, Nfa, State, Symbol};
+
+fn main() -> Result<(), Error> {
+    let mut aut = Nfa::with_states(4);
+
+    aut.add_initial(State::new(0))?;
+    aut.add_initial(State::new(1))?;
+    aut.add_final(State::new(2))?;
+    aut.add_final(State::new(3))?;
+    aut.add_transition(State::new(0), Symbol::new(0), State::new(2))?;
+    aut.add_transition(State::new(1), Symbol::new(1), State::new(3))?;
+
+    println!("{}", aut.dot());
+    Ok(())
+}
+```
 
 ### Benchmarking, profiling
 
