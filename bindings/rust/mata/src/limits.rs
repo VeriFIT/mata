@@ -35,28 +35,28 @@ use mata_sys::ffi;
 /// ```
 #[derive(Clone, Debug, Default)]
 pub struct Limits {
-    max_states: Option<usize>,
+	max_states: Option<usize>,
 }
 
 impl Limits {
-    /// No limits.
-    #[must_use]
-    pub const fn new() -> Limits {
-        Limits { max_states: None }
-    }
+	/// No limits.
+	#[must_use]
+	pub const fn new() -> Limits {
+		Limits { max_states: None }
+	}
 
-    /// At most `max_states` states in each deterministic automaton that the operation builds.
-    #[must_use]
-    pub const fn max_states(mut self, max_states: usize) -> Limits {
-        self.max_states = Some(max_states);
-        self
-    }
+	/// At most `max_states` states in each deterministic automaton that the operation builds.
+	#[must_use]
+	pub const fn max_states(mut self, max_states: usize) -> Limits {
+		self.max_states = Some(max_states);
+		self
+	}
 }
 
 impl From<&Limits> for ffi::Limits {
-    fn from(limits: &Limits) -> ffi::Limits {
-        ffi::Limits {
-            max_states: limits.max_states.unwrap_or(usize::MAX),
-        }
-    }
+	fn from(limits: &Limits) -> ffi::Limits {
+		ffi::Limits {
+			max_states: limits.max_states.unwrap_or(usize::MAX),
+		}
+	}
 }

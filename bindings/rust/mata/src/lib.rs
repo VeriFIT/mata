@@ -14,13 +14,13 @@ mod types;
 
 pub use alphabet::Alphabet;
 pub use error::{
-    AlphabetError, Error, InvalidAutomaton, LimitExceeded, NftError, NoSuchState, ParseError,
-    RegexError,
+	AlphabetError, Error, InvalidAutomaton, LimitExceeded, NftError, NoSuchState, ParseError,
+	RegexError,
 };
 pub use limits::Limits;
 pub use nfa::Nfa;
 pub use options::{
-    CheckAlgorithm, Complementation, Direction, Minimization, Reduction, ResidualConstruction,
+	CheckAlgorithm, Complementation, Direction, Minimization, Reduction, ResidualConstruction,
 };
 pub use types::{Distinction, Run, Side, State, Symbol, Transition, Word, word_from_bytes};
 
@@ -29,5 +29,5 @@ pub use mata_sys as sys;
 
 /// Unwraps a bridge call that throws only when something is badly wrong (such as running out of memory).
 fn check<T>(result: Result<T, mata_sys::cxx::Exception>) -> T {
-    result.unwrap_or_else(|error| panic!("Mata failed: {}", error.what()))
+	result.unwrap_or_else(|error| panic!("Mata failed: {}", error.what()))
 }

@@ -26,6 +26,7 @@
             indentation = "\t";
           };
 
+          rustfmt.enable = true;
           clang-format.enable = true;
           cmake-format = {
             enable = true;

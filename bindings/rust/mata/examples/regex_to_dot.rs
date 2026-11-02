@@ -9,17 +9,17 @@ use std::{env, process};
 use mata::Nfa;
 
 fn main() {
-    let Some(pattern) = env::args().nth(1) else {
-        eprintln!("usage: regex_to_dot PATTERN");
-        process::exit(2);
-    };
-    let nfa = match Nfa::from_regex(&pattern) {
-        Ok(nfa) => nfa,
-        Err(error) => {
-            eprintln!("{error}");
-            process::exit(1);
-        }
-    };
-    let dfa = nfa.minimize();
-    print!("{}", dfa.dot().ascii_labels(true).intervals(true));
+	let Some(pattern) = env::args().nth(1) else {
+		eprintln!("usage: regex_to_dot PATTERN");
+		process::exit(2);
+	};
+	let nfa = match Nfa::from_regex(&pattern) {
+		Ok(nfa) => nfa,
+		Err(error) => {
+			eprintln!("{error}");
+			process::exit(1);
+		}
+	};
+	let dfa = nfa.minimize();
+	print!("{}", dfa.dot().ascii_labels(true).intervals(true));
 }

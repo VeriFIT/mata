@@ -104,6 +104,12 @@ includes = ["*.py", "*.pyi"]
 options = ["format", "--line-length", "120"]
 priority = 1
 
+[formatter.rustfmt]
+command = "rustfmt"
+excludes = []
+includes = ["*.rs"]
+options = ["--config", "skip_children=true", "--edition", "2024"]
+
 [formatter.taplo]
 command = "taplo"
 excludes = []

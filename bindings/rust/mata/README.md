@@ -39,6 +39,7 @@ assert_eq!(a.minimize().num_states(), 4);
 - `serde`: `Serialize` and `Deserialize` for [`Nfa`], [`Alphabet`], [`State`], [`Symbol`] and [`Transition`].
 
 <!-- Explicit link targets, so that the links also work on crates.io, where this README is shown too. -->
+
 [`Alphabet`]: https://docs.rs/mata/latest/mata/alphabet/struct.Alphabet.html
 [`Limits`]: https://docs.rs/mata/latest/mata/struct.Limits.html
 [`Nfa`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html

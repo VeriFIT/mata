@@ -1,0 +1,2 @@
+# The C++ sources of the repository use tabs; the Rust bindings follow them.
+hard_tabs = true

@@ -3,4 +3,9 @@
 [target.wasm32-unknown-emscripten]
 runner = "node"
 # Without growth, the heap stays at Emscripten's 16 MiB; proptest needs more than its 64 KiB stack.
-rustflags = ["-C", "link-arg=-sALLOW_MEMORY_GROWTH=1", "-C", "link-arg=-sSTACK_SIZE=8MB"]
+rustflags = [
+  "-C",
+  "link-arg=-sALLOW_MEMORY_GROWTH=1",
+  "-C",
+  "link-arg=-sSTACK_SIZE=8MB",
+]
