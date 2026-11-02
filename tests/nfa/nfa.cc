@@ -5448,6 +5448,32 @@ TEST_CASE("mata::nfa::Nfa::trim()") {
 		CHECK(aut.num_of_states() == 0);
 		CHECK(state_map.empty());
 	}
+
+	SECTION("With state map, every state useful") {
+		Nfa aut{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'a', 0);
+		const Nfa expected{aut};
+		// Stale entries from an earlier call must not survive.
+		StateRenaming state_map{{0, 7}, {5, 1}, {9, 9}};
+		aut.trim(&state_map);
+		CHECK(aut.num_of_states() == 3);
+		CHECK(aut.initial == expected.initial);
+		CHECK(aut.final == expected.final);
+		CHECK(aut.delta == expected.delta);
+		CHECK(state_map == StateRenaming{{0, 0}, {1, 1}, {2, 2}});
+	}
+
+	SECTION("With state map, no states") {
+		Nfa aut{};
+		StateRenaming state_map{{0, 3}, {4, 1}};
+		aut.trim(&state_map);
+		CHECK(aut.num_of_states() == 0);
+		CHECK(state_map.empty());
+	}
 }
 
 TEST_CASE("mata::nfa::trim()") {

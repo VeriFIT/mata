@@ -76,6 +76,15 @@ template <typename Self> bool Automaton::is_lang_empty(this const Self& self, nf
 template <typename Self>
 Self& Automaton::trim_impl(this Self& self, const BoolVector& useful_states, nfa::StateRenaming* state_renaming) {
 	const size_t useful_states_size{useful_states.size()};
+	// Nothing to remove: the renaming would be the identity, so the transitions are left as they are.
+	if (std::ranges::all_of(useful_states, [](const uint8_t is_useful) { return is_useful != 0; })) {
+		if (state_renaming != nullptr) {
+			state_renaming->clear();
+			state_renaming->reserve(useful_states_size);
+			for (nfa::State q{0}; q < useful_states_size; ++q) { (*state_renaming)[q] = q; }
+		}
+		return self;
+	}
 	std::vector<nfa::State> renaming(useful_states_size);
 	for (nfa::State new_state{0}, orig_state{0}; orig_state < useful_states_size; ++orig_state) {
 		if (useful_states[orig_state]) {
