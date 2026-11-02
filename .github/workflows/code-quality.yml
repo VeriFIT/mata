@@ -113,6 +113,99 @@ jobs:
         uses: ./.github/workflows/actions/compile-python-tarball
       - name: Test the Python bindings
         uses: ./.github/workflows/actions/test-python
+  run-tests-rust:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      # Rust links the C++ runtime itself, so it has to be pointed at Homebrew's libc++ as well.
+      - name: Link against Homebrew's libc++ (macOS)
+        if: ${{ matrix.os == 'macos-latest' }}
+        shell: sh
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          echo "RUSTFLAGS=-L $LLVM_PREFIX/lib/c++ -C link-arg=-Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/rust
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Check the formatting of the Rust bindings
+        run: cargo fmt --all --check
+      - name: Lint the Rust bindings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test the Rust bindings
+        run: cargo test --workspace --all-features
+      - name: Build the documentation of the Rust bindings
+        run: cargo doc --workspace --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+  check-msrv-rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - name: Read the minimum supported Rust version
+        run: echo "MSRV=$(sed -n 's/^rust-version *= *\"\(.*\)\"/\1/p' Cargo.toml)" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.MSRV }}
+      - name: Check the Rust bindings on the minimum supported Rust version
+        run: cargo check --workspace --all-targets --all-features
+  run-tests-rust-wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # Pinned to the release the bindings are tested with (mata-sys/README.md); 'latest' is a
+      # moving target that may not match Rust's prebuilt standard library for the target.
+      EMSCRIPTEN_VERSION: 6.0.13
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-emscripten
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/rust
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install "$EMSCRIPTEN_VERSION"
+          "$HOME/emsdk/emsdk" activate "$EMSCRIPTEN_VERSION"
+      # Runs the tests under Node (bindings/rust/.cargo/config.toml).
+      - name: Test the Rust bindings on WebAssembly
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          cargo test --workspace --all-features --target wasm32-unknown-emscripten
   # run-test-performance-base:
   #   runs-on: ${{ matrix.os }}
   #   strategy:
@@ -362,6 +455,25 @@ jobs:
           ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
+      # The Rust bindings against the instrumented library: the FFI gets ASan/UBSan coverage too.
+      - name: Install the instrumented Mata for the Rust bindings
+        run: cmake --install build --prefix "$PWD/mata-install"
+      # `libmata.a` is instrumented but the Rust binaries are not, so the sanitizer runtimes are linked
+      #  explicitly, and ASan, which has to come first, is preloaded into the test binaries only (`--target`
+      #  keeps the build scripts, which cargo runs itself, out of it). Doctests get the same flags.
+      # The `compose` law test hits Mata's composition assertion of #902 in this Debug build; it runs in
+      #  run-tests-rust (Release). `--exact` keeps the other tests whose names contain "compose".
+      - name: Run the Rust bindings under sanitizers
+        working-directory: bindings/rust
+        env:
+          MATA_DIR: ${{ github.workspace }}/mata-install
+          RUSTFLAGS: -C link-arg=-Wl,--no-as-needed -C link-arg=-lasan -C link-arg=-lubsan
+          RUSTDOCFLAGS: -C link-arg=-Wl,--no-as-needed -C link-arg=-lasan -C link-arg=-lubsan
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: |
+          export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="env LD_PRELOAD=$("$CXX" -print-file-name=libasan.so)"
+          cargo test --workspace --all-features --target x86_64-unknown-linux-gnu -- --skip compose --exact
   # The default build has 32-bit states; the 64-bit escape hatch has to keep building and passing too.
   state-bits-64:
     runs-on: ubuntu-latest

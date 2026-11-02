@@ -25,6 +25,10 @@
       };
       mataPy = mataPyGcc;
 
+      mataRust = pkgs.callPackage ./mata-rust.nix {
+        inherit version;
+      };
+
       mataDocs = pkgs.callPackage ./mata-docs.nix {
         mata = mata;
       };
@@ -40,6 +44,7 @@
           mataPyGcc
           mataPyClang
 
+          mataRust
           mataDocs
           ;
         default = mata;
@@ -53,6 +58,7 @@
           mataPyGcc
           mataPyClang
 
+          mataRust
           mataDocs
           ;
       };

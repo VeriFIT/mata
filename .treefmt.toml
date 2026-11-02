@@ -41,7 +41,7 @@ options = ["-i"]
 [formatter.cmake-format]
 command = "cmake-format"
 excludes = ["cmake/GetGitRevisionDescription.cmake"]
-includes = ["*.cmake", "CMakeLists.txt", "*/CMakeLists.txt"]
+includes = ["*.cmake", "CMakeLists.txt", "**/CMakeLists.txt"]
 options = ["--in-place"]
 
 [formatter.just]
@@ -103,6 +103,12 @@ excludes = []
 includes = ["*.py", "*.pyi"]
 options = ["format", "--line-length", "120"]
 priority = 1
+
+[formatter.rustfmt]
+command = "rustfmt"
+excludes = []
+includes = ["*.rs"]
+options = ["--config", "skip_children=true", "--edition", "2024"]
 
 [formatter.taplo]
 command = "taplo"

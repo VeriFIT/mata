@@ -3,6 +3,9 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINA
 
 # create glob all source files with .cc and .hh extensions
 file (GLOB_RECURSE MATA_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+file (GLOB_RECURSE MATA_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/*.hh"
+	  "${PROJECT_SOURCE_DIR}/include/*.tpp"
+)
 
 # add_library(libmata SHARED
 add_library (
@@ -36,6 +39,19 @@ target_include_directories (
 	PRIVATE $<TARGET_PROPERTY:cudd,INTERFACE_INCLUDE_DIRECTORIES>
 			$<TARGET_PROPERTY:simlib,INTERFACE_INCLUDE_DIRECTORIES>
 			$<TARGET_PROPERTY:re2,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
+# The installed headers: the sources, and the generated `mata/config.hh`.
+target_sources (
+	libmata
+	PUBLIC FILE_SET
+		   HEADERS
+		   BASE_DIRS
+		   ${PROJECT_SOURCE_DIR}/include
+		   ${PROJECT_BINARY_DIR}/include
+		   FILES
+		   ${MATA_HEADERS}
+		   ${PROJECT_BINARY_DIR}/include/mata/config.hh
 )
 
 # Add Mata's compile warnings.

@@ -173,10 +173,11 @@ std::vector<mata::FormulaNode>
 				opstack.emplace_back(std::move(node));
 				break;
 			case mata::FormulaNode::Type::RightParenthesis:
-				while (!opstack.back().is_left_parenthesis()) {
+				while (!opstack.empty() && !opstack.back().is_left_parenthesis()) {
 					output.emplace_back(std::move(opstack.back()));
 					opstack.pop_back();
 				}
+				if (opstack.empty()) { throw std::runtime_error("Unbalanced parentheses: ')' without a matching '('"); }
 				opstack.pop_back();
 				break;
 			case mata::FormulaNode::Type::Operator:
@@ -197,6 +198,9 @@ std::vector<mata::FormulaNode>
 	}
 
 	while (!opstack.empty()) {
+		if (opstack.back().is_left_parenthesis()) {
+			throw std::runtime_error("Unbalanced parentheses: '(' without a matching ')'");
+		}
 		output.push_back(std::move(opstack.back()));
 		opstack.pop_back();
 	}
@@ -228,7 +232,7 @@ mata::FormulaGraph postfix_to_graph(std::vector<mata::FormulaNode> postfix) {
 			case mata::FormulaNode::Type::Operator: {
 				switch (node.operator_type) {
 					case mata::FormulaNode::OperatorType::Neg: { // 1 child: graph will be a NEG node.
-						MATA_ASSERT(!opstack.empty());
+						if (opstack.empty()) { throw std::runtime_error("Malformed formula: '!' without an operand"); }
 						mata::FormulaGraph child{std::move(opstack.back())};
 						opstack.pop_back();
 						mata::FormulaGraph& gr{opstack.emplace_back(std::move(node))};
@@ -236,7 +240,9 @@ mata::FormulaGraph postfix_to_graph(std::vector<mata::FormulaNode> postfix) {
 						break;
 					}
 					default: { // 2 children: Graph will be either an AND node, or an OR node.
-						MATA_ASSERT(opstack.size() > 1);
+						if (opstack.size() < 2) {
+							throw std::runtime_error("Malformed formula: '" + node.raw + "' needs two operands");
+						}
 						mata::FormulaGraph second_child{std::move(opstack.back())};
 						opstack.pop_back();
 						mata::FormulaGraph first_child{std::move(opstack.back())};
@@ -250,12 +256,15 @@ mata::FormulaGraph postfix_to_graph(std::vector<mata::FormulaNode> postfix) {
 				break;
 			}
 			default:
-				MATA_ASSERT(false, "Unknown type of node");
+				throw std::runtime_error("Malformed formula: unexpected '" + node.raw + "'");
 		}
 	}
 
 	// In case of no transition
-	if (opstack.size() != 1) { return {}; }
+	if (opstack.empty()) { return {}; }
+	if (opstack.size() > 1) {
+		throw std::runtime_error("Malformed formula: operands without an operator between them");
+	}
 
 	MATA_ASSERT(opstack.size() == 1);
 	return std::move(*opstack.begin());
@@ -502,10 +511,15 @@ std::vector<mata::IntermediateAut> mata::IntermediateAut::parse_from_mf(const ma
 const mata::FormulaGraph&
 	mata::IntermediateAut::get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& transition) const {
 	if (!this->is_nfa()) { throw std::runtime_error("We currently support symbol extraction only for NFA"); }
-	MATA_ASSERT(transition.first.is_operand() && transition.first.operand_type == FormulaNode::OperandType::State);
-	MATA_ASSERT(transition.second.node.is_operator()); // conjunction with rhs state
-	MATA_ASSERT(transition.second.children[1].node.is_operand()); // rhs state
-	return transition.second.children[0];
+	const FormulaGraph& rhs = transition.second;
+	// A conjunction of the symbol part with the target state.
+	if (!transition.first.is_operand() || !rhs.node.is_operator() || rhs.children.size() != 2 ||
+		!rhs.children[1].node.is_operand()) {
+		throw std::runtime_error(
+			"Malformed transition from '" + transition.first.raw + "': expected a symbol formula and a target state"
+		);
+	}
+	return rhs.children[0];
 }
 
 void mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs) {

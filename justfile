@@ -17,6 +17,7 @@ mod tests-cpp 'tests/tests.just'
 alias t := test
 alias tc := tests-cpp
 alias tp := bindings::python
+alias tr := bindings::rust
 alias ti := bench::performance
 alias b := cpp::build
 alias w := tests-cpp::wip
@@ -30,7 +31,7 @@ alias u := update
 alias c := clean
 alias h := help
 
-# Run the whole test suite: C++ unit tests in debug and release mode, Python bindings, and notebooks.
+# Run the whole test suite: C++ unit tests in debug and release mode, Python and Rust bindings, and notebooks.
 [default]
 test *ARGS: (tests-cpp::check ARGS) bindings::test examples::notebooks::run
 
