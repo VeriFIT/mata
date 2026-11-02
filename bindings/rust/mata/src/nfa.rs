@@ -195,7 +195,8 @@ impl Nfa {
 
     /// Parses an automaton in the `.mata` format. Symbol names are looked up in `alphabet`, and names
     /// not in it yet are added (see [`Alphabet::insert_name`]), so explicit automata parsed with the same
-    /// alphabet agree on their symbols. `<eps>` is [`Symbol::EPSILON`].
+    /// alphabet agree on their symbols. An unnamed symbol of `alphabet` is read from its number, as
+    /// [`Nfa::display_with`] prints it. `<eps>` is [`Symbol::EPSILON`].
     ///
     /// The text must hold exactly one automaton section: `@NFA-explicit`, or `@NFA-bits`, whose
     /// transition formulas are turned into one symbol per minterm. The minterms of one call are named `0`,
@@ -233,7 +234,7 @@ impl Nfa {
     ///
     /// [`ParseError`] if the text is not valid or holds a section other than an NFA.
     pub fn parse_mata_all(text: &str, alphabet: &mut Alphabet) -> Result<Vec<Nfa>, ParseError> {
-        let (names, symbols) = alphabet.raw_names();
+        let (names, symbols) = alphabet.raw_parse_names();
         let mut new_names = Vec::new();
         let mut new_symbols = Vec::new();
         let parsed = ffi::parse_mata(

@@ -213,8 +213,7 @@ impl Nft {
     }
 
     /// Parses a transducer in the `.mata` format (`@NFT-explicit`, with `%Levels` and `%LevelsNum`).
-    /// Symbol names are looked up in `alphabet`, one alphabet for all levels, and new names are added as
-    /// in [`Nfa::parse_mata`].
+    /// Symbols are read as in [`Nfa::parse_mata`], with one alphabet for all levels.
     ///
     /// # Errors
     ///
@@ -230,7 +229,7 @@ impl Nft {
     ///
     /// [`ParseError`] if the text is not valid or a section is not a well-formed NFT.
     pub fn parse_mata_all(text: &str, alphabet: &mut Alphabet) -> Result<Vec<Nft>, ParseError> {
-        let (names, symbols) = alphabet.raw_names();
+        let (names, symbols) = alphabet.raw_parse_names();
         let mut new_names = Vec::new();
         let mut new_symbols = Vec::new();
         let parsed = ffi::nft_parse_mata(

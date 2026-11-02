@@ -110,6 +110,24 @@ fn composing_one_level_transducers_is_an_error() -> Result<(), Error> {
 }
 
 #[test]
+fn unnamed_symbols_round_trip() -> Result<(), Error> {
+    let mut sigma = Alphabet::from_names(["a"])?;
+    let a = sigma.symbol("a").unwrap();
+    let unnamed = Symbol::new(41);
+    sigma.insert(unnamed)?;
+    let mut t = Nft::new(2)?;
+    let q = t.add_state();
+    t.add_initial(q)?;
+    t.add_final(q)?;
+    t.add_transition(q, &[a, unnamed], q)?;
+    let mut reread = sigma.clone();
+    let parsed = Nft::parse_mata(&t.display_with(&sigma).to_string(), &mut reread)?;
+    assert_eq!(reread, sigma, "41 is the unnamed symbol, not a new name");
+    assert!(parsed.accepts(&[[a], [unnamed]]) && parsed.is_equivalent_to(&t)?);
+    Ok(())
+}
+
+#[test]
 fn projecting_out_everything_is_an_error() {
     assert_eq!(
         a_to_b().project_out(&[0, 1]).unwrap_err(),

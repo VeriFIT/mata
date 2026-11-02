@@ -271,6 +271,10 @@ fn named_printing() -> Result<(), Error> {
         text,
         "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 x q1\nq0 41 q1\nq1 <eps> q0\n"
     );
+    let mut reread = sigma.clone();
+    let parsed = Nfa::parse_mata(&text, &mut reread)?;
+    assert_eq!(reread, sigma, "41 is the unnamed symbol, not a new name");
+    assert!(parsed.accepts(&[unnamed]) && parsed.is_equivalent_to(&nfa));
     let dot = nfa.dot().alphabet(&sigma).to_string();
     assert!(dot.contains('x'), "{dot}");
     assert_eq!(sigma.display_word(&[x, unnamed]).to_string(), "x 41");

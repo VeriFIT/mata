@@ -231,6 +231,21 @@ impl Alphabet {
             .unzip()
     }
 
+    /// The names that the parser knows: every name, and the number of every unnamed symbol whose number is
+    /// not a name, as printing writes it.
+    pub(crate) fn raw_parse_names(&self) -> (Vec<String>, Vec<u32>) {
+        self.symbols
+            .iter()
+            .filter_map(|(symbol, name)| {
+                if let Some(name) = name {
+                    return Some((name.clone(), symbol.value()));
+                }
+                let number = symbol.value().to_string();
+                (!self.by_name.contains_key(&number)).then_some((number, symbol.value()))
+            })
+            .unzip()
+    }
+
     /// The symbol that the parser gives to the first new name.
     pub(crate) fn raw_next_symbol(&self) -> u32 {
         self.next_symbol().value()
