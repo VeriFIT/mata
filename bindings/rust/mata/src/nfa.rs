@@ -537,8 +537,13 @@ impl Nfa {
 		check(ffi::is_minimal(self.raw()))
 	}
 
-	/// Whether every reachable state has a transition under every symbol of `alphabet`. Transitions under
-	/// other symbols do not matter.
+	/// Whether every reachable state has a transition under every symbol of `alphabet`. Transitions
+	/// under symbols outside `alphabet` are an error, as in Mata's own check, except epsilon
+	/// transitions, which are moves, not letters.
+	///
+	/// # Panics
+	///
+	/// If a reachable state has a transition under a symbol outside `alphabet`.
 	#[must_use]
 	pub fn is_complete(&self, alphabet: &Alphabet) -> bool {
 		check(ffi::is_complete(self.raw(), &alphabet.raw_symbols()))

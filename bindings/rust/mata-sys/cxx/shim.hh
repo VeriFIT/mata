@@ -42,13 +42,14 @@ enum class CheckAlgorithm : std::uint8_t;
 /// The automata of one parsed `.mata` text, taken out one by one with `parsed_take()`.
 class ParsedNfas {
   public:
-	explicit ParsedNfas(std::vector<Nfa> automata) : automata_(std::move(automata)) {}
+	explicit ParsedNfas(std::vector<Nfa> automata) : automata_(std::move(automata)), taken_(automata_.size(), false) {}
 
 	std::size_t size() const { return automata_.size(); }
 	std::unique_ptr<Nfa> take(std::size_t index);
 
   private:
 	std::vector<Nfa> automata_;
+	std::vector<bool> taken_;
 };
 
 /// The words of an automaton up to some length (produced lazily where `std::generator` exists).

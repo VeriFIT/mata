@@ -114,6 +114,8 @@ const mata::nfa::SymbolPost&
 
 std::unique_ptr<Nfa> ParsedNfas::take(const std::size_t index) {
 	if (index >= automata_.size()) { throw std::out_of_range("parsed automaton index out of range"); }
+	if (taken_[index]) { throw std::runtime_error("parsed automaton " + std::to_string(index) + " was already taken"); }
+	taken_[index] = true;
 	return boxed(std::move(automata_[index]));
 }
 
@@ -336,15 +338,34 @@ bool is_deterministic(const Nfa& nfa) {
 bool is_minimal(const Nfa& nfa) { return !has_epsilon_transitions(nfa) && nfa.is_minimal(); }
 
 bool is_complete(const Nfa& nfa, const rust::Slice<const Symbol> symbols) {
-	// Mata's own check throws on symbols outside `symbols`; here they are simply not asked about.
+	// Mata's own check throws on symbols outside `symbols`, and so does this one. Epsilon is a move,
+	// not a letter (as in every other language operation), so it is never outside.
 	const auto wanted = to_symbol_set(symbols);
 	for (const State state : nfa.get_reachable_states()) {
 		const auto& state_post = nfa.delta.state_post(state);
 		auto post = state_post.begin();
-		for (const Symbol symbol : wanted) {
-			while (post != state_post.end() && post->symbol < symbol) { ++post; }
-			if (post == state_post.end() || post->symbol != symbol || post->targets.empty()) { return false; }
+		auto symbol = wanted.begin();
+		bool is_symbol_missing = false;
+		while (post != state_post.end()) {
+			if (post->symbol == mata::nfa::EPSILON) {
+				++post;
+				continue;
+			}
+			if (symbol == wanted.end() || post->symbol < *symbol) {
+				throw std::runtime_error(
+					"state " + std::to_string(state) + " has a transition over symbol " + std::to_string(post->symbol) +
+					", which is outside the given symbols"
+				);
+			}
+			if (*symbol < post->symbol) {
+				is_symbol_missing = true;
+				++symbol;
+				continue;
+			}
+			++post;
+			++symbol;
 		}
+		if (is_symbol_missing || symbol != wanted.end()) { return false; }
 	}
 	return true;
 }

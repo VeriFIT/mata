@@ -357,6 +357,30 @@ fn trim_and_complete() -> Result<(), Error> {
 }
 
 #[test]
+fn is_complete_rejects_outside_symbols() -> Result<(), Error> {
+	// A transition over a symbol outside the alphabet is an error, as in Mata's own check.
+	let mut nfa = Nfa::with_states(2);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(1))?;
+	nfa.add_transition(q(0), Symbol::new(5), q(1))?;
+	let sigma = Alphabet::from_symbols([Symbol::new(0)])?;
+	let result = std::panic::catch_unwind(|| nfa.is_complete(&sigma));
+	assert!(
+		result.is_err(),
+		"a transition over symbol 5 must not pass silently"
+	);
+
+	// Epsilon is a move, never a letter outside the alphabet.
+	let mut nfa = Nfa::with_states(2);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(1))?;
+	nfa.add_transition(q(0), Symbol::EPSILON, q(1))?;
+	let sigma = Alphabet::from_symbols([Symbol::new(0)])?;
+	assert!(!nfa.is_complete(&sigma));
+	Ok(())
+}
+
+#[test]
 fn debug_output() {
 	let nfa = Nfa::from_word(&[Symbol::new(5)]);
 	assert_eq!(

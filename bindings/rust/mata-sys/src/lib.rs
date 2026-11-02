@@ -143,8 +143,7 @@ pub mod ffi {
 		) -> Result<UniquePtr<ParsedNfas>>;
 		/// The number of parsed automata.
 		fn parsed_len(parsed: &ParsedNfas) -> usize;
-		/// Moves out the automaton at `index`; taking one twice gives a moved-out, empty automaton
-		/// (the length does not change).
+		/// Moves out the automaton at `index`; taking one twice is an error (the length does not change).
 		fn parsed_take(parsed: Pin<&mut ParsedNfas>, index: usize) -> Result<UniquePtr<Nfa>>;
 
 		// Read-only views, shared by NFAs and NFTs through their base class `mata::Automaton`.
@@ -223,7 +222,8 @@ pub mod ffi {
 		/// Deterministic, trimmed and without equivalent states; for the empty language, a single
 		/// non-final initial state without transitions.
 		fn is_minimal(nfa: &Nfa) -> Result<bool>;
-		/// Every reachable state has a successor under every symbol of `symbols`.
+		/// Every reachable state has a successor under every symbol of `symbols`; a transition over
+		/// a symbol outside `symbols` is an error (epsilon is a move, never outside).
 		fn is_complete(nfa: &Nfa, symbols: &[u32]) -> Result<bool>;
 		/// The same number of states, initial and final states and transitions.
 		fn is_identical(lhs: &Nfa, rhs: &Nfa) -> Result<bool>;
