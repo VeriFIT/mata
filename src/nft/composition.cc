@@ -1391,7 +1391,8 @@ Nft compose_fast_no_jump_with(
 							waiting_state_storage.emplace(copy_target, new_composition_state);
 							waiting_worklist->push({new_composition_state, copy_target});
 						}
-						symbol_post.push_back(new_composition_state);
+						// A cached waiting state can be smaller than a target added before it.
+						symbol_post.insert(new_composition_state);
 					} else {
 						// Just copy this transition.
 						symbol_post.insert(create_composition_state(
@@ -1588,7 +1589,8 @@ Nft compose_fast_no_jump_with(
 							waiting_state_storage.emplace(running_epsilon_target, new_composition_state);
 							worklist.push({new_composition_state, running_epsilon_target});
 						}
-						epsilon_symbol_post.push_back(new_composition_state);
+						// A cached waiting state can be smaller than a target added before it.
+						epsilon_symbol_post.insert(new_composition_state);
 					}
 				}
 				if (!epsilon_symbol_post.targets.empty()) {

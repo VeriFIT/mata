@@ -3650,3 +3650,54 @@ TEST_CASE("mata::nft::compose() with FastNoJump and a state that cannot synchron
 		check_composition_modes_agree(lhs, rhs);
 	}
 }
+
+TEST_CASE("mata::nft::compose_fast_no_jump() reaches a shared waiting state out of order - issue #902") {
+	// The RHS waits while the LHS runs through EPSILON on its synchronization level. A waiting state created for an
+	//  earlier transition is reached again next to a fresh one with a smaller LHS state; the targets must stay sorted.
+	Nft rhs{Nft::with_levels(2)};
+	const State r0{rhs.add_state_with_level(0)}, r1{rhs.add_state_with_level(1)};
+	rhs.initial.insert(r0);
+	rhs.final.insert(r0);
+	rhs.delta.add(r0, 0, r1);
+	rhs.delta.add(r1, 0, r0);
+
+	SECTION("on the copied transitions before the synchronization level") {
+		// q0 -0-> p and q0 -1-> {r, p}, with r < p, both reading EPSILON back to q0.
+		Nft lhs{Nft::with_levels(2)};
+		const State q0{lhs.add_state_with_level(0)}, r{lhs.add_state_with_level(1)}, p{lhs.add_state_with_level(1)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, p);
+		lhs.delta.add(q0, 1, r);
+		lhs.delta.add(q0, 1, p);
+		lhs.delta.add(r, EPSILON, q0);
+		lhs.delta.add(p, EPSILON, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{1, 0}, {}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+
+	SECTION("on the EPSILON synchronization kept in the result") {
+		// q0 -0-> {s1, s2}, s1 -EPSILON-> t2 and s2 -EPSILON-> {t1, t2}, with t1 < t2, on a 3-level LHS whose
+		//  synchronization level 1 is kept.
+		Nft lhs{Nft::with_levels(3)};
+		const State q0{lhs.add_state_with_level(0)};
+		const State s1{lhs.add_state_with_level(1)}, s2{lhs.add_state_with_level(1)};
+		const State t1{lhs.add_state_with_level(2)}, t2{lhs.add_state_with_level(2)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, s1);
+		lhs.delta.add(q0, 0, s2);
+		lhs.delta.add(s1, EPSILON, t2);
+		lhs.delta.add(s2, EPSILON, t1);
+		lhs.delta.add(s2, EPSILON, t2);
+		lhs.delta.add(t1, 0, q0);
+		lhs.delta.add(t2, 1, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, false, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{0}, {}, {0}, {}}));
+		CHECK(fast.is_in_lang_by_levels({{0}, {}, {1}, {}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+}
