@@ -143,6 +143,19 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(body[0][1] == "b");
 	}
 
+	SECTION("lone backslash as the type line (#761)") {
+		// Used to read line.back() out of bounds and abort on a Debug assert.
+		CHECK_THROWS_WITH(parse_mf_section("\\"), Catch::Matchers::ContainsSubstring("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section("\\\n"), Catch::Matchers::ContainsSubstring("expecting automaton type"));
+	}
+
+	SECTION("type line ending with a backslash is not a continuation line") {
+		CHECK_THROWS_WITH(
+			parse_mf_section("@NFA-explicit\\\n%Initial q0\n"),
+			Catch::Matchers::ContainsSubstring("invalid trailing characters")
+		);
+	}
+
 	SECTION("file with transitions and line break") {
 		std::string file = "@Type\n"
 						   "%key1 value1\n"
@@ -842,6 +855,87 @@ q1 \false q2
 		} catch (const std::runtime_error& e) { exception = true; }
 
 		REQUIRE(exception);
+	}
+	SECTION("malformed transition with one token (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_WITH(
+			mata::IntermediateAut::parse_from_mf(parsed), Catch::Matchers::ContainsSubstring("transition [q0]")
+		);
+	}
+
+	SECTION("malformed transition with two tokens (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 1\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("malformed transition with four tokens (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q2\nq0 1 q1 q2\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("bad alphabet type suffix (#761)") {
+		std::string file = "@NFA-bitz\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 1 q1\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("bad naming suffix (#761)") {
+		std::string file = "@NFA-explicit\n%Alphabet-auto\n%States-numbers\n%Initial q0\n%Final q1\nq0 1 q1\n";
+		parsed = parse_mf(file);
+		CHECK_THROWS_AS(mata::IntermediateAut::parse_from_mf(parsed), std::runtime_error);
+	}
+
+	SECTION("ParsedSection operator[] on missing key (#761)") {
+		std::string file = "@NFA-explicit\n%Initial q0\n";
+		const auto sec = mata::parser::parse_mf_section(file);
+		CHECK_THROWS_AS((void) sec["Final"], std::runtime_error);
+	}
+
+	SECTION("non-ASCII first character of the type line (#761)") {
+		CHECK_THROWS_WITH(
+			mata::parser::parse_mf_section("\xc3\xa9@NFA-explicit\n%Initial q0\n"),
+			Catch::Matchers::ContainsSubstring("expecting automaton type")
+		);
+	}
+
+	SECTION("operator as the source state or the symbol of an explicit transition (#761)") {
+		for (const std::string type : {"NFA", "NFT"}) {
+			for (const std::string line : {"q0 ) q1", "q0 ( q1", "q0 ! q1", "q0 | q1", "( a q1", "! a q1"}) {
+				parsed = parse_mf("@" + type + "-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\n" + line + "\n");
+				CHECK_THROWS_WITH(
+					mata::IntermediateAut::parse_from_mf(parsed), Catch::Matchers::ContainsSubstring("is an operator")
+				);
+			}
+		}
+	}
+
+	SECTION("unknown automaton type (#761)") {
+		parsed = parse_mf("@DFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\n");
+		CHECK_THROWS_WITH(
+			mata::IntermediateAut::parse_from_mf(parsed), Catch::Matchers::ContainsSubstring("Unknown automaton type")
+		);
+	}
+
+	SECTION("constructing an automaton without an alphabet (#761)") {
+		parsed = parse_mf("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\n");
+		const std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		CHECK_THROWS_AS(mata::nfa::builder::construct(auts[0], nullptr), std::runtime_error);
+	}
+
+	SECTION("bare @NFA and %Alphabet without a suffix stay accepted") {
+		parsed = parse_mf("@NFA\n%Alphabet\n%Initial q0\n%Final q1\nq0 a q1\n");
+		const std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+		REQUIRE(auts.size() == 1);
+		CHECK(auts[0].automaton_type == mata::IntermediateAut::AutomatonType::Nfa);
+		CHECK(auts[0].alphabet_type == mata::IntermediateAut::AlphabetType::Explicit);
+		CHECK(auts[0].symbol_naming == mata::IntermediateAut::Naming::Auto);
+		REQUIRE(auts[0].transitions.size() == 1);
+		CHECK(auts[0].transitions[0].first.raw == "q0");
+		CHECK(auts[0].transitions[0].second.children[0].node.name == "a");
+		CHECK(auts[0].transitions[0].second.children[1].node.raw == "q1");
 	}
 } // parse_mf }}}
 

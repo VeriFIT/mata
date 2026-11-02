@@ -244,13 +244,14 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		std::string line;
 		getline(input, line);
 
-		const bool backslash_ending = (line.back() == '\\');
+		// getline drops the delimiter, so an empty line stays empty: line.back() would read out of bounds.
+		// Type lines are never continuation lines, so they keep the backslash and fail on the trailing characters.
+		const bool backslash_ending = !line.empty() && line.back() == '\\' && !reading_type;
 		if (backslash_ending) { line.pop_back(); }
 
 		PARSER_DEBUG_PRINT_LN(line);
-
 		if (reading_type) { // we're expecting a @TYPE declaration
-			MATA_ASSERT(ch == line[0]);
+			MATA_ASSERT(std::char_traits<char>::to_int_type(line[0]) == ch);
 			if ('#' == line[0] || '\n' == line[0]) {
 				continue; /* skip the rest of the line */
 			} else if ('@' != line[0]) {
@@ -353,10 +354,7 @@ ParsedSection mata::parser::parse_mf_section(const std::string& input, const boo
 
 const std::vector<std::string>& mata::parser::ParsedSection::operator[](const std::string& key) const {
 	const auto it = this->dict.find(key);
-	if (this->dict.end() == it) {
-		MATA_ASSERT(false);
-		// return this->dict.at("");
-	}
+	if (this->dict.end() == it) { throw std::runtime_error("Key '" + key + "' not found in parsed section"); }
 	return it->second;
 }
 
