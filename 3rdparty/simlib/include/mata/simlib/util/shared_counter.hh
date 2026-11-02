@@ -11,6 +11,7 @@
 #ifndef _SIMLIB_SHARED_COUNTER_HH_
 #define _SIMLIB_SHARED_COUNTER_HH_
 
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -31,6 +32,7 @@ public:
 	///  32 bits halve the rows, which dominate the memory of the simulation engine on large automata.
 	typedef std::uint32_t Count;
 	typedef CachingArrayAllocator<Count> Allocator;
+	/// Per (label, state) the counter slot, encoded by @c key_of() as row and column bit fields.
 	typedef std::vector<size_t> Key;
 	typedef std::vector<std::pair<size_t, size_t>> LabelMap;
 
@@ -53,7 +55,18 @@ private:
 
 	std::vector<Row> data_;
 
+	// A row holds rowSize_ counters plus a reference count, rowSize_ + 1 being a power of two, so that the hot lookup
+	//  splits a key (see key_of()) by a shift and the mask rowSize_ instead of a division.
+	size_t row_index(size_t key) const { return key >> std::countr_zero(this->rowSize_ + 1); }
+	size_t col_index(size_t key) const { return key & this->rowSize_; }
+
 public:
+
+	/// The key of the @p index-th counter slot in rows of @p rowSize counters.
+	static size_t key_of(size_t index, size_t rowSize) {
+		assert(std::has_single_bit(rowSize + 1));
+		return ((index / rowSize) << std::countr_zero(rowSize + 1)) | (index % rowSize);
+	}
 
 	SharedCounter(const Key& key, const size_t& states, const LabelMap& labelMap,
 		const size_t& rowSize, Allocator& allocator) : key_(key), states_(states),
@@ -101,8 +114,8 @@ public:
 		assert(label*this->states_ + state < this->key_.size());
 
 		size_t index = this->key_[label*this->states_ + state];
-		size_t rowIndex = index / this->rowSize_;
-		size_t colIndex = index % this->rowSize_;
+		size_t rowIndex = this->row_index(index);
+		size_t colIndex = this->col_index(index);
 
 		assert(rowIndex < this->data_.size());
 
@@ -121,8 +134,8 @@ public:
 		assert(label*this->states_ + state < this->key_.size());
 
 		size_t index = this->key_[label*this->states_ + state];
-		size_t rowIndex = index / this->rowSize_;
-		size_t colIndex = index % this->rowSize_;
+		size_t rowIndex = this->row_index(index);
+		size_t colIndex = this->col_index(index);
 
 		assert(rowIndex < this->data_.size());
 
@@ -162,8 +175,8 @@ public:
 		assert(label*this->states_ + state < this->key_.size());
 
 		size_t index = this->key_[label*this->states_ + state];
-		size_t rowIndex = index / this->rowSize_;
-		size_t colIndex = index % this->rowSize_;
+		size_t rowIndex = this->row_index(index);
+		size_t colIndex = this->col_index(index);
 
 		assert(rowIndex < this->data_.size());
 

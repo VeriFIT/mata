@@ -704,7 +704,7 @@ public:
 
 			for (auto& q : delta1[a])
 			{
-				this->key_[a*this->lts_.states() + q] = x++;
+				this->key_[a*this->lts_.states() + q] = SharedCounter::key_of(x++, this->row_size_);
 			}
 		}
 
