@@ -584,7 +584,8 @@ impl Nft {
     ///
     /// # Errors
     ///
-    /// [`NftError::NoLevelLeft`] if both transducers have a single level.
+    /// [`NftError::NoLevelLeft`] if both transducers have a single level, and
+    /// [`NftError::InvalidNumLevels`] if the result would have more than [`MAX_LEVELS`].
     #[must_use = "returns a new transducer and leaves `self` unchanged"]
     pub fn compose(&self, other: &Nft) -> Result<Nft, NftError> {
         self.compose_on(other, self.num_levels() - 1, 0, SyncLevel::ProjectOut)
@@ -599,8 +600,8 @@ impl Nft {
     ///
     /// # Errors
     ///
-    /// [`NftError::NoSuchLevel`] if a level does not exist, and [`NftError::NoLevelLeft`] if the result
-    /// would have no level.
+    /// [`NftError::NoSuchLevel`] if a level does not exist, [`NftError::NoLevelLeft`] if the result
+    /// would have no level, and [`NftError::InvalidNumLevels`] if it would have more than [`MAX_LEVELS`].
     #[must_use = "returns a new transducer and leaves `self` unchanged"]
     pub fn compose_on(
         &self,
@@ -618,6 +619,7 @@ impl Nft {
         if self.num_levels() + other.num_levels() <= removed {
             return Err(NftError::NoLevelLeft);
         }
+        check_num_levels(self.num_levels() + other.num_levels() - removed)?;
         Ok(Nft::from_owned(expect(ffi::nft_compose(
             self.raw(),
             other.raw(),

@@ -110,6 +110,22 @@ fn composing_one_level_transducers_is_an_error() -> Result<(), Error> {
 }
 
 #[test]
+fn composing_beyond_max_levels_is_an_error() -> Result<(), Error> {
+    let half = Nft::empty_word(513)?;
+    assert_eq!(half.compose(&half)?.num_levels(), 1024);
+    assert_eq!(
+        half.compose_on(&half, 512, 0, SyncLevel::Keep).unwrap_err(),
+        NftError::InvalidNumLevels { num_levels: 1025 }
+    );
+    let big = Nft::empty_word(600)?;
+    assert_eq!(
+        big.compose(&big).unwrap_err(),
+        NftError::InvalidNumLevels { num_levels: 1198 }
+    );
+    Ok(())
+}
+
+#[test]
 fn unnamed_symbols_round_trip() -> Result<(), Error> {
     let mut sigma = Alphabet::from_names(["a"])?;
     let a = sigma.symbol("a").unwrap();

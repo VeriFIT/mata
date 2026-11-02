@@ -429,6 +429,7 @@ std::unique_ptr<Nft> nft_compose(
 	if (lhs.levels.num_of_levels + rhs.levels.num_of_levels <= removed) {
 		throw std::invalid_argument("the composition would have no levels left");
 	}
+	check_num_levels(lhs.levels.num_of_levels + rhs.levels.num_of_levels - removed);
 	return boxed(compose_one_level(lhs, rhs, lhs_level, rhs_level, project_out_sync_level));
 }
 
