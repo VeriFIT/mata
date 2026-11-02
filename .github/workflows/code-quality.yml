@@ -461,8 +461,6 @@ jobs:
       # `libmata.a` is instrumented but the Rust binaries are not, so the sanitizer runtimes are linked
       #  explicitly, and ASan, which has to come first, is preloaded into the test binaries only (`--target`
       #  keeps the build scripts, which cargo runs itself, out of it). Doctests get the same flags.
-      # The `compose` law test hits Mata's composition assertion of #902 in this Debug build; it runs in
-      #  run-tests-rust (Release). `--exact` keeps the other tests whose names contain "compose".
       - name: Run the Rust bindings under sanitizers
         working-directory: bindings/rust
         env:
@@ -473,7 +471,7 @@ jobs:
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: |
           export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="env LD_PRELOAD=$("$CXX" -print-file-name=libasan.so)"
-          cargo test --workspace --all-features --target x86_64-unknown-linux-gnu -- --skip compose --exact
+          cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
   # The default build has 32-bit states; the 64-bit escape hatch has to keep building and passing too.
   state-bits-64:
     runs-on: ubuntu-latest
