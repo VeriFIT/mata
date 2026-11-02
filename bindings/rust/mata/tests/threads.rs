@@ -4,7 +4,7 @@
 //! Rust's standard library for Emscripten cannot spawn threads, so these tests do not run there.
 #![cfg(not(target_os = "emscripten"))]
 
-use std::sync::Arc;
+use std::sync::{Arc, Barrier};
 use std::thread;
 
 use mata::{Alphabet, Error, Nfa, State, Symbol};
@@ -27,9 +27,12 @@ fn workload(seed: usize) -> (usize, bool) {
 #[test]
 fn independent_automata_on_many_threads() {
 	let expected: Vec<usize> = (0..THREADS).map(|seed| workload(seed).0).collect();
+	let start = Arc::new(Barrier::new(THREADS));
 	let handles: Vec<_> = (0..THREADS)
 		.map(|seed| {
+			let start = Arc::clone(&start);
 			thread::spawn(move || {
+				start.wait();
 				(0..ROUNDS / 10).all(|_| {
 					let (states, consistent) = workload(seed);
 					consistent && states == 1 << (3 + seed % 4)
@@ -54,11 +57,13 @@ fn one_automaton_read_by_many_threads() -> Result<(), Error> {
 	let word: Vec<Symbol> = b"bbaabab".iter().copied().map(Symbol::from).collect();
 	let dfa_states = nfa.determinize().num_states();
 	let successors = nfa.successors(State::new(0), Symbol::from(b'a')).to_vec();
+	let start = Arc::new(Barrier::new(THREADS));
 	let handles: Vec<_> = (0..THREADS)
 		.map(|_| {
-			let nfa = Arc::clone(&nfa);
+			let (nfa, start) = (Arc::clone(&nfa), Arc::clone(&start));
 			let (word, successors) = (word.clone(), successors.clone());
 			thread::spawn(move || {
+				start.wait();
 				(0..ROUNDS).all(|_| {
 					nfa.accepts(&word)
 						&& nfa.successors(State::new(0), Symbol::from(b'a')) == successors
@@ -101,10 +106,12 @@ fn transducers_on_many_threads() {
 	}
 	let (a, b) = (Symbol::from(b'a'), Symbol::from(b'b'));
 	let shared = Arc::new(make());
+	let start = Arc::new(Barrier::new(THREADS));
 	let handles: Vec<_> = (0..THREADS)
 		.map(|_| {
-			let shared = Arc::clone(&shared);
+			let (shared, start) = (Arc::clone(&shared), Arc::clone(&start));
 			thread::spawn(move || {
+				start.wait();
 				(0..ROUNDS / 10).all(|_| {
 					let own = make();
 					let composed = own.compose(&shared).unwrap();
