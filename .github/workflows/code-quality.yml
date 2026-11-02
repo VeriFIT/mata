@@ -115,6 +115,7 @@ jobs:
         uses: ./.github/workflows/actions/test-python
   run-tests-rust:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -137,6 +138,9 @@ jobs:
         run: |
           LLVM_PREFIX="$(brew --prefix llvm)"
           echo "RUSTFLAGS=-L $LLVM_PREFIX/lib/c++ -C link-arg=-Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/rust
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -150,8 +154,34 @@ jobs:
         run: cargo doc --workspace --all-features --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
+  check-msrv-rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - name: Read the minimum supported Rust version
+        run: echo "MSRV=$(sed -n 's/^rust-version *= *\"\(.*\)\"/\1/p' Cargo.toml)" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.MSRV }}
+      - name: Check the Rust bindings on the minimum supported Rust version
+        run: cargo check --workspace --all-targets --all-features
   run-tests-rust-wasm:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # Pinned to the release the bindings are tested with (mata-sys/README.md); 'latest' is a
+      # moving target that may not match Rust's prebuilt standard library for the target.
+      EMSCRIPTEN_VERSION: 6.0.13
     defaults:
       run:
         working-directory: bindings/rust
@@ -163,12 +193,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-emscripten
-      # The latest release, as Rust's CI uses for the standard library of the target.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/rust
       - name: Install Emscripten
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
-          "$HOME/emsdk/emsdk" install latest
-          "$HOME/emsdk/emsdk" activate latest
+          "$HOME/emsdk/emsdk" install "$EMSCRIPTEN_VERSION"
+          "$HOME/emsdk/emsdk" activate "$EMSCRIPTEN_VERSION"
       # Runs the tests under Node (bindings/rust/.cargo/config.toml).
       - name: Test the Rust bindings on WebAssembly
         run: |
@@ -423,6 +455,16 @@ jobs:
           ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
+      # The Rust bindings against the instrumented library: the FFI gets ASan/UBSan coverage too.
+      - name: Install the instrumented Mata for the Rust bindings
+        run: cmake --install build --prefix "$PWD/mata-install"
+      - name: Run the Rust bindings under sanitizers
+        working-directory: bindings/rust
+        env:
+          MATA_DIR: ${{ github.workspace }}/mata-install
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: cargo test --workspace --all-features
   # The default build has 32-bit states; the 64-bit escape hatch has to keep building and passing too.
   state-bits-64:
     runs-on: ubuntu-latest
