@@ -52,6 +52,10 @@ inline void check_state(const mata::Automaton& automaton, const State state) {
 	}
 }
 
+/// Throws unless the transitions are kept as Mata keeps them: sorted by symbol, with sorted, unique targets
+/// that are states of `automaton`.
+void check_delta(const mata::Automaton& automaton);
+
 /// A Mata alphabet with the names of a Rust `Alphabet`, for printing.
 class NameTable final : public mata::Alphabet {
   public:

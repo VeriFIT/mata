@@ -230,6 +230,7 @@ std::unique_ptr<Nft> nft_empty_word(const std::size_t num_levels) {
 }
 
 void nft_check_well_formed(const Nft& nft) {
+	detail::check_delta(nft);
 	const auto num_levels = nft.levels.num_of_levels;
 	try {
 		check_num_levels(num_levels);

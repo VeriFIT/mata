@@ -263,7 +263,8 @@ impl Nft {
     ///
     /// # Errors
     ///
-    /// [`InvalidAutomaton`] if `ffi` is null or not well formed (see [`Nft`]).
+    /// [`InvalidAutomaton`] if `ffi` is null, its transitions are not kept as Mata keeps them (see
+    /// [`Nfa::from_ffi`]), or it is not well formed (see [`Nft`]).
     pub fn from_ffi(mut ffi: UniquePtr<ffi::Nft>) -> Result<Nft, InvalidAutomaton> {
         if ffi.is_null() {
             return Err(InvalidAutomaton::new("the transducer is null"));

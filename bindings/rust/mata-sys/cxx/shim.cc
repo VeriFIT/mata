@@ -351,27 +351,7 @@ bool is_identical(const Nfa& lhs, const Nfa& rhs) {
 
 void adopt(Nfa& nfa) {
 	nfa.alphabet = nullptr;
-	const State num_states = static_cast<State>(nfa.num_of_states());
-	for (State source = 0; source < nfa.delta.num_of_states(); ++source) {
-		const auto& state_post = nfa.delta[source];
-		auto previous = std::optional<Symbol>();
-		for (const auto& symbol_post : state_post) {
-			if (previous.has_value() && symbol_post.symbol <= *previous) {
-				throw std::runtime_error("the transitions of state " + std::to_string(source) + " are not sorted by symbol");
-			}
-			previous = symbol_post.symbol;
-			if (symbol_post.targets.empty()) {
-				throw std::runtime_error("state " + std::to_string(source) + " has a symbol without targets");
-			}
-			if (!std::ranges::is_sorted(symbol_post.targets) ||
-				std::ranges::adjacent_find(symbol_post.targets) != symbol_post.targets.end()) {
-				throw std::runtime_error("the targets of state " + std::to_string(source) + " are not sorted and unique");
-			}
-			if (symbol_post.targets.back() >= num_states) {
-				throw std::runtime_error("state " + std::to_string(source) + " has a target that does not exist");
-			}
-		}
-	}
+	detail::check_delta(nfa);
 }
 
 bool accepts(const Nfa& nfa, const rust::Slice<const Symbol> word) {
