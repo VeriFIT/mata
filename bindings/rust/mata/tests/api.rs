@@ -191,7 +191,7 @@ fn oversized_regex_is_an_error() {
 }
 
 #[test]
-#[ignore = "crashes the parser until the fix of #877 (or #941, only in master so far) reaches this branch"]
+#[ignore = "crashes the parser until #877 (transitions with too few tokens) is fixed"]
 fn malformed_mata_input_is_an_error() {
 	let cases = [
 		"",
