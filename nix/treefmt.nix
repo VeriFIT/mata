@@ -26,15 +26,15 @@
             indentation = "\t";
           };
 
-          rustfmt.enable = true;
           clang-format.enable = true;
+          rustfmt.enable = true;
           cmake-format = {
             enable = true;
-            # The default 'CMakeLists.txt' matches only the one at the root.
+            # 'CMakeLists.txt' alone matches only the root one, and '**/' does not match the root.
             includes = [
               "*.cmake"
               "CMakeLists.txt"
-              "*/CMakeLists.txt"
+              "**/CMakeLists.txt"
             ];
             # Vendored, kept byte-identical to upstream.
             excludes = [ "cmake/GetGitRevisionDescription.cmake" ];
