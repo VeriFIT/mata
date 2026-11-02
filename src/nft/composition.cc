@@ -53,9 +53,13 @@ using namespace mata::nft;
  * ON_EPSILON_AND_SYMBOL ||                |   wait on LHS   |      wait on LHS
  *                       ||   wait on RHS  |   wait on RHS   |      wait on RHS
  * =================================================================================
+ *
+ * A state with the type UNDEFINED neither synchronizes nor makes the other one wait.
  */
 enum class SynchronizationType : uint8_t {
-	UNDEFINED = 0b0000'0000, ///< Default value. Or used if we are past the synchronization.
+	/// No synchronization can be reached from the state: it has passed its synchronization level, or it is on or before
+	///  it but cannot reach one (a dead end). Only the level of the state tells the two apart.
+	UNDEFINED = 0b0000'0000,
 	ONLY_ON_SYMBOL = 0b0000'0001, ///< Synchronization on symbol.
 	ONLY_ON_EPSILON = 0b0000'0010, ///< Synchronization on EPSILON.
 	ON_EPSILON_AND_SYMBOL = 0b0000'0011, ///< Synchronization on EPSILON and symbol.
@@ -71,10 +75,11 @@ inline SynchronizationType& operator|=(SynchronizationType& lhs, Synchronization
 inline bool exist_intersection(SynchronizationType lhs, SynchronizationType rhs) {
 	return (static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)) != 0;
 }
+/// Whether a state of each type can reach a synchronization on a symbol, see the table above.
 inline bool exist_synchronization(SynchronizationType lhs, SynchronizationType rhs) {
-	return lhs != SynchronizationType::ONLY_ON_EPSILON && rhs != SynchronizationType::ONLY_ON_EPSILON;
+	return exist_intersection(lhs, SynchronizationType::ONLY_ON_SYMBOL) &&
+		   exist_intersection(rhs, SynchronizationType::ONLY_ON_SYMBOL);
 }
-inline bool exist_epsilon(SynchronizationType s) { return s != SynchronizationType::ONLY_ON_SYMBOL; }
 
 /**
  * @brief Filter state of the EPSILON-composition filter of Mohri (https://cs.nyu.edu/~mohri/pub/nway.pdf).
@@ -1307,25 +1312,25 @@ Nft compose_fast_no_jump_with(
 					continue;
 				}
 
+				const Level target_level = copy_nft.levels[copy_target];
 				const SynchronizationType copy_target_sync_type = copy_sync_types[copy_target];
 				// It makes sense to continue only if we believe that we will not get stuck
 				// later due to an inability to synchronize. When this function is called
 				// from the waiting simulation, we are interested in only synchronizations on EPSILON.
+				// UNDEFINED marks both a target past its synchronization level (or ending the round), which always
+				// continues, and a dead end on or before it, which never synchronizes; only the level tells them apart.
+				// Until the copied side passes its synchronization level, neither has the stationary one.
 				const bool can_synchronize_in_the_future =
+					target_level == 0 || target_level > copy_sync_level ||
 					(waiting_worklist != nullptr
-						 ? exist_epsilon(copy_target_sync_type) ||
-							   copy_nft.levels[copy_target] == 0 // End of the waiting loop.
-						 : exist_synchronization(stationar_state_sync_type, copy_target_sync_type) ||
-							   stationar_state_sync_type == SynchronizationType::UNDEFINED ||
-							   copy_target_sync_type == SynchronizationType::UNDEFINED ||
-							   copy_nft.levels[copy_target] == 0);
+						 ? exist_intersection(copy_target_sync_type, SynchronizationType::ONLY_ON_EPSILON)
+						 : exist_synchronization(stationar_state_sync_type, copy_target_sync_type));
 				if (!can_synchronize_in_the_future) {
 					// There is no way we would be able to synchronize in the future.
 					// We do not need to explore this path further.
 					continue;
 				}
 
-				const Level target_level = copy_nft.levels[copy_target];
 				const size_t trans_len =
 					(target_level == 0 ? copy_nft.levels.num_of_levels : target_level) - copy_state_level;
 				MATA_ASSERT(target_level == 0 || target_level > copy_state_level);
@@ -1341,8 +1346,8 @@ Nft compose_fast_no_jump_with(
 						// We are waiting in the stationary state.
 						// During this, only EPSILON synchronizations are allowed.
 						const auto& copy_eps_symbol_post = copy_nft.delta[copy_target].find(EPSILON);
-						// A dead end has no EPSILON transition to synchronize on.
-						if (copy_eps_symbol_post == copy_nft.delta[copy_target].end()) { continue; }
+						// A dead end never gets here: its type has no EPSILON.
+						MATA_ASSERT(copy_eps_symbol_post != copy_nft.delta[copy_target].end());
 						for (const State sync_target : copy_eps_symbol_post->targets) {
 							MATA_ASSERT(copy_nft.levels[sync_target] == 0);
 							symbol_post.insert(create_composition_state(
@@ -1386,7 +1391,8 @@ Nft compose_fast_no_jump_with(
 							waiting_state_storage.emplace(copy_target, new_composition_state);
 							waiting_worklist->push({new_composition_state, copy_target});
 						}
-						symbol_post.push_back(new_composition_state);
+						// A cached waiting state can be smaller than a target added before it.
+						symbol_post.insert(new_composition_state);
 					} else {
 						// Just copy this transition.
 						symbol_post.insert(create_composition_state(
@@ -1527,8 +1533,8 @@ Nft compose_fast_no_jump_with(
 				// We cannot use the synchronize function here, because we want to
 				// focus only on the EPSILON transitions.
 				const auto& running_epsilon_post_it = running_delta[running_state].find(EPSILON);
-				// A dead end keeps the type UNDEFINED and has no EPSILON transition to synchronize on.
-				if (running_epsilon_post_it == running_delta[running_state].end()) { continue; }
+				// There should be an EPSILON transition. It has been told by the SynchronizationType.
+				MATA_ASSERT(running_epsilon_post_it != running_delta[running_state].end());
 
 				if (num_of_epsilons_to_replace_sync > 1) {
 					// The synchronization will be replaced by an EPSILON transition anyway.
@@ -1583,7 +1589,8 @@ Nft compose_fast_no_jump_with(
 							waiting_state_storage.emplace(running_epsilon_target, new_composition_state);
 							worklist.push({new_composition_state, running_epsilon_target});
 						}
-						epsilon_symbol_post.push_back(new_composition_state);
+						// A cached waiting state can be smaller than a target added before it.
+						epsilon_symbol_post.insert(new_composition_state);
 					}
 				}
 				if (!epsilon_symbol_post.targets.empty()) {

@@ -10,6 +10,7 @@
 #include <random>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "mata/alphabet.hh"
@@ -108,6 +109,56 @@ std::string describe(const unsigned seed, const Nft& nft) {
 					   std::to_string(transition.target) + "\n";
 	}
 	return description;
+}
+
+/// The tuples of words, one word per level, of @p nft with no word longer than @p max_length: a search over the
+///  paths that drops EPSILON, spells DONT_CARE out as each of the symbols {0, ..., num_of_symbols - 1}, and repeats
+///  the symbol of a jump on every level it covers. Exact up to the bound, since a path never shortens a word.
+std::set<std::vector<Word>> bounded_tuples(const Nft& nft, const size_t num_of_symbols, const size_t max_length) {
+	const size_t num_of_levels{nft.levels.num_of_levels};
+	using Configuration = std::pair<State, std::vector<Word>>;
+	std::set<Configuration> visited{};
+	std::vector<Configuration> worklist{};
+	for (const State state : nft.initial) {
+		Configuration initial{state, std::vector<Word>(num_of_levels)};
+		if (visited.insert(initial).second) { worklist.push_back(std::move(initial)); }
+	}
+	std::set<std::vector<Word>> tuples{};
+	while (!worklist.empty()) {
+		const Configuration configuration{std::move(worklist.back())};
+		worklist.pop_back();
+		const auto& [source, words] = configuration;
+		if (nft.final.contains(source)) { tuples.insert(words); }
+		for (const auto& symbol_post : nft.delta[source]) {
+			std::vector<Symbol> symbols{};
+			if (symbol_post.symbol == DONT_CARE) {
+				for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { symbols.push_back(symbol); }
+			} else {
+				symbols.push_back(symbol_post.symbol);
+			}
+			for (const State target : symbol_post.targets) {
+				const size_t end_level{nft.levels[target] == 0 ? num_of_levels : nft.levels[target]};
+				for (const Symbol symbol : symbols) {
+					Configuration next{target, words};
+					bool is_within_bound{true};
+					for (size_t level{nft.levels[source]}; symbol != EPSILON && level < end_level; ++level) {
+						next.second[level].push_back(symbol);
+						is_within_bound = is_within_bound && next.second[level].size() <= max_length;
+					}
+					if (is_within_bound && visited.insert(next).second) { worklist.push_back(std::move(next)); }
+				}
+			}
+		}
+	}
+	return tuples;
+}
+
+/// Whether @p nft has a transition over EPSILON.
+bool has_epsilon_transition(const Nft& nft) {
+	for (const Transition& transition : nft.delta.transitions()) {
+		if (transition.symbol == EPSILON) { return true; }
+	}
+	return false;
 }
 
 } // Anonymous namespace.
@@ -247,33 +298,44 @@ TEST_CASE("mata::nft differential: remove_epsilon() keeps the relation", "[diffe
 	CHECK(shared_epsilon_successors > 0);
 }
 
-// Only DONT_CARE is drawn into the operands below: with an EPSILON transition in an operand,
-//  compose(..., FastNoJump) can abort on the assertion at src/nft/composition.cc:848 (and segfault
-//  in Release), so the comparison of the EPSILON-erased relations waits for the fix (#902).
+// An operand carries DONT_CARE or EPSILON, never both: General matches DONT_CARE with EPSILON (#763, item 7). For the
+//  same reason, General accepts tuples of words of different lengths that DONT_CARE operands do not, so with
+//  DONT_CARE only the tuples of words of the same length, read without any EPSILON, are compared.
 TEST_CASE("mata::nft differential: the composition modes agree on jump-free transducers", "[differential]") {
 	size_t nondeterministic_inputs{0};
-	for (unsigned seed{0}; seed < 60; ++seed) {
-		for (const bool with_dont_care : {false, true}) {
+	size_t composed_with_epsilon{0};
+	for (unsigned seed{0}; seed < 400; ++seed) {
+		for (const auto& [with_dont_care, with_epsilon] :
+			 {std::pair{false, false}, std::pair{true, false}, std::pair{false, true}}) {
 			std::mt19937 lhs_rng{seed};
 			std::mt19937 rhs_rng{seed + 700};
 			const size_t num_of_symbols{1 + seed % 2};
-			const Nft lhs{random_nft(lhs_rng, 1 + seed % 2, num_of_symbols, 2, with_dont_care)};
-			const Nft rhs{random_nft(rhs_rng, 1 + seed % 2, num_of_symbols, 2, with_dont_care)};
+			const Nft lhs{random_nft(lhs_rng, 1 + seed % 2, num_of_symbols, 2, with_dont_care, with_epsilon)};
+			const Nft rhs{random_nft(rhs_rng, 1 + seed % 2, num_of_symbols, 2, with_dont_care, with_epsilon)};
 			INFO(describe(seed, lhs) + "\n---\n" + describe(seed + 700, rhs));
 			if (!lhs.is_deterministic() || !rhs.is_deterministic()) { ++nondeterministic_inputs; }
 
 			const Nft general{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General)};
 			const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
 			CHECK(general.levels.num_of_levels == fast.levels.num_of_levels);
-			// The epsilon placement may differ between the modes, so the languages are compared word
-			//  by word up to a bound instead of with are_equivalent().
-			for (const Word& word : all_level_words(num_of_symbols, 4, 2)) {
-				CHECK(general.is_in_lang(word) == fast.is_in_lang(word));
+			if (with_dont_care) {
+				for (const Word& word : all_level_words(num_of_symbols, 4, 2)) {
+					CHECK(general.is_in_lang(word) == fast.is_in_lang(word));
+				}
+				continue;
+			}
+			// The modes may place EPSILON differently, so the relations are compared as their EPSILON-erased tuples up
+			//  to a bound instead of with are_equivalent().
+			const std::set<std::vector<Word>> tuples{bounded_tuples(general, num_of_symbols, 3)};
+			CHECK(tuples == bounded_tuples(fast, num_of_symbols, 3));
+			if ((has_epsilon_transition(lhs) || has_epsilon_transition(rhs)) && !tuples.empty()) {
+				++composed_with_epsilon;
 			}
 		}
 	}
 	// The two modes build the product differently only when a word reaches several states.
 	CHECK(nondeterministic_inputs > 0);
+	CHECK(composed_with_epsilon > 0);
 }
 
 TEST_CASE("mata::nft differential: composing with an empty operand keeps the level count", "[differential]") {
@@ -298,9 +360,9 @@ TEST_CASE("mata::nft differential: composing with an empty operand keeps the lev
 	}
 }
 
-// The normalization of the composition result rewrites EPSILON runs and duplicate states only. Fast EPSILON moves
-//  (zero-level to zero-level) and one-level operands with EPSILON make the composer generate them; EPSILON
-//  transitions inside the rounds are left out because of #902.
+// The normalization of the composition result rewrites EPSILON runs and duplicate states only. EPSILON transitions
+//  inside the rounds, fast EPSILON moves (zero-level to zero-level) and one-level operands with EPSILON make the
+//  composer generate them.
 TEST_CASE("mata::nft differential: compose() normalization keeps the relation and never grows", "[differential]") {
 	size_t num_of_shrunk{0};
 	for (unsigned seed{0}; seed < 120; ++seed) {
@@ -308,9 +370,9 @@ TEST_CASE("mata::nft differential: compose() normalization keeps the relation an
 		std::mt19937 rhs_rng{seed + 2'100};
 		const size_t num_of_symbols{1 + seed % 2};
 		const size_t num_of_states_per_level{1 + seed % 3};
-		Nft lhs{random_nft(lhs_rng, num_of_states_per_level, num_of_symbols, 2)};
+		Nft lhs{random_nft(lhs_rng, num_of_states_per_level, num_of_symbols, 2, false, true)};
 		const size_t rhs_num_of_levels{1 + (seed / 2) % 2};
-		Nft rhs{random_nft(rhs_rng, num_of_states_per_level, num_of_symbols, rhs_num_of_levels)};
+		Nft rhs{random_nft(rhs_rng, num_of_states_per_level, num_of_symbols, rhs_num_of_levels, false, true)};
 		// Fast EPSILON moves between the zero-level states, cycles included.
 		for (Nft* const nft : {&lhs, &rhs}) {
 			std::mt19937& rng{nft == &lhs ? lhs_rng : rhs_rng};
@@ -483,16 +545,32 @@ TEST_CASE("mata::nft differential: larger sweep", "[.differential-sweep]") {
 		// No universality here: it disagrees with the complement on every multi-level transducer,
 		//  which the [!shouldfail] test case above pins down.
 
-		// The composition modes, on two-level operands that do carry DONT_CARE.
-		std::mt19937 composed_lhs_rng{seed + 1'300};
-		std::mt19937 composed_rhs_rng{seed + 1'700};
-		const Nft composed_lhs{random_nft(composed_lhs_rng, 1 + seed % 3, num_of_symbols, 2, true)};
-		const Nft composed_rhs{random_nft(composed_rhs_rng, 1 + seed % 3, num_of_symbols, 2, true)};
-		const Nft general{compose(composed_lhs, composed_rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General)};
-		const Nft fast{compose(composed_lhs, composed_rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
-		CHECK(general.levels.num_of_levels == fast.levels.num_of_levels);
-		for (const Word& word : all_level_words(num_of_symbols, 6, 2)) {
-			CHECK(general.is_in_lang(word) == fast.is_in_lang(word));
+		// The composition modes, on two-level operands that carry DONT_CARE or EPSILON, compared as in the
+		//  [differential] test case above.
+		for (const bool with_epsilon : {false, true}) {
+			std::mt19937 composed_lhs_rng{seed + 1'300};
+			std::mt19937 composed_rhs_rng{seed + 1'700};
+			const Nft composed_lhs{
+				random_nft(composed_lhs_rng, 1 + seed % 3, num_of_symbols, 2, !with_epsilon, with_epsilon)
+			};
+			const Nft composed_rhs{
+				random_nft(composed_rhs_rng, 1 + seed % 3, num_of_symbols, 2, !with_epsilon, with_epsilon)
+			};
+			INFO(describe(seed + 1'300, composed_lhs) + "\n---\n" + describe(seed + 1'700, composed_rhs));
+			const Nft general{
+				compose(composed_lhs, composed_rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General)
+			};
+			const Nft fast{
+				compose(composed_lhs, composed_rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)
+			};
+			CHECK(general.levels.num_of_levels == fast.levels.num_of_levels);
+			if (with_epsilon) {
+				CHECK(bounded_tuples(general, num_of_symbols, 3) == bounded_tuples(fast, num_of_symbols, 3));
+			} else {
+				for (const Word& word : all_level_words(num_of_symbols, 6, 2)) {
+					CHECK(general.is_in_lang(word) == fast.is_in_lang(word));
+				}
+			}
 		}
 	}
 }

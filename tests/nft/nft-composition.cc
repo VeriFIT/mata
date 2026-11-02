@@ -3176,19 +3176,18 @@ TEST_CASE("mata::nft::compose() normalization of the generated states (issue #81
 			check_same_relation(raw, normalized);
 
 			// The 3-level variant keeps the synchronization level, so each run has two padding states. Without the
-			//  projection there is no trim either, so the n configurations that read x on the LHS before the RHS has
-			//  finished its EPSILON moves stay as dead ends.
+			//  projection there is no trim either, but the LHS does not read x before the RHS has finished its
+			//  EPSILON moves: in those configurations the RHS cannot synchronize, so they are not built.
 			const Nft rhs_two_level{two_level(n, x, b)};
 			const Nft raw_kept{compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::None)};
-			CHECK(raw_kept.num_of_states() == 7 * n + 4);
-			CHECK(raw_kept.delta.num_of_transitions() == 7 * n + 3);
-			Nft normalized_kept{compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::GeneratedOnly)};
-			CHECK(normalized_kept.num_of_states() == n + 4);
-			CHECK(normalized_kept.delta.num_of_transitions() == n + 3);
-			check_same_relation(raw_kept, normalized_kept);
-			normalized_kept.trim();
+			CHECK(raw_kept.num_of_states() == 6 * n + 4);
+			CHECK(raw_kept.delta.num_of_transitions() == 6 * n + 3);
+			const Nft normalized_kept{
+				compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::GeneratedOnly)
+			};
 			CHECK(normalized_kept.num_of_states() == 4);
 			CHECK(normalized_kept.delta.num_of_transitions() == 3);
+			check_same_relation(raw_kept, normalized_kept);
 		}
 	}
 
@@ -3577,4 +3576,128 @@ TEST_CASE("mata::nft::compose() with FastNoJump and a dead end on the synchroniz
 	CHECK(result.is_lang_empty());
 	const Nft projected = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump, CompositionMode::FastNoJump);
 	CHECK(projected.is_lang_empty());
+}
+
+namespace {
+/// Checks that FastNoJump and General composition of level 1 of @p lhs with level 0 of @p rhs accept the same tuples
+///  of words over {0, 1} up to length 2, with and without the synchronization level.
+void check_composition_modes_agree(const Nft& lhs, const Nft& rhs) {
+	for (const bool project_out : {true, false}) {
+		INFO("project_out " << project_out);
+		const Nft general{compose(lhs, rhs, 1, 0, project_out, JumpMode::NoJump, CompositionMode::General)};
+		const Nft fast{compose(lhs, rhs, 1, 0, project_out, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		REQUIRE(general.levels.num_of_levels == fast.levels.num_of_levels);
+		const std::vector<mata::Word> words{{}, {0}, {1}, {0, 0}, {0, 1}, {1, 0}, {1, 1}};
+		std::vector<mata::Word> tuple(fast.levels.num_of_levels);
+		std::vector<size_t> indices(tuple.size(), 0);
+		while (true) {
+			for (size_t level{0}; level < tuple.size(); ++level) { tuple[level] = words[indices[level]]; }
+			CHECK(general.is_in_lang_by_levels(tuple) == fast.is_in_lang_by_levels(tuple));
+			size_t level{0};
+			while (level < tuple.size() && ++indices[level] == words.size()) { indices[level++] = 0; }
+			if (level == tuple.size()) { break; }
+		}
+	}
+}
+} // namespace
+
+TEST_CASE("mata::nft::compose() with FastNoJump and a state that cannot synchronize - issue #902") {
+	// A state on or before its synchronization level from which no synchronization is reachable (a dead end, or an
+	//  RHS root without transitions) must not be taken for one that has passed the synchronization.
+
+	// The RHS relation {(ε, ε)}: one initial and final state without transitions.
+	Nft rhs{Nft::with_levels(2)};
+	const State r0{rhs.add_state_with_level(0)};
+	rhs.initial.insert(r0);
+	rhs.final.insert(r0);
+
+	SECTION("the EPSILON waiting round passes a dead sibling on the synchronization level") {
+		for (const bool is_q0_final : {true, false}) {
+			INFO("q0 final " << is_q0_final);
+			// q0 -0-> q1 -EPSILON-> q0 and q0 -0-> q2, with q2 a dead end on the synchronization level.
+			Nft lhs{Nft::with_levels(2)};
+			const State q0{lhs.add_state_with_level(0)}, q1{lhs.add_state_with_level(1)};
+			lhs.initial.insert(q0);
+			if (is_q0_final) { lhs.final.insert(q0); }
+			lhs.delta.add(q0, 0, q1);
+			lhs.delta.add(q1, EPSILON, q0);
+			lhs.delta.add(q0, 0, lhs.add_state_with_level(1));
+
+			const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+			CHECK(fast.is_in_lang({0, EPSILON}) == is_q0_final);
+			CHECK(fast.is_in_lang_by_levels({{0, 0}, {}}) == is_q0_final);
+			check_composition_modes_agree(lhs, rhs);
+		}
+	}
+
+	SECTION("the synchronized round reaches an EPSILON-only state against an RHS root without transitions") {
+		// q0 -0-> q1 -EPSILON-> q0 and q0 -1-> q2 -1-> q0: the RHS root cannot synchronize at all, so the pair
+		//  (q1, r0) can be reached only by waiting in r0, never by the LHS moving on its own.
+		Nft lhs{Nft::with_levels(2)};
+		const State q0{lhs.add_state_with_level(0)}, q1{lhs.add_state_with_level(1)}, q2{lhs.add_state_with_level(1)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, q1);
+		lhs.delta.add(q1, EPSILON, q0);
+		lhs.delta.add(q0, 1, q2);
+		lhs.delta.add(q2, 1, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{}, {}}));
+		CHECK(fast.is_in_lang_by_levels({{0, 0}, {}}));
+		CHECK(!fast.is_in_lang_by_levels({{1}, {}}));
+		CHECK(!fast.is_in_lang_by_levels({{1}, {1}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+}
+
+TEST_CASE("mata::nft::compose_fast_no_jump() reaches a shared waiting state out of order - issue #902") {
+	// The RHS waits while the LHS runs through EPSILON on its synchronization level. A waiting state created for an
+	//  earlier transition is reached again next to a fresh one with a smaller LHS state; the targets must stay sorted.
+	Nft rhs{Nft::with_levels(2)};
+	const State r0{rhs.add_state_with_level(0)}, r1{rhs.add_state_with_level(1)};
+	rhs.initial.insert(r0);
+	rhs.final.insert(r0);
+	rhs.delta.add(r0, 0, r1);
+	rhs.delta.add(r1, 0, r0);
+
+	SECTION("on the copied transitions before the synchronization level") {
+		// q0 -0-> p and q0 -1-> {r, p}, with r < p, both reading EPSILON back to q0.
+		Nft lhs{Nft::with_levels(2)};
+		const State q0{lhs.add_state_with_level(0)}, r{lhs.add_state_with_level(1)}, p{lhs.add_state_with_level(1)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, p);
+		lhs.delta.add(q0, 1, r);
+		lhs.delta.add(q0, 1, p);
+		lhs.delta.add(r, EPSILON, q0);
+		lhs.delta.add(p, EPSILON, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{1, 0}, {}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+
+	SECTION("on the EPSILON synchronization kept in the result") {
+		// q0 -0-> {s1, s2}, s1 -EPSILON-> t2 and s2 -EPSILON-> {t1, t2}, with t1 < t2, on a 3-level LHS whose
+		//  synchronization level 1 is kept.
+		Nft lhs{Nft::with_levels(3)};
+		const State q0{lhs.add_state_with_level(0)};
+		const State s1{lhs.add_state_with_level(1)}, s2{lhs.add_state_with_level(1)};
+		const State t1{lhs.add_state_with_level(2)}, t2{lhs.add_state_with_level(2)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, s1);
+		lhs.delta.add(q0, 0, s2);
+		lhs.delta.add(s1, EPSILON, t2);
+		lhs.delta.add(s2, EPSILON, t1);
+		lhs.delta.add(s2, EPSILON, t2);
+		lhs.delta.add(t1, 0, q0);
+		lhs.delta.add(t2, 1, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, false, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{0}, {}, {0}, {}}));
+		CHECK(fast.is_in_lang_by_levels({{0}, {}, {1}, {}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
 }
