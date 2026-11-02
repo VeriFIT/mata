@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.15.0)
+cmake_minimum_required (VERSION 3.23.0)
 
 # The source of truth for the version is the `VERSION` file that CI (and the Python sdist) writes.
 #  Outside a release checkout, fall back to the latest git tag, and to 0.0.0 when there is neither.
@@ -379,15 +379,8 @@ if (MATA_INSTALL)
 		TARGETS libmata cudd_headers simlib_headers
 		EXPORT mataTargets
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	)
-	# TODO: should headers be installed in some nicer way? there is something called FILE_SET in cmake, but I do not feel it will make it better
-	install (
-		DIRECTORY
-			${PROJECT_SOURCE_DIR}/include/
-			${PROJECT_SOURCE_DIR}/3rdparty/cudd/include/ # TODO remove this after we remove PUBLIC dependency on CUDD
-			${PROJECT_SOURCE_DIR}/3rdparty/simlib/include/ # TODO remove this after we remove PUBLIC dependency on simlib
-			${PROJECT_BINARY_DIR}/include/ # Generated `mata/config.hh`.
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+				FILE_SET HEADERS
+				DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	)
 	install (
 		EXPORT mataTargets

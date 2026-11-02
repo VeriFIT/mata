@@ -42,7 +42,7 @@ You can download pre-built binaries from the [releases](https://github.com/VeriF
 
 ### Building and installing from sources
 
-For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
+For a successful installation of Mata, `cmake` of version `3.23.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
 From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies).
 
 The Mata library further depends on the following libraries, included in the `./3rdparty/` directory:
@@ -242,7 +242,7 @@ We recommend `cmake` for building projects using Mata.
 Provided the Mata is installed in the system directories, the `CMakeLists.txt` file for the example may look like:
 
 ```cmake
-cmake_minimum_required (VERSION 3.15.0)
+cmake_minimum_required (VERSION 3.23.0)
 project (my-project)
 set (CMAKE_CXX_STANDARD 20)
 

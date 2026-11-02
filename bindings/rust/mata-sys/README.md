@@ -15,7 +15,7 @@ Native build of [Mata](https://github.com/VeriFIT/mata), the finite automata lib
 
 ## Building
 
-Requirements: CMake 3.15 or newer and a C++23 compiler: GCC 14 or newer, or Clang 18 or newer (on macOS, Homebrew's LLVM; Apple's Clang is too old). Tested on 64-bit Linux and on WebAssembly ([below](#webassembly)).
+Requirements: CMake 3.23 or newer and a C++23 compiler: GCC 14 or newer, or Clang 18 or newer (on macOS, Homebrew's LLVM; Apple's Clang is too old). Tested on 64-bit Linux and on WebAssembly ([below](#webassembly)).
 
 | Variable                | Effect                                                                                                 |
 | ----------------------- | ------------------------------------------------------------------------------------------------------ |
