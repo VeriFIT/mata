@@ -66,7 +66,9 @@ void check_delta(const mata::Automaton& automaton) {
 		auto previous = std::optional<Symbol>();
 		for (const auto& symbol_post : state_post) {
 			if (previous.has_value() && symbol_post.symbol <= *previous) {
-				throw std::runtime_error("the transitions of state " + std::to_string(source) + " are not sorted by symbol");
+				throw std::runtime_error(
+					"the transitions of state " + std::to_string(source) + " are not sorted by symbol"
+				);
 			}
 			previous = symbol_post.symbol;
 			if (symbol_post.targets.empty()) {
@@ -74,7 +76,9 @@ void check_delta(const mata::Automaton& automaton) {
 			}
 			if (!std::ranges::is_sorted(symbol_post.targets) ||
 				std::ranges::adjacent_find(symbol_post.targets) != symbol_post.targets.end()) {
-				throw std::runtime_error("the targets of state " + std::to_string(source) + " are not sorted and unique");
+				throw std::runtime_error(
+					"the targets of state " + std::to_string(source) + " are not sorted and unique"
+				);
 			}
 			if (symbol_post.targets.back() >= num_states) {
 				throw std::runtime_error("state " + std::to_string(source) + " has a target that does not exist");
@@ -84,8 +88,10 @@ void check_delta(const mata::Automaton& automaton) {
 }
 
 ParseAlphabet::ParseAlphabet(
-	const bool numeric_symbols, const rust::Slice<const rust::String> names,
-	const rust::Slice<const Symbol> named_symbols, const Symbol next_symbol
+	const bool numeric_symbols,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> named_symbols,
+	const Symbol next_symbol
 )
 	: numeric_(numeric_symbols),
 	  first_new_symbol_(next_symbol),

@@ -13,16 +13,16 @@ namespace mata_sys {
 
 namespace {
 
-using mata::Word;
-using mata::nfa::ParameterMap;
-using mata::nfa::Run;
-using mata::nfa::StateSet;
 using detail::assign;
 using detail::check_state;
 using detail::slice_of;
 using detail::SymbolSet;
 using detail::to_symbol_set;
 using detail::to_word;
+using mata::Word;
+using mata::nfa::ParameterMap;
+using mata::nfa::Run;
+using mata::nfa::StateSet;
 
 /// Wraps an automaton for Rust, without its alphabet.
 std::unique_ptr<Nfa> boxed(Nfa&& nfa) {
@@ -92,16 +92,17 @@ std::unique_ptr<Nfa> boxed_within(std::optional<Nfa>&& nfa, const Limits& limits
 
 ParameterMap params_of(const CheckAlgorithm algorithm) {
 	switch (algorithm) {
-		case CheckAlgorithm::Naive: return {{"algorithm", "naive"}};
-		case CheckAlgorithm::Antichains: return {{"algorithm", "antichains"}};
+		case CheckAlgorithm::Naive:
+			return {{"algorithm", "naive"}};
+		case CheckAlgorithm::Antichains:
+			return {{"algorithm", "antichains"}};
 	}
 	throw std::invalid_argument("unknown CheckAlgorithm");
 }
 
 /// The symbol post at `index` of `source`; throws past the end.
-const mata::nfa::SymbolPost& symbol_post_at(
-	const mata::Automaton& automaton, const State source, const std::size_t index
-) {
+const mata::nfa::SymbolPost&
+	symbol_post_at(const mata::Automaton& automaton, const State source, const std::size_t index) {
 	const auto& state_post = automaton.delta.state_post(source);
 	if (index >= state_post.size()) { throw std::out_of_range("symbol post index out of range"); }
 	return *(state_post.begin() + static_cast<std::ptrdiff_t>(index));
@@ -173,12 +174,15 @@ std::unique_ptr<Nfa> regex_nfa(const rust::Str pattern) {
 	return boxed(mata::nfa::builder::create_from_regex(std::string(pattern)));
 }
 
-
 // Parsing.
 
 std::unique_ptr<ParsedNfas> parse_mata(
-	const rust::Str text, const bool numeric_symbols, const rust::Slice<const rust::String> names,
-	const rust::Slice<const Symbol> named_symbols, const Symbol next_symbol, rust::Vec<rust::String>& new_names,
+	const rust::Str text,
+	const bool numeric_symbols,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> named_symbols,
+	const Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
 	rust::Vec<Symbol>& new_symbols
 ) {
 	auto alphabet = detail::ParseAlphabet(numeric_symbols, names, named_symbols, next_symbol);
@@ -217,7 +221,9 @@ rust::Slice<const State> final_states(const mata::Automaton& automaton) {
 	return slice_of(std::to_address(automaton.final.begin()), automaton.final.size());
 }
 
-bool contains_transition(const mata::Automaton& automaton, const State source, const Symbol symbol, const State target) {
+bool contains_transition(
+	const mata::Automaton& automaton, const State source, const Symbol symbol, const State target
+) {
 	return automaton.delta.contains(source, symbol, target);
 }
 
@@ -231,9 +237,8 @@ Symbol symbol_post_symbol(const mata::Automaton& automaton, const State source, 
 	return symbol_post_at(automaton, source, index).symbol;
 }
 
-rust::Slice<const State> symbol_post_targets(
-	const mata::Automaton& automaton, const State source, const std::size_t index
-) {
+rust::Slice<const State>
+	symbol_post_targets(const mata::Automaton& automaton, const State source, const std::size_t index) {
 	const auto& targets = symbol_post_at(automaton, source, index).targets;
 	return slice_of(targets.data(), targets.size());
 }
@@ -384,14 +389,18 @@ std::unique_ptr<Nfa> difference(const Nfa& lhs, const Nfa& rhs) {
 	return boxed(mata::nfa::lang_difference(without_epsilon(lhs, lhs_storage), without_epsilon(rhs, rhs_storage)));
 }
 
-std::unique_ptr<Nfa> complement(
-	const Nfa& nfa, const rust::Slice<const Symbol> symbols, const Complementation algorithm
-) {
+std::unique_ptr<Nfa>
+	complement(const Nfa& nfa, const rust::Slice<const Symbol> symbols, const Complementation algorithm) {
 	auto params = ParameterMap();
 	switch (algorithm) {
-		case Complementation::Classical: params = {{"algorithm", "classical"}}; break;
-		case Complementation::Brzozowski: params = {{"algorithm", "brzozowski"}}; break;
-		default: throw std::invalid_argument("unknown Complementation");
+		case Complementation::Classical:
+			params = {{"algorithm", "classical"}};
+			break;
+		case Complementation::Brzozowski:
+			params = {{"algorithm", "brzozowski"}};
+			break;
+		default:
+			throw std::invalid_argument("unknown Complementation");
 	}
 	auto storage = std::optional<Nfa>();
 	return boxed(mata::nfa::complement(without_epsilon(nfa, storage), to_symbol_set(symbols), params));
@@ -419,18 +428,29 @@ std::unique_ptr<Nfa> reduce(
 	const Nfa& nfa, const Reduction algorithm, const ResidualConstruction construction, const Direction direction
 ) {
 	switch (algorithm) {
-		case Reduction::Simulation: return boxed(mata::nfa::reduce(nfa, nullptr, {{"algorithm", "simulation"}}));
+		case Reduction::Simulation:
+			return boxed(mata::nfa::reduce(nfa, nullptr, {{"algorithm", "simulation"}}));
 		case Reduction::Residual: {
 			auto params = ParameterMap{{"algorithm", "residual"}};
 			switch (construction) {
-				case ResidualConstruction::After: params["type"] = "after"; break;
-				case ResidualConstruction::With: params["type"] = "with"; break;
-				default: throw std::invalid_argument("unknown ResidualConstruction");
+				case ResidualConstruction::After:
+					params["type"] = "after";
+					break;
+				case ResidualConstruction::With:
+					params["type"] = "with";
+					break;
+				default:
+					throw std::invalid_argument("unknown ResidualConstruction");
 			}
 			switch (direction) {
-				case Direction::Forward: params["direction"] = "forward"; break;
-				case Direction::Backward: params["direction"] = "backward"; break;
-				default: throw std::invalid_argument("unknown Direction");
+				case Direction::Forward:
+					params["direction"] = "forward";
+					break;
+				case Direction::Backward:
+					params["direction"] = "backward";
+					break;
+				default:
+					throw std::invalid_argument("unknown Direction");
 			}
 			auto storage = std::optional<Nfa>();
 			return boxed(mata::nfa::reduce(without_epsilon(nfa, storage), nullptr, params));
@@ -547,7 +567,9 @@ bool shortest_word(const Nfa& nfa, rust::Vec<Symbol>& word) {
 }
 
 bool is_universal(
-	const Nfa& nfa, const rust::Slice<const Symbol> symbols, const CheckAlgorithm algorithm,
+	const Nfa& nfa,
+	const rust::Slice<const Symbol> symbols,
+	const CheckAlgorithm algorithm,
 	rust::Vec<Symbol>& counterexample
 ) {
 	auto storage = std::optional<Nfa>();
@@ -593,16 +615,19 @@ bool next_word(WordStream& stream, rust::Vec<Symbol>& word) { return stream.next
 
 // Printing.
 
-rust::String print_mata(
-	const Nfa& nfa, const rust::Slice<const rust::String> names, const rust::Slice<const Symbol> symbols
-) {
+rust::String
+	print_mata(const Nfa& nfa, const rust::Slice<const rust::String> names, const rust::Slice<const Symbol> symbols) {
 	const auto table = detail::NameTable(names, symbols);
 	return rust::String(nfa.print_to_mata(&table));
 }
 
 rust::String print_dot(
-	const Nfa& nfa, const bool ascii_labels, const bool intervals, const std::int32_t max_label_length,
-	const rust::Slice<const rust::String> names, const rust::Slice<const Symbol> symbols
+	const Nfa& nfa,
+	const bool ascii_labels,
+	const bool intervals,
+	const std::int32_t max_label_length,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> symbols
 ) {
 	const auto table = detail::NameTable(names, symbols);
 	const mata::Alphabet* const alphabet = table.empty() ? nullptr : &table;

@@ -84,8 +84,12 @@ std::unique_ptr<Nfa> regex_nfa(rust::Str pattern);
 
 // Parsing.
 std::unique_ptr<ParsedNfas> parse_mata(
-	rust::Str text, bool numeric_symbols, rust::Slice<const rust::String> names,
-	rust::Slice<const Symbol> named_symbols, Symbol next_symbol, rust::Vec<rust::String>& new_names,
+	rust::Str text,
+	bool numeric_symbols,
+	rust::Slice<const rust::String> names,
+	rust::Slice<const Symbol> named_symbols,
+	Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
 	rust::Vec<Symbol>& new_symbols
 );
 std::size_t parsed_len(const ParsedNfas& parsed);
@@ -144,9 +148,8 @@ std::unique_ptr<Nfa> difference(const Nfa& lhs, const Nfa& rhs);
 std::unique_ptr<Nfa> complement(const Nfa& nfa, rust::Slice<const Symbol> symbols, Complementation algorithm);
 std::unique_ptr<Nfa> determinize(const Nfa& nfa);
 std::unique_ptr<Nfa> minimize(const Nfa& nfa, Minimization algorithm);
-std::unique_ptr<Nfa> reduce(
-	const Nfa& nfa, Reduction algorithm, ResidualConstruction construction, Direction direction
-);
+std::unique_ptr<Nfa>
+	reduce(const Nfa& nfa, Reduction algorithm, ResidualConstruction construction, Direction direction);
 std::unique_ptr<Nfa> revert(const Nfa& nfa);
 
 // The same operations within limits. Null means that a limit stopped the construction.
@@ -164,9 +167,7 @@ bool shortest_word(const Nfa& nfa, rust::Vec<Symbol>& word);
 bool is_universal(
 	const Nfa& nfa, rust::Slice<const Symbol> symbols, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample
 );
-bool is_included(
-	const Nfa& smaller, const Nfa& bigger, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample
-);
+bool is_included(const Nfa& smaller, const Nfa& bigger, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample);
 bool is_disjoint(const Nfa& lhs, const Nfa& rhs, rust::Vec<Symbol>& common_word);
 
 // Words.
@@ -176,8 +177,12 @@ bool next_word(WordStream& stream, rust::Vec<Symbol>& word);
 // Printing.
 rust::String print_mata(const Nfa& nfa, rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols);
 rust::String print_dot(
-	const Nfa& nfa, bool ascii_labels, bool intervals, std::int32_t max_label_length,
-	rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols
+	const Nfa& nfa,
+	bool ascii_labels,
+	bool intervals,
+	std::int32_t max_label_length,
+	rust::Slice<const rust::String> names,
+	rust::Slice<const Symbol> symbols
 );
 
 } // namespace mata_sys

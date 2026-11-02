@@ -65,7 +65,9 @@ Level check_level(const Nft& nft, const std::size_t level) {
 void check_level_zero_state(const Nft& nft, const State state) {
 	check_state(nft, state);
 	if (nft.levels[state] != 0) {
-		throw std::invalid_argument(describe_state(state) + " has level " + std::to_string(nft.levels[state]) + ", not 0");
+		throw std::invalid_argument(
+			describe_state(state) + " has level " + std::to_string(nft.levels[state]) + ", not 0"
+		);
 	}
 }
 
@@ -92,9 +94,8 @@ LevelSet to_level_set(const Nft& nft, const rust::Slice<const std::size_t> level
 }
 
 /// Splits `symbols` into one word per level, `lengths[i]` symbols for level `i`, dropping epsilon.
-std::vector<Word> split_words(
-	const Nft& nft, const rust::Slice<const Symbol> symbols, const rust::Slice<const std::size_t> lengths
-) {
+std::vector<Word>
+	split_words(const Nft& nft, const rust::Slice<const Symbol> symbols, const rust::Slice<const std::size_t> lengths) {
 	if (lengths.size() != nft.levels.num_of_levels) {
 		throw std::invalid_argument(
 			"expected one word per level (" + std::to_string(nft.levels.num_of_levels) + "), got " +
@@ -104,7 +105,9 @@ std::vector<Word> split_words(
 	auto words = std::vector<Word>(lengths.size());
 	std::size_t position = 0;
 	for (std::size_t level = 0; level < lengths.size(); ++level) {
-		if (lengths[level] > symbols.size() - position) { throw std::invalid_argument("word lengths exceed the symbols"); }
+		if (lengths[level] > symbols.size() - position) {
+			throw std::invalid_argument("word lengths exceed the symbols");
+		}
 		for (std::size_t i = 0; i < lengths[level]; ++i) {
 			const Symbol symbol = symbols[position + i];
 			if (symbol != mata::nft::EPSILON) { words[level].push_back(symbol); }
@@ -251,6 +254,14 @@ void nft_check_well_formed(const Nft& nft) {
 	}
 	for (const auto* states : {&nft.initial, &nft.final}) {
 		for (const State state : *states) {
+			// `levels` has room for `num_of_states()` states, but the sparse sets can hold any state of
+			// their domain, which other C++ code may have grown past it.
+			if (state >= nft.levels.size()) {
+				throw std::runtime_error(
+					"the transducer has levels for " + std::to_string(nft.levels.size()) + " states, but " +
+					describe_state(state) + " is initial or final"
+				);
+			}
 			if (nft.levels[state] != 0) {
 				throw std::runtime_error(
 					"initial and final states must have level 0, but " + describe_state(state) + " has level " +
@@ -264,9 +275,9 @@ void nft_check_well_formed(const Nft& nft) {
 		const Level target_level = nft.levels[transition.target];
 		if (target_level != 0 && target_level <= source_level) {
 			throw std::runtime_error(
-				"the transition from " + describe_state(transition.source) + " (level " +
-				std::to_string(source_level) + ") to " + describe_state(transition.target) + " (level " +
-				std::to_string(target_level) + ") does not move to a later level or back to level 0"
+				"the transition from " + describe_state(transition.source) + " (level " + std::to_string(source_level) +
+				") to " + describe_state(transition.target) + " (level " + std::to_string(target_level) +
+				") does not move to a later level or back to level 0"
 			);
 		}
 	}
@@ -281,8 +292,12 @@ void nft_adopt(Nft& nft) {
 // Parsing.
 
 std::unique_ptr<ParsedNfts> nft_parse_mata(
-	const rust::Str text, const bool numeric_symbols, const rust::Slice<const rust::String> names,
-	const rust::Slice<const Symbol> named_symbols, const Symbol next_symbol, rust::Vec<rust::String>& new_names,
+	const rust::Str text,
+	const bool numeric_symbols,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> named_symbols,
+	const Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
 	rust::Vec<Symbol>& new_symbols
 ) {
 	auto alphabet = detail::ParseAlphabet(numeric_symbols, names, named_symbols, next_symbol);
@@ -351,9 +366,7 @@ bool nft_remove_final(Nft& nft, const State state) {
 	return true;
 }
 
-void nft_add_transition(
-	Nft& nft, const State source, const rust::Slice<const Symbol> symbols, const State target
-) {
+void nft_add_transition(Nft& nft, const State source, const rust::Slice<const Symbol> symbols, const State target) {
 	check_level_zero_state(nft, source);
 	check_level_zero_state(nft, target);
 	if (symbols.size() != nft.levels.num_of_levels) {
@@ -366,7 +379,10 @@ void nft_add_transition(
 }
 
 void nft_insert_words(
-	Nft& nft, const State source, const rust::Slice<const Symbol> symbols, const rust::Slice<const std::size_t> lengths,
+	Nft& nft,
+	const State source,
+	const rust::Slice<const Symbol> symbols,
+	const rust::Slice<const std::size_t> lengths,
 	const State target
 ) {
 	check_level_zero_state(nft, source);
@@ -378,7 +394,9 @@ void nft_insert_words(
 	nft.insert_word_by_levels(source, words, target);
 }
 
-bool nft_accepts(const Nft& nft, const rust::Slice<const Symbol> symbols, const rust::Slice<const std::size_t> lengths) {
+bool nft_accepts(
+	const Nft& nft, const rust::Slice<const Symbol> symbols, const rust::Slice<const std::size_t> lengths
+) {
 	return nft.is_in_lang_by_levels(split_words(nft, symbols, lengths));
 }
 
@@ -420,7 +438,10 @@ std::unique_ptr<Nft> nft_concatenate(const Nft& lhs, const Nft& rhs) {
 }
 
 std::unique_ptr<Nft> nft_compose(
-	const Nft& lhs, const Nft& rhs, const std::size_t lhs_sync_level, const std::size_t rhs_sync_level,
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::size_t lhs_sync_level,
+	const std::size_t rhs_sync_level,
 	const bool project_out_sync_level
 ) {
 	const Level lhs_level = check_level(lhs, lhs_sync_level);
@@ -433,9 +454,8 @@ std::unique_ptr<Nft> nft_compose(
 	return boxed(compose_one_level(lhs, rhs, lhs_level, rhs_level, project_out_sync_level));
 }
 
-std::unique_ptr<Nft> nft_apply(
-	const Nft& nft, const mata::nfa::Nfa& nfa, const std::size_t level, const bool project_out
-) {
+std::unique_ptr<Nft>
+	nft_apply(const Nft& nft, const mata::nfa::Nfa& nfa, const std::size_t level, const bool project_out) {
 	const Level applied_level = check_level(nft, level);
 	if (project_out && nft.levels.num_of_levels < 2) {
 		throw std::invalid_argument("projecting out the only level would leave no levels");
@@ -481,9 +501,8 @@ std::unique_ptr<Nft> nft_reverse(const Nft& nft) {
 	return boxed(mata::nft::invert_levels(mata::nft::revert(without_jumps(nft, storage))));
 }
 
-std::unique_ptr<mata::nfa::Nfa> nft_to_nfa(
-	const Nft& nft, const bool expand_dont_care, const rust::Slice<const Symbol> dont_care_replacements
-) {
+std::unique_ptr<mata::nfa::Nfa>
+	nft_to_nfa(const Nft& nft, const bool expand_dont_care, const rust::Slice<const Symbol> dont_care_replacements) {
 	auto replacements = detail::to_symbol_set(dont_care_replacements);
 	const bool drop_dont_care = expand_dont_care && replacements.empty();
 	if (!expand_dont_care || drop_dont_care) { replacements = {mata::nft::DONT_CARE}; }
@@ -543,8 +562,12 @@ rust::String nft_print_mata(
 }
 
 rust::String nft_print_dot(
-	const Nft& nft, const bool ascii_labels, const bool intervals, const std::int32_t max_label_length,
-	const rust::Slice<const rust::String> names, const rust::Slice<const Symbol> symbols
+	const Nft& nft,
+	const bool ascii_labels,
+	const bool intervals,
+	const std::int32_t max_label_length,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> symbols
 ) {
 	const auto table = detail::NameTable(names, symbols);
 	const mata::Alphabet* const alphabet = table.empty() ? nullptr : &table;

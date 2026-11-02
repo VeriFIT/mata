@@ -1,6 +1,7 @@
 // Helpers shared by the NFA and NFT parts of the shim. Not part of the bridge.
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <stdexcept>
 #include <string>
@@ -10,6 +11,7 @@
 
 #include "mata/alphabet.hh"
 #include "mata/automaton.hh"
+#include "mata/nft/types.hh"
 #include "mata/parser/inter-aut.hh"
 #include "rust/cxx.h"
 
@@ -32,7 +34,14 @@ template <class T> rust::Slice<const T> slice_of(const std::vector<T>& values) {
 
 inline Word to_word(const rust::Slice<const Symbol> word) { return Word(word.begin(), word.end()); }
 
+/// Throws on EPSILON and DONT_CARE, which read as moves, not letters, in every Mata call that takes
+/// a symbol set (complement, difference, make_complete, is_complete, sigma_star_nfa, to_nfa).
 inline SymbolSet to_symbol_set(const rust::Slice<const Symbol> symbols) {
+	if (std::ranges::any_of(symbols, [](const Symbol symbol) {
+			return symbol == mata::nft::EPSILON || symbol == mata::nft::DONT_CARE;
+		})) {
+		throw std::invalid_argument("a symbol set cannot contain epsilon or the don't-care symbol");
+	}
 	return SymbolSet(std::vector<Symbol>(symbols.begin(), symbols.end()));
 }
 
@@ -78,7 +87,9 @@ std::vector<mata::IntermediateAut> parse_sections(rust::Str text);
 class ParseAlphabet {
   public:
 	ParseAlphabet(
-		bool numeric_symbols, rust::Slice<const rust::String> names, rust::Slice<const Symbol> named_symbols,
+		bool numeric_symbols,
+		rust::Slice<const rust::String> names,
+		rust::Slice<const Symbol> named_symbols,
 		Symbol next_symbol
 	);
 
