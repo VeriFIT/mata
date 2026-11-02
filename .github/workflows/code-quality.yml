@@ -458,13 +458,22 @@ jobs:
       # The Rust bindings against the instrumented library: the FFI gets ASan/UBSan coverage too.
       - name: Install the instrumented Mata for the Rust bindings
         run: cmake --install build --prefix "$PWD/mata-install"
+      # `libmata.a` is instrumented but the Rust binaries are not, so the sanitizer runtimes are linked
+      #  explicitly, and ASan, which has to come first, is preloaded into the test binaries only (`--target`
+      #  keeps the build scripts, which cargo runs itself, out of it). Doctests get the same flags.
+      # The `compose` law test hits Mata's composition assertion of #902 in this Debug build; it runs in
+      #  run-tests-rust (Release). `--exact` keeps the other tests whose names contain "compose".
       - name: Run the Rust bindings under sanitizers
         working-directory: bindings/rust
         env:
           MATA_DIR: ${{ github.workspace }}/mata-install
+          RUSTFLAGS: -C link-arg=-Wl,--no-as-needed -C link-arg=-lasan -C link-arg=-lubsan
+          RUSTDOCFLAGS: -C link-arg=-Wl,--no-as-needed -C link-arg=-lasan -C link-arg=-lubsan
           ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
-        run: cargo test --workspace --all-features
+        run: |
+          export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="env LD_PRELOAD=$("$CXX" -print-file-name=libasan.so)"
+          cargo test --workspace --all-features --target x86_64-unknown-linux-gnu -- --skip compose --exact
   # The default build has 32-bit states; the 64-bit escape hatch has to keep building and passing too.
   state-bits-64:
     runs-on: ubuntu-latest
