@@ -933,8 +933,10 @@ impl Nfa {
 
     /// The accepted words of length at most `max_length`, each once, in no particular order.
     ///
-    /// The words come lazily from a search over sets of states, so a word with many runs costs no more than
-    /// one. There can still be exponentially many words.
+    /// The words come from a search over sets of states, so a word with many runs costs no more than one.
+    /// With GCC's libstdc++, the search runs lazily as the iterator advances. LLVM's libc++, the standard
+    /// library on macOS, has no `std::generator`, so there this call runs the whole search first and stores
+    /// every word: even `words_up_to(30).take(1)` can need memory for billions of words over two symbols.
     ///
     /// ```
     /// use mata::{Nfa, Symbol};
