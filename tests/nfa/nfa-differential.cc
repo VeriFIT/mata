@@ -413,6 +413,39 @@ void check_simulation(const unsigned seed) {
 	CHECK(block_projection == projection);
 }
 
+/// reduce_simulation() gives the quotient by the simulation the engine computes, with the same numbering, on a
+///  random NFA of up to 300 states: rows of one to four bit words, and the engine from 257 states on (seeds 255 and
+///  256 give 256 and 257 states).
+void check_reduction(const unsigned seed) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{1 + seed % 300};
+	const size_t num_of_symbols{1 + seed % 3};
+	const size_t density{1 + (seed / 3) % 4}; // of 64, the chance of each transition
+	Nfa nfa{num_of_states};
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 4) == 0) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			for (mata::nfa::State target{0}; target < num_of_states; ++target) {
+				if (draw(rng, 64) < density) { nfa.delta.add(state, symbol, target); }
+			}
+		}
+	}
+	INFO(describe(seed, nfa));
+
+	const Simlib::Util::BinaryRelation relation{algorithms::compute_relation(nfa)};
+	std::vector<size_t> projection;
+	relation.get_symmetric_quotient_projection(projection);
+	StateRenaming expected_renaming;
+	const Nfa expected{algorithms::quotient_by_simulation(nfa, relation, projection, nullptr, &expected_renaming)};
+	StateRenaming renaming;
+	const Nfa reduced{algorithms::reduce_simulation(nfa, renaming)};
+	CHECK(reduced.delta == expected.delta);
+	CHECK(reduced.initial == expected.initial);
+	CHECK(reduced.final == expected.final);
+	CHECK(renaming == expected_renaming);
+}
+
 } // Anonymous namespace.
 
 TEST_CASE("mata::nfa differential: the algorithms agree with the reference acceptor", "[differential]") {
@@ -667,4 +700,8 @@ TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differen
 		CHECK(reverted.final == simple_revert(nfa).final);
 		CHECK(revert(reverted).delta == nfa.delta);
 	}
+}
+
+TEST_CASE("mata::nfa differential: the reduction is the quotient by the simulation", "[differential]") {
+	for (unsigned seed{0}; seed < 400; ++seed) { check_reduction(seed); }
 }
