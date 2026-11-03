@@ -2,8 +2,17 @@
 
 # Repositories
 
+> [!IMPORTANT]
+> For proper benchmarking of Mata (and comparison with other automata libraries), use
+> **[VeriFIT/automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench)**, the preferred benchmarking
+> infrastructure. The in-repository infrastructure in `./tests-integration/` described below is meant for quick local
+> measurements, profiling and integration testing.
+
 We have several repositories for all the NFA benchmarks and the benchmarking infrastructure:
 
+- **[VeriFIT/automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench)**
+  - The preferred benchmarking infrastructure for Mata and other automata libraries
+  - Use it for proper benchmarking and for comparing Mata versions or libraries
 - **[VeriFIT/mata](https://github.com/VeriFIT/mata/)**
   - The main repository for Mata: A fast and simple automata library
   - `./tests-integration/`
@@ -14,7 +23,7 @@ We have several repositories for all the NFA benchmarks and the benchmarking inf
 - **[VeriFIT/nfa-program-parser](https://github.com/VeriFIT/nfa-program-parser/)**
   - parsers and interpreters for the .emp files
 - **[VeriFIT/mata-comparison](https://github.com/VeriFIT/mata-comparison)**
-  - Master repo for comparison of the libmata library
+  - Replication package for the comparison of the libmata library from the TACAS'24 paper; superseded by automata-lib-bench for new benchmarking
 - [automata-bench](https://github.com/VeriFIT/automata-bench)
   - Extensive benchmark for reasoning about regular properties
 - [automata-benchmarks](https://github.com/ondrik/automata-benchmarks)
@@ -223,6 +232,7 @@ E.g.:
 ``` -->
 
 For additional details, see tests-integration README and our replication package for the TACAS'24 paper introducing Mata.
+For proper benchmarking, prefer [VeriFIT/automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench).
 
 - Running pycobench manually
   1. Run `./tests-integration/pycobench/src/pycobench.py`:
