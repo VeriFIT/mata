@@ -1754,10 +1754,11 @@ Nft intersection(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE.
- * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
- *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
- *                             mode is optimized for NFTs without jump transitions and with only one synchronization
- * level.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
+ *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
+ *                             jump transition, EPSILON or DONT_CARE (the jump mode then does not matter), and General
+ *                             otherwise. General mode supports all NFTs, while FastNoJump mode is optimized for NFTs
+ *                             without jump transitions and with only one synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @pre The synchronization level vectors are non-empty, of equal size and strictly increasing, every level is below
@@ -1826,10 +1827,11 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE.
- * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
- *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
- *                             mode is optimized for NFTs without jump transitions and with only one synchronization
- * level.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
+ *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
+ *                             jump transition, EPSILON or DONT_CARE (the jump mode then does not matter), and General
+ *                             otherwise. General mode supports all NFTs, while FastNoJump mode is optimized for NFTs
+ *                             without jump transitions and with only one synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @return A new NFT after the composition.
