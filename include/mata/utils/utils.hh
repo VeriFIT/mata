@@ -307,23 +307,6 @@ template <class Vector> void inline reserve_on_insert(Vector& vec, size_t needed
 	}
 }
 
-// This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
-//  It might be useful in revert and trim, but so far it is useless. It was hard to get right, so I am reluctant to
-//  remove .... It assumes that renaming[i] <= i. It assumes that vec is not longer than renaming. The function is very
-//  fragile.
-template <class Vector, typename Index> void defragment(Vector& vec, const std::vector<Index>& renaming) {
-	// MATA_ASSERT(vec.size() <= renaming.size());
-	size_t i = 0;
-	for (size_t rsize = renaming.size(), vsize = vec.size(); i < vsize && i < rsize; i++) {
-		if (renaming[i] != i) {
-			if (!(renaming[i] < vsize)) { break; }
-			MATA_ASSERT(renaming[i] < i);
-			vec[i] = std::move(vec[renaming[i]]);
-		}
-	}
-	vec.reserve(i);
-}
-
 // In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
 template <class Vector, typename Index> void rename(Vector& vec, const std::vector<Index>& renaming) {
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {

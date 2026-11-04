@@ -23,13 +23,7 @@ template <typename Self> bool Automaton::is_identical(this const Self& self, con
 }
 
 template <typename Self> Self& Automaton::trim(this Self& self, nfa::StateRenaming* state_renaming) {
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{self.get_useful_states()};
-	useful_states.clear();
-	useful_states = self.get_useful_states();
-#else
 	const BoolVector useful_states{self.get_useful_states()};
-#endif
 	return self.trim_impl(useful_states, state_renaming);
 }
 

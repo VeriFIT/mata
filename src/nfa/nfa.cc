@@ -62,13 +62,7 @@ Nfa mata::nfa::trim(
 
 	// Compute useful states using two reachability passes.
 	// The result is a bool vector where true means the state is useful.
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-	useful_states.clear();
-	useful_states = nfa.get_useful_states(initial_states, final_states);
-#else
 	const BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-#endif
 	// Build the result from the useful states directly instead of copying and trimming in place, which would copy
 	//  every transition only to discard those of the useless states.
 	Nfa nfa_trimmed{};
