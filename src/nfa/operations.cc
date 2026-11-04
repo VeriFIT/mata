@@ -3,6 +3,8 @@
  */
 
 #include <algorithm>
+#include <bit>
+#include <cstdint>
 #include <deque>
 #include <limits>
 #include <list>
@@ -1423,6 +1425,119 @@ RefinablePartition<State> refine_by_hopcroft(const Nfa& aut) {
 	return brp;
 }
 
+/// The largest automaton whose simulation bit_row_fw_direct_simulation() computes instead of the simulation engine:
+///  its rows cost the square of the number of states, which outgrows the engine above a few hundred states.
+constexpr size_t BIT_ROW_SIMULATION_MAX_STATES{256};
+
+/**
+ * @brief The forward direct simulation of @p aut, as compute_fw_direct_simulation() computes it.
+ *
+ * The greatest fixpoint on a row of bit words per state, refining the whole row of a state at once: q can match
+ *  the transition p -a-> t only if q is an a-predecessor of a state that simulates t.
+ * @return The relation where get(p, q) is whether q simulates p.
+ */
+Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
+	const size_t num_of_states{aut.num_of_states()};
+	const size_t num_of_words{(num_of_states + 63) / 64};
+	const auto set_bit = [](std::uint64_t* const row, const size_t q) { row[q / 64] |= std::uint64_t{1} << (q % 64); };
+	std::vector<Symbol> symbols;
+	for (State q{0}; q < num_of_states; ++q) {
+		for (const SymbolPost& symbol_post : aut.delta[q]) { symbols.push_back(symbol_post.symbol); }
+	}
+	std::ranges::sort(symbols);
+	symbols.erase(std::ranges::unique(symbols).begin(), symbols.end());
+	const auto index_of = [&](const Symbol symbol) {
+		return static_cast<size_t>(std::ranges::lower_bound(symbols, symbol) - symbols.begin());
+	};
+	// The row (index_of(a) * num_of_states + t) holds the states with a transition over a to t.
+	std::vector<std::uint64_t> a_predecessors(symbols.size() * num_of_states * num_of_words, 0);
+	// The states with a transition to each state.
+	std::vector<std::vector<State>> predecessors(num_of_states);
+	// The index of the symbol of each symbol post of each state.
+	std::vector<std::vector<size_t>> symbol_indices(num_of_states);
+	std::vector<std::uint64_t> final_states(num_of_words, 0);
+	// The row index_of(a) holds the states with a transition over a.
+	std::vector<std::uint64_t> with_symbol(symbols.size() * num_of_words, 0);
+	for (State q{0}; q < num_of_states; ++q) {
+		if (aut.final[q]) { set_bit(final_states.data(), q); }
+		symbol_indices[q].reserve(aut.delta[q].size());
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			const size_t symbol_index{index_of(symbol_post.symbol)};
+			symbol_indices[q].push_back(symbol_index);
+			set_bit(&with_symbol[symbol_index * num_of_words], q);
+			for (const State target : symbol_post.targets) {
+				set_bit(&a_predecessors[(symbol_index * num_of_states + target) * num_of_words], q);
+				predecessors[target].push_back(q);
+			}
+		}
+	}
+	// The row p holds the states q that simulate p. It starts with the states that are final if p is and have a
+	//  transition over every symbol p has one over: the first refinement would remove the others anyway, at the cost
+	//  of matching every target against all states.
+	std::vector<std::uint64_t> simulators(num_of_states * num_of_words, 0);
+	for (State p{0}; p < num_of_states; ++p) {
+		std::uint64_t* const row{&simulators[p * num_of_words]};
+		if (aut.final[p]) {
+			std::ranges::copy(final_states, row);
+		} else {
+			for (State q{0}; q < num_of_states; ++q) { set_bit(row, q); }
+		}
+		for (const size_t symbol_index : symbol_indices[p]) {
+			const std::uint64_t* const with_this_symbol{&with_symbol[symbol_index * num_of_words]};
+			for (size_t word{0}; word < num_of_words; ++word) { row[word] &= with_this_symbol[word]; }
+		}
+	}
+
+	// Only the row of a state whose successor lost a simulator can lose a simulator, so only those are rechecked.
+	std::vector<State> to_check(num_of_states);
+	std::iota(to_check.begin(), to_check.end(), State{0});
+	std::vector<bool> is_to_check(num_of_states, true);
+	std::vector<std::uint64_t> row(num_of_words);
+	std::vector<std::uint64_t> matching(num_of_words);
+	while (!to_check.empty()) {
+		const State p{to_check.back()};
+		to_check.pop_back();
+		is_to_check[p] = false;
+		std::uint64_t* const p_row{&simulators[p * num_of_words]};
+		std::copy_n(p_row, num_of_words, row.begin());
+		auto symbol_index{symbol_indices[p].begin()};
+		for (const SymbolPost& symbol_post : aut.delta[p]) {
+			const size_t symbol_offset{*symbol_index++ * num_of_states * num_of_words};
+			for (const State target : symbol_post.targets) {
+				const std::uint64_t* const target_row{&simulators[target * num_of_words]};
+				std::ranges::fill(matching, 0);
+				for (size_t word{0}; word < num_of_words; ++word) {
+					for (std::uint64_t bits{target_row[word]}; bits != 0; bits &= bits - 1) {
+						const std::uint64_t* const a_predecessors_row{
+							&a_predecessors
+								[symbol_offset +
+								 (word * 64 + static_cast<size_t>(std::countr_zero(bits))) * num_of_words]
+						};
+						for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
+					}
+				}
+				for (size_t w{0}; w < num_of_words; ++w) { row[w] &= matching[w]; }
+			}
+		}
+		if (!std::equal(row.begin(), row.end(), p_row)) {
+			std::ranges::copy(row, p_row);
+			for (const State predecessor : predecessors[p]) {
+				if (!is_to_check[predecessor]) {
+					is_to_check[predecessor] = true;
+					to_check.push_back(predecessor);
+				}
+			}
+		}
+	}
+
+	Simlib::Util::BinaryRelation relation{num_of_states, false};
+	for (State p{0}; p < num_of_states; ++p) {
+		const std::uint64_t* const p_row{&simulators[p * num_of_words]};
+		for (State q{0}; q < num_of_states; ++q) { relation.set(p, q, ((p_row[q / 64] >> (q % 64)) & 1) != 0); }
+	}
+	return relation;
+}
+
 /// Every symbol post has exactly one target, and there is at least one transition.
 bool has_one_target_posts(const Nfa& aut) {
 	bool has_transition{false};
@@ -2400,10 +2515,15 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 		// The simulation engine costs the product of the numbers of states and transitions even when it finds no
 		//  pair to merge; Hopcroft's refinement gives the same quotient in O(m log n) here.
 		if (has_one_target_posts(nfa)) { return quotient_by_bisimulation(nfa, renaming); }
+		std::vector<size_t> quot_proj;
+		if (nfa.num_of_states() <= BIT_ROW_SIMULATION_MAX_STATES) {
+			const Simlib::Util::BinaryRelation sim_relation{bit_row_fw_direct_simulation(nfa)};
+			sim_relation.get_symmetric_quotient_projection(quot_proj);
+			return quotient_by_simulation(nfa, sim_relation, quot_proj, nullptr, &renaming);
+		}
 		const auto sim_relation = algorithms::compute_partition_relation(
 			nfa, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}}
 		);
-		std::vector<size_t> quot_proj;
 		sim_relation.get_symmetric_quotient_projection(quot_proj);
 		return quotient_by_simulation(nfa, sim_relation, quot_proj, nullptr, &renaming);
 	};
