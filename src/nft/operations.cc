@@ -61,7 +61,7 @@ template <class Relation> Relation compute_fw_direct_simulation(const Nft& aut) 
 	std::vector<std::vector<size_t>> partition{};
 	std::vector<std::pair<Level, bool>> block_key{};
 	for (State state{0}; state < state_num; ++state) {
-		const std::pair<Level, bool> key{aut.levels[state], static_cast<bool>(aut.final[state])};
+		const std::pair<Level, bool> key{aut.levels[state], aut.final[state]};
 		const auto [it, inserted]{block_of.try_emplace(key, partition.size())};
 		if (inserted) {
 			partition.emplace_back();
@@ -670,7 +670,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	std::vector<Level> new_levels(nft.levels.num_of_levels, 0);
 	Level lvl_sub{0};
 	for (Level lvl_old{0}; lvl_old < seq_start_idx; lvl_old++) {
-		new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
+		new_levels[lvl_old] = lvl_old - lvl_sub;
 		if (levels_to_project.contains(lvl_old)) { lvl_sub++; }
 	}
 
