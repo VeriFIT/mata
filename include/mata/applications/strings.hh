@@ -111,6 +111,36 @@ class ShortestWordsMap {
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
+ * @brief Get the longest words (regarding their length) of the automaton.
+ *
+ * The language has longest words iff it is finite, i.e., iff no cycle passes through a useful state (a state reachable
+ *  from an initial state that reaches a final state). Cycles through useless states are allowed. Every symbol,
+ *  epsilon included, counts as one letter, as in @c get_shortest_words().
+ *
+ * Costs O(|Q| + |delta|) to compute the length of the longest words from every state, and then a depth-first search
+ *  over macrostates that follows only the transitions on some longest accepting path, so every branch of the search
+ *  ends in a word to report and every word is reported once, however many accepting paths spell it.
+ *
+ * @return Set of the longest words (empty if the language is empty), or @c std::nullopt if the language is infinite.
+ */
+std::optional<std::set<Word>> get_longest_words(const Nfa& nfa);
+
+#if MATA_HAS_GENERATOR_SUPPORT
+/**
+ * @brief Lazy variant of @c get_longest_words(): yields the longest words one by one, in lexicographic order.
+ *
+ * Laziness is sound because only the enumeration is lazy: the finiteness of the language and the length of the
+ *  longest words are decided by this call before the first word is yielded, in O(|Q| + |delta|), so a word once
+ *  yielded is known to be longest. The delay between two words is O(length * |delta|) at worst.
+ *
+ * @note The generator refers to @p nfa, which therefore has to outlive it.
+ * @return Generator of the longest words (yielding nothing if the language is empty), or @c std::nullopt if the
+ *  language is infinite.
+ */
+std::optional<std::generator<Word>> get_longest_words_lazy(const Nfa& nfa);
+#endif
+
+/**
  * @brief Get the accepting words for each tape of @p nft with specific lengths
  *
  * This function finds such an accepting word of @p nft that for each tape i,

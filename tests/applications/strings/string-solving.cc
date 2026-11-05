@@ -1,6 +1,7 @@
 /* tests-nfa-strings.cc -- Tests for string solving operations.
  */
 
+#include <random>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -176,6 +177,166 @@ TEST_CASE("mata::nfa::get_shortest_words() for profiling", "[.profiling][shortes
 	expected.insert(expected.begin(), word2);
 
 	for (size_t n{}; n < 100'000; ++n) { get_shortest_words(aut); }
+}
+
+namespace {
+/// The longest words by the lazy variant, in the order yielded, or @c std::nullopt for an infinite language.
+std::optional<std::vector<Word>> lazy_longest_words(const Nfa& nfa) {
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::optional<std::generator<Word>> words{get_longest_words_lazy(nfa)};
+	if (!words.has_value()) { return std::nullopt; }
+	std::vector<Word> result{};
+	for (Word&& word : *words) { result.push_back(std::move(word)); }
+	return result;
+#else
+	const std::optional<std::set<Word>> words{get_longest_words(nfa)};
+	if (!words.has_value()) { return std::nullopt; }
+	return std::vector<Word>(words->begin(), words->end());
+#endif
+}
+
+/// Checks that both variants find @p expected (@c std::nullopt for an infinite language), the lazy one in
+///  lexicographic order.
+void check_longest_words(const Nfa& nfa, const std::optional<std::set<Word>>& expected) {
+	CHECK(get_longest_words(nfa) == expected);
+	const std::optional<std::vector<Word>> lazy{lazy_longest_words(nfa)};
+	REQUIRE(lazy.has_value() == expected.has_value());
+	if (expected.has_value()) { CHECK(*lazy == std::vector<Word>(expected->begin(), expected->end())); }
+}
+
+/// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.
+size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
+} // namespace
+
+TEST_CASE("mata::applications::strings::get_longest_words()") {
+	Nfa aut('q' + 1);
+
+	SECTION("Empty automaton") { check_longest_words(aut, std::set<Word>{}); }
+
+	SECTION("No final state reachable") {
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 1);
+		check_longest_words(aut, std::set<Word>{});
+	}
+
+	SECTION("Only the empty word") {
+		aut.initial = {0};
+		aut.final = {0};
+		check_longest_words(aut, std::set<Word>{Word{}});
+	}
+
+	SECTION("Self-loop on a useful state") {
+		aut.initial = {1};
+		aut.final = {1};
+		aut.delta.add(1, 'a', 1);
+		check_longest_words(aut, std::nullopt);
+	}
+
+	SECTION("Cycles through useful states") {
+		FILL_WITH_AUT_A(aut);
+		check_longest_words(aut, std::nullopt);
+		aut.clear();
+		FILL_WITH_AUT_B(aut);
+		check_longest_words(aut, std::nullopt);
+	}
+
+	SECTION("Cycles through useless states only") {
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		// A non-terminating cycle reachable from the initial state.
+		aut.delta.add(0, 'c', 3);
+		aut.delta.add(3, 'c', 3);
+		// An unreachable cycle leading to the final state.
+		aut.delta.add(4, 'a', 5);
+		aut.delta.add(5, 'a', 4);
+		aut.delta.add(5, 'a', 2);
+		check_longest_words(aut, std::set<Word>{Word{'a', 'b'}});
+	}
+
+	SECTION("Shorter words are dropped and words spelled by several paths come once") {
+		aut.initial = {0, 10};
+		aut.final = {3, 1, 12};
+		// 0 accepts "a", "ab", "abc", "bbc" ("abc" twice).
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(0, 'a', 4);
+		aut.delta.add(4, 'b', 5);
+		aut.delta.add(5, 'c', 3);
+		aut.delta.add(0, 'b', 6);
+		aut.delta.add(6, 'b', 2);
+		aut.delta.add(1, 'b', 3);
+		// 10 accepts only "aa", shorter than the longest words of 0.
+		aut.delta.add(10, 'a', 11);
+		aut.delta.add(11, 'a', 12);
+		check_longest_words(aut, std::set<Word>{Word{'a', 'b', 'c'}, Word{'b', 'b', 'c'}});
+
+		SECTION("Another initial state with longest words of the same length") {
+			aut.delta.add(12, 'a', 13);
+			aut.final.insert(13);
+			check_longest_words(aut, std::set<Word>{Word{'a', 'a', 'a'}, Word{'a', 'b', 'c'}, Word{'b', 'b', 'c'}});
+		}
+	}
+
+	SECTION("Longest path through a final state") {
+		aut.initial = {0};
+		aut.final = {1, 3};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(0, 'b', 3);
+		check_longest_words(aut, std::set<Word>{Word{'a', 'b', 'c'}});
+	}
+}
+
+TEST_CASE("mata::applications::strings::get_longest_words() agrees with the words up to the number of states") {
+	for (unsigned seed{0}; seed < 500; ++seed) {
+		INFO("seed " << seed);
+		std::mt19937 rng{seed};
+		const size_t num_of_states{1 + draw(rng, 10)};
+		const size_t num_of_symbols{1 + draw(rng, 3)};
+		// Short forward transitions keep many languages finite and their words long; a backward one may close a cycle.
+		const size_t backward_odds{4 + draw(rng, 60)};
+		Nfa nfa{num_of_states};
+		for (size_t initial{0}, initials{1 + draw(rng, 2)}; initial < initials; ++initial) {
+			nfa.initial.insert(static_cast<State>(draw(rng, (num_of_states + 1) / 2)));
+		}
+		for (State state{0}; state < num_of_states; ++state) {
+			if (draw(rng, 3) == 0) { nfa.final.insert(state); }
+			for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+				for (size_t transition{0}, transitions{draw(rng, 3)}; transition < transitions; ++transition) {
+					const bool backward{draw(rng, backward_odds) == 0};
+					if (!backward && state + 1 == num_of_states) { continue; }
+					const size_t target{
+						backward ? draw(rng, state + 1)
+								 : state + 1 + draw(rng, std::min<size_t>(3, num_of_states - state - 1))
+					};
+					nfa.delta.add(state, symbol, static_cast<State>(target));
+				}
+			}
+		}
+		INFO(nfa.print_to_mata());
+
+		Nfa trimmed{nfa};
+		trimmed.trim();
+		if (!trimmed.is_acyclic()) {
+			check_longest_words(nfa, std::nullopt);
+			continue;
+		}
+		// An acyclic trimmed automaton accepts only words shorter than its number of states.
+		const std::set<Word> words{nfa.get_words(num_of_states)};
+		size_t longest_length{0};
+		for (const Word& word : words) { longest_length = std::max(longest_length, word.size()); }
+		std::set<Word> expected{};
+		for (const Word& word : words) {
+			if (word.size() == longest_length) { expected.insert(word); }
+		}
+		check_longest_words(nfa, expected);
+	}
 }
 
 TEST_CASE("mata::applications::strings::get_lengths()") {
