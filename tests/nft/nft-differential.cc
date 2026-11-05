@@ -317,7 +317,8 @@ TEST_CASE(
 		const size_t num_of_symbols{1 + seed % 2};
 		const size_t lhs_num_of_levels{1 + seed % 3};
 		const size_t rhs_num_of_levels{1 + (seed / 2) % 3};
-		const Nft lhs{random_nft(lhs_rng, 1 + seed % 3, num_of_symbols, lhs_num_of_levels)};
+		// The number of states varies apart from the number of levels, so one-level operands have several states.
+		const Nft lhs{random_nft(lhs_rng, 1 + (seed / 3) % 4, num_of_symbols, lhs_num_of_levels)};
 		const Nft rhs{random_nft(rhs_rng, 1 + seed % 3, num_of_symbols, rhs_num_of_levels)};
 		INFO(describe(seed, lhs) + "\n---\n" + describe(seed + 5'300, rhs));
 		for (Level lhs_sync_level{0}; lhs_sync_level < lhs_num_of_levels; ++lhs_sync_level) {
