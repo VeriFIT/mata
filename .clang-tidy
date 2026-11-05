@@ -49,6 +49,11 @@ Checks: |
 #-cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
 
 CheckOptions:
+  # The consuming overloads take their operand by rvalue reference and move its members or elements out one by one;
+  #  an unnamed rvalue reference parameter is an inherited constructor of a container adaptor.
+  cppcoreguidelines-rvalue-reference-param-not-moved.AllowPartialMove: true
+  cppcoreguidelines-rvalue-reference-param-not-moved.IgnoreUnnamedParams: true
+
   # The naming rules.
   #
   # Note: A public member must be 'lower_case', but is additionally allowed to end in '_' to mark a member which is "public but internal for expert use only". 'lower_case' alone rejects the trailing '_', hence the explicit ignore pattern in '*IgnoredRegexp' beside the required naming options.
