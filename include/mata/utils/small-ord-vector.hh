@@ -37,6 +37,10 @@ namespace mata::utils {
  *
  * Iterators are plain pointers; any operation that grows the set may invalidate them.
  */
+// The class is the raw storage itself: the inline keys share a union with the heap block, and both are walked by
+//  pointer.
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic, cppcoreguidelines-pro-type-union-access,
+// cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 template <class Key, std::size_t InlineCapacity = std::max<std::size_t>(1, sizeof(std::uintptr_t) / sizeof(Key))>
 class SmallOrdVector {
 	static_assert(std::is_trivially_copyable_v<Key> && std::is_trivially_destructible_v<Key>);
@@ -346,6 +350,8 @@ class SmallOrdVector {
 		size_ = static_cast<std::uint32_t>(size << 1) | (size_ & heap_flag);
 	}
 }; // class SmallOrdVector.
+// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic, cppcoreguidelines-pro-type-union-access,
+// cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 } // namespace mata::utils.
 
