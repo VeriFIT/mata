@@ -1173,7 +1173,7 @@ namespace {
  *  closes a cycle through inner states; the path enumerator this construction replaced grew its stack on such
  *  an input until the allocation failed (#809), so the input is rejected before any work is done.
  */
-void validate_invert_levels_layering_(const Nft& aut) {
+void validate_invert_levels_layering(const Nft& aut) {
 	const size_t num_of_states{aut.num_of_states()};
 	if (aut.levels.size() < num_of_states) {
 		throw std::invalid_argument(
@@ -1221,7 +1221,7 @@ struct InvertedAuxKeyHash {
 } // Anonymous namespace.
 
 Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
-	validate_invert_levels_layering_(aut);
+	validate_invert_levels_layering(aut);
 	const size_t num_of_states{aut.num_of_states()};
 	const size_t num_of_levels{aut.levels.num_of_levels};
 

@@ -787,8 +787,8 @@ namespace mata::applications::strings::seg_nfa {
 namespace {
 // delimiters, we cannot use mata::nfa::EPSILON, because that is normal mata::nfa::EPSILON which can be used in nft
 // (non-preserving lengths nfts are allowed) and mata::nfa::EPSILON-1 is DONT_CARE
-constexpr Symbol input_delimiter{nfa::EPSILON - 2};
-constexpr Symbol output_delimiter{nfa::EPSILON - 3};
+constexpr Symbol INPUT_DELIMITER{nfa::EPSILON - 2};
+constexpr Symbol OUTPUT_DELIMITER{nfa::EPSILON - 3};
 
 /// The segment automaton whose noodles noodlify_for_transducer() turns into transducer noodles; std::nullopt if its
 ///  language is empty.
@@ -808,8 +808,8 @@ std::optional<Nfa> transducer_product(
 
 	// concatenate input and output automata to one input/output automaton connected with
 	// INPUT_DELIMITER/OUTPUT_DELIMITER
-	Nfa concatenated_input = concatenate_with(input_automata, input_delimiter);
-	Nfa concatenated_output = concatenate_with(output_automata, output_delimiter);
+	Nfa concatenated_input = concatenate_with(input_automata, INPUT_DELIMITER);
+	Nfa concatenated_output = concatenate_with(output_automata, OUTPUT_DELIMITER);
 
 	// we will work with nfts, so we just transfer nfas to nfts
 	const Nft concatenated_input_nft(std::move(concatenated_input));
@@ -845,14 +845,14 @@ std::optional<Nfa> transducer_product(
 		for (size_t i = 1; i < input_automata.size(); ++i) {
 			const Nft composition =
 				mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump);
-			concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, input_delimiter, true);
+			concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, INPUT_DELIMITER, true);
 		}
 		intersection = std::move(concatenation);
 	} else {
 		intersection = *nft;
 		// we intersect input nfa with nft on the input track, but we need to add INPUT_DELIMITER as an "epsilon
 		// transition" of nft
-		add_self_loop_for_every_default_state(intersection, input_delimiter);
+		add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
 
 		intersection =
 			mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false, mata::nft::JumpMode::NoJump);
@@ -864,8 +864,8 @@ std::optional<Nfa> transducer_product(
 	// We intersect output nfa with nft on the output track, but we need to add OUTPUT_DELIMITER as an
 	//  "epsilon transition" of nft.
 	// We also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it.
-	add_self_loop_for_every_default_state(concatenated_output_nft, input_delimiter);
-	add_self_loop_for_every_default_state(intersection, output_delimiter);
+	add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
+	add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
 	intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false, mata::nft::JumpMode::NoJump);
 	intersection.trim();
 
@@ -893,7 +893,7 @@ std::optional<Nfa> transducer_product(
 	std::map<State, std::vector<Transition>> middle_state_to_delimiter_transition_as_source;
 	// maps middle state to each "middle ---DELIMITER---> target" transition
 	for (const Transition& trans : intersection.delta.transitions()) {
-		if (trans.symbol == input_delimiter || trans.symbol == output_delimiter) {
+		if (trans.symbol == INPUT_DELIMITER || trans.symbol == OUTPUT_DELIMITER) {
 			if (intersection.levels[trans.source] == nft::DEFAULT_LEVEL) {
 				// source ---DELIMITER---> middle
 				middle_state_to_delimiter_transition_as_target[trans.target].push_back(trans);
@@ -987,7 +987,7 @@ class TransducerElements {
 
 #if MATA_HAS_GENERATOR_SUPPORT
 std::generator<TransducerNoodle> transducer_noodles(Nfa product, const NoodleOrder order) {
-	NoodleEnumerator noodles{product, {input_delimiter, output_delimiter}, false, order};
+	NoodleEnumerator noodles{product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, order};
 	TransducerElements elements{};
 	while (auto noodle{noodles.next()}) { co_yield elements.make(*noodle); }
 }
@@ -1005,7 +1005,7 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 		transducer_product(nft, input_automata, output_automata, reduce_intersection, use_homomorphic_heuristic)
 	};
 	if (!product) { return {}; }
-	NoodleEnumerator noodles{*product, {input_delimiter, output_delimiter}, false, NoodleOrder{}};
+	NoodleEnumerator noodles{*product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, NoodleOrder{}};
 	TransducerElements elements{};
 	std::vector<TransducerNoodle> result;
 	while (auto noodle{noodles.next()}) { result.push_back(elements.make(*noodle)); }

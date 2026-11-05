@@ -447,11 +447,11 @@ bool Automaton::has_no_accepting_path() const {
 	// Reachability only: a breadth-first search that stops at the first final state. Tarjan's SCC discovery used to
 	//  answer this and pays for its per-state bookkeeping even when the whole reachable part has to be traversed.
 	//  The queue order also keeps the scan of `delta` close to ascending, which a LIFO worklist does not.
-	const size_t num_of_states_{num_of_states()};
+	const size_t num_states{num_of_states()};
 	std::vector<State> worklist{};
-	BoolVector visited(num_of_states_, false);
+	BoolVector visited(num_states, false);
 	for (const State state : initial) {
-		if (state < num_of_states_ && !visited[state]) {
+		if (state < num_states && !visited[state]) {
 			visited[state] = true;
 			worklist.push_back(state);
 		}

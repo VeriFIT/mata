@@ -393,15 +393,15 @@ struct CoveredStates {
 void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 	const size_t num_of_covered{covered_states.order.size()};
 	if (num_of_covered == 0) { return; }
-	constexpr size_t NOT_COVERED{std::numeric_limits<size_t>::max()};
-	std::vector<size_t> covered_index(nfa.num_of_states(), NOT_COVERED);
+	constexpr size_t not_covered{std::numeric_limits<size_t>::max()};
+	std::vector<size_t> covered_index(nfa.num_of_states(), not_covered);
 	for (size_t i{0}; i < num_of_covered; ++i) { covered_index[covered_states.order[i]] = i; }
 
 	std::vector<StateSet> resolved(num_of_covered);
 	for (size_t i{num_of_covered}; i-- > 0;) {
 		for (const State covering : covered_states.covering_sets[i]) {
 			const size_t covering_index{covered_index[covering]};
-			if (covering_index == NOT_COVERED) {
+			if (covering_index == not_covered) {
 				resolved[i].insert(covering);
 			} else {
 				resolved[i].insert(resolved[covering_index]);
@@ -409,7 +409,7 @@ void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 		}
 	}
 
-	const auto is_covered{[&](const State state) { return covered_index[state] != NOT_COVERED; }};
+	const auto is_covered{[&](const State state) { return covered_index[state] != not_covered; }};
 	for (State source{0}; source < nfa.delta.num_of_states(); ++source) {
 		if (is_covered(source)) {
 			nfa.delta.mutable_state_post(source).clear();
@@ -1820,8 +1820,8 @@ Nfa mata::nfa::determinize(
 		if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_res, StateSet{initial_orig})) {
 			return result;
 		}
-		constexpr State kUnseen{std::numeric_limits<State>::max()};
-		std::vector<State> renaming(aut.num_of_states(), kUnseen);
+		constexpr State unseen{std::numeric_limits<State>::max()};
+		std::vector<State> renaming(aut.num_of_states(), unseen);
 		renaming[initial_orig] = initial_res;
 		std::vector<State> worklist{initial_orig};
 		while (!worklist.empty()) {
@@ -1833,7 +1833,7 @@ Nfa mata::nfa::determinize(
 				if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, symbol_post.symbol)) { continue; }
 				const State target_orig{symbol_post.targets.front()};
 				State target_res{renaming[target_orig]};
-				const bool target_is_new{target_res == kUnseen};
+				const bool target_is_new{target_res == unseen};
 				if (target_is_new) {
 					target_res = result.add_state();
 					renaming[target_orig] = target_res;

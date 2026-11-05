@@ -719,7 +719,7 @@ struct PostQuery {
 /// level the rank is the position itself, two used levels take one division.
 template <size_t WIDTH> class RankedPositions {
   public:
-	static constexpr bool RANKED{true};
+	static constexpr bool ranked{true};
 	using Tuple = std::conditional_t<WIDTH == std::dynamic_extent, std::vector<uint32_t>, std::array<uint32_t, WIDTH>>;
 
 	/// @p radices: word length + 1 for each used level, with a product @p num_of_ids that fits in 32 bits.
@@ -775,7 +775,7 @@ template <size_t WIDTH> class RankedPositions {
 /// looked up there, so a tuple is copied only when it is new.
 class InternedPositions {
   public:
-	static constexpr bool RANKED{false};
+	static constexpr bool ranked{false};
 	using Tuple = std::vector<size_t>;
 
 	/// @p ends: the word length of each used level.
@@ -857,9 +857,9 @@ StateSet search_by_words(const Nft& nft, const PostQuery& query, Positions& posi
 	const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
 		return (static_cast<uint64_t>(positions_id) << 32U) | static_cast<uint32_t>(state);
 	};
-	constexpr uint64_t MAX_VISITED_BITS{uint64_t{1} << 27U}; // 16 MiB.
+	constexpr uint64_t max_visited_bits{uint64_t{1} << 27U}; // 16 MiB.
 	const bool bitmap_fits{
-		Positions::RANKED && positions.num_of_ids() <= MAX_VISITED_BITS / std::max<size_t>(num_of_states, 1)
+		Positions::ranked && positions.num_of_ids() <= max_visited_bits / std::max<size_t>(num_of_states, 1)
 	};
 	const size_t bitmap_bits{bitmap_fits ? static_cast<size_t>(positions.num_of_ids() * num_of_states) : 0};
 	std::unordered_set<uint64_t> visited;
