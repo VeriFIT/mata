@@ -317,7 +317,7 @@ Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, const Symbol marker
 	std::vector<std::pair<State, State>> epsilon_moves;
 	for (State source{0}; source < dft_marker_num_of_states; ++source) {
 		for (const auto& [symbol, target] : dft_marker.delta[source].moves_epsilons()) {
-			epsilon_moves.push_back({source, target});
+			epsilon_moves.emplace_back(source, target);
 		}
 	}
 	for (const auto& [source, target] : epsilon_moves) {
