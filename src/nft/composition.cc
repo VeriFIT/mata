@@ -927,6 +927,22 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 	return std::make_shared<mata::AlphabetLevels>(std::move(composed_alphabets));
 }
 
+namespace {
+/**
+ * Whether the fast composition, which reads @p nft with @c JumpMode::NoJump, composes it as the general composition
+ *  does under any jump mode: @p nft has no jump transitions, so the jump mode does not matter, and neither EPSILON nor
+ *  DONT_CARE, which the two compositions place and match differently (#763).
+ */
+bool reads_jump_mode_alike(const Nft& nft) {
+	static_assert(EPSILON > DONT_CARE, "EPSILON and DONT_CARE are expected to sort last in a state post");
+	for (State state{0}; state < nft.num_of_states(); ++state) {
+		const StatePost& state_post{nft.delta[state]};
+		if (!state_post.empty() && state_post.back().symbol >= DONT_CARE) { return false; }
+	}
+	return !nft.contains_jump_transitions();
+}
+} // namespace
+
 // Dispatch function for composition modes.
 Nft compose(
 	const Nft& lhs,
@@ -953,7 +969,8 @@ Nft compose(
 				lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels, normalization
 			);
 		case CompositionMode::Auto:
-			if (jump_mode == JumpMode::NoJump && lhs_sync_levels.size() == 1) {
+			if (lhs_sync_levels.size() == 1 &&
+				(jump_mode == JumpMode::NoJump || (reads_jump_mode_alike(lhs) && reads_jump_mode_alike(rhs)))) {
 				return algorithms::compose_fast_no_jump(
 					lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels, normalization
 				);
