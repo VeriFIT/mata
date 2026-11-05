@@ -848,7 +848,7 @@ class ReluctantReplace {
 
 	static Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 
-	static nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, const Alphabet* alphabet);
+	static nfa::Nfa reluctant_nfa_with_marker(const nfa::Nfa& nfa, Symbol marker, const Alphabet* alphabet);
 
 	static Nft reluctant_leftmost_nft(
 		const std::string& regex,

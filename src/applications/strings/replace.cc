@@ -393,8 +393,9 @@ Nft ReluctantReplace::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbo
 	return marker_nft(end_marker_dfa, end_marker);
 }
 
-nfa::Nfa
-	ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol marker, const Alphabet* const alphabet) {
+nfa::Nfa ReluctantReplace::reluctant_nfa_with_marker(
+	const nfa::Nfa& nfa, const Symbol marker, const Alphabet* const alphabet
+) {
 	// Accept begin markers inside the shortest match but never after it, so that the next begin marker stays for the
 	//  next replace. This is the reluctant NFA intersected with a guard NFA over {after a letter, after a marker}. In
 	//  that product, (q, after a marker) has the same successors as (q, after a letter) and is never final, so the
@@ -453,7 +454,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(
 	const Word& replacement,
 	const ReplaceMode replace_mode
 ) {
-	nfa = reluctant_nfa_with_marker(std::move(nfa), begin_marker, alphabet);
+	nfa = reluctant_nfa_with_marker(nfa, begin_marker, alphabet);
 	Nft nft_reluctant_leftmost{nft::builder::from_nfa_with_levels_zero(nfa, 2, true, {EPSILON})};
 	const size_t regex_num_of_states{nft_reluctant_leftmost.num_of_states()};
 	const utils::OrdVector<Symbol> alphabet_symbols{alphabet->get_alphabet_symbols()};
