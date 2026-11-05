@@ -175,6 +175,8 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 				// Is some already processed macrostate of smaller_succ a subset of bigger_succ, and therefore
 				//  dominates it?
+				// 'bigger_succ' is moved from only for the last target, after which the loop ends.
+				// NOLINTNEXTLINE(bugprone-use-after-move)
 				if (processed[smaller_succ].subsumes(nodes, bigger_succ, bigger_succ_signature)) { continue; }
 
 				// Pruning: drop every stored node that succ dominates, in the processed antichain and thereby in the

@@ -687,7 +687,8 @@ class GeneratedStatesNormalizer {
 			for (const SymbolPost& symbol_post : from_post) { generated_.link(symbol_post.targets); }
 		}
 		if (to_post.empty() && move) {
-			to_post = std::move(from_post);
+			// Exchange rather than move: 'from_post' is cleared below and has to be in a known state.
+			to_post = std::exchange(from_post, {});
 		} else if (to_post.empty()) {
 			to_post = from_post;
 		} else {

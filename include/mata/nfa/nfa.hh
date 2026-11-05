@@ -148,10 +148,13 @@ class Nfa : public Automaton {
 	 */
 	Nfa(const Nfa& other) = default;
 
+	// Only the 'Automaton' base of 'other' is moved from before its own members are.
+	// NOLINTBEGIN(bugprone-use-after-move)
 	Nfa(Nfa&& other) noexcept
 		: Automaton{std::move(other)},
 		  alphabet{std::move(other.alphabet)},
 		  attributes{std::move(other.attributes)} {}
+	// NOLINTEND(bugprone-use-after-move)
 
 	Nfa& operator=(const Nfa& other) = default;
 	Nfa& operator=(Nfa&& other) noexcept;

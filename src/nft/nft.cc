@@ -1202,8 +1202,9 @@ StateSet Nft::post(
 Nft& Nft::operator=(Nft&& other) noexcept {
 	if (this != &other) {
 		Automaton::operator=(std::move(other));
+		// Only the 'Automaton' base of 'other' has been moved from; its own members are intact.
+		// NOLINTNEXTLINE(bugprone-use-after-move)
 		levels = std::move(other.levels);
-		levels.num_of_levels = other.levels.num_of_levels;
 		alphabets = std::exchange(other.alphabets, nullptr);
 	}
 	return *this;

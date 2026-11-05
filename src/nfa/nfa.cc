@@ -426,6 +426,8 @@ Nfa& Nfa::unify_final(const bool force_new_state) {
 Nfa& Nfa::operator=(Nfa&& other) noexcept {
 	if (this != &other) {
 		Automaton::operator=(std::move(other));
+		// Only the 'Automaton' base of 'other' has been moved from; its own members are intact.
+		// NOLINTNEXTLINE(bugprone-use-after-move)
 		alphabet = std::move(other.alphabet);
 		attributes = std::move(other.attributes);
 	}
