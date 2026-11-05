@@ -619,16 +619,17 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	MATA_ASSERT(!levels_to_project.empty());
 	MATA_ASSERT(*std::ranges::max_element(levels_to_project) < nft.levels.num_of_levels);
 
+	BoolVector is_level_projected(nft.levels.num_of_levels, false);
+	for (const Level level : levels_to_project) { is_level_projected[level] = true; }
+
 	// Checks if a given state is being projected out based on the levels_to_project vector.
-	auto is_projected_out = [&](const State state) {
-		return levels_to_project.find(nft.levels[state]) != levels_to_project.end();
-	};
+	auto is_projected_out = [&](const State state) { return is_level_projected[nft.levels[state]]; };
 
 	// Checks if each level between given states is being projected out.
 	auto is_projected_along_path = [&](const State src, const State tgt) {
 		const Level stop_lvl = (nft.levels[tgt] == 0) ? static_cast<Level>(nft.levels.num_of_levels) : nft.levels[tgt];
 		for (Level lvl{nft.levels[src]}; lvl < stop_lvl; lvl++) {
-			if (levels_to_project.find(lvl) == levels_to_project.end()) { return false; }
+			if (!is_level_projected[lvl]) { return false; }
 		}
 		return true;
 	};
@@ -673,51 +674,60 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		if (levels_to_project.find(lvl_old) != levels_to_project.end()) { lvl_sub++; }
 	}
 
-	// cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
+	// The closure of a projected state: the states reachable from it over transitions all of whose levels are
+	//  projected, expanding only projected states. A state that is not projected is its own closure.
 	const size_t num_of_states_in_delta{nft.delta.num_of_states()};
-	std::vector<StateSet> closure = std::vector<StateSet>(num_of_states_in_delta, OrdVector<State>());
-	;
-
-	// TODO: Evaluate efficiency. This might not be as inefficient as the remove_epsilon closure.
-	// Begin by initializing the closure.
-	for (State source{0}; source < num_of_states_in_delta; ++source) {
-		closure[source].insert(source);
-		if (!is_projected_out(source)) { continue; }
-		for (const auto& trans : nft.delta[source]) {
-			for (const auto& target : trans.targets) {
-				if (is_projected_along_path(source, target)) { closure[source].insert(target); }
-			}
-		}
-	}
-
-	// We will focus only on those states that will be affected by projection.
-	std::vector<State> states_to_project;
-	for (State s{0}; s < num_of_states_in_delta; s++) {
-		if (closure[s].size() > 1) { states_to_project.push_back(s); }
-	}
-
-	// Compute transitive closure.
-	bool changed = true;
-	while (changed) { // Compute the fixpoint.
-		changed = false;
-		for (const State s : states_to_project) {
-			for (const std::vector<State> cls_states_orig = closure[s].to_vector();
-				 const State cls_state : cls_states_orig) {
-				if (!closure[cls_state].is_subset_of(closure[s])) {
-					closure[s].insert(closure[cls_state]);
-					changed = true;
+	std::vector<std::vector<State>> closure(num_of_states_in_delta);
+	{
+		std::vector<size_t> visited_in(num_of_states_in_delta, 0);
+		std::vector<State> stack{};
+		for (State source{0}; source < num_of_states_in_delta; ++source) {
+			if (!is_projected_out(source)) { continue; }
+			std::vector<State>& reached{closure[source]};
+			const size_t mark{static_cast<size_t>(source) + 1};
+			visited_in[source] = mark;
+			reached.push_back(source);
+			stack.push_back(source);
+			while (!stack.empty()) {
+				const State state{stack.back()};
+				stack.pop_back();
+				if (!is_projected_out(state)) { continue; }
+				for (const SymbolPost& move : nft.delta[state]) {
+					for (const State target : move.targets) {
+						if (visited_in[target] != mark && is_projected_along_path(state, target)) {
+							visited_in[target] = mark;
+							reached.push_back(target);
+							stack.push_back(target);
+						}
+					}
 				}
 			}
 		}
 	}
 
-	// Construct the automaton with projected levels.
+	// Construct the automaton with projected levels. The moves of each state are collected, sorted and deduplicated,
+	//  then appended to its post in order.
 	Nft result{Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabets)};
+	std::vector<std::pair<Symbol, State>> moves{};
 	for (State src_state{0}; src_state < num_of_states_in_delta; src_state++) { // For every state.
-		for (const State cls_state : closure[src_state]) { // For every state in its epsilon closure.
+		const Level src_level{nft.levels[src_state]};
+		if (!is_projected_out(src_state) && std::ranges::none_of(nft.delta[src_state], [&](const SymbolPost& move) {
+				return std::ranges::any_of(move.targets, [&](const State target) {
+					return nft.levels[target] != 0 && nft.levels[target] <= src_level;
+				});
+			})) {
+			// Its closure is itself, and a state that is not projected keeps every move to a later level or level 0.
+			result.delta.emplace_back(nft.delta[src_state]);
+			continue;
+		}
+		moves.clear();
+		const std::span<const State> closure_of_src{
+			closure[src_state].empty() ? std::span<const State>{&src_state, 1}
+									   : std::span<const State>{closure[src_state]}
+		};
+		for (const State cls_state : closure_of_src) { // For every state in its epsilon closure.
 			if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
 			for (const SymbolPost& move : nft.delta[cls_state]) {
-				// TODO: this could be done more efficiently if we had a better add method
 				for (const State tgt_state : move.targets) {
 					const bool is_loop_on_target = cls_state == tgt_state;
 					if (is_projected_along_path(cls_state, tgt_state)) { continue; }
@@ -728,20 +738,24 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 					if (is_projected_out(cls_state)) {
 						// If there are remaining levels between cls_state and tgt_state
 						// on a transition with a length greater than 1, then these levels must be preserved.
-						if (jump_mode != JumpMode::AppendDontCares) {
-							result.delta.add(src_state, move.symbol, tgt_state);
-						} else {
-							result.delta.add(src_state, DONT_CARE, tgt_state);
-						}
+						moves.emplace_back(jump_mode != JumpMode::AppendDontCares ? move.symbol : DONT_CARE, tgt_state);
 					} else if (is_loop_on_target) {
 						// Instead of creating a transition to tgt_state and
 						// then a self-loop, establish the self-loop directly on src_state.
-						result.delta.add(src_state, move.symbol, src_state);
+						moves.emplace_back(move.symbol, src_state);
 					} else {
-						result.delta.add(src_state, move.symbol, tgt_state);
+						moves.emplace_back(move.symbol, tgt_state);
 					}
 				}
 			}
+		}
+		std::ranges::sort(moves);
+		const auto [duplicates_begin, duplicates_end]{std::ranges::unique(moves)};
+		moves.erase(duplicates_begin, duplicates_end);
+		StatePost& state_post{result.delta.emplace_back()};
+		for (const auto& [symbol, target] : moves) {
+			if (state_post.empty() || state_post.back().symbol != symbol) { state_post.emplace_back(symbol); }
+			state_post.back().push_back(target);
 		}
 	}
 	// TODO(nft): Sometimes, unreachable states are left in the automaton.
