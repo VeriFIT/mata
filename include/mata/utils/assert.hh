@@ -11,7 +11,10 @@
 #include <format>
 #include <print>
 
+// Macros, not functions: they stringize the condition, report the call site, and compile out together with their
+//  arguments.
 #ifdef NDEBUG
+	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_ASSERT(cond, ...) ((void) 0)
 #else
 namespace mata::internal {
@@ -39,6 +42,7 @@ namespace mata::internal {
 	 * ```
 	 * In release builds (when `NDEBUG` is defined), the assertions are disabled and have no effect.
 	 */
+	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_ASSERT(cond, ...)                                                                                     \
 		{                                                                                                              \
 			((cond) ? ((void) 0)                                                                                       \
@@ -56,8 +60,10 @@ namespace mata::internal {
  *  paying an extra linear scan per call.
  */
 #ifdef MATA_EXPENSIVE_ASSERTS
+	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_EXPENSIVE_ASSERT(cond, ...) MATA_ASSERT(cond __VA_OPT__(, ) __VA_ARGS__)
 #else
+  // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_EXPENSIVE_ASSERT(cond, ...) ((void) 0)
 #endif
 
