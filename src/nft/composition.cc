@@ -95,20 +95,20 @@ inline bool exist_synchronization(SynchronizationType lhs, SynchronizationType r
  * representative with the very same word, and pruning the rest does not change the language of the
  * result. One-sided moves emitting real symbols (multi-level waiting rounds) do not commute on the
  * flattened word, so they are not reordered: they always stay allowed and reset the filter to
- * LHS_MAY_MOVE_ALONE.
+ * LhsMayMoveAlone.
  */
 enum class EpsilonFilterMode : uint8_t {
-	LHS_MAY_MOVE_ALONE = 0, ///< No silent RHS-only move happened yet; both sides may move alone.
-	RHS_MOVED_ALONE = 1, ///< A silent RHS-only move happened; silent LHS-only moves are refused.
+	LhsMayMoveAlone = 0, ///< No silent RHS-only move happened yet; both sides may move alone.
+	RhsMovedAlone = 1, ///< A silent RHS-only move happened; silent LHS-only moves are refused.
 };
 constexpr size_t NUMBER_OF_EPSILON_FILTER_MODES = 2;
 
 /// A one-sided move of a composition step, classified by the EPSILON it does or does not emit.
 enum class EpsilonFilterAction : uint8_t {
-	SILENT_LHS_ONLY_MOVE, ///< A fast EPSILON of the LHS or a waiting round of a one-level LHS.
-	NON_SILENT_LHS_ONLY_MOVE, ///< A waiting round of a multi-level LHS.
-	SILENT_RHS_ONLY_MOVE, ///< A fast EPSILON of the RHS or a waiting round of a one-level RHS.
-	NON_SILENT_RHS_ONLY_MOVE, ///< A waiting round of a multi-level RHS.
+	SilentLhsOnlyMove, ///< A fast EPSILON of the LHS or a waiting round of a one-level LHS.
+	NonSilentLhsOnlyMove, ///< A waiting round of a multi-level LHS.
+	SilentRhsOnlyMove, ///< A fast EPSILON of the RHS or a waiting round of a one-level RHS.
+	NonSilentRhsOnlyMove, ///< A waiting round of a multi-level RHS.
 };
 
 /**
@@ -130,26 +130,25 @@ inline std::optional<EpsilonFilterMode> epsilon_filter_step(
 	const bool lhs_has_a_silent_lhs_only_move,
 	const bool lhs_gets_stuck_without_moving
 ) {
-	if (action == EpsilonFilterAction::NON_SILENT_LHS_ONLY_MOVE ||
-		action == EpsilonFilterAction::NON_SILENT_RHS_ONLY_MOVE) {
+	if (action == EpsilonFilterAction::NonSilentLhsOnlyMove || action == EpsilonFilterAction::NonSilentRhsOnlyMove) {
 		// A move emitting real symbols is not reordered; it starts a fresh interleaving.
-		return EpsilonFilterMode::LHS_MAY_MOVE_ALONE;
+		return EpsilonFilterMode::LhsMayMoveAlone;
 	}
-	if (action == EpsilonFilterAction::SILENT_LHS_ONLY_MOVE) {
+	if (action == EpsilonFilterAction::SilentLhsOnlyMove) {
 		// The canonical schedule runs every silent LHS-only move before any silent RHS-only move,
 		// so once the RHS has moved alone silently, a silent LHS-only move is refused from this
 		// configuration; its canonical counterpart came before the silent RHS-only moves.
-		if (mode == EpsilonFilterMode::RHS_MOVED_ALONE) { return std::nullopt; }
-		return EpsilonFilterMode::LHS_MAY_MOVE_ALONE;
+		if (mode == EpsilonFilterMode::RhsMovedAlone) { return std::nullopt; }
+		return EpsilonFilterMode::LhsMayMoveAlone;
 	}
-	if (mode == EpsilonFilterMode::RHS_MOVED_ALONE) { return EpsilonFilterMode::RHS_MOVED_ALONE; }
+	if (mode == EpsilonFilterMode::RhsMovedAlone) { return EpsilonFilterMode::RhsMovedAlone; }
 	if (lhs_gets_stuck_without_moving) {
 		// After switching the filter, the LHS could never move again, so the move would be dead.
 		return std::nullopt;
 	}
 	// If the LHS has no silent LHS-only move at all, the two filter modes coincide for it;
-	// keep the LHS_MAY_MOVE_ALONE mode instead of splitting the pair by the mode to no effect.
-	return lhs_has_a_silent_lhs_only_move ? EpsilonFilterMode::RHS_MOVED_ALONE : EpsilonFilterMode::LHS_MAY_MOVE_ALONE;
+	// keep the LhsMayMoveAlone mode instead of splitting the pair by the mode to no effect.
+	return lhs_has_a_silent_lhs_only_move ? EpsilonFilterMode::RhsMovedAlone : EpsilonFilterMode::LhsMayMoveAlone;
 }
 
 /// Whether @p state has a fast EPSILON transition (an EPSILON transition to another zero-level state)
@@ -183,7 +182,7 @@ inline bool has_only_silent_lhs_only_moves(const Nft& nft, const State state) {
 
 /// Whether @p rhs can ever make a silent RHS-only move: a fast EPSILON transition, or a waiting round of a one-level
 /// RHS. Only such a move switches the EPSILON-composition filter, so without one the filter keeps every configuration
-/// in the LHS_MAY_MOVE_ALONE mode and refuses nothing.
+/// in the LhsMayMoveAlone mode and refuses nothing.
 inline bool can_move_alone_silently(const Nft& rhs) {
 	if (rhs.levels.num_of_levels == 1) { return true; }
 	const size_t num_of_states{rhs.num_of_states()};
@@ -207,7 +206,7 @@ template <bool UseFilter> struct CompositionKey {
 	EpsilonFilterMode mode() const { return epsilon_filter_mode; }
 };
 
-/// Without the filter, every configuration stays in the LHS_MAY_MOVE_ALONE mode, so the key does not store it.
+/// Without the filter, every configuration stays in the LhsMayMoveAlone mode, so the key does not store it.
 template <> struct CompositionKey<false> {
 	State lhs_state;
 	State rhs_state;
@@ -215,9 +214,9 @@ template <> struct CompositionKey<false> {
 	CompositionKey(const State lhs_state, const State rhs_state, [[maybe_unused]] const EpsilonFilterMode mode)
 		: lhs_state{lhs_state},
 		  rhs_state{rhs_state} {
-		MATA_ASSERT(mode == EpsilonFilterMode::LHS_MAY_MOVE_ALONE);
+		MATA_ASSERT(mode == EpsilonFilterMode::LhsMayMoveAlone);
 	}
-	static constexpr EpsilonFilterMode mode() { return EpsilonFilterMode::LHS_MAY_MOVE_ALONE; }
+	static constexpr EpsilonFilterMode mode() { return EpsilonFilterMode::LhsMayMoveAlone; }
 };
 
 /**
@@ -1029,7 +1028,7 @@ Nft compose_fast_no_jump_with(
 	// because waiting in virtual states would spoil the inverse mapping.
 	// The EPSILON-composition filter mode is a part of the key of zero-level states only: after a
 	// synchronized symbol both modes coincide again, so the intermediate configurations of a
-	// synchronized round are shared in the LHS_MAY_MOVE_ALONE map.
+	// synchronized round are shared in the LhsMayMoveAlone map.
 	std::array<TwoDimensionalMap<State, false>, UseFilter ? NUMBER_OF_EPSILON_FILTER_MODES : 1> composition_storage{
 		[&]<size_t... Index>(std::index_sequence<Index...>) {
 			return std::array{((void) Index, TwoDimensionalMap<State, false>{lhs_num_of_states, rhs_num_of_states})...};
@@ -1040,7 +1039,7 @@ Nft compose_fast_no_jump_with(
 		if constexpr (UseFilter) {
 			return composition_storage[static_cast<size_t>(epsilon_filter_mode)];
 		} else {
-			MATA_ASSERT(epsilon_filter_mode == EpsilonFilterMode::LHS_MAY_MOVE_ALONE);
+			MATA_ASSERT(epsilon_filter_mode == EpsilonFilterMode::LhsMayMoveAlone);
 			return composition_storage[0];
 		}
 	}};
@@ -1143,11 +1142,11 @@ Nft compose_fast_no_jump_with(
 	auto create_composition_state = [&](const State first, const State second, const Level level,
 										const bool is_first_lhs = true,
 										const EpsilonFilterMode epsilon_filter_mode =
-											EpsilonFilterMode::LHS_MAY_MOVE_ALONE,
+											EpsilonFilterMode::LhsMayMoveAlone,
 										const State composition_state_to_add = Limits::max_state) {
 		const auto key = is_first_lhs ? std::make_pair(first, second) : std::make_pair(second, first);
 		MATA_ASSERT(
-			level == 0 || epsilon_filter_mode == EpsilonFilterMode::LHS_MAY_MOVE_ALONE,
+			level == 0 || epsilon_filter_mode == EpsilonFilterMode::LhsMayMoveAlone,
 			"Only zero-level configurations are split by the EPSILON filter mode"
 		);
 
@@ -1310,7 +1309,7 @@ Nft compose_fast_no_jump_with(
 	 */
 	auto copy_transition = [&](const State composition_state, const State copy_state, const State stationar_state,
 							   const bool is_copy_state_lhs,
-							   const EpsilonFilterMode epsilon_filter_mode = EpsilonFilterMode::LHS_MAY_MOVE_ALONE,
+							   const EpsilonFilterMode epsilon_filter_mode = EpsilonFilterMode::LhsMayMoveAlone,
 							   std::queue<std::pair<State, State>>* waiting_worklist = nullptr) {
 		const SynchronizationProperties& copy_sync_props = is_copy_state_lhs ? lhs_sync_props : rhs_sync_props;
 		const SynchronizationProperties& stationar_sync_props = is_copy_state_lhs ? rhs_sync_props : lhs_sync_props;
@@ -1672,7 +1671,7 @@ Nft compose_fast_no_jump_with(
 	 * canonical route through them: the simultaneous (Cartesian) move equals the LHS-then-RHS
 	 * route and is dropped, the LHS-only moves of the other interleavings are refused by the
 	 * filter mode, and every allowed RHS-only move either switches the filter or stays in the
-	 * LHS_MAY_MOVE_ALONE mode when the LHS cannot move alone anymore.
+	 * LhsMayMoveAlone mode when the LHS cannot move alone anymore.
 	 *
 	 * @param composition_state The state in the resulting composition NFT.
 	 * @param lhs_src The source state of a potential EPSILON transition in the LHS NFT.
@@ -1717,7 +1716,7 @@ Nft compose_fast_no_jump_with(
 		// The one-sided fast EPSILON moves the filter allows, with the filter mode of their targets.
 		std::vector<State> lhs_only_targets;
 		std::vector<std::pair<State, EpsilonFilterMode>> rhs_only_targets;
-		if (epsilon_filter_mode == EpsilonFilterMode::LHS_MAY_MOVE_ALONE) {
+		if (epsilon_filter_mode == EpsilonFilterMode::LhsMayMoveAlone) {
 			for (const State lhs_target : filtered_lhs_fast_eps_targets) {
 				if (lhs_target != lhs_src) { lhs_only_targets.push_back(lhs_target); }
 			}
@@ -1725,7 +1724,7 @@ Nft compose_fast_no_jump_with(
 		for (const State rhs_target : filtered_rhs_fast_eps_targets) {
 			if (rhs_target == rhs_src) { continue; }
 			if (const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
-					epsilon_filter_mode, EpsilonFilterAction::SILENT_RHS_ONLY_MOVE, lhs_has_a_silent_lhs_only_move,
+					epsilon_filter_mode, EpsilonFilterAction::SilentRhsOnlyMove, lhs_has_a_silent_lhs_only_move,
 					lhs_gets_stuck_without_moving
 				)) {
 				rhs_only_targets.emplace_back(rhs_target, *next_mode);
@@ -1745,7 +1744,7 @@ Nft compose_fast_no_jump_with(
 		SymbolPost symbol_post{EPSILON};
 		for (const State lhs_target : lhs_only_targets) {
 			symbol_post.insert(
-				create_composition_state(lhs_target, rhs_src, 0, true, EpsilonFilterMode::LHS_MAY_MOVE_ALONE)
+				create_composition_state(lhs_target, rhs_src, 0, true, EpsilonFilterMode::LhsMayMoveAlone)
 			);
 		}
 		for (const auto& [rhs_target, next_mode] : rhs_only_targets) {
@@ -1819,8 +1818,8 @@ Nft compose_fast_no_jump_with(
 				const bool is_a_silent_move = rhs_sync_props.nft.levels.num_of_levels == 1;
 				const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
 					epsilon_filter_mode,
-					is_a_silent_move ? EpsilonFilterAction::SILENT_RHS_ONLY_MOVE
-									 : EpsilonFilterAction::NON_SILENT_RHS_ONLY_MOVE,
+					is_a_silent_move ? EpsilonFilterAction::SilentRhsOnlyMove
+									 : EpsilonFilterAction::NonSilentRhsOnlyMove,
 					lhs_has_a_silent_lhs_only_move, lhs_gets_stuck_without_moving
 				);
 				if (next_mode) { model_waiting(composition_state, lhs_state, rhs_state, true, *next_mode); }
@@ -1830,8 +1829,8 @@ Nft compose_fast_no_jump_with(
 				const bool is_a_silent_move = lhs_sync_props.nft.levels.num_of_levels == 1;
 				const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
 					epsilon_filter_mode,
-					is_a_silent_move ? EpsilonFilterAction::SILENT_LHS_ONLY_MOVE
-									 : EpsilonFilterAction::NON_SILENT_LHS_ONLY_MOVE,
+					is_a_silent_move ? EpsilonFilterAction::SilentLhsOnlyMove
+									 : EpsilonFilterAction::NonSilentLhsOnlyMove,
 					lhs_has_a_silent_lhs_only_move, lhs_gets_stuck_without_moving
 				);
 				if (next_mode) { model_waiting(composition_state, rhs_state, lhs_state, false, *next_mode); }
@@ -1951,7 +1950,7 @@ Nft algorithms::compose_fast_no_jump(
 	);
 
 	// The filter switches only on a silent move of the RHS alone. Without one it keeps every configuration in the
-	//  LHS_MAY_MOVE_ALONE mode and refuses nothing, so the composition runs without its bookkeeping.
+	//  LhsMayMoveAlone mode and refuses nothing, so the composition runs without its bookkeeping.
 	const bool normalize_generated{
 		normalization == CompositionNormalization::GeneratedOnly || normalization == CompositionNormalization::Full
 	};
