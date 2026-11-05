@@ -152,6 +152,8 @@ class SmallOrdVector {
 			push_back(key);
 			return {end() - 1, true};
 		}
+		// Returned as the mutable 'iterator' of the pair below, which the check does not follow.
+		// NOLINTNEXTLINE(misc-const-correctness)
 		Key* pos{std::lower_bound(data(), data() + n, key)};
 		if (*pos == key) { return {pos, false}; }
 		const auto index{static_cast<size_type>(pos - data())};
@@ -250,7 +252,7 @@ class SmallOrdVector {
 	template <class Pred> size_type erase_if(Pred&& should_erase) {
 		Key* const first{data()};
 		Key* const last{first + size()};
-		Key* const new_last{std::remove_if(first, last, std::forward<Pred>(should_erase))};
+		const Key* const new_last{std::remove_if(first, last, std::forward<Pred>(should_erase))};
 		const auto erased{static_cast<size_type>(last - new_last)};
 		set_size(static_cast<size_type>(new_last - first));
 		return erased;

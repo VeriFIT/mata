@@ -121,7 +121,7 @@ std::vector<State> mata::nfa::algorithms::identical_successor_classes(
 
 	// In the first round every state is its own class, so the state posts themselves are compared. Most automata
 	//  merge nothing and are done after this round, without copying their transitions.
-	size_t num_of_classes{merge_round(
+	const size_t num_of_classes{merge_round(
 		[&](const State q) {
 			size_t accum{hash_step(hash_step(HASH_SEED, aut.final[q]), level_of(q))};
 			for (const SymbolPost& symbol_post : aut.delta[q]) {

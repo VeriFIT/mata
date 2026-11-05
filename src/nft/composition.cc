@@ -1789,11 +1789,10 @@ Nft compose_fast_no_jump_with(
 			// (and the state is not final); in that case a silent move of the RHS would lead nowhere.
 			// The filter reads both only for a silent RHS-only move, so they are not computed for the pairs
 			// where the RHS cannot move alone silently, nor at all without the filter.
-			bool rhs_may_move_alone_silently{false};
-			if constexpr (UseFilter) {
-				rhs_may_move_alone_silently = (perform_wait_on_lhs && rhs_sync_props.nft.levels.num_of_levels == 1) ||
-											  has_fast_epsilon_move(rhs_sync_props.nft, rhs_state);
-			}
+			const bool rhs_may_move_alone_silently{
+				UseFilter && ((perform_wait_on_lhs && rhs_sync_props.nft.levels.num_of_levels == 1) ||
+							  has_fast_epsilon_move(rhs_sync_props.nft, rhs_state))
+			};
 			const bool lhs_has_a_silent_lhs_only_move =
 				rhs_may_move_alone_silently && (has_fast_epsilon_move(lhs_sync_props.nft, lhs_state) ||
 												(perform_wait_on_rhs && lhs_sync_props.nft.levels.num_of_levels == 1));

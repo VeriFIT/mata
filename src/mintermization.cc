@@ -175,14 +175,16 @@ mata::Mintermization::MintermPartition
 
 		for (auto& region : current) {
 			// Positive child: inside source (covered by source i)
-			if (BDD b1 = region.value * source; !b1.IsZero()) {
+			if (const BDD b1 = region.value * source; !b1.IsZero()) {
 				auto new_incidence = region.incidence;
 				set_bit(new_incidence, i);
 				next.push_back({b1, std::move(new_incidence)});
 			}
 
 			// Negative child: outside source (incidence unchanged, moved: last use of the region)
-			if (BDD b0 = region.value * !source; !b0.IsZero()) { next.push_back({b0, std::move(region.incidence)}); }
+			if (const BDD b0 = region.value * !source; !b0.IsZero()) {
+				next.push_back({b0, std::move(region.incidence)});
+			}
 		}
 
 		current = std::move(next);
@@ -198,13 +200,13 @@ mata::Mintermization::MintermPartition
 
 		// Invert incidence: for each source covered by this minterm, add minterm_idx to minterms_of_source[i]
 		if (source_bdds.size() <= 64) {
-			uint64_t mask = get_mask(current[minterm_idx].incidence);
+			const uint64_t mask = get_mask(current[minterm_idx].incidence);
 			for (size_t i = 0; i < source_bdds.size(); ++i) {
 				if ((mask & (1ULL << i)) != 0) { result.minterms_of_source[i].push_back(minterm_idx); }
 			}
 		} else {
 			const auto& vec = std::get<std::vector<size_t>>(current[minterm_idx].incidence);
-			for (size_t idx : vec) { result.minterms_of_source[idx].push_back(minterm_idx); }
+			for (const size_t idx : vec) { result.minterms_of_source[idx].push_back(minterm_idx); }
 		}
 	}
 

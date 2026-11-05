@@ -135,8 +135,8 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// copy the information about aut to save the case when this is the same object as aut.
-	utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
-	utils::SparseSet<mata::nfa::State> aut_final = aut.final;
+	const utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
+	const utils::SparseSet<mata::nfa::State> aut_final = aut.final;
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, static_cast<State>(n));

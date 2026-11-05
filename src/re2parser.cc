@@ -228,7 +228,7 @@ class RegexParser {
 } // namespace
 
 mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Options& options) {
-	RegexParser regex_parser{};
+	const RegexParser regex_parser{};
 	// Own RE2's raw pointers, so they are also freed when the conversion below throws.
 	const auto parsed_regex = std::unique_ptr<re2::Regexp, decltype([](re2::Regexp* regex) { regex->Decref(); })>(
 		regex_parser.parse_regex_string(pattern, options.encoding)

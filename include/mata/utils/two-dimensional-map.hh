@@ -205,7 +205,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 
 	/// Double the number of slots of the hash table and reinsert the stored pairs.
 	void grow_hash_storage() {
-		HashStorage old_storage{
+		const HashStorage old_storage{
 			std::exchange(hash_storage_, HashStorage(2 * hash_storage_.size(), Slot{.key = empty_key, .value = 0}))
 		};
 		--hash_shift_;
