@@ -10,6 +10,9 @@ FormatStyle: file
 #     closure); recursion is the chosen formulation there, not an oversight.
 #   - 'cppcoreguidelines-non-private-member-variables-in-classes' is the alias of the already disabled
 #     'misc-non-private-member-variables-in-classes'; both have to be named to turn it off.
+#   - 'cppcoreguidelines-pro-bounds-constant-array-index' asks for 'gsl::at()' on every 'std::array' subscript with a
+#     computed index. Mata does not use the GSL, and 'at()' would bounds-check the radix and stride arrays in the
+#     inner loops of the word-reading 'Nft::post()'; the indices there come from loops over the array itself.
 Checks: |
   clang-analyzer-*,
   clang-diagnostic-*,
@@ -32,6 +35,7 @@ Checks: |
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-init-variables,
   -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-use-default-member-init,
   -misc-include-cleaner,
   -misc-no-recursion,
