@@ -601,7 +601,7 @@ class NoodleEnumerator {
 	}
 };
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 template <class T> std::generator<T> no_noodles() { co_return; }
 #endif
 } // namespace
@@ -614,7 +614,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	return noodles;
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 std::generator<seg_nfa::NoodleWithEpsilonsCounter>
 	seg_nfa::noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty, NoodleOrder order) {
 	NoodleEnumerator enumerator{aut, epsilons, include_empty, order};
@@ -752,7 +752,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 	return noodlify_mult_eps(*product, {mata::nfa::EPSILON, mata::nfa::EPSILON - 1}, include_empty);
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 std::generator<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation_lazy(
 	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
 	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
@@ -976,7 +976,7 @@ class TransducerElements {
 	std::map<std::pair<const Nfa*, State>, std::weak_ptr<Element>> elements_{};
 };
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 std::generator<TransducerNoodle> transducer_noodles(Nfa product, const NoodleOrder order) {
 	NoodleEnumerator noodles{product, {input_delimiter, output_delimiter}, false, order};
 	TransducerElements elements{};
@@ -1003,7 +1003,7 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 	return result;
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 	const std::shared_ptr<Nft>& nft,
 	const std::vector<std::shared_ptr<Nfa>>& input_automata,

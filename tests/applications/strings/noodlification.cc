@@ -1045,7 +1045,7 @@ void check_noodles(
 	}
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 /// Whether @p actual holds the noodles of @p expected in some order.
 bool same_noodles_in_any_order(
 	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& actual,
@@ -1098,7 +1098,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() matches a brute-force enumerat
 	const std::vector<Symbol> epsilons{EPSILON, EPSILON - 1};
 	const std::set<Symbol> epsilon_set{epsilons.begin(), epsilons.end()};
 	size_t num_of_noodles{0}, num_with_left_out{0};
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 	size_t num_of_shuffled{0};
 #endif
 	for (unsigned seed{0}; seed < 300; ++seed) {
@@ -1115,7 +1115,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() matches a brute-force enumerat
 		})};
 		num_with_left_out += has_left_out;
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 		const std::vector<seg_nfa::NoodleWithEpsilonsCounter> forward{lazy_noodles(aut, epsilon_set, {})};
 		check_noodles(forward, expected);
 
@@ -1164,12 +1164,12 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() matches a brute-force enumerat
 	// The automata exercise the search: many noodles, some with left out segments.
 	CHECK(num_of_noodles > 1'000);
 	CHECK(num_with_left_out > 10);
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 	CHECK(num_of_shuffled > 10);
 #endif
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer_lazy() emits the noodles of noodlify_for_transducer()") {
 	Nft t{Nft::with_levels(2, 1, {0}, {0})};
 	t.add_transition_by_levels(0, {'a', 'a'}, 0);
