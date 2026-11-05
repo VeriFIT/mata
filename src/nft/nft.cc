@@ -779,11 +779,12 @@ class InternedPositions {
 	using Tuple = std::vector<size_t>;
 
 	/// @p ends: the word length of each used level.
-	explicit InternedPositions(const std::vector<size_t>& ends) : width_{ends.size()}, slots_(64, 0) {
-		scratch_.assign(width_, 0);
-		start_id_ = intern(scratch_);
-		end_id_ = intern(ends);
-	}
+	explicit InternedPositions(const std::vector<size_t>& ends)
+		: width_{ends.size()},
+		  slots_(64, 0),
+		  scratch_(width_, 0),
+		  start_id_{intern(scratch_)},
+		  end_id_{intern(ends)} {}
 
 	uint32_t start_id() const { return start_id_; }
 	uint32_t end_id() const { return end_id_; }
