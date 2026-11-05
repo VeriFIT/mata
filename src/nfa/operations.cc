@@ -2655,23 +2655,23 @@ Nfa quotient_by(
 } // namespace
 
 Nfa mata::nfa::algorithms::quotient_by_simulation(
-	const Nfa& aut,
+	const Nfa& nfa,
 	const Simlib::Util::BinaryRelation& sim_relation,
 	const std::vector<size_t>& quot_proj,
 	const BoolVector* states,
 	StateRenaming* state_renaming
 ) {
-	return quotient_by(aut, sim_relation, quot_proj, states, state_renaming);
+	return quotient_by(nfa, sim_relation, quot_proj, states, state_renaming);
 }
 
 Nfa mata::nfa::algorithms::quotient_by_simulation(
-	const Nfa& aut,
+	const Nfa& nfa,
 	const Simlib::Util::PartitionRelation& sim_relation,
 	const std::vector<size_t>& quot_proj,
 	const BoolVector* states,
 	StateRenaming* state_renaming
 ) {
-	return quotient_by(aut, sim_relation, quot_proj, states, state_renaming);
+	return quotient_by(nfa, sim_relation, quot_proj, states, state_renaming);
 }
 
 Nfa mata::nfa::algorithms::reduce_residual(

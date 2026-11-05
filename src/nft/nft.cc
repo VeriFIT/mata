@@ -1156,8 +1156,8 @@ StateSet post_by_words(
 
 StateSet Nft::post(
 	const StateSet& states,
-	const std::vector<Word>& tape_symbols,
-	const BoolVector& use_tape,
+	const std::vector<Word>& level_words,
+	const BoolVector& use_level,
 	StateSet* const visited_zero_level_states,
 	const bool epsilon_closure_after,
 	const JumpMode jump_mode,
@@ -1165,7 +1165,7 @@ StateSet Nft::post(
 ) const {
 	bool stopped{false};
 	return post_by_words(
-		*this, states, tape_symbols, use_tape, visited_zero_level_states, epsilon_closure_after, jump_mode,
+		*this, states, level_words, use_level, visited_zero_level_states, epsilon_closure_after, jump_mode,
 		PostStop{.is_early_exit_config = is_early_exit_config ? &is_early_exit_config : nullptr}, stopped
 	);
 }
@@ -1183,18 +1183,18 @@ bool Nft::reaches_final_by_levels_(
 
 StateSet Nft::post(
 	const StateSet& states,
-	const std::vector<Word>& tape_symbols,
-	const std::vector<Level>& tape_levels,
+	const std::vector<Word>& level_words,
+	const std::vector<Level>& word_levels,
 	StateSet* visited_zero_level_states,
 	const bool epsilon_closure_after,
 	JumpMode jump_mode
 ) const {
-	MATA_ASSERT(tape_symbols.size() == tape_levels.size());
+	MATA_ASSERT(level_words.size() == word_levels.size());
 	std::vector<Word> word_per_level(levels.num_of_levels);
 	BoolVector use_level(levels.num_of_levels, false);
-	for (size_t i = 0; i < tape_symbols.size(); ++i) {
-		use_level[tape_levels[i]] = true;
-		word_per_level[tape_levels[i]] = tape_symbols[i];
+	for (size_t i = 0; i < level_words.size(); ++i) {
+		use_level[word_levels[i]] = true;
+		word_per_level[word_levels[i]] = level_words[i];
 	}
 	return post(states, word_per_level, use_level, visited_zero_level_states, epsilon_closure_after, jump_mode);
 }
