@@ -178,6 +178,7 @@ Nft& Nft::concatenate(Nft&& aut) {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	if (this == &aut) {
 		// Self-concatenation: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft snapshot{aut};
 		return concatenate(snapshot);
 	}
@@ -247,6 +248,7 @@ Nft algorithms::concatenate_eps(
 ) {
 	if (&lhs == &rhs) {
 		// Self-concatenation: one controlled snapshot of the right operand, then the consuming path.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft rhs_snapshot{rhs};
 		return concatenate_eps_consuming(
 			std::move(lhs), rhs_snapshot, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming

@@ -521,6 +521,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
 	if (this == &nfa) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nfa snapshot{nfa};
 		return unite_nondet_with(snapshot);
 	}

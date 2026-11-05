@@ -1663,6 +1663,7 @@ Nft& Nft::unite_nondet_with(Nft&& nft) {
 	assert_num_of_levels_match_(nft);
 	if (this == &nft) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft snapshot{nft};
 		return unite_nondet_with(snapshot);
 	}
