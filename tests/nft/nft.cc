@@ -6978,3 +6978,43 @@ TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_
 	CHECK(unwound.num_of_states() == nft.num_of_states());
 	CHECK(unwound.delta.num_of_transitions() == nft.delta.num_of_transitions());
 }
+
+TEST_CASE("mata::nft::Nft::to_nfa_update_copy() flattens exactly as unwind_jumps()") {
+	const OrdVector<Symbol> symbols{'a', 'b'};
+	const auto require_flattened_as_unwound = [&](const Nft& nft, const OrdVector<Symbol>& replacements) {
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const mata::nfa::Nfa flattened{nft.to_nfa_update_copy(replacements, jump_mode)};
+			const mata::nfa::Nfa unwound{nft.unwind_jumps(replacements, jump_mode).to_nfa_copy()};
+			CHECK(flattened.is_identical(unwound));
+		}
+	};
+	// The three-level relation {(a, b, a)} plus DONT_CARE on the second level.
+	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+	nft.delta.add(0, 'a', 1);
+	nft.delta.add(1, 'b', 2);
+	nft.delta.add(2, 'a', 3);
+
+	SECTION("nothing to unwind: a copy of the transducer") {
+		require_flattened_as_unwound(nft, symbols);
+		CHECK(nft.to_nfa_update_copy(symbols).is_identical(nft.to_nfa_copy()));
+	}
+
+	SECTION("DONT_CARE kept as its own replacement") {
+		nft.delta.add(1, DONT_CARE, 2);
+		require_flattened_as_unwound(nft, {DONT_CARE});
+		CHECK(nft.to_nfa_update_copy({DONT_CARE}).is_identical(nft.to_nfa_copy()));
+	}
+
+	SECTION("DONT_CARE spelled out") {
+		nft.delta.add(1, DONT_CARE, 2);
+		require_flattened_as_unwound(nft, symbols);
+		// 1 -b-> 2 and 1 -DONT_CARE-> 2 become 1 -a-> 2 and 1 -b-> 2.
+		CHECK(nft.to_nfa_update_copy(symbols).delta.num_of_transitions() == 4);
+	}
+
+	SECTION("a jump") {
+		nft.delta.add(0, 'b', 3);
+		require_flattened_as_unwound(nft, symbols);
+		CHECK(nft.to_nfa_update_copy(symbols).num_of_states() == 6);
+	}
+}

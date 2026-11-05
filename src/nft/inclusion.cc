@@ -53,10 +53,8 @@ bool mata::nft::algorithms::is_included_antichains(
 	}
 
 	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly.
-	Nft smaller_unwound{smaller.unwind_jumps(symbols, jump_mode)};
-	Nft bigger_unwound{bigger.unwind_jumps(symbols, jump_mode)};
 	return nfa::algorithms::is_included_antichains(
-		smaller_unwound.to_nfa_move(), bigger_unwound.to_nfa_move(), alphabet, cex
+		smaller.to_nfa_update_copy(symbols, jump_mode), bigger.to_nfa_update_copy(symbols, jump_mode), alphabet, cex
 	);
 } // }}}
 
@@ -119,10 +117,8 @@ bool mata::nft::are_equivalent(
 
 	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly. EPSILON
 	// on a level means "nothing on this tape" and stays a letter here, so the epsilon-unaware entry point is used.
-	Nft lhs_unwound{lhs.unwind_jumps(symbols, jump_mode)};
-	Nft rhs_unwound{rhs.unwind_jumps(symbols, jump_mode)};
 	return nfa::algorithms::are_equivalent_epsilon_as_symbol(
-		lhs_unwound.to_nfa_move(), rhs_unwound.to_nfa_move(), alphabet, params
+		lhs.to_nfa_update_copy(symbols, jump_mode), rhs.to_nfa_update_copy(symbols, jump_mode), alphabet, params
 	);
 }
 

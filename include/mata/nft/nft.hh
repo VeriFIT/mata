@@ -1509,7 +1509,9 @@ class Nft : public mata::Automaton {
 	 * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
 	 * sequence of @c DONT_CARE symbols.
-	 * @return A newly created NFA with copied members from NFT with updated transitions.
+	 * @return A newly created NFA with copied members from NFT with updated transitions; a plain copy when there is
+	 *  nothing to unwind.
+	 * @throw std::invalid_argument when the level vector does not cover all states or a level is out of range.
 	 */
 	nfa::Nfa to_nfa_update_copy(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
