@@ -56,6 +56,9 @@ CheckOptions:
 
   # The naming rules.
   #
+  # Each '*IgnoredRegexp' is anchored at both ends as a whole, so its alternatives are grouped; ungrouped, the anchors
+  #  bind only to the first and the last alternative.
+  #
   # Note: A public member must be 'lower_case', but is additionally allowed to end in '_' to mark a member which is "public but internal for expert use only". 'lower_case' alone rejects the trailing '_', hence the explicit ignore pattern in '*IgnoredRegexp' beside the required naming options.
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "(const_)?(iterator|reverse_iterator)"
@@ -66,7 +69,7 @@ CheckOptions:
   readability-identifier-naming.EnumConstantCase: CamelCase
   readability-identifier-naming.ConceptCase: CamelCase
   readability-identifier-naming.TypeAliasCase: CamelCase
-  readability-identifier-naming.TypeAliasIgnoredRegexp: "(const_)?(iterator|reverse_iterator)|super|size_type|value_type|difference_type|reference|pointer|conjunction"
+  readability-identifier-naming.TypeAliasIgnoredRegexp: "((const_)?(iterator|reverse_iterator|reference|pointer)|super|size_type|value_type|difference_type|iterator_category|conjunction)"
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.TypeTemplateParameterCase: CamelCase
   readability-identifier-naming.ValueTemplateParameterCase: CamelCase
@@ -74,7 +77,7 @@ CheckOptions:
   readability-identifier-naming.FunctionCase: lower_case
   # 'Ordering::Minimal' and 'Ordering::Next' are comparator constants passed as values, hence CamelCase.
   readability-identifier-naming.MethodCase: lower_case
-  readability-identifier-naming.MethodIgnoredRegexp: "[a-z][a-z0-9_]*_|Minimal|Next"
+  readability-identifier-naming.MethodIgnoredRegexp: "([a-z][a-z0-9_]*_|Minimal|Next)"
   readability-identifier-naming.ParameterCase: lower_case
   readability-identifier-naming.VariableCase: lower_case
   readability-identifier-naming.PublicMemberCase: lower_case
