@@ -2170,7 +2170,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 		auto initial_symbol_post_end{initial_state_post.cend()};
 		// Initialize the worklist for the given @p initial_state with the first valid transition.
 		while (worklist.empty() && initial_symbol_post_it != initial_state_post.cend()) {
-			auto initial_target_it{initial_symbol_post_it->targets.cbegin()};
+			const auto* initial_target_it{initial_symbol_post_it->targets.cbegin()};
 			do {
 				if (searched[*initial_target_it]) {
 					++initial_target_it;
@@ -2201,7 +2201,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 					const StatePost& state_post{delta[*targets_it]};
 					if (!state_post.empty()) {
 						auto new_state_post_it{state_post.cbegin()};
-						auto new_targets_it{new_state_post_it->cbegin()};
+						const auto* new_targets_it{new_state_post_it->cbegin()};
 						worklist.emplace_back(new_state_post_it, state_post.cend(), new_targets_it);
 					} else {
 						++targets_it;

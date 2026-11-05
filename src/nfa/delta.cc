@@ -159,7 +159,7 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
 	const size_t num_of_states{this->num_of_states()};
 	for (State state_from{0}; state_from < num_of_states; ++state_from) {
 		for (const SymbolPost& state_from_move : state_post(state_from)) {
-			if (const auto target_state{state_from_move.targets.find(state_to)};
+			if (const auto* const target_state{state_from_move.targets.find(state_to)};
 				target_state != state_from_move.targets.end()) {
 				transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to);
 			}
@@ -171,7 +171,7 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
 std::vector<Transition> Delta::get_transitions_between(const State state_from, const State state_to) const {
 	std::vector<Transition> transitions_between{};
 	for (const SymbolPost& symbol_post : state_post(state_from)) {
-		if (const auto state_to_find_it = symbol_post.targets.find(state_to);
+		if (const auto* const state_to_find_it = symbol_post.targets.find(state_to);
 			state_to_find_it != symbol_post.targets.end()) {
 			transitions_between.emplace_back(state_from, symbol_post.symbol, state_to);
 		}
