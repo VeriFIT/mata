@@ -142,11 +142,8 @@ mata::Mintermization::MintermPartition
 
 	// Helper lambda to create an incidence representation
 	auto make_incidence = [&]() -> std::variant<uint64_t, std::vector<size_t>> {
-		if (source_bdds.size() <= 64) {
-			return uint64_t(0);
-		} else {
-			return std::vector<size_t>();
-		}
+		if (source_bdds.size() <= 64) { return uint64_t(0); }
+		return std::vector<size_t>();
 	};
 
 	auto set_bit = [](auto& incidence, size_t idx) {
