@@ -1028,7 +1028,7 @@ class StateSetTable {
 	/// Id of @p states, and whether it is new. @p states must not point into the table.
 	std::pair<uint32_t, bool> find_or_insert(const ChunkSpan states) { return find_or_insert(key_of(states)); }
 
-	std::pair<uint32_t, bool> find_or_insert(const Key key) {
+	std::pair<uint32_t, bool> find_or_insert(const Key& key) {
 		const size_t slot_mask = table_.size() - 1;
 		size_t slot = key.hash & slot_mask;
 		// Linear probing, until the set or an empty slot.
@@ -1539,7 +1539,7 @@ class FourRussiansDeterminizer {
 
 	/// Add the transition from @p source under @p class_id to the macrostate of @p targets. Returns false if the
 	///  callback stops.
-	bool add_transition(const size_t source, const ClassId class_id, const StateSetTable::Key targets) {
+	bool add_transition(const size_t source, const ClassId class_id, const StateSetTable::Key& targets) {
 		const auto [target, is_new] = find_or_add_macrostate(targets);
 		transitions_.push(class_id, target);
 
@@ -1549,7 +1549,7 @@ class FourRussiansDeterminizer {
 	}
 
 	/// DFA state of the macrostate of @p key, and whether it is new.
-	std::pair<State, bool> find_or_add_macrostate(const StateSetTable::Key key) {
+	std::pair<State, bool> find_or_add_macrostate(const StateSetTable::Key& key) {
 		const auto [id, is_new] = macrostates_.find_or_insert(key);
 		if (!is_new) { return {id, false}; }
 
