@@ -591,7 +591,7 @@ std::optional<std::filesystem::path> find_executable(const std::string& name) {
 	while (true) {
 		const size_t separator{directories.find(':')};
 		const std::string_view directory{directories.substr(0, separator)};
-		const std::filesystem::path candidate{std::filesystem::path{directory.empty() ? "." : directory} / name};
+		std::filesystem::path candidate{std::filesystem::path{directory.empty() ? "." : directory} / name};
 		if (is_executable_file(candidate)) { return candidate; }
 		if (separator == std::string_view::npos) { return std::nullopt; }
 		directories.remove_prefix(separator + 1);
