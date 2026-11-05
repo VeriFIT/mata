@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iterator>
 #include <limits>
@@ -509,8 +510,9 @@ SolverAnswer parse_solver_output(
 				} catch (const std::exception&) { parsed = 0; }
 				if (parsed != token.size() || literal < -max_variable || literal > max_variable) {
 					throw std::runtime_error(
-						"The solver '" + solver + "' printed an unexpected value '" + token + "'." +
-						output_excerpt(output)
+						std::format(
+							"The solver '{}' printed an unexpected value '{}'.{}", solver, token, output_excerpt(output)
+						)
 					);
 				}
 				if (literal != 0) { answer.model[static_cast<size_t>(literal < 0 ? -literal : literal)] = literal > 0; }

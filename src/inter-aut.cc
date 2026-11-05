@@ -8,6 +8,8 @@
 #include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
+#include <format>
+
 namespace {
 
 bool has_at_most_one_auto_naming(const mata::IntermediateAut& aut) {
@@ -33,8 +35,10 @@ void check_explicit_transition(const std::vector<std::string>& tokens, const std
 		if (const std::string& token = tokens[i];
 			token == "&" || token == "|" || token == "!" || token == "(" || token == ")") {
 			throw std::runtime_error(
-				"Malformed explicit " + automaton_type + " transition " + std::to_string(tokens) + ": '" + token +
-				"' is an operator, not a state or a symbol"
+				std::format(
+					"Malformed explicit {} transition {}: '{}' is an operator, not a state or a symbol", automaton_type,
+					std::to_string(tokens), token
+				)
 			);
 		}
 	}
