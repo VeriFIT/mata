@@ -72,10 +72,18 @@ bool is_included_naive(
 
 /**
  * Inclusion implemented by antichain algorithms.
+ *
+ * The operands are read as the flat automata that @c Nft::unwind_jumps() with the DONT_CARE replacements below would
+ *  produce, EPSILON being an ordinary letter. When unwinding would spell DONT_CARE out over the replacements (on a
+ *  DONT_CARE transition, or on the links padding a jump under @c JumpMode::AppendDontCares), the jumps and DONT_CAREs
+ *  are explored lazily during the search instead: no operand is unwound and DONT_CARE is not expanded over the
+ *  alphabet. The answer is that of @c is_included_antichains_unwound().
  * @param[in] smaller Automaton which language should be included in the bigger one
  * @param[in] bigger Automaton which language should include the smaller one
- * @param[in] alphabet Alphabet of both automata (not needed for antichain algorithm)
- * @param[out] cex A potential counterexample word which breaks inclusion
+ * @param[in] alphabet Alphabet whose symbols replace @c DONT_CARE; @c nullptr for the symbols of both automata
+ *  without @c DONT_CARE.
+ * @param[out] cex A potential counterexample word which breaks inclusion, one symbol per level. When the jumps are
+ *  explored lazily, the positions of @c cex->path inside a jump hold @c Limits::max_state.
  * @param[out] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE.
@@ -85,6 +93,29 @@ bool is_included_naive(
  *  that is out of range.
  */
 bool is_included_antichains(
+	const Nft& smaller,
+	const Nft& bigger,
+	const Alphabet* alphabet = nullptr,
+	Run* cex = nullptr,
+	JumpMode jump_mode = JumpMode::RepeatSymbol
+);
+
+/**
+ * Inclusion implemented by unwinding both automata with @c Nft::to_nfa_update_copy() and running the NFA antichain
+ *  inclusion on the results; the reference for @c is_included_antichains().
+ * @param[in] smaller Automaton which language should be included in the bigger one
+ * @param[in] bigger Automaton which language should include the smaller one
+ * @param[in] alphabet Alphabet whose symbols replace @c DONT_CARE; @c nullptr for the symbols of both automata
+ *  without @c DONT_CARE.
+ * @param[out] cex A potential counterexample word which breaks inclusion, and a path through the unwound @p smaller.
+ * @param[out] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @c DONT_CARE.
+ * @return True if smaller language is included.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
+ */
+bool is_included_antichains_unwound(
 	const Nft& smaller,
 	const Nft& bigger,
 	const Alphabet* alphabet = nullptr,

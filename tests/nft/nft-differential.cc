@@ -7,6 +7,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
+#include <memory>
 #include <random>
 #include <set>
 #include <string>
@@ -617,4 +619,177 @@ TEST_CASE("mata::nft differential: larger sweep", "[.differential-sweep]") {
 			}
 		}
 	}
+}
+
+namespace {
+
+/// A random NFT over {0, ..., num_of_symbols - 1} with jumps: a transition from level l goes to any of the levels
+///  l + 1, ..., num_of_levels (level 0 standing for num_of_levels), so it spans one level or jumps over several.
+///  @p with_dont_care and @p with_epsilon add DONT_CARE and EPSILON transitions; @p with_odd_spans lets a transition
+///  also stay on its level or go back, and makes a few states on other levels than 0 final, which unwind_jumps()
+///  unwinds as well.
+Nft random_nft_with_jumps(
+	std::mt19937& rng,
+	const size_t num_of_states_per_level,
+	const size_t num_of_symbols,
+	const size_t num_of_levels,
+	const bool with_dont_care,
+	const bool with_epsilon,
+	const bool with_odd_spans
+) {
+	Nft nft{Nft::with_levels(num_of_levels)};
+	std::vector<std::vector<State>> states_by_level(num_of_levels);
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (size_t index{0}; index < num_of_states_per_level; ++index) {
+			states_by_level[level].push_back(nft.add_state_with_level(static_cast<Level>(level)));
+		}
+	}
+	for (size_t initial{0}, initials{1 + draw(rng, 2)}; initial < initials; ++initial) {
+		nft.initial.insert(states_by_level[0][draw(rng, num_of_states_per_level)]);
+	}
+	for (const State state : states_by_level[0]) {
+		if (draw(rng, 3) == 0) { nft.final.insert(state); }
+	}
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (const State source : states_by_level[level]) {
+			if (with_odd_spans && draw(rng, 10) == 0) { nft.final.insert(source); }
+			for (size_t transition{0}, transitions{draw(rng, 4)}; transition < transitions; ++transition) {
+				Symbol symbol{static_cast<Symbol>(draw(rng, num_of_symbols))};
+				if (const size_t kind{draw(rng, 6)}; with_dont_care && kind == 0) {
+					symbol = DONT_CARE;
+				} else if (with_epsilon && kind == 1) {
+					symbol = EPSILON;
+				}
+				size_t target_level{(level + 1 + draw(rng, num_of_levels - level)) % num_of_levels};
+				if (with_odd_spans && draw(rng, 6) == 0) { target_level = draw(rng, num_of_levels); }
+				nft.delta.add(source, symbol, states_by_level[target_level][draw(rng, num_of_states_per_level)]);
+			}
+		}
+	}
+	return nft;
+}
+
+/// Statistics of the lazy-against-unwound inclusion checks, so that the corpus provably covers both answers.
+struct LazyInclusionStats {
+	size_t included{0};
+	size_t not_included{0};
+	size_t with_jumps{0};
+};
+
+/// Checks the antichain inclusion of the transducers of @p seed, with up to @p max_states_per_level states per level,
+///  both ways, and their equivalence, against the inclusion of the unwound transducers, under every jump mode, and
+///  replays each counterexample on the unwound ones.
+void check_lazy_inclusion(const unsigned seed, const size_t max_states_per_level, LazyInclusionStats& stats) {
+	std::mt19937 rng{seed};
+	const size_t num_of_symbols{1 + seed % 3};
+	const size_t num_of_levels{1 + (seed / 3) % 4};
+	const size_t num_of_states_per_level{1 + (seed / 2) % max_states_per_level};
+	const bool with_dont_care{seed % 2 == 0};
+	const bool with_epsilon{seed % 3 == 0};
+	const bool with_odd_spans{seed % 5 == 0};
+	const Nft lhs{random_nft_with_jumps(
+		rng, num_of_states_per_level, num_of_symbols, num_of_levels, with_dont_care, with_epsilon, with_odd_spans
+	)};
+	Nft rhs{random_nft_with_jumps(
+		rng, num_of_states_per_level, num_of_symbols, num_of_levels, with_dont_care, with_epsilon, with_odd_spans
+	)};
+	if (seed % 3 == 1) {
+		// rhs grows lhs by a few transitions, so lhs is included in it.
+		rhs = lhs;
+		const size_t num_of_states{rhs.num_of_states()};
+		for (size_t transition{0}, transitions{draw(rng, 4)}; transition < transitions; ++transition) {
+			const Symbol symbol{draw(rng, 4) == 0 ? DONT_CARE : static_cast<Symbol>(draw(rng, num_of_symbols))};
+			rhs.delta.add(
+				static_cast<State>(draw(rng, num_of_states)), symbol, static_cast<State>(draw(rng, num_of_states))
+			);
+		}
+	}
+	if (lhs.contains_jump_transitions() || rhs.contains_jump_transitions()) { ++stats.with_jumps; }
+
+	// The symbols that replace DONT_CARE: those of both transducers, a full or a partial alphabet, one with EPSILON,
+	//  none, DONT_CARE alone (kept as a letter), and DONT_CARE among others.
+	std::shared_ptr<EnumAlphabet> alphabet{};
+	switch (seed % 7) {
+		case 0:
+			break;
+		case 1:
+			alphabet = alphabet_of(num_of_symbols);
+			break;
+		case 2:
+			alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0});
+			break;
+		case 3:
+			alphabet = alphabet_of(num_of_symbols);
+			alphabet->add_new_symbol(EPSILON);
+			break;
+		case 4:
+			alphabet = std::make_shared<EnumAlphabet>();
+			break;
+		case 5:
+			alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{DONT_CARE});
+			break;
+		default:
+			alphabet = std::make_shared<EnumAlphabet>(EnumAlphabet{0, DONT_CARE});
+			break;
+	}
+	mata::utils::OrdVector<Symbol> symbols{};
+	if (alphabet != nullptr) {
+		symbols = alphabet->get_alphabet_symbols();
+	} else {
+		symbols = create_alphabet(lhs, rhs).get_alphabet_symbols();
+		if (symbols.contains(DONT_CARE) && symbols.size() > 1) { symbols.erase(DONT_CARE); }
+	}
+	INFO(describe(seed, lhs) + "\n---\n" + describe(seed, rhs) + "\nalphabet variant " + std::to_string(seed % 7));
+
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares, JumpMode::NoJump}) {
+		INFO("jump mode " << static_cast<int>(jump_mode));
+		std::array<bool, 2> eager_answers{};
+		for (const bool forward : {true, false}) {
+			const Nft& smaller{forward ? lhs : rhs};
+			const Nft& bigger{forward ? rhs : lhs};
+			INFO(std::string{forward ? "lhs <= rhs" : "rhs <= lhs"});
+			Run cex{};
+			const bool lazy{algorithms::is_included_antichains(smaller, bigger, alphabet.get(), &cex, jump_mode)};
+			const bool eager{
+				algorithms::is_included_antichains_unwound(smaller, bigger, alphabet.get(), nullptr, jump_mode)
+			};
+			REQUIRE(lazy == eager);
+			eager_answers[forward ? 0 : 1] = eager;
+			if (lazy) {
+				++stats.included;
+				continue;
+			}
+			++stats.not_included;
+			// The counterexample is a word of the unwound smaller transducer and not of the unwound bigger one, read
+			//  along a path from an initial to a final state of the smaller transducer.
+			CHECK(smaller.to_nfa_update_copy(symbols, jump_mode).is_in_lang(cex.word));
+			CHECK(!bigger.to_nfa_update_copy(symbols, jump_mode).is_in_lang(cex.word));
+			REQUIRE(cex.path.size() == cex.word.size() + 1);
+			CHECK(smaller.initial.contains(cex.path.front()));
+			CHECK(smaller.final.contains(cex.path.back()));
+		}
+		CHECK(
+			are_equivalent(lhs, rhs, alphabet.get(), jump_mode, {{"algorithm", "antichains"}}) ==
+			(eager_answers[0] && eager_answers[1])
+		);
+	}
+}
+
+} // namespace
+
+TEST_CASE(
+	"mata::nft differential: inclusion and equivalence explore jumps lazily as unwinding reads them", "[differential]"
+) {
+	LazyInclusionStats stats{};
+	for (unsigned seed{0}; seed < 2'000; ++seed) { check_lazy_inclusion(seed, 5, stats); }
+	// The corpus has both answers and jumps.
+	CHECK(stats.included > 1'000);
+	CHECK(stats.not_included > 1'000);
+	CHECK(stats.with_jumps > 1'000);
+}
+
+// A hidden sweep over more seeds; the default run stays fast.
+TEST_CASE("mata::nft differential: lazy jump exploration in a larger sweep", "[.differential-sweep]") {
+	LazyInclusionStats stats{};
+	for (unsigned seed{2'000}; seed < 30'000; ++seed) { check_lazy_inclusion(seed, 8, stats); }
 }
