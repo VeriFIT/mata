@@ -486,6 +486,8 @@ class OnTheFlyAlphabet : public Alphabet {
 	Symbol next_symbol_value_{}; ///< Next value to be used for a newly added symbol.
 
 	const SymbolNames* find_names(Symbol symbol) const;
+	/// The names of @p symbol, which has to be a symbol of @c symbol_map_.
+	SymbolNames& indexed_names(Symbol symbol);
 	void index_name(StringToSymbolMap::const_iterator name_it);
 	/// Remove @p name_it from the reverse index; call before erasing it from @c symbol_map_.
 	void unindex_name(StringToSymbolMap::const_iterator name_it);

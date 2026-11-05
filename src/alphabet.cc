@@ -40,7 +40,7 @@ OnTheFlyAlphabet& OnTheFlyAlphabet::operator=(const OnTheFlyAlphabet& rhs) {
 void OnTheFlyAlphabet::redirect_copied_index() {
 	// The copied pointers still point into the source map, whose names equal ours.
 	for (const auto& [name, symbol] : symbol_map_) {
-		auto& names{*const_cast<SymbolNames*>(find_names(symbol))};
+		auto& names{indexed_names(symbol)};
 		if (*names.name == name) { names.name = &name; }
 	}
 }
@@ -52,6 +52,12 @@ const OnTheFlyAlphabet::SymbolNames* OnTheFlyAlphabet::find_names(const Symbol s
 	}
 	const auto names_it{sparse_names_.find(symbol)};
 	return names_it == sparse_names_.end() ? nullptr : &names_it->second;
+}
+
+OnTheFlyAlphabet::SymbolNames& OnTheFlyAlphabet::indexed_names(const Symbol symbol) {
+	// Every symbol of 'symbol_map_' has its names indexed, so the lookup cannot fail; '*this' is non-const here.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast, clang-analyzer-core.NullDereference)
+	return *const_cast<SymbolNames*>(find_names(symbol));
 }
 
 void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_it) {
@@ -80,7 +86,7 @@ void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_i
 
 void OnTheFlyAlphabet::unindex_name(const StringToSymbolMap::const_iterator name_it) {
 	const Symbol symbol{name_it->second};
-	SymbolNames& names{*const_cast<SymbolNames*>(find_names(symbol))};
+	SymbolNames& names{indexed_names(symbol)};
 	if (--names.num_of_names == 0) {
 		if (symbol < dense_names_.size()) {
 			names.name = nullptr;
