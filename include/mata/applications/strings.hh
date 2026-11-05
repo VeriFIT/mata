@@ -562,7 +562,7 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
  *  necessarily to the best noodle overall.
  */
 struct NoodleOrder {
-	enum class Kind {
+	enum class Kind : std::uint8_t {
 		Forward, ///< The order of the functions returning a vector.
 		Reverse, ///< The reverse of that order.
 		/// The candidate whose segment has the fewest states reachable from its initial state first (segments with the

@@ -76,7 +76,7 @@ enum class CompositionMode : std::uint8_t {
  * Every mode keeps the relation and the level of every state; state numbering is not part of the contract, and
  *  neither is the placement of EPSILON, which @c are_equivalent() reads as a letter.
  */
-enum class CompositionNormalization {
+enum class CompositionNormalization : std::uint8_t {
 	None, ///< Return the result as constructed (trimmed when the synchronization levels are projected out).
 	/// Rewrite only the states the fast composer generated itself (EPSILON padding, bridges over a replaced
 	///  synchronization, and waiting states): close the whole-round EPSILON runs through generated states with exactly
