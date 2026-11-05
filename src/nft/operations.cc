@@ -1610,6 +1610,8 @@ Nft mata::nft::union_nondet(Nft&& lhs, Nft&& rhs) {
 	return union_nft;
 }
 
+// Reads 'this' only through the assertion, which release builds compile out.
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 void Nft::assert_num_of_levels_match_(const Nft& nft) const {
 	MATA_ASSERT(
 		this->levels.num_of_levels == nft.levels.num_of_levels,
