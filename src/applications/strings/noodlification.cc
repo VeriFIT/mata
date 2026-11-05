@@ -559,7 +559,7 @@ class NoodleEnumerator {
 		part.state_of_initial.reserve(segment.initial.size());
 		share_per_initial_state(segment, part_finals, [&](State, std::optional<seg_nfa::NoodleSegment>&& seg) {
 			if (seg) {
-				part.automaton = seg->automaton;
+				part.automaton = std::move(seg->automaton);
 				part.state_of_initial.push_back(seg->initial);
 			} else {
 				part.state_of_initial.push_back(Limits::max_state);

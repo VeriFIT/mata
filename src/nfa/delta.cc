@@ -245,6 +245,8 @@ void Delta::add(const State source, SymbolPost&& symbol_post) {
 	note_added(num_of_targets);
 }
 
+// Taken by rvalue reference to be sorted and deduplicated in place.
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void Delta::add(std::vector<Transition>&& transitions) {
 	if (transitions.empty()) { return; }
 	std::ranges::sort(transitions, [](const Transition& lhs, const Transition& rhs) {
@@ -492,6 +494,8 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 	return *this;
 }
 
+// The posts of 'other' are moved out one by one below.
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 Delta& Delta::append_shifted(Delta&& other, const State offset) {
 	// Self-append: the snapshot is the operand, `this` keeps its own posts.
 	if (this == &other) { return append_shifted(Delta{other}, offset); }
