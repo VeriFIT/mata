@@ -5,6 +5,7 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
+#include "nft-internal.hh"
 
 using namespace mata::nft;
 using namespace mata::utils;
@@ -17,6 +18,8 @@ bool algorithms::is_included_naive(
 	Run* cex,
 	const JumpMode jump_mode
 ) { // {{{
+	internal::validate_nft_levels(smaller, "is_included_naive");
+	internal::validate_nft_levels(bigger, "is_included_naive");
 	Nft bigger_cmpl;
 	if (alphabet == nullptr) {
 		bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
@@ -37,6 +40,8 @@ bool mata::nft::algorithms::is_included_antichains(
 	Run* cex,
 	const JumpMode jump_mode
 ) { // {{{
+	internal::validate_nft_levels(smaller, "is_included_antichains");
+	internal::validate_nft_levels(bigger, "is_included_antichains");
 	if (smaller.levels.num_of_levels != bigger.levels.num_of_levels) { return false; }
 
 	OrdVector<mata::Symbol> symbols;
@@ -100,6 +105,8 @@ bool mata::nft::is_included(
 bool mata::nft::are_equivalent(
 	const Nft& lhs, const Nft& rhs, const Alphabet* alphabet, const JumpMode jump_mode, const ParameterMap& params
 ) {
+	internal::validate_nft_levels(lhs, "are_equivalent");
+	internal::validate_nft_levels(rhs, "are_equivalent");
 	if (lhs.levels.num_of_levels != rhs.levels.num_of_levels) { return false; }
 
 	OrdVector<mata::Symbol> symbols;

@@ -59,6 +59,8 @@ Nft complement_classical(
  *  of @c DONT_CARE.
  * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is
  * empty.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool is_included_naive(
 	const Nft& smaller,
@@ -79,6 +81,8 @@ bool is_included_naive(
  *  of @c DONT_CARE.
  * @return True if smaller language is included, i.e., if the final intersection of smaller complement of bigger is
  * empty.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool is_included_antichains(
 	const Nft& smaller,

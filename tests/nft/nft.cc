@@ -6910,6 +6910,63 @@ TEST_CASE("mata::nft::Nft::unwind_jumps() validates level metadata") {
 	}
 }
 
+TEST_CASE("mata::nft inclusion and equivalence validate level metadata") {
+	// The two-level relation {(a, a)}.
+	Nft valid{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+	valid.delta.add(0, 'a', 1);
+	valid.delta.add(1, 'a', 2);
+	const auto require_rejected = [&](const Nft& malformed) {
+		for (const std::string algorithm : {"naive", "antichains"}) {
+			const ParameterMap params{{"algorithm", algorithm}};
+			CHECK_THROWS_AS(
+				is_included(malformed, valid, nullptr, JumpMode::RepeatSymbol, params), std::invalid_argument
+			);
+			CHECK_THROWS_AS(
+				is_included(valid, malformed, nullptr, JumpMode::RepeatSymbol, params), std::invalid_argument
+			);
+			CHECK_THROWS_AS(are_equivalent(malformed, valid, JumpMode::RepeatSymbol, params), std::invalid_argument);
+			CHECK_THROWS_AS(are_equivalent(valid, malformed, JumpMode::RepeatSymbol, params), std::invalid_argument);
+		}
+	};
+
+	SECTION("the operands are well-formed") {
+		CHECK(is_included(valid, valid));
+		CHECK(are_equivalent(valid, valid));
+	}
+
+	SECTION("a missing level vector is rejected") {
+		Nft missing{Nft::with_levels(2)};
+		missing.delta.add(0, 'a', 1);
+		missing.delta.add(1, 'a', 2);
+		missing.initial = {0};
+		missing.final = {2};
+		REQUIRE(missing.levels.empty());
+		require_rejected(missing);
+	}
+
+	SECTION("a short level vector is rejected") {
+		Nft short_levels{Nft::with_levels({2, {0, 1}}, 2, {0}, {2})};
+		short_levels.delta.add(0, 'a', 1);
+		short_levels.delta.add(1, 'a', 2);
+		require_rejected(short_levels);
+	}
+
+	SECTION("a level at or above the number of levels is rejected") {
+		Nft out_of_range{valid};
+		out_of_range.levels[1] = static_cast<Level>(out_of_range.levels.num_of_levels);
+		require_rejected(out_of_range);
+	}
+
+	SECTION("malformed levels are rejected before the level counts are compared") {
+		Nft out_of_range{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+		out_of_range.delta.add(0, 'a', 1);
+		out_of_range.delta.add(1, 'a', 2);
+		out_of_range.delta.add(2, 'a', 3);
+		out_of_range.levels[2] = 3;
+		require_rejected(out_of_range);
+	}
+}
+
 TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_CARE") {
 	// Every transition advances exactly one level and no DONT_CARE is expanded: unwinding is an identity.
 	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};

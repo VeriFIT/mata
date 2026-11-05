@@ -2007,6 +2007,8 @@ Nft reduce(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool is_included(
 	const Nft& smaller,
@@ -2029,6 +2031,8 @@ bool is_included(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 inline bool is_included(
 	const Nft& smaller,
@@ -2052,6 +2056,8 @@ inline bool is_included(
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool are_equivalent(
 	const Nft& lhs,
@@ -2080,6 +2086,8 @@ bool are_equivalent(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool are_equivalent(
 	const Nft& lhs,

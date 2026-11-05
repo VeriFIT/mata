@@ -24,6 +24,7 @@
 #include "mata/nft/nft.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
+#include "nft-internal.hh"
 
 using namespace mata::utils;
 using namespace mata::nft;
@@ -474,16 +475,7 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return res;
 }
 
-namespace mata::nft {
-namespace {
-/**
- * @brief Throw @c std::invalid_argument when the level metadata of @p nft is incomplete or out of range.
- *
- * Operations that interpret transitions through the level vector (jump unwinding, inclusion, equivalence)
- *  must not silently treat a transducer with missing or malformed levels as a flat NFA; that produced
- *  wrong answers without any error (#791).
- */
-void validate_nft_levels(const Nft& nft, const char* const operation) {
+void mata::nft::internal::validate_nft_levels(const Nft& nft, const char* const operation) {
 	// num_of_states() counts only states used in delta, initial and final; the level vector may legitimately
 	//  be longer (e.g. sized by construction or before trimming). Missing levels for used states are the hazard.
 	if (nft.levels.size() < nft.num_of_states()) {
@@ -501,11 +493,9 @@ void validate_nft_levels(const Nft& nft, const char* const operation) {
 		}
 	}
 }
-} // anonymous namespace
-} // namespace mata::nft
 
 void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
-	validate_nft_levels(*this, "unwind_jumps_inplace");
+	internal::validate_nft_levels(*this, "unwind_jumps_inplace");
 	const bool dont_care_for_dont_care = dont_care_symbol_replacements == utils::OrdVector<Symbol>({DONT_CARE});
 	std::vector<Transition> transitions_to_del;
 	std::vector<Transition> transitions_to_add;
@@ -570,7 +560,7 @@ void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replace
 }
 
 Nft Nft::unwind_jumps(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
-	validate_nft_levels(*this, "unwind_jumps");
+	internal::validate_nft_levels(*this, "unwind_jumps");
 	Nft result{*this};
 	result.unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
 	return result;
