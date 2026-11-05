@@ -363,7 +363,8 @@ class Nft : public mata::Automaton {
 	explicit Nft(nfa::Nfa&& other, Levels levels)
 		: Automaton{std::move(other.delta), std::move(other.initial), std::move(other.final)},
 		  levels{std::move(levels)} {
-		MATA_ASSERT(other.num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
+		// The NFA members were moved from above, so their count lives on in 'this' now.
+		MATA_ASSERT(this->num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
 	}
 
 	/**

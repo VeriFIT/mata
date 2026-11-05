@@ -49,6 +49,15 @@ TEST_CASE("mata::nft::Nft()") {
 	CHECK(nft.levels == std::vector<Level>{0, 3, 1});
 }
 
+TEST_CASE("mata::nft::Nft() from a moved NFA keeps the state count of its own members") {
+	const nfa::Nfa nfa{3, {0}, {2}};
+	// Used to abort: the assertion read 'other.num_of_states()' after the members had been moved out of it.
+	const Nft nft{nfa::Nfa{nfa}, Levels{2, {0, 1, 0}}};
+	CHECK(nft.num_of_states() == 3);
+	CHECK(nft.levels.num_of_levels == 2);
+	CHECK(nft.levels == std::vector<Level>{0, 1, 0});
+}
+
 TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
 	auto shared_alphabet = std::make_shared<IntAlphabet>();
 	auto input_alphabet = std::make_shared<IntAlphabet>();
