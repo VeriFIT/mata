@@ -2112,6 +2112,9 @@ class RoundLookahead {
  * - When every level of both operands is a synchronization level, a round of one operand alone emits nothing but
  *   EPSILON. Such rounds of the two operands commute, so the EPSILON-composition filter of the fast composer keeps
  *   only the interleavings in which the LHS moves alone before the RHS does.
+ *
+ * A projected synchronization level gets no result level: reading it is a step of the move that reads the kept level
+ *  before it, which goes on to the configurations after it.
  */
 class DirectGeneralComposer {
   public:
@@ -2120,7 +2123,8 @@ class DirectGeneralComposer {
 		const Nft& rhs,
 		const CompositionSchedule& schedule,
 		const OrdVector<Level>& lhs_sync_levels,
-		const OrdVector<Level>& rhs_sync_levels
+		const OrdVector<Level>& rhs_sync_levels,
+		const bool project_out_sync_levels
 	)
 		: lhs_{lhs},
 		  rhs_{rhs},
@@ -2154,6 +2158,15 @@ class DirectGeneralComposer {
 			is_lhs_done_[position] = owner == CompositionSchedule::Owner::Rhs && is_lhs_done_[position + 1];
 			is_rhs_done_[position] = owner == CompositionSchedule::Owner::Lhs && is_rhs_done_[position + 1];
 		}
+		is_projected_.resize(num_of_positions_, false);
+		result_level_.resize(num_of_positions_, 0);
+		for (size_t position{0}; position < num_of_positions_; ++position) {
+			is_projected_[position] =
+				project_out_sync_levels && schedule.positions[position].owner == CompositionSchedule::Owner::Sync;
+			result_level_[position] = num_of_result_levels_;
+			if (!is_projected_[position]) { ++num_of_result_levels_; }
+		}
+		MATA_ASSERT(num_of_result_levels_ > 0);
 	}
 
 	/// Whether the configurations of @p lhs_num_of_states states and @p num_of_positions positions can be numbered.
@@ -2162,7 +2175,7 @@ class DirectGeneralComposer {
 		return lhs_num_of_states < (Limits::max_state - 1) / num_of_layers;
 	}
 
-	/// Build the composition with every aligned level, the synchronization levels included.
+	/// Build the composition.
 	Nft compose() {
 		SparseSet<State> initial{};
 		for (const State lhs_initial : lhs_.initial) {
@@ -2174,7 +2187,7 @@ class DirectGeneralComposer {
 		//  search that appends the post of each state to the delta in order.
 		for (State source{0}; source < configuration_of_.size(); ++source) { expand(source); }
 		return Nft::with_levels(
-			Levels{num_of_positions_, std::move(levels_)}, delta_builder_.finish(), std::move(initial),
+			Levels{num_of_result_levels_, std::move(levels_)}, delta_builder_.finish(), std::move(initial),
 			std::move(final_)
 		);
 	}
@@ -2314,24 +2327,49 @@ class DirectGeneralComposer {
 			.value();
 	}
 
-	/// Read the aligned level @p position in @p mode from the operand states and record the moves of @p source.
-	void read_into_moves(const State lhs_state, const State rhs_state, const size_t position, const Mode mode) {
-		const size_t next_position{position + 1};
+	/**
+	 * @brief Record a move over @p symbol into the configuration before the aligned level @p position.
+	 *
+	 * A projected synchronization level has no transition of its own: its read is a step of the move, which then
+	 *  reaches each configuration after it. The aligned level only grows within a round, so this ends at the next kept
+	 *  level or at the end of the round.
+	 */
+	void move_to(
+		const Symbol symbol, const State lhs_state, const State rhs_state, const size_t position, const Mode mode
+	) {
+		if (position == num_of_positions_) {
+			moves_.emplace_back(
+				symbol, intern(lhs_state, rhs_state, start_layer(filter_mode_after(mode, lhs_state)), 0)
+			);
+			return;
+		}
+		if (!can_finish(lhs_state, rhs_state, position, mode)) { return; }
+		if (!is_projected_[position]) {
+			moves_.emplace_back(
+				symbol, intern(lhs_state, rhs_state, inner_layer(position, mode), result_level_[position])
+			);
+			return;
+		}
+		read(lhs_state, rhs_state, position, mode, [&](Symbol, const State lhs_target, const State rhs_target) {
+			move_to(symbol, lhs_target, rhs_target, position + 1, mode);
+		});
+	}
+
+	/// Record the moves that read the first kept aligned level from @p position on in @p mode. Projected levels
+	///  before it, which only the start of a round can have, are read on the way.
+	void read_kept_level(const State lhs_state, const State rhs_state, const size_t position, const Mode mode) {
+		if (is_projected_[position]) {
+			read(lhs_state, rhs_state, position, mode, [&](Symbol, const State lhs_target, const State rhs_target) {
+				if (can_finish(lhs_target, rhs_target, position + 1, mode)) {
+					read_kept_level(lhs_target, rhs_target, position + 1, mode);
+				}
+			});
+			return;
+		}
 		read(
 			lhs_state, rhs_state, position, mode,
 			[&](const Symbol symbol, const State lhs_target, const State rhs_target) {
-				if (next_position == num_of_positions_) {
-					moves_.emplace_back(
-						symbol, intern(lhs_target, rhs_target, start_layer(filter_mode_after(mode, lhs_target)), 0)
-					);
-				} else if (can_finish(lhs_target, rhs_target, next_position, mode)) {
-					moves_.emplace_back(
-						symbol,
-						intern(
-							lhs_target, rhs_target, inner_layer(next_position, mode), static_cast<Level>(next_position)
-						)
-					);
-				}
+				move_to(symbol, lhs_target, rhs_target, position + 1, mode);
 			}
 		);
 	}
@@ -2342,18 +2380,18 @@ class DirectGeneralComposer {
 		if (layer < num_of_filter_modes_) {
 			const auto filter_mode{static_cast<EpsilonFilterMode>(layer)};
 			if (can_finish(lhs_state, rhs_state, 0, Mode::Both)) {
-				read_into_moves(lhs_state, rhs_state, 0, Mode::Both);
+				read_kept_level(lhs_state, rhs_state, 0, Mode::Both);
 			}
 			if (lhs_lookahead_.can_finish_alone(lhs_state) &&
 				epsilon_filter_step(filter_mode, lhs_alone_action_, false, false).has_value()) {
-				read_into_moves(lhs_state, rhs_state, 0, Mode::LhsAlone);
+				read_kept_level(lhs_state, rhs_state, 0, Mode::LhsAlone);
 			}
 			if (rhs_lookahead_.can_finish_alone(rhs_state)) {
-				read_into_moves(lhs_state, rhs_state, 0, Mode::RhsAlone);
+				read_kept_level(lhs_state, rhs_state, 0, Mode::RhsAlone);
 			}
 		} else {
 			const size_t inner{layer - num_of_filter_modes_};
-			read_into_moves(
+			read_kept_level(
 				lhs_state, rhs_state, inner / NUMBER_OF_MODES + 1, static_cast<Mode>(inner % NUMBER_OF_MODES)
 			);
 		}
@@ -2388,6 +2426,10 @@ class DirectGeneralComposer {
 	BoolVector is_sync_ahead_{};
 	BoolVector is_lhs_done_{};
 	BoolVector is_rhs_done_{};
+	/// Indexed by aligned level: whether it is projected out, and the result level of a configuration before it.
+	BoolVector is_projected_{};
+	std::vector<Level> result_level_{};
+	Level num_of_result_levels_{0};
 	/// The result state of each configuration, keyed by the pair of the LHS state and the layer, and the RHS state.
 	TwoDimensionalMap<State, false> configurations_;
 	std::vector<Configuration> configuration_of_{};
@@ -2419,11 +2461,11 @@ std::optional<Nft> algorithms::compose_general_direct(
 		!DirectGeneralComposer::fits(lhs.num_of_states(), schedule.positions.size())) {
 		return std::nullopt;
 	}
-	Nft result{DirectGeneralComposer{lhs, rhs, schedule, lhs_sync_levels, rhs_sync_levels}.compose()};
-	if (project_out_sync_levels) {
-		result.trim();
-		result = project_out(result, schedule.sync_positions(), jump_mode);
-	}
+	Nft result{
+		DirectGeneralComposer{lhs, rhs, schedule, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels}.compose()
+	};
+	// A projected result is trimmed, as the pipeline one is.
+	if (project_out_sync_levels) { result.trim(); }
 	result.alphabets = compose_alphabets(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
 	if (normalization == CompositionNormalization::Full) { normalize_fully(result, jump_mode); }
 	return result;
