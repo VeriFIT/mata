@@ -7,13 +7,14 @@
 
 #include <mutex>
 #include <span>
-#include <version>
-#ifdef __cpp_lib_generator
-	#include <generator>
-#endif
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/generator-support.hh"
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	#include <generator>
+#endif
 
 /**
  * Operations on NFAs/NFTs used for string constraint solving.
@@ -545,7 +546,7 @@ struct NoodleOrder {
 	bool operator==(const NoodleOrder&) const = default;
 };
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 /**
  * @brief Emit the noodles of noodlify_mult_eps() one at a time.
  *

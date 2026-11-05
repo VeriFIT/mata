@@ -48,7 +48,7 @@ runs:
     # AppleClang version numbers do not track upstream LLVM, and the Xcode shipped on macos-latest is not new
     #  enough for the C++23 features Mata uses, so macOS always builds against Homebrew's own "llvm" formula and
     #  ignores the `compiler` input. Its bundled libc++ does not implement <generator> at all yet (libc++ hasn't
-    #  shipped P2502 in any release) -- code needing it must guard on __cpp_lib_generator (see
+    #  shipped P2502 in any release) -- code needing it must guard on MATA_HAS_GENERATOR_SUPPORT (see
     #  mata/utils/generator-support.hh) rather than assume C++23 support implies it.
     - name: Select Clang (macOS)
       if: ${{ inputs.os == 'macos-latest' }}
