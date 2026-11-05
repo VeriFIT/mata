@@ -63,13 +63,14 @@ CheckOptions:
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: "(const_)?(iterator|reverse_iterator)"
   readability-identifier-naming.StructCase: CamelCase
-  readability-identifier-naming.StructIgnoredRegexp: "bool_pack"
+  # 'sorted_unique_t' and 'sorted_unique' mirror the C++23 'std::sorted_unique' tag of the flat containers.
+  readability-identifier-naming.StructIgnoredRegexp: "(bool_pack|sorted_unique_t)"
   readability-identifier-naming.UnionCase: CamelCase
   readability-identifier-naming.EnumCase: CamelCase
   readability-identifier-naming.EnumConstantCase: CamelCase
   readability-identifier-naming.ConceptCase: CamelCase
   readability-identifier-naming.TypeAliasCase: CamelCase
-  readability-identifier-naming.TypeAliasIgnoredRegexp: "((const_)?(iterator|reverse_iterator|reference|pointer)|super|size_type|value_type|difference_type|iterator_category|conjunction)"
+  readability-identifier-naming.TypeAliasIgnoredRegexp: "((const_)?(iterator|reverse_iterator|reference|pointer)|super|size_type|value_type|difference_type|iterator_category|conjunction|type)"
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.TypeTemplateParameterCase: CamelCase
   readability-identifier-naming.ValueTemplateParameterCase: CamelCase
@@ -90,7 +91,7 @@ CheckOptions:
   # ('Limits::max_state'). Mutable globals ('LOG_VERBOSITY') follow the namespace-scope spelling, and
   # 'g_GIT_SHA1' keeps its 'g_' prefix. Include guards ('MATA_NFA_HH_') end in '_'.
   readability-identifier-naming.GlobalConstantCase: UPPER_CASE
-  readability-identifier-naming.GlobalConstantIgnoredRegexp: "g_[A-Z0-9_]*"
+  readability-identifier-naming.GlobalConstantIgnoredRegexp: "(g_[A-Z0-9_]*|sorted_unique)"
   readability-identifier-naming.GlobalVariableCase: UPPER_CASE
   readability-identifier-naming.ClassConstantCase: lower_case
   readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
