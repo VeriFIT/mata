@@ -25,8 +25,6 @@
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/utils/assert.hh>
 
-using std::tie;
-
 using namespace mata::utils;
 using namespace mata::nfa;
 using mata::Symbol;
