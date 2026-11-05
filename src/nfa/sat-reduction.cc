@@ -39,7 +39,7 @@
 	#include <sys/stat.h>
 	#include <sys/wait.h>
 	#include <unistd.h>
-	#if defined(__APPLE__)
+	#ifdef __APPLE__
 		#include <crt_externs.h>
 	#endif
 #endif
@@ -566,7 +566,7 @@ class TemporaryDirectory {
 };
 
 char** environment() {
-	#if defined(__APPLE__)
+	#ifdef __APPLE__
 	return *_NSGetEnviron();
 	#else
 	return environ;
