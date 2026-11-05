@@ -181,7 +181,7 @@ inline constexpr size_t HASH_SEED{
  *  variant is Murmur3's @c fmix32. Without such a finalizer, nearby keys (which is what state identifiers are)
  *  stay nearby in the hash space and share hash-table buckets.
  */
-inline constexpr size_t hash_mix(size_t value) {
+constexpr size_t hash_mix(size_t value) {
 	if constexpr (sizeof(size_t) == 8) {
 		uint64_t mixed{static_cast<uint64_t>(value)};
 		constexpr uint64_t multiplier{0x0e'98'46'af'9b'1a'61'5dULL};
