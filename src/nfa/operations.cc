@@ -6,6 +6,7 @@
 #include <bit>
 #include <cstdint>
 #include <deque>
+#include <iterator>
 #include <limits>
 #include <list>
 #include <numeric>
@@ -2183,7 +2184,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 			const auto* initial_target_it{initial_symbol_post_it->targets.cbegin()};
 			do {
 				if (searched[*initial_target_it]) {
-					++initial_target_it;
+					initial_target_it = std::next(initial_target_it);
 				} else {
 					worklist.emplace_back(initial_symbol_post_it, initial_symbol_post_end, initial_target_it);
 					break;
@@ -2200,7 +2201,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 			if (state_post_it != state_post_end) {
 				if (targets_it != state_post_it->targets.cend()) {
 					if (searched[*targets_it]) {
-						++targets_it;
+						targets_it = std::next(targets_it);
 						continue;
 					}
 					if (final.contains(*targets_it)) {
@@ -2214,7 +2215,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 						const auto* new_targets_it{new_state_post_it->cbegin()};
 						worklist.emplace_back(new_state_post_it, state_post.cend(), new_targets_it);
 					} else {
-						++targets_it;
+						targets_it = std::next(targets_it);
 					}
 				} else { // targets_it == state_post_it->targets.cend().
 					++state_post_it;
@@ -2224,7 +2225,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 				worklist.pop_back();
 				if (!worklist.empty()) {
 					auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{worklist.back()};
-					++prev_targets_it;
+					prev_targets_it = std::next(prev_targets_it);
 				}
 			}
 		}

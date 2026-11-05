@@ -6,6 +6,7 @@
 #include "mata/utils/assert.hh"
 
 #include <algorithm>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <span>
@@ -493,7 +494,7 @@ std::optional<std::vector<mata::Word>>
 		}
 		const Symbol symbol{frame.symbol_post->symbol};
 		const State target{*frame.target};
-		++frame.target;
+		frame.target = std::next(frame.target);
 		const size_t new_counts{symbol == nft::EPSILON ? frame.counts : frame.counts + radix[frame.level]};
 		const size_t new_config{(target * num_of_counts) + new_counts};
 		if (!visit(new_config, SearchNode{.prev = frame.config, .symbol = symbol, .level = frame.level})) { continue; }

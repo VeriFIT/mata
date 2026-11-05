@@ -393,7 +393,7 @@ Delta::Transitions::const_iterator::const_iterator(const Delta& delta, const Sta
 Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator++() {
 	MATA_ASSERT(delta_->begin() != delta_->end());
 
-	++symbol_post_it_;
+	symbol_post_it_ = std::next(symbol_post_it_);
 	if (symbol_post_it_ != state_post_it_->targets.end()) {
 		transition_.target = *symbol_post_it_;
 		return *this;
@@ -717,7 +717,7 @@ StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
 }
 
 StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
-	++target_it_;
+	target_it_ = std::next(target_it_);
 	if (target_it_ != symbol_post_it_->targets.end()) {
 		move_.target = *target_it_;
 		return *this;

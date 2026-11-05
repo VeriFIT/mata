@@ -230,10 +230,7 @@ template <typename Number> class SparseSet {
 	// call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does
 	// not have constant membership)
 	template <class T> bool intersects_with(const T& set) const {
-		for (auto i = set.begin(); i < set.end(); ++i) {
-			if (contains(*i)) { return true; }
-		}
-		return false;
+		return std::ranges::any_of(set, [this](const auto& element) { return contains(element); });
 	}
 
 	/*
