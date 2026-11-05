@@ -303,7 +303,10 @@ TEST_CASE("mata::nft differential: remove_epsilon() keeps the relation", "[diffe
 //  DONT_CARE only the tuples of words of the same length, read without any EPSILON, are compared.
 // The default compose() reads its operands with JumpMode::RepeatSymbol and takes the fast composition when they have
 //  no jump transition, EPSILON or DONT_CARE. Its result must then be the general composition, EPSILON placement
-//  included, which are_equivalent() reads as a letter, for every pair of single synchronization levels.
+//  included, which are_equivalent() reads as a letter, for every pair of single synchronization levels. A one-level
+//  left operand is the layout of Nft::apply(). Two one-level operands composed without projection are the exception:
+//  General synchronizes their EPSILON self-loops into an EPSILON self-loop of the result, which on one level is the
+//  empty word, so these results are compared without EPSILON.
 TEST_CASE(
 	"mata::nft differential: the default composition of jump-free transducers is the general one", "[differential]"
 ) {
@@ -312,9 +315,10 @@ TEST_CASE(
 		std::mt19937 lhs_rng{seed};
 		std::mt19937 rhs_rng{seed + 5'300};
 		const size_t num_of_symbols{1 + seed % 2};
-		const size_t lhs_num_of_levels{2 + seed % 2};
+		const size_t lhs_num_of_levels{1 + seed % 3};
 		const size_t rhs_num_of_levels{1 + (seed / 2) % 3};
-		const Nft lhs{random_nft(lhs_rng, 1 + seed % 3, num_of_symbols, lhs_num_of_levels)};
+		// The number of states varies apart from the number of levels, so one-level operands have several states.
+		const Nft lhs{random_nft(lhs_rng, 1 + (seed / 3) % 4, num_of_symbols, lhs_num_of_levels)};
 		const Nft rhs{random_nft(rhs_rng, 1 + seed % 3, num_of_symbols, rhs_num_of_levels)};
 		INFO(describe(seed, lhs) + "\n---\n" + describe(seed + 5'300, rhs));
 		for (Level lhs_sync_level{0}; lhs_sync_level < lhs_num_of_levels; ++lhs_sync_level) {
@@ -328,7 +332,11 @@ TEST_CASE(
 						CompositionMode::General
 					)};
 					REQUIRE(by_default.levels.num_of_levels == general.levels.num_of_levels);
-					CHECK(are_equivalent(by_default, general));
+					if (lhs_num_of_levels + rhs_num_of_levels == 2) {
+						CHECK(are_equivalent(remove_epsilon(by_default), remove_epsilon(general)));
+					} else {
+						CHECK(are_equivalent(by_default, general));
+					}
 					if (!general.is_lang_empty()) { ++num_of_nonempty; }
 				}
 			}
