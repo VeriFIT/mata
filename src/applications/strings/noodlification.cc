@@ -343,7 +343,10 @@ class NoodleEnumerator {
 	}
 
 	NoodleEnumerator(const NoodleEnumerator&) = delete;
+	NoodleEnumerator(NoodleEnumerator&&) = delete;
 	NoodleEnumerator& operator=(const NoodleEnumerator&) = delete;
+	NoodleEnumerator& operator=(NoodleEnumerator&&) = delete;
+	~NoodleEnumerator() = default;
 
 	/// The next noodle, or std::nullopt if there is none left.
 	std::optional<seg_nfa::NoodleWithEpsilonsCounter> next() {

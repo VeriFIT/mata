@@ -543,7 +543,9 @@ class TemporaryDirectory {
   public:
 	TemporaryDirectory() : path_{create()} {}
 	TemporaryDirectory(const TemporaryDirectory&) = delete;
+	TemporaryDirectory(TemporaryDirectory&&) = delete;
 	TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
+	TemporaryDirectory& operator=(TemporaryDirectory&&) = delete;
 	~TemporaryDirectory() {
 		std::error_code error{};
 		std::filesystem::remove_all(path_, error);
