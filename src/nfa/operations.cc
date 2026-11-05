@@ -1512,7 +1512,7 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 						const std::uint64_t* const a_predecessors_row{
 							&a_predecessors
 								[symbol_offset +
-								 (word * 64 + static_cast<size_t>(std::countr_zero(bits))) * num_of_words]
+								 ((word * 64 + static_cast<size_t>(std::countr_zero(bits))) * num_of_words)]
 						};
 						for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
 					}

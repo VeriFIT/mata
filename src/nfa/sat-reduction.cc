@@ -144,7 +144,8 @@ class AutomatonVariables {
 	size_t num_of_symbols() const { return num_of_symbols_; }
 
 	Literal transition(const State source, const Symbol symbol, const State target) const {
-		return first_transition_ + static_cast<Literal>((source * num_of_symbols_ + symbol) * num_of_states_ + target);
+		return first_transition_ +
+			   static_cast<Literal>(((source * num_of_symbols_ + symbol) * num_of_states_) + target);
 	}
 
 	Literal initial(const State state) const { return first_initial_ + static_cast<Literal>(state); }

@@ -869,12 +869,12 @@ StateSet search_by_words(const Nft& nft, const PostQuery& query, Positions& posi
 			if (!bitmap_fits || visited.size() < bitmap_bits / 256) { return true; }
 			visited_bitmap.resize(bitmap_bits);
 			for (const uint64_t packed : visited) {
-				visited_bitmap[(packed >> 32U) * num_of_states + (packed & 0xFF'FF'FF'FFU)] = true;
+				visited_bitmap[((packed >> 32U) * num_of_states) + (packed & 0xFF'FF'FF'FFU)] = true;
 			}
 			visited = {};
 			return true;
 		}
-		auto bit{visited_bitmap[static_cast<size_t>(positions_id) * num_of_states + state]};
+		auto bit{visited_bitmap[(static_cast<size_t>(positions_id) * num_of_states) + state]};
 		if (bit) { return false; }
 		bit = true;
 		return true;

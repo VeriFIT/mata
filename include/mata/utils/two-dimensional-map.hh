@@ -188,7 +188,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 	static constexpr size_t min_hash_capacity{16};
 
 	uint64_t pack(const T first, const T second) const noexcept {
-		return static_cast<uint64_t>(first) * second_dim_size_ + second;
+		return (static_cast<uint64_t>(first) * second_dim_size_) + second;
 	}
 
 	/**

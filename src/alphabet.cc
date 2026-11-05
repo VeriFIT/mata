@@ -63,7 +63,7 @@ OnTheFlyAlphabet::SymbolNames& OnTheFlyAlphabet::indexed_names(const Symbol symb
 void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_it) {
 	const Symbol symbol{name_it->second};
 	// Grow the dense index while it stays proportional to the number of names; a few huge symbols go to the sparse one.
-	if (symbol >= dense_names_.size() && symbol < 2 * symbol_map_.size() + 64) {
+	if (symbol >= dense_names_.size() && symbol < (2 * symbol_map_.size()) + 64) {
 		Symbol covered{static_cast<Symbol>(dense_names_.size())};
 		dense_names_.resize(symbol + 1);
 		// Move the sparse symbols now covered by the dense index. Looking up the newly covered symbols rather than

@@ -495,7 +495,7 @@ std::optional<std::vector<mata::Word>>
 		const State target{*frame.target};
 		++frame.target;
 		const size_t new_counts{symbol == nft::EPSILON ? frame.counts : frame.counts + radix[frame.level]};
-		const size_t new_config{target * num_of_counts + new_counts};
+		const size_t new_config{(target * num_of_counts) + new_counts};
 		if (!visit(new_config, SearchNode{.prev = frame.config, .symbol = symbol, .level = frame.level})) { continue; }
 		if (new_counts == full_counts && nft.final[target]) { return words_leading_to(new_config); }
 		enter(new_config); // Invalidates 'frame'.

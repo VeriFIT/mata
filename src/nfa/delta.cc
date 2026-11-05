@@ -1004,12 +1004,12 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 	// Dense targets: mark them in a bitset over the words spanning [min_target, max_target] and read them back in
 	//  order, which costs O(targets + words) instead of a sort.
 	const size_t first_word{min_target / 64};
-	const size_t num_of_words{max_target / 64 - first_word + 1};
+	const size_t num_of_words{(max_target / 64) - first_word + 1};
 	if (num_of_words <= num_of_targets) {
 		unify_words_.assign(num_of_words, 0);
 		for (const StatePost::const_iterator& symbol_post_it : current) {
 			for (const State target : symbol_post_it->targets) {
-				unify_words_[target / 64 - first_word] |= uint64_t{1} << (target % 64);
+				unify_words_[(target / 64) - first_word] |= uint64_t{1} << (target % 64);
 			}
 		}
 		size_t num_of_unique_targets{0};
