@@ -2949,6 +2949,107 @@ TEST_CASE("mata::nft::algorithms::CompositionSchedule") {
 	}
 }
 
+TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
+	constexpr mata::Symbol a{'a'}, b{'b'}, c{'c'}, d{'d'}, x{'x'}, y{'y'};
+	// Tracks [A, X, Y] composed with [X, B, Y] on X and Y: the aligned levels are A, X, B, Y.
+	// LHS: round (a, x, y), then optionally (c, EPSILON, EPSILON), which can also go along a waiting RHS.
+	Nft lhs{Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0}}, 7, {0}, {3, 6})};
+	lhs.delta.add(0, a, 1);
+	lhs.delta.add(1, x, 2);
+	lhs.delta.add(2, y, 3);
+	lhs.delta.add(3, c, 4);
+	lhs.delta.add(4, EPSILON, 5);
+	lhs.delta.add(5, EPSILON, 6);
+	// RHS: round (x, b, y), then optionally (EPSILON, d, EPSILON).
+	Nft rhs{Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0}}, 7, {0}, {3, 6})};
+	rhs.delta.add(0, x, 1);
+	rhs.delta.add(1, b, 2);
+	rhs.delta.add(2, y, 3);
+	rhs.delta.add(3, EPSILON, 4);
+	rhs.delta.add(4, d, 5);
+	rhs.delta.add(5, EPSILON, 6);
+
+	for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+		const std::optional<Nft> kept{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode)};
+		REQUIRE(kept.has_value());
+		CHECK(kept->levels.num_of_levels == 4);
+		CHECK(
+			are_equivalent(*kept, algorithms::compose_general(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode), jump_mode)
+		);
+		CHECK(kept->is_in_lang_by_levels({{a}, {x}, {b}, {y}}));
+		CHECK(kept->is_in_lang_by_levels({{a, c}, {x}, {b, d}, {y}}));
+		CHECK(!kept->is_in_lang_by_levels({{a}, {x}, {b}, {}}));
+
+		const std::optional<Nft> projected{
+			algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 2}, true, jump_mode)
+		};
+		REQUIRE(projected.has_value());
+		CHECK(projected->levels.num_of_levels == 2);
+		CHECK(are_equivalent(
+			*projected, algorithms::compose_general(lhs, rhs, {1, 2}, {0, 2}, true, jump_mode), jump_mode
+		));
+		for (const std::vector<mata::Word>& accepted :
+			 {std::vector<mata::Word>{{a}, {b}}, {{a, c}, {b}}, {{a}, {b, d}}, {{a, c}, {b, d}}}) {
+			CHECK(projected->is_in_lang_by_levels(accepted));
+		}
+		for (const std::vector<mata::Word>& rejected :
+			 {std::vector<mata::Word>{{a}, {}}, {{c}, {d}}, {{a, c, c}, {b}}, {{a}, {b, b}}}) {
+			CHECK(!projected->is_in_lang_by_levels(rejected));
+		}
+	}
+
+	SECTION("three synchronization blocks with one-sided levels on both sides") {
+		// LHS tracks [X, A, Y, Z] synchronize X, Y, Z; RHS tracks [B, X, Y, Z] synchronize X, Y, Z.
+		Nft lhs3{Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4})};
+		lhs3.delta.add(0, x, 1);
+		lhs3.delta.add(0, EPSILON, 1);
+		lhs3.delta.add(1, a, 2);
+		lhs3.delta.add(2, y, 3);
+		lhs3.delta.add(2, EPSILON, 3);
+		lhs3.delta.add(3, EPSILON, 4);
+		lhs3.delta.add(4, x, 1);
+		Nft rhs3{Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {0, 4})};
+		rhs3.delta.add(0, b, 1);
+		rhs3.delta.add(1, x, 2);
+		rhs3.delta.add(1, EPSILON, 2);
+		rhs3.delta.add(2, EPSILON, 3);
+		rhs3.delta.add(2, y, 3);
+		rhs3.delta.add(3, EPSILON, 4);
+		rhs3.delta.add(4, b, 1);
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(*direct, algorithms::compose_general(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)));
+			if (project_out) {
+				CHECK(direct->levels.num_of_levels == 2);
+				// The result tracks are [B, A]. A synchronized round (x, a, y, EPSILON | b, x, y, EPSILON), rounds of
+				//  either operand alone on EPSILON synchronization levels, and the LHS reads A in each of its rounds.
+				CHECK(direct->is_in_lang_by_levels({{b}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{b, b, b}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{b}, {a, a}}));
+				CHECK(!direct->is_in_lang_by_levels({{b}, {}}));
+				CHECK(!direct->is_in_lang_by_levels({{a}, {b}}));
+			}
+		}
+	}
+
+	SECTION("outside the domain") {
+		Nft jumping{Nft::with_levels({2, {0, 0}}, 2, {0}, {1})};
+		jumping.delta.add(0, a, 1);
+		CHECK(!algorithms::compose_general_direct(jumping, rhs, {1}, {0}).has_value());
+		Nft dont_care{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+		dont_care.delta.add(0, DONT_CARE, 1);
+		dont_care.delta.add(1, a, 2);
+		CHECK(!algorithms::compose_general_direct(dont_care, rhs, {1}, {0}).has_value());
+		Nft one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
+		one_level.delta.add(0, a, 0);
+		CHECK(!algorithms::compose_general_direct(one_level, one_level, {0}, {0}, false).has_value());
+	}
+}
+
 TEST_CASE("mata::nft::compose_fast_no_jump()") {
 	SECTION("Issue #670") {
 		const Nft lhs{mata::nft::builder::parse_from_mata(

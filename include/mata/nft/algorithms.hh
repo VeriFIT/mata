@@ -5,6 +5,8 @@
 #ifndef MATA_NFT_INTERNALS_HH_
 #define MATA_NFT_INTERNALS_HH_
 
+#include <optional>
+
 #include "mata/simlib/util/binary_relation.hh"
 #include "nft.hh"
 
@@ -326,6 +328,26 @@ struct CompositionSchedule {
  *  this entry point directly does not skip them.
  */
 Nft compose_general(
+	const Nft& lhs,
+	const Nft& rhs,
+	const utils::OrdVector<Level>& lhs_sync_levels,
+	const utils::OrdVector<Level>& rhs_sync_levels,
+	bool project_out_sync_levels = true,
+	JumpMode jump_mode = JumpMode::RepeatSymbol,
+	CompositionNormalization normalization = CompositionNormalization::Auto
+);
+
+/**
+ * @brief The general composition by a direct traversal of the aligned configurations of the two NFTs.
+ *
+ * Builds a result with the relation of @c compose_general(), EPSILON included, without padding copies of the operands:
+ *  an operand reads its own levels and waits on the others. It covers operands without jump transitions and
+ *  without DONT_CARE, under every @p jump_mode (they coincide without jumps), with more than one aligned level.
+ *
+ * @return The composition, or @c std::nullopt for operands outside that domain.
+ * @throws std::invalid_argument When the request is invalid, as @c compose_general().
+ */
+std::optional<Nft> compose_general_direct(
 	const Nft& lhs,
 	const Nft& rhs,
 	const utils::OrdVector<Level>& lhs_sync_levels,
