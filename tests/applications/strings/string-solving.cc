@@ -182,7 +182,7 @@ TEST_CASE("mata::nfa::get_shortest_words() for profiling", "[.profiling][shortes
 namespace {
 /// The longest words by the lazy variant, in the order yielded, or @c std::nullopt for an infinite language.
 std::optional<std::vector<Word>> lazy_longest_words(const Nfa& nfa) {
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 	std::optional<std::generator<Word>> words{get_longest_words_lazy(nfa)};
 	if (!words.has_value()) { return std::nullopt; }
 	std::vector<Word> result{};

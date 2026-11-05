@@ -124,7 +124,7 @@ std::set<Word> get_shortest_words(const Nfa& nfa);
  */
 std::optional<std::set<Word>> get_longest_words(const Nfa& nfa);
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 /**
  * @brief Lazy variant of @c get_longest_words(): yields the longest words one by one, in lexicographic order.
  *

@@ -263,7 +263,7 @@ class LongestWordSearch {
 	bool started_{false};
 };
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 std::generator<mata::Word> longest_words(LongestWordSearch search) {
 	while (const mata::Word* word{search.next()}) { co_yield *word; }
 }
@@ -280,7 +280,7 @@ std::optional<std::set<mata::Word>> mata::applications::strings::get_longest_wor
 	return result;
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
 std::optional<std::generator<mata::Word>> mata::applications::strings::get_longest_words_lazy(const Nfa& nfa) {
 	std::optional<std::vector<State>> longest{get_longest_word_lengths(nfa)};
 	if (!longest.has_value()) { return std::nullopt; }
