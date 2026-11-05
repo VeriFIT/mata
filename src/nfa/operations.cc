@@ -420,7 +420,7 @@ void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 		}
 		for (SymbolPost& symbol_post : nfa.delta.mutable_state_post(source)) {
 			if (std::ranges::none_of(symbol_post.targets, is_covered)) { continue; }
-			StateSet targets{};
+			SmallStateSet targets{};
 			for (const State target : symbol_post.targets) {
 				if (!is_covered(target)) { targets.push_back(target); }
 			}
