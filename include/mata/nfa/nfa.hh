@@ -1011,6 +1011,37 @@ Nfa intersection(
 bool is_intersection_empty(const Nfa& lhs, const Nfa& rhs, Run* witness = nullptr, Symbol first_epsilon = EPSILON);
 
 /**
+ * @brief Compute the left quotient of the language of @p nfa by the language of @p prefixes.
+ *
+ * The left quotient (derivative by a language) is `{ w | there is u in L(prefixes) with u.w in L(nfa) }`: the words
+ *  of @p nfa with a prefix from @p prefixes removed. With @p prefixes accepting a single word `u`, this is the
+ *  Brzozowski derivative of @p nfa by `u`.
+ *
+ * The result is @p nfa with its initial states replaced by the states of @p nfa reachable by reading a word of
+ *  @p prefixes. These are found by exploring the reachable pairs `(state_of_prefixes, state_of_nfa)` directly,
+ *  without materializing the product, and pairs with a useless state of @p prefixes are never explored. The
+ *  result is not trimmed: call `Nfa::trim()` to remove the states no longer reachable.
+ *
+ * Symbols at or above @p first_epsilon move one side only, as in `intersection(lhs, rhs, first_epsilon)`, so
+ *  epsilon transitions of both automata are supported. The epsilon transitions of @p nfa are kept in the result.
+ *
+ * @param[in] nfa NFA whose language is quotiented.
+ * @param[in] prefixes NFA accepting the prefixes to remove.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return NFA for the left quotient of @p nfa by @p prefixes.
+ */
+Nfa left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the left quotient of the language of @p nfa by the language of @p prefixes, consuming @p nfa.
+ *
+ * The transitions of @p nfa are moved into the result instead of copied. @p nfa and @p prefixes may be the same
+ *  automaton. @p nfa is moved from.
+ * @see left_quotient(const Nfa&, const Nfa&, Symbol)
+ */
+Nfa left_quotient(Nfa&& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
+
+/**
  * @brief Concatenate two NFAs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
