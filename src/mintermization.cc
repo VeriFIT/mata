@@ -134,7 +134,11 @@ std::unordered_set<BDD> mata::Mintermization::compute_minterms(const std::unorde
 
 mata::Mintermization::MintermPartition
 	mata::Mintermization::compute_minterms_with_incidence(const std::vector<BDD>& source_bdds) const {
-	if (source_bdds.empty()) { return {std::vector<BDD>{bdd_mng_.bddOne()}, std::vector<std::vector<size_t>>{}}; }
+	if (source_bdds.empty()) {
+		return {
+			.minterms = std::vector<BDD>{bdd_mng_.bddOne()}, .minterms_of_source = std::vector<std::vector<size_t>>{}
+		};
+	}
 
 	// Helper lambda to create an incidence representation
 	auto make_incidence = [&]() -> std::variant<uint64_t, std::vector<size_t>> {

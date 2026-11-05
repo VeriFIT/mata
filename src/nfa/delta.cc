@@ -549,7 +549,7 @@ Delta Delta::reverted(const size_t num_of_states) const {
 	for (State source{0}; source < state_posts_.size(); ++source) {
 		for (const SymbolPost& symbol_post : state_posts_[source]) {
 			for (const State target : symbol_post.targets) {
-				edges[fill_cursors[target]++] = ReversedEdge{symbol_post.symbol, source};
+				edges[fill_cursors[target]++] = ReversedEdge{.symbol = symbol_post.symbol, .source = source};
 			}
 		}
 	}

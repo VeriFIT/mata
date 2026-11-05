@@ -579,7 +579,16 @@ class GeneratedStatesNormalizer {
 			const auto node{static_cast<State>(nodes.size())};
 			const size_t rounds_begin{rounds.size()};
 			collect_rounds(state, rounds);
-			nodes.push_back(Node{state, node, rounds_begin, rounds.size(), true, false});
+			nodes.push_back(
+				Node{
+					.state = state,
+					.low_link = node,
+					.rounds_begin = rounds_begin,
+					.rounds_end = rounds.size(),
+					.on_stack = true,
+					.in_cycle = false
+				}
+			);
 			node_of[state] = node;
 			component_stack.push_back(node);
 			call_stack.emplace_back(node, rounds_begin);

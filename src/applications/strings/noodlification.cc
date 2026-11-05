@@ -105,11 +105,11 @@ std::shared_ptr<const Nfa> make_empty_segment_automaton() {
 std::optional<seg_nfa::NoodleSegment> make_whole_segment(Nfa&& segment, const bool include_empty) {
 	if (segment.initial.empty()) {
 		if (!include_empty) { return std::nullopt; }
-		return seg_nfa::NoodleSegment{make_empty_segment_automaton(), 0};
+		return seg_nfa::NoodleSegment{.automaton = make_empty_segment_automaton(), .initial = 0};
 	}
 	segment.unify_initial();
 	const State initial{*segment.initial.begin()};
-	return seg_nfa::NoodleSegment{std::make_shared<const Nfa>(std::move(segment)), initial};
+	return seg_nfa::NoodleSegment{.automaton = std::make_shared<const Nfa>(std::move(segment)), .initial = initial};
 }
 } // namespace
 
@@ -222,7 +222,11 @@ void share_per_initial_state(
 	const auto reduced{std::make_shared<const Nfa>(mata::nfa::algorithms::reduce_simulation(useful, to_reduced))};
 	for (const State init_state : segment.initial) {
 		if (const auto useful_init{to_useful.find(init_state)}; useful_init != to_useful.end()) {
-			emit(init_state, std::optional{seg_nfa::NoodleSegment{reduced, to_reduced.at(useful_init->second)}});
+			emit(
+				init_state, std::optional{seg_nfa::NoodleSegment{
+								.automaton = reduced, .initial = to_reduced.at(useful_init->second)
+							}}
+			);
 		} else {
 			emit(init_state, std::optional<seg_nfa::NoodleSegment>{});
 		}
@@ -242,7 +246,9 @@ void seg_nfa::segs_one_initial_final(
 			out.insert_or_assign(std::make_pair(init_state, final_state), std::move(*segment));
 		} else if (include_empty) {
 			if (!empty_automaton) { empty_automaton = make_empty_segment_automaton(); }
-			out.insert_or_assign(std::make_pair(init_state, final_state), NoodleSegment{empty_automaton, 0});
+			out.insert_or_assign(
+				std::make_pair(init_state, final_state), NoodleSegment{.automaton = empty_automaton, .initial = 0}
+			);
 		}
 	};
 
@@ -565,10 +571,10 @@ class NoodleEnumerator {
 		if (part_of_fin.automaton != nullptr) {
 			state = part_of_fin.state_of_initial[seg_id == 0 ? 0 : initial_position_[init]];
 		}
-		if (state != Limits::max_state) { return {part_of_fin.automaton, state}; }
+		if (state != Limits::max_state) { return {.automaton = part_of_fin.automaton, .initial = state}; }
 		// Only the pairs of `include_empty_` reach no final state.
 		if (!empty_automaton_) { empty_automaton_ = make_empty_segment_automaton(); }
-		return {empty_automaton_, 0};
+		return {.automaton = empty_automaton_, .initial = 0};
 	}
 
 	void push_segment(const size_t seg_id, const State init, const State fin) {

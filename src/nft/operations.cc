@@ -1258,7 +1258,8 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 			return;
 		}
 		const Level aux_level{static_cast<Level>((new_levels[target] + num_of_levels - 1) % num_of_levels)};
-		const auto [entry, is_new] = auxiliary_states.try_emplace(InvertedAuxKey{source, target, aux_level});
+		const auto [entry, is_new] =
+			auxiliary_states.try_emplace(InvertedAuxKey{.source = source, .target = target, .level = aux_level});
 		if (is_new) {
 			entry->second = add_inverted_state(aux_level);
 			new_transitions.emplace_back(source, DONT_CARE, entry->second);
