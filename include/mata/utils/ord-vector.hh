@@ -102,7 +102,7 @@ template <class Key> class OrdVector {
 	/// Adopt @p vec and sort and deduplicate it in place, saving the copy of the lvalue overload.
 	explicit OrdVector(VectorType&& vec) : vec_{std::move(vec)} { utils::sort_and_rmdupl(vec_); }
 	/// Adopt @p vec as it is; @p vec has to be sorted and free of duplicates already.
-	OrdVector(sorted_unique_t, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
+	OrdVector(sorted_unique_t /*tag*/, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
 	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
 	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
 	template <class T> explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }

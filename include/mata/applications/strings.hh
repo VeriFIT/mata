@@ -294,8 +294,8 @@ class Segmentation {
 	template <typename T> class LazyView {
 	  public:
 		LazyView() = default;
-		LazyView(const LazyView&) {}
-		LazyView(LazyView&&) noexcept {}
+		LazyView(const LazyView& /*other*/) {}
+		LazyView(LazyView&& /*other*/) noexcept {}
 		LazyView& operator=(const LazyView&) = delete;
 		LazyView& operator=(LazyView&&) = delete;
 		~LazyView() = default;
