@@ -214,7 +214,7 @@ template <class Emit>
 void share_per_initial_state(
 	const Nfa& segment,
 	const std::optional<std::reference_wrapper<const mata::utils::SparseSet<State>>> final_states,
-	Emit&& emit
+	Emit emit
 ) {
 	mata::nfa::StateRenaming to_useful;
 	const Nfa useful{trim(segment, &to_useful, std::nullopt, final_states)};

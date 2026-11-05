@@ -338,7 +338,7 @@ template <class Vector, typename Index> void rename(Vector& vec, const std::vect
 	}
 }
 
-template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun&& is_staying) {
+template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -351,7 +351,7 @@ template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun&& is_
 	vec.erase(vec.begin() + static_cast<typename Vector::difference_type>(last), vec.end());
 }
 
-template <class Vector, typename Fun> void filter(Vector& vec, Fun&& is_staying) {
+template <class Vector, typename Fun> void filter(Vector& vec, Fun is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {

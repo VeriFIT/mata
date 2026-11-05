@@ -254,7 +254,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <typename F> void filter(F&& is_staying) {
+	template <typename F> void filter(F is_staying) {
 		for (Number i{0}; i < size_; ++i) {
 			while (i < size_ && !is_staying(dense_[i])) { erase(dense_[i]); }
 		}
@@ -269,7 +269,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <typename F> void rename(F&& renaming) {
+	template <typename F> void rename(F renaming) {
 		for (Number i = 0; i < size_; ++i) {
 			if (dense_[i] != renaming(dense_[i])) {
 				dense_[i] = renaming(dense_[i]);
