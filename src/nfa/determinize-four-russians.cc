@@ -2139,6 +2139,8 @@ std::optional<Nfa> determinize_reduced_automaton(
 /// Scales the estimated cost of the simulation to macrostates (calibrated on nfa-bench).
 constexpr double ADAPTIVE_BUDGET_FACTOR = 0.1;
 constexpr size_t ADAPTIVE_MIN_BUDGET = 1'000;
+/// Keeps the budget in the range of size_t when it has 32 bits (more macrostates than fit in memory there).
+constexpr double ADAPTIVE_MAX_BUDGET = 1e9;
 
 /// determinize_four_russians() with a reduction.
 Nfa determinize_reduced(
@@ -2157,10 +2159,12 @@ Nfa determinize_reduced(
 	const double num_of_states = static_cast<double>(cheap.aut.num_of_states());
 	const double num_of_transitions = static_cast<double>(cheap.aut.delta.num_of_transitions());
 	const double simulation_cost = num_of_transitions * std::sqrt(num_of_transitions) + num_of_states * num_of_states;
+	// At least 1: the reduction of an empty language has no states and no symbol classes.
 	const double macrostate_cost =
-		static_cast<double>(cheap.classes.num_of_classes() + words_for(cheap.aut.num_of_states()));
-	const size_t budget =
-		static_cast<size_t>(ADAPTIVE_BUDGET_FACTOR * simulation_cost / macrostate_cost) + ADAPTIVE_MIN_BUDGET;
+		std::max(static_cast<double>(cheap.classes.num_of_classes() + words_for(cheap.aut.num_of_states())), 1.0);
+	const double scaled_cost =
+		std::min(ADAPTIVE_BUDGET_FACTOR * simulation_cost / macrostate_cost, ADAPTIVE_MAX_BUDGET);
+	const size_t budget = static_cast<size_t>(scaled_cost) + ADAPTIVE_MIN_BUDGET;
 	if (std::optional<Nfa> result = determinize_reduced_automaton(cheap, options, subset_map, budget)) {
 		return std::move(*result);
 	}
