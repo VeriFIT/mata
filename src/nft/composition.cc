@@ -1044,7 +1044,7 @@ Nft compose_fast_no_jump_with(
 	 * @param source The source state of the transition.
 	 * @param symbol_post The symbol post to insert.
 	 */
-	auto insert_symbol_post_to_delta = [&](const State source, const SymbolPost& symbol_post) {
+	auto insert_symbol_post_to_delta = [&](const State source, SymbolPost&& symbol_post) {
 		MATA_ASSERT(not symbol_post.targets.empty());
 		if (normalize_generated) {
 			if (symbol_post.symbol == EPSILON && result.levels[source] == 0) {
@@ -1088,7 +1088,7 @@ Nft compose_fast_no_jump_with(
 			if (normalize_generated) { generated.add(new_composition_state, kind); }
 			MATA_ASSERT(current_level < result.levels.num_of_levels);
 			symbol_post.push_back(new_composition_state);
-			insert_symbol_post_to_delta(current_source, symbol_post);
+			insert_symbol_post_to_delta(current_source, std::move(symbol_post));
 			current_source = new_composition_state;
 		}
 		return current_source;
@@ -1108,7 +1108,7 @@ Nft compose_fast_no_jump_with(
 		State internal_state = create_epsilon_transition_with_common_path(source, common_path_length);
 		SymbolPost symbol_post{EPSILON};
 		symbol_post.insert(target);
-		insert_symbol_post_to_delta(internal_state, symbol_post);
+		insert_symbol_post_to_delta(internal_state, std::move(symbol_post));
 	};
 
 	/**
@@ -1198,7 +1198,7 @@ Nft compose_fast_no_jump_with(
 						);
 					}
 				}
-				insert_symbol_post_to_delta(composition_state, symbol_post);
+				insert_symbol_post_to_delta(composition_state, std::move(symbol_post));
 				return;
 			}
 
@@ -1235,7 +1235,7 @@ Nft compose_fast_no_jump_with(
 						}
 					}
 				}
-				insert_symbol_post_to_delta(composition_state, symbol_post);
+				insert_symbol_post_to_delta(composition_state, std::move(symbol_post));
 			}
 		};
 
@@ -1419,7 +1419,9 @@ Nft compose_fast_no_jump_with(
 					}
 				}
 			}
-			if (!symbol_post.targets.empty()) { insert_symbol_post_to_delta(composition_state, symbol_post); }
+			if (!symbol_post.targets.empty()) {
+				insert_symbol_post_to_delta(composition_state, std::move(symbol_post));
+			}
 		}
 	};
 
@@ -1503,7 +1505,7 @@ Nft compose_fast_no_jump_with(
 			// This function ensures that the transitions are added in the most optimal way.
 			// It creates one common path for all targets and then use only the last transitions of
 			// that path to connect to all targets.
-			insert_symbol_post_to_delta(new_composition_state, symbol_post);
+			insert_symbol_post_to_delta(new_composition_state, std::move(symbol_post));
 			return;
 		}
 
@@ -1611,7 +1613,7 @@ Nft compose_fast_no_jump_with(
 					}
 				}
 				if (!epsilon_symbol_post.targets.empty()) {
-					insert_symbol_post_to_delta(composition_state, epsilon_symbol_post);
+					insert_symbol_post_to_delta(composition_state, std::move(epsilon_symbol_post));
 				}
 			} else if (running_state_level == 0 && !first_running_transition) {
 				// We are at a leaf zero-level state in the running NFT.
@@ -1675,6 +1677,8 @@ Nft compose_fast_no_jump_with(
 		const auto rhs_eps_post_it = rhs.delta[rhs_src].find(EPSILON);
 		const bool lhs_eps_exists = lhs_eps_post_it != lhs.delta[lhs_src].end();
 		const bool rhs_eps_exists = rhs_eps_post_it != rhs.delta[rhs_src].end();
+		// Without an EPSILON post on either side there is no fast EPSILON transition, and nothing to allocate for.
+		if (!lhs_eps_exists && !rhs_eps_exists) { return; }
 
 		StateSet filtered_lhs_fast_eps_targets{lhs_src};
 		StateSet filtered_rhs_fast_eps_targets{rhs_src};
@@ -1733,7 +1737,7 @@ Nft compose_fast_no_jump_with(
 		for (const auto& [rhs_target, next_mode] : rhs_only_targets) {
 			symbol_post.insert(create_composition_state(lhs_src, rhs_target, 0, true, next_mode));
 		}
-		insert_symbol_post_to_delta(source, symbol_post);
+		insert_symbol_post_to_delta(source, std::move(symbol_post));
 	};
 
 	// Initialization of the main worklist.
