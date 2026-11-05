@@ -398,6 +398,19 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 		}
 	}
 
+	SECTION("the largest symbols") {
+		// The size of the bit vector of the used symbols must not overflow for them when size_t has 32 bits.
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		for (const Symbol symbol : {Limits::max_symbol - 1, Limits::max_symbol}) {
+			nfa.delta.add(0, symbol, 1);
+			nfa.delta.add(0, symbol, 2);
+			nfa.delta.add(1, symbol, 2);
+		}
+		check_same_subset_construction_for_all_block_sizes(nfa);
+	}
+
 	SECTION("deterministic automata (copied without a subset construction)") {
 		// A deterministic input is copied, with the states numbered as the subset construction (forced by a discovery
 		//  callback) numbers them.

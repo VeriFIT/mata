@@ -171,7 +171,8 @@ std::vector<Symbol> used_symbols(const Delta& delta) {
 	}
 
 	std::vector<Symbol> symbols;
-	const size_t num_of_words = words_for(size_t{max_symbol} + 1);
+	// Not words_for(max_symbol + 1), which overflows for the largest symbols when size_t has 32 bits.
+	const size_t num_of_words = size_t{max_symbol / WORD_BITS} + 1;
 	// collected in a bit vector when that is cheaper than sorting
 	if (num_of_words <= num_of_symbol_posts) {
 		// Mark the used symbols in a bit vector, then read them out in order.
