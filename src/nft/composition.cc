@@ -1964,6 +1964,51 @@ Nft algorithms::compose_fast_no_jump(
 	return result;
 }
 
+algorithms::CompositionSchedule::CompositionSchedule(
+	const size_t lhs_num_of_levels,
+	const size_t rhs_num_of_levels,
+	const OrdVector<Level>& lhs_sync_levels,
+	const OrdVector<Level>& rhs_sync_levels
+) {
+	MATA_ASSERT(lhs_sync_levels.size() == rhs_sync_levels.size());
+	positions.reserve(lhs_num_of_levels + rhs_num_of_levels - lhs_sync_levels.size());
+	Level lhs_level{0};
+	Level rhs_level{0};
+	// The levels only one operand reads before its level @p lhs_end or @p rhs_end: those of `lhs` first.
+	auto append_one_sided_levels = [&](const size_t lhs_end, const size_t rhs_end) {
+		for (; lhs_level < lhs_end; ++lhs_level) { positions.push_back({Owner::Lhs, lhs_level, rhs_level}); }
+		// Once `lhs` has read its last level, its state is a zero-level state again.
+		const Level waiting_lhs_level{lhs_level == lhs_num_of_levels ? Level{0} : lhs_level};
+		for (; rhs_level < rhs_end; ++rhs_level) { positions.push_back({Owner::Rhs, waiting_lhs_level, rhs_level}); }
+	};
+	for (auto lhs_sync_it{lhs_sync_levels.cbegin()}, rhs_sync_it{rhs_sync_levels.cbegin()};
+		 lhs_sync_it != lhs_sync_levels.cend(); ++lhs_sync_it, ++rhs_sync_it) {
+		append_one_sided_levels(*lhs_sync_it, *rhs_sync_it);
+		positions.push_back({Owner::Sync, lhs_level++, rhs_level++});
+	}
+	append_one_sided_levels(lhs_num_of_levels, rhs_num_of_levels);
+}
+
+BoolVector algorithms::CompositionSchedule::lhs_new_levels_mask() const {
+	BoolVector mask(positions.size(), false);
+	for (size_t i{0}; i < positions.size(); ++i) { mask[i] = positions[i].owner == Owner::Rhs; }
+	return mask;
+}
+
+BoolVector algorithms::CompositionSchedule::rhs_new_levels_mask() const {
+	BoolVector mask(positions.size(), false);
+	for (size_t i{0}; i < positions.size(); ++i) { mask[i] = positions[i].owner == Owner::Lhs; }
+	return mask;
+}
+
+OrdVector<Level> algorithms::CompositionSchedule::sync_positions() const {
+	OrdVector<Level> sync_positions{};
+	for (size_t i{0}; i < positions.size(); ++i) {
+		if (positions[i].owner == Owner::Sync) { sync_positions.push_back(static_cast<Level>(i)); }
+	}
+	return sync_positions;
+}
+
 Nft algorithms::compose_general(
 	const Nft& lhs,
 	const Nft& rhs,
@@ -1992,74 +2037,12 @@ Nft algorithms::compose_general(
 		}
 	};
 
-	// Calculate the number of non-synchronization levels in lhs and rhs before/after each/last synchronization level.
-	// Example:
-	//    Lets suppose we have 2 synchronization levels.
-	//    The vector lhs_nonsync_levels_cnt = { 2, 0, 1 } indicates that
-	//    - before the first synchronization level (i == 0) there are 2 non-synchronization levels
-	//    - before the second synchronization level (i == 1) there are 0 non-synchronization levels
-	//    - after the last synchronization level (i == |sync|) there is 1 non-synchronization level
-	std::vector<unsigned> lhs_nonsync_levels_cnt;
-	std::vector<unsigned> rhs_nonsync_levels_cnt;
-	const size_t num_of_sync_levels = lhs_sync_levels.size();
-	lhs_nonsync_levels_cnt.reserve(num_of_sync_levels + 1);
-	rhs_nonsync_levels_cnt.reserve(num_of_sync_levels + 1);
-	auto lhs_sync_levels_it = lhs_sync_levels.cbegin();
-	auto rhs_sync_levels_it = rhs_sync_levels.cbegin();
-	// Before the first synchronization level (i == 0)
-	lhs_nonsync_levels_cnt.push_back(*lhs_sync_levels_it++);
-	rhs_nonsync_levels_cnt.push_back(*rhs_sync_levels_it++);
-	// Before each synchronization level (i < |sync|)
-	for (size_t i = 1; i < num_of_sync_levels; ++i) {
-		lhs_nonsync_levels_cnt.push_back(*lhs_sync_levels_it - *(lhs_sync_levels_it - 1) - 1);
-		rhs_nonsync_levels_cnt.push_back(*rhs_sync_levels_it - *(rhs_sync_levels_it - 1) - 1);
-		++lhs_sync_levels_it;
-		++rhs_sync_levels_it;
-	}
-	// After the last synchronization level (i == |sync|)
-	lhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(lhs.levels.num_of_levels) - *(lhs_sync_levels_it - 1) - 1);
-	rhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(rhs.levels.num_of_levels) - *(rhs_sync_levels_it - 1) - 1);
-
-	// Construct a mask for new levels in lhs and rhs.
-	// For each synchronization block (non-synchronization levels up to a synchronization transition),
-	// first insert the non-synchronization levels from lhs, then from rhs, and finally the synchronization level
-	// itself. For the last block of non-synchronization levels after the last synchronization level, insert the
-	// non-synchronization levels from lhs first, followed by the levels from rhs. Example:
-	//                 LHS                         |                    RHS
-	// --------------------------------------------+---------------------------------------------
-	//            num_of_levels = 5                |             num_of_levels = 4
-	//          sync_levels = { 2, 4 }             |            sync_levels = { 1, 2 }
-	// --------------------------------------------|---------------------------------------------
-	//       nonsync_levels_cnt = { 2, 1, 0 }      |       nonsync_levels_cnt = { 1, 0, 1 }
-	//  new_levels_mask = { 0, 0, 1, 0, 0, 0, 1 }  |  new_levels_mask = { 1, 1, 0, 0, 1, 0, 0 }
-	auto lhs_nonsync_levels_cnt_it = lhs_nonsync_levels_cnt.cbegin();
-	auto rhs_nonsync_levels_cnt_it = rhs_nonsync_levels_cnt.cbegin();
-	BoolVector lhs_new_levels_mask;
-	BoolVector rhs_new_levels_mask;
-	OrdVector<Level> sync_levels_to_project_out;
-	Level level = 0;
-	const size_t nonsync_levels_cnt_size = lhs_nonsync_levels_cnt.size();
-	for (size_t i = 0; i < nonsync_levels_cnt_size; ++i) {
-		// LHS goes first -> make space (insert new levels) in RHS
-		for (unsigned j = 0; j < *lhs_nonsync_levels_cnt_it; ++j, ++level) {
-			lhs_new_levels_mask.push_back(false);
-			rhs_new_levels_mask.push_back(true);
-		}
-		// RHS goes first -> make space (insert new levels) in LHS
-		for (unsigned j = 0; j < *rhs_nonsync_levels_cnt_it; ++j, ++level) {
-			lhs_new_levels_mask.push_back(true);
-			rhs_new_levels_mask.push_back(false);
-		}
-		// The synchronization level goes last
-		if (i < num_of_sync_levels) {
-			sync_levels_to_project_out.push_back(level);
-			lhs_new_levels_mask.push_back(false);
-			rhs_new_levels_mask.push_back(false);
-			++level;
-		}
-		++lhs_nonsync_levels_cnt_it;
-		++rhs_nonsync_levels_cnt_it;
-	}
+	const CompositionSchedule schedule{
+		lhs.levels.num_of_levels, rhs.levels.num_of_levels, lhs_sync_levels, rhs_sync_levels
+	};
+	const BoolVector lhs_new_levels_mask{schedule.lhs_new_levels_mask()};
+	const BoolVector rhs_new_levels_mask{schedule.rhs_new_levels_mask()};
+	const OrdVector<Level> sync_levels_to_project_out{schedule.sync_positions()};
 
 	// Insert new levels into lhs and rhs.
 	Nft lhs_synced = insert_levels(lhs, lhs_new_levels_mask, {}, jump_mode);

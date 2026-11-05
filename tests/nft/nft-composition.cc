@@ -2894,6 +2894,61 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
 	}
 }
 
+TEST_CASE("mata::nft::algorithms::CompositionSchedule") {
+	using algorithms::CompositionSchedule;
+	using Owner = CompositionSchedule::Owner;
+
+	SECTION("two synchronization blocks and both kinds of one-sided levels") {
+		const CompositionSchedule schedule{5, 4, {2, 4}, {1, 2}};
+		CHECK(
+			schedule.positions == std::vector<CompositionSchedule::Position>{
+									  {Owner::Lhs, 0, 0},
+									  {Owner::Lhs, 1, 0},
+									  {Owner::Rhs, 2, 0},
+									  {Owner::Sync, 2, 1},
+									  {Owner::Lhs, 3, 2},
+									  {Owner::Sync, 4, 2},
+									  {Owner::Rhs, 0, 3},
+								  }
+		);
+		CHECK(schedule.lhs_new_levels_mask() == mata::BoolVector{0, 0, 1, 0, 0, 0, 1});
+		CHECK(schedule.rhs_new_levels_mask() == mata::BoolVector{1, 1, 0, 0, 1, 0, 0});
+		CHECK(schedule.sync_positions() == OrdVector<Level>{3, 5});
+	}
+
+	SECTION("the layout documented at compose_general()") {
+		const CompositionSchedule schedule{7, 8, {0, 2, 5}, {1, 4, 5}};
+		CHECK(
+			schedule.positions == std::vector<CompositionSchedule::Position>{
+									  {Owner::Rhs, 0, 0},
+									  {Owner::Sync, 0, 1},
+									  {Owner::Lhs, 1, 2},
+									  {Owner::Rhs, 2, 2},
+									  {Owner::Rhs, 2, 3},
+									  {Owner::Sync, 2, 4},
+									  {Owner::Lhs, 3, 5},
+									  {Owner::Lhs, 4, 5},
+									  {Owner::Sync, 5, 5},
+									  {Owner::Lhs, 6, 6},
+									  {Owner::Rhs, 0, 6},
+									  {Owner::Rhs, 0, 7},
+								  }
+		);
+		CHECK(schedule.sync_positions() == OrdVector<Level>{1, 5, 8});
+	}
+
+	SECTION("one-level operands and the layout of Nft::apply()") {
+		CHECK(
+			CompositionSchedule{1, 1, {0}, {0}}.positions ==
+			std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}}
+		);
+		const CompositionSchedule apply{1, 2, {0}, {0}};
+		CHECK(apply.positions == std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}, {Owner::Rhs, 0, 1}});
+		CHECK(apply.lhs_new_levels_mask() == mata::BoolVector{0, 1});
+		CHECK(apply.rhs_new_levels_mask() == mata::BoolVector{0, 0});
+	}
+}
+
 TEST_CASE("mata::nft::compose_fast_no_jump()") {
 	SECTION("Issue #670") {
 		const Nft lhs{mata::nft::builder::parse_from_mata(
