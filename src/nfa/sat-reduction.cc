@@ -587,6 +587,8 @@ std::optional<std::filesystem::path> find_executable(const std::string& name) {
 	if (name.find('/') != std::string::npos) {
 		return is_executable_file(name) ? std::optional<std::filesystem::path>{name} : std::nullopt;
 	}
+	// Mata never modifies the environment, so reading it cannot race with a setenv() of its own.
+	// NOLINTNEXTLINE(concurrency-mt-unsafe)
 	const char* const path{std::getenv("PATH")};
 	if (path == nullptr) { return std::nullopt; }
 	std::string_view directories{path};
@@ -665,6 +667,8 @@ std::vector<std::string>
 		return arguments;
 	}};
 	if (!command.empty()) { return resolve(command, "given by the \"solver\" parameter"); }
+	// Mata never modifies the environment, so reading it cannot race with a setenv() of its own.
+	// NOLINTNEXTLINE(concurrency-mt-unsafe)
 	if (const char* const value{std::getenv(variable.c_str())}; value != nullptr && *value != '\0') {
 		return resolve(value, "given by the environment variable " + variable);
 	}
