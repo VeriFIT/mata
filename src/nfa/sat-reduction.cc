@@ -616,6 +616,7 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments, cons
 	::posix_spawn_file_actions_adddup2(&actions, STDOUT_FILENO, STDERR_FILENO);
 
 	std::vector<char*> argv{};
+	argv.reserve(arguments.size() + 1);
 	for (std::string& argument : arguments) { argv.push_back(argument.data()); }
 	argv.push_back(nullptr);
 	pid_t process{};
