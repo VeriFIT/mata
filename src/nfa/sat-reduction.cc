@@ -783,7 +783,7 @@ Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_co
 	if (used_symbols.contains(EPSILON)) { input = trim(remove_epsilon(input)); }
 	const std::vector<Symbol> symbols{input.delta.get_used_symbols().to_vector()}; // Sorted.
 	const Nfa target{with_renamed_symbols(input, [&](const Symbol symbol) {
-		return static_cast<Symbol>(std::lower_bound(symbols.begin(), symbols.end(), symbol) - symbols.begin());
+		return static_cast<Symbol>(std::ranges::lower_bound(symbols, symbol) - symbols.begin());
 	})};
 	const auto restore_symbols{[&](const Nfa& aut) {
 		return with_renamed_symbols(aut, [&](const Symbol symbol) { return symbols[symbol]; }, nfa.alphabet);

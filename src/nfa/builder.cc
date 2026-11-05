@@ -190,6 +190,9 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 	//  `get_symbols_to_work_with()`, which prefers the attached alphabet over the symbols actually used, and would
 	//  thus break printing, completeness checks and completion.
 	std::vector<Symbol> alphabet_symbols(alphabet_size);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(alphabet_symbols.begin(), alphabet_symbols.end(), 0);
 	auto alphabet{std::make_shared<EnumAlphabet>(alphabet_symbols.begin(), alphabet_symbols.end())};
 

@@ -206,6 +206,9 @@ std::vector<State> mata::nfa::algorithms::identical_successor_classes(
 	std::vector<bool> is_hashed(num_of_classes, false);
 	std::vector<bool> is_queued(num_of_classes, true);
 	std::vector<State> worklist(num_of_classes);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(worklist.begin(), worklist.end(), State{0});
 	while (!worklist.empty()) {
 		const State cls{worklist.back()};
@@ -1489,6 +1492,9 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 
 	// Only the row of a state whose successor lost a simulator can lose a simulator, so only those are rechecked.
 	std::vector<State> to_check(num_of_states);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(to_check.begin(), to_check.end(), State{0});
 	std::vector<bool> is_to_check(num_of_states, true);
 	std::vector<std::uint64_t> row(num_of_words);

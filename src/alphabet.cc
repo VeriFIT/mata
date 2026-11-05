@@ -6,6 +6,8 @@
 #include <mata/nft/types.hh>
 #include <mata/utils/assert.hh>
 
+#include <algorithm>
+
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
 using mata::Symbol;
@@ -213,7 +215,7 @@ void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
 std::ostream& mata::OnTheFlyAlphabet::print(std::ostream& os) const {
 	// symbol_map_ is unordered and names may share a value; sort by (value, name) so that the output is deterministic.
 	std::vector<std::pair<std::string, Symbol>> pairs{symbol_map_.begin(), symbol_map_.end()};
-	std::sort(pairs.begin(), pairs.end(), [](const auto& lhs, const auto& rhs) {
+	std::ranges::sort(pairs, [](const auto& lhs, const auto& rhs) {
 		return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
 	});
 	os << '{';
