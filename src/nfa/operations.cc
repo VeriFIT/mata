@@ -13,6 +13,7 @@
 #include <queue>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 // MATA headers
 #include <ranges>
@@ -1441,7 +1442,13 @@ constexpr size_t BIT_ROW_SIMULATION_MAX_STATES{256};
 Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	const size_t num_of_states{aut.num_of_states()};
 	const size_t num_of_words{(num_of_states + 63) / 64};
-	const auto set_bit = [](std::uint64_t* const row, const size_t q) { row[q / 64] |= std::uint64_t{1} << (q % 64); };
+	// The row @p index of a bit matrix with num_of_words words per row.
+	const auto row_of = [num_of_words](auto& matrix, const size_t index) {
+		return std::span{matrix}.subspan(index * num_of_words, num_of_words);
+	};
+	const auto set_bit = [](const std::span<std::uint64_t> row, const size_t q) {
+		row[q / 64] |= std::uint64_t{1} << (q % 64);
+	};
 	std::vector<Symbol> symbols;
 	for (State q{0}; q < num_of_states; ++q) {
 		for (const SymbolPost& symbol_post : aut.delta[q]) { symbols.push_back(symbol_post.symbol); }
@@ -1461,14 +1468,14 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	// The row index_of(a) holds the states with a transition over a.
 	std::vector<std::uint64_t> with_symbol(symbols.size() * num_of_words, 0);
 	for (State q{0}; q < num_of_states; ++q) {
-		if (aut.final[q]) { set_bit(final_states.data(), q); }
+		if (aut.final[q]) { set_bit(final_states, q); }
 		symbol_indices[q].reserve(aut.delta[q].size());
 		for (const SymbolPost& symbol_post : aut.delta[q]) {
 			const size_t symbol_index{index_of(symbol_post.symbol)};
 			symbol_indices[q].push_back(symbol_index);
-			set_bit(&with_symbol[symbol_index * num_of_words], q);
+			set_bit(row_of(with_symbol, symbol_index), q);
 			for (const State target : symbol_post.targets) {
-				set_bit(&a_predecessors[(symbol_index * num_of_states + target) * num_of_words], q);
+				set_bit(row_of(a_predecessors, (symbol_index * num_of_states) + target), q);
 				predecessors[target].push_back(q);
 			}
 		}
@@ -1478,14 +1485,14 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	//  of matching every target against all states.
 	std::vector<std::uint64_t> simulators(num_of_states * num_of_words, 0);
 	for (State p{0}; p < num_of_states; ++p) {
-		std::uint64_t* const row{&simulators[p * num_of_words]};
+		const auto row{row_of(simulators, p)};
 		if (aut.final[p]) {
-			std::ranges::copy(final_states, row);
+			std::ranges::copy(final_states, row.begin());
 		} else {
 			for (State q{0}; q < num_of_states; ++q) { set_bit(row, q); }
 		}
 		for (const size_t symbol_index : symbol_indices[p]) {
-			const std::uint64_t* const with_this_symbol{&with_symbol[symbol_index * num_of_words]};
+			const auto with_this_symbol{row_of(std::as_const(with_symbol), symbol_index)};
 			for (size_t word{0}; word < num_of_words; ++word) { row[word] &= with_this_symbol[word]; }
 		}
 	}
@@ -1503,29 +1510,28 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 		const State p{to_check.back()};
 		to_check.pop_back();
 		is_to_check[p] = false;
-		std::uint64_t* const p_row{&simulators[p * num_of_words]};
-		std::copy_n(p_row, num_of_words, row.begin());
+		const auto p_row{row_of(simulators, p)};
+		std::ranges::copy(p_row, row.begin());
 		auto symbol_index{symbol_indices[p].begin()};
 		for (const SymbolPost& symbol_post : aut.delta[p]) {
-			const size_t symbol_offset{*symbol_index++ * num_of_states * num_of_words};
+			const size_t symbol_rows{*symbol_index++ * num_of_states};
 			for (const State target : symbol_post.targets) {
-				const std::uint64_t* const target_row{&simulators[target * num_of_words]};
+				const auto target_row{row_of(std::as_const(simulators), target)};
 				std::ranges::fill(matching, 0);
 				for (size_t word{0}; word < num_of_words; ++word) {
 					for (std::uint64_t bits{target_row[word]}; bits != 0; bits &= bits - 1) {
-						const std::uint64_t* const a_predecessors_row{
-							&a_predecessors
-								[symbol_offset +
-								 ((word * 64 + static_cast<size_t>(std::countr_zero(bits))) * num_of_words)]
-						};
+						const auto a_predecessors_row{row_of(
+							std::as_const(a_predecessors),
+							symbol_rows + (word * 64) + static_cast<size_t>(std::countr_zero(bits))
+						)};
 						for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
 					}
 				}
 				for (size_t w{0}; w < num_of_words; ++w) { row[w] &= matching[w]; }
 			}
 		}
-		if (!std::equal(row.begin(), row.end(), p_row)) {
-			std::ranges::copy(row, p_row);
+		if (!std::ranges::equal(row, p_row)) {
+			std::ranges::copy(row, p_row.begin());
 			for (const State predecessor : predecessors[p]) {
 				if (!is_to_check[predecessor]) {
 					is_to_check[predecessor] = true;
@@ -1537,7 +1543,7 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 
 	Simlib::Util::BinaryRelation relation{num_of_states, false};
 	for (State p{0}; p < num_of_states; ++p) {
-		const std::uint64_t* const p_row{&simulators[p * num_of_words]};
+		const auto p_row{row_of(std::as_const(simulators), p)};
 		for (State q{0}; q < num_of_states; ++q) { relation.set(p, q, ((p_row[q / 64] >> (q % 64)) & 1) != 0); }
 	}
 	return relation;
