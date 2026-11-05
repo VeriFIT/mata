@@ -2675,7 +2675,10 @@ Nfa mata::nfa::algorithms::quotient_by_simulation(
 }
 
 Nfa mata::nfa::algorithms::reduce_residual(
-	const Nfa& nfa, StateRenaming& state_renaming, const std::string& type, const std::string& direction
+	const Nfa& nfa,
+	[[maybe_unused]] StateRenaming& state_renaming,
+	const std::string& type,
+	const std::string& direction
 ) {
 	Nfa back_determinized = nfa;
 	Nfa result;
