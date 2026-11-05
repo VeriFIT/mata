@@ -2012,7 +2012,8 @@ OrdVector<Level> algorithms::CompositionSchedule::sync_positions() const {
 namespace {
 using algorithms::CompositionSchedule;
 
-/// Whether the direct general composition reads @p nft as the pipeline of @c compose_general() does: @p nft has no jump
+/// Whether the direct general composition reads @p nft as the pipeline of @c compose_general_reference() does: @p nft
+/// has no jump
 ///  transition, which the jump modes read differently, and no DONT_CARE, which the pipeline matches with EPSILON
 ///  (#561).
 bool is_read_directly(const Nft& nft) {
@@ -2095,7 +2096,7 @@ class RoundLookahead {
  * @brief The general composition of two jump-free NFTs without DONT_CARE by a traversal of the aligned
  *  configurations reachable from the initial pairs.
  *
- * The pipeline of @c compose_general() pads copies of the operands to the aligned levels, adds a whole-round
+ * The pipeline of @c compose_general_reference() pads copies of the operands to the aligned levels, adds a whole-round
  *  self-loop of EPSILON and DONT_CARE to each of their zero-level states, and builds their product. A round of that
  *  product is a round of both operands, or a round of one operand against the self-loop of the other one. This class
  *  builds exactly these rounds over the original operands: a configuration is a pair of operand states, the aligned
@@ -2438,9 +2439,9 @@ class DirectGeneralComposer {
 	nfa::DeltaBuilder delta_builder_{};
 	std::vector<std::pair<Symbol, State>> moves_{};
 };
-} // namespace
 
-std::optional<Nft> algorithms::compose_general_direct(
+/// The body of @c compose_general_direct() for a validated request.
+std::optional<Nft> compose_directly(
 	const Nft& lhs,
 	const Nft& rhs,
 	const OrdVector<Level>& lhs_sync_levels,
@@ -2449,9 +2450,6 @@ std::optional<Nft> algorithms::compose_general_direct(
 	const JumpMode jump_mode,
 	const CompositionNormalization normalization
 ) {
-	validate_composition_request(
-		"compose_general_direct", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
-	);
 	const CompositionSchedule schedule{
 		lhs.levels.num_of_levels, rhs.levels.num_of_levels, lhs_sync_levels, rhs_sync_levels
 	};
@@ -2470,8 +2468,48 @@ std::optional<Nft> algorithms::compose_general_direct(
 	if (normalization == CompositionNormalization::Full) { normalize_fully(result, jump_mode); }
 	return result;
 }
+} // namespace
+
+std::optional<Nft> algorithms::compose_general_direct(
+	const Nft& lhs,
+	const Nft& rhs,
+	const OrdVector<Level>& lhs_sync_levels,
+	const OrdVector<Level>& rhs_sync_levels,
+	const bool project_out_sync_levels,
+	const JumpMode jump_mode,
+	const CompositionNormalization normalization
+) {
+	validate_composition_request(
+		"compose_general_direct", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
+	);
+	return compose_directly(
+		lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode, normalization
+	);
+}
 
 Nft algorithms::compose_general(
+	const Nft& lhs,
+	const Nft& rhs,
+	const OrdVector<Level>& lhs_sync_levels,
+	const OrdVector<Level>& rhs_sync_levels,
+	const bool project_out_sync_levels,
+	const JumpMode jump_mode,
+	const CompositionNormalization normalization
+) {
+	validate_composition_request(
+		"compose_general", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
+	);
+	if (std::optional<Nft> direct{compose_directly(
+			lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode, normalization
+		)}) {
+		return std::move(*direct);
+	}
+	return compose_general_reference(
+		lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode, normalization
+	);
+}
+
+Nft algorithms::compose_general_reference(
 	const Nft& lhs,
 	const Nft& rhs,
 	const OrdVector<Level>& lhs_sync_levels,
@@ -2481,7 +2519,7 @@ Nft algorithms::compose_general(
 	const CompositionNormalization normalization
 ) {
 	validate_composition_request(
-		"compose_general", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
+		"compose_general_reference", lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels
 	);
 
 	// Inserts loop into the given Nft for each state with level 0.

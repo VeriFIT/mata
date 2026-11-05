@@ -434,9 +434,14 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 					lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode
 				)};
 				REQUIRE(direct.has_value());
-				const Nft pipeline{
+				// compose_general() dispatches to the direct composition here.
+				CHECK(
 					algorithms::compose_general(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode)
-				};
+						.is_identical(*direct)
+				);
+				const Nft pipeline{algorithms::compose_general_reference(
+					lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode
+				)};
 				REQUIRE(direct->levels.num_of_levels == pipeline.levels.num_of_levels);
 				CHECK(are_equivalent(*direct, pipeline, jump_mode));
 				const std::set<std::vector<Word>> tuples{bounded_tuples(pipeline, num_of_symbols, 2)};

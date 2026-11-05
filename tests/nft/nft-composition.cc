@@ -2973,9 +2973,9 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		const std::optional<Nft> kept{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode)};
 		REQUIRE(kept.has_value());
 		CHECK(kept->levels.num_of_levels == 4);
-		CHECK(
-			are_equivalent(*kept, algorithms::compose_general(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode), jump_mode)
-		);
+		CHECK(are_equivalent(
+			*kept, algorithms::compose_general_reference(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode), jump_mode
+		));
 		CHECK(kept->is_in_lang_by_levels({{a}, {x}, {b}, {y}}));
 		CHECK(kept->is_in_lang_by_levels({{a, c}, {x}, {b, d}, {y}}));
 		CHECK(!kept->is_in_lang_by_levels({{a}, {x}, {b}, {}}));
@@ -2986,7 +2986,7 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		REQUIRE(projected.has_value());
 		CHECK(projected->levels.num_of_levels == 2);
 		CHECK(are_equivalent(
-			*projected, algorithms::compose_general(lhs, rhs, {1, 2}, {0, 2}, true, jump_mode), jump_mode
+			*projected, algorithms::compose_general_reference(lhs, rhs, {1, 2}, {0, 2}, true, jump_mode), jump_mode
 		));
 		for (const std::vector<mata::Word>& accepted :
 			 {std::vector<mata::Word>{{a}, {b}}, {{a, c}, {b}}, {{a}, {b, d}}, {{a, c}, {b, d}}}) {
@@ -3021,7 +3021,9 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 				algorithms::compose_general_direct(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)
 			};
 			REQUIRE(direct.has_value());
-			CHECK(are_equivalent(*direct, algorithms::compose_general(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)));
+			CHECK(are_equivalent(
+				*direct, algorithms::compose_general_reference(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)
+			));
 			if (project_out) {
 				CHECK(direct->levels.num_of_levels == 2);
 				// The result tracks are [B, A]. A synchronized round (x, a, y, EPSILON | b, x, y, EPSILON), rounds of
