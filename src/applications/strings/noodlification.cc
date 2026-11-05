@@ -611,7 +611,9 @@ class NoodleEnumerator {
 };
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 template <class T> std::generator<T> no_noodles() { co_return; }
+MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace
 
@@ -624,11 +626,13 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<seg_nfa::NoodleWithEpsilonsCounter>
 	seg_nfa::noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty, NoodleOrder order) {
 	NoodleEnumerator enumerator{aut, epsilons, include_empty, order};
 	while (auto noodle{enumerator.next()}) { co_yield std::move(*noodle); }
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
@@ -762,6 +766,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation_lazy(
 	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
 	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
@@ -775,6 +780,7 @@ std::generator<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equatio
 		std::move(*product), {mata::nfa::EPSILON, mata::nfa::EPSILON - 1}, include_empty, order
 	);
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
@@ -986,11 +992,13 @@ class TransducerElements {
 };
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<TransducerNoodle> transducer_noodles(Nfa product, const NoodleOrder order) {
 	NoodleEnumerator noodles{product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, order};
 	TransducerElements elements{};
 	while (auto noodle{noodles.next()}) { co_yield elements.make(*noodle); }
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace
 
@@ -1013,6 +1021,7 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 	const std::shared_ptr<Nft>& nft,
 	const std::vector<std::shared_ptr<Nfa>>& input_automata,
@@ -1027,5 +1036,6 @@ std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 	if (!product) { return no_noodles<TransducerNoodle>(); }
 	return transducer_noodles(std::move(*product), order);
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace mata::applications::strings::seg_nfa
