@@ -335,7 +335,7 @@ void mata::Mintermization::minterms_to_aut_nfa(
 	// The minterms below the BDD of the symbol part of a transition, or nullptr if the transition had a zero BDD and
 	//  so was not added to the map.
 	const auto minterms_of_transition{[&](const FormulaGraph& formula_graph) -> const std::vector<size_t>* {
-		const auto bdd{trans_to_bddvar_.find(&formula_graph.children[0])};
+		const auto bdd{trans_to_bddvar_.find(formula_graph.children.data())};
 		if (bdd == trans_to_bddvar_.end()) { return nullptr; }
 		return minterms_below(bdd->second, source_bdd_to_index_, minterms_of_source);
 	}};
