@@ -1042,6 +1042,37 @@ Nfa left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol first_epsilon = EP
 Nfa left_quotient(Nfa&& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
 
 /**
+ * @brief Compute the right quotient of the language of @p nfa by the language of @p suffixes.
+ *
+ * The right quotient is `{ u | there is w in L(suffixes) with u.w in L(nfa) }`: the words of @p nfa with a suffix
+ *  from @p suffixes removed.
+ *
+ * The result is @p nfa with its final states replaced by the states of @p nfa from which @p nfa accepts a word of
+ *  @p suffixes. These are found as in `left_quotient()`, but backward: pairs of a state of the reverted @p suffixes
+ *  and a state of @p nfa are explored from the final states of both, moving @p nfa against its transitions over an
+ *  index of predecessors, without reverting @p nfa or materializing the product. The result is not trimmed: call
+ *  `Nfa::trim()` to remove the states that no longer reach a final state.
+ *
+ * Symbols at or above @p first_epsilon move one side only, as in `intersection(lhs, rhs, first_epsilon)`, so
+ *  epsilon transitions of both automata are supported. The epsilon transitions of @p nfa are kept in the result.
+ *
+ * @param[in] nfa NFA whose language is quotiented.
+ * @param[in] suffixes NFA accepting the suffixes to remove.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return NFA for the right quotient of @p nfa by @p suffixes.
+ */
+Nfa right_quotient(const Nfa& nfa, const Nfa& suffixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the right quotient of the language of @p nfa by the language of @p suffixes, consuming @p nfa.
+ *
+ * The transitions of @p nfa are moved into the result instead of copied. @p nfa and @p suffixes may be the same
+ *  automaton. @p nfa is moved from.
+ * @see right_quotient(const Nfa&, const Nfa&, Symbol)
+ */
+Nfa right_quotient(Nfa&& nfa, const Nfa& suffixes, Symbol first_epsilon = EPSILON);
+
+/**
  * @brief Concatenate two NFAs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.

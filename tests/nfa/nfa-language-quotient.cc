@@ -1,4 +1,4 @@
-/* nfa-left-quotient.cc -- Tests for the left quotient of NFA languages.
+/* nfa-language-quotient.cc -- Tests for the left and right quotients of NFA languages.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -19,6 +19,18 @@ Nfa reference_left_quotient(const Nfa& nfa, const Nfa& prefixes) {
 		Nfa nfa_to_state{nfa};
 		nfa_to_state.final = {state};
 		if (!is_intersection_empty(nfa_to_state, prefixes)) { result.initial.insert(state); }
+	}
+	return result;
+}
+
+/// Reference: q is final in the quotient iff @p nfa accepts some word of @p suffixes from q.
+Nfa reference_right_quotient(const Nfa& nfa, const Nfa& suffixes) {
+	Nfa result{nfa};
+	result.final.clear();
+	for (State state{0}; state < nfa.num_of_states(); ++state) {
+		Nfa nfa_from_state{nfa};
+		nfa_from_state.initial = {state};
+		if (!is_intersection_empty(nfa_from_state, suffixes)) { result.final.insert(state); }
 	}
 	return result;
 }
@@ -129,6 +141,81 @@ TEST_CASE("mata::nfa::left_quotient()") {
 			prefixes.final.insert(19'999);
 			CAPTURE(seed);
 			CHECK(OrdVector<State>{left_quotient(nfa, prefixes).initial} == expected);
+		}
+	}
+}
+
+TEST_CASE("mata::nfa::right_quotient()") {
+	SECTION("quotient by a single word") {
+		const Nfa nfa{builder::create_from_regex("c*ba|db|ba")};
+		CHECK(are_equivalent(
+			right_quotient(nfa, builder::create_single_word_nfa(mata::Word{'a'})), builder::create_from_regex("c*b|b")
+		));
+		CHECK(are_equivalent(
+			right_quotient(nfa, builder::create_single_word_nfa(mata::Word{'b', 'a'})), builder::create_from_regex("c*")
+		));
+		CHECK(are_equivalent(
+			right_quotient(nfa, builder::create_single_word_nfa(mata::Word{'b'})), builder::create_from_regex("d")
+		));
+		CHECK(right_quotient(nfa, builder::create_single_word_nfa(mata::Word{'c'})).is_lang_empty());
+	}
+
+	SECTION("quotient by a language") {
+		const Nfa nfa{builder::create_from_regex("cba*|da*")};
+		CHECK(are_equivalent(right_quotient(nfa, builder::create_from_regex("a*")), nfa));
+		CHECK(are_equivalent(right_quotient(nfa, builder::create_from_regex("ba*")), builder::create_from_regex("c")));
+		CHECK(
+			are_equivalent(right_quotient(nfa, builder::create_from_regex("(b|d)a+")), builder::create_from_regex("c|"))
+		);
+	}
+
+	SECTION("suffixes with the empty word keep the language") {
+		const Nfa nfa{builder::create_from_regex("b*a")};
+		CHECK(are_equivalent(right_quotient(nfa, builder::create_from_regex("|b")), nfa));
+	}
+
+	SECTION("suffixes or nfa with an empty language give an empty language") {
+		const Nfa nfa{builder::create_from_regex("b*a")};
+		Nfa suffixes{builder::create_single_word_nfa(mata::Word{'a'})};
+		suffixes.final.clear();
+		CHECK(right_quotient(nfa, suffixes).is_lang_empty());
+		CHECK(right_quotient(nfa, Nfa{}).is_lang_empty());
+		CHECK(right_quotient(Nfa{}, builder::create_from_regex("a*")).is_lang_empty());
+	}
+
+	SECTION("epsilon transitions in both automata") {
+		// nfa: a eps b, suffixes: b eps.
+		Nfa nfa{4, {0}, {3}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, EPSILON, 2);
+		nfa.delta.add(2, 'b', 3);
+		Nfa suffixes{2, {0}, {2}};
+		suffixes.delta.add(0, 'b', 1);
+		suffixes.delta.add(1, EPSILON, 2);
+		const Nfa result{right_quotient(nfa, suffixes)};
+		CHECK(result.is_in_lang(mata::Word{'a'}, true));
+		CHECK(!result.is_in_lang(mata::Word{'a', 'b'}, true));
+		CHECK(!result.is_in_lang(mata::Word{}, true));
+	}
+
+	SECTION("consuming overload with suffixes aliasing nfa") {
+		Nfa nfa{builder::create_from_regex("ab|abab")};
+		const Nfa expected{builder::create_from_regex("|ab")};
+		CHECK(are_equivalent(right_quotient(std::move(nfa), nfa), expected));
+	}
+
+	SECTION("random automata match the reference") {
+		for (unsigned seed{0}; seed < 200; ++seed) {
+			Nfa nfa{builder::create_random_nfa_tabakov_vardi(12, 3, 1.0, 0.3, seed)};
+			Nfa suffixes{builder::create_random_nfa_tabakov_vardi(5, 3, 0.8, 0.3, seed + 1'000)};
+			if (seed % 2 == 1) {
+				nfa.delta.add(seed % 12, EPSILON, (seed * 7) % 12);
+				suffixes.delta.add(seed % 5, EPSILON, (seed * 3) % 5);
+			}
+			const Nfa expected{reference_right_quotient(nfa, suffixes)};
+			CAPTURE(seed);
+			CHECK(OrdVector<State>{right_quotient(nfa, suffixes).final} == OrdVector<State>{expected.final});
+			CHECK(OrdVector<State>{right_quotient(Nfa{nfa}, suffixes).final} == OrdVector<State>{expected.final});
 		}
 	}
 }
