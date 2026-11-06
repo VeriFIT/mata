@@ -396,6 +396,8 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 			}
 
 			ProcessedAntichain& antichain{processed_of(smaller_succ)};
+			// 'bigger_succ' is moved from only for the last target, after which the loop ends.
+			// NOLINTNEXTLINE(bugprone-use-after-move)
 			if (antichain.subsumes(nodes, bigger_succ, bigger_succ_signature)) { continue; }
 			antichain.prune(nodes, bigger_succ, bigger_succ_signature);
 			const size_t succ_idx{nodes.size()};
@@ -404,6 +406,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 			nodes.push_back(
 				Node{
 					.smaller_state = smaller_succ,
+					// NOLINTNEXTLINE(clang-analyzer-cplusplus.Move): see 'bigger_succ' above.
 					.bigger_set = last_target ? std::move(bigger_succ) : bigger_succ,
 					.signature = bigger_succ_signature,
 					.dominated = false,
