@@ -216,12 +216,23 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
 cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
     cdef CBinaryRelation c_compute_relation "mata::nfa::algorithms::compute_relation" (CNfa&, ParameterMap&) except + nogil
 
+    cdef enum CFourRussiansReduction "mata::nfa::algorithms::FourRussiansReduction":
+        FourRussiansReductionNone "mata::nfa::algorithms::FourRussiansReduction::None"
+        FourRussiansReductionBisimulation "mata::nfa::algorithms::FourRussiansReduction::Bisimulation"
+        FourRussiansReductionSimulation "mata::nfa::algorithms::FourRussiansReduction::Simulation"
+        FourRussiansReductionAdaptive "mata::nfa::algorithms::FourRussiansReduction::Adaptive"
+
+    cdef cppclass CFourRussiansOptions "mata::nfa::algorithms::FourRussiansOptions":
+        unsigned block_size
+        CFourRussiansReduction reduction
+
 # The long-running entry points are declared `except + nogil` so that the callers can run them without the GIL.
 # The C++ library does not synchronise anything: concurrent calls may only read the automata and alphabets they
 # are given, and no other thread may mutate them meanwhile (`OnTheFlyAlphabet::translate_symb` mutates).
 cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void get_elements(StateSet*, CBoolVector) except +
-    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*) except + nogil
+    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*, ParameterMap&) except + nogil
+    cdef void c_determinize_four_russians "mata::nfa::plumbing::determinize_four_russians" (CNfa*, CNfa&, CFourRussiansOptions&, umap[StateSet, State]*) except + nogil
     cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&) except + nogil
     cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State, CPairHash[State, State]]*) except + nogil
     cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*) except + nogil

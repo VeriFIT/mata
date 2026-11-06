@@ -1809,6 +1809,38 @@ Nfa mata::nfa::determinize(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map,
 	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
+	const OrdVector<Symbol>* const restrict_to_symbols,
+	const ParameterMap& params
+) {
+	if (!haskey(params, "algorithm")) {
+		throw std::runtime_error(
+			std::to_string(__func__) +
+			" requires setting the \"algorithm\" key in the \"params\" argument; "
+			"received: " +
+			std::to_string(params)
+		);
+	}
+
+	const std::string& str_algo = params.at("algorithm");
+	if ("four_russians" == str_algo) {
+		return algorithms::determinize_four_russians(
+			aut, {}, subset_map, std::move(macrostate_discover), restrict_to_symbols
+		);
+	}
+
+	if ("classical" == str_algo) {
+		return algorithms::determinize_classical(aut, subset_map, std::move(macrostate_discover), restrict_to_symbols);
+	}
+
+	throw std::runtime_error(
+		std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+	);
+}
+
+Nfa mata::nfa::algorithms::determinize_classical(
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map,
+	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
 	const OrdVector<Symbol>* const restrict_to_symbols
 ) {
 	// DFA fast path: a scalar depth-first renumbering reproduces the numbering of the generic subset

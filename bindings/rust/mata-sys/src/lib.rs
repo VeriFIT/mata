@@ -44,6 +44,16 @@ pub mod ffi {
 		Brzozowski,
 	}
 
+	/// Determinization algorithm.
+	#[repr(u8)]
+	#[derive(Debug)]
+	enum Determinization {
+		/// The "Four Russians" subset construction.
+		FourRussians,
+		/// The classical subset construction.
+		Classical,
+	}
+
 	/// Minimization algorithm.
 	#[repr(u8)]
 	#[derive(Debug)]
@@ -262,7 +272,7 @@ pub mod ffi {
 			algorithm: Complementation,
 		) -> Result<UniquePtr<Nfa>>;
 		/// An equivalent DFA, by the subset construction.
-		fn determinize(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
+		fn determinize(nfa: &Nfa, algorithm: Determinization) -> Result<UniquePtr<Nfa>>;
 		/// The trimmed minimal DFA (determinizes and trims first for Hopcroft); for the empty language, a
 		/// single non-final initial state.
 		fn minimize(nfa: &Nfa, algorithm: Minimization) -> Result<UniquePtr<Nfa>>;

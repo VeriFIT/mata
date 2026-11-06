@@ -1,5 +1,6 @@
 from array import array
 from collections.abc import Iterable, Iterator
+from enum import IntEnum
 from typing import Any, Literal, Required, Self, TypedDict, overload
 
 import networkx
@@ -604,18 +605,64 @@ class Nfa:
         """
 
 # Operations
-def determinize_with_subset_map(lhs: Nfa) -> tuple[Nfa, dict[tuple[State], State]]:
+def determinize_with_subset_map(
+    lhs: Nfa, params: dict[Literal["algorithm"], Literal["four_russians", "classical"]] | None = None
+) -> tuple[Nfa, dict[tuple[State], State]]:
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
+    :param Dict params: Additional parameters for the determinization:
+      - "algorithm":
+        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+          default.
+        - "classical": The classical subset construction.
+        Both give the same DFA up to the numbering of its states.
     :return: deterministic finite automaton, subset map
     """
 
-def determinize(lhs: Nfa) -> Nfa:
+def determinize(
+    lhs: Nfa, params: dict[Literal["algorithm"], Literal["four_russians", "classical"]] | None = None
+) -> Nfa:
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
+    :param Dict params: Additional parameters for the determinization:
+      - "algorithm":
+        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+          default.
+        - "classical": The classical subset construction.
+        Both give the same DFA up to the numbering of its states.
     :return: deterministic finite automaton
+    """
+
+class FourRussiansReduction(IntEnum):
+    """Reduction of the DFA of `determinize_four_russians()`: a smaller DFA for the same language, not always minimal."""
+
+    Bisimulation = 1
+    Simulation = 2
+    Adaptive = 3
+
+def determinize_four_russians(lhs: Nfa, block_size: int = 0, reduction: FourRussiansReduction | None = None) -> Nfa:
+    """Determinize the lhs automaton by the "Four Russians" subset construction.
+
+    The same construction as the default of `determinize()`, with its options. With a reduction, gives a smaller DFA
+    for the same language.
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
+    :param FourRussiansReduction reduction: reduction of the result, or None for no reduction
+    :return: deterministic finite automaton
+    """
+
+def determinize_four_russians_with_subset_map(
+    lhs: Nfa, block_size: int = 0, reduction: FourRussiansReduction | None = None
+) -> tuple[Nfa, dict[tuple[State], State]]:
+    """Determinize the lhs automaton by the "Four Russians" subset construction, see `determinize_four_russians()`.
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
+    :param FourRussiansReduction reduction: reduction of the result, or None for no reduction
+    :return: deterministic finite automaton, subset map (with a reduction, merged states appear as one of them)
     """
 
 def union(lhs: Nfa, rhs: Nfa) -> Nfa:

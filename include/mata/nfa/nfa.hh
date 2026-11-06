@@ -1227,6 +1227,12 @@ Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}
  * @param[in] restrict_to_symbols When not @c nullptr, determinize over these symbols only. Transitions over any other
  *  symbol are ignored, so the macrostates reachable only over such a transition are never constructed. The caller
  *  gets the determinization of @p aut with its transitions restricted to @p restrict_to_symbols.
+ * @param[in] params Optional parameters to control the determinization algorithm:
+ * - "algorithm":
+ *      - "four_russians" (default): The "Four Russians" subset construction, see
+ *                                   @c algorithms::determinize_four_russians().
+ *      - "classical": The classical subset construction, see @c algorithms::determinize_classical().
+ *   Both give the same DFA up to the numbering of its states.
  * @return Determinized automaton.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
@@ -1234,8 +1240,19 @@ Nfa determinize(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
 	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
-	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr,
+	const ParameterMap& params = {{"algorithm", "four_russians"}}
 );
+
+/**
+ * @brief Determinize automaton by the algorithm of @p params.
+ *
+ * See @c determinize(const Nfa&, std::unordered_map<StateSet, State>*, std::optional<std::function<bool(const Nfa&,
+ *  State, const StateSet&)>>, const utils::OrdVector<Symbol>*, const ParameterMap&).
+ */
+inline Nfa determinize(const Nfa& aut, const ParameterMap& params) {
+	return determinize(aut, nullptr, std::nullopt, nullptr, params);
+}
 
 /**
  * @brief Return a deterministic version of @p aut, avoiding the determinization machinery when possible.

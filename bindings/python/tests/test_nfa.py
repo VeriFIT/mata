@@ -219,6 +219,51 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     assert sm_map == {(0,): 0, (0, 1): 1}
 
 
+def test_determinize_four_russians(nfa_two_states_uni):
+    """Tests the "Four Russians" determinisation against the classical one."""
+    for block_size in (0, 1, 2, 64):
+        dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa_two_states_uni, block_size)
+        assert dfa.is_deterministic()
+        assert subset_map == {(0,): 0, (0, 1): 1}
+
+    nfa = _nth_symbol_from_the_end_nfa(7)
+    classic = mata_nfa.determinize(nfa, {"algorithm": "classical"})
+    for block_size in (0, 1, 8):
+        dfa = mata_nfa.determinize_four_russians(nfa, block_size)
+        assert dfa.is_deterministic()
+        assert dfa.num_of_states() == classic.num_of_states() == 2**7
+        assert mata_nfa.equivalence_check(dfa, nfa)
+
+    for reduction in mata_nfa.FourRussiansReduction:
+        dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa, reduction=reduction)
+        assert dfa.is_deterministic()
+        assert dfa.num_of_states() <= classic.num_of_states()
+        assert mata_nfa.equivalence_check(dfa, nfa)
+
+    with pytest.raises(ValueError):
+        mata_nfa.determinize_four_russians(nfa, block_size=3)
+    with pytest.raises(ValueError):
+        mata_nfa.determinize_four_russians(nfa, reduction=7)
+
+
+def test_determinize_algorithm(nfa_two_states_uni):
+    """Tests the choice of the algorithm in determinize()."""
+    for params in (None, {"algorithm": "four_russians"}, {"algorithm": "classical"}):
+        dfa, subset_map = mata_nfa.determinize_with_subset_map(nfa_two_states_uni, params)
+        assert dfa.is_deterministic()
+        assert subset_map == {(0,): 0, (0, 1): 1}
+
+    nfa = _nth_symbol_from_the_end_nfa(7)
+    dfa = mata_nfa.determinize(nfa, {"algorithm": "classical"})
+    assert dfa.num_of_states() == mata_nfa.determinize(nfa).num_of_states() == 2**7
+    assert mata_nfa.equivalence_check(dfa, nfa)
+
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize(nfa, {"algorithm": "subset"})
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize_with_subset_map(nfa, {"type": "classical"})
+
+
 def test_forward_reach_states(fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight):
     assert fa_one_divisible_by_two.get_reachable_states() == set(range(3))
     assert fa_one_divisible_by_four.get_reachable_states() == set(range(5))
@@ -1040,6 +1085,7 @@ def _nth_symbol_from_the_end_nfa(n):
     [
         lambda aut, other, alphabet: mata_nfa.determinize(aut),
         lambda aut, other, alphabet: mata_nfa.determinize_with_subset_map(aut),
+        lambda aut, other, alphabet: mata_nfa.determinize_four_russians(aut),
         lambda aut, other, alphabet: mata_nfa.minimize(aut),
         lambda aut, other, alphabet: mata_nfa.complement(aut, alphabet),
         lambda aut, other, alphabet: mata_nfa.reduce(other),
@@ -1049,6 +1095,7 @@ def _nth_symbol_from_the_end_nfa(n):
     ids=[
         "determinize",
         "determinize_with_subset_map",
+        "determinize_four_russians",
         "minimize",
         "complement",
         "reduce",
