@@ -9,10 +9,8 @@
 ///  support implies it.
 // A macro, not a 'constexpr' constant: it guards '#if' blocks around the declarations that need 'std::generator'.
 #ifdef __cpp_lib_generator
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_HAS_GENERATOR_SUPPORT 1
 #else
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_HAS_GENERATOR_SUPPORT 0
 #endif
 
@@ -24,15 +22,11 @@
 ///  libstdc++'s own test suite.
 // Macros, not pragmas written out at each site: '_Pragma' is the only way to make them conditional on the compiler.
 #if defined(__GNUC__) && !defined(__clang__)
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_GENERATOR_COROUTINE_BEGIN                                                                             \
 		_Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wmismatched-new-delete\"")
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_GENERATOR_COROUTINE_END _Pragma("GCC diagnostic pop")
 #else
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_GENERATOR_COROUTINE_BEGIN
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 	#define MATA_GENERATOR_COROUTINE_END
 #endif
 

@@ -21,13 +21,11 @@
 
 /// Macro for debug outputs. A macro, not a function: the arguments must stay unevaluated unless the verbosity level
 ///  asks for the output.
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): lazy evaluation of the arguments is the point of the macro.
 #define PRINT_VERBOSE_LVL(lvl, title, x)                                                                               \
 	{                                                                                                                  \
 		if (mata::LOG_VERBOSITY >= (lvl)) { std::cerr << (title) << ": " << x << "\n"; }                               \
 	}
 
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): see 'PRINT_VERBOSE_LVL' above.
 #define PRINT_VERBOSE_LVL_LN(lvl, title, x)                                                                            \
 	{PRINT_VERBOSE_LVL((lvl), (title), __FILE__ << ":" << __func__ << ":" << __LINE__ << ": ")}
 
@@ -44,7 +42,6 @@
 	{ PRINT_VERBOSE_LVL(4, "debug VM", x); }
 #define DEBUG_VM_LOW_PRINT_LN(x)                                                                                       \
 	{ PRINT_VERBOSE_LVL_LN(4, "debug VM", x); }
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): see 'PRINT_VERBOSE_LVL' above.
 #define WARN_PRINT(x)                                                                                                  \
 	{ PRINT_VERBOSE_LVL(1, "warning", x); }
 

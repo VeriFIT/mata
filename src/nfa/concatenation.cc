@@ -27,7 +27,6 @@ template <typename RhsNfa>
 Nfa concatenate_eps_consuming(
 	Nfa&& lhs,
 	// A forwarding reference only to take a const operand or one to consume, which is used in place.
-	// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 	RhsNfa&& rhs,
 	const Symbol& epsilon,
 	const bool use_epsilon,

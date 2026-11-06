@@ -126,8 +126,6 @@ class SymbolPost {
 	 * The innermost level of the traversal that @c mata::Automaton is written against.
 	 *  Callers above this level never need to know how the targets are stored.
 	 */
-	// 'fn' is called once per target: forwarding it would invoke an rvalue callable as an rvalue on every call.
-	// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 	template <typename Fn> void for_each_target(Fn&& fn) const {
 		for (const State target : targets) { fn(target); }
 	}
@@ -314,8 +312,6 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	/**
 	 * @brief Apply @p fn to every target state reachable from this state post, over any symbol.
 	 */
-	// 'fn' is called once per symbol post: forwarding it would invoke an rvalue callable as an rvalue on every call.
-	// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 	template <typename Fn> void for_each_target(Fn&& fn) const {
 		for (const SymbolPost& symbol_post : *this) { symbol_post.for_each_target(fn); }
 	}
@@ -323,8 +319,6 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	/**
 	 * @brief Apply @p fn to every @c Move of this state post, as a (symbol, target) pair.
 	 */
-	// 'fn' is called once per move: forwarding it would invoke an rvalue callable as an rvalue on every call.
-	// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 	template <typename Fn> void for_each_move(Fn&& fn) const {
 		for (const SymbolPost& symbol_post : *this) {
 			symbol_post.for_each_target([&](const State target) { fn(symbol_post.symbol, target); });
@@ -380,8 +374,6 @@ class SuccessorCursor {
 		}
 		const State& operator*() const { return *target_it_; }
 		const_iterator& operator++() {
-			// The cursor walks one contiguous target span; advancing the pointer is the point of the flattened walk.
-			// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 			if (++target_it_ == target_end_) { seek(); }
 			return *this;
 		}

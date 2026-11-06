@@ -29,7 +29,6 @@ template <typename RhsNft>
 Nft concatenate_eps_consuming(
 	Nft&& lhs,
 	// A forwarding reference only to take a const operand or one to consume, which is used in place.
-	// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 	RhsNft&& rhs,
 	const Symbol& epsilon,
 	const bool use_epsilon,
