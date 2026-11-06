@@ -6,9 +6,12 @@ import '../just/common.just'
 [default]
 build: doxygen html
 
-# Generate the Doxygen XML reference of the C++ API.
+# Generate the Doxygen XML reference of the C++ API, in the build directory of MODE.
+# The root Makefile's 'docs' target configures its build as Debug, so the build of MODE is made here and only its
+# 'docs' target is run.
 doxygen MODE=BUILD_MODE:
-	make -C '{{ ROOT }}' docs BUILD_DIR='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}' JOBS='{{ JOBS }}'
+	make -C '{{ ROOT }}' '{{ MODE }}' BUILD_DIR='{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}' JOBS='{{ JOBS }}'
+	cmake --build '{{ BUILD_ROOT }}/{{ MODE }}/{{ CXX }}' --target docs
 
 # Build the HTML documentation from the generated Doxygen XML.
 html:
