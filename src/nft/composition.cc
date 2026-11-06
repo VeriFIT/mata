@@ -2276,7 +2276,7 @@ class DirectOperand {
 	 *  @c may_choose_again().
 	 */
 	template <typename OnRead>
-	void read(const State place, const size_t position, const bool chooses_again, OnRead&& on_read) const {
+	void read_level(const State place, const size_t position, const bool chooses_again, OnRead&& on_read) const {
 		const Level next_level{next_level_[position]};
 		if (place < num_of_states_ || chooses_again) {
 			const State source{place < num_of_states_ ? place : cursor_of(place).first};
@@ -2290,11 +2290,11 @@ class DirectOperand {
 		read_symbol_post(source, symbol_post, symbol_inside(*symbol_post), next_level, on_read);
 	}
 
-	/// Read as the other @c read() into @p reads.
-	void read(const State place, const size_t position, const bool chooses_again, Reads& reads) const {
+	/// Read as the other @c read_level() into @p reads.
+	void read_level(const State place, const size_t position, const bool chooses_again, Reads& reads) const {
 		reads.targets.clear();
 		reads.runs.clear();
-		read(place, position, chooses_again, [&](const Symbol symbol, const State target) {
+		read_level(place, position, chooses_again, [&](const Symbol symbol, const State target) {
 			if (reads.runs.empty() || reads.runs.back().symbol != symbol) {
 				reads.runs.push_back({symbol, reads.targets.size(), reads.targets.size()});
 			}
@@ -2303,9 +2303,9 @@ class DirectOperand {
 		});
 	}
 
-	/// As the first @c read(), restricted to the reads of @p symbol.
+	/// As the first @c read_level(), restricted to the reads of @p symbol.
 	template <typename OnRead>
-	void read(
+	void read_level(
 		const State place, const size_t position, const bool chooses_again, const Symbol symbol, OnRead&& on_read
 	) const {
 		const Level next_level{next_level_[position]};
@@ -2570,7 +2570,9 @@ class DirectGeneralComposer {
 	 *  symbol and the operand places after each move.
 	 */
 	template <typename OnMove>
-	void read(const State lhs_place, const State rhs_place, const size_t position, const Mode mode, OnMove&& on_move) {
+	void read_level(
+		const State lhs_place, const State rhs_place, const size_t position, const Mode mode, OnMove&& on_move
+	) {
 		const bool lhs_chooses_again{
 			lhs_.may_choose_again(lhs_place) && rhs_.has_state_at(rhs_place, position, mode == Mode::LhsAlone)
 		};
@@ -2583,18 +2585,20 @@ class DirectGeneralComposer {
 					on_move(EPSILON, lhs_place, rhs_place);
 					return;
 				}
-				lhs_.read(lhs_place, position, lhs_chooses_again, [&](const Symbol symbol, const State lhs_target) {
-					on_move(symbol, lhs_target, rhs_place);
-				});
+				lhs_.read_level(
+					lhs_place, position, lhs_chooses_again,
+					[&](const Symbol symbol, const State lhs_target) { on_move(symbol, lhs_target, rhs_place); }
+				);
 				return;
 			case CompositionSchedule::Owner::Rhs:
 				if (mode == Mode::LhsAlone) {
 					on_move(EPSILON, lhs_place, rhs_place);
 					return;
 				}
-				rhs_.read(rhs_place, position, rhs_chooses_again, [&](const Symbol symbol, const State rhs_target) {
-					on_move(symbol, lhs_place, rhs_target);
-				});
+				rhs_.read_level(
+					rhs_place, position, rhs_chooses_again,
+					[&](const Symbol symbol, const State rhs_target) { on_move(symbol, lhs_place, rhs_target); }
+				);
 				return;
 			case CompositionSchedule::Owner::Sync:
 				break;
@@ -2602,7 +2606,7 @@ class DirectGeneralComposer {
 		if (mode == Mode::LhsAlone) {
 			// The waiting RHS reads EPSILON on its own levels, which EPSILON and DONT_CARE match.
 			for (const Symbol symbol : {DONT_CARE, EPSILON}) {
-				lhs_.read(lhs_place, position, lhs_chooses_again, symbol, [&](Symbol, const State lhs_target) {
+				lhs_.read_level(lhs_place, position, lhs_chooses_again, symbol, [&](Symbol, const State lhs_target) {
 					on_move(EPSILON, lhs_target, rhs_place);
 				});
 			}
@@ -2610,7 +2614,7 @@ class DirectGeneralComposer {
 		}
 		if (mode == Mode::RhsAlone) {
 			for (const Symbol symbol : {DONT_CARE, EPSILON}) {
-				rhs_.read(rhs_place, position, rhs_chooses_again, symbol, [&](Symbol, const State rhs_target) {
+				rhs_.read_level(rhs_place, position, rhs_chooses_again, symbol, [&](Symbol, const State rhs_target) {
 					on_move(EPSILON, lhs_place, rhs_target);
 				});
 			}
@@ -2632,10 +2636,10 @@ class DirectGeneralComposer {
 		}
 		// A move on a later level reads into the buffers of that level.
 		DirectOperand::Reads& lhs_reads{lhs_reads_[position]};
-		lhs_.read(lhs_place, position, lhs_chooses_again, lhs_reads);
+		lhs_.read_level(lhs_place, position, lhs_chooses_again, lhs_reads);
 		if (lhs_reads.runs.empty()) { return; }
 		DirectOperand::Reads& rhs_reads{rhs_reads_[position]};
-		rhs_.read(rhs_place, position, rhs_chooses_again, rhs_reads);
+		rhs_.read_level(rhs_place, position, rhs_chooses_again, rhs_reads);
 		synchronize(
 			lhs_reads.runs, rhs_reads.runs,
 			[&](const Symbol symbol, const DirectOperand::ReadRun& lhs_run, const DirectOperand::ReadRun& rhs_run) {
@@ -2709,7 +2713,7 @@ class DirectGeneralComposer {
 			if (is_kept && has_read_kept_level) { break; }
 			next_steps.clear();
 			for (const Step& step : steps) {
-				read(
+				read_level(
 					step.lhs, step.rhs, position, mode,
 					[&](const Symbol symbol, const State lhs_target, const State rhs_target) {
 						if (position + 1 == num_of_positions_ ||
