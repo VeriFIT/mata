@@ -251,6 +251,24 @@ def test_nft_insert_identity():
     assert nft2.is_in_lang([6, 6])
 
 
+def test_nft_insert_identity_jump_mode():
+    jump = mata_nft.Nft(1, num_of_levels=3)
+    jump.insert_identity(0, [5, 6])
+    assert jump.num_of_states() == 1
+    assert jump.contains_jump_transitions()
+
+    loop = mata_nft.Nft(1, num_of_levels=3)
+    loop.insert_identity(0, [5, 6], mata_nft.JumpMode.NoJump)
+    assert loop.num_of_states() == 5
+    assert not loop.contains_jump_transitions()
+
+    for nft in (jump, loop):
+        nft.make_initial_state(0)
+        nft.make_final_state(0)
+        assert nft.is_in_lang([5, 5, 5, 6, 6, 6])
+        assert not nft.is_in_lang([5, 6, 5])
+
+
 def test_nft_make_complete():
     nft = mata_nft.Nft(1, num_of_levels=1)
     nft.make_initial_state(0)

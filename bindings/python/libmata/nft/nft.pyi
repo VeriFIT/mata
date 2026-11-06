@@ -209,7 +209,8 @@ class Nft:
         symbols_or_alphabet: Symbol | list[Symbol] | alph.Alphabet | None = None,
         jump_mode: JumpMode = JumpMode.RepeatSymbol,
     ) -> Self:
-        """Insert identity transition(s) at `state`."""
+        """Insert identity transition(s) at `state`: one self-loop jump per symbol for `RepeatSymbol`, an explicit
+        loop with one transition per level otherwise."""
     def contains_jump_transitions(self) -> bool:
         """Check if the transducer contains any jump transition."""
     def trim(self) -> Self:

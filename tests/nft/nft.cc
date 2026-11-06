@@ -6320,6 +6320,60 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
 	}
 }
 
+TEST_CASE("mata::nft::Nft::insert_identity() honours the jump mode - issue #791") {
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares, JumpMode::NoJump}) {
+		for (const size_t num_of_levels : {size_t{1}, size_t{2}, size_t{3}, size_t{4}}) {
+			CAPTURE(static_cast<int>(jump_mode), num_of_levels);
+			Nft nft{Nft::with_levels({num_of_levels, {0}}, 1, {0}, {0})};
+			nft.insert_identity(0, {'a', 'b'}, jump_mode);
+
+			// The explicit word loop through fresh inner states, one transition per level.
+			Nft word_loop{Nft::with_levels({num_of_levels, {0}}, 1, {0}, {0})};
+			word_loop.insert_word(0, Word(num_of_levels, 'a'), 0);
+			word_loop.insert_word(0, Word(num_of_levels, 'b'), 0);
+			CHECK(are_equivalent(nft, word_loop, jump_mode));
+
+			if (jump_mode == JumpMode::RepeatSymbol || num_of_levels == 1) {
+				// One full-span self-loop per symbol.
+				CHECK(nft.num_of_states() == 1);
+				CHECK(nft.delta.num_of_transitions() == 2);
+				CHECK(nft.contains_jump_transitions() == (num_of_levels > 1));
+			} else {
+				CHECK(nft.num_of_states() == 1 + 2 * (num_of_levels - 1));
+				CHECK(nft.delta.num_of_transitions() == 2 * num_of_levels);
+				CHECK(!nft.contains_jump_transitions());
+			}
+
+			for (const Word& word : {Word{}, Word{'a'}, Word{'b', 'a'}, Word{'a', 'a', 'b'}}) {
+				CHECK(nft.is_in_lang_by_levels(std::vector<Word>(num_of_levels, word), false, jump_mode));
+			}
+			// Each level must read the same word: no DONT_CARE padding, no shifted or shortened copy.
+			if (num_of_levels > 1) {
+				for (const auto& [first, rest] : std::vector<std::pair<Word, Word>>{
+						 {{'a'}, {'b'}}, {{'a', 'b'}, {'b', 'a'}}, {{'a'}, {'a', 'a'}}, {{'a'}, {}}, {{'c'}, {'c'}}
+					 }) {
+					std::vector<Word> level_words(num_of_levels, rest);
+					level_words[0] = first;
+					CHECK(!nft.is_in_lang_by_levels(level_words, false, jump_mode));
+				}
+			}
+		}
+	}
+
+	SECTION("A state on a nonzero level gets the explicit loop in every mode") {
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares, JumpMode::NoJump}) {
+			CAPTURE(static_cast<int>(jump_mode));
+			Nft nft{Nft::with_levels({2, {0, 1}}, 2, {0}, {0})};
+			nft.delta.add(0, 'x', 1);
+			nft.delta.add(1, 'y', 0);
+			nft.insert_identity(1, 'c', jump_mode);
+			CHECK(!nft.contains_jump_transitions());
+			CHECK(nft.is_in_lang_by_levels({{'x', 'c'}, {'c', 'y'}}, false, jump_mode));
+			CHECK(!nft.is_in_lang_by_levels({{'x', 'c'}, {'y'}}, false, jump_mode));
+		}
+	}
+}
+
 TEST_CASE("mata::nft::Nft::add_transition() using a symbol name") {
 	// 3-level NFT, source at level 0 and a pre-existing target at level 2: a jump spanning levels 0 and 1.
 	Nft nft{Nft::with_levels({3, {0, 0, 2}}, 3)};
@@ -6892,7 +6946,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
 	SECTION("apply with 5 tapes") {
 		Nfa nfa = nfa::builder::create_from_regex("(a|b)*");
 		Nft nft{Nft::with_levels({5, {0, 0}}, 1, {0}, {0})};
-		nft.insert_identity(0, 'a');
+		nft.insert_identity(0, 'a', JumpMode::NoJump);
 		CHECK(nft.apply(nfa, 0, true, JumpMode::NoJump).levels.num_of_levels == 4);
 		CHECK(nft.apply(nfa, 3, false, JumpMode::NoJump).levels.num_of_levels == 5);
 	}
