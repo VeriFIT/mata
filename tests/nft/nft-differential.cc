@@ -811,6 +811,13 @@ TEST_CASE("mata::nft differential: lazy jump exploration over long jumps", "[dif
 	CHECK(stats.jumps_without_dont_care > 200);
 }
 
+// Seed 3790 of the larger sweep has a state whose jumps lead to cursors numbered out of the order of their targets:
+//  the moves of a state must then be sorted, which no seed of the default cases needs.
+TEST_CASE("mata::nft differential: lazy jump exploration with cursors numbered out of order", "[differential]") {
+	LazyInclusionStats stats{};
+	check_lazy_inclusion(3'790, 8, 16, stats);
+}
+
 // A hidden sweep over more seeds; the default run stays fast.
 TEST_CASE("mata::nft differential: lazy jump exploration in a larger sweep", "[.differential-sweep]") {
 	LazyInclusionStats stats{};
