@@ -3161,6 +3161,55 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		}
 	}
 
+	SECTION("paths through projected levels that meet are read once") {
+		// LHS tracks [A, X_1, ..., X_depth], RHS tracks [X_1, ..., X_depth], synchronized and projected out. Both read
+		//  x or y on each X_i into the same state, so 2^depth paths through the projected levels reach one
+		//  configuration.
+		const auto deep_operands{[&](const size_t depth) {
+			Nft deep_lhs{Nft::with_levels(depth + 1)};
+			Nft deep_rhs{Nft::with_levels(depth)};
+			for (size_t level{0}; level <= depth; ++level) { deep_lhs.add_state_with_level(static_cast<Level>(level)); }
+			for (size_t level{0}; level < depth; ++level) { deep_rhs.add_state_with_level(static_cast<Level>(level)); }
+			deep_lhs.initial.insert(0);
+			deep_lhs.final.insert(0);
+			deep_rhs.initial.insert(0);
+			deep_rhs.final.insert(0);
+			deep_lhs.delta.add(0, a, 1);
+			for (State state{1}; state <= depth; ++state) {
+				for (const mata::Symbol symbol : {x, y}) {
+					deep_lhs.delta.add(state, symbol, state == depth ? 0 : state + 1);
+					deep_rhs.delta.add(state - 1, symbol, state == depth ? 0 : state);
+				}
+			}
+			OrdVector<Level> lhs_sync_levels{};
+			OrdVector<Level> rhs_sync_levels{};
+			for (Level level{0}; level < depth; ++level) {
+				lhs_sync_levels.insert(level + 1);
+				rhs_sync_levels.insert(level);
+			}
+			return std::tuple{deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels};
+		}};
+		{
+			const auto [deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels]{deep_operands(12)};
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels, true)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct,
+				algorithms::compose_general_reference(deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels, true)
+			));
+		}
+		// Reading every path takes 2^30 steps; reading each level once takes a few.
+		const auto [deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels]{deep_operands(30)};
+		const std::optional<Nft> direct{
+			algorithms::compose_general_direct(deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels, true)
+		};
+		REQUIRE(direct.has_value());
+		CHECK(direct->num_of_states() == 1);
+		CHECK(direct->is_in_lang_by_levels({{a, a}}));
+	}
+
 	SECTION("outside the domain") {
 		// A transition back to the level it starts on.
 		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};

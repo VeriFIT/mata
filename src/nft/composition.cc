@@ -2680,51 +2680,58 @@ class DirectGeneralComposer {
 			.value();
 	}
 
-	/**
-	 * @brief Record a move over @p symbol into the configuration before the aligned level @p position.
-	 *
-	 * A projected synchronization level has no transition of its own: its read is a step of the move, which then
-	 *  reaches each configuration after it. The aligned level only grows within a round, so this ends at the next kept
-	 *  level or at the end of the round.
-	 */
-	void move_to(
-		const Symbol symbol, const State lhs_state, const State rhs_state, const size_t position, const Mode mode
-	) {
-		if (position == num_of_positions_) {
-			moves_.emplace_back(
-				symbol, intern(lhs_state, rhs_state, start_layer(filter_mode_after(mode, lhs_state)), 0)
-			);
-			return;
-		}
-		if (!can_finish(lhs_state, rhs_state, position, mode)) { return; }
-		if (!is_projected_[position]) {
-			moves_.emplace_back(
-				symbol, intern(lhs_state, rhs_state, inner_layer(position, mode), result_level_[position])
-			);
-			return;
-		}
-		read(lhs_state, rhs_state, position, mode, [&](Symbol, const State lhs_target, const State rhs_target) {
-			move_to(symbol, lhs_target, rhs_target, position + 1, mode);
-		});
-	}
+	/// A move inside a round on its way through the projected levels: the symbol it emits on its kept level and the
+	///  operand places it has reached.
+	struct Step {
+		Symbol symbol;
+		State lhs;
+		State rhs;
+		auto operator<=>(const Step&) const = default;
+	};
 
-	/// Record the moves that read the first kept aligned level from @p position on in @p mode. Projected levels
-	///  before it, which only the start of a round can have, are read on the way.
-	void read_kept_level(const State lhs_state, const State rhs_state, const size_t position, const Mode mode) {
-		if (is_projected_[position]) {
-			read(lhs_state, rhs_state, position, mode, [&](Symbol, const State lhs_target, const State rhs_target) {
-				if (can_finish(lhs_target, rhs_target, position + 1, mode)) {
-					read_kept_level(lhs_target, rhs_target, position + 1, mode);
-				}
-			});
-			return;
-		}
-		read(
-			lhs_state, rhs_state, position, mode,
-			[&](const Symbol symbol, const State lhs_target, const State rhs_target) {
-				move_to(symbol, lhs_target, rhs_target, position + 1, mode);
+	/**
+	 * @brief Record the moves in @p mode that read the first kept aligned level from @p position on, from the operand
+	 *  places @p lhs_place and @p rhs_place.
+	 *
+	 * A projected synchronization level has no transition of its own. Projected levels before the kept one, which only
+	 *  the start of a round has, are read on the way to it; those after it are steps of the moves, which reach the
+	 *  configurations before the next kept level or at the end of the round. The steps reached on each level are
+	 *  deduplicated before the next level is read, so the work is bounded by the configurations of each level, not by
+	 *  the paths through the projected levels, which can be exponentially many.
+	 */
+	void read_kept_level(const State lhs_place, const State rhs_place, size_t position, const Mode mode) {
+		std::vector<Step>& steps{steps_};
+		std::vector<Step>& next_steps{next_steps_};
+		steps.assign(1, Step{EPSILON, lhs_place, rhs_place});
+		bool has_read_kept_level{false};
+		for (; position < num_of_positions_ && !steps.empty(); ++position) {
+			const bool is_kept{!is_projected_[position]};
+			if (is_kept && has_read_kept_level) { break; }
+			next_steps.clear();
+			for (const Step& step : steps) {
+				read(
+					step.lhs, step.rhs, position, mode,
+					[&](const Symbol symbol, const State lhs_target, const State rhs_target) {
+						if (position + 1 == num_of_positions_ ||
+							can_finish(lhs_target, rhs_target, position + 1, mode)) {
+							next_steps.push_back({is_kept ? symbol : step.symbol, lhs_target, rhs_target});
+						}
+					}
+				);
 			}
-		);
+			has_read_kept_level = has_read_kept_level || is_kept;
+			std::ranges::sort(next_steps);
+			const auto [duplicates_begin, duplicates_end]{std::ranges::unique(next_steps)};
+			next_steps.erase(duplicates_begin, duplicates_end);
+			std::swap(steps, next_steps);
+		}
+		for (const Step& step : steps) {
+			moves_.emplace_back(
+				step.symbol, position == num_of_positions_
+								 ? intern(step.lhs, step.rhs, start_layer(filter_mode_after(mode, step.lhs)), 0)
+								 : intern(step.lhs, step.rhs, inner_layer(position, mode), result_level_[position])
+			);
+		}
 	}
 
 	void expand(const State source) {
@@ -2788,6 +2795,9 @@ class DirectGeneralComposer {
 	SparseSet<State> final_{};
 	nfa::DeltaBuilder delta_builder_{};
 	std::vector<std::pair<Symbol, State>> moves_{};
+	/// The steps of read_kept_level() on the current level and on the next one.
+	std::vector<Step> steps_{};
+	std::vector<Step> next_steps_{};
 	/// Indexed by aligned level: the reads of each operand on a synchronization level both operands read.
 	std::vector<DirectOperand::Reads> lhs_reads_;
 	std::vector<DirectOperand::Reads> rhs_reads_;
