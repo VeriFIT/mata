@@ -775,6 +775,8 @@ template <size_t WIDTH> class RankedPositions {
 /// looked up there, so a tuple is copied only when it is new.
 class InternedPositions {
   public:
+	// Read through the template parameter as 'Positions::ranked', which cppcheck does not follow.
+	// cppcheck-suppress unusedStructMember
 	static constexpr bool ranked{false};
 	using Tuple = std::vector<size_t>;
 
