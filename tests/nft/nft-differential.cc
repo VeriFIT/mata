@@ -72,8 +72,11 @@ Nft random_nft(
 			if (with_epsilon && draw(rng, 5) == 0) {
 				nft.delta.add(source, EPSILON, states_by_level[next_level][draw(rng, num_of_states_per_level)]);
 			}
-			// A jump ends on a level in [level + 2, num_of_levels], where num_of_levels stands for level 0.
-			if (with_jumps && level + 2 <= num_of_levels && draw(rng, 3) == 0) {
+			// Up to two jumps, each ending on a level in [level + 2, num_of_levels], where num_of_levels stands for
+			//  level 0.
+			for (size_t jump{0},
+				 jumps{with_jumps && level + 2 <= num_of_levels && draw(rng, 4) == 0 ? 1 + draw(rng, 2) : 0};
+				 jump < jumps; ++jump) {
 				const size_t end{level + 2 + draw(rng, num_of_levels - level - 1)};
 				std::vector<Symbol> symbols{};
 				for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { symbols.push_back(symbol); }
@@ -414,13 +417,15 @@ OrdVector<Level> random_levels(std::mt19937& rng, const size_t num_of_levels, co
 
 // The direct general composition has to accept the relation of the pipeline it replaces, EPSILON placement included
 //  (are_equivalent() reads EPSILON as a letter), under every jump mode, also with DONT_CARE, which the pipeline
-//  matches with EPSILON too (#561), and with jump transitions under AppendDontCares. The EPSILON-erased tuples, which
-//  the comparison of the composition modes above uses, are compared as well, with the jumps unwound in the jump mode.
+//  matches with EPSILON too (#561), and with jump transitions. The EPSILON-erased tuples, which the comparison of the
+//  composition modes above uses, are compared as well, with the jumps unwound in the jump mode.
 TEST_CASE("mata::nft differential: the direct general composition is the pipeline one", "[differential]") {
 	size_t num_of_nonempty{0};
 	size_t num_of_nonempty_with_epsilon{0};
 	size_t num_of_nonempty_with_dont_care{0};
 	size_t num_of_nonempty_with_jumps{0};
+	// With jumps kept by the pipeline in an operand reading every aligned level, which product() lets choose again.
+	size_t num_of_nonempty_with_kept_jumps{0};
 	size_t num_of_nonempty_multi_sync{0};
 	for (unsigned seed{0}; seed < 500; ++seed) {
 		std::mt19937 rng{seed};
@@ -459,8 +464,7 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 				const std::optional<Nft> direct{algorithms::compose_general_direct(
 					lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode
 				)};
-				REQUIRE(direct.has_value() == (!has_jumps || jump_mode == JumpMode::AppendDontCares));
-				if (!direct.has_value()) { continue; }
+				REQUIRE(direct.has_value());
 				// compose_general() dispatches to the direct composition here.
 				CHECK(
 					algorithms::compose_general(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode)
@@ -481,6 +485,10 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 					if (with_epsilon) { ++num_of_nonempty_with_epsilon; }
 					if (with_dont_care) { ++num_of_nonempty_with_dont_care; }
 					if (has_jumps) { ++num_of_nonempty_with_jumps; }
+					if (has_jumps && jump_mode != JumpMode::AppendDontCares &&
+						(lhs_num_of_levels == num_of_sync_levels || rhs_num_of_levels == num_of_sync_levels)) {
+						++num_of_nonempty_with_kept_jumps;
+					}
 					if (num_of_sync_levels > 1) { ++num_of_nonempty_multi_sync; }
 				}
 			}
@@ -490,6 +498,7 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 	CHECK(num_of_nonempty_with_epsilon > 0);
 	CHECK(num_of_nonempty_with_dont_care > 0);
 	CHECK(num_of_nonempty_with_jumps > 0);
+	CHECK(num_of_nonempty_with_kept_jumps > 0);
 	CHECK(num_of_nonempty_multi_sync > 0);
 }
 

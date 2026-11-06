@@ -323,9 +323,9 @@ struct CompositionSchedule {
  * @param[in] normalization Only @c CompositionNormalization::Full changes the result: the general composition
  *  generates no states of its own for @c GeneratedOnly to rewrite.
  *
- * Operands without jump transitions, or with them under @c JumpMode::AppendDontCares, are composed by
- *  @c compose_general_direct(), all others by the pipeline of @c compose_general_reference(); both accept the same
- *  relation.
+ * Operands whose transitions all go to a later level of their round or end it are composed by
+ *  @c compose_general_direct() (with more than one aligned level), all others by the pipeline of
+ *  @c compose_general_reference(); both accept the same relation.
  *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When the request is invalid; the same checks as @c nft::compose() runs, so calling
@@ -363,10 +363,10 @@ Nft compose_general_reference(
  *
  * Builds a result with the relation of @c compose_general_reference(), EPSILON included, without padding copies of the
  * operands: an operand reads its own levels and waits on the others, and a jump transition is read level by level.
- *  It covers operands whose transitions all go to a later level of the round or end it, without jump transitions
- *  under every @p jump_mode (they coincide without jumps) and with them under @c JumpMode::AppendDontCares, with more
- *  than one aligned level. DONT_CARE matches every symbol of the other operand, EPSILON included, as in @c product()
- *  (#561).
+ *  It covers operands whose transitions all go to a later level of the round or end it, under every @p jump_mode,
+ *  with more than one aligned level. DONT_CARE matches every symbol of the other operand, EPSILON included, as in
+ *  @c product() (#561); an operand the pipeline inserts no level into may choose its jump again inside it under
+ *  @c JumpMode::RepeatSymbol and @c JumpMode::NoJump, as @c product() lets it.
  *
  * @return The composition, or @c std::nullopt for operands outside that domain.
  * @throws std::invalid_argument When the request is invalid, as @c compose_general().

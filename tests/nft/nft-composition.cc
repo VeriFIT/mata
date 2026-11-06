@@ -3077,39 +3077,96 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		lhs_jumps.delta.add(0, a, 1);
 		lhs_jumps.delta.add(1, c, 0);
 		lhs_jumps.delta.add(0, y, 0);
-		// RHS tracks [X, B]: the rounds (x, b) and (EPSILON, d).
-		Nft rhs_plain{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		// RHS tracks [X, B]: the rounds (x, b), (a, b) and (EPSILON, d).
+		Nft rhs_plain{Nft::with_levels({2, {0, 1, 1, 1}}, 4, {0}, {0})};
 		rhs_plain.delta.add(0, x, 1);
 		rhs_plain.delta.add(1, b, 0);
+		rhs_plain.delta.add(0, a, 3);
+		rhs_plain.delta.add(3, b, 0);
 		rhs_plain.delta.add(0, EPSILON, 2);
 		rhs_plain.delta.add(2, d, 0);
-		const JumpMode jump_mode{JumpMode::AppendDontCares};
-		for (const bool project_out : {false, true}) {
+		for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			for (const bool project_out : {false, true}) {
+				const std::optional<Nft> direct{
+					algorithms::compose_general_direct(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode)
+				};
+				REQUIRE(direct.has_value());
+				CHECK(are_equivalent(
+					*direct,
+					algorithms::compose_general_reference(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode),
+					jump_mode
+				));
+				if (!project_out) { continue; }
+				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {b}}));
+				CHECK(!direct->is_in_lang_by_levels({{a}, {}, {b}}));
+				if (jump_mode == JumpMode::AppendDontCares) {
+					// The jump reads DONT_CARE on X, which matches x, EPSILON, and the EPSILON of a waiting RHS.
+					CHECK(direct->is_in_lang_by_levels({{a}, {c}, {d}}));
+					CHECK(direct->is_in_lang_by_levels({{a}, {c}, {}}));
+				} else {
+					// The jump reads a on X, which only the round (a, b) matches.
+					CHECK(!direct->is_in_lang_by_levels({{a}, {c}, {d}}));
+					CHECK(!direct->is_in_lang_by_levels({{a}, {c}, {}}));
+				}
+			}
+		}
+	}
+
+	SECTION("an operand reading every aligned level chooses its jump again") {
+		// LHS tracks [X, A], synchronizing X: the whole-round jumps (a, a) and (b, b). RHS tracks [X]: the round (a).
+		Nft lhs_jumps{Nft::with_levels({2, {0, 0, 0}}, 3, {0}, {1, 2})};
+		lhs_jumps.delta.add(0, a, 1);
+		lhs_jumps.delta.add(0, b, 2);
+		Nft rhs_one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
+		rhs_one_level.delta.add(0, a, 0);
+		for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			for (const bool project_out : {false, true}) {
+				const std::optional<Nft> direct{
+					algorithms::compose_general_direct(lhs_jumps, rhs_one_level, {0}, {0}, project_out, jump_mode)
+				};
+				REQUIRE(direct.has_value());
+				CHECK(are_equivalent(
+					*direct,
+					algorithms::compose_general_reference(lhs_jumps, rhs_one_level, {0}, {0}, project_out, jump_mode),
+					jump_mode
+				));
+				if (jump_mode == JumpMode::AppendDontCares || project_out) { continue; }
+				// The pipeline keeps the jumps of the LHS, into which it inserts no level, and product() lets the
+				//  LHS, waiting in the source state, take (b, b) on A after (a, a) has synchronized on X.
+				CHECK(direct->is_in_lang_by_levels({{a}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {b}}));
+				CHECK(!direct->is_in_lang_by_levels({{b}, {b}}));
+			}
+		}
+
+		// LHS tracks [X, Y, A, B], synchronizing X and Y: (EPSILON, EPSILON, EPSILON) into a dead end, or (b, b, b)
+		//  then (c). RHS tracks [X, Y] only wait. Going along the waiting RHS, the LHS reads EPSILON on X and Y, then
+		//  b on A: no single jump of it reads that, so the round lookahead must not prune the round.
+		Nft lhs_combined{Nft::with_levels({4, {0, 3, 3}}, 3, {0}, {0})};
+		lhs_combined.delta.add(0, EPSILON, 1);
+		lhs_combined.delta.add(0, b, 2);
+		lhs_combined.delta.add(2, c, 0);
+		const Nft rhs_waiting{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
 			const std::optional<Nft> direct{
-				algorithms::compose_general_direct(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode)
+				algorithms::compose_general_direct(lhs_combined, rhs_waiting, {0, 1}, {0, 1}, false, jump_mode)
 			};
 			REQUIRE(direct.has_value());
 			CHECK(are_equivalent(
-				*direct, algorithms::compose_general_reference(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode),
+				*direct,
+				algorithms::compose_general_reference(lhs_combined, rhs_waiting, {0, 1}, {0, 1}, false, jump_mode),
 				jump_mode
 			));
-			if (project_out) {
-				// The jump reads DONT_CARE on X, which matches x, EPSILON, and the EPSILON of a waiting RHS.
-				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {b}}));
-				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {d}}));
-				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {}}));
-				CHECK(!direct->is_in_lang_by_levels({{a}, {}, {b}}));
-			}
-		}
-		for (const JumpMode other_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol}) {
-			CHECK(!algorithms::compose_general_direct(lhs_jumps, rhs_plain, {1}, {0}, true, other_mode).has_value());
+			if (jump_mode != JumpMode::AppendDontCares) { CHECK(direct->is_in_lang_by_levels({{}, {}, {b}, {c}})); }
 		}
 	}
 
 	SECTION("outside the domain") {
-		Nft jumping{Nft::with_levels({2, {0, 0}}, 2, {0}, {1})};
-		jumping.delta.add(0, a, 1);
-		CHECK(!algorithms::compose_general_direct(jumping, rhs, {1}, {0}).has_value());
+		// A transition back to the level it starts on.
+		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		backwards.delta.add(0, a, 1);
+		backwards.delta.add(1, a, 2);
+		CHECK(!algorithms::compose_general_direct(backwards, rhs, {1}, {0}).has_value());
 		Nft one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
 		one_level.delta.add(0, a, 0);
 		CHECK(!algorithms::compose_general_direct(one_level, one_level, {0}, {0}, false).has_value());
