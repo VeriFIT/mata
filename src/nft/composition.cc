@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <deque>
 #include <format>
 #include <functional>
@@ -347,17 +348,34 @@ template <typename Operand> class SynchronizationProperties {
 	size_t num_of_levels_before_sync;
 	size_t num_of_levels_after_sync;
 	std::vector<SynchronizationType> sync_types_vec;
+	/// For each state on or before its synchronization level, a signature of the symbols but EPSILON it can read on
+	///  that level: one of 64 bits per symbol, all of them for @c DONT_CARE, which matches every symbol but EPSILON.
+	///  Two states whose signatures do not intersect read no symbol both can synchronize on.
+	std::vector<uint64_t> sync_symbols_vec;
 
 	SynchronizationProperties(const Operand& nft, const Level sync_level)
 		: nft(nft),
 		  sync_level(sync_level),
 		  num_of_levels_before_sync(sync_level),
 		  num_of_levels_after_sync(nft.levels.num_of_levels - sync_level - 1),
-		  sync_types_vec(nft.num_of_states(), SynchronizationType::Undefined) {
+		  sync_types_vec(nft.num_of_states(), SynchronizationType::Undefined),
+		  sync_symbols_vec(nft.num_of_states(), 0) {
 		get_synchronization_types();
 	}
 
+	/// Whether @p state may read a symbol on the synchronization level of its round that @p other_state of @p other
+	///  can synchronize with on its own: a constant-time test that never refutes a pair that can synchronize.
+	bool may_share_a_symbol(const State state, const SynchronizationProperties& other, const State other_state) const {
+		return (sync_symbols_vec[state] & other.sync_symbols_vec[other_state]) != 0;
+	}
+
   private:
+	/// The signature bit of @p symbol, spread by a multiplicative hash so that close symbols get different bits.
+	static uint64_t symbol_bit(const Symbol symbol) {
+		if (symbol == DONT_CARE) { return ~uint64_t{0}; }
+		return uint64_t{1} << ((static_cast<uint64_t>(symbol) * 0x9E'37'79'B9'7F'4A'7C'15ULL) >> 58);
+	}
+
 	/**
 	 * @brief For each state, sets the type of synchronization that follows.
 	 *
@@ -401,6 +419,7 @@ template <typename Operand> class SynchronizationProperties {
 				if (current_sync_type == SynchronizationType::UnderComputation) {
 					// Combine the synchronization types of its children.
 					current_sync_type = SynchronizationType::Undefined;
+					uint64_t current_sync_symbols{0};
 					for (const SymbolPost& symbol_post : state_post) {
 						for (const State target : symbol_post.targets) {
 							// Skip fast EPSILON transitions.
@@ -411,9 +430,11 @@ template <typename Operand> class SynchronizationProperties {
 							}
 							MATA_ASSERT(nft.levels[target] > nft.levels[state]);
 							current_sync_type |= sync_types_vec[target];
+							current_sync_symbols |= sync_symbols_vec[target];
 						}
 					}
 					sync_types_vec[state] = current_sync_type;
+					sync_symbols_vec[state] = current_sync_symbols;
 					continue; // We already visited its children.
 				}
 
@@ -432,6 +453,11 @@ template <typename Operand> class SynchronizationProperties {
 						current_sync_type = SynchronizationType::OnlyOnSymbol;
 					}
 					sync_types_vec[state] = current_sync_type;
+					uint64_t current_sync_symbols{0};
+					for (const SymbolPost& symbol_post : state_post) {
+						if (symbol_post.symbol != EPSILON) { current_sync_symbols |= symbol_bit(symbol_post.symbol); }
+					}
+					sync_symbols_vec[state] = current_sync_symbols;
 					continue; // No need to visit its children.
 				}
 
@@ -1463,12 +1489,14 @@ Nft compose_fast_with(
 				// from the waiting simulation, we are interested in only synchronizations on EPSILON.
 				// Undefined marks both a target past its synchronization level (or ending the round), which always
 				// continues, and a dead end on or before it, which never synchronizes; only the level tells them apart.
-				// Until the copied side passes its synchronization level, neither has the stationary one.
+				// Until the copied side passes its synchronization level, neither has the stationary one, so both
+				//  read their next synchronization symbols in this round and must share one.
 				const bool can_synchronize_in_the_future =
 					target_level == 0 || target_level > copy_sync_level ||
 					(waiting_worklist != nullptr
 						 ? exist_intersection(copy_target_sync_type, SynchronizationType::OnlyOnEpsilon)
-						 : exist_synchronization(stationar_state_sync_type, copy_target_sync_type));
+						 : exist_synchronization(stationar_state_sync_type, copy_target_sync_type) &&
+							   copy_sync_props.may_share_a_symbol(copy_target, stationar_sync_props, stationar_state));
 				if (!can_synchronize_in_the_future) {
 					// There is no way we would be able to synchronize in the future.
 					// We do not need to explore this path further.
@@ -1903,7 +1931,9 @@ Nft compose_fast_with(
 			// in the documentation of the SynchronizationType enum class.
 			const bool perform_wait_on_lhs = exist_intersection(rhs_sync_type, SynchronizationType::OnlyOnEpsilon);
 			const bool perform_wait_on_rhs = exist_intersection(lhs_sync_type, SynchronizationType::OnlyOnEpsilon);
-			const bool can_synchronize_in_the_future = exist_synchronization(lhs_sync_type, rhs_sync_type);
+			const bool can_synchronize_in_the_future =
+				exist_synchronization(lhs_sync_type, rhs_sync_type) &&
+				lhs_sync_props.may_share_a_symbol(lhs_state, rhs_sync_props, rhs_state);
 
 			// The inputs of the EPSILON-composition filter. A silent LHS-only move is a fast EPSILON
 			// move of the LHS or a waiting round of a one-level LHS. The LHS gets stuck once the

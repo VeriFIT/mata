@@ -3955,6 +3955,66 @@ TEST_CASE("mata::nft::compose_fast_no_jump() expands each waiting state once - i
 	CHECK(fast.get_words(2 * fast.levels.num_of_levels) == expected_words);
 }
 
+TEST_CASE("mata::nft::compose_fast_no_jump() skips the pairs whose synchronization symbols differ - issue #816") {
+	constexpr size_t NUM_OF_BRANCHES{16};
+	// The LHS reads one of the x_i and then 'a' on its synchronization level 1; the RHS reads one of the y_j, then
+	//  'b' on its synchronization level 1, and then 'z'.
+	const auto make_lhs = [&](const mata::Symbol sync_symbol) {
+		Nft lhs{Nft::with_levels(2)};
+		const State root{lhs.add_state_with_level(0)};
+		const State final{lhs.add_state_with_level(0)};
+		for (size_t i{0}; i < NUM_OF_BRANCHES; ++i) {
+			const State middle{lhs.add_state_with_level(1)};
+			lhs.delta.add(root, static_cast<mata::Symbol>(100 + i), middle);
+			lhs.delta.add(middle, sync_symbol, final);
+		}
+		lhs.initial.insert(root);
+		lhs.final.insert(final);
+		return lhs;
+	};
+	Nft rhs{Nft::with_levels(3)};
+	const State rhs_root{rhs.add_state_with_level(0)};
+	const State rhs_final{rhs.add_state_with_level(0)};
+	for (size_t j{0}; j < NUM_OF_BRANCHES; ++j) {
+		const State first{rhs.add_state_with_level(1)};
+		const State second{rhs.add_state_with_level(2)};
+		rhs.delta.add(rhs_root, static_cast<mata::Symbol>(200 + j), first);
+		rhs.delta.add(first, 'b', second);
+		rhs.delta.add(second, 'z', rhs_final);
+	}
+	rhs.initial.insert(rhs_root);
+	rhs.final.insert(rhs_final);
+
+	SECTION("Disjoint symbols stop at the initial pair") {
+		const Nft fast{algorithms::compose_fast_no_jump(make_lhs('a'), rhs, 1, 1, false)};
+		CHECK(fast.num_of_states() == 1);
+		CHECK(fast.final.empty());
+	}
+
+	SECTION("DONT_CARE shares every symbol") {
+		const Nft fast{algorithms::compose_fast_no_jump(make_lhs(DONT_CARE), rhs, 1, 1, false)};
+		CHECK(fast.get_words(fast.levels.num_of_levels).size() == NUM_OF_BRANCHES * NUM_OF_BRANCHES);
+	}
+
+	SECTION("A copied branch whose symbol the stationary state cannot read is skipped") {
+		// The root reads 'a' through x_0 and 'c' through the other x_i; the one-level RHS reads only 'a'.
+		Nft lhs{make_lhs('c')};
+		const State middle{*lhs.delta[0].find(100)->targets.begin()};
+		lhs.delta.remove(middle, 'c', 1);
+		lhs.delta.add(middle, 'a', 1);
+		Nft nfa{Nft::with_levels(1)};
+		nfa.add_state_with_level(0);
+		nfa.add_state_with_level(0);
+		nfa.delta.add(0, 'a', 1);
+		nfa.initial.insert(0);
+		nfa.final.insert(1);
+		const Nft fast{algorithms::compose_fast_no_jump(lhs, nfa, 1, 0, false)};
+		// The initial pair, the pair of x_0, and the final pair.
+		CHECK(fast.num_of_states() == 3);
+		CHECK(fast.get_words(fast.levels.num_of_levels) == std::set<mata::Word>{{100, 'a'}});
+	}
+}
+
 TEST_CASE("mata::nft::compose() validates the whole request - issue #818") {
 	const Nft three_levels{mata::nft::builder::create_sigma_star_nft(size_t{3})};
 	const Nft two_levels{mata::nft::builder::create_sigma_star_nft(size_t{2})};
