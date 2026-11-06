@@ -674,15 +674,19 @@ struct LazyInclusionStats {
 	size_t included{0};
 	size_t not_included{0};
 	size_t with_jumps{0};
+	/// Pairs with jumps and no DONT_CARE transition, read lazily also under RepeatSymbol and NoJump.
+	size_t jumps_without_dont_care{0};
 };
 
-/// Checks the antichain inclusion of the transducers of @p seed, with up to @p max_states_per_level states per level,
-///  both ways, and their equivalence, against the inclusion of the unwound transducers, under every jump mode, and
-///  replays each counterexample on the unwound ones.
-void check_lazy_inclusion(const unsigned seed, const size_t max_states_per_level, LazyInclusionStats& stats) {
+/// Checks the antichain inclusion of the transducers of @p seed, with up to @p max_states_per_level states per level
+///  and up to @p max_levels levels, both ways, and their equivalence, against the inclusion of the unwound
+///  transducers, under every jump mode, and replays each counterexample on the unwound ones.
+void check_lazy_inclusion(
+	const unsigned seed, const size_t max_states_per_level, const size_t max_levels, LazyInclusionStats& stats
+) {
 	std::mt19937 rng{seed};
 	const size_t num_of_symbols{1 + seed % 3};
-	const size_t num_of_levels{1 + (seed / 3) % 4};
+	const size_t num_of_levels{1 + (seed / 3) % max_levels};
 	const size_t num_of_states_per_level{1 + (seed / 2) % max_states_per_level};
 	const bool with_dont_care{seed % 2 == 0};
 	const bool with_epsilon{seed % 3 == 0};
@@ -704,7 +708,15 @@ void check_lazy_inclusion(const unsigned seed, const size_t max_states_per_level
 			);
 		}
 	}
-	if (lhs.contains_jump_transitions() || rhs.contains_jump_transitions()) { ++stats.with_jumps; }
+	if (lhs.contains_jump_transitions() || rhs.contains_jump_transitions()) {
+		++stats.with_jumps;
+		const auto has_dont_care = [](const Nft& nft) {
+			return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
+				return state_post.find(DONT_CARE) != state_post.end();
+			});
+		};
+		if (!has_dont_care(lhs) && !has_dont_care(rhs)) { ++stats.jumps_without_dont_care; }
+	}
 
 	// The symbols that replace DONT_CARE: those of both transducers, a full or a partial alphabet, one with EPSILON,
 	//  none, DONT_CARE alone (kept as a letter), and DONT_CARE among others.
@@ -781,15 +793,26 @@ TEST_CASE(
 	"mata::nft differential: inclusion and equivalence explore jumps lazily as unwinding reads them", "[differential]"
 ) {
 	LazyInclusionStats stats{};
-	for (unsigned seed{0}; seed < 2'000; ++seed) { check_lazy_inclusion(seed, 5, stats); }
-	// The corpus has both answers and jumps.
+	for (unsigned seed{0}; seed < 2'000; ++seed) { check_lazy_inclusion(seed, 5, 4, stats); }
+	// The corpus has both answers and jumps, also without DONT_CARE.
 	CHECK(stats.included > 1'000);
 	CHECK(stats.not_included > 1'000);
 	CHECK(stats.with_jumps > 1'000);
+	CHECK(stats.jumps_without_dont_care > 500);
+}
+
+TEST_CASE("mata::nft differential: lazy jump exploration over long jumps", "[differential]") {
+	// Up to 16 levels, so jumps of up to 16 links, of different lengths into the same target.
+	LazyInclusionStats stats{};
+	for (unsigned seed{0}; seed < 600; ++seed) { check_lazy_inclusion(seed, 3, 16, stats); }
+	CHECK(stats.included > 1'500);
+	CHECK(stats.not_included > 700);
+	CHECK(stats.with_jumps > 400);
+	CHECK(stats.jumps_without_dont_care > 200);
 }
 
 // A hidden sweep over more seeds; the default run stays fast.
 TEST_CASE("mata::nft differential: lazy jump exploration in a larger sweep", "[.differential-sweep]") {
 	LazyInclusionStats stats{};
-	for (unsigned seed{2'000}; seed < 30'000; ++seed) { check_lazy_inclusion(seed, 8, stats); }
+	for (unsigned seed{2'000}; seed < 30'000; ++seed) { check_lazy_inclusion(seed, 8, 16, stats); }
 }

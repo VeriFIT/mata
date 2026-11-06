@@ -1770,22 +1770,18 @@ bool Nft::is_identical(const Nft& aut) const {
 	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && Automaton::is_identical(aut);
 }
 
-namespace {
-/// Whether unwinding @p nft with @p dont_care_symbol_replacements changes it: a transition does not advance exactly one
-///  level, or a DONT_CARE is spelled out (it is kept only when it is its own sole replacement).
-bool unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
+bool mata::nft::internal::unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
 	if (nft.contains_jump_transitions()) { return true; }
 	if (dont_care_symbol_replacements == OrdVector<Symbol>{DONT_CARE}) { return false; }
 	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
 		return state_post.find(DONT_CARE) != state_post.end();
 	});
 }
-} // namespace
 
 mata::nfa::Nfa
 	Nft::to_nfa_update_copy(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
 	internal::validate_nft_levels(*this, "to_nfa_update_copy");
-	if (!unwinding_changes(*this, dont_care_symbol_replacements)) { return to_nfa_copy(); }
+	if (!internal::unwinding_changes(*this, dont_care_symbol_replacements)) { return to_nfa_copy(); }
 	// Unwind a private copy and move it out instead of copying the unwound transducer once more.
 	Nft unwound{*this};
 	unwound.unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
