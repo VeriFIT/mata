@@ -5,6 +5,8 @@
 #ifndef MATA_NFT_INTERNALS_HH_
 #define MATA_NFT_INTERNALS_HH_
 
+#include <optional>
+
 #include "mata/simlib/util/binary_relation.hh"
 #include "nft.hh"
 
@@ -233,6 +235,62 @@ Nft concatenate_eps(
 );
 
 /**
+ * @brief The common level layout of the general composition of two NFTs.
+ *
+ * The aligned levels come in blocks, one per synchronization level and one after the last: the levels only @c lhs
+ *  reads, then the levels only @c rhs reads, then the synchronization level, which the last block lacks. The result
+ *  of the composition has the aligned levels in this order, without the synchronization levels when they are
+ *  projected out. Example:
+ *
+ *                 LHS                         |                    RHS
+ * --------------------------------------------+---------------------------------------------
+ *            num_of_levels = 5                |             num_of_levels = 4
+ *          sync_levels = { 2, 4 }             |            sync_levels = { 1, 2 }
+ * --------------------------------------------+---------------------------------------------
+ *  positions: lhs 0, lhs 1, rhs 0, sync (2, 1), lhs 3, sync (4, 2), rhs 3
+ *  lhs_new_levels_mask() = { 0, 0, 1, 0, 0, 0, 1 }, rhs_new_levels_mask() = { 1, 1, 0, 0, 1, 0, 0 }
+ */
+struct CompositionSchedule {
+	/// Which operand reads an aligned level.
+	enum class Owner : uint8_t {
+		Lhs, ///< Only @c lhs reads it; @c rhs is not inserted into it.
+		Rhs, ///< Only @c rhs reads it.
+		Sync, ///< Both read it: a synchronization level.
+	};
+	/// An aligned level.
+	struct Position {
+		Owner owner;
+		/// The level of the @c lhs state when this aligned level is read: the level @c lhs reads here, or, where only
+		///  @c rhs reads, the next level @c lhs reads (0 once it has read its last level of the round).
+		Level lhs_level;
+		/// The level of the @c rhs state when this aligned level is read, as @c lhs_level.
+		Level rhs_level;
+		bool operator==(const Position&) const = default;
+	};
+
+	/// The aligned levels, in the order of the result levels.
+	std::vector<Position> positions{};
+
+	/**
+	 * @brief Lay out the composition of an NFT with @p lhs_num_of_levels levels and one with @p rhs_num_of_levels
+	 *  levels on the given synchronization levels, which must be valid (see @c compose()).
+	 */
+	CompositionSchedule(
+		size_t lhs_num_of_levels,
+		size_t rhs_num_of_levels,
+		const utils::OrdVector<Level>& lhs_sync_levels,
+		const utils::OrdVector<Level>& rhs_sync_levels
+	);
+
+	/// The mask of the aligned levels @c insert_levels() inserts into @c lhs: those only @c rhs reads.
+	BoolVector lhs_new_levels_mask() const;
+	/// The mask of the aligned levels @c insert_levels() inserts into @c rhs: those only @c lhs reads.
+	BoolVector rhs_new_levels_mask() const;
+	/// The aligned synchronization levels.
+	utils::OrdVector<Level> sync_positions() const;
+};
+
+/**
  * @brief Composes two NFTs.
  *
  * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
@@ -265,11 +323,55 @@ Nft concatenate_eps(
  * @param[in] normalization Only @c CompositionNormalization::Full changes the result: the general composition
  *  generates no states of its own for @c GeneratedOnly to rewrite.
  *
+ * Operands whose transitions all go to a later level of their round or end it are composed by
+ *  @c compose_general_direct() (with more than one aligned level), all others by the pipeline of
+ *  @c compose_general_reference(); both accept the same relation.
+ *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When the request is invalid; the same checks as @c nft::compose() runs, so calling
  *  this entry point directly does not skip them.
  */
 Nft compose_general(
+	const Nft& lhs,
+	const Nft& rhs,
+	const utils::OrdVector<Level>& lhs_sync_levels,
+	const utils::OrdVector<Level>& rhs_sync_levels,
+	bool project_out_sync_levels = true,
+	JumpMode jump_mode = JumpMode::RepeatSymbol,
+	CompositionNormalization normalization = CompositionNormalization::Auto
+);
+
+/**
+ * @brief The general composition by a pipeline: copies of the operands padded to the common levels by
+ *  @c insert_levels(), a whole-round self-loop at each of their zero-level states, their @c product(), and
+ *  @c project_out() of the synchronization levels.
+ *
+ * The reference and the fallback of @c compose_general_direct(); takes the arguments of @c compose_general().
+ */
+Nft compose_general_reference(
+	const Nft& lhs,
+	const Nft& rhs,
+	const utils::OrdVector<Level>& lhs_sync_levels,
+	const utils::OrdVector<Level>& rhs_sync_levels,
+	bool project_out_sync_levels = true,
+	JumpMode jump_mode = JumpMode::RepeatSymbol,
+	CompositionNormalization normalization = CompositionNormalization::Auto
+);
+
+/**
+ * @brief The general composition by a direct traversal of the aligned configurations of the two NFTs.
+ *
+ * Builds a result with the relation of @c compose_general_reference(), EPSILON included, without padding copies of the
+ * operands: an operand reads its own levels and waits on the others, and a jump transition is read level by level.
+ *  It covers operands whose transitions all go to a later level of the round or end it, under every @p jump_mode,
+ *  with more than one aligned level. DONT_CARE matches every symbol of the other operand, EPSILON included, as in
+ *  @c product() (#561); an operand the pipeline inserts no level into may choose its jump again inside it under
+ *  @c JumpMode::RepeatSymbol and @c JumpMode::NoJump, as @c product() lets it.
+ *
+ * @return The composition, or @c std::nullopt for operands outside that domain.
+ * @throws std::invalid_argument When the request is invalid, as @c compose_general().
+ */
+std::optional<Nft> compose_general_direct(
 	const Nft& lhs,
 	const Nft& rhs,
 	const utils::OrdVector<Level>& lhs_sync_levels,

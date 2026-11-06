@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -19,11 +20,13 @@
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/ord-vector.hh"
 
 using namespace mata::nft;
 using mata::EnumAlphabet;
 using mata::Symbol;
 using mata::Word;
+using mata::utils::OrdVector;
 
 namespace {
 
@@ -33,14 +36,16 @@ size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(
 ///  state on level l to a state on level (l + 1) mod num_of_levels. Each (state, symbol) gets zero,
 ///  one or two targets, so a word can reach several states at once whenever the level holds more
 ///  than one state. @p with_dont_care and @p with_epsilon add DONT_CARE and EPSILON transitions,
-///  which the algorithms have to treat like the ordinary ones.
+///  which the algorithms have to treat like the ordinary ones. @p with_jumps adds jump transitions, from a
+///  level l to a level after l + 1 or to level 0 skipping a level, over any of these symbols.
 Nft random_nft(
 	std::mt19937& rng,
 	const size_t num_of_states_per_level,
 	const size_t num_of_symbols,
 	const size_t num_of_levels,
 	const bool with_dont_care = false,
-	const bool with_epsilon = false
+	const bool with_epsilon = false,
+	const bool with_jumps = false
 ) {
 	Nft nft{Nft::with_levels(num_of_levels)};
 	std::vector<std::vector<State>> states_by_level(num_of_levels);
@@ -66,6 +71,21 @@ Nft random_nft(
 			}
 			if (with_epsilon && draw(rng, 5) == 0) {
 				nft.delta.add(source, EPSILON, states_by_level[next_level][draw(rng, num_of_states_per_level)]);
+			}
+			// Up to two jumps, each ending on a level in [level + 2, num_of_levels], where num_of_levels stands for
+			//  level 0.
+			for (size_t jump{0},
+				 jumps{with_jumps && level + 2 <= num_of_levels && draw(rng, 4) == 0 ? 1 + draw(rng, 2) : 0};
+				 jump < jumps; ++jump) {
+				const size_t end{level + 2 + draw(rng, num_of_levels - level - 1)};
+				std::vector<Symbol> symbols{};
+				for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { symbols.push_back(symbol); }
+				if (with_dont_care) { symbols.push_back(DONT_CARE); }
+				if (with_epsilon) { symbols.push_back(EPSILON); }
+				nft.delta.add(
+					source, symbols[draw(rng, symbols.size())],
+					states_by_level[end % num_of_levels][draw(rng, num_of_states_per_level)]
+				);
 			}
 		}
 	}
@@ -382,6 +402,104 @@ TEST_CASE("mata::nft differential: the composition modes agree on jump-free tran
 	// The two modes build the product differently only when a word reaches several states.
 	CHECK(nondeterministic_inputs > 0);
 	CHECK(composed_with_epsilon > 0);
+}
+
+namespace {
+/// @p count of the levels {0, ..., @p num_of_levels - 1}, drawn at random, in increasing order.
+OrdVector<Level> random_levels(std::mt19937& rng, const size_t num_of_levels, const size_t count) {
+	std::vector<Level> levels(num_of_levels);
+	for (size_t level{0}; level < num_of_levels; ++level) { levels[level] = static_cast<Level>(level); }
+	std::ranges::shuffle(levels, rng);
+	levels.resize(count);
+	return OrdVector<Level>{levels};
+}
+} // namespace
+
+// The direct general composition has to accept the relation of the pipeline it replaces, EPSILON placement included
+//  (are_equivalent() reads EPSILON as a letter), under every jump mode, also with DONT_CARE, which the pipeline
+//  matches with EPSILON too (#561), and with jump transitions. The EPSILON-erased tuples, which the comparison of the
+//  composition modes above uses, are compared as well, with the jumps unwound in the jump mode.
+TEST_CASE("mata::nft differential: the direct general composition is the pipeline one", "[differential]") {
+	size_t num_of_nonempty{0};
+	size_t num_of_nonempty_with_epsilon{0};
+	size_t num_of_nonempty_with_dont_care{0};
+	size_t num_of_nonempty_with_jumps{0};
+	// With jumps kept by the pipeline in an operand reading every aligned level, which product() lets choose again.
+	size_t num_of_nonempty_with_kept_jumps{0};
+	size_t num_of_nonempty_multi_sync{0};
+	for (unsigned seed{0}; seed < 500; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_symbols{1 + seed % 2};
+		const size_t lhs_num_of_levels{1 + draw(rng, 4)};
+		const size_t rhs_num_of_levels{1 + draw(rng, 4)};
+		const size_t num_of_sync_levels{1 + draw(rng, std::min({size_t{3}, lhs_num_of_levels, rhs_num_of_levels}))};
+		if (lhs_num_of_levels + rhs_num_of_levels - num_of_sync_levels == 1) { continue; }
+		const bool with_epsilon{seed % 4 != 0};
+		const bool with_dont_care{seed % 3 == 1};
+		const bool with_jumps{seed % 5 >= 3};
+		const size_t lhs_num_of_states_per_level{1 + draw(rng, 3)};
+		const size_t rhs_num_of_states_per_level{1 + draw(rng, 3)};
+		Nft lhs{random_nft(
+			rng, lhs_num_of_states_per_level, num_of_symbols, lhs_num_of_levels, with_dont_care, with_epsilon,
+			with_jumps
+		)};
+		Nft rhs{random_nft(
+			rng, rhs_num_of_states_per_level, num_of_symbols, rhs_num_of_levels, with_dont_care, with_epsilon,
+			with_jumps
+		)};
+		const bool has_jumps{lhs.contains_jump_transitions() || rhs.contains_jump_transitions()};
+		// random_nft() numbers the zero-level states first.
+		lhs.initial.insert(static_cast<State>(draw(rng, lhs_num_of_states_per_level)));
+		rhs.initial.insert(static_cast<State>(draw(rng, rhs_num_of_states_per_level)));
+		const OrdVector<Level> lhs_sync_levels{random_levels(rng, lhs_num_of_levels, num_of_sync_levels)};
+		const OrdVector<Level> rhs_sync_levels{random_levels(rng, rhs_num_of_levels, num_of_sync_levels)};
+		INFO(describe(seed, lhs) + "\n---\n" + describe(seed, rhs));
+		for (const bool project_out : {false, true}) {
+			if (project_out && lhs_num_of_levels + rhs_num_of_levels == 2 * num_of_sync_levels) { continue; }
+			for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+				INFO(
+					"sync " << lhs_sync_levels << " / " << rhs_sync_levels << " project_out " << project_out
+							<< " jump mode " << static_cast<int>(jump_mode)
+				);
+				const std::optional<Nft> direct{algorithms::compose_general_direct(
+					lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode
+				)};
+				REQUIRE(direct.has_value());
+				// compose_general() dispatches to the direct composition here.
+				CHECK(
+					algorithms::compose_general(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode)
+						.is_identical(*direct)
+				);
+				const Nft pipeline{algorithms::compose_general_reference(
+					lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out, jump_mode
+				)};
+				REQUIRE(direct->levels.num_of_levels == pipeline.levels.num_of_levels);
+				CHECK(are_equivalent(*direct, pipeline, jump_mode));
+				const OrdVector<Symbol> keep_dont_care{DONT_CARE};
+				const std::set<std::vector<Word>> tuples{
+					bounded_tuples(pipeline.unwind_jumps(keep_dont_care, jump_mode), num_of_symbols, 2)
+				};
+				CHECK(bounded_tuples(direct->unwind_jumps(keep_dont_care, jump_mode), num_of_symbols, 2) == tuples);
+				if (!tuples.empty()) {
+					++num_of_nonempty;
+					if (with_epsilon) { ++num_of_nonempty_with_epsilon; }
+					if (with_dont_care) { ++num_of_nonempty_with_dont_care; }
+					if (has_jumps) { ++num_of_nonempty_with_jumps; }
+					if (has_jumps && jump_mode != JumpMode::AppendDontCares &&
+						(lhs_num_of_levels == num_of_sync_levels || rhs_num_of_levels == num_of_sync_levels)) {
+						++num_of_nonempty_with_kept_jumps;
+					}
+					if (num_of_sync_levels > 1) { ++num_of_nonempty_multi_sync; }
+				}
+			}
+		}
+	}
+	CHECK(num_of_nonempty > 0);
+	CHECK(num_of_nonempty_with_epsilon > 0);
+	CHECK(num_of_nonempty_with_dont_care > 0);
+	CHECK(num_of_nonempty_with_jumps > 0);
+	CHECK(num_of_nonempty_with_kept_jumps > 0);
+	CHECK(num_of_nonempty_multi_sync > 0);
 }
 
 TEST_CASE("mata::nft differential: composing with an empty operand keeps the level count", "[differential]") {
