@@ -90,7 +90,14 @@ enum class CompositionNormalization : std::uint8_t {
 	Full,
 	/// @c None: @c GeneratedOnly costs more in the composition than it saves in a following composition on the
 	///  transducers of string constraints, whose results it shrinks by a few percent.
-	Auto
+	Auto,
+	/// @c None, then trimmed, also when the synchronization levels are kept. The fast composer then builds the result
+	///  forward and from the final states (by composing the reverted operands) in turns with a growing state budget
+	///  and keeps whichever finishes first: on the transducers of string constraints, either direction can build tens
+	///  of times more states that the trim removes than the other. The composer trims a result without the
+	///  synchronization levels the same way under @c None and @c Auto. Operands it reads through the cursors of
+	///  their jump transitions are composed forward only.
+	Trim
 };
 
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;

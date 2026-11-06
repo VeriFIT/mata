@@ -729,6 +729,120 @@ TEST_CASE("mata::nft differential: compose() normalization keeps the relation an
 	CHECK(num_of_shrunk > 0);
 }
 
+// CompositionNormalization::Trim may build the composition of the reverted operands and revert it: reverting an NFT
+//  of n levels moves level l to n - 1 - l, so the reverted RHS composed with the reverted LHS on the mirrored
+//  synchronization levels has to be the reverted composition, with the levels of the result in the same order.
+TEST_CASE("mata::nft differential: composing the reverted operands gives the reverted composition", "[differential]") {
+	size_t num_of_nonempty{0};
+	for (unsigned seed{0}; seed < 150; ++seed) {
+		std::mt19937 lhs_rng{seed};
+		std::mt19937 rhs_rng{seed + 3'100};
+		const size_t num_of_symbols{1 + seed % 3};
+		const size_t num_of_states_per_level{1 + seed % 3};
+		const bool with_epsilon{seed % 2 == 0};
+		Nft lhs{random_nft(lhs_rng, num_of_states_per_level, num_of_symbols, 2, false, with_epsilon)};
+		const size_t rhs_num_of_levels{1 + (seed / 2) % 3};
+		Nft rhs{random_nft(rhs_rng, num_of_states_per_level, num_of_symbols, rhs_num_of_levels, false, with_epsilon)};
+		// Fast EPSILON moves between the zero-level states.
+		for (Nft* const nft : {&lhs, &rhs}) {
+			std::mt19937& rng{nft == &lhs ? lhs_rng : rhs_rng};
+			for (State source{0}; source < nft->num_of_states(); ++source) {
+				if (!with_epsilon || nft->levels[source] != 0 || draw(rng, 2) != 0) { continue; }
+				State target{static_cast<State>(draw(rng, nft->num_of_states()))};
+				while (nft->levels[target] != 0) { target = static_cast<State>(draw(rng, nft->num_of_states())); }
+				if (target != source) { nft->delta.add(source, EPSILON, target); }
+			}
+		}
+		INFO(describe(seed, lhs) + "\n---\n" + describe(seed + 3'100, rhs));
+
+		for (const Level lhs_sync_level : {Level{0}, Level{1}}) {
+			for (Level rhs_sync_level{0}; rhs_sync_level < rhs_num_of_levels; ++rhs_sync_level) {
+				for (const bool project_out : {true, false}) {
+					if (project_out && rhs_num_of_levels == 1) { continue; } // would leave the LHS's other level only
+					INFO("sync " << lhs_sync_level << "," << rhs_sync_level << " project_out " << project_out);
+					Nft forward{compose(
+						lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::NoJump,
+						CompositionMode::FastNoJump, CompositionNormalization::None
+					)};
+					forward.trim();
+					Nft reverted{revert(compose(
+						revert(rhs), revert(lhs), static_cast<Level>(rhs_num_of_levels - 1 - rhs_sync_level),
+						static_cast<Level>(1 - lhs_sync_level), project_out, JumpMode::NoJump,
+						CompositionMode::FastNoJump, CompositionNormalization::None
+					))};
+					reverted.trim();
+					const Nft trimmed{compose(
+						lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::NoJump,
+						CompositionMode::FastNoJump, CompositionNormalization::Trim
+					)};
+					REQUIRE(reverted.levels.num_of_levels == forward.levels.num_of_levels);
+					REQUIRE(trimmed.levels.num_of_levels == forward.levels.num_of_levels);
+					const std::set<std::vector<Word>> tuples{bounded_tuples(forward, num_of_symbols, 2)};
+					CHECK(bounded_tuples(reverted, num_of_symbols, 2) == tuples);
+					CHECK(bounded_tuples(trimmed, num_of_symbols, 2) == tuples);
+					CHECK(trimmed.num_of_states() == forward.num_of_states());
+					if (!tuples.empty()) { ++num_of_nonempty; }
+				}
+			}
+		}
+	}
+	CHECK(num_of_nonempty > 0);
+}
+
+// A cycle of the LHS, entered from its initial state and never left, that the RHS follows forever: the forward
+//  composition builds more states than CompositionNormalization::Trim lets it before it composes the reverted
+//  operands, which start from the final states and never enter the cycle.
+TEST_CASE(
+	"mata::nft differential: Trim composes from the final states when the forward composition is dead", "[differential]"
+) {
+	constexpr Symbol a{0};
+	constexpr Symbol x{1};
+	constexpr Symbol y{2};
+	constexpr Symbol z{3};
+	constexpr State cycle_length{40'000};
+	// lhs: a/a from state 0 into the cycle of its zero-level states 1, ..., cycle_length, and x/y from state 0 to the
+	//  final state.
+	Nft lhs{Nft::with_levels(2)};
+	for (State state{0}; state <= cycle_length; ++state) { lhs.add_state_with_level(0); }
+	for (State state{0}; state <= cycle_length; ++state) {
+		const State inner{lhs.add_state_with_level(1)};
+		lhs.delta.add(state, a, inner);
+		lhs.delta.add(inner, a, state % cycle_length + 1);
+	}
+	const State lhs_inner{lhs.add_state_with_level(1)};
+	const State lhs_final{lhs.add_state_with_level(0)};
+	lhs.delta.add(0, x, lhs_inner);
+	lhs.delta.add(lhs_inner, y, lhs_final);
+	lhs.initial.insert(0);
+	lhs.final.insert(lhs_final);
+	// rhs: a/a forever, or y/z to the final state.
+	Nft rhs{Nft::with_levels(2)};
+	const State rhs_initial{rhs.add_state_with_level(0)};
+	const State rhs_loop{rhs.add_state_with_level(1)};
+	const State rhs_inner{rhs.add_state_with_level(1)};
+	const State rhs_final{rhs.add_state_with_level(0)};
+	rhs.delta.add(rhs_initial, a, rhs_loop);
+	rhs.delta.add(rhs_loop, a, rhs_initial);
+	rhs.delta.add(rhs_initial, y, rhs_inner);
+	rhs.delta.add(rhs_inner, z, rhs_final);
+	rhs.initial.insert(rhs_initial);
+	rhs.final.insert(rhs_final);
+
+	const Nft projected{
+		compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump, CompositionNormalization::Trim)
+	};
+	CHECK(projected.levels.num_of_levels == 2);
+	CHECK(projected.num_of_states() == 3);
+	CHECK(bounded_tuples(projected, 4, 2) == std::set<std::vector<Word>>{{Word{x}, Word{z}}});
+
+	const Nft kept{
+		compose(lhs, rhs, 1, 0, false, JumpMode::NoJump, CompositionMode::FastNoJump, CompositionNormalization::Trim)
+	};
+	CHECK(kept.levels.num_of_levels == 3);
+	CHECK(kept.num_of_states() == 4);
+	CHECK(bounded_tuples(kept, 4, 2) == std::set<std::vector<Word>>{{Word{x}, Word{y}, Word{z}}});
+}
+
 // is_universal() carries the NFA antichain algorithm over unchanged: it demands a final state after
 //  every single symbol, while a transducer with n levels can only be final after a multiple of n
 //  symbols. On genuine multi-level transducers it therefore answers false even for the complete one

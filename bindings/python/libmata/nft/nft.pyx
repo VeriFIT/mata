@@ -75,6 +75,7 @@ class CompositionNormalization(IntEnum):
     GeneratedOnly = <int>mata_nft.CompositionNormalizationGeneratedOnly
     Full = <int>mata_nft.CompositionNormalizationFull
     Auto = <int>mata_nft.CompositionNormalizationAuto
+    Trim = <int>mata_nft.CompositionNormalizationTrim
 
 
 cdef CJumpMode _c_jump_mode(jump_mode):

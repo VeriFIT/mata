@@ -34,6 +34,7 @@ class CompositionNormalization(IntEnum):
     GeneratedOnly = 1
     Full = 2
     Auto = 3
+    Trim = 4
 
 class Levels:
     """Wrapper over the per-state levels of an NFT (`mata::nft::Levels`)."""
