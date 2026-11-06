@@ -2946,6 +2946,11 @@ TEST_CASE("mata::nft::algorithms::CompositionSchedule") {
 		CHECK(apply.positions == std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}, {Owner::Rhs, 0, 1}});
 		CHECK(apply.lhs_new_levels_mask() == mata::BoolVector{0, 1});
 		CHECK(apply.rhs_new_levels_mask() == mata::BoolVector{0, 0});
+		// An operand that has read its last level is at a zero-level state on the levels the other one reads after.
+		CHECK(
+			CompositionSchedule{2, 1, {0}, {0}}.positions ==
+			std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}, {Owner::Lhs, 1, 0}}
+		);
 	}
 }
 
@@ -3063,6 +3068,41 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 				CHECK(direct->is_in_lang_by_levels({{a}, {}}));
 				CHECK(!direct->is_in_lang_by_levels({{}, {b}}));
 			}
+		}
+	}
+
+	SECTION("jump transitions skipping a level and wrapping around") {
+		// LHS tracks [A, X, C], synchronizing X: the round (a, -, c) jumps over X, the round (y, -, -) over X and C.
+		Nft lhs_jumps{Nft::with_levels({3, {0, 2}}, 2, {0}, {0})};
+		lhs_jumps.delta.add(0, a, 1);
+		lhs_jumps.delta.add(1, c, 0);
+		lhs_jumps.delta.add(0, y, 0);
+		// RHS tracks [X, B]: the rounds (x, b) and (EPSILON, d).
+		Nft rhs_plain{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		rhs_plain.delta.add(0, x, 1);
+		rhs_plain.delta.add(1, b, 0);
+		rhs_plain.delta.add(0, EPSILON, 2);
+		rhs_plain.delta.add(2, d, 0);
+		const JumpMode jump_mode{JumpMode::AppendDontCares};
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct, algorithms::compose_general_reference(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode),
+				jump_mode
+			));
+			if (project_out) {
+				// The jump reads DONT_CARE on X, which matches x, EPSILON, and the EPSILON of a waiting RHS.
+				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {b}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {d}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {}}));
+				CHECK(!direct->is_in_lang_by_levels({{a}, {}, {b}}));
+			}
+		}
+		for (const JumpMode other_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol}) {
+			CHECK(!algorithms::compose_general_direct(lhs_jumps, rhs_plain, {1}, {0}, true, other_mode).has_value());
 		}
 	}
 

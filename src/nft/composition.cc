@@ -1976,8 +1976,9 @@ algorithms::CompositionSchedule::CompositionSchedule(
 	Level rhs_level{0};
 	// The levels only one operand reads before its level @p lhs_end or @p rhs_end: those of `lhs` first.
 	auto append_one_sided_levels = [&](const size_t lhs_end, const size_t rhs_end) {
-		for (; lhs_level < lhs_end; ++lhs_level) { positions.push_back({Owner::Lhs, lhs_level, rhs_level}); }
-		// Once `lhs` has read its last level, its state is a zero-level state again.
+		// Once an operand has read its last level, its state is a zero-level state again.
+		const Level waiting_rhs_level{rhs_level == rhs_num_of_levels ? Level{0} : rhs_level};
+		for (; lhs_level < lhs_end; ++lhs_level) { positions.push_back({Owner::Lhs, lhs_level, waiting_rhs_level}); }
 		const Level waiting_lhs_level{lhs_level == lhs_num_of_levels ? Level{0} : lhs_level};
 		for (; rhs_level < rhs_end; ++rhs_level) { positions.push_back({Owner::Rhs, waiting_lhs_level, rhs_level}); }
 	};
@@ -2012,9 +2013,29 @@ OrdVector<Level> algorithms::CompositionSchedule::sync_positions() const {
 namespace {
 using algorithms::CompositionSchedule;
 
-/// Whether the direct general composition reads @p nft as the pipeline of @c compose_general_reference() does: @p nft
-///  has no jump transition, which the jump modes read differently.
-bool is_read_directly(const Nft& nft) { return !nft.contains_jump_transitions(); }
+/**
+ * Whether the direct general composition reads @p nft as the pipeline of @c compose_general_reference() does under
+ *  @p jump_mode: every transition goes to a later level of its round or ends the round, and jump transitions occur
+ *  only under @c JumpMode::AppendDontCares.
+ */
+bool is_read_directly(const Nft& nft, const JumpMode jump_mode) {
+	const size_t num_of_levels{nft.levels.num_of_levels};
+	for (State source{0}; source < nft.num_of_states(); ++source) {
+		const Level source_level{nft.levels[source]};
+		if (source_level >= num_of_levels) { return false; }
+		for (const SymbolPost& symbol_post : nft.delta[source]) {
+			for (const State target : symbol_post.targets) {
+				const Level target_level{nft.levels[target]};
+				if (target_level >= num_of_levels || (target_level != 0 && target_level <= source_level)) {
+					return false;
+				}
+				const size_t end{target_level == 0 ? num_of_levels : target_level};
+				if (end != source_level + size_t{1} && jump_mode != JumpMode::AppendDontCares) { return false; }
+			}
+		}
+	}
+	return true;
+}
 
 /// Whether @p symbol matches the EPSILON a waiting operand reads: EPSILON itself, or DONT_CARE, which the product of
 ///  the pipeline matches with EPSILON too (#561).
@@ -2028,45 +2049,96 @@ constexpr SynchronizationType sync_type_of(const Symbol symbol) {
 }
 
 /**
- * @brief What each state of a jump-free operand can still do in its round, computed backwards over the levels.
+ * @brief Pair the groups of reads of two operands on a synchronization level both of them read.
+ *
+ * The groups of each operand have a @c symbol each, in increasing order. Equal symbols synchronize, and DONT_CARE
+ *  synchronizes with every symbol of the other operand, EPSILON included, as in the product of the pipeline (#561);
+ *  @p on_pair gets the symbol the pair emits, which is DONT_CARE only for DONT_CARE against DONT_CARE.
+ */
+template <typename LhsGroups, typename RhsGroups, typename OnPair>
+void synchronize(const LhsGroups& lhs_groups, const RhsGroups& rhs_groups, OnPair&& on_pair) {
+	const auto symbol_of{[](const auto& group) { return group.symbol; }};
+	const auto lhs_dont_care{std::ranges::lower_bound(lhs_groups, DONT_CARE, {}, symbol_of)};
+	const bool lhs_has_dont_care{lhs_dont_care != std::ranges::end(lhs_groups) && lhs_dont_care->symbol == DONT_CARE};
+	if (lhs_has_dont_care) {
+		for (const auto& rhs_group : rhs_groups) { on_pair(rhs_group.symbol, *lhs_dont_care, rhs_group); }
+	}
+	if (const auto rhs_dont_care{std::ranges::lower_bound(rhs_groups, DONT_CARE, {}, symbol_of)};
+		rhs_dont_care != std::ranges::end(rhs_groups) && rhs_dont_care->symbol == DONT_CARE) {
+		for (const auto& lhs_group : lhs_groups) {
+			if (lhs_group.symbol != DONT_CARE) { on_pair(lhs_group.symbol, lhs_group, *rhs_dont_care); }
+		}
+	}
+	// A two-pointer merge finds the other shared symbols, EPSILON included.
+	auto lhs_group{std::ranges::begin(lhs_groups)};
+	auto rhs_group{std::ranges::begin(rhs_groups)};
+	while (lhs_group != std::ranges::end(lhs_groups) && rhs_group != std::ranges::end(rhs_groups)) {
+		if (lhs_group->symbol < rhs_group->symbol) {
+			++lhs_group;
+		} else if (rhs_group->symbol < lhs_group->symbol) {
+			++rhs_group;
+		} else {
+			if (lhs_group->symbol != DONT_CARE) { on_pair(lhs_group->symbol, *lhs_group, *rhs_group); }
+			++lhs_group;
+			++rhs_group;
+		}
+	}
+}
+
+/**
+ * @brief What each state of an operand can still do in its round, computed backwards over the levels.
  *
  * A round of an operand runs from a zero-level state over every level back to a zero-level state. The direct
  *  composition takes a round of each operand together, or a round of one operand while the other one waits: the
  *  waiting operand reads EPSILON on every synchronization level, so the moving one has to read EPSILON (or DONT_CARE)
- *  there too.
+ *  there too. A jump transition reads its symbol on its first level and DONT_CARE on the others
+ *  (@c JumpMode::AppendDontCares).
+ *
+ * A place of the operand that is not a state, a cursor inside a jump transition (@c DirectOperand), is not looked
+ *  ahead: it may still do anything.
  */
 class RoundLookahead {
   public:
-	RoundLookahead(const Nft& nft, const OrdVector<Level>& sync_levels) : facts_(nft.num_of_states(), 0) {
+	/// Look ahead in the operand @p nft with @p num_of_places places, see @c DirectOperand.
+	RoundLookahead(const Nft& nft, const OrdVector<Level>& sync_levels, const size_t num_of_places)
+		: facts_(num_of_places, ANYTHING) {
 		const size_t num_of_levels{nft.levels.num_of_levels};
 		BoolVector is_sync(num_of_levels, false);
 		for (const Level level : sync_levels) { is_sync[level] = true; }
-		BoolVector is_sync_ahead(num_of_levels + 1, false);
+		// The first synchronization level from each level on, or num_of_levels if there is none.
+		std::vector<size_t> first_sync(num_of_levels + 1, num_of_levels);
 		for (size_t level{num_of_levels}; level-- > 0;) {
-			is_sync_ahead[level] = is_sync[level] || is_sync_ahead[level + 1];
+			first_sync[level] = is_sync[level] ? level : first_sync[level + 1];
 		}
 		std::vector<std::vector<State>> states_by_level(num_of_levels);
-		for (State state{0}; state < facts_.size(); ++state) {
+		for (State state{0}; state < nft.num_of_states(); ++state) {
 			if (nft.levels[state] < num_of_levels) { states_by_level[nft.levels[state]].push_back(state); }
 		}
+		// A transition goes to a later level or to a zero-level state, which ends the round, so the facts of its
+		//  targets are known before those of its source.
 		for (size_t level{num_of_levels}; level-- > 0;) {
 			for (const State state : states_by_level[level]) {
 				uint8_t facts{0};
 				for (const SymbolPost& symbol_post : nft.delta[state]) {
 					for (const State target : symbol_post.targets) {
-						// In a jump-free NFT, only a transition from the last level reaches a zero-level state, which
-						//  ends the round.
+						const size_t end{nft.levels[target] == 0 ? num_of_levels : nft.levels[target]};
 						const uint8_t target_facts{nft.levels[target] == 0 ? FINISHED : facts_[target]};
 						facts |= target_facts & CAN_FINISH;
-						if ((!is_sync[level] || matches_epsilon(symbol_post.symbol)) &&
+						// The transition reads its symbol on the level of the state, and DONT_CARE on the levels it
+						//  jumps over.
+						const bool reads_sync_first{is_sync[level] != 0};
+						const bool reads_sync_later{first_sync[level + 1] < end};
+						if ((!reads_sync_first || matches_epsilon(symbol_post.symbol)) &&
 							(target_facts & CAN_WAIT) != 0) {
 							facts |= CAN_WAIT;
 						}
-						if (is_sync[level]) {
+						if (reads_sync_first || reads_sync_later) {
 							if ((target_facts & CAN_FINISH) != 0) {
-								facts |= static_cast<uint8_t>(sync_type_of(symbol_post.symbol));
+								facts |= static_cast<uint8_t>(
+									sync_type_of(reads_sync_first ? symbol_post.symbol : DONT_CARE)
+								);
 							}
-						} else if (is_sync_ahead[level]) {
+						} else if (first_sync[end] < num_of_levels) {
 							facts |= target_facts & SYNC_TYPE;
 						}
 					}
@@ -2076,34 +2148,204 @@ class RoundLookahead {
 		}
 	}
 
-	/// What @p state can read on the next synchronization level of its round on a path that finishes the round.
-	SynchronizationType sync_type(const State state) const {
-		return static_cast<SynchronizationType>(facts_[state] & SYNC_TYPE);
+	/// What @p place can read on the next synchronization level of its round on a path that finishes the round.
+	SynchronizationType sync_type(const State place) const {
+		return static_cast<SynchronizationType>(facts_of(place) & SYNC_TYPE);
 	}
-	/// Whether @p state can finish its round.
-	bool can_finish(const State state) const { return (facts_[state] & CAN_FINISH) != 0; }
-	/// Whether @p state can finish its round reading EPSILON on each synchronization level left, as it has to while
+	/// Whether @p place can finish its round.
+	bool can_finish(const State place) const { return (facts_of(place) & CAN_FINISH) != 0; }
+	/// Whether @p place can finish its round reading EPSILON on each synchronization level left, as it has to while
 	///  the other operand waits.
-	bool can_finish_alone(const State state) const { return (facts_[state] & CAN_WAIT) != 0; }
+	bool can_finish_alone(const State place) const { return (facts_of(place) & CAN_WAIT) != 0; }
 
   private:
 	static constexpr uint8_t SYNC_TYPE{static_cast<uint8_t>(SynchronizationType::ON_EPSILON_AND_SYMBOL)};
 	static constexpr uint8_t CAN_FINISH{0b0000'0100};
 	static constexpr uint8_t CAN_WAIT{0b0000'1000};
 	static constexpr uint8_t FINISHED{CAN_FINISH | CAN_WAIT};
+	static constexpr uint8_t ANYTHING{SYNC_TYPE | FINISHED};
+
+	uint8_t facts_of(const State place) const { return facts_[place]; }
+
 	std::vector<uint8_t> facts_;
 };
 
 /**
- * @brief The general composition of two jump-free NFTs by a traversal of the aligned configurations reachable from
- *  the initial pairs.
+ * @brief An operand of the direct general composition as it reads the aligned levels.
+ *
+ * A place of the operand is one of its states, or a cursor inside its jump transitions, numbered after the states: a
+ *  source state and one of its symbol posts. The symbol was read on the first level of the jump; the cursor stands
+ *  for the targets of the symbol post not reached yet and reads DONT_CARE on each level up to them
+ *  (@c JumpMode::AppendDontCares), so a jump is read level by level without inner states.
+ */
+class DirectOperand {
+  public:
+	DirectOperand(
+		const Nft& nft, const CompositionSchedule& schedule, const bool is_lhs, const OrdVector<Level>& sync_levels
+	)
+		: nft_{nft},
+		  num_of_states_{nft.num_of_states()},
+		  post_offset_{nft.contains_jump_transitions() ? first_cursors_of(nft) : std::vector<size_t>{}},
+		  cursor_source_{sources_of_cursors(post_offset_)},
+		  lookahead_{nft, sync_levels, num_of_states_ + cursor_source_.size()} {
+		const size_t num_of_positions{schedule.positions.size()};
+		next_level_.resize(num_of_positions, 0);
+		for (size_t position{0}; position + 1 < num_of_positions; ++position) {
+			const CompositionSchedule::Position& next{schedule.positions[position + 1]};
+			next_level_[position] = is_lhs ? next.lhs_level : next.rhs_level;
+		}
+	}
+
+	/// An upper bound on the number of places of @p nft.
+	static size_t max_num_of_places(const Nft& nft) {
+		size_t num_of_places{nft.num_of_states()};
+		for (State state{0}; state < nft.num_of_states(); ++state) { num_of_places += nft.delta[state].size(); }
+		return num_of_places;
+	}
+
+	/// A run of reads on one symbol: the indices of their places in @c Reads::targets.
+	struct ReadRun {
+		Symbol symbol;
+		size_t begin;
+		size_t end;
+	};
+	/// Reads grouped by symbol, in increasing order.
+	struct Reads {
+		std::vector<State> targets{};
+		std::vector<ReadRun> runs{};
+	};
+
+	const Nft& nft() const { return nft_; }
+	const RoundLookahead& lookahead() const { return lookahead_; }
+	/// The number of places: the states, then the cursors.
+	size_t num_of_places() const { return num_of_states_ + cursor_source_.size(); }
+	bool has_jumps() const { return !cursor_source_.empty(); }
+
+	/// Read the aligned level @p position, one the operand reads, from @p place: call @p on_read with each symbol
+	///  read and the place after it.
+	template <typename OnRead> void read(const State place, const size_t position, OnRead&& on_read) const {
+		const Level next_level{next_level_[position]};
+		if (place < num_of_states_) {
+			const StatePost& state_post{nft_.delta[place]};
+			for (auto symbol_post{state_post.begin()}; symbol_post != state_post.end(); ++symbol_post) {
+				read_symbol_post(place, symbol_post, symbol_post->symbol, next_level, on_read);
+			}
+			return;
+		}
+		const auto [source, symbol_post]{cursor_of(place)};
+		read_symbol_post(source, symbol_post, DONT_CARE, next_level, on_read);
+	}
+
+	/// Read as the other @c read() into @p reads.
+	void read(const State place, const size_t position, Reads& reads) const {
+		reads.targets.clear();
+		reads.runs.clear();
+		read(place, position, [&](const Symbol symbol, const State target) {
+			if (reads.runs.empty() || reads.runs.back().symbol != symbol) {
+				reads.runs.push_back({symbol, reads.targets.size(), reads.targets.size()});
+			}
+			reads.targets.push_back(target);
+			++reads.runs.back().end;
+		});
+	}
+
+	/// As the first @c read(), restricted to the reads of @p symbol.
+	template <typename OnRead>
+	void read(const State place, const size_t position, const Symbol symbol, OnRead&& on_read) const {
+		const Level next_level{next_level_[position]};
+		if (place < num_of_states_) {
+			const StatePost& state_post{nft_.delta[place]};
+			if (const auto symbol_post{state_post.find(symbol)}; symbol_post != state_post.end()) {
+				read_symbol_post(place, symbol_post, symbol, next_level, on_read);
+			}
+			return;
+		}
+		if (symbol == DONT_CARE) {
+			const auto [source, symbol_post]{cursor_of(place)};
+			read_symbol_post(source, symbol_post, DONT_CARE, next_level, on_read);
+		}
+	}
+
+  private:
+	/// Read @p symbol along @p symbol_post of @p source: reach its targets on @p next_level, and keep a cursor for its
+	///  targets further on.
+	template <typename OnRead>
+	void read_symbol_post(
+		const State source,
+		const StatePost::const_iterator symbol_post,
+		const Symbol symbol,
+		const Level next_level,
+		OnRead&& on_read
+	) const {
+		if (!has_jumps()) {
+			// Without jumps, every target is on the next level.
+			for (const State target : symbol_post->targets) { on_read(symbol, target); }
+			return;
+		}
+		bool goes_on{false};
+		for (const State target : symbol_post->targets) {
+			const Level target_level{nft_.levels[target]};
+			if (target_level == next_level) {
+				on_read(symbol, target);
+			} else if (next_level != 0 && (target_level == 0 || target_level > next_level)) {
+				goes_on = true;
+			}
+		}
+		if (goes_on) { on_read(symbol, cursor(source, symbol_post)); }
+	}
+
+	/// The index of the first cursor of each state of @p nft, and their number at the end: one per symbol post.
+	static std::vector<size_t> first_cursors_of(const Nft& nft) {
+		std::vector<size_t> first_cursors(nft.num_of_states() + 1, 0);
+		for (State state{0}; state < nft.num_of_states(); ++state) {
+			first_cursors[state + 1] = first_cursors[state] + nft.delta[state].size();
+		}
+		return first_cursors;
+	}
+	static std::vector<State> sources_of_cursors(const std::vector<size_t>& first_cursors) {
+		if (first_cursors.empty()) { return {}; }
+		std::vector<State> sources(first_cursors.back());
+		for (State state{0}; state + 1 < first_cursors.size(); ++state) {
+			std::fill(
+				sources.begin() + static_cast<std::ptrdiff_t>(first_cursors[state]),
+				sources.begin() + static_cast<std::ptrdiff_t>(first_cursors[state + 1]), state
+			);
+		}
+		return sources;
+	}
+
+	State cursor(const State source, const StatePost::const_iterator symbol_post) const {
+		return static_cast<State>(
+			num_of_states_ + post_offset_[source] + static_cast<size_t>(symbol_post - nft_.delta[source].begin())
+		);
+	}
+	std::pair<State, StatePost::const_iterator> cursor_of(const State place) const {
+		const size_t index{place - num_of_states_};
+		const State source{cursor_source_[index]};
+		return {source, nft_.delta[source].begin() + static_cast<std::ptrdiff_t>(index - post_offset_[source])};
+	}
+
+	const Nft& nft_;
+	const size_t num_of_states_;
+	/// The index of the first cursor of each state, and the source state of each cursor; empty without jumps.
+	const std::vector<size_t> post_offset_;
+	const std::vector<State> cursor_source_;
+	const RoundLookahead lookahead_;
+	/// Indexed by aligned level: the level of the operand after reading it, 0 at the end of the round.
+	std::vector<Level> next_level_{};
+};
+
+/**
+ * @brief The general composition of two NFTs by a traversal of the aligned configurations reachable from the
+ *  initial pairs.
  *
  * The pipeline of @c compose_general_reference() pads copies of the operands to the aligned levels, adds a whole-round
  *  self-loop of EPSILON and DONT_CARE to each of their zero-level states, and builds their product. A round of that
  *  product is a round of both operands, or a round of one operand against the self-loop of the other one. This class
- *  builds exactly these rounds over the original operands: a configuration is a pair of operand states, the aligned
- *  level read next (@c CompositionSchedule), and which operands move in the current round; a padded level is a
- *  cursor move that emits the symbol of the operand reading it, or EPSILON for an operand waiting in its self-loop.
+ *  builds exactly these rounds over the original operands: a configuration is a pair of operand places (a state, or
+ *  a cursor inside a jump transition, see @c DirectOperand), the aligned level read next (@c CompositionSchedule), and
+ *  which operands move in the current round; a padded level is a cursor move that emits the symbol of the operand
+ *  reading it, or EPSILON for an operand waiting in its self-loop.
  *  On a synchronization level, DONT_CARE matches every symbol of the other operand and emits it, EPSILON included, as
  *  the product of the pipeline does (#561); so a moving operand reads DONT_CARE against a waiting one as EPSILON.
  *  The result has the same relation as the pipeline result, EPSILON included, except that a round where both
@@ -2131,12 +2373,10 @@ class DirectGeneralComposer {
 		const OrdVector<Level>& rhs_sync_levels,
 		const bool project_out_sync_levels
 	)
-		: lhs_{lhs},
-		  rhs_{rhs},
+		: lhs_{lhs, schedule, true, lhs_sync_levels},
+		  rhs_{rhs, schedule, false, rhs_sync_levels},
 		  schedule_{schedule},
 		  num_of_positions_{schedule.positions.size()},
-		  lhs_lookahead_{lhs, lhs_sync_levels},
-		  rhs_lookahead_{rhs, rhs_sync_levels},
 		  lhs_alone_action_{
 			  lhs.levels.num_of_levels == lhs_sync_levels.size() ? EpsilonFilterAction::SILENT_LHS_ONLY_MOVE
 																 : EpsilonFilterAction::NON_SILENT_LHS_ONLY_MOVE
@@ -2152,7 +2392,9 @@ class DirectGeneralComposer {
 				  : 1
 		  },
 		  num_of_layers_{num_of_filter_modes_ + NUMBER_OF_MODES * (num_of_positions_ - 1)},
-		  configurations_{lhs.num_of_states() * num_of_layers_, rhs.num_of_states()} {
+		  configurations_{lhs_.num_of_places() * num_of_layers_, rhs_.num_of_places()},
+		  lhs_reads_(num_of_positions_),
+		  rhs_reads_(num_of_positions_) {
 		MATA_ASSERT(num_of_positions_ > 1);
 		is_sync_ahead_.resize(num_of_positions_ + 1, false);
 		is_lhs_done_.resize(num_of_positions_ + 1, true);
@@ -2174,17 +2416,18 @@ class DirectGeneralComposer {
 		MATA_ASSERT(num_of_result_levels_ > 0);
 	}
 
-	/// Whether the configurations of @p lhs_num_of_states states and @p num_of_positions positions can be numbered.
-	static bool fits(const size_t lhs_num_of_states, const size_t num_of_positions) {
+	/// Whether the configurations of @p lhs and @p rhs on @p num_of_positions positions can be numbered.
+	static bool fits(const Nft& lhs, const Nft& rhs, const size_t num_of_positions) {
 		const size_t num_of_layers{NUMBER_OF_EPSILON_FILTER_MODES + NUMBER_OF_MODES * (num_of_positions - 1)};
-		return lhs_num_of_states < (Limits::max_state - 1) / num_of_layers;
+		return DirectOperand::max_num_of_places(lhs) < (Limits::max_state - 1) / num_of_layers &&
+			   DirectOperand::max_num_of_places(rhs) < Limits::max_state;
 	}
 
 	/// Build the composition.
 	Nft compose() {
 		SparseSet<State> initial{};
-		for (const State lhs_initial : lhs_.initial) {
-			for (const State rhs_initial : rhs_.initial) {
+		for (const State lhs_initial : lhs_.nft().initial) {
+			for (const State rhs_initial : rhs_.nft().initial) {
 				initial.insert(intern(lhs_initial, rhs_initial, start_layer(EpsilonFilterMode::LHS_MAY_MOVE_ALONE), 0));
 			}
 		}
@@ -2206,8 +2449,9 @@ class DirectGeneralComposer {
 	};
 	static constexpr size_t NUMBER_OF_MODES{3};
 
-	/// A configuration: the operand states and the layer, which encodes either the filter mode of a configuration at
-	///  the start of a round, or the aligned level read next and the mode of the round.
+	/// A configuration: the operand places and the layer, which encodes either the filter mode of a configuration at
+	///  the start of a round, where the places are zero-level states, or the aligned level read next and the mode of
+	///  the round.
 	struct Configuration {
 		State lhs;
 		State rhs;
@@ -2231,102 +2475,88 @@ class DirectGeneralComposer {
 		configurations_.insert(row, rhs_state, state);
 		configuration_of_.push_back({lhs_state, rhs_state, layer});
 		levels_.push_back(level);
-		if (layer < num_of_filter_modes_ && lhs_.final.contains(lhs_state) && rhs_.final.contains(rhs_state)) {
+		if (layer < num_of_filter_modes_ && lhs_.nft().final.contains(lhs_state) &&
+			rhs_.nft().final.contains(rhs_state)) {
 			final_.insert(state);
 		}
 		return state;
 	}
 
 	/**
-	 * @brief Read the aligned level @p position from the operand states in @p mode: call @p on_move with the emitted
-	 *  symbol and the operand states after each move.
+	 * @brief Read the aligned level @p position from the operand places in @p mode: call @p on_move with the emitted
+	 *  symbol and the operand places after each move.
 	 */
 	template <typename OnMove>
-	void read(
-		const State lhs_state, const State rhs_state, const size_t position, const Mode mode, OnMove&& on_move
-	) const {
+	void read(const State lhs_place, const State rhs_place, const size_t position, const Mode mode, OnMove&& on_move) {
 		switch (schedule_.positions[position].owner) {
 			case CompositionSchedule::Owner::Lhs:
 				if (mode == Mode::RhsAlone) {
-					on_move(EPSILON, lhs_state, rhs_state);
+					on_move(EPSILON, lhs_place, rhs_place);
 					return;
 				}
-				for (const SymbolPost& symbol_post : lhs_.delta[lhs_state]) {
-					for (const State target : symbol_post.targets) { on_move(symbol_post.symbol, target, rhs_state); }
-				}
+				lhs_.read(lhs_place, position, [&](const Symbol symbol, const State lhs_target) {
+					on_move(symbol, lhs_target, rhs_place);
+				});
 				return;
 			case CompositionSchedule::Owner::Rhs:
 				if (mode == Mode::LhsAlone) {
-					on_move(EPSILON, lhs_state, rhs_state);
+					on_move(EPSILON, lhs_place, rhs_place);
 					return;
 				}
-				for (const SymbolPost& symbol_post : rhs_.delta[rhs_state]) {
-					for (const State target : symbol_post.targets) { on_move(symbol_post.symbol, lhs_state, target); }
-				}
+				rhs_.read(rhs_place, position, [&](const Symbol symbol, const State rhs_target) {
+					on_move(symbol, lhs_place, rhs_target);
+				});
 				return;
 			case CompositionSchedule::Owner::Sync:
 				break;
 		}
-		const StatePost& lhs_post{lhs_.delta[lhs_state]};
-		const StatePost& rhs_post{rhs_.delta[rhs_state]};
 		if (mode == Mode::LhsAlone) {
 			// The waiting RHS reads EPSILON on its own levels, which EPSILON and DONT_CARE match.
 			for (const Symbol symbol : {DONT_CARE, EPSILON}) {
-				if (const auto symbol_post{lhs_post.find(symbol)}; symbol_post != lhs_post.end()) {
-					for (const State target : symbol_post->targets) { on_move(EPSILON, target, rhs_state); }
-				}
+				lhs_.read(lhs_place, position, symbol, [&](Symbol, const State lhs_target) {
+					on_move(EPSILON, lhs_target, rhs_place);
+				});
 			}
 			return;
 		}
 		if (mode == Mode::RhsAlone) {
 			for (const Symbol symbol : {DONT_CARE, EPSILON}) {
-				if (const auto symbol_post{rhs_post.find(symbol)}; symbol_post != rhs_post.end()) {
-					for (const State target : symbol_post->targets) { on_move(EPSILON, lhs_state, target); }
-				}
+				rhs_.read(rhs_place, position, symbol, [&](Symbol, const State rhs_target) {
+					on_move(EPSILON, lhs_place, rhs_target);
+				});
 			}
 			return;
 		}
-		// DONT_CARE matches every symbol of the other operand, EPSILON included (#561), and emits that symbol.
-		if (const auto dont_care_post{lhs_post.find(DONT_CARE)}; dont_care_post != lhs_post.end()) {
-			for (const SymbolPost& rhs_symbol_post : rhs_post) {
-				for (const State lhs_target : dont_care_post->targets) {
-					for (const State rhs_target : rhs_symbol_post.targets) {
-						on_move(rhs_symbol_post.symbol, lhs_target, rhs_target);
-					}
-				}
-			}
-		}
-		if (const auto dont_care_post{rhs_post.find(DONT_CARE)}; dont_care_post != rhs_post.end()) {
-			for (const SymbolPost& lhs_symbol_post : lhs_post) {
-				if (lhs_symbol_post.symbol == DONT_CARE) { continue; }
-				for (const State lhs_target : lhs_symbol_post.targets) {
-					for (const State rhs_target : dont_care_post->targets) {
-						on_move(lhs_symbol_post.symbol, lhs_target, rhs_target);
-					}
-				}
-			}
-		}
-		// Both posts are sorted by symbol: a two-pointer merge finds the other shared symbols, EPSILON included.
-		auto lhs_symbol_post{lhs_post.begin()};
-		auto rhs_symbol_post{rhs_post.begin()};
-		while (lhs_symbol_post != lhs_post.end() && rhs_symbol_post != rhs_post.end()) {
-			if (lhs_symbol_post->symbol < rhs_symbol_post->symbol) {
-				++lhs_symbol_post;
-			} else if (rhs_symbol_post->symbol < lhs_symbol_post->symbol) {
-				++rhs_symbol_post;
-			} else {
-				// DONT_CARE against DONT_CARE was read above.
-				if (lhs_symbol_post->symbol != DONT_CARE) {
-					for (const State lhs_target : lhs_symbol_post->targets) {
-						for (const State rhs_target : rhs_symbol_post->targets) {
-							on_move(lhs_symbol_post->symbol, lhs_target, rhs_target);
+		if (!lhs_.has_jumps() && !rhs_.has_jumps()) {
+			// Every target of a state of an operand without jumps is on its next level.
+			synchronize(
+				lhs_.nft().delta[lhs_place], rhs_.nft().delta[rhs_place],
+				[&](const Symbol symbol, const SymbolPost& lhs_symbol_post, const SymbolPost& rhs_symbol_post) {
+					for (const State lhs_target : lhs_symbol_post.targets) {
+						for (const State rhs_target : rhs_symbol_post.targets) {
+							on_move(symbol, lhs_target, rhs_target);
 						}
 					}
 				}
-				++lhs_symbol_post;
-				++rhs_symbol_post;
-			}
+			);
+			return;
 		}
+		// A move on a later level reads into the buffers of that level.
+		DirectOperand::Reads& lhs_reads{lhs_reads_[position]};
+		lhs_.read(lhs_place, position, lhs_reads);
+		if (lhs_reads.runs.empty()) { return; }
+		DirectOperand::Reads& rhs_reads{rhs_reads_[position]};
+		rhs_.read(rhs_place, position, rhs_reads);
+		synchronize(
+			lhs_reads.runs, rhs_reads.runs,
+			[&](const Symbol symbol, const DirectOperand::ReadRun& lhs_run, const DirectOperand::ReadRun& rhs_run) {
+				for (size_t lhs_index{lhs_run.begin}; lhs_index < lhs_run.end; ++lhs_index) {
+					for (size_t rhs_index{rhs_run.begin}; rhs_index < rhs_run.end; ++rhs_index) {
+						on_move(symbol, lhs_reads.targets[lhs_index], rhs_reads.targets[rhs_index]);
+					}
+				}
+			}
+		);
 	}
 
 	/// Whether a round in @p mode can still be finished from the operand states before the aligned level @p position.
@@ -2334,14 +2564,16 @@ class DirectGeneralComposer {
 		switch (mode) {
 			case Mode::Both:
 				if (is_sync_ahead_[position]) {
-					return exist_intersection(lhs_lookahead_.sync_type(lhs_state), rhs_lookahead_.sync_type(rhs_state));
+					return exist_intersection(
+						lhs_.lookahead().sync_type(lhs_state), rhs_.lookahead().sync_type(rhs_state)
+					);
 				}
-				return (is_lhs_done_[position] || lhs_lookahead_.can_finish(lhs_state)) &&
-					   (is_rhs_done_[position] || rhs_lookahead_.can_finish(rhs_state));
+				return (is_lhs_done_[position] || lhs_.lookahead().can_finish(lhs_state)) &&
+					   (is_rhs_done_[position] || rhs_.lookahead().can_finish(rhs_state));
 			case Mode::LhsAlone:
-				return is_lhs_done_[position] || lhs_lookahead_.can_finish_alone(lhs_state);
+				return is_lhs_done_[position] || lhs_.lookahead().can_finish_alone(lhs_state);
 			case Mode::RhsAlone:
-				return is_rhs_done_[position] || rhs_lookahead_.can_finish_alone(rhs_state);
+				return is_rhs_done_[position] || rhs_.lookahead().can_finish_alone(rhs_state);
 		}
 		return false;
 	}
@@ -2353,7 +2585,7 @@ class DirectGeneralComposer {
 		return epsilon_filter_step(
 				   EpsilonFilterMode::LHS_MAY_MOVE_ALONE, rhs_alone_action_,
 				   lhs_alone_action_ == EpsilonFilterAction::SILENT_LHS_ONLY_MOVE &&
-					   lhs_lookahead_.can_finish_alone(lhs_state),
+					   lhs_.lookahead().can_finish_alone(lhs_state),
 				   false
 		)
 			.value();
@@ -2414,11 +2646,11 @@ class DirectGeneralComposer {
 			if (can_finish(lhs_state, rhs_state, 0, Mode::Both)) {
 				read_kept_level(lhs_state, rhs_state, 0, Mode::Both);
 			}
-			if (lhs_lookahead_.can_finish_alone(lhs_state) &&
+			if (lhs_.lookahead().can_finish_alone(lhs_state) &&
 				epsilon_filter_step(filter_mode, lhs_alone_action_, false, false).has_value()) {
 				read_kept_level(lhs_state, rhs_state, 0, Mode::LhsAlone);
 			}
-			if (rhs_lookahead_.can_finish_alone(rhs_state)) {
+			if (rhs_.lookahead().can_finish_alone(rhs_state)) {
 				read_kept_level(lhs_state, rhs_state, 0, Mode::RhsAlone);
 			}
 		} else {
@@ -2443,12 +2675,10 @@ class DirectGeneralComposer {
 		delta_builder_.finish_state();
 	}
 
-	const Nft& lhs_;
-	const Nft& rhs_;
+	const DirectOperand lhs_;
+	const DirectOperand rhs_;
 	const CompositionSchedule& schedule_;
 	const size_t num_of_positions_;
-	const RoundLookahead lhs_lookahead_;
-	const RoundLookahead rhs_lookahead_;
 	const EpsilonFilterAction lhs_alone_action_;
 	const EpsilonFilterAction rhs_alone_action_;
 	const size_t num_of_filter_modes_;
@@ -2469,6 +2699,9 @@ class DirectGeneralComposer {
 	SparseSet<State> final_{};
 	nfa::DeltaBuilder delta_builder_{};
 	std::vector<std::pair<Symbol, State>> moves_{};
+	/// Indexed by aligned level: the reads of each operand on a synchronization level both operands read.
+	std::vector<DirectOperand::Reads> lhs_reads_;
+	std::vector<DirectOperand::Reads> rhs_reads_;
 };
 
 /// The body of @c compose_general_direct() for a validated request.
@@ -2486,8 +2719,8 @@ std::optional<Nft> compose_directly(
 	};
 	// A single aligned level is a single synchronization level, where the pipeline also synchronizes the
 	//  self-loops of the two operands into an EPSILON self-loop of the result.
-	if (schedule.positions.size() == 1 || !is_read_directly(lhs) || !is_read_directly(rhs) ||
-		!DirectGeneralComposer::fits(lhs.num_of_states(), schedule.positions.size())) {
+	if (schedule.positions.size() == 1 || !is_read_directly(lhs, jump_mode) || !is_read_directly(rhs, jump_mode) ||
+		!DirectGeneralComposer::fits(lhs, rhs, schedule.positions.size())) {
 		return std::nullopt;
 	}
 	Nft result{
