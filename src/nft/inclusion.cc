@@ -34,6 +34,9 @@ OrdVector<Symbol> unwinding_symbols(const Nft& lhs, const Nft& rhs, const mata::
 	return symbols;
 }
 
+/// The first cursor of a chain of LazyUnwinding no search has reached yet.
+constexpr size_t UNNUMBERED_CHAIN{std::numeric_limits<size_t>::max()};
+
 /*
  * Lazy exploration of jumps for the antichain inclusion (#791).
  *
@@ -201,7 +204,6 @@ class LazyUnwinding {
   private:
 	/// The cursors {target, r, label} for r = 1, ..., length, numbered first + r - 1 once the search reaches one.
 	struct Chain {
-		static constexpr size_t unnumbered{std::numeric_limits<size_t>::max()};
 		State target;
 		Symbol label;
 		size_t first;
@@ -243,7 +245,7 @@ class LazyUnwinding {
 		// A target has few chains, one per label of the jumps into it: a linear scan beats a binary search.
 		const auto chain{std::ranges::find(first, last, label, &Chain::label)};
 		MATA_ASSERT(chain != last && chain->label == label && remaining <= chain->length);
-		if (chain->first == Chain::unnumbered) { number_cursors(*chain); }
+		if (chain->first == UNNUMBERED_CHAIN) { number_cursors(*chain); }
 		return static_cast<State>(chain->first + remaining - 1);
 	}
 
@@ -348,9 +350,7 @@ class LazyUnwinding {
 			})};
 			labels.erase(shorter.begin(), shorter.end());
 			for (const auto& [label, length] : labels) {
-				chains_.push_back(
-					Chain{.target = target, .label = label, .first = Chain::unnumbered, .length = length}
-				);
+				chains_.push_back(Chain{.target = target, .label = label, .first = UNNUMBERED_CHAIN, .length = length});
 			}
 			chains_of_target_[target + 1] = chains_.size();
 		}
