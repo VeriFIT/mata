@@ -64,6 +64,16 @@ cd mata
 make release
 ```
 
+For C++ executables, **install [mimalloc](https://github.com/microsoft/mimalloc)** and build with `MATA_USE_MIMALLOC=ON`:
+
+```shell
+make release MATA_USE_MIMALLOC=ON
+```
+
+The option is off by default and `cmake` fails if mimalloc cannot be found. The Nix C++ package enables it.
+The allocator applies to the final executable, so consumers linking `libmata.a` without the exported CMake target must also link mimalloc themselves.
+A measurement over Mata operations on the automata-lib-bench TACAS'24 experiments and selected NFT programs reduced total runtime by 26.6%; the effect varies by workload.
+
 In order to install the library, you can run
 
 ```shell

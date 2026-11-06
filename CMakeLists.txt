@@ -87,6 +87,15 @@ option (MATA_ENABLE_IPO "Build Mata with interprocedural (link-time) optimizatio
 #  reaches `mataTargets.cmake` and therefore no consumer of an installed Mata inherits it.
 option (MATA_ARCH_NATIVE "Optimize for the architecture of the building machine (local use only)" OFF)
 
+option (MATA_USE_MIMALLOC "Link mimalloc as the memory allocator" OFF)
+if (MATA_USE_MIMALLOC)
+	# Off by default, so the configure fails if mimalloc cannot be found.
+	find_package (mimalloc REQUIRED)
+	message (STATUS "Using mimalloc")
+else ()
+	message (STATUS "Not using mimalloc")
+endif ()
+
 # Profile-guided optimization, driven in two stages: a `generate` build writes a profile while it
 #  runs the training workload, a `use` build reads it back. A profile belongs to one exact compiler
 #  and source tree, so it is never installed and never committed. `just cpp::pgo` runs both stages.
