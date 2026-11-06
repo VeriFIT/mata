@@ -130,6 +130,8 @@ std::optional<std::vector<State>> get_longest_word_lengths(const Nfa& nfa) {
 	std::vector<Frame> stack{};
 	const auto push{[&](const State state) {
 		on_stack[state] = true;
+		// The analyzer loses track of the 'nfa' reference captured by the lambda and reports a null call.
+		// NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
 		stack.push_back({.state = state, .longest = 0, .successor = SuccessorCursor{nfa.delta[state]}.begin()});
 	}};
 
