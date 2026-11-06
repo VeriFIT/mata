@@ -143,7 +143,7 @@ def test_noodlify_for_transducer():
     identity_nft = mata_nft.Nft(1, num_of_levels=2)
     identity_nft.make_initial_state(0)
     identity_nft.make_final_state(0)
-    identity_nft.insert_identity(0, [1, 2, 3])
+    identity_nft.insert_identity(0, [1, 2, 3], mata_nft.JumpMode.NoJump)
 
     in_aut = mata_nfa.Nfa(2)
     in_aut.make_initial_state(0)
@@ -196,7 +196,7 @@ def test_noodlify_for_equation_sides_and_transducer_do_not_mutate_their_inputs()
     identity_nft = mata_nft.Nft(1, num_of_levels=2)
     identity_nft.make_initial_state(0)
     identity_nft.make_final_state(0)
-    identity_nft.insert_identity(0, [1, 2, 3])
+    identity_nft.insert_identity(0, [1, 2, 3], mata_nft.JumpMode.NoJump)
     expected = _snapshot([left, right, identity_nft])
 
     assert mata_strings.noodlify_for_equation_sides([left], [right])
@@ -225,7 +225,7 @@ def test_noodlify_variants_threaded_match_single_threaded_results():
     identity_nft = mata_nft.Nft(1, num_of_levels=2)
     identity_nft.make_initial_state(0)
     identity_nft.make_final_state(0)
-    identity_nft.insert_identity(0, [1, 2, 3])
+    identity_nft.insert_identity(0, [1, 2, 3], mata_nft.JumpMode.NoJump)
 
     expected_noodles = _snapshot(mata_strings.noodlify(aut, 200))
     expected_mult_eps = _snapshot(mata_strings.noodlify_mult_eps(aut, {200}))
@@ -271,7 +271,7 @@ def test_noodlify_for_transducer_lets_other_threads_run(runs_without_the_gil):
     identity_nft = mata_nft.Nft(1, num_of_levels=2)
     identity_nft.make_initial_state(0)
     identity_nft.make_final_state(0)
-    identity_nft.insert_identity(0, [0, 1])
+    identity_nft.insert_identity(0, [0, 1], mata_nft.JumpMode.NoJump)
     left, right = _random_nfa(1, 22), _random_nfa(2, 22)
     assert runs_without_the_gil(lambda: mata_strings.noodlify_for_transducer(identity_nft, [left], [right]))
 

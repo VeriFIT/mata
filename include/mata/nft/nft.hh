@@ -560,41 +560,49 @@ class Nft : public mata::Automaton {
 	/**
 	 * Inserts identity transitions into the NFT.
 	 *
+	 * For each symbol, the result reads the symbol on every level and returns to @p state, so the inserted loops
+	 *  accept exactly the tuples (w, w, ..., w). The representation depends on @p jump_mode:
+	 *  - @c JumpMode::RepeatSymbol: one jump transition @c state -symbol-> @c state spanning all levels, which repeats
+	 *    the symbol on every level. Read the result with @c JumpMode::RepeatSymbol, not with @c JumpMode::NoJump or
+	 *    by the fast composition (@c CompositionMode::FastNoJump), which require jump-free NFTs.
+	 *  - @c JumpMode::NoJump and @c JumpMode::AppendDontCares: an explicit loop of @c num_of_levels single-level
+	 *    transitions through fresh inner states. A jump under @c AppendDontCares would pad the symbol with @c
+	 * DONT_CARE, which is no identity.
+	 *
+	 * A one-level NFT gets a single self-loop in every mode. A @p state on a nonzero level always gets the explicit
+	 *  loop, as a jump must start and end on level 0.
+	 *
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol
 	 * in the vector.
-	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
+	 * @param jump_mode How to represent the identity, see above.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 	/**
-	 * Inserts identity transitions into the NFT.
+	 * Inserts identity transitions into the NFT, represented according to @p jump_mode as described at
+	 *  @c insert_identity(State, const std::vector<Symbol>&, JumpMode).
 	 *
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param alphabet The alphabet with symbols used for the identity transition. Identity will be created for each
 	 *  symbol in the alphabet resolved via @c get_symbols_to_work_with(alphabet, levels[state]) (see
 	 *  @c resolve_alphabet for the resolution order).
-	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
+	 * @param jump_mode How to represent the identity.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, const Alphabet* alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 	/**
-	 * Inserts an identity transition into the NFT.
+	 * Inserts an identity transition into the NFT, represented according to @p jump_mode as described at
+	 *  @c insert_identity(State, const std::vector<Symbol>&, JumpMode).
 	 *
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param symbol The symbol used for the identity transition.
-	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
+	 * @param jump_mode How to represent the identity.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);

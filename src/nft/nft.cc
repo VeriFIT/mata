@@ -1561,16 +1561,14 @@ Nft& Nft::insert_identity(const State state, const Alphabet* alphabet, const Jum
 }
 
 Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode jump_mode) {
-	(void) jump_mode;
-	// TODO(nft): Evaluate the performance difference between adding a jump transition and inserting a transition for
-	// each level.
-	// FIXME(nft): Allow symbol jump transitions?
-	//    if (jump_mode == JumpMode::RepeatSymbol) {
-	//        delta.add(state, symbol, state);
-	//        insert_word(state, Word(levels.num_of_levels, symbol), state);
-	//    } else {
-	insert_word(state, Word(levels.num_of_levels, symbol), state);
-	//    }
+	add_state(state);
+	// A full-span jump must start and end on level 0. AppendDontCares would pad it with DONT_CARE instead of
+	//  repeating the symbol, which is no identity, so it keeps the explicit loop like NoJump.
+	if (jump_mode == JumpMode::RepeatSymbol && levels[state] == 0) {
+		delta.add(state, symbol, state);
+	} else {
+		insert_word(state, Word(levels.num_of_levels, symbol), state);
+	}
 	return *this;
 }
 
