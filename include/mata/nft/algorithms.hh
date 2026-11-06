@@ -309,8 +309,8 @@ struct CompositionSchedule {
  *   - `lhs` level 6
  *   - `rhs` levels 6 and 7
  *
- * NOTE: If you have only a single synchronization level per NFT and don't use jump transitions, consider using
- *       no-jump varsion of the composition for better performance.
+ * NOTE: If you have only a single synchronization level per NFT, consider @c compose_fast() for better performance; it
+ *       reads jump transitions as well.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
@@ -382,14 +382,59 @@ std::optional<Nft> compose_general_direct(
 );
 
 /**
- * @brief Composes two NFTs with a single synchronization level and no jumps.
+ * @brief Composes two NFTs with a single synchronization level, reading their jump transitions in @p jump_mode.
  *
  * The levels of the resulting NFT are in the following order:
- *  - levels of `lhs` before its synvhronization level
- *  - levels of `rhs` before its synvhronization level
+ *  - levels of `lhs` before its synchronization level
+ *  - levels of `rhs` before its synchronization level
  *  - the synchronizing level (possibly missing if project_out_sync_levels is true)
- *  - levels of `lhs` after its synvhronization level
- *  - levels of `rhs` after its synvhronization level
+ *  - levels of `lhs` after its synchronization level
+ *  - levels of `rhs` after its synchronization level
+ *
+ * A jump transition is read lazily, one level at a time: the jumps of a symbol post share a cursor per level they cover
+ *  after their first one, which reads the symbol of the jump under @c JumpMode::RepeatSymbol and DONT_CARE under
+ *  @c JumpMode::AppendDontCares, and a configuration of the composition pairs such cursors as it pairs states. A level
+ *  inside a jump thus synchronizes on the symbol the jump reads there. The operands are not copied, and DONT_CARE is
+ *  not spelled out. Under @c JumpMode::RepeatSymbol, an EPSILON transition between two zero-level states is a whole
+ *  round of EPSILON, as under @c JumpMode::NoJump.
+ *
+ * The result has no jump transitions: a jump is unwound into one transition per level, through the result states of
+ *  the configurations with its cursors, so it reads the same in every jump mode. Its relation is the one of
+ *  @c compose_fast_no_jump() on the operands with their jumps unwound in @p jump_mode (DONT_CARE kept), which is the
+ *  relation of @c compose_general() whenever the operands have no EPSILON or DONT_CARE, no jump of @p jump_mode
+ *  @c JumpMode::AppendDontCares reads DONT_CARE on a synchronization level, and, under @c JumpMode::RepeatSymbol,
+ *  neither operand with a jump is composed with a one-level operand. The two compositions place EPSILON differently,
+ *  and @c compose_general() matches DONT_CARE with EPSILON (#561) and lets an operand composed with a one-level
+ *  operand choose its jump again inside it.
+ *
+ * @param[in] lhs First transducer to compose.
+ * @param[in] rhs Second transducer to compose.
+ * @param[in] lhs_sync_level The synchronization level of the @p lhs.
+ * @param[in] rhs_sync_level The synchronization level of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
+ * @param[in] jump_mode How a jump transition reads the levels after its first one. With @c JumpMode::NoJump, the
+ *  operands must not have jump transitions other than fast EPSILON transitions, as in @c compose_fast_no_jump().
+ * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
+ *
+ * @return A new NFT after the composition.
+ * @throws std::invalid_argument When a synchronization level is out of range for its operand, when the composition
+ *  would leave no levels, or, under a jump mode other than @c JumpMode::NoJump, when a transition goes to an earlier
+ *  level of its round. The no-jump shape of the operands under @c JumpMode::NoJump is only checked by
+ *  @c MATA_ASSERT.
+ */
+Nft compose_fast(
+	const Nft& lhs,
+	const Nft& rhs,
+	Level lhs_sync_level,
+	Level rhs_sync_level,
+	bool project_out_sync_levels,
+	JumpMode jump_mode,
+	CompositionNormalization normalization = CompositionNormalization::Auto
+);
+
+/**
+ * @brief Composes two NFTs with a single synchronization level and no jumps: @c compose_fast() under
+ *  @c JumpMode::NoJump.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.

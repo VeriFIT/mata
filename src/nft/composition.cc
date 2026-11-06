@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <deque>
 #include <format>
 #include <functional>
 #include <optional>
@@ -152,8 +153,8 @@ inline std::optional<EpsilonFilterMode> epsilon_filter_step(
 }
 
 /// Whether @p state has a fast EPSILON transition (an EPSILON transition to another zero-level state)
-/// in @p nft; @p state must be a zero-level state itself.
-inline bool has_fast_epsilon_move(const Nft& nft, const State state) {
+/// in @p nft; @p state must be a zero-level state itself. @p Operand is an @c Nft or a @c CursorOperand.
+template <typename Operand> bool has_fast_epsilon_move(const Operand& nft, const State state) {
 	if (nft.levels.num_of_levels == 1) { return false; }
 	const auto epsilon_post_it = nft.delta[state].find(EPSILON);
 	if (epsilon_post_it == nft.delta[state].end()) { return false; }
@@ -166,7 +167,7 @@ inline bool has_fast_epsilon_move(const Nft& nft, const State state) {
 /// transition to another zero-level state (a fast EPSILON transition), or any EPSILON transition
 /// of a one-level NFT; @p state must be a zero-level state of the LHS. A state with no outgoing
 /// transition at all trivially qualifies.
-inline bool has_only_silent_lhs_only_moves(const Nft& nft, const State state) {
+template <typename Operand> bool has_only_silent_lhs_only_moves(const Operand& nft, const State state) {
 	const StatePost& state_post = nft.delta[state];
 	for (const SymbolPost& symbol_post : state_post) {
 		if (symbol_post.symbol != EPSILON) { return false; }
@@ -183,7 +184,7 @@ inline bool has_only_silent_lhs_only_moves(const Nft& nft, const State state) {
 /// Whether @p rhs can ever make a silent RHS-only move: a fast EPSILON transition, or a waiting round of a one-level
 /// RHS. Only such a move switches the EPSILON-composition filter, so without one the filter keeps every configuration
 /// in the LhsMayMoveAlone mode and refuses nothing.
-inline bool can_move_alone_silently(const Nft& rhs) {
+template <typename Operand> bool can_move_alone_silently(const Operand& rhs) {
 	if (rhs.levels.num_of_levels == 1) { return true; }
 	const size_t num_of_states{rhs.num_of_states()};
 	for (State state{0}; state < num_of_states; ++state) {
@@ -191,6 +192,121 @@ inline bool can_move_alone_silently(const Nft& rhs) {
 	}
 	return false;
 }
+
+/**
+ * @brief An operand of the fast composition that reads its jump transitions level by level, without unwinding it.
+ *
+ * A place is a state of the NFT or a cursor inside the jumps of a symbol post, numbered after the states. The jumps of
+ *  a symbol post share one cursor per level they cover after their first one: on its level the cursor reads the
+ *  symbol of the post under @c JumpMode::RepeatSymbol and DONT_CARE under @c JumpMode::AppendDontCares, and leads to
+ *  the targets of the jumps that end on the next level and to the cursor of the next level if a jump ends later. The
+ *  composition pairs places as it pairs states, so a configuration with a cursor carries what remains of the jump its
+ *  operand is in. A state with a jump reads a post of its own, in which the cursor of the next level replaces the
+ *  targets of the jumps; every other state reads its post in the NFT, which is not copied.
+ *
+ * The composer reads a place through the members it reads an @c Nft by. Under @c JumpMode::RepeatSymbol, an EPSILON
+ *  transition between two zero-level states of a multi-level NFT is the fast EPSILON transition the composer reads as a
+ *  whole round of EPSILON anyway, so it gets no cursor.
+ */
+class CursorOperand {
+  public:
+	/// The posts of the places.
+	struct PlacePosts {
+		std::vector<const StatePost*> posts{};
+		const StatePost& operator[](const State place) const { return *posts[place]; }
+	};
+	/// The levels of the places.
+	struct PlaceLevels {
+		std::vector<Level> levels{};
+		size_t num_of_levels{0};
+		Level operator[](const State place) const { return levels[place]; }
+	};
+
+	PlacePosts delta{};
+	PlaceLevels levels{};
+	const mata::utils::SparseSet<State>& initial;
+	const mata::utils::SparseSet<State>& final; ///< No cursor is final: the cursors are numbered after the states.
+
+	/// @throws std::invalid_argument When a transition of @p nft goes to an earlier level of its round.
+	CursorOperand(const Nft& nft, const JumpMode jump_mode) : initial{nft.initial}, final{nft.final} {
+		MATA_ASSERT(jump_mode != JumpMode::NoJump);
+		const size_t num_of_states{nft.num_of_states()};
+		const size_t num_of_levels{nft.levels.num_of_levels};
+		levels.num_of_levels = num_of_levels;
+		levels.levels.assign(nft.levels.begin(), nft.levels.end());
+		levels.levels.resize(num_of_states, 0);
+		delta.posts.resize(num_of_states);
+		// The level a transition into @p target ends on, num_of_levels for a zero-level target.
+		const auto end_of{[&](const State target) -> size_t {
+			return levels.levels[target] == 0 ? num_of_levels : levels.levels[target];
+		}};
+		for (State source{0}; source < num_of_states; ++source) {
+			const StatePost& state_post{nft.delta[source]};
+			delta.posts[source] = &state_post;
+			const Level source_level{levels.levels[source]};
+			const auto is_jump{[&](const Symbol symbol, const State target) {
+				const size_t end{end_of(target)};
+				if (end <= source_level) {
+					throw std::invalid_argument(
+						std::format(
+							"compose_fast: the transition {} -{}-> {} goes from level {} back to level {}.", source,
+							symbol, target, source_level, end
+						)
+					);
+				}
+				return end > source_level + 1u && !(jump_mode == JumpMode::RepeatSymbol && symbol == EPSILON &&
+													end == num_of_levels && source_level == 0);
+			}};
+			const bool has_jump{std::ranges::any_of(state_post, [&](const SymbolPost& symbol_post) {
+				return std::ranges::any_of(symbol_post.targets, [&](const State target) {
+					return is_jump(symbol_post.symbol, target);
+				});
+			})};
+			if (!has_jump) { continue; }
+			StatePost& own_post{own_posts_.emplace_back()};
+			for (const SymbolPost& symbol_post : state_post) {
+				SymbolPost own_symbol_post{symbol_post.symbol};
+				size_t last_end{source_level + 1u};
+				for (const State target : symbol_post.targets) {
+					if (is_jump(symbol_post.symbol, target)) {
+						last_end = std::max(last_end, end_of(target));
+					} else {
+						own_symbol_post.targets.push_back(target);
+					}
+				}
+				if (last_end > source_level + 1u) {
+					const Symbol cursor_symbol{jump_mode == JumpMode::RepeatSymbol ? symbol_post.symbol : DONT_CARE};
+					// The cursor of each level is the place after the one of the previous level.
+					const State first_cursor{static_cast<State>(levels.levels.size())};
+					own_symbol_post.targets.push_back(first_cursor);
+					for (size_t level{source_level + 1u}; level < last_end; ++level) {
+						SymbolPost cursor_symbol_post{cursor_symbol};
+						for (const State target : symbol_post.targets) {
+							if (end_of(target) == level + 1 && is_jump(symbol_post.symbol, target)) {
+								cursor_symbol_post.targets.push_back(target);
+							}
+						}
+						if (level + 1 < last_end) {
+							cursor_symbol_post.targets.push_back(static_cast<State>(levels.levels.size() + 1));
+						}
+						StatePost& cursor_post{own_posts_.emplace_back()};
+						cursor_post.push_back(std::move(cursor_symbol_post));
+						delta.posts.push_back(&cursor_post);
+						levels.levels.push_back(static_cast<Level>(level));
+					}
+				}
+				own_post.push_back(std::move(own_symbol_post));
+			}
+			delta.posts[source] = &own_post;
+		}
+	}
+
+	size_t num_of_states() const { return levels.levels.size(); }
+
+  private:
+	std::deque<StatePost>
+		own_posts_{}; ///< The posts of the states with a jump and of the cursors, at stable addresses.
+};
 
 /// A zero-level state pair of the composition worklist, with the EPSILON-composition filter mode it was reached in
 /// when @p UseFilter is set.
@@ -223,16 +339,16 @@ template <> struct CompositionKey<false> {
  * @brief A class to hold properties related to synchronization during the composition of NFTs.
  * This simplifies passing multiple synchronization-related parameters.
  */
-class SynchronizationProperties {
+template <typename Operand> class SynchronizationProperties {
   public:
 	// A stack-allocated helper that borrows the composed transducer for its lifetime; it is never copied nor assigned.
-	const Nft& nft;
+	const Operand& nft;
 	Level sync_level;
 	size_t num_of_levels_before_sync;
 	size_t num_of_levels_after_sync;
 	std::vector<SynchronizationType> sync_types_vec;
 
-	SynchronizationProperties(const Nft& nft, const Level sync_level)
+	SynchronizationProperties(const Operand& nft, const Level sync_level)
 		: nft(nft),
 		  sync_level(sync_level),
 		  num_of_levels_before_sync(sync_level),
@@ -996,13 +1112,14 @@ Nft compose(
 
 namespace algorithms {
 namespace {
-/// The body of @c compose_fast_no_jump(), with the EPSILON-composition filter compiled in only when @p UseFilter is
-/// set; the inputs are validated by the caller. With @p normalize_generated, the builder records the states it
-/// generates and normalizes the result on them (@c CompositionNormalization::GeneratedOnly).
-template <bool UseFilter>
-Nft compose_fast_no_jump_with(
-	const Nft& lhs,
-	const Nft& rhs,
+/// The body of @c compose_fast(), with the EPSILON-composition filter compiled in only when @p UseFilter is set; the
+/// inputs are validated by the caller. With @p normalize_generated, the builder records the states it generates and
+/// normalizes the result on them (@c CompositionNormalization::GeneratedOnly). @p Operand is an @c Nft without jump
+/// transitions (fast EPSILON transitions apart) or a @c CursorOperand; the result has no alphabets.
+template <bool UseFilter, typename Operand>
+Nft compose_fast_with(
+	const Operand& lhs,
+	const Operand& rhs,
 	const Level lhs_sync_level,
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels,
@@ -1222,7 +1339,7 @@ Nft compose_fast_no_jump_with(
 				is_remaining_transition_in_lhs ? lhs_sync_targets : rhs_sync_targets;
 			const SmallStateSet& static_sync_targets =
 				is_remaining_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
-			const Nft& moving_nft = is_remaining_transition_in_lhs ? lhs : rhs;
+			const Operand& moving_nft = is_remaining_transition_in_lhs ? lhs : rhs;
 
 			mata::utils::SynchronizedExistentialIterator<mata::utils::OrdVector<SymbolPost>::const_iterator>
 				moving_sync_iterator(moving_sync_targets.size());
@@ -1252,8 +1369,8 @@ Nft compose_fast_no_jump_with(
 		// Helper function to perform synchronization on DONT_CARE transitions.
 		auto synchronization_on_dont_care = [&](const State dont_care_state, const State other_state,
 												const bool is_dont_care_lhs) {
-			const Nft& dont_care_nft = is_dont_care_lhs ? lhs : rhs;
-			const Nft& other_nft = is_dont_care_lhs ? rhs : lhs;
+			const Operand& dont_care_nft = is_dont_care_lhs ? lhs : rhs;
+			const Operand& other_nft = is_dont_care_lhs ? rhs : lhs;
 
 			auto dont_care_sync_it = dont_care_nft.delta[dont_care_state].find(DONT_CARE);
 			if (dont_care_sync_it != dont_care_nft.delta[dont_care_state].end()) {
@@ -1308,9 +1425,9 @@ Nft compose_fast_no_jump_with(
 							   const bool is_copy_state_lhs,
 							   const EpsilonFilterMode epsilon_filter_mode = EpsilonFilterMode::LhsMayMoveAlone,
 							   std::queue<std::pair<State, State>>* waiting_worklist = nullptr) {
-		const SynchronizationProperties& copy_sync_props = is_copy_state_lhs ? lhs_sync_props : rhs_sync_props;
-		const SynchronizationProperties& stationar_sync_props = is_copy_state_lhs ? rhs_sync_props : lhs_sync_props;
-		const Nft& copy_nft = copy_sync_props.nft;
+		const auto& copy_sync_props = is_copy_state_lhs ? lhs_sync_props : rhs_sync_props;
+		const auto& stationar_sync_props = is_copy_state_lhs ? rhs_sync_props : lhs_sync_props;
+		const Operand& copy_nft = copy_sync_props.nft;
 		const Level composition_state_level = result.levels[composition_state];
 		const Level copy_state_level = copy_nft.levels[copy_state];
 		const Level stationar_state_level = stationar_sync_props.nft.levels[stationar_state];
@@ -1465,11 +1582,11 @@ Nft compose_fast_no_jump_with(
 							 const State running_root_state, const bool is_lhs_waiting,
 							 const EpsilonFilterMode epsilon_filter_mode) {
 		waiting_state_storage.clear();
-		const SynchronizationProperties& running_sync_props = is_lhs_waiting ? rhs_sync_props : lhs_sync_props;
-		const SynchronizationProperties& waiting_sync_props = is_lhs_waiting ? lhs_sync_props : rhs_sync_props;
+		const auto& running_sync_props = is_lhs_waiting ? rhs_sync_props : lhs_sync_props;
+		const auto& waiting_sync_props = is_lhs_waiting ? lhs_sync_props : rhs_sync_props;
 		const Level sync_level = running_sync_props.sync_level;
-		const Levels& running_levels = running_sync_props.nft.levels;
-		const Delta& running_delta = running_sync_props.nft.delta;
+		const auto& running_levels = running_sync_props.nft.levels;
+		const auto& running_delta = running_sync_props.nft.delta;
 		const size_t running_num_of_levels = running_sync_props.nft.levels.num_of_levels;
 		const size_t running_trans_after_sync = running_sync_props.num_of_levels_after_sync;
 		const size_t waiting_trans_before_sync = waiting_sync_props.num_of_levels_before_sync;
@@ -1899,14 +2016,115 @@ Nft compose_fast_no_jump_with(
 		result.trim();
 	}
 
+	return result;
+}
+
+/// Run @c compose_fast_with() with the EPSILON-composition filter if @p rhs needs it. The filter switches only on a
+///  silent move of the RHS alone. Without one it keeps every configuration in the LhsMayMoveAlone mode and refuses
+///  nothing, so the composition runs without its bookkeeping.
+template <typename Operand>
+Nft compose_fast_choosing_filter(
+	const Operand& lhs,
+	const Operand& rhs,
+	const Level lhs_sync_level,
+	const Level rhs_sync_level,
+	const bool project_out_sync_levels,
+	const bool normalize_generated
+) {
+	return can_move_alone_silently(rhs)
+			   ? compose_fast_with<true>(
+					 lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+				 )
+			   : compose_fast_with<false>(
+					 lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+				 );
+}
+
+/// The body of @c compose_fast() and @c compose_fast_no_jump(), which name themselves @p caller in their errors.
+Nft compose_fast_checked(
+	const std::string_view caller,
+	const Nft& lhs,
+	const Nft& rhs,
+	const Level lhs_sync_level,
+	const Level rhs_sync_level,
+	const bool project_out_sync_levels,
+	const JumpMode jump_mode,
+	const CompositionNormalization normalization
+) {
+	check_sync_level_in_range(caller, "lhs", lhs, lhs_sync_level);
+	check_sync_level_in_range(caller, "rhs", rhs, rhs_sync_level);
+	check_result_num_of_levels(caller, lhs, rhs, 1, project_out_sync_levels);
+	const bool normalize_generated{
+		normalization == CompositionNormalization::GeneratedOnly || normalization == CompositionNormalization::Full
+	};
+	Nft result{};
+	if (jump_mode == JumpMode::NoJump) {
+		MATA_ASSERT(
+			std::all_of(
+				lhs.delta.transitions().begin(), lhs.delta.transitions().end(),
+				[&](const Transition& transition) {
+					return static_cast<Level>((lhs.levels[transition.source] + 1) % lhs.levels.num_of_levels) ==
+							   lhs.levels[transition.target] ||
+						   (lhs.levels[transition.source] == 0 && lhs.levels[transition.target] == 0 &&
+							transition.symbol == EPSILON);
+				}
+			),
+			"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
+			"transitions"
+		);
+		MATA_ASSERT(
+			std::all_of(
+				rhs.delta.transitions().begin(), rhs.delta.transitions().end(),
+				[&](const Transition& transition) {
+					return static_cast<Level>((rhs.levels[transition.source] + 1) % rhs.levels.num_of_levels) ==
+							   rhs.levels[transition.target] ||
+						   (rhs.levels[transition.source] == 0 && rhs.levels[transition.target] == 0 &&
+							transition.symbol == EPSILON);
+				}
+			),
+			"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
+			"transitions"
+		);
+		result = compose_fast_choosing_filter(
+			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+		);
+	} else {
+		const CursorOperand lhs_operand{lhs, jump_mode};
+		const CursorOperand rhs_operand{rhs, jump_mode};
+		// Without a cursor the operands read as they are, and the composer reads them without the indirection.
+		result =
+			lhs_operand.num_of_states() == lhs.num_of_states() && rhs_operand.num_of_states() == rhs.num_of_states()
+				? compose_fast_choosing_filter(
+					  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+				  )
+				: compose_fast_choosing_filter(
+					  lhs_operand, rhs_operand, lhs_sync_level, rhs_sync_level, project_out_sync_levels,
+					  normalize_generated
+				  );
+	}
 	result.alphabets = compose_alphabets(
 		lhs, rhs, OrdVector<Level>{lhs_sync_level}, OrdVector<Level>{rhs_sync_level}, project_out_sync_levels
 	);
-
+	// The result has no jump transitions, whatever the jump mode of the operands.
+	if (normalization == CompositionNormalization::Full) { normalize_fully(result, JumpMode::NoJump); }
 	return result;
 }
 } // namespace
 } // namespace algorithms
+
+Nft algorithms::compose_fast(
+	const Nft& lhs,
+	const Nft& rhs,
+	const Level lhs_sync_level,
+	const Level rhs_sync_level,
+	const bool project_out_sync_levels,
+	const JumpMode jump_mode,
+	const CompositionNormalization normalization
+) {
+	return compose_fast_checked(
+		"compose_fast", lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, jump_mode, normalization
+	);
+}
 
 Nft algorithms::compose_fast_no_jump(
 	const Nft& lhs,
@@ -1916,52 +2134,10 @@ Nft algorithms::compose_fast_no_jump(
 	const bool project_out_sync_levels,
 	const CompositionNormalization normalization
 ) {
-	check_sync_level_in_range("compose_fast_no_jump", "lhs", lhs, lhs_sync_level);
-	check_sync_level_in_range("compose_fast_no_jump", "rhs", rhs, rhs_sync_level);
-	check_result_num_of_levels("compose_fast_no_jump", lhs, rhs, 1, project_out_sync_levels);
-	MATA_ASSERT(
-		std::all_of(
-			lhs.delta.transitions().begin(), lhs.delta.transitions().end(),
-			[&](const Transition& transition) {
-				return static_cast<Level>((lhs.levels[transition.source] + 1) % lhs.levels.num_of_levels) ==
-						   lhs.levels[transition.target] ||
-					   (lhs.levels[transition.source] == 0 && lhs.levels[transition.target] == 0 &&
-						transition.symbol == EPSILON);
-			}
-		),
-		"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
-		"transitions"
+	return compose_fast_checked(
+		"compose_fast_no_jump", lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, JumpMode::NoJump,
+		normalization
 	);
-	MATA_ASSERT(
-		std::all_of(
-			rhs.delta.transitions().begin(), rhs.delta.transitions().end(),
-			[&](const Transition& transition) {
-				return static_cast<Level>((rhs.levels[transition.source] + 1) % rhs.levels.num_of_levels) ==
-						   rhs.levels[transition.target] ||
-					   (rhs.levels[transition.source] == 0 && rhs.levels[transition.target] == 0 &&
-						transition.symbol == EPSILON);
-			}
-		),
-		"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
-		"transitions"
-	);
-
-	// The filter switches only on a silent move of the RHS alone. Without one it keeps every configuration in the
-	//  LhsMayMoveAlone mode and refuses nothing, so the composition runs without its bookkeeping.
-	const bool normalize_generated{
-		normalization == CompositionNormalization::GeneratedOnly || normalization == CompositionNormalization::Full
-	};
-	Nft result{
-		can_move_alone_silently(rhs)
-			? compose_fast_no_jump_with<true>(
-				  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
-			  )
-			: compose_fast_no_jump_with<false>(
-				  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
-			  )
-	};
-	if (normalization == CompositionNormalization::Full) { normalize_fully(result, JumpMode::NoJump); }
-	return result;
 }
 
 algorithms::CompositionSchedule::CompositionSchedule(
