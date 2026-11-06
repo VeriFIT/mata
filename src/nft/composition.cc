@@ -2013,15 +2013,18 @@ namespace {
 using algorithms::CompositionSchedule;
 
 /// Whether the direct general composition reads @p nft as the pipeline of @c compose_general_reference() does: @p nft
-/// has no jump
-///  transition, which the jump modes read differently, and no DONT_CARE, which the pipeline matches with EPSILON
-///  (#561).
-bool is_read_directly(const Nft& nft) {
-	for (State state{0}; state < nft.delta.num_of_states(); ++state) {
-		const StatePost& state_post{nft.delta[state]};
-		if (state_post.find(DONT_CARE) != state_post.end()) { return false; }
-	}
-	return !nft.contains_jump_transitions();
+///  has no jump transition, which the jump modes read differently.
+bool is_read_directly(const Nft& nft) { return !nft.contains_jump_transitions(); }
+
+/// Whether @p symbol matches the EPSILON a waiting operand reads: EPSILON itself, or DONT_CARE, which the product of
+///  the pipeline matches with EPSILON too (#561).
+constexpr bool matches_epsilon(const Symbol symbol) { return symbol == EPSILON || symbol == DONT_CARE; }
+
+/// The synchronization type of reading @p symbol on a synchronization level: DONT_CARE matches both kinds.
+constexpr SynchronizationType sync_type_of(const Symbol symbol) {
+	if (symbol == EPSILON) { return SynchronizationType::ONLY_ON_EPSILON; }
+	if (symbol == DONT_CARE) { return SynchronizationType::ON_EPSILON_AND_SYMBOL; }
+	return SynchronizationType::ONLY_ON_SYMBOL;
 }
 
 /**
@@ -2029,7 +2032,8 @@ bool is_read_directly(const Nft& nft) {
  *
  * A round of an operand runs from a zero-level state over every level back to a zero-level state. The direct
  *  composition takes a round of each operand together, or a round of one operand while the other one waits: the
- *  waiting operand reads EPSILON on every synchronization level, so the moving one has to read EPSILON there too.
+ *  waiting operand reads EPSILON on every synchronization level, so the moving one has to read EPSILON (or DONT_CARE)
+ *  there too.
  */
 class RoundLookahead {
   public:
@@ -2054,15 +2058,13 @@ class RoundLookahead {
 						//  ends the round.
 						const uint8_t target_facts{nft.levels[target] == 0 ? FINISHED : facts_[target]};
 						facts |= target_facts & CAN_FINISH;
-						if ((!is_sync[level] || symbol_post.symbol == EPSILON) && (target_facts & CAN_WAIT) != 0) {
+						if ((!is_sync[level] || matches_epsilon(symbol_post.symbol)) &&
+							(target_facts & CAN_WAIT) != 0) {
 							facts |= CAN_WAIT;
 						}
 						if (is_sync[level]) {
 							if ((target_facts & CAN_FINISH) != 0) {
-								facts |= static_cast<uint8_t>(
-									symbol_post.symbol == EPSILON ? SynchronizationType::ONLY_ON_EPSILON
-																  : SynchronizationType::ONLY_ON_SYMBOL
-								);
+								facts |= static_cast<uint8_t>(sync_type_of(symbol_post.symbol));
 							}
 						} else if (is_sync_ahead[level]) {
 							facts |= target_facts & SYNC_TYPE;
@@ -2093,8 +2095,8 @@ class RoundLookahead {
 };
 
 /**
- * @brief The general composition of two jump-free NFTs without DONT_CARE by a traversal of the aligned
- *  configurations reachable from the initial pairs.
+ * @brief The general composition of two jump-free NFTs by a traversal of the aligned configurations reachable from
+ *  the initial pairs.
  *
  * The pipeline of @c compose_general_reference() pads copies of the operands to the aligned levels, adds a whole-round
  *  self-loop of EPSILON and DONT_CARE to each of their zero-level states, and builds their product. A round of that
@@ -2102,6 +2104,8 @@ class RoundLookahead {
  *  builds exactly these rounds over the original operands: a configuration is a pair of operand states, the aligned
  *  level read next (@c CompositionSchedule), and which operands move in the current round; a padded level is a
  *  cursor move that emits the symbol of the operand reading it, or EPSILON for an operand waiting in its self-loop.
+ *  On a synchronization level, DONT_CARE matches every symbol of the other operand and emits it, EPSILON included, as
+ *  the product of the pipeline does (#561); so a moving operand reads DONT_CARE against a waiting one as EPSILON.
  *  The result has the same relation as the pipeline result, EPSILON included, except that a round where both
  *  operands would wait does not exist (the pipeline has one only when all aligned levels are a single
  *  synchronization level, which is left to it).
@@ -2266,19 +2270,43 @@ class DirectGeneralComposer {
 		const StatePost& lhs_post{lhs_.delta[lhs_state]};
 		const StatePost& rhs_post{rhs_.delta[rhs_state]};
 		if (mode == Mode::LhsAlone) {
-			// The waiting RHS reads EPSILON on its own levels.
-			if (const auto epsilon_post{lhs_post.find(EPSILON)}; epsilon_post != lhs_post.end()) {
-				for (const State target : epsilon_post->targets) { on_move(EPSILON, target, rhs_state); }
+			// The waiting RHS reads EPSILON on its own levels, which EPSILON and DONT_CARE match.
+			for (const Symbol symbol : {DONT_CARE, EPSILON}) {
+				if (const auto symbol_post{lhs_post.find(symbol)}; symbol_post != lhs_post.end()) {
+					for (const State target : symbol_post->targets) { on_move(EPSILON, target, rhs_state); }
+				}
 			}
 			return;
 		}
 		if (mode == Mode::RhsAlone) {
-			if (const auto epsilon_post{rhs_post.find(EPSILON)}; epsilon_post != rhs_post.end()) {
-				for (const State target : epsilon_post->targets) { on_move(EPSILON, lhs_state, target); }
+			for (const Symbol symbol : {DONT_CARE, EPSILON}) {
+				if (const auto symbol_post{rhs_post.find(symbol)}; symbol_post != rhs_post.end()) {
+					for (const State target : symbol_post->targets) { on_move(EPSILON, lhs_state, target); }
+				}
 			}
 			return;
 		}
-		// Both posts are sorted by symbol: a two-pointer merge finds the shared symbols, EPSILON included.
+		// DONT_CARE matches every symbol of the other operand, EPSILON included (#561), and emits that symbol.
+		if (const auto dont_care_post{lhs_post.find(DONT_CARE)}; dont_care_post != lhs_post.end()) {
+			for (const SymbolPost& rhs_symbol_post : rhs_post) {
+				for (const State lhs_target : dont_care_post->targets) {
+					for (const State rhs_target : rhs_symbol_post.targets) {
+						on_move(rhs_symbol_post.symbol, lhs_target, rhs_target);
+					}
+				}
+			}
+		}
+		if (const auto dont_care_post{rhs_post.find(DONT_CARE)}; dont_care_post != rhs_post.end()) {
+			for (const SymbolPost& lhs_symbol_post : lhs_post) {
+				if (lhs_symbol_post.symbol == DONT_CARE) { continue; }
+				for (const State lhs_target : lhs_symbol_post.targets) {
+					for (const State rhs_target : dont_care_post->targets) {
+						on_move(lhs_symbol_post.symbol, lhs_target, rhs_target);
+					}
+				}
+			}
+		}
+		// Both posts are sorted by symbol: a two-pointer merge finds the other shared symbols, EPSILON included.
 		auto lhs_symbol_post{lhs_post.begin()};
 		auto rhs_symbol_post{rhs_post.begin()};
 		while (lhs_symbol_post != lhs_post.end() && rhs_symbol_post != rhs_post.end()) {
@@ -2287,9 +2315,12 @@ class DirectGeneralComposer {
 			} else if (rhs_symbol_post->symbol < lhs_symbol_post->symbol) {
 				++rhs_symbol_post;
 			} else {
-				for (const State lhs_target : lhs_symbol_post->targets) {
-					for (const State rhs_target : rhs_symbol_post->targets) {
-						on_move(lhs_symbol_post->symbol, lhs_target, rhs_target);
+				// DONT_CARE against DONT_CARE was read above.
+				if (lhs_symbol_post->symbol != DONT_CARE) {
+					for (const State lhs_target : lhs_symbol_post->targets) {
+						for (const State rhs_target : rhs_symbol_post->targets) {
+							on_move(lhs_symbol_post->symbol, lhs_target, rhs_target);
+						}
 					}
 				}
 				++lhs_symbol_post;

@@ -323,8 +323,8 @@ struct CompositionSchedule {
  * @param[in] normalization Only @c CompositionNormalization::Full changes the result: the general composition
  *  generates no states of its own for @c GeneratedOnly to rewrite.
  *
- * Operands without jump transitions and without DONT_CARE are composed by @c compose_general_direct(), all others by
- *  the pipeline of @c compose_general_reference(); both accept the same relation.
+ * Operands without jump transitions are composed by @c compose_general_direct(), all others by the pipeline of
+ *  @c compose_general_reference(); both accept the same relation.
  *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When the request is invalid; the same checks as @c nft::compose() runs, so calling
@@ -361,8 +361,9 @@ Nft compose_general_reference(
  * @brief The general composition by a direct traversal of the aligned configurations of the two NFTs.
  *
  * Builds a result with the relation of @c compose_general_reference(), EPSILON included, without padding copies of the
- * operands: an operand reads its own levels and waits on the others. It covers operands without jump transitions and
- *  without DONT_CARE, under every @p jump_mode (they coincide without jumps), with more than one aligned level.
+ * operands: an operand reads its own levels and waits on the others. It covers operands without jump transitions,
+ *  under every @p jump_mode (they coincide without jumps), with more than one aligned level. DONT_CARE matches every
+ *  symbol of the other operand, EPSILON included, as in @c product() (#561).
  *
  * @return The composition, or @c std::nullopt for operands outside that domain.
  * @throws std::invalid_argument When the request is invalid, as @c compose_general().

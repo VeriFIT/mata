@@ -399,11 +399,13 @@ OrdVector<Level> random_levels(std::mt19937& rng, const size_t num_of_levels, co
 } // namespace
 
 // The direct general composition has to accept the relation of the pipeline it replaces, EPSILON placement included
-//  (are_equivalent() reads EPSILON as a letter), under every jump mode, for jump-free operands without DONT_CARE.
-//  The EPSILON-erased tuples, which the comparison of the composition modes above uses, are compared as well.
+//  (are_equivalent() reads EPSILON as a letter), under every jump mode, for jump-free operands, also with DONT_CARE,
+//  which the pipeline matches with EPSILON too (#561). The EPSILON-erased tuples, which the comparison of the
+//  composition modes above uses, are compared as well.
 TEST_CASE("mata::nft differential: the direct general composition is the pipeline one", "[differential]") {
 	size_t num_of_nonempty{0};
 	size_t num_of_nonempty_with_epsilon{0};
+	size_t num_of_nonempty_with_dont_care{0};
 	size_t num_of_nonempty_multi_sync{0};
 	for (unsigned seed{0}; seed < 500; ++seed) {
 		std::mt19937 rng{seed};
@@ -413,10 +415,15 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 		const size_t num_of_sync_levels{1 + draw(rng, std::min({size_t{3}, lhs_num_of_levels, rhs_num_of_levels}))};
 		if (lhs_num_of_levels + rhs_num_of_levels - num_of_sync_levels == 1) { continue; }
 		const bool with_epsilon{seed % 4 != 0};
+		const bool with_dont_care{seed % 3 == 1};
 		const size_t lhs_num_of_states_per_level{1 + draw(rng, 3)};
 		const size_t rhs_num_of_states_per_level{1 + draw(rng, 3)};
-		Nft lhs{random_nft(rng, lhs_num_of_states_per_level, num_of_symbols, lhs_num_of_levels, false, with_epsilon)};
-		Nft rhs{random_nft(rng, rhs_num_of_states_per_level, num_of_symbols, rhs_num_of_levels, false, with_epsilon)};
+		Nft lhs{random_nft(
+			rng, lhs_num_of_states_per_level, num_of_symbols, lhs_num_of_levels, with_dont_care, with_epsilon
+		)};
+		Nft rhs{random_nft(
+			rng, rhs_num_of_states_per_level, num_of_symbols, rhs_num_of_levels, with_dont_care, with_epsilon
+		)};
 		// random_nft() numbers the zero-level states first.
 		lhs.initial.insert(static_cast<State>(draw(rng, lhs_num_of_states_per_level)));
 		rhs.initial.insert(static_cast<State>(draw(rng, rhs_num_of_states_per_level)));
@@ -449,6 +456,7 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 				if (!tuples.empty()) {
 					++num_of_nonempty;
 					if (with_epsilon) { ++num_of_nonempty_with_epsilon; }
+					if (with_dont_care) { ++num_of_nonempty_with_dont_care; }
 					if (num_of_sync_levels > 1) { ++num_of_nonempty_multi_sync; }
 				}
 			}
@@ -456,6 +464,7 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 	}
 	CHECK(num_of_nonempty > 0);
 	CHECK(num_of_nonempty_with_epsilon > 0);
+	CHECK(num_of_nonempty_with_dont_care > 0);
 	CHECK(num_of_nonempty_multi_sync > 0);
 }
 

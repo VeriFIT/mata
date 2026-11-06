@@ -3038,14 +3038,38 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		}
 	}
 
+	SECTION("DONT_CARE matches every symbol of the other operand, EPSILON included (#561)") {
+		// LHS tracks [A, X]: the round (a, DONT_CARE). RHS tracks [X, B]: the rounds (x, b) and (EPSILON, d), or none.
+		Nft lhs_dont_care{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+		lhs_dont_care.delta.add(0, a, 1);
+		lhs_dont_care.delta.add(1, DONT_CARE, 2);
+		Nft rhs_epsilon{Nft::with_levels({2, {0, 1, 0, 1, 0}}, 5, {0}, {0, 2, 4})};
+		rhs_epsilon.delta.add(0, x, 1);
+		rhs_epsilon.delta.add(1, b, 2);
+		rhs_epsilon.delta.add(0, EPSILON, 3);
+		rhs_epsilon.delta.add(3, d, 4);
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(lhs_dont_care, rhs_epsilon, {1}, {0}, project_out)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct, algorithms::compose_general_reference(lhs_dont_care, rhs_epsilon, {1}, {0}, project_out)
+			));
+			if (project_out) {
+				// DONT_CARE synchronizes with x and with EPSILON, and a round of the LHS alone reads it as EPSILON.
+				CHECK(direct->is_in_lang_by_levels({{a}, {b}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {d}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {}}));
+				CHECK(!direct->is_in_lang_by_levels({{}, {b}}));
+			}
+		}
+	}
+
 	SECTION("outside the domain") {
 		Nft jumping{Nft::with_levels({2, {0, 0}}, 2, {0}, {1})};
 		jumping.delta.add(0, a, 1);
 		CHECK(!algorithms::compose_general_direct(jumping, rhs, {1}, {0}).has_value());
-		Nft dont_care{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
-		dont_care.delta.add(0, DONT_CARE, 1);
-		dont_care.delta.add(1, a, 2);
-		CHECK(!algorithms::compose_general_direct(dont_care, rhs, {1}, {0}).has_value());
 		Nft one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
 		one_level.delta.add(0, a, 0);
 		CHECK(!algorithms::compose_general_direct(one_level, one_level, {0}, {0}, false).has_value());
