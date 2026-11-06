@@ -4,6 +4,19 @@
 
 use mata_sys::ffi;
 
+/// How [`Nfa::determinize_with`](crate::Nfa::determinize_with) determinizes. Both give the same DFA up to
+/// the numbering of its states.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Determinization {
+	/// The "Four Russians" subset construction: the post of each part of a macrostate inside a block of
+	/// states is computed once and kept in a table. Usually much faster on large automata.
+	#[default]
+	FourRussians,
+	/// The classical subset construction.
+	Classical,
+}
+
 /// How [`Nfa::minimize_with`](crate::Nfa::minimize_with) minimizes. Both give the minimal (trimmed) DFA.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -75,6 +88,15 @@ pub enum CheckAlgorithm {
 	/// Search the subset construction lazily, pruned by antichains. Usually much faster.
 	#[default]
 	Antichains,
+}
+
+impl From<Determinization> for ffi::Determinization {
+	fn from(algorithm: Determinization) -> ffi::Determinization {
+		match algorithm {
+			Determinization::FourRussians => ffi::Determinization::FourRussians,
+			Determinization::Classical => ffi::Determinization::Classical,
+		}
+	}
 }
 
 impl From<Minimization> for ffi::Minimization {

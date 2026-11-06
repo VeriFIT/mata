@@ -100,6 +100,16 @@ ParameterMap params_of(const CheckAlgorithm algorithm) {
 	throw std::invalid_argument("unknown CheckAlgorithm");
 }
 
+ParameterMap params_of(const Determinization algorithm) {
+	switch (algorithm) {
+		case Determinization::FourRussians:
+			return {{"algorithm", "four_russians"}};
+		case Determinization::Classical:
+			return {{"algorithm", "classical"}};
+	}
+	throw std::invalid_argument("unknown Determinization");
+}
+
 /// The symbol post at `index` of `source`; throws past the end.
 const mata::nfa::SymbolPost&
 	symbol_post_at(const mata::Automaton& automaton, const State source, const std::size_t index) {
@@ -427,9 +437,9 @@ std::unique_ptr<Nfa>
 	return boxed(mata::nfa::complement(without_epsilon(nfa, storage), to_symbol_set(symbols), params));
 }
 
-std::unique_ptr<Nfa> determinize(const Nfa& nfa) {
+std::unique_ptr<Nfa> determinize(const Nfa& nfa, const Determinization algorithm) {
 	auto storage = std::optional<Nfa>();
-	return boxed(mata::nfa::determinize(without_epsilon(nfa, storage)));
+	return boxed(mata::nfa::determinize(without_epsilon(nfa, storage), params_of(algorithm)));
 }
 
 std::unique_ptr<Nfa> minimize(const Nfa& nfa, const Minimization algorithm) {
