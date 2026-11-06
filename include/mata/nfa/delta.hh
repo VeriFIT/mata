@@ -449,11 +449,6 @@ class StatePost::Moves::const_iterator {
 class SynchronizedExistentialSymbolPostIterator
 	: public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
   public:
-	// Without the base class' virtual functions this class would be an aggregate, and 'Iterator it{}' would then be
-	//  aggregate initialization through the explicit base constructor instead of value initialization.
-	using utils::SynchronizedExistentialIterator<
-		utils::OrdVector<SymbolPost>::const_iterator>::SynchronizedExistentialIterator;
-
 	/**
 	 * @brief Get union of all targets.
 	 */
