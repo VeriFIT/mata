@@ -1,6 +1,108 @@
-Checks: >
-#  *,
-  clang-diagnostic-*, clang-analyzer-*, cppcoreguidelines-*, modernize-*,
-  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
-  -modernize-use-trailing-return-type,
+HeaderFilterRegex: ".*/include/mata/.*"
+ExcludeHeaderFilterRegex: ".*/3rdparty/.*"
+FormatStyle: file
+
+# Notes on the disabled checks:
+#   - 'readability-redundant-member-init' removes the '{}' default member initializers, which the build then reports
+#     back as '-Weffc++: should be initialized in the member initialization list'.
+#     The compiler warning wins: it is part of 'MATA_COMMON_WARNINGS' and 'build-werror' fails on it.
+#   - 'misc-no-recursion' flags the recursive automata algorithms (mintermization, formula graph traversal, epsilon
+#     closure); recursion is the chosen formulation there, not an oversight.
+#   - 'cppcoreguidelines-non-private-member-variables-in-classes' is the alias of the already disabled
+#     'misc-non-private-member-variables-in-classes'; both have to be named to turn it off.
+#   - 'cppcoreguidelines-pro-bounds-constant-array-index' asks for 'gsl::at()' on every 'std::array' subscript with a
+#     computed index. Mata does not use the GSL, and 'at()' would bounds-check the radix and stride arrays in the
+#     inner loops of the word-reading 'Nft::post()'; the indices there come from loops over the array itself.
+Checks: |
+  clang-analyzer-*,
+  clang-diagnostic-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  performance-move-const-arg,
+  performance-unnecessary-copy-initialization,
+  performance-unnecessary-value-param,
+  performance-noexcept-move-constructor,
+  performance-inefficient-vector-operation,
+  bugprone-use-after-move,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-missing-std-forward,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-use-default-member-init,
+  -misc-include-cleaner,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -modernize-use-default-member-init,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-magic-numbers,
+  -readability-redundant-access-specifiers,
+  -readability-redundant-member-init,
+  -readability-suspicious-call-argument,
+#-cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
+
+CheckOptions:
+  # The consuming overloads take their operand by rvalue reference and move its members or elements out one by one;
+  #  an unnamed rvalue reference parameter is an inherited constructor of a container adaptor.
+  cppcoreguidelines-rvalue-reference-param-not-moved.AllowPartialMove: true
+  cppcoreguidelines-rvalue-reference-param-not-moved.IgnoreUnnamedParams: true
+
+  # The naming rules.
+  #
+  # Each '*IgnoredRegexp' is anchored at both ends as a whole, so its alternatives are grouped; ungrouped, the anchors
+  #  bind only to the first and the last alternative.
+  #
+  # Note: A public member must be 'lower_case', but is additionally allowed to end in '_' to mark a member which is "public but internal for expert use only". 'lower_case' alone rejects the trailing '_', hence the explicit ignore pattern in '*IgnoredRegexp' beside the required naming options.
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.ClassIgnoredRegexp: "(const_)?(iterator|reverse_iterator)"
+  readability-identifier-naming.StructCase: CamelCase
+  # 'sorted_unique_t' and 'sorted_unique' mirror the C++23 'std::sorted_unique' tag of the flat containers.
+  readability-identifier-naming.StructIgnoredRegexp: "(bool_pack|sorted_unique_t)"
+  readability-identifier-naming.UnionCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.ConceptCase: CamelCase
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.TypeAliasIgnoredRegexp: "((const_)?(iterator|reverse_iterator|reference|pointer)|super|size_type|value_type|difference_type|iterator_category|conjunction|type)"
+  readability-identifier-naming.TypedefCase: CamelCase
+  readability-identifier-naming.TypeTemplateParameterCase: CamelCase
+  readability-identifier-naming.ValueTemplateParameterCase: CamelCase
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.FunctionCase: lower_case
+  # 'Ordering::Minimal' and 'Ordering::Next' are comparator constants passed as values, hence CamelCase.
+  readability-identifier-naming.MethodCase: lower_case
+  readability-identifier-naming.MethodIgnoredRegexp: "([a-z][a-z0-9_]*_|Minimal|Next)"
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.PublicMemberCase: lower_case
+  readability-identifier-naming.PublicMemberIgnoredRegexp: "[a-z][a-z0-9_]*_"
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberSuffix: "_"
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: "_"
+  # Constants are 'UPPER_CASE' at namespace scope ('EPSILON'), 'lower_case' in a class
+  # ('Limits::max_state'). Mutable globals ('LOG_VERBOSITY') follow the namespace-scope spelling, and
+  # 'g_GIT_SHA1' keeps its 'g_' prefix. Include guards ('MATA_NFA_HH_') end in '_'.
+  readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+  readability-identifier-naming.GlobalConstantIgnoredRegexp: "(g_[A-Z0-9_]*|sorted_unique)"
+  readability-identifier-naming.GlobalVariableCase: UPPER_CASE
+  readability-identifier-naming.ClassConstantCase: lower_case
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "[A-Z][A-Z0-9_]*_"
+  # 'if (ptr)' and 'if (count)' are idiomatic here; keep only the conversions that really obscure intent.
+  # readability-implicit-bool-conversion.AllowPointerConditions: true
+  # readability-implicit-bool-conversion.AllowIntegerConditions: true

@@ -154,7 +154,8 @@ Nft mata::nft::algorithms::product(
 
 					// If jump_mode is AppendDONT_CAREs, we should wait in the deeper state.
 					// If jump_mode is RepeatSymbol, we should wait in the source state that has a deeper target.
-					State lhs_target, rhs_target;
+					State lhs_target;
+					State rhs_target;
 					if (dont_care_on_lhs) {
 						lhs_target = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level ||
 									  specific_target_is_deeper)
@@ -213,7 +214,7 @@ Nft mata::nft::algorithms::product(
 	}
 
 	while (!worklist.empty()) {
-		State product_source = worklist.back();
+		const State product_source = worklist.back();
 		;
 		worklist.pop_back();
 		const State lhs_source = product_storage.get_first_inverted(product_source);

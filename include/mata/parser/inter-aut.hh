@@ -8,6 +8,7 @@
 #ifndef MATA_INTER_AUT_HH
 #define MATA_INTER_AUT_HH
 
+#include <cstdint>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -24,11 +25,11 @@ namespace mata {
  */
 class FormulaNode {
   public:
-	enum class OperandType { Symbol, State, Node, True, False, NotOperand };
+	enum class OperandType : std::uint8_t { Symbol, State, Node, True, False, NotOperand };
 
-	enum class OperatorType { Neg, And, Or, NotOperator };
+	enum class OperatorType : std::uint8_t { Neg, And, Or, NotOperator };
 
-	enum class Type { Operand, Operator, LeftParenthesis, RightParenthesis, Unknown };
+	enum class Type : std::uint8_t { Operand, Operator, LeftParenthesis, RightParenthesis, Unknown };
 
 	/// Define whether a node is operand or operator
 	Type type{};
@@ -94,6 +95,7 @@ class FormulaNode {
 
 	FormulaNode& operator=(const FormulaNode& other) = default;
 	FormulaNode& operator=(FormulaNode&& other) noexcept = default;
+	~FormulaNode() = default;
 };
 
 /**
@@ -122,6 +124,7 @@ class FormulaGraph {
 
 	FormulaGraph& operator=(const FormulaGraph&) = default;
 	FormulaGraph& operator=(FormulaGraph&&) noexcept = default;
+	~FormulaGraph() = default;
 
 	std::unordered_set<std::string> collect_node_names() const;
 	void print_tree(std::ostream& os) const;
@@ -139,7 +142,7 @@ class IntermediateAut {
 	 * Type of automaton. So far we support nondeterministic finite automata (NFA) and
 	 * alternating finite automata (AFA)
 	 */
-	enum class AutomatonType {
+	enum class AutomatonType : std::uint8_t {
 		Nfa,
 		Afa,
 		Nft,
@@ -154,14 +157,14 @@ class IntermediateAut {
 	 * There are two special cases used for alphabet - symbols could be any character (CHARS) or anything from utf
 	 * (UTF).
 	 */
-	enum class Naming { Auto, Marked, Enum, Chars, Utf };
+	enum class Naming : std::uint8_t { Auto, Marked, Enum, Chars, Utf };
 
 	/**
 	 * Type of alphabet. We can have explicit alphabet (containing explicit symbols), or bitvector, or class of symbols
 	 * (e.g., alphabet is everything in utf), or intervals.
 	 * So far, only explicit representation is supported.
 	 */
-	enum class AlphabetType { Explicit, Bitvector, Class, Intervals };
+	enum class AlphabetType : std::uint8_t { Explicit, Bitvector, Class, Intervals };
 
 	Naming state_naming = Naming::Marked;
 	Naming symbol_naming = Naming::Marked;
@@ -238,7 +241,7 @@ class IntermediateAut {
 	static void parse_transition(IntermediateAut& aut, const std::vector<std::string>& tokens);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
-	void print_transitions_trees(std::ostream&) const;
+	void print_transitions_trees(std::ostream& os) const;
 }; // class IntermediateAut.
 
 } // namespace mata.

@@ -39,7 +39,7 @@ class RegexParser {
 	re2::Regexp* parse_regex_string(const std::string& regex_string, const Encoding encoding = Encoding::Latin1) const {
 		re2::RegexpStatus status;
 
-		const auto parsed_regex = re2::Regexp::Parse(
+		auto* const parsed_regex = re2::Regexp::Parse(
 			regex_string, static_cast<re2::Regexp::ParseFlags>(options.ParseFlags() | static_cast<int>(encoding)),
 			&status
 		);
@@ -228,7 +228,7 @@ class RegexParser {
 } // namespace
 
 mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Options& options) {
-	RegexParser regex_parser{};
+	const RegexParser regex_parser{};
 	// Own RE2's raw pointers, so they are also freed when the conversion below throws.
 	const auto parsed_regex = std::unique_ptr<re2::Regexp, decltype([](re2::Regexp* regex) { regex->Decref(); })>(
 		regex_parser.parse_regex_string(pattern, options.encoding)

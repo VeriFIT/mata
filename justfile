@@ -35,6 +35,9 @@ alias h := help
 [default]
 test *ARGS: (tests-cpp::check ARGS) bindings::test examples::notebooks::run
 
+# Build everything: the C++ project, all language bindings, and the documentation. MODE is 'debug', 'release', or 'release-debuginfo'.
+build MODE=BUILD_MODE: (cpp::build MODE) bindings::build (docs::doxygen MODE) docs::html
+
 # Build the whole project in release mode.
 release: (cpp::build "release")
 

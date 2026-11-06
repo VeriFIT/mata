@@ -23,7 +23,9 @@ namespace mata::utils {
  * The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
  * TransSymbolStates is ordered by the symbol.
  *
- * SynchronisedIterator is the parent virtual class.
+ * SynchronisedIterator is the base class holding the data shared by both synchronized iterators. The hierarchy is
+ * non-polymorphic on purpose: every user instantiates one of the two derived classes directly, so the base needs no
+ * vtable.
  * It stores a vector of end-iterators for the OrdContainer v and a vector of current positions.
  * They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and
  *  ends, respectively.
@@ -61,7 +63,7 @@ template <typename Iterator> class SynchronizedIterator {
 	 * Calling after advance breaks the iterator.
 	 * Specifies begin and end of one vector, to initialise before the iteration starts.
 	 */
-	virtual void push_back(const Iterator& begin, const Iterator& end) {
+	void push_back(const Iterator& begin, const Iterator& end) {
 		// Btw, I don't know what I am doing with the const & parameter passing,
 		// begin is actually incremented in advance ...? But tests do pass ...
 		this->positions.emplace_back(begin);
@@ -72,7 +74,7 @@ template <typename Iterator> class SynchronizedIterator {
 	 * Though they should keep the allocated space.
 	 * @param size Number of elements to reserve up-front for positions and ends.
 	 */
-	virtual void reset(const size_t size = 0) {
+	void reset(const size_t size = 0) {
 		positions.clear();
 		ends.clear();
 		if (size > 0) {
@@ -85,11 +87,6 @@ template <typename Iterator> class SynchronizedIterator {
 		this->positions.reserve(size);
 		this->ends.reserve(size);
 	}
-
-	virtual bool advance() = 0;
-	virtual const std::vector<Iterator>& get_current() const = 0;
-
-	virtual ~SynchronizedIterator() = default;
 };
 
 template <typename Iterator> class SynchronizedUniversalIterator : public SynchronizedIterator<Iterator> {
@@ -113,7 +110,7 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 	 *  and both callers (NFT intersection in @c src/nft/intersection.cc and composition in
 	 *  @c src/nft/composition.cc) push two inputs anyway.
 	 */
-	bool advance() override {
+	bool advance() {
 		MATA_ASSERT(!this->positions.empty());
 		// Nothing to synchronize: there is no position to return.
 		if (this->positions.empty()) { return false; }
@@ -162,11 +159,11 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 	}
 
 	/// Returns the vector of current positions.
-	const std::vector<Iterator>& get_current() const override { return this->positions; }
+	const std::vector<Iterator>& get_current() const { return this->positions; }
 
 	explicit SynchronizedUniversalIterator(const size_t size = 0) : SynchronizedIterator<Iterator>(size) {}
 
-	void reset(const size_t size = 0) override {
+	void reset(const size_t size = 0) {
 		SynchronizedIterator<Iterator>::reset(size);
 		this->synchronized_at_current_minimum = false;
 	}
@@ -196,7 +193,7 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 	 * Since next_minimum becomes the current minimum,
 	 * new next_minimum must be updated too.
 	 */
-	bool advance() override {
+	bool advance() {
 		// The next_minimum becomes the current current_minimum.
 		auto current_minimum = this->next_minimum;
 
@@ -248,9 +245,9 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 	 * Beware, they will be ordered differently from how there were input into the iterator.
 	 * This is due to swapping of the emptied positions with positions at the end.
 	 */
-	const std::vector<Iterator>& get_current() const override { return this->currently_synchronized; }
+	const std::vector<Iterator>& get_current() const { return this->currently_synchronized; }
 
-	void push_back(const Iterator& begin, const Iterator& end) override {
+	void push_back(const Iterator& begin, const Iterator& end) {
 		// Empty vector would not have any effect (unlike in the case of the universal iterator).
 		if (begin == end) { return; }
 
@@ -272,7 +269,7 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 		this->currently_synchronized.reserve(size);
 	}
 
-	void reset(const size_t size = 0) override {
+	void reset(const size_t size = 0) {
 		SynchronizedIterator<Iterator>::reset(size);
 		if (size > 0) { this->currently_synchronized.reserve(size); }
 		this->currently_synchronized.clear();
@@ -284,9 +281,12 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
  * as the two parameters of the method push_back,
  * this function wraps the method push_back,
  * takes the iterator and v and extracts the v.begin() and v.end() from v.
+ *
+ * @note Templated on the concrete iterator type: 'SynchronizedExistentialIterator::push_back()' does more than the one
+ *  in the base class, and the hierarchy is not polymorphic, so the base type must not appear in the signature.
  */
-template <class Container>
-void push_back(SynchronizedIterator<typename Container::const_iterator>& i, const Container& container) {
+template <class SynchronizedIteratorType, class Container>
+void push_back(SynchronizedIteratorType& i, const Container& container) {
 	i.push_back(container.begin(), container.end());
 }
 

@@ -7,6 +7,7 @@
 #include "mata/utils/utils.hh"
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 
 using std::tie;
@@ -16,6 +17,7 @@ using mata::parser::ParsedSection;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
+// Argument must stay unevaluated; mirrors DEBUG_PRINT_LN() which forwards to debug machinery.
 #define PARSER_DEBUG_PRINT_LN(x)                                                                                       \
 	{}
 
@@ -55,7 +57,7 @@ bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch ==
 std::string get_token_from_line(std::istream& input, bool* quoted) {
 	MATA_ASSERT(nullptr != quoted);
 
-	enum class TokenizerState { Init, Unquoted, Quoted, QuotedEscape };
+	enum class TokenizerState : std::uint8_t { Init, Unquoted, Quoted, QuotedEscape };
 
 	std::string result;
 	*quoted = false;
@@ -83,29 +85,38 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
 				break;
 			}
 			case TokenizerState::Unquoted: {
-				if (std::isspace(ch)) {
-					return result;
-				} else if ('#' == ch) { // clear the rest of the line
+				if (std::isspace(ch)) { return result; }
+				if ('#' == ch) { // clear the rest of the line
 					std::string aux;
 					std::getline(input, aux);
 					return result;
-				} else if ('"' == ch) {
+				}
+				if ('"' == ch) {
 					std::string context;
 					std::getline(input, context);
-					throw std::runtime_error("misplaced quotes: " + result + "_\"_" + context);
-				} else if ('(' == ch || ')' == ch) {
+					std::string msg = "misplaced quotes: ";
+					msg += result;
+					msg += "_\"_";
+					msg += context;
+					throw std::runtime_error(msg);
+				}
+				if ('(' == ch || ')' == ch) {
 					input.unget();
 					return result;
-				} else if ('@' == ch || '%' == ch) {
+				}
+				if ('@' == ch || '%' == ch) {
 					std::string context;
 					std::getline(input, context);
-					throw std::runtime_error(
-						std::to_string("misplaced character \'") + static_cast<char>(ch) + "\' in string \"" + result +
-						static_cast<char>(ch) + context + "\""
-					);
-				} else {
-					result += static_cast<char>(ch);
+					std::string msg = "misplaced character '";
+					msg += static_cast<char>(ch);
+					msg += "' in string \"";
+					msg += result;
+					msg += static_cast<char>(ch);
+					msg += context;
+					msg += "\"";
+					throw std::runtime_error(msg);
 				}
+				result += static_cast<char>(ch);
 				break;
 			}
 			case TokenizerState::Quoted: {
@@ -114,11 +125,16 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
 					if (!std::isspace(ch) && ('#' != ch) && (')' != ch) && std::char_traits<char>::eof() != ch) {
 						std::string context;
 						std::getline(input, context);
-						throw std::runtime_error("misplaced quotes: \"" + result + "_\"_" + context);
+						std::string msg = "misplaced quotes: \"";
+						msg += result;
+						msg += "_\"_";
+						msg += context;
+						throw std::runtime_error(msg);
 					}
 
 					return result;
-				} else if ('\\' == ch) {
+				}
+				if ('\\' == ch) {
 					state = TokenizerState::QuotedEscape;
 				} else {
 					result += static_cast<char>(ch);
@@ -160,11 +176,8 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 
 		if (!first && !quoted) {
 			MATA_ASSERT(!token.empty());
-			if ('@' == token[0]) {
-				throw std::runtime_error("invalid position of @TYPE: " + line);
-			} else if ('%' == token[0]) {
-				throw std::runtime_error("invalid position of %KEY: " + line);
-			}
+			if ('@' == token[0]) { throw std::runtime_error("invalid position of @TYPE: " + line); }
+			if ('%' == token[0]) { throw std::runtime_error("invalid position of %KEY: " + line); }
 		}
 
 		result.emplace_back(std::move(token), quoted);
@@ -234,9 +247,8 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 	while (input.good()) {
 		eat_whites(input);
 		const int ch = input.peek();
-		if (std::char_traits<char>::eof() == ch) {
-			break;
-		} else if (!reading_type && '@' == ch) {
+		if (std::char_traits<char>::eof() == ch) { break; }
+		if (!reading_type && '@' == ch) {
 			// another @TYPE declaration
 			break;
 		}
@@ -252,9 +264,8 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		PARSER_DEBUG_PRINT_LN(line);
 		if (reading_type) { // we're expecting a @TYPE declaration
 			MATA_ASSERT(std::char_traits<char>::to_int_type(line[0]) == ch);
-			if ('#' == line[0] || '\n' == line[0]) {
-				continue; /* skip the rest of the line */
-			} else if ('@' != line[0]) {
+			if ('#' == line[0] || '\n' == line[0]) { continue; /* skip the rest of the line */ }
+			if ('@' != line[0]) {
 				throw std::runtime_error("expecting automaton type (@TYPE), got \"" + line + "\" instead");
 			}
 
@@ -277,9 +288,12 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 					break;
 				} else {
 					const std::string trailing(line, i);
-					throw std::runtime_error(
-						"invalid trailing characters \"" + trailing + "\" on the line \"" + line + "\""
-					);
+					std::string msg = "invalid trailing characters \"";
+					msg += trailing;
+					msg += "\" on the line \"";
+					msg += line;
+					msg += "\"";
+					throw std::runtime_error(msg);
 				}
 			}
 
@@ -314,7 +328,7 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		MATA_ASSERT(quoted || '@' != maybe_key[0]);
 
 		if (!quoted && '%' == maybe_key[0]) {
-			std::string key = maybe_key.substr(1);
+			const std::string key = maybe_key.substr(1);
 			if (key.empty()) { throw std::runtime_error("%KEY name missing: " + line); }
 
 			auto it = result.dict.find(key);
@@ -332,11 +346,8 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 			BodyLine stripped_token_line;
 			std::ranges::transform(
 				token_line, std::back_inserter(stripped_token_line), [&](const std::pair<std::string, bool>& token) {
-					if (keep_quotes && token.second) {
-						return "\"" + token.first + "\"";
-					} else {
-						return token.first;
-					}
+					if (keep_quotes && token.second) { return "\"" + token.first + "\""; }
+					return token.first;
 				}
 			);
 			result.body.push_back(std::move(stripped_token_line));

@@ -6,6 +6,8 @@
 #ifndef MATA_MINTERM_HH
 #define MATA_MINTERM_HH
 
+#include <cstdint>
+
 #include "mata/cudd/cuddObj.hh"
 
 #include "inter-aut.hh"
@@ -14,7 +16,7 @@ namespace mata {
 
 class Mintermization {
 	struct OptionalBdd {
-		enum class Type { NothingE, BddE };
+		enum class Type : std::uint8_t { NothingE, BddE };
 
 		Type type{};
 		BDD val{};

@@ -164,6 +164,8 @@ void Nfa::print_to_dot(
 			case '\\':
 				return "\\\\";
 			default:
+				// Not a braced initializer list: '{1, c}' would build the two-character string "\x01c".
+				// NOLINTNEXTLINE(modernize-return-braced-init-list)
 				return std::string(1, static_cast<char>(symbol));
 		}
 	};
@@ -182,9 +184,8 @@ void Nfa::print_to_dot(
 			// Reverse lookups may scan the whole alphabet; translate each symbol once.
 			if (const auto it{symbol_names.find(symbol)}; it != symbol_names.end()) { return it->second; }
 			return symbol_names.emplace(symbol, used_alphabet->reverse_translate_symbol(symbol)).first->second;
-		} else {
-			return std::to_string(symbol);
 		}
+		return std::to_string(symbol);
 	};
 
 	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
@@ -245,7 +246,7 @@ void Nfa::print_to_dot(
 		tgt_symbols_map.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
-			for (State target : move.targets) {
+			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
 				tgt_symbols_map[target].insert(move.symbol);
 			}
@@ -258,7 +259,7 @@ void Nfa::print_to_dot(
 
 			std::string label =
 				(use_intervals) ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
-			std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
+			const std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
 			bool is_shortened = false;
 			if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
 				label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
@@ -425,6 +426,8 @@ Nfa& Nfa::unify_final(const bool force_new_state) {
 Nfa& Nfa::operator=(Nfa&& other) noexcept {
 	if (this != &other) {
 		Automaton::operator=(std::move(other));
+		// Only the 'Automaton' base of 'other' has been moved from; its own members are intact.
+		// NOLINTNEXTLINE(bugprone-use-after-move)
 		alphabet = std::move(other.alphabet);
 		attributes = std::move(other.attributes);
 	}
@@ -518,6 +521,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
 	if (this == &nfa) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nfa snapshot{nfa};
 		return unite_nondet_with(snapshot);
 	}
@@ -563,7 +567,7 @@ Nfa Nfa::decode_utf8() const {
 
 	// Pushes a set of states to the worklist and marks them as used.
 	auto push_state_set = [&](const std::span<const State> set) {
-		for (State state : set) {
+		for (const State state : set) {
 			if (used[state]) { continue; }
 			worklist.push(state);
 			used[state] = true;

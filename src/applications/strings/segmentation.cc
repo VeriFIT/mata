@@ -59,7 +59,9 @@ std::deque<seg_nfa::Segmentation::StateDepthTuple> seg_nfa::Segmentation::initia
 	std::map<Symbol, unsigned> def_eps_map{};
 	for (const Symbol& e : this->epsilons_) { def_eps_map[e] = 0; }
 
-	for (const State state : automaton_.initial) { worklist.push_back(StateDepthTuple{state, 0, def_eps_map}); }
+	for (const State state : automaton_.initial) {
+		worklist.push_back(StateDepthTuple{.state = state, .depth = 0, .eps = def_eps_map});
+	}
 	return worklist;
 }
 
@@ -160,7 +162,7 @@ void seg_nfa::Segmentation::compute_epsilon_depths() {
 	std::deque<StateDepthTuple> worklist{initialize_worklist()};
 
 	while (!worklist.empty()) {
-		StateDepthTuple state_depth_pair{worklist.front()};
+		const StateDepthTuple state_depth_pair{worklist.front()};
 		worklist.pop_front();
 
 		if (!visited[state_depth_pair.state]) {

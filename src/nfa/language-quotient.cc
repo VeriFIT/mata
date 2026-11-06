@@ -33,6 +33,8 @@ class BitMatrixPairStore {
 	BitMatrixPairStore(const size_t prefixes_num_of_states, const size_t nfa_num_of_states)
 		: row_words_{words_per_row(prefixes_num_of_states)},
 		  // calloc() of a large block maps zeroed pages lazily: rows of states of nfa never reached cost nothing.
+		  //  'std::make_unique<uint64_t[]>()' would zero the whole block up front instead.
+		  // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 		  bits_{static_cast<uint64_t*>(std::calloc(nfa_num_of_states * 2 * row_words_, sizeof(uint64_t)))},
 		  queued_(nfa_num_of_states, false) {
 		if (bits_ == nullptr) { throw std::bad_alloc{}; }
@@ -47,7 +49,7 @@ class BitMatrixPairStore {
 
 	/// Mark the pair visited and pending. Returns true iff it was not visited before.
 	bool visit(const State prefixes_state, const State nfa_state) {
-		uint64_t* const visited_row{bits_.get() + static_cast<size_t>(nfa_state) * 2 * row_words_};
+		uint64_t* const visited_row{bits_.get() + (static_cast<size_t>(nfa_state) * 2 * row_words_)};
 		const size_t word{prefixes_state / 64};
 		const uint64_t bit{uint64_t{1} << (prefixes_state % 64)};
 		if ((visited_row[word] & bit) != 0) { return false; }
@@ -67,10 +69,10 @@ class BitMatrixPairStore {
 		worklist_.pop_front();
 		queued_[nfa_state] = false;
 		batch.clear();
-		uint64_t* const pending_row{bits_.get() + (static_cast<size_t>(nfa_state) * 2 + 1) * row_words_};
+		uint64_t* const pending_row{bits_.get() + ((static_cast<size_t>(nfa_state) * 2 + 1) * row_words_)};
 		for (size_t word{0}; word < row_words_; ++word) {
 			for (uint64_t bits{std::exchange(pending_row[word], 0)}; bits != 0; bits &= bits - 1) {
-				batch.push_back(static_cast<State>(word * 64 + static_cast<size_t>(std::countr_zero(bits))));
+				batch.push_back(static_cast<State>((word * 64) + static_cast<size_t>(std::countr_zero(bits))));
 			}
 		}
 		return true;
@@ -78,11 +80,13 @@ class BitMatrixPairStore {
 
   private:
 	struct Free {
+		// NOLINTNEXTLINE(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory): releases the calloc() above.
 		void operator()(uint64_t* const bits) const noexcept { std::free(bits); }
 	};
 
 	const size_t row_words_;
 	/// Per state of nfa, the row of visited pairs followed by the row of pending pairs.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): runtime-sized, calloc()-backed block.
 	std::unique_ptr<uint64_t[], Free> bits_;
 	BoolVector queued_;
 	std::deque<State> worklist_{};
@@ -122,7 +126,7 @@ class HashPairStore {
 };
 
 /// The bit matrix is used while it takes at most this many Bytes, the hash table otherwise.
-constexpr size_t max_bit_matrix_bytes{200'000'000};
+constexpr size_t MAX_BIT_MATRIX_BYTES{200'000'000};
 
 /**
  * @brief The moves of nfa along its transitions, forward: the pairs reached from the batch of one state of nfa by a
@@ -319,7 +323,7 @@ utils::SparseSet<State> explore_pairs(
 	const size_t words_num_of_states{words.num_of_states()};
 	if (nfa_num_of_states == 0 || words_num_of_states == 0) { return {}; }
 	const BoolVector useful_words_states{words.get_useful_states()};
-	if (BitMatrixPairStore::num_of_bytes(words_num_of_states, nfa_num_of_states) <= max_bit_matrix_bytes) {
+	if (BitMatrixPairStore::num_of_bytes(words_num_of_states, nfa_num_of_states) <= MAX_BIT_MATRIX_BYTES) {
 		return explore_pairs<BitMatrixPairStore>(
 			nfa_moves, nfa_num_of_states, nfa_start, words, first_epsilon, useful_words_states
 		);

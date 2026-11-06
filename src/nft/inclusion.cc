@@ -43,10 +43,9 @@ OrdVector<Symbol> unwinding_symbols(const Nft& lhs, const Nft& rhs, const mata::
 bool spells_out_dont_care(const Nft& nft, const OrdVector<Symbol>& symbols, const JumpMode jump_mode) {
 	if (symbols == OrdVector<Symbol>{DONT_CARE}) { return false; }
 	if (jump_mode == JumpMode::AppendDontCares && nft.contains_jump_transitions()) { return true; }
-	for (const StatePost& state_post : nft.delta) {
-		if (state_post.find(DONT_CARE) != state_post.end()) { return true; }
-	}
-	return false;
+	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
+		return state_post.find(DONT_CARE) != state_post.end();
+	});
 }
 
 /*
@@ -95,7 +94,7 @@ bool spells_out_dont_care(const Nft& nft, const OrdVector<Symbol>& symbols, cons
  */
 class LazyUnwinding {
   public:
-	static constexpr size_t UNREACHABLE{std::numeric_limits<size_t>::max()};
+	static constexpr size_t unreachable{std::numeric_limits<size_t>::max()};
 
 	LazyUnwinding(const Nft& nft, const OrdVector<Symbol>& symbols, const JumpMode jump_mode)
 		: nft_{nft},
@@ -104,7 +103,7 @@ class LazyUnwinding {
 		  has_wildcard_{symbols != OrdVector<Symbol>{DONT_CARE}},
 		  exact_{!has_wildcard_ || !symbols.contains(DONT_CARE)},
 		  num_of_original_states_{nft.num_of_states()},
-		  distances_(num_of_original_states_, UNREACHABLE),
+		  distances_(num_of_original_states_, unreachable),
 		  original_moves_(num_of_original_states_),
 		  original_expanded_(num_of_original_states_, false) {
 		compute_distances();
@@ -126,7 +125,7 @@ class LazyUnwinding {
 	const mata::utils::SparseSet<State>& initial() const { return nft_.initial; }
 	State original_or_none(const State state) const { return is_cursor(state) ? Limits::max_state : state; }
 
-	/// Length of a shortest run from @p state to a final state, or @c UNREACHABLE.
+	/// Length of a shortest run from @p state to a final state, or @c unreachable.
 	size_t distance(const State state) const { return distances_[state]; }
 
 	/// The moves of a state: symbol posts sorted by symbol, the wildcard as DONT_CARE.
@@ -185,7 +184,7 @@ class LazyUnwinding {
 	/// Appends to @p run a shortest run from @p state to a final state, cursors on the path as @c Limits::max_state.
 	void append_shortest_accepting_run(State state, Run& run) {
 		run.path.push_back(original_or_none(state));
-		for (size_t dist{distance(state)}; dist != 0 && dist != UNREACHABLE; --dist) {
+		for (size_t dist{distance(state)}; dist != 0 && dist != unreachable; --dist) {
 			bool advanced{false};
 			expand(state);
 			for (const SymbolPost& symbol_post : moves(state)) {
@@ -260,7 +259,7 @@ class LazyUnwinding {
 		cursor_moves_.emplace_back(label);
 		cursor_expanded_.push_back(false);
 		// The distances of the original states are final by now: the constructor computes them.
-		distances_.push_back(distances_[target] == UNREACHABLE ? UNREACHABLE : remaining + distances_[target]);
+		distances_.push_back(distances_[target] == unreachable ? unreachable : remaining + distances_[target]);
 		return id;
 	}
 
@@ -324,7 +323,7 @@ class LazyUnwinding {
 
 /// The antichain inclusion of @p smaller in @p bigger over their lazily unwound jumps; see @c LazyUnwinding.
 bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* const cex) {
-	constexpr size_t UNREACHABLE{LazyUnwinding::UNREACHABLE};
+	constexpr size_t unreachable{LazyUnwinding::unreachable};
 	if (cex != nullptr) {
 		cex->word.clear();
 		cex->path.clear();
@@ -340,10 +339,10 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 	};
 
 	auto drop_useless_bigger_states = [&](StateSet& set) {
-		set.erase_if([&](const State state) { return bigger.distance(state) == UNREACHABLE; });
+		set.erase_if([&](const State state) { return bigger.distance(state) == unreachable; });
 	};
 	auto min_dst = [&](const StateSet& set) {
-		size_t min{UNREACHABLE};
+		size_t min{unreachable};
 		for (const State state : set) { min = std::min(min, bigger.distance(state)); }
 		return min;
 	};
@@ -353,7 +352,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 	const size_t bigger_initial_min_dst{min_dst(bigger_initial)};
 	for (const State state : smaller.initial()) {
 		const size_t smaller_dst{smaller.distance(state)};
-		if (smaller_dst == UNREACHABLE) { continue; }
+		if (smaller_dst == unreachable) { continue; }
 		if (smaller_dst < bigger_initial_min_dst) {
 			if (cex != nullptr) { smaller.append_shortest_accepting_run(state, *cex); }
 			return false;
@@ -382,7 +381,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 		for (auto target{smaller_targets.begin()}; target != smaller_targets.end(); ++target) {
 			const State smaller_succ{*target};
 			const size_t smaller_succ_dst{smaller.distance(smaller_succ)};
-			if (smaller_succ_dst == UNREACHABLE) { continue; }
+			if (smaller_succ_dst == unreachable) { continue; }
 
 			if (smaller_succ_dst < bigger_succ_min_dst) {
 				if (cex != nullptr) {
@@ -396,6 +395,8 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 			}
 
 			ProcessedAntichain& antichain{processed_of(smaller_succ)};
+			// 'bigger_succ' is moved from only for the last target, after which the loop ends.
+			// NOLINTNEXTLINE(bugprone-use-after-move)
 			if (antichain.subsumes(nodes, bigger_succ, bigger_succ_signature)) { continue; }
 			antichain.prune(nodes, bigger_succ, bigger_succ_signature);
 			const size_t succ_idx{nodes.size()};
@@ -404,6 +405,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 			nodes.push_back(
 				Node{
 					.smaller_state = smaller_succ,
+					// NOLINTNEXTLINE(clang-analyzer-cplusplus.Move): see 'bigger_succ' above.
 					.bigger_set = last_target ? std::move(bigger_succ) : bigger_succ,
 					.signature = bigger_succ_signature,
 					.dominated = false,

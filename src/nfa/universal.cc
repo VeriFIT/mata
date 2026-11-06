@@ -48,7 +48,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 
 	// initialize
 	const StateSet initial_set{aut.initial};
-	const Macrostate initial{initial_set, macrostate_signature(initial_set)};
+	const Macrostate initial{.set = initial_set, .signature = macrostate_signature(initial_set)};
 	std::vector<Macrostate> worklist = {initial};
 	std::vector<Macrostate> processed = {initial};
 	const mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
@@ -143,7 +143,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 			}
 
 			const uint64_t succ_signature{macrostate_signature(succ_set)};
-			const Macrostate succ{std::move(succ_set), succ_signature};
+			const Macrostate succ{.set = std::move(succ_set), .signature = succ_signature};
 			// Check if the successor is subsumed by any processed macrostate
 			bool is_subsumed = false;
 			for (const auto& anti_state : processed) {
@@ -188,6 +188,8 @@ bool contains_epsilon(const Nfa& nfa) {
 // The dispatching method that calls the correct one based on parameters.
 bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
+	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
+	// NOLINTNEXTLINE(misc-const-correctness)
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(

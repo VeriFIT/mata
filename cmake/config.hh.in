@@ -6,6 +6,8 @@
 #define MATA_CONFIG_HH
 
 /// Width of @c mata::nfa::State in bits, 32 or 64. Set by the CMake option @c MATA_STATE_BITS.
+// A macro, not a constant, so that dependent code can test it with '#if'.
+// NOLINTNEXTLINE(cppcoreguidelines-macro-to-enum, modernize-macro-to-enum)
 #define MATA_STATE_BITS @MATA_STATE_BITS@
 
 #endif // MATA_CONFIG_HH

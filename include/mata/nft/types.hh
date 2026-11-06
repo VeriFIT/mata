@@ -6,6 +6,7 @@
 #define MATA_NFT_TYPES_HH
 
 #include <concepts>
+#include <cstdint>
 #include <optional>
 #include <utility>
 
@@ -57,13 +58,13 @@ using Limits = mata::nfa::Limits;
 
 class Nft; ///< A non-deterministic finite transducer.
 
-enum class JumpMode {
+enum class JumpMode : std::uint8_t {
 	RepeatSymbol, ///< Repeat the symbol on the jump.
 	AppendDontCares, ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 	NoJump ///< No jumps are allowed.
 };
 
-enum class CompositionMode {
+enum class CompositionMode : std::uint8_t {
 	General, ///< General composition mode for arbitrary number or synchronization levels and jump modes.
 	FastNoJump, ///< Fast composition mode for a single synchronization level and no jumps.
 	Auto ///< Automatically select the best composition mode based on the parameters.
@@ -75,7 +76,7 @@ enum class CompositionMode {
  * Every mode keeps the relation and the level of every state; state numbering is not part of the contract, and
  *  neither is the placement of EPSILON, which @c are_equivalent() reads as a letter.
  */
-enum class CompositionNormalization {
+enum class CompositionNormalization : std::uint8_t {
 	None, ///< Return the result as constructed (trimmed when the synchronization levels are projected out).
 	/// Rewrite only the states the fast composer generated itself (EPSILON padding, bridges over a replaced
 	///  synchronization, and waiting states): close the whole-round EPSILON runs through generated states with exactly
@@ -123,7 +124,11 @@ class Levels : std::vector<Level> {
 		 * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the
 		 * next lowest level of the next state.
 		 */
-		static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
+		static bool Next(const Level lhs, const Level rhs) {
+			if (lhs == 0) { return false; }
+			if (rhs == 0) { return true; }
+			return lhs < rhs;
+		}
 	};
 
 	/**
@@ -154,6 +159,7 @@ class Levels : std::vector<Level> {
 	Levels(Levels&& other) = default;
 	Levels& operator=(const Levels& other) = default;
 	Levels& operator=(Levels&& other) = default;
+	~Levels() = default;
 	/**
 	 * @brief Assign levels from @p other to @c this.
 	 *

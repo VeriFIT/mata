@@ -28,6 +28,7 @@ bool concatenation_is_empty(const Nft& lhs, const Nft& rhs) {
 template <typename RhsNft>
 Nft concatenate_eps_consuming(
 	Nft&& lhs,
+	// A forwarding reference only to take a const operand or one to consume, which is used in place.
 	RhsNft&& rhs,
 	const Symbol& epsilon,
 	const bool use_epsilon,
@@ -144,8 +145,8 @@ Nft& Nft::concatenate(const Nft& aut) {
 	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// copy the information about aut to save the case when this is the same object as aut.
-	utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
-	utils::SparseSet<mata::nft::State> aut_final = aut.final;
+	const utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
+	const utils::SparseSet<mata::nft::State> aut_final = aut.final;
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, static_cast<State>(n));
@@ -178,6 +179,7 @@ Nft& Nft::concatenate(Nft&& aut) {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	if (this == &aut) {
 		// Self-concatenation: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft snapshot{aut};
 		return concatenate(snapshot);
 	}
@@ -247,6 +249,7 @@ Nft algorithms::concatenate_eps(
 ) {
 	if (&lhs == &rhs) {
 		// Self-concatenation: one controlled snapshot of the right operand, then the consuming path.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft rhs_snapshot{rhs};
 		return concatenate_eps_consuming(
 			std::move(lhs), rhs_snapshot, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
@@ -286,7 +289,7 @@ Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power) {
 	// Then square `base` for the next bit.
 	while (power > 0) {
 		// If current least-significant bit is set, append `base` to `result`.
-		if (power & 1u) { result.concatenate(base); }
+		if (power & 1U) { result.concatenate(base); }
 
 		// Shift to the next bit.
 		power >>= 1;

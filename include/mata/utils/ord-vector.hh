@@ -20,9 +20,8 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 	auto it_lhs = lhs.begin();
 	auto it_rhs = rhs.begin();
 	while (it_lhs != lhs.end() && it_rhs != rhs.end()) {
-		if (*it_lhs == *it_rhs) {
-			return false;
-		} else if (*it_lhs < *it_rhs) {
+		if (*it_lhs == *it_rhs) { return false; }
+		if (*it_lhs < *it_rhs) {
 			++it_lhs;
 		} else {
 			++it_rhs;
@@ -103,7 +102,7 @@ template <class Key> class OrdVector {
 	/// Adopt @p vec and sort and deduplicate it in place, saving the copy of the lvalue overload.
 	explicit OrdVector(VectorType&& vec) : vec_{std::move(vec)} { utils::sort_and_rmdupl(vec_); }
 	/// Adopt @p vec as it is; @p vec has to be sorted and free of duplicates already.
-	OrdVector(sorted_unique_t, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
+	OrdVector(sorted_unique_t /*tag*/, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
 	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
 	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
 	template <class T> explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
@@ -267,18 +266,15 @@ template <class Key> class OrdVector {
 		return inserted;
 	}
 
-	inline void clear() { vec_.clear(); }
+	void clear() { vec_.clear(); }
 
-	inline size_t size() const { return vec_.size(); }
+	size_t size() const { return vec_.size(); }
 
-	inline size_t count(const Key& key) const {
+	size_t count(const Key& key) const {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 		for (auto v : this->vec_) {
-			if (v == key) {
-				return 1;
-			} else if (v > key) {
-				return 0;
-			}
+			if (v == key) { return 1; }
+			if (v > key) { return 0; }
 		}
 		return 0;
 	}
@@ -296,22 +292,16 @@ template <class Key> class OrdVector {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) {
-			return vec_.end();
-		} else {
-			return it;
-		}
+		if (it == vec_.end() || *it != key) { return vec_.end(); }
+		return it;
 	}
 
 	iterator find(const Key& key) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) {
-			return vec_.end();
-		} else {
-			return it;
-		}
+		if (it == vec_.end() || *it != key) { return vec_.end(); }
+		return it;
 	}
 
 	const Key& front() const { return vec_[0]; }
@@ -350,7 +340,7 @@ template <class Key> class OrdVector {
 	 *
 	 * This function expects the vector to be sorted.
 	 */
-	inline size_t erase(const Key& k) {
+	size_t erase(const Key& k) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 		auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
 		if (found_value_it != vec_.end()) {
@@ -364,33 +354,33 @@ template <class Key> class OrdVector {
 		return 0;
 	}
 
-	inline bool empty() const { return vec_.empty(); }
+	bool empty() const { return vec_.empty(); }
 
 	// Indexes which ar staying are shifted left to take place of those that are not staying.
-	template <typename Fun> void filter_indexes(Fun&& is_staying) { utils::filter_indexes(vec_, is_staying); }
+	template <typename Fun> void filter_indexes(Fun is_staying) { utils::filter_indexes(vec_, std::move(is_staying)); }
 
 	// Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
-	template <typename Fun> void filter(Fun&& is_staying) { utils::filter(vec_, is_staying); }
+	template <typename Fun> void filter(Fun is_staying) { utils::filter(vec_, std::move(is_staying)); }
 
-	inline const_reference back() const { return vec_.back(); }
+	const_reference back() const { return vec_.back(); }
 
 	/**
 	 * @brief Get reference to the last element in the vector.
 	 *
 	 * Modifying the underlying value in the reference could break sortedness.
 	 */
-	inline reference back() { return vec_.back(); }
+	reference back() { return vec_.back(); }
 
-	inline void pop_back() { return vec_.pop_back(); }
+	void pop_back() { return vec_.pop_back(); }
 
-	inline const_iterator begin() const { return vec_.begin(); }
-	inline const_iterator end() const { return vec_.end(); }
+	const_iterator begin() const { return vec_.begin(); }
+	const_iterator end() const { return vec_.end(); }
 
-	inline iterator begin() { return vec_.begin(); }
-	inline iterator end() { return vec_.end(); }
+	iterator begin() { return vec_.begin(); }
+	iterator end() { return vec_.end(); }
 
-	inline const_iterator cbegin() const { return begin(); }
-	inline const_iterator cend() const { return end(); }
+	const_iterator cbegin() const { return begin(); }
+	const_iterator cend() const { return end(); }
 
 	/**
 	 * @brief  Overloaded << operator
@@ -444,7 +434,8 @@ template <class Key> class OrdVector {
 			   (it_rhs != rhs.end())) { // until we drop out of the array (or find a common element)
 			if (*it_lhs == *it_rhs) { // in case there exists a common element
 				return false;
-			} else if (*it_lhs < *it_rhs) { // in case the element in lhs is smaller
+			}
+			if (*it_lhs < *it_rhs) { // in case the element in lhs is smaller
 				++it_lhs;
 			} else { // in case the element in rhs is smaller
 				MATA_ASSERT(*it_lhs > *it_rhs);

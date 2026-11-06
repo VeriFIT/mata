@@ -19,7 +19,8 @@
 #include <unordered_map>
 #include <vector>
 
-/// macro for debug outputs
+/// Macro for debug outputs. A macro, not a function: the arguments must stay unevaluated unless the verbosity level
+///  asks for the output.
 #define PRINT_VERBOSE_LVL(lvl, title, x)                                                                               \
 	{                                                                                                                  \
 		if (mata::LOG_VERBOSITY >= (lvl)) { std::cerr << (title) << ": " << x << "\n"; }                               \
@@ -76,7 +77,7 @@ class BoolVector : public std::vector<uint8_t> {
 
 	BoolVector& operator=(const BoolVector&) = default;
 	BoolVector& operator=(BoolVector&&) noexcept = default;
-
+	~BoolVector() = default;
 	/// Count the number of set elements.
 	size_t count() const {
 		size_t cnt{0};
@@ -102,7 +103,7 @@ class BoolVector : public std::vector<uint8_t> {
 
 }; // class BoolVector.
 
-/// log verbosity
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables): the log level is global state by design.
 extern unsigned LOG_VERBOSITY;
 
 /// git sha
@@ -177,7 +178,7 @@ inline constexpr size_t HASH_SEED{
  *  variant is Murmur3's @c fmix32. Without such a finalizer, nearby keys (which is what state identifiers are)
  *  stay nearby in the hash space and share hash-table buckets.
  */
-inline constexpr size_t hash_mix(size_t value) {
+constexpr size_t hash_mix(size_t value) {
 	if constexpr (sizeof(size_t) == 8) {
 		uint64_t mixed{static_cast<uint64_t>(value)};
 		constexpr uint64_t multiplier{0x0e'98'46'af'9b'1a'61'5dULL};
@@ -261,6 +262,9 @@ template <class A, class B> struct PairHash {
 };
 
 /// checks whether a container with @p find contains a key
+// The decay warning fires for instantiations with a string-literal key, where decaying to 'const char*' is what the
+//  container lookup expects.
+// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 template <class T, class K> inline bool haskey(const T& cont, const K& key) { return cont.find(key) != cont.cend(); }
 
 /// inverts a map (should work for std::map and std::unordered_map)
@@ -331,7 +335,7 @@ template <class Vector, typename Index> void rename(Vector& vec, const std::vect
 	}
 }
 
-template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun&& is_staying) {
+template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -344,7 +348,7 @@ template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun&& is_
 	vec.erase(vec.begin() + static_cast<typename Vector::difference_type>(last), vec.end());
 }
 
-template <class Vector, typename Fun> void filter(Vector& vec, Fun&& is_staying) {
+template <class Vector, typename Fun> void filter(Vector& vec, Fun is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -418,7 +422,7 @@ inline std::string to_string(const std::string& str) { return str; }
 template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 	std::string result = "[";
 	bool first = true;
-	for (auto elem : vec) {
+	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(elem);
@@ -432,7 +436,7 @@ template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 	std::string result = "[";
 	bool first = true;
-	for (auto elem : vec) {
+	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(elem);
@@ -448,7 +452,7 @@ template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : unmap) {
+	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
@@ -462,7 +466,7 @@ template <class A, class B> std::string to_string(const std::unordered_map<A, B>
 template <class A, class B> std::string to_string(const std::map<A, B>& mp) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : mp) {
+	for (const auto& key_val_pair : mp) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
@@ -476,7 +480,7 @@ template <class A, class B> std::string to_string(const std::map<A, B>& mp) { //
 template <class A, class B> std::string to_string(const std::unordered_multimap<A, B>& unmap) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : unmap) {
+	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
@@ -490,7 +494,7 @@ template <class A, class B> std::string to_string(const std::unordered_multimap<
 template <class A> std::string to_string(const std::set<A>& st) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto elem : st) {
+	for (const auto& elem : st) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += std::to_string(elem);
@@ -533,6 +537,8 @@ template <class A, class B> std::string to_string(const std::pair<A, B>& p) { //
 /** arbitrary type with the << operator */
 template <class A> std::string to_string(const A& value) { // {{{
 	std::ostringstream os;
+	// Streaming a string literal decays it to 'const char*'; that is the only overload 'operator<<' offers for it.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 	os << value;
 	return os.str();
 } // to_string(T) }}}

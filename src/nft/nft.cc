@@ -192,6 +192,8 @@ void Nft::print_to_dot(
 			case '\\':
 				return "\\\\";
 			default:
+				// Not a braced initializer list: '{1, c}' would build the two-character string "\x01c".
+				// NOLINTNEXTLINE(modernize-return-braced-init-list)
 				return std::string(1, static_cast<char>(symbol));
 		}
 	};
@@ -279,7 +281,7 @@ void Nft::print_to_dot(
 		tgt_symbols_map.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
-			for (State target : move.targets) {
+			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
 				tgt_symbols_map[target].insert(move.symbol);
 			}
@@ -293,7 +295,7 @@ void Nft::print_to_dot(
 			const Level source_level = source < levels.size() ? levels[source] : 0;
 			std::string label = use_intervals ? vec_of_symbols_to_string_with_intervals(symbols, source_level)
 											  : vec_of_symbols_to_string(symbols, source_level);
-			std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
+			const std::string on_hover_label = replace_all(replace_all(label, "<", "&lt;"), ">", "&gt;");
 			bool is_shortened = false;
 			if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
 				label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
@@ -717,7 +719,7 @@ struct PostQuery {
 /// level the rank is the position itself, two used levels take one division.
 template <size_t WIDTH> class RankedPositions {
   public:
-	static constexpr bool RANKED{true};
+	static constexpr bool ranked{true};
 	using Tuple = std::conditional_t<WIDTH == std::dynamic_extent, std::vector<uint32_t>, std::array<uint32_t, WIDTH>>;
 
 	/// @p radices: word length + 1 for each used level, with a product @p num_of_ids that fits in 32 bits.
@@ -773,15 +775,18 @@ template <size_t WIDTH> class RankedPositions {
 /// looked up there, so a tuple is copied only when it is new.
 class InternedPositions {
   public:
-	static constexpr bool RANKED{false};
+	// Read through the template parameter as 'Positions::ranked', which cppcheck does not follow.
+	// cppcheck-suppress unusedStructMember
+	static constexpr bool ranked{false};
 	using Tuple = std::vector<size_t>;
 
 	/// @p ends: the word length of each used level.
-	explicit InternedPositions(const std::vector<size_t>& ends) : width_{ends.size()}, slots_(64, 0) {
-		scratch_.assign(width_, 0);
-		start_id_ = intern(scratch_);
-		end_id_ = intern(ends);
-	}
+	explicit InternedPositions(const std::vector<size_t>& ends)
+		: width_{ends.size()},
+		  slots_(64, 0),
+		  scratch_(width_, 0),
+		  start_id_{intern(scratch_)},
+		  end_id_{intern(ends)} {}
 
 	uint32_t start_id() const { return start_id_; }
 	uint32_t end_id() const { return end_id_; }
@@ -854,9 +859,9 @@ StateSet search_by_words(const Nft& nft, const PostQuery& query, Positions& posi
 	const auto pack = [](const uint32_t positions_id, const State state) -> uint64_t {
 		return (static_cast<uint64_t>(positions_id) << 32U) | static_cast<uint32_t>(state);
 	};
-	constexpr uint64_t MAX_VISITED_BITS{uint64_t{1} << 27U}; // 16 MiB.
+	constexpr uint64_t max_visited_bits{uint64_t{1} << 27U}; // 16 MiB.
 	const bool bitmap_fits{
-		Positions::RANKED && positions.num_of_ids() <= MAX_VISITED_BITS / std::max<size_t>(num_of_states, 1)
+		Positions::ranked && positions.num_of_ids() <= max_visited_bits / std::max<size_t>(num_of_states, 1)
 	};
 	const size_t bitmap_bits{bitmap_fits ? static_cast<size_t>(positions.num_of_ids() * num_of_states) : 0};
 	std::unordered_set<uint64_t> visited;
@@ -867,12 +872,12 @@ StateSet search_by_words(const Nft& nft, const PostQuery& query, Positions& posi
 			if (!bitmap_fits || visited.size() < bitmap_bits / 256) { return true; }
 			visited_bitmap.resize(bitmap_bits);
 			for (const uint64_t packed : visited) {
-				visited_bitmap[(packed >> 32U) * num_of_states + (packed & 0xFF'FF'FF'FFU)] = true;
+				visited_bitmap[((packed >> 32U) * num_of_states) + (packed & 0xFF'FF'FF'FFU)] = true;
 			}
 			visited = {};
 			return true;
 		}
-		auto bit{visited_bitmap[static_cast<size_t>(positions_id) * num_of_states + state]};
+		auto bit{visited_bitmap[(static_cast<size_t>(positions_id) * num_of_states) + state]};
 		if (bit) { return false; }
 		bit = true;
 		return true;
@@ -1154,8 +1159,8 @@ StateSet post_by_words(
 
 StateSet Nft::post(
 	const StateSet& states,
-	const std::vector<Word>& tape_symbols,
-	const BoolVector& use_tape,
+	const std::vector<Word>& level_words,
+	const BoolVector& use_level,
 	StateSet* const visited_zero_level_states,
 	const bool epsilon_closure_after,
 	const JumpMode jump_mode,
@@ -1163,7 +1168,7 @@ StateSet Nft::post(
 ) const {
 	bool stopped{false};
 	return post_by_words(
-		*this, states, tape_symbols, use_tape, visited_zero_level_states, epsilon_closure_after, jump_mode,
+		*this, states, level_words, use_level, visited_zero_level_states, epsilon_closure_after, jump_mode,
 		PostStop{.is_early_exit_config = is_early_exit_config ? &is_early_exit_config : nullptr}, stopped
 	);
 }
@@ -1181,18 +1186,18 @@ bool Nft::reaches_final_by_levels_(
 
 StateSet Nft::post(
 	const StateSet& states,
-	const std::vector<Word>& tape_symbols,
-	const std::vector<Level>& tape_levels,
+	const std::vector<Word>& level_words,
+	const std::vector<Level>& word_levels,
 	StateSet* visited_zero_level_states,
 	const bool epsilon_closure_after,
 	JumpMode jump_mode
 ) const {
-	MATA_ASSERT(tape_symbols.size() == tape_levels.size());
+	MATA_ASSERT(level_words.size() == word_levels.size());
 	std::vector<Word> word_per_level(levels.num_of_levels);
 	BoolVector use_level(levels.num_of_levels, false);
-	for (size_t i = 0; i < tape_symbols.size(); ++i) {
-		use_level[tape_levels[i]] = true;
-		word_per_level[tape_levels[i]] = tape_symbols[i];
+	for (size_t i = 0; i < level_words.size(); ++i) {
+		use_level[word_levels[i]] = true;
+		word_per_level[word_levels[i]] = level_words[i];
 	}
 	return post(states, word_per_level, use_level, visited_zero_level_states, epsilon_closure_after, jump_mode);
 }
@@ -1200,8 +1205,9 @@ StateSet Nft::post(
 Nft& Nft::operator=(Nft&& other) noexcept {
 	if (this != &other) {
 		Automaton::operator=(std::move(other));
+		// Only the 'Automaton' base of 'other' has been moved from; its own members are intact.
+		// NOLINTNEXTLINE(bugprone-use-after-move)
 		levels = std::move(other.levels);
-		levels.num_of_levels = other.levels.num_of_levels;
 		alphabets = std::exchange(other.alphabets, nullptr);
 	}
 	return *this;
@@ -1699,10 +1705,9 @@ namespace {
 bool unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
 	if (nft.contains_jump_transitions()) { return true; }
 	if (dont_care_symbol_replacements == OrdVector<Symbol>{DONT_CARE}) { return false; }
-	for (const StatePost& state_post : nft.delta) {
-		if (state_post.find(DONT_CARE) != state_post.end()) { return true; }
-	}
-	return false;
+	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
+		return state_post.find(DONT_CARE) != state_post.end();
+	});
 }
 } // namespace
 

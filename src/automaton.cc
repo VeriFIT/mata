@@ -228,7 +228,7 @@ std::vector<State> Automaton::distances_from_initial() const {
 	BoolVector visited(num_of_states() + 1, false);
 	std::deque<State> que;
 
-	for (State qi : initial) {
+	for (const State qi : initial) {
 		visited[qi] = true;
 		distances[qi] = 0;
 		que.push_back(qi);
@@ -335,7 +335,7 @@ void Automaton::tarjan_scc_discover(
 	for (const State& q0 : (initial_states.value_or(this->initial)).get()) { program_stack.push_back(q0); }
 
 	while (!program_stack.empty()) {
-		State act_state = program_stack.back();
+		const State act_state = program_stack.back();
 		TarjanNodeData& act_state_data = node_info[act_state];
 
 		// if a node is initialized and is not on stack --> skip it; this state was
@@ -447,11 +447,11 @@ bool Automaton::has_no_accepting_path() const {
 	// Reachability only: a breadth-first search that stops at the first final state. Tarjan's SCC discovery used to
 	//  answer this and pays for its per-state bookkeeping even when the whole reachable part has to be traversed.
 	//  The queue order also keeps the scan of `delta` close to ascending, which a LIFO worklist does not.
-	const size_t num_of_states_{num_of_states()};
+	const size_t num_states{num_of_states()};
 	std::vector<State> worklist{};
-	BoolVector visited(num_of_states_, false);
+	BoolVector visited(num_states, false);
 	for (const State state : initial) {
-		if (state < num_of_states_ && !visited[state]) {
+		if (state < num_states && !visited[state]) {
 			visited[state] = true;
 			worklist.push_back(state);
 		}
@@ -482,11 +482,10 @@ bool Automaton::is_acyclic() const {
 		if (scc.size() > 1) {
 			acyclic = false;
 			return true;
-		} else { // check for self-loops.
-			if (delta.has_self_loop(scc[0])) {
-				acyclic = false;
-				return true;
-			}
+		} // check for self-loops.
+		if (delta.has_self_loop(scc[0])) {
+			acyclic = false;
+			return true;
 		}
 
 		return false;
