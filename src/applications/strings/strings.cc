@@ -6,6 +6,7 @@
 #include "mata/utils/assert.hh"
 
 #include <algorithm>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <span>
@@ -129,6 +130,8 @@ std::optional<std::vector<State>> get_longest_word_lengths(const Nfa& nfa) {
 	std::vector<Frame> stack{};
 	const auto push{[&](const State state) {
 		on_stack[state] = true;
+		// The analyzer loses track of the 'nfa' reference captured by the lambda and reports a null call.
+		// NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
 		stack.push_back({.state = state, .longest = 0, .successor = SuccessorCursor{nfa.delta[state]}.begin()});
 	}};
 
@@ -292,7 +295,7 @@ std::set<mata::Symbol> mata::applications::strings::get_accepted_symbols(const N
 	std::set<mata::Symbol> accepted_symbols;
 	for (const State init : nfa.initial) {
 		for (const SymbolPost& symbol_post_init : nfa.delta[init]) {
-			mata::Symbol sym = symbol_post_init.symbol;
+			const mata::Symbol sym = symbol_post_init.symbol;
 			if (auto symbol_it = accepted_symbols.lower_bound(sym);
 				(symbol_it == accepted_symbols.end() || *symbol_it != sym) &&
 				nfa.final.intersects_with(symbol_post_init.targets)) {
@@ -325,7 +328,7 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 	while (curr_state.has_value()) {
 		visited.insert(curr_state.value());
 		handles[curr_state.value()] = cnt++;
-		nfa::StatePost post = one_letter.delta[curr_state.value()];
+		const nfa::StatePost post = one_letter.delta[curr_state.value()];
 
 		curr_state.reset();
 		MATA_ASSERT(post.size() <= 1);
@@ -355,11 +358,9 @@ bool mata::applications::strings::is_lang_eps(const Nfa& nfa) {
 	Nfa tr_aut{nfa};
 	tr_aut.trim();
 	if (tr_aut.initial.empty()) { return false; }
-	for (const auto& ini : tr_aut.initial) {
-		if (!tr_aut.final[ini]) { return false; }
-		if (!tr_aut.delta[ini].empty()) { return false; }
-	}
-	return true;
+	return std::ranges::all_of(tr_aut.initial, [&](const auto& ini) {
+		return tr_aut.delta[ini].empty() && tr_aut.final[ini];
+	});
 }
 
 namespace {
@@ -495,9 +496,9 @@ std::optional<std::vector<mata::Word>>
 		}
 		const Symbol symbol{frame.symbol_post->symbol};
 		const State target{*frame.target};
-		++frame.target;
+		frame.target = std::next(frame.target);
 		const size_t new_counts{symbol == nft::EPSILON ? frame.counts : frame.counts + radix[frame.level]};
-		const size_t new_config{target * num_of_counts + new_counts};
+		const size_t new_config{(target * num_of_counts) + new_counts};
 		if (!visit(new_config, SearchNode{.prev = frame.config, .symbol = symbol, .level = frame.level})) { continue; }
 		if (new_counts == full_counts && nft.final[target]) { return words_leading_to(new_config); }
 		enter(new_config); // Invalidates 'frame'.

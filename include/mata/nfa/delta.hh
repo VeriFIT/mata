@@ -31,6 +31,8 @@ struct Transition {
 	Transition(Transition&&) = default;
 	Transition& operator=(const Transition&) = default;
 	Transition& operator=(Transition&&) = default;
+
+	~Transition() = default;
 	Transition(const State source, const Symbol symbol, const State target)
 		: source(source),
 		  symbol(symbol),
@@ -74,6 +76,8 @@ class SymbolPost {
 	SymbolPost(const SymbolPost& rhs) = default;
 	SymbolPost& operator=(SymbolPost&& rhs) noexcept = default;
 	SymbolPost& operator=(const SymbolPost& rhs) = default;
+
+	~SymbolPost() = default;
 
 	// Symbol-only, deliberately: a `StatePost` identifies a post by its symbol, so `find()`,
 	//  `erase(const Key&)` and the `std::unique()` of `sort_and_rmdupl()` all depend on it.
@@ -184,6 +188,8 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	StatePost(StatePost&&) = default;
 	StatePost& operator=(const StatePost&) = default;
 	StatePost& operator=(StatePost&&) = default;
+
+	~StatePost() = default;
 	/**
 	 * @brief Two posts are equal when they hold the same symbols with the same targets.
 	 *
@@ -264,6 +270,8 @@ class StatePost : utils::OrdVector<SymbolPost> {
 		Moves& operator=(Moves&& other) noexcept;
 		Moves& operator=(const Moves& other) noexcept;
 
+		~Moves() = default;
+
 		class const_iterator;
 		const_iterator begin() const;
 
@@ -286,7 +294,7 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
 	 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
 	 */
-	Moves moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end) const;
+	static Moves moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
 	/**
 	 * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
 	 */
@@ -324,10 +332,9 @@ class StatePost : utils::OrdVector<SymbolPost> {
 	 * @return True if @p target is reachable from this state post over any symbol, false otherwise.
 	 */
 	bool has_target(const State target) const {
-		for (const SymbolPost& symbol_post : *this) {
-			if (symbol_post.has_target(target)) { return true; }
-		}
-		return false;
+		return std::ranges::any_of(*this, [target](const SymbolPost& symbol_post) {
+			return symbol_post.has_target(target);
+		});
 	}
 }; // class StatePost.
 
@@ -353,7 +360,7 @@ class SuccessorCursor {
 		void load_targets() {
 			const std::span<const State> targets{symbol_post_it_->target_span()};
 			target_it_ = targets.data();
-			target_end_ = target_it_ + targets.size();
+			target_end_ = std::next(target_it_, static_cast<ptrdiff_t>(targets.size()));
 		}
 		/// Restore the invariant "positioned on a target, or exhausted".
 		void seek() {
@@ -371,7 +378,7 @@ class SuccessorCursor {
 			return *this;
 		}
 		/// Compares against @c std::default_sentinel: the end is stateless, so no end iterator is stored.
-		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
+		bool operator==(std::default_sentinel_t /*sentinel*/) const { return symbol_post_it_ == symbol_post_end_; }
 	};
 
 	explicit SuccessorCursor(const StatePost& state_post) : state_post_{&state_post} {}
@@ -385,7 +392,7 @@ class SuccessorCursor {
 		it.seek();
 		return it;
 	}
-	std::default_sentinel_t end() const { return std::default_sentinel; }
+	static std::default_sentinel_t end() { return std::default_sentinel; }
 
   private:
 	const StatePost* state_post_;
@@ -430,6 +437,8 @@ class StatePost::Moves::const_iterator {
 
 	const_iterator& operator=(const const_iterator& other) noexcept = default;
 	const_iterator& operator=(const_iterator&&) = default;
+
+	~const_iterator() = default;
 
 	bool operator==(const const_iterator& other) const;
 }; // class const_iterator.
@@ -535,6 +544,8 @@ class Delta {
 		other.clear();
 		return *this;
 	}
+
+	~Delta() = default;
 
 	bool operator==(const Delta& other) const;
 
@@ -785,14 +796,14 @@ class Delta {
 	 * @brief Apply @p fn to every target state reachable from @p source, over any symbol.
 	 */
 	template <typename Fn> void for_each_successor(const State source, Fn&& fn) const {
-		state_post(source).for_each_target(fn);
+		state_post(source).for_each_target(std::forward<Fn>(fn));
 	}
 
 	/**
 	 * @brief Apply @p fn to every @c Move leaving @p source, as a (symbol, target) pair.
 	 */
 	template <typename Fn> void for_each_move(const State source, Fn&& fn) const {
-		state_post(source).for_each_move(fn);
+		state_post(source).for_each_move(std::forward<Fn>(fn));
 	}
 
 	/**
@@ -1137,6 +1148,8 @@ class Delta::Transitions {
 	Transitions& operator=(Transitions&&) = default;
 	Transitions& operator=(const Transitions&) = default;
 
+	~Transitions() = default;
+
 	class const_iterator;
 	const_iterator begin() const;
 
@@ -1182,6 +1195,8 @@ class Delta::Transitions::const_iterator {
 
 	const_iterator& operator=(const const_iterator& other) noexcept = default;
 	const_iterator& operator=(const_iterator&&) = default;
+
+	~const_iterator() = default;
 
 	bool operator==(const const_iterator& other) const;
 }; // class Delta::Transitions::const_iterator.

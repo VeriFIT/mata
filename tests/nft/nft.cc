@@ -49,6 +49,15 @@ TEST_CASE("mata::nft::Nft()") {
 	CHECK(nft.levels == std::vector<Level>{0, 3, 1});
 }
 
+TEST_CASE("mata::nft::Nft() from a moved NFA keeps the state count of its own members") {
+	const nfa::Nfa nfa{3, {0}, {2}};
+	// Used to abort: the assertion read 'other.num_of_states()' after the members had been moved out of it.
+	const Nft nft{nfa::Nfa{nfa}, Levels{2, {0, 1, 0}}};
+	CHECK(nft.num_of_states() == 3);
+	CHECK(nft.levels.num_of_levels == 2);
+	CHECK(nft.levels == std::vector<Level>{0, 1, 0});
+}
+
 TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
 	auto shared_alphabet = std::make_shared<IntAlphabet>();
 	auto input_alphabet = std::make_shared<IntAlphabet>();
@@ -1631,6 +1640,19 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
 	}
 } // }}}
+
+TEST_CASE("mata::nft::is_included() and are_equivalent() with a jump over 2^32 - 1 levels") {
+	// The lazy exploration of jumps must not allocate per level of a jump the search does not read: no final state is
+	//  reachable here, so it reads none.
+	Nft nft{Nft::with_levels(std::numeric_limits<Level>::max())};
+	nft.add_state_with_level(0);
+	nft.add_state_with_level(0);
+	nft.initial.insert(0);
+	nft.delta.add(0, DONT_CARE, 1);
+	nft.delta.add(1, 0, 0);
+	CHECK(is_included(nft, nft));
+	CHECK(are_equivalent(nft, nft));
+}
 
 TEST_CASE("mata::nft::are_equivalent") {
 	Nft smaller(10);

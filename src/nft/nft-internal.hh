@@ -20,6 +20,12 @@ namespace mata::nft::internal {
  */
 void validate_nft_levels(const Nft& nft, const char* operation);
 
+/**
+ * @brief Whether unwinding @p nft with @p dont_care_symbol_replacements changes it: a transition does not advance
+ *  exactly one level, or a DONT_CARE is spelled out (it is kept only when it is its own sole replacement).
+ */
+bool unwinding_changes(const Nft& nft, const utils::OrdVector<Symbol>& dont_care_symbol_replacements);
+
 } // namespace mata::nft::internal
 
 #endif // MATA_SRC_NFT_NFT_INTERNAL_HH_

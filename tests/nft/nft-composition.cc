@@ -3063,7 +3063,7 @@ TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #
 		}
 	}
 
-	// Shapes A-C never enter RHS_MOVED_ALONE: while the LHS can move silently it has no other
+	// Shapes A-C never enter RhsMovedAlone: while the LHS can move silently it has no other
 	// move, so a silent RHS-only move is refused. Here the LHS branches in its initial state 0
 	// into a silent move and X, so the silent RHS move 0 -> 1 switches the filter. From (0, 1)
 	// the silent LHS move is refused (its canonical counterpart is the LHS-first route through

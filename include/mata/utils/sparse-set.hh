@@ -16,6 +16,7 @@
 #ifndef LIBMATA_SPARSE_SET_HH
 #define LIBMATA_SPARSE_SET_HH
 
+#include <algorithm>
 #include <concepts>
 #include <iterator>
 #include <type_traits>
@@ -134,11 +135,7 @@ template <typename Number> class SparseSet {
 
 	SparseSet() = default;
 	/// Basic constructor where you may reserve a domain size.
-	explicit SparseSet(Number domain_size)
-		: dense_(domain_size),
-		  sparse_(domain_size, 0),
-		  size_(0),
-		  domain_size_(domain_size) {
+	explicit SparseSet(Number domain_size) : dense_(domain_size), sparse_(domain_size, 0), domain_size_(domain_size) {
 		MATA_ASSERT(consistent());
 	};
 
@@ -190,6 +187,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 		return *this;
 	}
+	~SparseSet() = default;
 
 	// TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
 	//  comparing contained elements should be enough?
@@ -209,10 +207,7 @@ template <typename Number> class SparseSet {
 	bool operator[](Number q) const { return contains(q); }
 
 	template <class InputIterator> void insert(InputIterator first, InputIterator last) {
-		while (first != last) {
-			insert(*first);
-			++first;
-		}
+		std::for_each(first, last, [this](const Number element) { insert(element); });
 		MATA_ASSERT(consistent());
 	}
 
@@ -235,10 +230,7 @@ template <typename Number> class SparseSet {
 	// call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does
 	// not have constant membership)
 	template <class T> bool intersects_with(const T& set) const {
-		for (auto i = set.begin(); i < set.end(); ++i) {
-			if (contains(*i)) { return true; }
-		}
-		return false;
+		return std::ranges::any_of(set, [this](const auto& element) { return contains(element); });
 	}
 
 	/*
@@ -259,7 +251,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <typename F> void filter(F&& is_staying) {
+	template <typename F> void filter(F is_staying) {
 		for (Number i{0}; i < size_; ++i) {
 			while (i < size_ && !is_staying(dense_[i])) { erase(dense_[i]); }
 		}
@@ -274,7 +266,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <typename F> void rename(F&& renaming) {
+	template <typename F> void rename(F renaming) {
 		for (Number i = 0; i < size_; ++i) {
 			if (dense_[i] != renaming(dense_[i])) {
 				dense_[i] = renaming(dense_[i]);
@@ -309,14 +301,8 @@ template <typename Number> class SparseSet {
 
 	// This could be a template with types of A and B both as parameters, in utils?
 	friend bool are_disjoint(const SparseSet& a, const SparseSet& b) {
-		if (a.size() > b.size()) {
-			return are_disjoint(b, a);
-		} else {
-			for (auto i : a) {
-				if (b.contains(i)) { return false; }
-			}
-		}
-		return true;
+		if (a.size() > b.size()) { return are_disjoint(b, a); }
+		return !std::ranges::any_of(a, [&b](auto i) { return b.contains(i); });
 	}
 };
 } // namespace mata::utils

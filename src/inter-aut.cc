@@ -8,14 +8,14 @@
 #include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
+#include <format>
+
 namespace {
 
 bool has_at_most_one_auto_naming(const mata::IntermediateAut& aut) {
-	return !(
-		!(aut.node_naming == mata::IntermediateAut::Naming::Auto &&
-		  aut.symbol_naming == mata::IntermediateAut::Naming::Auto) &&
-		(aut.state_naming == mata::IntermediateAut::Naming::Auto)
-	);
+	return (aut.node_naming == mata::IntermediateAut::Naming::Auto &&
+			aut.symbol_naming == mata::IntermediateAut::Naming::Auto) ||
+		   (aut.state_naming != mata::IntermediateAut::Naming::Auto);
 }
 
 /// Determines whether the character is one of the logical operators of a transition formula.
@@ -35,8 +35,10 @@ void check_explicit_transition(const std::vector<std::string>& tokens, const std
 		if (const std::string& token = tokens[i];
 			token == "&" || token == "|" || token == "!" || token == "(" || token == ")") {
 			throw std::runtime_error(
-				"Malformed explicit " + automaton_type + " transition " + std::to_string(tokens) + ": '" + token +
-				"' is an operator, not a state or a symbol"
+				std::format(
+					"Malformed explicit {} transition {}: '{}' is an operator, not a state or a symbol", automaton_type,
+					std::to_string(tokens), token
+				)
 			);
 		}
 	}
@@ -68,13 +70,9 @@ mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string& type) {
 	}
 
 	const std::string alph_type = type.substr(found + 1, std::string::npos);
-	if (alph_type == "bits") {
-		return mata::IntermediateAut::AlphabetType::Bitvector;
-	} else if (alph_type == "explicit") {
-		return mata::IntermediateAut::AlphabetType::Explicit;
-	} else if (alph_type == "intervals") {
-		return mata::IntermediateAut::AlphabetType::Intervals;
-	}
+	if (alph_type == "bits") { return mata::IntermediateAut::AlphabetType::Bitvector; }
+	if (alph_type == "explicit") { return mata::IntermediateAut::AlphabetType::Explicit; }
+	if (alph_type == "intervals") { return mata::IntermediateAut::AlphabetType::Intervals; }
 
 	throw std::runtime_error("Unknown alphabet type '" + alph_type + "'; expected one of: bits, explicit, intervals");
 	return {};
@@ -170,11 +168,8 @@ mata::FormulaNode create_node(const mata::IntermediateAut& mata, const std::stri
  * Checks if @p op1 has lower precedence than @p op2. Precedence from the lowest to highest is: | < & < !
  */
 bool lower_precedence(const mata::FormulaNode::OperatorType op1, const mata::FormulaNode::OperatorType op2) {
-	if (op1 == mata::FormulaNode::OperatorType::Neg ||
-		(op1 == mata::FormulaNode::OperatorType::And && op2 != mata::FormulaNode::OperatorType::Neg)) {
-		return false;
-	}
-	return true;
+	return op1 != mata::FormulaNode::OperatorType::Neg &&
+		   (op1 != mata::FormulaNode::OperatorType::And || op2 == mata::FormulaNode::OperatorType::Neg);
 }
 
 /**
@@ -495,6 +490,9 @@ std::unordered_set<std::string> mata::FormulaGraph::collect_node_names() const {
 	std::unordered_set<std::string> res;
 	std::vector<const mata::FormulaGraph*> stack;
 
+	// FormulaGraph contains a node member, but we alias it as a FormulaGraph for tree traversal.
+	// This is intentional type punning required by the algorithm.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 	stack.emplace_back(reinterpret_cast<const FormulaGraph*>(&(this->node)));
 	while (!stack.empty()) {
 		const FormulaGraph* g = stack.back();
@@ -518,7 +516,7 @@ void mata::FormulaGraph::print_tree(std::ostream& os) const {
 
 	next_level.push_back(this);
 	while (!next_level.empty()) {
-		std::vector<const FormulaGraph*> this_level = next_level;
+		const std::vector<const FormulaGraph*> this_level = next_level;
 		next_level.clear();
 		for (const auto& graph : this_level) {
 			for (const auto& child : graph->children) { next_level.push_back(&child); }
@@ -614,7 +612,14 @@ bool mata::IntermediateAut::is_graph_conjunction_of_negations(const mata::Formul
 }
 
 std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut) {
-	const std::string type = inter_aut.is_nfa() ? "NFA" : (inter_aut.is_afa() ? "AFA" : "Unknown");
+	std::string type;
+	if (inter_aut.is_nfa()) {
+		type = "NFA";
+	} else if (inter_aut.is_afa()) {
+		type = "AFA";
+	} else {
+		type = "Unknown";
+	}
 	os << "Intermediate automaton type " << type << '\n';
 	os << "Naming - state: " << static_cast<size_t>(inter_aut.state_naming)
 	   << " symbol: " << static_cast<size_t>(inter_aut.symbol_naming)

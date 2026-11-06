@@ -5,7 +5,6 @@
 #include <functional>
 #include <limits>
 #include <queue>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -35,19 +34,8 @@ OrdVector<Symbol> unwinding_symbols(const Nft& lhs, const Nft& rhs, const mata::
 	return symbols;
 }
 
-/**
- * Whether unwinding @p nft with @p symbols spells DONT_CARE out over them: on a DONT_CARE transition, or on the links
- *  that pad a jump under AppendDontCares. Only then is the lazy exploration used: otherwise the unwound transducer is
- *  at most linear in the jump lengths, and the NFA inclusion on it is faster per explored node.
- */
-bool spells_out_dont_care(const Nft& nft, const OrdVector<Symbol>& symbols, const JumpMode jump_mode) {
-	if (symbols == OrdVector<Symbol>{DONT_CARE}) { return false; }
-	if (jump_mode == JumpMode::AppendDontCares && nft.contains_jump_transitions()) { return true; }
-	for (const StatePost& state_post : nft.delta) {
-		if (state_post.find(DONT_CARE) != state_post.end()) { return true; }
-	}
-	return false;
-}
+/// The first cursor of a chain of LazyUnwinding no search has reached yet.
+constexpr size_t UNNUMBERED_CHAIN{std::numeric_limits<size_t>::max()};
 
 /*
  * Lazy exploration of jumps for the antichain inclusion (#791).
@@ -95,7 +83,7 @@ bool spells_out_dont_care(const Nft& nft, const OrdVector<Symbol>& symbols, cons
  */
 class LazyUnwinding {
   public:
-	static constexpr size_t UNREACHABLE{std::numeric_limits<size_t>::max()};
+	static constexpr size_t unreachable{std::numeric_limits<size_t>::max()};
 
 	LazyUnwinding(const Nft& nft, const OrdVector<Symbol>& symbols, const JumpMode jump_mode)
 		: nft_{nft},
@@ -104,10 +92,11 @@ class LazyUnwinding {
 		  has_wildcard_{symbols != OrdVector<Symbol>{DONT_CARE}},
 		  exact_{!has_wildcard_ || !symbols.contains(DONT_CARE)},
 		  num_of_original_states_{nft.num_of_states()},
-		  distances_(num_of_original_states_, UNREACHABLE),
+		  distances_(num_of_original_states_, unreachable),
 		  original_moves_(num_of_original_states_),
-		  original_expanded_(num_of_original_states_, false) {
-		compute_distances();
+		  original_expanded_(num_of_original_states_, false),
+		  rewritten_(num_of_original_states_, false) {
+		compute_distances_and_chains();
 	}
 
 	/// Whether the lazy exploration reads the transducer exactly as the unwinding does; see above for the exceptions.
@@ -122,47 +111,45 @@ class LazyUnwinding {
 	const OrdVector<Symbol>& symbols() const { return symbols_; }
 
 	bool is_cursor(const State state) const { return state >= num_of_original_states_; }
-	size_t num_of_states() const { return num_of_original_states_ + cursors_.size(); }
+	size_t num_of_states() const { return num_of_original_states_ + cursor_moves_.size(); }
 	const mata::utils::SparseSet<State>& initial() const { return nft_.initial; }
 	State original_or_none(const State state) const { return is_cursor(state) ? Limits::max_state : state; }
 
-	/// Length of a shortest run from @p state to a final state, or @c UNREACHABLE.
+	/// Length of a shortest run from @p state to a final state, or @c unreachable.
 	size_t distance(const State state) const { return distances_[state]; }
 
 	/// The moves of a state: symbol posts sorted by symbol, the wildcard as DONT_CARE.
 	using Moves = std::ranges::subrange<StatePost::const_iterator>;
 
-	/// Computes the moves of @p state unless they are known. Interning the cursors they reach invalidates every
-	///  range that moves() returned before.
+	/// Computes the moves of @p state unless they are known. Numbering the cursors they reach invalidates every range
+	///  that moves() returned before.
 	void expand(const State state) {
 		if (is_cursor(state)) {
-			const size_t cursor_idx{state - num_of_original_states_};
-			if (cursor_expanded_[cursor_idx]) { return; }
-			const Cursor cursor{cursors_[cursor_idx]};
-			const State next{
-				cursor.remaining == 1 ? cursor.target : intern(cursor.target, cursor.remaining - 1, cursor.label)
-			};
-			cursor_moves_[cursor_idx].push_back(next);
-			cursor_expanded_[cursor_idx] = true;
+			// The move of a cursor is known once the cursor is numbered; only the counter needs the visit.
+			if (std::vector<bool>::reference visited{cursor_visited_[state - num_of_original_states_]}; !visited) {
+				visited = true;
+				++counters_.cursors_expanded;
+			}
 			return;
 		}
-		if (original_expanded_[state]) { return; }
-		std::vector<std::pair<Symbol, State>> moves{};
+		if (!rewritten_[state] || original_expanded_[state]) { return; }
+		StatePost& state_post{original_moves_[state]};
 		for (const SymbolPost& symbol_post : nft_.delta[state]) {
+			// Every link of the post reads its symbol first, so the one-link targets, in order, followed by the
+			//  cursors, sorted, are sorted, and distinct as their targets are.
+			SymbolPost moves{symbol_post.symbol};
+			cursor_buffer_.clear();
 			for (const State target : symbol_post.targets) {
 				const Link link{link_of(state, symbol_post.symbol, target)};
-				if (link.length == 0) { continue; }
-				moves.emplace_back(link.first, link.length == 1 ? target : intern(target, link.length - 1, link.rest));
+				if (link.length == 1) {
+					moves.push_back(target);
+				} else if (link.length > 1) {
+					cursor_buffer_.push_back(cursor_of(target, link.length - 1, link.rest));
+				}
 			}
-		}
-		std::ranges::sort(moves);
-		StatePost& state_post{original_moves_[state]};
-		for (auto move{moves.begin()}; move != moves.end(); ++move) {
-			if (state_post.empty() || state_post.back().symbol != move->first) {
-				state_post.push_back(SymbolPost{move->first});
-			}
-			if (move != moves.begin() && *(move - 1) == *move) { continue; }
-			state_post.back().push_back(move->second);
+			std::ranges::sort(cursor_buffer_);
+			for (const State cursor : cursor_buffer_) { moves.push_back(cursor); }
+			if (!moves.empty()) { state_post.push_back(std::move(moves)); }
 		}
 		original_expanded_[state] = true;
 	}
@@ -173,7 +160,8 @@ class LazyUnwinding {
 			const auto post{cursor_moves_.cbegin() + static_cast<std::ptrdiff_t>(state - num_of_original_states_)};
 			return Moves{post, post + 1};
 		}
-		return Moves{original_moves_[state].begin(), original_moves_[state].end()};
+		const StatePost& state_post{rewritten_[state] ? original_moves_[state] : nft_.delta[state]};
+		return Moves{state_post.begin(), state_post.end()};
 	}
 
 	/// The moves over @p symbol in @p moves, or their end.
@@ -185,7 +173,7 @@ class LazyUnwinding {
 	/// Appends to @p run a shortest run from @p state to a final state, cursors on the path as @c Limits::max_state.
 	void append_shortest_accepting_run(State state, Run& run) {
 		run.path.push_back(original_or_none(state));
-		for (size_t dist{distance(state)}; dist != 0 && dist != UNREACHABLE; --dist) {
+		for (size_t dist{distance(state)}; dist != 0 && dist != unreachable; --dist) {
 			bool advanced{false};
 			expand(state);
 			for (const SymbolPost& symbol_post : moves(state)) {
@@ -202,25 +190,24 @@ class LazyUnwinding {
 		}
 	}
 
+	/// What the lazy reading costs, for debugging: cursors stand for the fresh states of the unwinding.
+	struct Counters {
+		/// Positions inside chains, one per fresh state the unwinding creates.
+		size_t chain_positions{0};
+		/// Cursors numbered, one per (target, remaining length, label) of each chain the search reached.
+		size_t cursors_created{0};
+		/// Cursors the search visited.
+		size_t cursors_expanded{0};
+	};
+	const Counters& counters() const { return counters_; }
+
   private:
-	struct Cursor {
+	/// The cursors {target, r, label} for r = 1, ..., length, numbered first + r - 1 once the search reaches one.
+	struct Chain {
 		State target;
-		size_t remaining;
 		Symbol label;
-	};
-	struct CursorKey {
-		State target;
-		size_t remaining;
-		Symbol label;
-		bool operator==(const CursorKey&) const = default;
-	};
-	struct CursorKeyHash {
-		size_t operator()(const CursorKey& key) const {
-			size_t hash{std::hash<Symbol>{}(key.label)};
-			hash ^= std::hash<size_t>{}(key.remaining) + 0x9e'37'79'b9'7f'4a'7c'15ULL + (hash << 6) + (hash >> 2);
-			hash ^= std::hash<State>{}(key.target) + 0x9e'37'79'b9'7f'4a'7c'15ULL + (hash << 6) + (hash >> 2);
-			return hash;
-		}
+		size_t first;
+		size_t length;
 	};
 	/// The unwound form of one transition: @c length links, the first over @c first and the others over @c rest;
 	///  @c length 0 when some link reads nothing.
@@ -251,24 +238,45 @@ class LazyUnwinding {
 		return link;
 	}
 
-	State intern(const State target, const size_t remaining, const Symbol label) {
-		const CursorKey key{.target = target, .remaining = remaining, .label = label};
-		if (const auto it{cursor_ids_.find(key)}; it != cursor_ids_.end()) { return it->second; }
-		const State id{mata::nfa::to_state(num_of_states())};
-		cursor_ids_.emplace(key, id);
-		cursors_.push_back(Cursor{.target = target, .remaining = remaining, .label = label});
-		cursor_moves_.emplace_back(label);
-		cursor_expanded_.push_back(false);
-		// The distances of the original states are final by now: the constructor computes them.
-		distances_.push_back(distances_[target] == UNREACHABLE ? UNREACHABLE : remaining + distances_[target]);
-		return id;
+	/// The cursor {target, remaining, label} of a chain the constructor created, numbering its cursors on first use.
+	State cursor_of(const State target, const size_t remaining, const Symbol label) {
+		const auto first{chains_.begin() + static_cast<std::ptrdiff_t>(chains_of_target_[target])};
+		const auto last{chains_.begin() + static_cast<std::ptrdiff_t>(chains_of_target_[target + 1])};
+		// A target has few chains, one per label of the jumps into it: a linear scan beats a binary search.
+		const auto chain{std::ranges::find(first, last, label, &Chain::label)};
+		MATA_ASSERT(chain != last && chain->label == label && remaining <= chain->length);
+		if (chain->first == UNNUMBERED_CHAIN) { number_cursors(*chain); }
+		return static_cast<State>(chain->first + remaining - 1);
 	}
 
-	/// Shortest weighted distances of the original states to a final state, a chain weighing its number of links.
-	///  Also finds whether any link reads the wildcard, and the DONT_CARE transitions that stay on their level, which
-	///  make the lazy reading inexact.
-	void compute_distances() {
-		std::vector<std::vector<std::pair<State, size_t>>> predecessors(num_of_original_states_);
+	/// Numbers the cursors of @p chain after all cursors numbered so far. A cursor moves to the cursor with one link
+	///  less, numbered just before it, or to the target.
+	void number_cursors(Chain& chain) {
+		chain.first = num_of_states();
+		mata::nfa::check_num_of_states(chain.first + chain.length);
+		const size_t target_distance{distances_[chain.target]};
+		for (size_t remaining{1}; remaining <= chain.length; ++remaining) {
+			distances_.push_back(target_distance == unreachable ? unreachable : remaining + target_distance);
+			cursor_moves_.emplace_back(
+				chain.label, remaining == 1 ? chain.target : static_cast<State>(chain.first + remaining - 2)
+			);
+		}
+		cursor_visited_.resize(cursor_moves_.size(), false);
+		counters_.cursors_created += chain.length;
+	}
+
+	/// Shortest weighted distances of the original states to a final state, a chain weighing its number of links,
+	///  and the chains of cursors: chains of different transitions with the same target and label share their
+	///  cursors, the longest one holding all the others. Also finds whether any link reads the wildcard, and the
+	///  DONT_CARE transitions that stay on their level, which make the lazy reading inexact.
+	void compute_distances_and_chains() {
+		// The links into each original state q are incoming[incoming_of[q], incoming_of[q + 1]).
+		struct Incoming {
+			State source;
+			Symbol label;
+			Level length;
+		};
+		std::vector<size_t> incoming_of(num_of_original_states_ + 1, 0);
 		for (State source{0}; source < num_of_original_states_; ++source) {
 			for (const SymbolPost& symbol_post : nft_.delta[source]) {
 				for (const State target : symbol_post.targets) {
@@ -277,29 +285,74 @@ class LazyUnwinding {
 						exact_ = false;
 					}
 					const Link link{link_of(source, symbol_post.symbol, target)};
+					if (link.length != 1) { rewritten_[source] = true; }
 					if (link.length == 0) { continue; }
-					predecessors[target].emplace_back(source, link.length);
+					++incoming_of[target + 1];
 					has_wildcard_links_ =
 						has_wildcard_links_ || is_wildcard(link.first) || (link.length > 1 && is_wildcard(link.rest));
 				}
 			}
 		}
-		using Entry = std::pair<size_t, State>;
-		std::priority_queue<Entry, std::vector<Entry>, std::greater<>> queue{};
-		for (const State final_state : nft_.final) {
-			distances_[final_state] = 0;
-			queue.emplace(0, final_state);
+		for (size_t state{0}; state < num_of_original_states_; ++state) {
+			incoming_of[state + 1] += incoming_of[state];
 		}
-		while (!queue.empty()) {
-			const auto [distance, state]{queue.top()};
-			queue.pop();
-			if (distance != distances_[state]) { continue; }
-			for (const auto& [source, length] : predecessors[state]) {
-				if (distance + length < distances_[source]) {
-					distances_[source] = distance + length;
-					queue.emplace(distance + length, source);
+		std::vector<Incoming> incoming(incoming_of.back());
+		{
+			std::vector<size_t> next_incoming(incoming_of.begin(), incoming_of.end() - 1);
+			for (State source{0}; source < num_of_original_states_; ++source) {
+				for (const SymbolPost& symbol_post : nft_.delta[source]) {
+					for (const State target : symbol_post.targets) {
+						const Link link{link_of(source, symbol_post.symbol, target)};
+						if (link.length == 0) { continue; }
+						incoming[next_incoming[target]++] =
+							Incoming{.source = source, .label = link.rest, .length = static_cast<Level>(link.length)};
+					}
 				}
 			}
+		}
+
+		// Dijkstra's algorithm on a binary heap. A bucket per link weight would allocate one per level of the
+		//  longest jump, millions of them even when that jump is unreachable.
+		using Pending = std::pair<size_t, State>;
+		std::priority_queue<Pending, std::vector<Pending>, std::greater<>> pending{};
+		for (const State final_state : nft_.final) {
+			distances_[final_state] = 0;
+			pending.emplace(0, final_state);
+		}
+		while (!pending.empty()) {
+			const auto [distance, state]{pending.top()};
+			pending.pop();
+			if (distances_[state] != distance) { continue; }
+			for (size_t index{incoming_of[state]}; index < incoming_of[state + 1]; ++index) {
+				const Incoming& link{incoming[index]};
+				if (const size_t link_distance{distance + link.length}; link_distance < distances_[link.source]) {
+					distances_[link.source] = link_distance;
+					pending.emplace(link_distance, link.source);
+				}
+			}
+		}
+
+		// One chain per (target, label), as long as the longest of them, which sorts first.
+		chains_of_target_.assign(num_of_original_states_ + 1, 0);
+		std::vector<std::pair<Symbol, size_t>> labels{};
+		for (State target{0}; target < num_of_original_states_; ++target) {
+			labels.clear();
+			for (size_t index{incoming_of[target]}; index < incoming_of[target + 1]; ++index) {
+				if (incoming[index].length < 2) { continue; }
+				labels.emplace_back(incoming[index].label, incoming[index].length - 1);
+				counters_.chain_positions += incoming[index].length - 1;
+			}
+			std::ranges::sort(labels, [](const auto& lhs, const auto& rhs) {
+				return lhs.first < rhs.first || (lhs.first == rhs.first && lhs.second > rhs.second);
+			});
+			const auto shorter{std::ranges::unique(labels, [](const auto& lhs, const auto& rhs) {
+				return lhs.first == rhs.first;
+			})};
+			labels.erase(shorter.begin(), shorter.end());
+			for (const auto& [label, length] : labels) {
+				chains_.push_back(Chain{.target = target, .label = label, .first = UNNUMBERED_CHAIN, .length = length});
+			}
+			chains_of_target_[target + 1] = chains_.size();
 		}
 	}
 
@@ -313,18 +366,24 @@ class LazyUnwinding {
 	const size_t num_of_original_states_;
 	/// Indexed by the original states and then by the cursors.
 	std::vector<size_t> distances_;
-	std::vector<Cursor> cursors_{};
-	std::unordered_map<CursorKey, State, CursorKeyHash> cursor_ids_{};
+	/// Sorted by target and label.
+	std::vector<Chain> chains_{};
+	/// The chains ending in state q are chains_[chains_of_target_[q], chains_of_target_[q + 1]).
+	std::vector<size_t> chains_of_target_{};
 	std::vector<StatePost> original_moves_;
 	std::vector<bool> original_expanded_;
-	/// The one move of each cursor; its target is set when the cursor is expanded.
+	/// The original states with a link that is not a single one: their moves differ from their posts in the delta.
+	std::vector<bool> rewritten_;
+	/// The one move of each cursor.
 	std::vector<SymbolPost> cursor_moves_{};
-	std::vector<bool> cursor_expanded_{};
+	std::vector<bool> cursor_visited_{};
+	std::vector<State> cursor_buffer_{};
+	Counters counters_{};
 };
 
 /// The antichain inclusion of @p smaller in @p bigger over their lazily unwound jumps; see @c LazyUnwinding.
 bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* const cex) {
-	constexpr size_t UNREACHABLE{LazyUnwinding::UNREACHABLE};
+	constexpr size_t unreachable{LazyUnwinding::unreachable};
 	if (cex != nullptr) {
 		cex->word.clear();
 		cex->path.clear();
@@ -340,10 +399,10 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 	};
 
 	auto drop_useless_bigger_states = [&](StateSet& set) {
-		set.erase_if([&](const State state) { return bigger.distance(state) == UNREACHABLE; });
+		set.erase_if([&](const State state) { return bigger.distance(state) == unreachable; });
 	};
 	auto min_dst = [&](const StateSet& set) {
-		size_t min{UNREACHABLE};
+		size_t min{unreachable};
 		for (const State state : set) { min = std::min(min, bigger.distance(state)); }
 		return min;
 	};
@@ -353,7 +412,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 	const size_t bigger_initial_min_dst{min_dst(bigger_initial)};
 	for (const State state : smaller.initial()) {
 		const size_t smaller_dst{smaller.distance(state)};
-		if (smaller_dst == UNREACHABLE) { continue; }
+		if (smaller_dst == unreachable) { continue; }
 		if (smaller_dst < bigger_initial_min_dst) {
 			if (cex != nullptr) { smaller.append_shortest_accepting_run(state, *cex); }
 			return false;
@@ -382,7 +441,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 		for (auto target{smaller_targets.begin()}; target != smaller_targets.end(); ++target) {
 			const State smaller_succ{*target};
 			const size_t smaller_succ_dst{smaller.distance(smaller_succ)};
-			if (smaller_succ_dst == UNREACHABLE) { continue; }
+			if (smaller_succ_dst == unreachable) { continue; }
 
 			if (smaller_succ_dst < bigger_succ_min_dst) {
 				if (cex != nullptr) {
@@ -396,6 +455,8 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 			}
 
 			ProcessedAntichain& antichain{processed_of(smaller_succ)};
+			// 'bigger_succ' is moved from only for the last target, after which the loop ends.
+			// NOLINTNEXTLINE(bugprone-use-after-move)
 			if (antichain.subsumes(nodes, bigger_succ, bigger_succ_signature)) { continue; }
 			antichain.prune(nodes, bigger_succ, bigger_succ_signature);
 			const size_t succ_idx{nodes.size()};
@@ -404,6 +465,7 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 			nodes.push_back(
 				Node{
 					.smaller_state = smaller_succ,
+					// NOLINTNEXTLINE(clang-analyzer-cplusplus.Move): see 'bigger_succ' above.
 					.bigger_set = last_target ? std::move(bigger_succ) : bigger_succ,
 					.signature = bigger_succ_signature,
 					.dominated = false,
@@ -532,6 +594,24 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 	}
 	return true;
 }
+
+/// Reports at log verbosity 2 how many virtual states the lazy reading of @p unwinding used.
+void log_counters(const char* const operation, const char* const operand, const LazyUnwinding& unwinding) {
+	const LazyUnwinding::Counters& counters{unwinding.counters()};
+	DEBUG_PRINT(
+		operation << ": " << operand << ": " << counters.chain_positions << " positions inside jumps, "
+				  << counters.cursors_created << " cursors numbered, " << counters.cursors_expanded << " expanded"
+	);
+}
+/// The flat automaton of @p nft, already validated, unwound only when @p changes says unwinding changes it: the
+///  caller has computed that once for the dispatch, and to_nfa_update_copy() would scan and validate @p nft again.
+mata::nfa::Nfa flat(const Nft& nft, const bool changes, const OrdVector<Symbol>& symbols, const JumpMode jump_mode) {
+	if (!changes) { return nft.to_nfa_copy(); }
+	Nft unwound{nft};
+	unwound.unwind_jumps_inplace(symbols, jump_mode);
+	return unwound.to_nfa_move();
+}
+
 } // namespace
 
 /// naive language inclusion check (complementation + intersection + emptiness)
@@ -569,16 +649,22 @@ bool mata::nft::algorithms::is_included_antichains(
 	if (smaller.levels.num_of_levels != bigger.levels.num_of_levels) { return false; }
 
 	const OrdVector<Symbol> symbols{unwinding_symbols(smaller, bigger, alphabet)};
-	if (spells_out_dont_care(smaller, symbols, jump_mode) || spells_out_dont_care(bigger, symbols, jump_mode)) {
+	const bool smaller_changes{internal::unwinding_changes(smaller, symbols)};
+	const bool bigger_changes{internal::unwinding_changes(bigger, symbols)};
+	if (smaller_changes || bigger_changes) {
 		LazyUnwinding smaller_unwinding{smaller, symbols, jump_mode};
 		LazyUnwinding bigger_unwinding{bigger, symbols, jump_mode};
 		if (smaller_unwinding.is_exact() && bigger_unwinding.is_exact()) {
-			return is_included_lazily(smaller_unwinding, bigger_unwinding, cex);
+			const bool included{is_included_lazily(smaller_unwinding, bigger_unwinding, cex)};
+			log_counters("is_included_antichains", "smaller", smaller_unwinding);
+			log_counters("is_included_antichains", "bigger", bigger_unwinding);
+			return included;
 		}
 	}
-	// No DONT_CARE to spell out, or an unwinding the lazy reading does not follow exactly: compare the flat automata.
+	// Nothing to unwind, or an unwinding the lazy reading does not follow exactly: compare the flat automata.
 	return nfa::algorithms::is_included_antichains(
-		smaller.to_nfa_update_copy(symbols, jump_mode), bigger.to_nfa_update_copy(symbols, jump_mode), alphabet, cex
+		flat(smaller, smaller_changes, symbols, jump_mode), flat(bigger, bigger_changes, symbols, jump_mode), alphabet,
+		cex
 	);
 } // }}}
 
@@ -646,22 +732,28 @@ bool mata::nft::are_equivalent(
 	if (lhs.levels.num_of_levels != rhs.levels.num_of_levels) { return false; }
 
 	const OrdVector<Symbol> symbols{unwinding_symbols(lhs, rhs, alphabet)};
+	const bool lhs_changes{internal::unwinding_changes(lhs, symbols)};
+	const bool rhs_changes{internal::unwinding_changes(rhs, symbols)};
 	const auto algorithm{params.find("algorithm")};
-	if (algorithm != params.end() && algorithm->second == "antichains" &&
-		(spells_out_dont_care(lhs, symbols, jump_mode) || spells_out_dont_care(rhs, symbols, jump_mode))) {
+	if (algorithm != params.end() && algorithm->second == "antichains" && (lhs_changes || rhs_changes)) {
 		// Both inclusions share the cursors and the distances of each operand.
 		LazyUnwinding lhs_unwinding{lhs, symbols, jump_mode};
 		LazyUnwinding rhs_unwinding{rhs, symbols, jump_mode};
 		if (lhs_unwinding.is_exact() && rhs_unwinding.is_exact()) {
-			return is_included_lazily(lhs_unwinding, rhs_unwinding, nullptr) &&
-				   is_included_lazily(rhs_unwinding, lhs_unwinding, nullptr);
+			const bool equivalent{
+				is_included_lazily(lhs_unwinding, rhs_unwinding, nullptr) &&
+				is_included_lazily(rhs_unwinding, lhs_unwinding, nullptr)
+			};
+			log_counters("are_equivalent", "lhs", lhs_unwinding);
+			log_counters("are_equivalent", "rhs", rhs_unwinding);
+			return equivalent;
 		}
 	}
 
 	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly. EPSILON
 	// on a level means "nothing on this tape" and stays a letter here, so the epsilon-unaware entry point is used.
 	return nfa::algorithms::are_equivalent_epsilon_as_symbol(
-		lhs.to_nfa_update_copy(symbols, jump_mode), rhs.to_nfa_update_copy(symbols, jump_mode), alphabet, params
+		flat(lhs, lhs_changes, symbols, jump_mode), flat(rhs, rhs_changes, symbols, jump_mode), alphabet, params
 	);
 }
 

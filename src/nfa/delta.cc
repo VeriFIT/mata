@@ -159,7 +159,7 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
 	const size_t num_of_states{this->num_of_states()};
 	for (State state_from{0}; state_from < num_of_states; ++state_from) {
 		for (const SymbolPost& state_from_move : state_post(state_from)) {
-			if (const auto target_state{state_from_move.targets.find(state_to)};
+			if (const auto* const target_state{state_from_move.targets.find(state_to)};
 				target_state != state_from_move.targets.end()) {
 				transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to);
 			}
@@ -171,7 +171,7 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
 std::vector<Transition> Delta::get_transitions_between(const State state_from, const State state_to) const {
 	std::vector<Transition> transitions_between{};
 	for (const SymbolPost& symbol_post : state_post(state_from)) {
-		if (const auto state_to_find_it = symbol_post.targets.find(state_to);
+		if (const auto* const state_to_find_it = symbol_post.targets.find(state_to);
 			state_to_find_it != symbol_post.targets.end()) {
 			transitions_between.emplace_back(state_from, symbol_post.symbol, state_to);
 		}
@@ -245,6 +245,8 @@ void Delta::add(const State source, SymbolPost&& symbol_post) {
 	note_added(num_of_targets);
 }
 
+// Taken by rvalue reference to be sorted and deduplicated in place.
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void Delta::add(std::vector<Transition>&& transitions) {
 	if (transitions.empty()) { return; }
 	std::ranges::sort(transitions, [](const Transition& lhs, const Transition& rhs) {
@@ -391,7 +393,7 @@ Delta::Transitions::const_iterator::const_iterator(const Delta& delta, const Sta
 Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator++() {
 	MATA_ASSERT(delta_->begin() != delta_->end());
 
-	++symbol_post_it_;
+	symbol_post_it_ = std::next(symbol_post_it_);
 	if (symbol_post_it_ != state_post_it_->targets.end()) {
 		transition_.target = *symbol_post_it_;
 		return *this;
@@ -492,6 +494,8 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 	return *this;
 }
 
+// The posts of 'other' are moved out one by one below.
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 Delta& Delta::append_shifted(Delta&& other, const State offset) {
 	// Self-append: the snapshot is the operand, `this` keeps its own posts.
 	if (this == &other) { return append_shifted(Delta{other}, offset); }
@@ -549,7 +553,7 @@ Delta Delta::reverted(const size_t num_of_states) const {
 	for (State source{0}; source < state_posts_.size(); ++source) {
 		for (const SymbolPost& symbol_post : state_posts_[source]) {
 			for (const State target : symbol_post.targets) {
-				edges[fill_cursors[target]++] = ReversedEdge{symbol_post.symbol, source};
+				edges[fill_cursors[target]++] = ReversedEdge{.symbol = symbol_post.symbol, .source = source};
 			}
 		}
 	}
@@ -713,7 +717,7 @@ StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
 }
 
 StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
-	++target_it_;
+	target_it_ = std::next(target_it_);
 	if (target_it_ != symbol_post_it_->targets.end()) {
 		move_.target = *target_it_;
 		return *this;
@@ -768,9 +772,8 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
 	return *this;
 }
 
-StatePost::Moves StatePost::moves(
-	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
-) const {
+StatePost::Moves
+	StatePost::moves(const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end) {
 	return {symbol_post_it, symbol_post_end};
 }
 
@@ -1005,12 +1008,12 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 	// Dense targets: mark them in a bitset over the words spanning [min_target, max_target] and read them back in
 	//  order, which costs O(targets + words) instead of a sort.
 	const size_t first_word{min_target / 64};
-	const size_t num_of_words{max_target / 64 - first_word + 1};
+	const size_t num_of_words{(max_target / 64) - first_word + 1};
 	if (num_of_words <= num_of_targets) {
 		unify_words_.assign(num_of_words, 0);
 		for (const StatePost::const_iterator& symbol_post_it : current) {
 			for (const State target : symbol_post_it->targets) {
-				unify_words_[target / 64 - first_word] |= uint64_t{1} << (target % 64);
+				unify_words_[(target / 64) - first_word] |= uint64_t{1} << (target % 64);
 			}
 		}
 		size_t num_of_unique_targets{0};

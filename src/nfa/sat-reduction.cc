@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iterator>
 #include <limits>
@@ -39,7 +40,7 @@
 	#include <sys/stat.h>
 	#include <sys/wait.h>
 	#include <unistd.h>
-	#if defined(__APPLE__)
+	#ifdef __APPLE__
 		#include <crt_externs.h>
 	#endif
 #endif
@@ -144,7 +145,8 @@ class AutomatonVariables {
 	size_t num_of_symbols() const { return num_of_symbols_; }
 
 	Literal transition(const State source, const Symbol symbol, const State target) const {
-		return first_transition_ + static_cast<Literal>((source * num_of_symbols_ + symbol) * num_of_states_ + target);
+		return first_transition_ +
+			   static_cast<Literal>(((source * num_of_symbols_ + symbol) * num_of_states_) + target);
 	}
 
 	Literal initial(const State state) const { return first_initial_ + static_cast<Literal>(state); }
@@ -508,8 +510,9 @@ SolverAnswer parse_solver_output(
 				} catch (const std::exception&) { parsed = 0; }
 				if (parsed != token.size() || literal < -max_variable || literal > max_variable) {
 					throw std::runtime_error(
-						"The solver '" + solver + "' printed an unexpected value '" + token + "'." +
-						output_excerpt(output)
+						std::format(
+							"The solver '{}' printed an unexpected value '{}'.{}", solver, token, output_excerpt(output)
+						)
 					);
 				}
 				if (literal != 0) { answer.model[static_cast<size_t>(literal < 0 ? -literal : literal)] = literal > 0; }
@@ -542,7 +545,9 @@ class TemporaryDirectory {
   public:
 	TemporaryDirectory() : path_{create()} {}
 	TemporaryDirectory(const TemporaryDirectory&) = delete;
+	TemporaryDirectory(TemporaryDirectory&&) = delete;
 	TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
+	TemporaryDirectory& operator=(TemporaryDirectory&&) = delete;
 	~TemporaryDirectory() {
 		std::error_code error{};
 		std::filesystem::remove_all(path_, error);
@@ -565,7 +570,7 @@ class TemporaryDirectory {
 };
 
 char** environment() {
-	#if defined(__APPLE__)
+	#ifdef __APPLE__
 	return *_NSGetEnviron();
 	#else
 	return environ;
@@ -582,13 +587,15 @@ std::optional<std::filesystem::path> find_executable(const std::string& name) {
 	if (name.find('/') != std::string::npos) {
 		return is_executable_file(name) ? std::optional<std::filesystem::path>{name} : std::nullopt;
 	}
+	// Mata never modifies the environment, so reading it cannot race with a setenv() of its own.
+	// NOLINTNEXTLINE(concurrency-mt-unsafe)
 	const char* const path{std::getenv("PATH")};
 	if (path == nullptr) { return std::nullopt; }
 	std::string_view directories{path};
 	while (true) {
 		const size_t separator{directories.find(':')};
 		const std::string_view directory{directories.substr(0, separator)};
-		const std::filesystem::path candidate{std::filesystem::path{directory.empty() ? "." : directory} / name};
+		std::filesystem::path candidate{std::filesystem::path{directory.empty() ? "." : directory} / name};
 		if (is_executable_file(candidate)) { return candidate; }
 		if (separator == std::string_view::npos) { return std::nullopt; }
 		directories.remove_prefix(separator + 1);
@@ -613,6 +620,7 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments, cons
 	::posix_spawn_file_actions_adddup2(&actions, STDOUT_FILENO, STDERR_FILENO);
 
 	std::vector<char*> argv{};
+	argv.reserve(arguments.size() + 1);
 	for (std::string& argument : arguments) { argv.push_back(argument.data()); }
 	argv.push_back(nullptr);
 	pid_t process{};
@@ -659,6 +667,8 @@ std::vector<std::string>
 		return arguments;
 	}};
 	if (!command.empty()) { return resolve(command, "given by the \"solver\" parameter"); }
+	// Mata never modifies the environment, so reading it cannot race with a setenv() of its own.
+	// NOLINTNEXTLINE(concurrency-mt-unsafe)
 	if (const char* const value{std::getenv(variable.c_str())}; value != nullptr && *value != '\0') {
 		return resolve(value, "given by the environment variable " + variable);
 	}
@@ -773,7 +783,7 @@ Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_co
 	if (used_symbols.contains(EPSILON)) { input = trim(remove_epsilon(input)); }
 	const std::vector<Symbol> symbols{input.delta.get_used_symbols().to_vector()}; // Sorted.
 	const Nfa target{with_renamed_symbols(input, [&](const Symbol symbol) {
-		return static_cast<Symbol>(std::lower_bound(symbols.begin(), symbols.end(), symbol) - symbols.begin());
+		return static_cast<Symbol>(std::ranges::lower_bound(symbols, symbol) - symbols.begin());
 	})};
 	const auto restore_symbols{[&](const Nfa& aut) {
 		return with_renamed_symbols(aut, [&](const Symbol symbol) { return symbols[symbol]; }, nfa.alphabet);

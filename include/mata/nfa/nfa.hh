@@ -148,13 +148,18 @@ class Nfa : public Automaton {
 	 */
 	Nfa(const Nfa& other) = default;
 
+	// Only the 'Automaton' base of 'other' is moved from before its own members are.
+	// NOLINTBEGIN(bugprone-use-after-move)
 	Nfa(Nfa&& other) noexcept
 		: Automaton{std::move(other)},
 		  alphabet{std::move(other.alphabet)},
 		  attributes{std::move(other.attributes)} {}
+	// NOLINTEND(bugprone-use-after-move)
 
 	Nfa& operator=(const Nfa& other) = default;
 	Nfa& operator=(Nfa&& other) noexcept;
+
+	~Nfa() = default;
 
 	/**
 	 * Add a new (fresh) state to the automaton.
@@ -653,11 +658,11 @@ class Nfa : public Automaton {
 	 *
 	 * If the automaton is nondeterministic, the result is undefined.
 	 *
-	 * @param word The word to read.
+	 * @param run The run whose word is read.
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
-	std::optional<State> read_word_det(const Run& word) const;
+	std::optional<State> read_word_det(const Run& run) const;
 
 	/**
 	 * @brief Read a word and return the state the deterministic automaton ends up in.

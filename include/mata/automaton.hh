@@ -74,6 +74,8 @@ class Automaton {
 	Automaton& operator=(const Automaton& other) = default;
 	Automaton& operator=(Automaton&& other) noexcept;
 
+	~Automaton() = default;
+
 	/**
 	 * @brief Get the current number of states in the whole automaton.
 	 *

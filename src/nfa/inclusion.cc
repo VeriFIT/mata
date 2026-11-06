@@ -36,9 +36,9 @@ bool mata::nfa::algorithms::is_included_naive(
 	// The map is only read to translate the counterexample path back to `smaller`'s states, but `intersection()`
 	//  inserts every product state into it.
 	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
-	Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, cex != nullptr ? &prod_map : nullptr);
+	const Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, cex != nullptr ? &prod_map : nullptr);
 
-	bool result = nfa_isect.is_lang_empty(cex);
+	const bool result = nfa_isect.is_lang_empty(cex);
 	if (cex != nullptr && !result) {
 		std::unordered_map<State, State> nfa_isect_state_to_smaller_state;
 		for (const auto& [states_orig, state_res] : prod_map) {
@@ -135,7 +135,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 		const State smaller_state{nodes[node_idx].smaller_state};
 
 		sync_iterator.reset();
-		for (State q : nodes[node_idx].bigger_set) { mata::utils::push_back(sync_iterator, bigger.delta[q]); }
+		for (const State q : nodes[node_idx].bigger_set) { mata::utils::push_back(sync_iterator, bigger.delta[q]); }
 
 		// process transitions leaving smaller_state
 		for (const auto& smaller_move : smaller.delta[smaller_state]) {
@@ -175,6 +175,8 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 				// Is some already processed macrostate of smaller_succ a subset of bigger_succ, and therefore
 				//  dominates it?
+				// 'bigger_succ' is moved from only for the last target, after which the loop ends.
+				// NOLINTNEXTLINE(bugprone-use-after-move)
 				if (processed[smaller_succ].subsumes(nodes, bigger_succ, bigger_succ_signature)) { continue; }
 
 				// Pruning: drop every stored node that succ dominates, in the processed antichain and thereby in the

@@ -7275,12 +7275,13 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 	for (size_t iteration{0}; iteration < 30; ++iteration) {
 		const size_t num_states{std::uniform_int_distribution<size_t>(2, 40)(gen)};
 		Nfa nfa{num_states};
+		const auto max_state{static_cast<State>(num_states - 1)};
 		for (State state{0}; state + 1 < num_states; ++state) {
 			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
 			for (size_t i{0}; i < out_degree; ++i) {
 				nfa.delta.add(
 					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
-					num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, num_states - 1)(gen) : 0
+					num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, max_state)(gen) : 0
 				);
 			}
 			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
@@ -7429,11 +7430,12 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 			// Random initials and finals
 			const size_t num_init = std::max(size_t(1), num_states / 4);
 			const size_t num_final = std::max(size_t(1), num_states / 4);
+			const auto max_state{static_cast<State>(num_states - 1)};
 			for (size_t i = 0; i < num_init; ++i) {
-				aut.initial.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
+				aut.initial.insert(std::uniform_int_distribution<State>(0, max_state)(gen));
 			}
 			for (size_t i = 0; i < num_final; ++i) {
-				aut.final.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
+				aut.final.insert(std::uniform_int_distribution<State>(0, max_state)(gen));
 			}
 
 			// Random edges (allow duplicates, the delta will ignore them)
@@ -7441,8 +7443,8 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 				num_states / 2 + std::uniform_int_distribution<size_t>(num_states, 2 * num_states)(gen)
 			};
 			for (size_t i = 0; i < num_edges; ++i) {
-				State src = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
-				State tgt = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
+				State src = std::uniform_int_distribution<State>(0, max_state)(gen);
+				State tgt = std::uniform_int_distribution<State>(0, max_state)(gen);
 				Symbol sym = std::uniform_int_distribution<Symbol>(0, 255)(gen);
 				aut.delta.add(src, sym, tgt);
 			}

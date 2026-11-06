@@ -2,6 +2,7 @@
  */
 
 #include <algorithm>
+#include <memory>
 #include <random>
 #include <set>
 #include <type_traits>
@@ -271,6 +272,16 @@ TEST_CASE("mata::utils::OrdVector::filter() and filter_indexes() with a named pr
 	indexed.filter_indexes(keeps_first_two);
 	CHECK(indexed == OrdVector<int>{10, 20});
 	CHECK(indexed.size() == 2);
+}
+
+TEST_CASE("mata::utils::OrdVector::filter() and filter_indexes() take a move-only predicate") {
+	OrdVector<int> vec{1, 2, 3, 4, 5};
+	vec.filter([divisor = std::make_unique<int>(2)](const int value) { return value % *divisor == 1; });
+	CHECK(vec == OrdVector<int>{1, 3, 5});
+
+	OrdVector<int> indexed{10, 20, 30, 40};
+	indexed.filter_indexes([limit = std::make_unique<size_t>(2)](const size_t index) { return index < *limit; });
+	CHECK(indexed == OrdVector<int>{10, 20});
 }
 
 TEST_CASE("mata::utils::OrdVector::OrdVector(VectorType&&) - issue #847") {

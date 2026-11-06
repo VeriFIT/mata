@@ -1,5 +1,19 @@
 Language: Cpp
 BasedOnStyle: LLVM
+# Deprecated in clang-format 22, where 'AlignAfterOpenBracket' becomes a bool and 'BlockIndent' is expressed as the
+#  per-construct break options below. Once the pinned clang-tools reaches 22, replace this line with the full set
+#  that 22 maps 'BlockIndent' to:
+#   AlignAfterOpenBracket: true
+#   BreakAfterOpenBracketBracedList: true
+#   BreakAfterOpenBracketFunction: true
+#   BreakAfterOpenBracketIf: true
+#   BreakAfterOpenBracketLoop: false
+#   BreakAfterOpenBracketSwitch: false
+#   BreakBeforeCloseBracketBracedList: true
+#   BreakBeforeCloseBracketFunction: true
+#   BreakBeforeCloseBracketIf: true
+#   BreakBeforeCloseBracketLoop: false
+#   BreakBeforeCloseBracketSwitch: false
 AlignAfterOpenBracket: BlockIndent
 AlignTrailingComments:
   Kind: Never

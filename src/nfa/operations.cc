@@ -6,6 +6,7 @@
 #include <bit>
 #include <cstdint>
 #include <deque>
+#include <iterator>
 #include <limits>
 #include <list>
 #include <numeric>
@@ -13,6 +14,7 @@
 #include <queue>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 // MATA headers
 #include <ranges>
@@ -24,8 +26,6 @@
 #include "mata/utils/sparse-set.hh"
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/utils/assert.hh>
-
-using std::tie;
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -121,7 +121,7 @@ std::vector<State> mata::nfa::algorithms::identical_successor_classes(
 
 	// In the first round every state is its own class, so the state posts themselves are compared. Most automata
 	//  merge nothing and are done after this round, without copying their transitions.
-	size_t num_of_classes{merge_round(
+	const size_t num_of_classes{merge_round(
 		[&](const State q) {
 			size_t accum{hash_step(hash_step(HASH_SEED, aut.final[q]), level_of(q))};
 			for (const SymbolPost& symbol_post : aut.delta[q]) {
@@ -208,6 +208,9 @@ std::vector<State> mata::nfa::algorithms::identical_successor_classes(
 	std::vector<bool> is_hashed(num_of_classes, false);
 	std::vector<bool> is_queued(num_of_classes, true);
 	std::vector<State> worklist(num_of_classes);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(worklist.begin(), worklist.end(), State{0});
 	while (!worklist.empty()) {
 		const State cls{worklist.back()};
@@ -351,7 +354,7 @@ void check_covered_and_covering(
 				//
 				// same applies for any covered state, if it contains newly turned state in theirs
 				// covering set, then it has to be updated
-				State erase_state = it->second; // covered state to remove
+				const State erase_state = it->second; // covered state to remove
 				for (const auto& state : covered | std::views::values) {
 					if (covering_indexes[state].contains(erase_state)) {
 						covering_indexes[state].erase(erase_state);
@@ -392,15 +395,15 @@ struct CoveredStates {
 void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 	const size_t num_of_covered{covered_states.order.size()};
 	if (num_of_covered == 0) { return; }
-	constexpr size_t NOT_COVERED{std::numeric_limits<size_t>::max()};
-	std::vector<size_t> covered_index(nfa.num_of_states(), NOT_COVERED);
+	constexpr size_t not_covered{std::numeric_limits<size_t>::max()};
+	std::vector<size_t> covered_index(nfa.num_of_states(), not_covered);
 	for (size_t i{0}; i < num_of_covered; ++i) { covered_index[covered_states.order[i]] = i; }
 
 	std::vector<StateSet> resolved(num_of_covered);
 	for (size_t i{num_of_covered}; i-- > 0;) {
 		for (const State covering : covered_states.covering_sets[i]) {
 			const size_t covering_index{covered_index[covering]};
-			if (covering_index == NOT_COVERED) {
+			if (covering_index == not_covered) {
 				resolved[i].insert(covering);
 			} else {
 				resolved[i].insert(resolved[covering_index]);
@@ -408,7 +411,7 @@ void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 		}
 	}
 
-	const auto is_covered{[&](const State state) { return covered_index[state] != NOT_COVERED; }};
+	const auto is_covered{[&](const State state) { return covered_index[state] != not_covered; }};
 	for (State source{0}; source < nfa.delta.num_of_states(); ++source) {
 		if (is_covered(source)) {
 			nfa.delta.mutable_state_post(source).clear();
@@ -422,7 +425,7 @@ void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
 		}
 		for (SymbolPost& symbol_post : nfa.delta.mutable_state_post(source)) {
 			if (std::ranges::none_of(symbol_post.targets, is_covered)) { continue; }
-			StateSet targets{};
+			SmallStateSet targets{};
 			for (const State target : symbol_post.targets) {
 				if (!is_covered(target)) { targets.push_back(target); }
 			}
@@ -1053,6 +1056,8 @@ Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
 }
 
 Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
+	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
+	// NOLINTNEXTLINE(misc-const-correctness)
 	decltype(algorithms::minimize_auto)* algo = algorithms::minimize_auto;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
@@ -1232,12 +1237,14 @@ class RefinablePartition {
 		return *this;
 	}
 
+	~RefinablePartition() = default;
+
 	/**
 	 * @brief Get the number of elements across all sets.
 	 *
 	 * @return The number of elements.
 	 */
-	inline size_t size() const { return elems_.size(); }
+	size_t size() const { return elems_.size(); }
 
 	/**
 	 * @brief Get the size of the set.
@@ -1245,7 +1252,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The size of the set.
 	 */
-	inline size_t size_of_set(const size_t s) const { return end_[s] - first_[s]; }
+	size_t size_of_set(const size_t s) const { return end_[s] - first_[s]; }
 
 	/**
 	 * @brief Get the first element of the set.
@@ -1253,7 +1260,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The first element of the set.
 	 */
-	inline T get_first(const size_t s) const { return elems_[first_[s]]; }
+	T get_first(const size_t s) const { return elems_[first_[s]]; }
 
 	/**
 	 * @brief Get the next element of the set.
@@ -1261,7 +1268,7 @@ class RefinablePartition {
 	 * @param e The element.
 	 * @return The next element of the set or NO_MORE_ELEMENTS if there is no next element.
 	 */
-	inline T get_next(const T e) const {
+	T get_next(const T e) const {
 		if (location_[e] + 1 >= end_[set_idx[e]]) { return no_more_elements; }
 		return elems_[location_[e] + 1];
 	}
@@ -1290,7 +1297,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return True if the set has no marked elements, false otherwise.
 	 */
-	inline bool has_no_marks(const size_t s) const { return mid_[s] == first_[s]; }
+	bool has_no_marks(const size_t s) const { return mid_[s] == first_[s]; }
 
 	/**
 	 * @brief Split the set into two sets according to the marked elements (the mid).
@@ -1307,15 +1314,13 @@ class RefinablePartition {
 		if (mid_[s] == first_[s]) {
 			// If all or no elements were marked, there is no need to split the set.
 			return no_split;
-		} else {
-			// Split the set according to the mid.
-			first_[num_of_sets] = first_[s];
-			mid_[num_of_sets] = first_[s];
-			end_[num_of_sets] = mid_[s];
-			first_[s] = mid_[s];
-			for (size_t l = first_[num_of_sets]; l < end_[num_of_sets]; ++l) { set_idx[elems_[l]] = num_of_sets; }
-			return num_of_sets++;
-		}
+		} // Split the set according to the mid.
+		first_[num_of_sets] = first_[s];
+		mid_[num_of_sets] = first_[s];
+		end_[num_of_sets] = mid_[s];
+		first_[s] = mid_[s];
+		for (size_t l = first_[num_of_sets]; l < end_[num_of_sets]; ++l) { set_idx[elems_[l]] = num_of_sets; }
+		return num_of_sets++;
 	}
 };
 
@@ -1438,7 +1443,13 @@ constexpr size_t BIT_ROW_SIMULATION_MAX_STATES{256};
 Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	const size_t num_of_states{aut.num_of_states()};
 	const size_t num_of_words{(num_of_states + 63) / 64};
-	const auto set_bit = [](std::uint64_t* const row, const size_t q) { row[q / 64] |= std::uint64_t{1} << (q % 64); };
+	// The row @p index of a bit matrix with num_of_words words per row.
+	const auto row_of = [num_of_words](auto& matrix, const size_t index) {
+		return std::span{matrix}.subspan(index * num_of_words, num_of_words);
+	};
+	const auto set_bit = [](const std::span<std::uint64_t> row, const size_t q) {
+		row[q / 64] |= std::uint64_t{1} << (q % 64);
+	};
 	std::vector<Symbol> symbols;
 	for (State q{0}; q < num_of_states; ++q) {
 		for (const SymbolPost& symbol_post : aut.delta[q]) { symbols.push_back(symbol_post.symbol); }
@@ -1458,14 +1469,14 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	// The row index_of(a) holds the states with a transition over a.
 	std::vector<std::uint64_t> with_symbol(symbols.size() * num_of_words, 0);
 	for (State q{0}; q < num_of_states; ++q) {
-		if (aut.final[q]) { set_bit(final_states.data(), q); }
+		if (aut.final[q]) { set_bit(final_states, q); }
 		symbol_indices[q].reserve(aut.delta[q].size());
 		for (const SymbolPost& symbol_post : aut.delta[q]) {
 			const size_t symbol_index{index_of(symbol_post.symbol)};
 			symbol_indices[q].push_back(symbol_index);
-			set_bit(&with_symbol[symbol_index * num_of_words], q);
+			set_bit(row_of(with_symbol, symbol_index), q);
 			for (const State target : symbol_post.targets) {
-				set_bit(&a_predecessors[(symbol_index * num_of_states + target) * num_of_words], q);
+				set_bit(row_of(a_predecessors, (symbol_index * num_of_states) + target), q);
 				predecessors[target].push_back(q);
 			}
 		}
@@ -1475,20 +1486,23 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	//  of matching every target against all states.
 	std::vector<std::uint64_t> simulators(num_of_states * num_of_words, 0);
 	for (State p{0}; p < num_of_states; ++p) {
-		std::uint64_t* const row{&simulators[p * num_of_words]};
+		const auto row{row_of(simulators, p)};
 		if (aut.final[p]) {
-			std::ranges::copy(final_states, row);
+			std::ranges::copy(final_states, row.begin());
 		} else {
 			for (State q{0}; q < num_of_states; ++q) { set_bit(row, q); }
 		}
 		for (const size_t symbol_index : symbol_indices[p]) {
-			const std::uint64_t* const with_this_symbol{&with_symbol[symbol_index * num_of_words]};
+			const auto with_this_symbol{row_of(std::as_const(with_symbol), symbol_index)};
 			for (size_t word{0}; word < num_of_words; ++word) { row[word] &= with_this_symbol[word]; }
 		}
 	}
 
 	// Only the row of a state whose successor lost a simulator can lose a simulator, so only those are rechecked.
 	std::vector<State> to_check(num_of_states);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(to_check.begin(), to_check.end(), State{0});
 	std::vector<bool> is_to_check(num_of_states, true);
 	std::vector<std::uint64_t> row(num_of_words);
@@ -1497,29 +1511,28 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 		const State p{to_check.back()};
 		to_check.pop_back();
 		is_to_check[p] = false;
-		std::uint64_t* const p_row{&simulators[p * num_of_words]};
-		std::copy_n(p_row, num_of_words, row.begin());
+		const auto p_row{row_of(simulators, p)};
+		std::ranges::copy(p_row, row.begin());
 		auto symbol_index{symbol_indices[p].begin()};
 		for (const SymbolPost& symbol_post : aut.delta[p]) {
-			const size_t symbol_offset{*symbol_index++ * num_of_states * num_of_words};
+			const size_t symbol_rows{*symbol_index++ * num_of_states};
 			for (const State target : symbol_post.targets) {
-				const std::uint64_t* const target_row{&simulators[target * num_of_words]};
+				const auto target_row{row_of(std::as_const(simulators), target)};
 				std::ranges::fill(matching, 0);
 				for (size_t word{0}; word < num_of_words; ++word) {
 					for (std::uint64_t bits{target_row[word]}; bits != 0; bits &= bits - 1) {
-						const std::uint64_t* const a_predecessors_row{
-							&a_predecessors
-								[symbol_offset +
-								 (word * 64 + static_cast<size_t>(std::countr_zero(bits))) * num_of_words]
-						};
+						const auto a_predecessors_row{row_of(
+							std::as_const(a_predecessors),
+							symbol_rows + (word * 64) + static_cast<size_t>(std::countr_zero(bits))
+						)};
 						for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
 					}
 				}
 				for (size_t w{0}; w < num_of_words; ++w) { row[w] &= matching[w]; }
 			}
 		}
-		if (!std::equal(row.begin(), row.end(), p_row)) {
-			std::ranges::copy(row, p_row);
+		if (!std::ranges::equal(row, p_row)) {
+			std::ranges::copy(row, p_row.begin());
 			for (const State predecessor : predecessors[p]) {
 				if (!is_to_check[predecessor]) {
 					is_to_check[predecessor] = true;
@@ -1531,7 +1544,7 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 
 	Simlib::Util::BinaryRelation relation{num_of_states, false};
 	for (State p{0}; p < num_of_states; ++p) {
-		const std::uint64_t* const p_row{&simulators[p * num_of_words]};
+		const auto p_row{row_of(std::as_const(simulators), p)};
 		for (State q{0}; q < num_of_states; ++q) { relation.set(p, q, ((p_row[q / 64] >> (q % 64)) & 1) != 0); }
 	}
 	return relation;
@@ -1708,9 +1721,8 @@ Relation compute_relation_as(const Nfa& aut, const ParameterMap& params, const s
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
 		return compute_fw_direct_simulation<Relation>(aut);
-	} else {
-		throw std::runtime_error(caller + " received an unknown value of the \"relation\" key: " + relation);
 	}
+	throw std::runtime_error(caller + " received an unknown value of the \"relation\" key: " + relation);
 }
 } // namespace
 
@@ -1815,8 +1827,8 @@ Nfa mata::nfa::determinize(
 		if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_res, StateSet{initial_orig})) {
 			return result;
 		}
-		constexpr State kUnseen{std::numeric_limits<State>::max()};
-		std::vector<State> renaming(aut.num_of_states(), kUnseen);
+		constexpr State unseen{std::numeric_limits<State>::max()};
+		std::vector<State> renaming(aut.num_of_states(), unseen);
 		renaming[initial_orig] = initial_res;
 		std::vector<State> worklist{initial_orig};
 		while (!worklist.empty()) {
@@ -1828,7 +1840,7 @@ Nfa mata::nfa::determinize(
 				if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, symbol_post.symbol)) { continue; }
 				const State target_orig{symbol_post.targets.front()};
 				State target_res{renaming[target_orig]};
-				const bool target_is_new{target_res == kUnseen};
+				const bool target_is_new{target_res == unseen};
 				if (target_is_new) {
 					target_res = result.add_state();
 					renaming[target_orig] = target_res;
@@ -1880,12 +1892,12 @@ Nfa mata::nfa::determinize(
 
 		// add moves of S to the sync ex iterator
 		synchronized_iterator.reset();
-		for (State q : states_orig) { push_back(synchronized_iterator, aut.delta[q]); }
+		for (const State q : states_orig) { push_back(synchronized_iterator, aut.delta[q]); }
 
 		while (synchronized_iterator.advance()) {
 			// extract post from the synchronized_iterator iterator
 			const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
-			Symbol current_symbol = (*symbol_posts.begin())->symbol;
+			const Symbol current_symbol = (*symbol_posts.begin())->symbol;
 			// Skipping before the targets are unified keeps the macrostates reachable only over a foreign symbol
 			//  from ever being constructed.
 			if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, current_symbol)) { continue; }
@@ -1934,7 +1946,7 @@ std::shared_ptr<const mata::Alphabet> mata::nfa::Nfa::resolve_alphabet(const Alp
 		// Non-owning: `alphabet` is borrowed from the caller (e.g., a stack-local object), so wrap it with a
 		//  no-op deleter instead of an owning shared_ptr, which would erroneously delete it once this shared_ptr's
 		//  refcount reaches zero.
-		return std::shared_ptr<const Alphabet>(alphabet, [](const Alphabet*) {});
+		return {alphabet, [](const Alphabet*) {}};
 	}
 	if (this->alphabet != nullptr) { return this->alphabet; }
 	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
@@ -2132,6 +2144,7 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<size_t> max_length) const {
 	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
 	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
@@ -2143,6 +2156,7 @@ std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<si
 		if (!search.cut_off() || length >= length_max) { co_return; }
 	}
 }
+MATA_GENERATOR_COROUTINE_END
 #endif // MATA_HAS_GENERATOR_SUPPORT
 
 OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet* const shared_alphabet) {
@@ -2167,10 +2181,10 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 		auto initial_symbol_post_end{initial_state_post.cend()};
 		// Initialize the worklist for the given @p initial_state with the first valid transition.
 		while (worklist.empty() && initial_symbol_post_it != initial_state_post.cend()) {
-			auto initial_target_it{initial_symbol_post_it->targets.cbegin()};
+			const auto* initial_target_it{initial_symbol_post_it->targets.cbegin()};
 			do {
 				if (searched[*initial_target_it]) {
-					++initial_target_it;
+					initial_target_it = std::next(initial_target_it);
 				} else {
 					worklist.emplace_back(initial_symbol_post_it, initial_symbol_post_end, initial_target_it);
 					break;
@@ -2187,7 +2201,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 			if (state_post_it != state_post_end) {
 				if (targets_it != state_post_it->targets.cend()) {
 					if (searched[*targets_it]) {
-						++targets_it;
+						targets_it = std::next(targets_it);
 						continue;
 					}
 					if (final.contains(*targets_it)) {
@@ -2198,10 +2212,10 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 					const StatePost& state_post{delta[*targets_it]};
 					if (!state_post.empty()) {
 						auto new_state_post_it{state_post.cbegin()};
-						auto new_targets_it{new_state_post_it->cbegin()};
+						const auto* new_targets_it{new_state_post_it->cbegin()};
 						worklist.emplace_back(new_state_post_it, state_post.cend(), new_targets_it);
 					} else {
-						++targets_it;
+						targets_it = std::next(targets_it);
 					}
 				} else { // targets_it == state_post_it->targets.cend().
 					++state_post_it;
@@ -2211,7 +2225,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 				worklist.pop_back();
 				if (!worklist.empty()) {
 					auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{worklist.back()};
-					++prev_targets_it;
+					prev_targets_it = std::next(prev_targets_it);
 				}
 			}
 		}
@@ -2246,7 +2260,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 	std::vector<Predecessor> pred(num_of_states);
 
 	// Initialize BFS from all initial states
-	for (mata::nfa::State init_state : this->initial) {
+	for (const mata::nfa::State init_state : this->initial) {
 		dist[init_state] = 0;
 		worklist.push(init_state);
 
@@ -2258,23 +2272,23 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 	// Standard BFS loop
 	while (!worklist.empty()) {
 		// Get the next state in the queue and remove it
-		mata::nfa::State curr_state = worklist.front();
+		const mata::nfa::State curr_state = worklist.front();
 		worklist.pop();
 
 		// Calculate the distance for any newly discovered states from this node
-		int next_dist = dist[curr_state] + 1;
+		const int next_dist = dist[curr_state] + 1;
 
 		// Iterate outgoing transitions
 		for (const auto& sym_post : this->delta[curr_state]) {
-			mata::Symbol transition_sym = sym_post.symbol;
+			const mata::Symbol transition_sym = sym_post.symbol;
 
 			// Iterate over all destination states for this specific symbol
-			for (mata::nfa::State target_state : sym_post.targets) {
+			for (const mata::nfa::State target_state : sym_post.targets) {
 				// Skip if the state has already been visited
 				if (dist[target_state] != -1) { continue; }
 
 				dist[target_state] = next_dist; // Mark state as visited
-				pred[target_state] = {curr_state, transition_sym}; // Store made transition
+				pred[target_state] = {.prev = curr_state, .sym = transition_sym}; // Store made transition
 
 				// Check if the newly reached state is an accepting state
 				if (this->final.contains(target_state)) {
@@ -2282,7 +2296,7 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 					// reconstruct shortest word
 					for (mata::nfa::State backtrack_state = target_state; dist[backtrack_state] > 0;
 						 backtrack_state = pred[backtrack_state].prev) {
-						Symbol next_symbol = pred[backtrack_state].sym;
+						const Symbol next_symbol = pred[backtrack_state].sym;
 						if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
 					}
 					// Reverse the backtracked word
@@ -2320,7 +2334,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 	const auto symbols_end{symbols.end()};
 	bool continue_complementation{true};
 	while (continue_complementation && !worklist.empty()) {
-		const auto curr_state_set_it{worklist.back()};
+		const auto* const curr_state_set_it{worklist.back()};
 		const State macrostate{curr_state_set_it->second};
 		const StateSet& curr_state_set{curr_state_set_it->first};
 		worklist.pop_back();
@@ -2402,7 +2416,7 @@ Nfa mata::nfa::lang_difference(
 	std::vector<SubsetMacrostateMap::const_pointer> worklist{};
 
 	// '{}' represents a sink state that is always final in the complement.
-	const auto subset_set_excluded_sink_ptr{subset_set_excluded.insert(StateSet{}).first.operator->()};
+	const auto* const subset_set_excluded_sink_ptr{subset_set_excluded.insert(StateSet{}).first.operator->()};
 
 	Nfa nfa_lang_difference{};
 	const State new_initial{nfa_lang_difference.add_state()};
@@ -2411,9 +2425,9 @@ Nfa mata::nfa::lang_difference(
 		!nfa_excluded.final.intersects_with(nfa_excluded.initial)) {
 		nfa_lang_difference.final.insert(new_initial);
 	}
-	auto subset_set_included_ptr{subset_set_included.emplace(nfa_included.initial).first.operator->()};
-	auto subset_set_excluded_ptr{subset_set_excluded.emplace(nfa_excluded.initial).first.operator->()};
-	auto subset_macrostate_map_ptr{
+	const auto* subset_set_included_ptr{subset_set_included.emplace(nfa_included.initial).first.operator->()};
+	const auto* subset_set_excluded_ptr{subset_set_excluded.emplace(nfa_excluded.initial).first.operator->()};
+	auto* subset_macrostate_map_ptr{
 		subset_macrostate_map.emplace(std::make_pair(subset_set_included_ptr, subset_set_excluded_ptr), new_initial)
 			.first.operator->()
 	};
@@ -2430,10 +2444,10 @@ Nfa mata::nfa::lang_difference(
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator_excluded{};
 
 	while (!worklist.empty()) {
-		const auto curr_macrostate_ptr{worklist.back()};
+		const auto* const curr_macrostate_ptr{worklist.back()};
 		worklist.pop_back();
-		const auto curr_state_set_included_ptr{curr_macrostate_ptr->first.first};
-		const auto curr_state_set_excluded_ptr{curr_macrostate_ptr->first.second};
+		const auto* const curr_state_set_included_ptr{curr_macrostate_ptr->first.first};
+		const auto* const curr_state_set_excluded_ptr{curr_macrostate_ptr->first.second};
 		const StateSet& curr_state_set_included{*curr_state_set_included_ptr};
 		const StateSet& curr_state_set_excluded{*curr_state_set_excluded_ptr};
 		const State macrostate{curr_macrostate_ptr->second};
@@ -2652,27 +2666,30 @@ Nfa quotient_by(
 } // namespace
 
 Nfa mata::nfa::algorithms::quotient_by_simulation(
-	const Nfa& aut,
+	const Nfa& nfa,
 	const Simlib::Util::BinaryRelation& sim_relation,
 	const std::vector<size_t>& quot_proj,
 	const BoolVector* states,
 	StateRenaming* state_renaming
 ) {
-	return quotient_by(aut, sim_relation, quot_proj, states, state_renaming);
+	return quotient_by(nfa, sim_relation, quot_proj, states, state_renaming);
 }
 
 Nfa mata::nfa::algorithms::quotient_by_simulation(
-	const Nfa& aut,
+	const Nfa& nfa,
 	const Simlib::Util::PartitionRelation& sim_relation,
 	const std::vector<size_t>& quot_proj,
 	const BoolVector* states,
 	StateRenaming* state_renaming
 ) {
-	return quotient_by(aut, sim_relation, quot_proj, states, state_renaming);
+	return quotient_by(nfa, sim_relation, quot_proj, states, state_renaming);
 }
 
 Nfa mata::nfa::algorithms::reduce_residual(
-	const Nfa& nfa, StateRenaming& state_renaming, const std::string& type, const std::string& direction
+	const Nfa& nfa,
+	[[maybe_unused]] StateRenaming& state_renaming,
+	const std::string& type,
+	const std::string& direction
 ) {
 	Nfa back_determinized = nfa;
 	Nfa result;
@@ -2752,15 +2769,15 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 		// add moves of S to the sync ex iterator
 		synchronized_iterator.reset();
-		for (State q : states_orig) { mata::utils::push_back(synchronized_iterator, nfa.delta[q]); }
+		for (const State q : states_orig) { mata::utils::push_back(synchronized_iterator, nfa.delta[q]); }
 
 		while (synchronized_iterator.advance()) {
 			bool add = false; // check whether to add transitions
 
 			// extract post from the synchronized_iterator iterator
 			const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-			Symbol current_symbol = (*moves.begin())->symbol;
-			StateSet targets = synchronized_iterator.unify_targets(); // new state unify
+			const Symbol current_symbol = (*moves.begin())->symbol;
+			const StateSet targets = synchronized_iterator.unify_targets(); // new state unify
 
 			auto existing_target_res = subset_map.find(targets); // check if state was already discovered
 			State target_res;
@@ -2798,7 +2815,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 				result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
 				predecessors.record(state_res, current_symbol, target_res);
 			} else {
-				for (State switch_target : covering_indexes[target_res]) {
+				for (const State switch_target : covering_indexes[target_res]) {
 					predecessors.add(result, state_res, current_symbol, switch_target);
 				}
 			}

@@ -29,9 +29,8 @@ Nft algorithms::complement_classical(
 		// } else {
 		//     sink_state = result.num_of_states();
 		// }
-	} else {
-		result = determinize(aut);
 	}
+	result = determinize(aut);
 
 	result.make_complete(symbols);
 	// TODO(nft): Should empty nft produce a complement with one initial and final state accepting { {epsilon},
@@ -55,7 +54,9 @@ Nft mata::nft::complement(const Nft& nft, const Alphabet& alphabet, const Parame
 
 Nft mata::nft::complement(const Nft& nft, const OrdVector<Symbol>& symbols, const ParameterMap& params) {
 	// Setting the requested algorithm.
-	decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
+	// The pointee is a function type, which cannot be const-qualified; only the pointer can, and it is.
+	// NOLINTNEXTLINE(misc-const-correctness)
+	decltype(algorithms::complement_classical)* const algo = algorithms::complement_classical;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
 			std::to_string(__func__) +
@@ -74,14 +75,16 @@ Nft mata::nft::complement(const Nft& nft, const OrdVector<Symbol>& symbols, cons
 
 	bool minimize_during_determinization{false};
 	if (params.contains("minimize")) {
-		if (const std::string& minimize_arg = params.at("minimize"); "true" == minimize_arg) {
+		const std::string& minimize_arg = params.at("minimize");
+		if ("true" == minimize_arg) {
 			throw std::runtime_error(
 				std::to_string(__func__) +
 				" received unimplemented option 'minimize' = 'true' for the complementation algorithm on NFTs."
 			);
 			// TODO(nft): implement minimization for NFTs.
 			// minimize_during_determinization = true;
-		} else if ("false" == minimize_arg) {
+		}
+		if ("false" == minimize_arg) {
 			minimize_during_determinization = false;
 		} else {
 			throw std::runtime_error(

@@ -61,7 +61,7 @@ template <class Relation> Relation compute_fw_direct_simulation(const Nft& aut) 
 	std::vector<std::vector<size_t>> partition{};
 	std::vector<std::pair<Level, bool>> block_key{};
 	for (State state{0}; state < state_num; ++state) {
-		const std::pair<Level, bool> key{aut.levels[state], static_cast<bool>(aut.final[state])};
+		const std::pair<Level, bool> key{aut.levels[state], aut.final[state]};
 		const auto [it, inserted]{block_of.try_emplace(key, partition.size())};
 		if (inserted) {
 			partition.emplace_back();
@@ -266,7 +266,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 		// If all levels contain epsilon, we eventually achieve a simple change of state.
 		auto symbol_post_it{state_post.find(nft::EPSILON)};
 		if (symbol_post_it != state_post_end) {
-			for (State target : symbol_post_it->targets) {
+			for (const State target : symbol_post_it->targets) {
 				if (aut.levels[target] == 0 && aut.final.contains(target) && words_match(words_its)) { return true; }
 				worklist.emplace_back(target, words_its);
 			}
@@ -277,7 +277,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 		if (word_symbol_it == track_words_ends[level]) { continue; }
 
 		auto handle_symbol_it{[&] {
-			for (State target : symbol_post_it->targets) {
+			for (const State target : symbol_post_it->targets) {
 				bool jump_failed{false};
 				const Level level_target{aut.levels[target]};
 				auto next_words_its{words_its};
@@ -354,7 +354,7 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 /// @warning Correct only when it succeeds (returns a value). A @c std::nullopt result carries no information about
 /// whether @p level_words is readable. The caller must fall back to the general algorithm to find out.
 std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const std::vector<Word>& level_words) {
-	MATA_ASSERT(std::all_of(nft.initial.begin(), nft.initial.end(), [&](const State s) { return nft.levels[s] == 0; }));
+	MATA_ASSERT(std::ranges::all_of(nft.initial, [&](const State s) { return nft.levels[s] == 0; }));
 	const size_t num_of_levels{level_words.size()};
 	std::vector<size_t> position(num_of_levels, 0);
 	StateSet current{nft.initial.begin(), nft.initial.end()};
@@ -400,6 +400,9 @@ std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const st
 			const auto state_post_end{state_post.end()};
 			const auto add_targets{[&](const SymbolPost& symbol_post) -> bool {
 				for (const State target : symbol_post.targets) {
+					// 'next_level_after()' only reads 'Levels::num_of_levels'; the analyzer loses track of the
+					//  'nft' reference captured by the lambda and reports its member access as a null dereference.
+					// NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
 					if (nft.levels[target] != nft.levels.next_level_after(level)) { return false; }
 					next.insert(target);
 				}
@@ -425,12 +428,11 @@ std::optional<StateSet> read_word_by_levels_single_step(const Nft& nft, const st
 		level = nft.levels.next_level_after(level);
 	}
 }
-} // Anonymous namespace.
 
 /// Map state levels onto the reversed automaton. Reversing the direction of every transition also reverses the
 ///  order of the tapes: tape i becomes tape N-1-i, so a state on level l moves to level (N - l) mod N. States
 ///  without a level entry keep the default level.
-Levels revert_levels_(const Levels& forward_levels, const size_t num_of_states) {
+Levels revert_levels(const Levels& forward_levels, const size_t num_of_states) {
 	std::vector<Level> mapped(num_of_states, DEFAULT_LEVEL);
 	const size_t num_of_levels{forward_levels.num_of_levels};
 	if (num_of_levels == 0) { return Levels{num_of_levels, std::move(mapped)}; }
@@ -439,6 +441,7 @@ Levels revert_levels_(const Levels& forward_levels, const size_t num_of_states) 
 	}
 	return Levels{num_of_levels, std::move(mapped)};
 }
+} // Anonymous namespace.
 
 bool mata::nft::has_epsilon_cycle(const Nft& nft) {
 	const size_t num_of_states{nft.num_of_states()};
@@ -510,7 +513,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 			for (Level cur_level = 0; cur_level < aut.levels.num_of_levels; ++cur_level) {
 				std::vector<std::vector<State>> new_state_safe_epsilon_runs;
 				for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
-					State state_s = safe_epsilon_run.back();
+					const State state_s = safe_epsilon_run.back();
 					const StatePost& post_s{aut.delta[state_s]};
 					if (const auto eps_move_it_s{post_s.find(epsilon)}; eps_move_it_s != post_s.end()) {
 						if (cur_level != DEFAULT_LEVEL && (aut.delta[state_s].size() != 1)) {
@@ -525,7 +528,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 							// safe
 							continue;
 						}
-						for (State target : eps_move_it_s->targets) {
+						for (const State target : eps_move_it_s->targets) {
 							if (cur_level == aut.levels.num_of_levels - 1) {
 								// we are at the last level, next level will be 0
 								MATA_ASSERT(aut.levels[target] == DEFAULT_LEVEL);
@@ -549,11 +552,8 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 						}
 					}
 				}
-				if (new_state_safe_epsilon_runs.empty()) {
-					break;
-				} else {
-					state_safe_epsilon_runs = std::move(new_state_safe_epsilon_runs);
-				}
+				if (new_state_safe_epsilon_runs.empty()) { break; }
+				state_safe_epsilon_runs = std::move(new_state_safe_epsilon_runs);
 			}
 		}
 	}
@@ -574,10 +574,10 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 			continue;
 		}
 
-		for (State before_state : before_states) {
+		for (const State before_state : before_states) {
 			if (before_state != state) { eps_delta[before_state].insert(after_states); }
 		}
-		for (State after_state : after_states) {
+		for (const State after_state : after_states) {
 			if (after_state != state) { eps_delta_inverse[after_state].insert(before_states); }
 		}
 	}
@@ -592,7 +592,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 	std::set<Transition> safe_epsilon_runs_transitions;
 	for (const auto& safe_epsilon_run : safe_epsilon_runs) {
 		for (size_t i = 0; i < safe_epsilon_run.size() - 1; ++i) {
-			if (Transition safe_epsilon_run_transition{safe_epsilon_run[i], epsilon, safe_epsilon_run[i + 1]};
+			if (const Transition safe_epsilon_run_transition{safe_epsilon_run[i], epsilon, safe_epsilon_run[i + 1]};
 				!safe_epsilon_runs_transitions.contains(safe_epsilon_run_transition)) {
 				result.delta.remove(safe_epsilon_run_transition);
 				safe_epsilon_runs_transitions.insert(safe_epsilon_run_transition);
@@ -602,7 +602,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
 	// we add new transitions using epsilon closure
 	for (State state{0}; state < num_of_states; ++state) {
-		for (State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
+		for (const State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
 			if (eps_cl_state != state) { // transitions from state are already in result
 				if (aut.final[eps_cl_state]) { result.final.insert(state); }
 				// we only need to add the first transition to level 1 state
@@ -670,8 +670,8 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	std::vector<Level> new_levels(nft.levels.num_of_levels, 0);
 	Level lvl_sub{0};
 	for (Level lvl_old{0}; lvl_old < seq_start_idx; lvl_old++) {
-		new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
-		if (levels_to_project.find(lvl_old) != levels_to_project.end()) { lvl_sub++; }
+		new_levels[lvl_old] = lvl_old - lvl_sub;
+		if (levels_to_project.contains(lvl_old)) { lvl_sub++; }
 	}
 
 	// The closure of a projected state: the states reachable from it over transitions all of whose levels are
@@ -770,8 +770,8 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	//  new level numbers. In Global mode result.alphabets (== nft.alphabets) is already correct as-is.
 	if (nft.alphabets != nullptr && nft.alphabets->mode() == AlphabetLevels::Mode::MultiLevel) {
 		auto new_alphabets = std::make_shared<AlphabetLevels>(*nft.alphabets);
-		for (auto it = levels_to_proj_v.rbegin(); it != levels_to_proj_v.rend(); ++it) {
-			new_alphabets->erase(new_alphabets->begin() + *it);
+		for (const auto level : std::views::reverse(levels_to_proj_v)) {
+			new_alphabets->erase(new_alphabets->begin() + level);
 		}
 		result.alphabets = std::move(new_alphabets);
 	}
@@ -803,7 +803,7 @@ Nft mata::nft::insert_levels(
 ) {
 	MATA_ASSERT(0 < nft.levels.num_of_levels);
 	MATA_ASSERT(nft.levels.num_of_levels <= new_levels_mask.size());
-	MATA_ASSERT(static_cast<size_t>(std::ranges::count(new_levels_mask, false)) == nft.levels.num_of_levels);
+	MATA_ASSERT(std::cmp_equal(std::ranges::count(new_levels_mask, false), nft.levels.num_of_levels));
 
 	if (const auto num_of_new_levels = static_cast<size_t>(std::ranges::count(new_levels_mask, true));
 		!new_level_alphabets.empty() && new_level_alphabets.size() != num_of_new_levels) {
@@ -982,7 +982,7 @@ Nft mata::nft::fragile_revert(const Nft& aut) {
 
 	result.initial = aut.final;
 	result.final = aut.initial;
-	result.levels = revert_levels_(aut.levels, num_of_states);
+	result.levels = revert_levels(aut.levels, num_of_states);
 
 	// Compute non-epsilon symbols.
 	OrdVector<Symbol> symbols = aut.delta.get_used_symbols();
@@ -1112,7 +1112,7 @@ Nft mata::nft::simple_revert(const Nft& aut) {
 
 	result.initial = aut.final;
 	result.final = aut.initial;
-	result.levels = revert_levels_(aut.levels, num_of_states);
+	result.levels = revert_levels(aut.levels, num_of_states);
 
 	return result;
 }
@@ -1124,7 +1124,7 @@ Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
 
 	result.initial = aut.final;
 	result.final = aut.initial;
-	result.levels = revert_levels_(aut.levels, num_of_states);
+	result.levels = revert_levels(aut.levels, num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
 		for (const SymbolPost& transition : aut.delta[source_state]) {
@@ -1160,7 +1160,7 @@ Nft nft::revert(const Nft& aut) {
 	result.delta = aut.delta.reverted(num_of_states);
 	result.initial = aut.final;
 	result.final = aut.initial;
-	result.levels = revert_levels_(aut.levels, num_of_states);
+	result.levels = revert_levels(aut.levels, num_of_states);
 	return result;
 }
 
@@ -1173,7 +1173,7 @@ namespace {
  *  closes a cycle through inner states; the path enumerator this construction replaced grew its stack on such
  *  an input until the allocation failed (#809), so the input is rejected before any work is done.
  */
-void validate_invert_levels_layering_(const Nft& aut) {
+void validate_invert_levels_layering(const Nft& aut) {
 	const size_t num_of_states{aut.num_of_states()};
 	if (aut.levels.size() < num_of_states) {
 		throw std::invalid_argument(
@@ -1221,7 +1221,7 @@ struct InvertedAuxKeyHash {
 } // Anonymous namespace.
 
 Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
-	validate_invert_levels_layering_(aut);
+	validate_invert_levels_layering(aut);
 	const size_t num_of_states{aut.num_of_states()};
 	const size_t num_of_levels{aut.levels.num_of_levels};
 
@@ -1258,7 +1258,8 @@ Nft nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 			return;
 		}
 		const Level aux_level{static_cast<Level>((new_levels[target] + num_of_levels - 1) % num_of_levels)};
-		const auto [entry, is_new] = auxiliary_states.try_emplace(InvertedAuxKey{source, target, aux_level});
+		const auto [entry, is_new] =
+			auxiliary_states.try_emplace(InvertedAuxKey{.source = source, .target = target, .level = aux_level});
 		if (is_new) {
 			entry->second = add_inverted_state(aux_level);
 			new_transitions.emplace_back(source, DONT_CARE, entry->second);
@@ -1609,6 +1610,8 @@ Nft mata::nft::union_nondet(Nft&& lhs, Nft&& rhs) {
 	return union_nft;
 }
 
+// Reads 'this' only through the assertion, which release builds compile out.
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 void Nft::assert_num_of_levels_match_(const Nft& nft) const {
 	MATA_ASSERT(
 		this->levels.num_of_levels == nft.levels.num_of_levels,
@@ -1660,6 +1663,7 @@ Nft& Nft::unite_nondet_with(Nft&& nft) {
 	assert_num_of_levels_match_(nft);
 	if (this == &nft) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft snapshot{nft};
 		return unite_nondet_with(snapshot);
 	}
@@ -1722,11 +1726,10 @@ Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& 
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
 		return compute_fw_direct_simulation<Simlib::Util::BinaryRelation>(aut);
-	} else {
-		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
-		);
 	}
+	throw std::runtime_error(
+		std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
+	);
 }
 
 Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const ParameterMap& params) {
@@ -2105,6 +2108,7 @@ std::set<Word> Nft::get_words(const std::optional<size_t> max_length, const Jump
 }
 
 #if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<Word> Nft::get_words_lazy(const std::optional<size_t> max_length, const JumpMode jump_mode) const {
 	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
 	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
@@ -2115,4 +2119,5 @@ std::generator<Word> Nft::get_words_lazy(const std::optional<size_t> max_length,
 		if (!search.cut_off()) { co_return; }
 	}
 }
+MATA_GENERATOR_COROUTINE_END
 #endif // MATA_HAS_GENERATOR_SUPPORT
