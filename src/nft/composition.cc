@@ -2038,9 +2038,9 @@ constexpr bool matches_epsilon(const Symbol symbol) { return symbol == EPSILON |
 
 /// The synchronization type of reading @p symbol on a synchronization level: DONT_CARE matches both kinds.
 constexpr SynchronizationType sync_type_of(const Symbol symbol) {
-	if (symbol == EPSILON) { return SynchronizationType::ONLY_ON_EPSILON; }
-	if (symbol == DONT_CARE) { return SynchronizationType::ON_EPSILON_AND_SYMBOL; }
-	return SynchronizationType::ONLY_ON_SYMBOL;
+	if (symbol == EPSILON) { return SynchronizationType::OnlyOnEpsilon; }
+	if (symbol == DONT_CARE) { return SynchronizationType::OnEpsilonAndSymbol; }
+	return SynchronizationType::OnlyOnSymbol;
 }
 
 /**
@@ -2163,7 +2163,7 @@ class RoundLookahead {
 	bool can_finish_alone(const State place) const { return (facts_of(place) & CAN_WAIT) != 0; }
 
   private:
-	static constexpr uint8_t SYNC_TYPE{static_cast<uint8_t>(SynchronizationType::ON_EPSILON_AND_SYMBOL)};
+	static constexpr uint8_t SYNC_TYPE{static_cast<uint8_t>(SynchronizationType::OnEpsilonAndSymbol)};
 	static constexpr uint8_t CAN_FINISH{0b0000'0100};
 	static constexpr uint8_t CAN_WAIT{0b0000'1000};
 	static constexpr uint8_t FINISHED{CAN_FINISH | CAN_WAIT};
@@ -2461,16 +2461,16 @@ class DirectGeneralComposer {
 		  schedule_{schedule},
 		  num_of_positions_{schedule.positions.size()},
 		  lhs_alone_action_{
-			  lhs.levels.num_of_levels == lhs_sync_levels.size() ? EpsilonFilterAction::SILENT_LHS_ONLY_MOVE
-																 : EpsilonFilterAction::NON_SILENT_LHS_ONLY_MOVE
+			  lhs.levels.num_of_levels == lhs_sync_levels.size() ? EpsilonFilterAction::SilentLhsOnlyMove
+																 : EpsilonFilterAction::NonSilentLhsOnlyMove
 		  },
 		  rhs_alone_action_{
-			  rhs.levels.num_of_levels == rhs_sync_levels.size() ? EpsilonFilterAction::SILENT_RHS_ONLY_MOVE
-																 : EpsilonFilterAction::NON_SILENT_RHS_ONLY_MOVE
+			  rhs.levels.num_of_levels == rhs_sync_levels.size() ? EpsilonFilterAction::SilentRhsOnlyMove
+																 : EpsilonFilterAction::NonSilentRhsOnlyMove
 		  },
 		  num_of_filter_modes_{
-			  lhs_alone_action_ == EpsilonFilterAction::SILENT_LHS_ONLY_MOVE &&
-					  rhs_alone_action_ == EpsilonFilterAction::SILENT_RHS_ONLY_MOVE
+			  lhs_alone_action_ == EpsilonFilterAction::SilentLhsOnlyMove &&
+					  rhs_alone_action_ == EpsilonFilterAction::SilentRhsOnlyMove
 				  ? NUMBER_OF_EPSILON_FILTER_MODES
 				  : 1
 		  },
@@ -2511,7 +2511,7 @@ class DirectGeneralComposer {
 		SparseSet<State> initial{};
 		for (const State lhs_initial : lhs_.nft().initial) {
 			for (const State rhs_initial : rhs_.nft().initial) {
-				initial.insert(intern(lhs_initial, rhs_initial, start_layer(EpsilonFilterMode::LHS_MAY_MOVE_ALONE), 0));
+				initial.insert(intern(lhs_initial, rhs_initial, start_layer(EpsilonFilterMode::LhsMayMoveAlone), 0));
 			}
 		}
 		// The states are numbered in the order they are found, so expanding them in that order is a breadth-first
@@ -2674,10 +2674,10 @@ class DirectGeneralComposer {
 	/// The filter mode after a round in @p mode. A round of the RHS alone leaves the LHS state as it was, and the
 	///  filter refuses no round of the RHS alone, so the result does not depend on the mode the round started in.
 	EpsilonFilterMode filter_mode_after(const Mode mode, const State lhs_state) const {
-		if (mode != Mode::RhsAlone) { return EpsilonFilterMode::LHS_MAY_MOVE_ALONE; }
+		if (mode != Mode::RhsAlone) { return EpsilonFilterMode::LhsMayMoveAlone; }
 		return epsilon_filter_step(
-				   EpsilonFilterMode::LHS_MAY_MOVE_ALONE, rhs_alone_action_,
-				   lhs_alone_action_ == EpsilonFilterAction::SILENT_LHS_ONLY_MOVE &&
+				   EpsilonFilterMode::LhsMayMoveAlone, rhs_alone_action_,
+				   lhs_alone_action_ == EpsilonFilterAction::SilentLhsOnlyMove &&
 					   lhs_.lookahead().can_finish_alone(lhs_state),
 				   false
 		)
