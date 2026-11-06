@@ -1139,7 +1139,7 @@ class RefinablePartition {
 	 *
 	 * @param delta The transition function.
 	 */
-	explicit RefinablePartition(const Delta& delta) : num_of_sets(0) {
+	explicit RefinablePartition(const Delta& delta) : num_of_sets(0), elems_(), info_(), bounds_() {
 		size_t num_of_transitions = 0;
 		std::vector<size_t> counts;
 		std::unordered_map<Symbol, size_t> symbol_map;
@@ -1188,8 +1188,6 @@ class RefinablePartition {
 	 * @return The index of the set.
 	 */
 	size_t set_of(const T e) const { return info_[e].set; }
-
-	~RefinablePartition() = default;
 
 	/**
 	 * @brief Get the number of elements across all sets.
