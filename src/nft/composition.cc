@@ -308,16 +308,23 @@ class CursorOperand {
 		own_posts_{}; ///< The posts of the states with a jump and of the cursors, at stable addresses.
 };
 
-/// A zero-level state pair of the composition worklist, with the EPSILON-composition filter mode it was reached in
-/// when @p UseFilter is set.
+/// A state pair of the composition worklist with its state in the result, so that popping it needs no lookup in the
+/// map of composition states, and the EPSILON-composition filter mode it was reached in when @p UseFilter is set.
 template <bool UseFilter> struct CompositionKey {
 	State lhs_state;
 	State rhs_state;
+	State composition_state;
 	EpsilonFilterMode epsilon_filter_mode;
 
-	CompositionKey(const State lhs_state, const State rhs_state, const EpsilonFilterMode epsilon_filter_mode)
+	CompositionKey(
+		const State lhs_state,
+		const State rhs_state,
+		const State composition_state,
+		const EpsilonFilterMode epsilon_filter_mode
+	)
 		: lhs_state{lhs_state},
 		  rhs_state{rhs_state},
+		  composition_state{composition_state},
 		  epsilon_filter_mode{epsilon_filter_mode} {}
 	EpsilonFilterMode mode() const { return epsilon_filter_mode; }
 };
@@ -326,10 +333,17 @@ template <bool UseFilter> struct CompositionKey {
 template <> struct CompositionKey<false> {
 	State lhs_state;
 	State rhs_state;
+	State composition_state;
 
-	CompositionKey(const State lhs_state, const State rhs_state, [[maybe_unused]] const EpsilonFilterMode mode)
+	CompositionKey(
+		const State lhs_state,
+		const State rhs_state,
+		const State composition_state,
+		[[maybe_unused]] const EpsilonFilterMode mode
+	)
 		: lhs_state{lhs_state},
-		  rhs_state{rhs_state} {
+		  rhs_state{rhs_state},
+		  composition_state{composition_state} {
 		MATA_ASSERT(mode == EpsilonFilterMode::LhsMayMoveAlone);
 	}
 	static constexpr EpsilonFilterMode mode() { return EpsilonFilterMode::LhsMayMoveAlone; }
@@ -1285,7 +1299,7 @@ Nft compose_fast_with(
 				result.final.insert(new_state);
 			}
 		}
-		worklist.push({key.first, key.second, epsilon_filter_mode});
+		worklist.push({key.first, key.second, new_state, epsilon_filter_mode});
 		return new_state;
 	};
 
@@ -1882,8 +1896,8 @@ Nft compose_fast_with(
 		const State lhs_state{key.lhs_state};
 		const State rhs_state{key.rhs_state};
 		const EpsilonFilterMode epsilon_filter_mode{key.mode()};
-		const State composition_state = storage_for(epsilon_filter_mode).get(lhs_state, rhs_state);
-		MATA_ASSERT(composition_state != Limits::max_state);
+		const State composition_state{key.composition_state};
+		MATA_ASSERT(composition_state == storage_for(epsilon_filter_mode).get(lhs_state, rhs_state));
 		const Level lhs_level = lhs.levels[lhs_state];
 		const Level rhs_level = rhs.levels[rhs_state];
 		const SynchronizationType lhs_sync_type = lhs_sync_props.sync_types_vec[lhs_state];
