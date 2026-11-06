@@ -122,7 +122,11 @@ class LazyUnwinding {
 	///  that moves() returned before.
 	void expand(const State state) {
 		if (is_cursor(state)) {
-			// The move of a cursor is known once the cursor is numbered.
+			// The move of a cursor is known once the cursor is numbered; only the counter needs the visit.
+			if (std::vector<bool>::reference visited{cursor_visited_[state - num_of_original_states_]}; !visited) {
+				visited = true;
+				++counters_.cursors_expanded;
+			}
 			return;
 		}
 		if (!rewritten_[state] || original_expanded_[state]) { return; }
@@ -182,6 +186,17 @@ class LazyUnwinding {
 			}
 		}
 	}
+
+	/// What the lazy reading costs, for debugging: cursors stand for the fresh states of the unwinding.
+	struct Counters {
+		/// Positions inside chains, one per fresh state the unwinding creates.
+		size_t chain_positions{0};
+		/// Cursors numbered, one per (target, remaining length, label) of each chain the search reached.
+		size_t cursors_created{0};
+		/// Cursors the search visited.
+		size_t cursors_expanded{0};
+	};
+	const Counters& counters() const { return counters_; }
 
   private:
 	/// The cursors {target, r, label} for r = 1, ..., length, numbered first + r - 1 once the search reaches one.
@@ -244,6 +259,8 @@ class LazyUnwinding {
 				chain.label, remaining == 1 ? chain.target : static_cast<State>(chain.first + remaining - 2)
 			);
 		}
+		cursor_visited_.resize(cursor_moves_.size(), false);
+		counters_.cursors_created += chain.length;
 	}
 
 	/// Shortest weighted distances of the original states to a final state, a chain weighing its number of links,
@@ -321,6 +338,7 @@ class LazyUnwinding {
 			for (size_t index{incoming_of[target]}; index < incoming_of[target + 1]; ++index) {
 				if (incoming[index].length < 2) { continue; }
 				labels.emplace_back(incoming[index].label, incoming[index].length - 1);
+				counters_.chain_positions += incoming[index].length - 1;
 			}
 			std::ranges::sort(labels, [](const auto& lhs, const auto& rhs) {
 				return lhs.first < rhs.first || (lhs.first == rhs.first && lhs.second > rhs.second);
@@ -358,7 +376,9 @@ class LazyUnwinding {
 	std::vector<bool> rewritten_;
 	/// The one move of each cursor.
 	std::vector<SymbolPost> cursor_moves_{};
+	std::vector<bool> cursor_visited_{};
 	std::vector<State> cursor_buffer_{};
+	Counters counters_{};
 };
 
 /// The antichain inclusion of @p smaller in @p bigger over their lazily unwound jumps; see @c LazyUnwinding.
@@ -575,6 +595,14 @@ bool is_included_lazily(LazyUnwinding& smaller, LazyUnwinding& bigger, Run* cons
 	return true;
 }
 
+/// Reports at log verbosity 2 how many virtual states the lazy reading of @p unwinding used.
+void log_counters(const char* const operation, const char* const operand, const LazyUnwinding& unwinding) {
+	const LazyUnwinding::Counters& counters{unwinding.counters()};
+	DEBUG_PRINT(
+		operation << ": " << operand << ": " << counters.chain_positions << " positions inside jumps, "
+				  << counters.cursors_created << " cursors numbered, " << counters.cursors_expanded << " expanded"
+	);
+}
 } // namespace
 
 /// naive language inclusion check (complementation + intersection + emptiness)
@@ -616,7 +644,10 @@ bool mata::nft::algorithms::is_included_antichains(
 		LazyUnwinding smaller_unwinding{smaller, symbols, jump_mode};
 		LazyUnwinding bigger_unwinding{bigger, symbols, jump_mode};
 		if (smaller_unwinding.is_exact() && bigger_unwinding.is_exact()) {
-			return is_included_lazily(smaller_unwinding, bigger_unwinding, cex);
+			const bool included{is_included_lazily(smaller_unwinding, bigger_unwinding, cex)};
+			log_counters("is_included_antichains", "smaller", smaller_unwinding);
+			log_counters("is_included_antichains", "bigger", bigger_unwinding);
+			return included;
 		}
 	}
 	// Nothing to unwind, or an unwinding the lazy reading does not follow exactly: compare the flat automata.
@@ -696,8 +727,13 @@ bool mata::nft::are_equivalent(
 		LazyUnwinding lhs_unwinding{lhs, symbols, jump_mode};
 		LazyUnwinding rhs_unwinding{rhs, symbols, jump_mode};
 		if (lhs_unwinding.is_exact() && rhs_unwinding.is_exact()) {
-			return is_included_lazily(lhs_unwinding, rhs_unwinding, nullptr) &&
-				   is_included_lazily(rhs_unwinding, lhs_unwinding, nullptr);
+			const bool equivalent{
+				is_included_lazily(lhs_unwinding, rhs_unwinding, nullptr) &&
+				is_included_lazily(rhs_unwinding, lhs_unwinding, nullptr)
+			};
+			log_counters("are_equivalent", "lhs", lhs_unwinding);
+			log_counters("are_equivalent", "rhs", rhs_unwinding);
+			return equivalent;
 		}
 	}
 
