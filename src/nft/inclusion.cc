@@ -603,6 +603,15 @@ void log_counters(const char* const operation, const char* const operand, const 
 				  << counters.cursors_created << " cursors numbered, " << counters.cursors_expanded << " expanded"
 	);
 }
+/// The flat automaton of @p nft, already validated, unwound only when @p changes says unwinding changes it: the
+///  caller has computed that once for the dispatch, and to_nfa_update_copy() would scan and validate @p nft again.
+mata::nfa::Nfa flat(const Nft& nft, const bool changes, const OrdVector<Symbol>& symbols, const JumpMode jump_mode) {
+	if (!changes) { return nft.to_nfa_copy(); }
+	Nft unwound{nft};
+	unwound.unwind_jumps_inplace(symbols, jump_mode);
+	return unwound.to_nfa_move();
+}
+
 } // namespace
 
 /// naive language inclusion check (complementation + intersection + emptiness)
@@ -640,7 +649,9 @@ bool mata::nft::algorithms::is_included_antichains(
 	if (smaller.levels.num_of_levels != bigger.levels.num_of_levels) { return false; }
 
 	const OrdVector<Symbol> symbols{unwinding_symbols(smaller, bigger, alphabet)};
-	if (internal::unwinding_changes(smaller, symbols) || internal::unwinding_changes(bigger, symbols)) {
+	const bool smaller_changes{internal::unwinding_changes(smaller, symbols)};
+	const bool bigger_changes{internal::unwinding_changes(bigger, symbols)};
+	if (smaller_changes || bigger_changes) {
 		LazyUnwinding smaller_unwinding{smaller, symbols, jump_mode};
 		LazyUnwinding bigger_unwinding{bigger, symbols, jump_mode};
 		if (smaller_unwinding.is_exact() && bigger_unwinding.is_exact()) {
@@ -652,7 +663,8 @@ bool mata::nft::algorithms::is_included_antichains(
 	}
 	// Nothing to unwind, or an unwinding the lazy reading does not follow exactly: compare the flat automata.
 	return nfa::algorithms::is_included_antichains(
-		smaller.to_nfa_update_copy(symbols, jump_mode), bigger.to_nfa_update_copy(symbols, jump_mode), alphabet, cex
+		flat(smaller, smaller_changes, symbols, jump_mode), flat(bigger, bigger_changes, symbols, jump_mode), alphabet,
+		cex
 	);
 } // }}}
 
@@ -720,9 +732,10 @@ bool mata::nft::are_equivalent(
 	if (lhs.levels.num_of_levels != rhs.levels.num_of_levels) { return false; }
 
 	const OrdVector<Symbol> symbols{unwinding_symbols(lhs, rhs, alphabet)};
+	const bool lhs_changes{internal::unwinding_changes(lhs, symbols)};
+	const bool rhs_changes{internal::unwinding_changes(rhs, symbols)};
 	const auto algorithm{params.find("algorithm")};
-	if (algorithm != params.end() && algorithm->second == "antichains" &&
-		(internal::unwinding_changes(lhs, symbols) || internal::unwinding_changes(rhs, symbols))) {
+	if (algorithm != params.end() && algorithm->second == "antichains" && (lhs_changes || rhs_changes)) {
 		// Both inclusions share the cursors and the distances of each operand.
 		LazyUnwinding lhs_unwinding{lhs, symbols, jump_mode};
 		LazyUnwinding rhs_unwinding{rhs, symbols, jump_mode};
@@ -740,7 +753,7 @@ bool mata::nft::are_equivalent(
 	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly. EPSILON
 	// on a level means "nothing on this tape" and stays a letter here, so the epsilon-unaware entry point is used.
 	return nfa::algorithms::are_equivalent_epsilon_as_symbol(
-		lhs.to_nfa_update_copy(symbols, jump_mode), rhs.to_nfa_update_copy(symbols, jump_mode), alphabet, params
+		flat(lhs, lhs_changes, symbols, jump_mode), flat(rhs, rhs_changes, symbols, jump_mode), alphabet, params
 	);
 }
 
