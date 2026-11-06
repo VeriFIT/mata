@@ -1509,7 +1509,9 @@ class Nft : public mata::Automaton {
 	 * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
 	 * sequence of @c DONT_CARE symbols.
-	 * @return A newly created NFA with copied members from NFT with updated transitions.
+	 * @return A newly created NFA with copied members from NFT with updated transitions; a plain copy when there is
+	 *  nothing to unwind.
+	 * @throw std::invalid_argument when the level vector does not cover all states or a level is out of range.
 	 */
 	nfa::Nfa to_nfa_update_copy(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
@@ -2007,6 +2009,8 @@ Nft reduce(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool is_included(
 	const Nft& smaller,
@@ -2029,6 +2033,8 @@ bool is_included(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 inline bool is_included(
 	const Nft& smaller,
@@ -2052,6 +2058,8 @@ inline bool is_included(
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool are_equivalent(
 	const Nft& lhs,
@@ -2080,6 +2088,8 @@ bool are_equivalent(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool are_equivalent(
 	const Nft& lhs,

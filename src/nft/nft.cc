@@ -24,6 +24,7 @@
 #include "mata/nft/nft.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
+#include "nft-internal.hh"
 
 using namespace mata::utils;
 using namespace mata::nft;
@@ -474,16 +475,7 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return res;
 }
 
-namespace mata::nft {
-namespace {
-/**
- * @brief Throw @c std::invalid_argument when the level metadata of @p nft is incomplete or out of range.
- *
- * Operations that interpret transitions through the level vector (jump unwinding, inclusion, equivalence)
- *  must not silently treat a transducer with missing or malformed levels as a flat NFA; that produced
- *  wrong answers without any error (#791).
- */
-void validate_nft_levels(const Nft& nft, const char* const operation) {
+void mata::nft::internal::validate_nft_levels(const Nft& nft, const char* const operation) {
 	// num_of_states() counts only states used in delta, initial and final; the level vector may legitimately
 	//  be longer (e.g. sized by construction or before trimming). Missing levels for used states are the hazard.
 	if (nft.levels.size() < nft.num_of_states()) {
@@ -501,11 +493,9 @@ void validate_nft_levels(const Nft& nft, const char* const operation) {
 		}
 	}
 }
-} // anonymous namespace
-} // namespace mata::nft
 
 void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
-	validate_nft_levels(*this, "unwind_jumps_inplace");
+	internal::validate_nft_levels(*this, "unwind_jumps_inplace");
 	const bool dont_care_for_dont_care = dont_care_symbol_replacements == utils::OrdVector<Symbol>({DONT_CARE});
 	std::vector<Transition> transitions_to_del;
 	std::vector<Transition> transitions_to_add;
@@ -570,7 +560,7 @@ void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replace
 }
 
 Nft Nft::unwind_jumps(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
-	validate_nft_levels(*this, "unwind_jumps");
+	internal::validate_nft_levels(*this, "unwind_jumps");
 	Nft result{*this};
 	result.unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
 	return result;
@@ -1703,9 +1693,27 @@ bool Nft::is_identical(const Nft& aut) const {
 	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && Automaton::is_identical(aut);
 }
 
+namespace {
+/// Whether unwinding @p nft with @p dont_care_symbol_replacements changes it: a transition does not advance exactly one
+///  level, or a DONT_CARE is spelled out (it is kept only when it is its own sole replacement).
+bool unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
+	if (nft.contains_jump_transitions()) { return true; }
+	if (dont_care_symbol_replacements == OrdVector<Symbol>{DONT_CARE}) { return false; }
+	for (const StatePost& state_post : nft.delta) {
+		if (state_post.find(DONT_CARE) != state_post.end()) { return true; }
+	}
+	return false;
+}
+} // namespace
+
 mata::nfa::Nfa
 	Nft::to_nfa_update_copy(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
-	return unwind_jumps(dont_care_symbol_replacements, jump_mode).to_nfa_copy();
+	internal::validate_nft_levels(*this, "to_nfa_update_copy");
+	if (!unwinding_changes(*this, dont_care_symbol_replacements)) { return to_nfa_copy(); }
+	// Unwind a private copy and move it out instead of copying the unwound transducer once more.
+	Nft unwound{*this};
+	unwound.unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);
+	return unwound.to_nfa_move();
 }
 
 mata::nfa::Nfa

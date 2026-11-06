@@ -6910,6 +6910,63 @@ TEST_CASE("mata::nft::Nft::unwind_jumps() validates level metadata") {
 	}
 }
 
+TEST_CASE("mata::nft inclusion and equivalence validate level metadata") {
+	// The two-level relation {(a, a)}.
+	Nft valid{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+	valid.delta.add(0, 'a', 1);
+	valid.delta.add(1, 'a', 2);
+	const auto require_rejected = [&](const Nft& malformed) {
+		for (const std::string algorithm : {"naive", "antichains"}) {
+			const ParameterMap params{{"algorithm", algorithm}};
+			CHECK_THROWS_AS(
+				is_included(malformed, valid, nullptr, JumpMode::RepeatSymbol, params), std::invalid_argument
+			);
+			CHECK_THROWS_AS(
+				is_included(valid, malformed, nullptr, JumpMode::RepeatSymbol, params), std::invalid_argument
+			);
+			CHECK_THROWS_AS(are_equivalent(malformed, valid, JumpMode::RepeatSymbol, params), std::invalid_argument);
+			CHECK_THROWS_AS(are_equivalent(valid, malformed, JumpMode::RepeatSymbol, params), std::invalid_argument);
+		}
+	};
+
+	SECTION("the operands are well-formed") {
+		CHECK(is_included(valid, valid));
+		CHECK(are_equivalent(valid, valid));
+	}
+
+	SECTION("a missing level vector is rejected") {
+		Nft missing{Nft::with_levels(2)};
+		missing.delta.add(0, 'a', 1);
+		missing.delta.add(1, 'a', 2);
+		missing.initial = {0};
+		missing.final = {2};
+		REQUIRE(missing.levels.empty());
+		require_rejected(missing);
+	}
+
+	SECTION("a short level vector is rejected") {
+		Nft short_levels{Nft::with_levels({2, {0, 1}}, 2, {0}, {2})};
+		short_levels.delta.add(0, 'a', 1);
+		short_levels.delta.add(1, 'a', 2);
+		require_rejected(short_levels);
+	}
+
+	SECTION("a level at or above the number of levels is rejected") {
+		Nft out_of_range{valid};
+		out_of_range.levels[1] = static_cast<Level>(out_of_range.levels.num_of_levels);
+		require_rejected(out_of_range);
+	}
+
+	SECTION("malformed levels are rejected before the level counts are compared") {
+		Nft out_of_range{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+		out_of_range.delta.add(0, 'a', 1);
+		out_of_range.delta.add(1, 'a', 2);
+		out_of_range.delta.add(2, 'a', 3);
+		out_of_range.levels[2] = 3;
+		require_rejected(out_of_range);
+	}
+}
+
 TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_CARE") {
 	// Every transition advances exactly one level and no DONT_CARE is expanded: unwinding is an identity.
 	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
@@ -6920,4 +6977,44 @@ TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_
 	CHECK(unwound.is_lang_empty() == nft.is_lang_empty());
 	CHECK(unwound.num_of_states() == nft.num_of_states());
 	CHECK(unwound.delta.num_of_transitions() == nft.delta.num_of_transitions());
+}
+
+TEST_CASE("mata::nft::Nft::to_nfa_update_copy() flattens exactly as unwind_jumps()") {
+	const OrdVector<Symbol> symbols{'a', 'b'};
+	const auto require_flattened_as_unwound = [&](const Nft& nft, const OrdVector<Symbol>& replacements) {
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const mata::nfa::Nfa flattened{nft.to_nfa_update_copy(replacements, jump_mode)};
+			const mata::nfa::Nfa unwound{nft.unwind_jumps(replacements, jump_mode).to_nfa_copy()};
+			CHECK(flattened.is_identical(unwound));
+		}
+	};
+	// The three-level relation {(a, b, a)} plus DONT_CARE on the second level.
+	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+	nft.delta.add(0, 'a', 1);
+	nft.delta.add(1, 'b', 2);
+	nft.delta.add(2, 'a', 3);
+
+	SECTION("nothing to unwind: a copy of the transducer") {
+		require_flattened_as_unwound(nft, symbols);
+		CHECK(nft.to_nfa_update_copy(symbols).is_identical(nft.to_nfa_copy()));
+	}
+
+	SECTION("DONT_CARE kept as its own replacement") {
+		nft.delta.add(1, DONT_CARE, 2);
+		require_flattened_as_unwound(nft, {DONT_CARE});
+		CHECK(nft.to_nfa_update_copy({DONT_CARE}).is_identical(nft.to_nfa_copy()));
+	}
+
+	SECTION("DONT_CARE spelled out") {
+		nft.delta.add(1, DONT_CARE, 2);
+		require_flattened_as_unwound(nft, symbols);
+		// 1 -b-> 2 and 1 -DONT_CARE-> 2 become 1 -a-> 2 and 1 -b-> 2.
+		CHECK(nft.to_nfa_update_copy(symbols).delta.num_of_transitions() == 4);
+	}
+
+	SECTION("a jump") {
+		nft.delta.add(0, 'b', 3);
+		require_flattened_as_unwound(nft, symbols);
+		CHECK(nft.to_nfa_update_copy(symbols).num_of_states() == 6);
+	}
 }
