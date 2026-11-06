@@ -230,16 +230,19 @@ TEST_CASE("mata::nft::Nft::add_state() does not reset the level of an existing s
 	CHECK(nft.levels[q1] == 1);
 	CHECK(nft.levels[q2] == 1);
 
+	// insert_word() adds max(source, target) internally; that must not reset the level of an existing target, or the
+	//  level comparison throws. The word has to span a whole level cycle to land on level 1 again.
+	REQUIRE_NOTHROW(nft.insert_word(q1, Word{5, 6, 7}, q2));
+	CHECK(nft.levels[q1] == 1);
+	CHECK(nft.levels[q2] == 1);
+	CHECK(nft.num_of_states() == 5);
+
 	// Adding an existing state again is a no-op for its level.
 	nft.add_state(q1);
 	nft.add_state(q2);
 	CHECK(nft.levels[q1] == 1);
 	CHECK(nft.levels[q2] == 1);
-	CHECK(nft.num_of_states() == 3);
-
-	// insert_word() between two level-1 states now compares their true levels instead of the levels
-	//  add_state() used to reset; the word has to span a whole level cycle to land on level 1 again.
-	REQUIRE_NOTHROW(nft.insert_word(q1, Word{5, 6, 7}, q2));
+	CHECK(nft.num_of_states() == 5);
 }
 
 TEST_CASE("mata::nft::Trans::operator<<") {
