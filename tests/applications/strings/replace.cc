@@ -618,9 +618,10 @@ TEST_CASE("mata::applications::strings::reluctant_leftmost_nft()") {
 	SECTION("all 'a' replaced with 'f': no isolated state and no ε-chain after the replacement - issue #568") {
 		const EnumAlphabet alphabet_af{'a', 'f'};
 		nft = reluctant_replace.reluctant_leftmost_nft("a", &alphabet_af, BEGIN_MARKER, Word{'f'}, ReplaceMode::All);
-		// Regex DFA (2 states) with one intermediate state per transition (2), initial state with an identity loop
-		//  (1 + 2), the begin marker step (1), and the replacement 'f' going straight back to the initial state (1).
-		CHECK(nft.num_of_states() == 9);
+		// Regex DFA (2 states) with one intermediate state per transition (2), initial state with an identity loop of
+		//  RepeatSymbol jumps (1), the begin marker step (1), and the replacement 'f' going straight back to the
+		//  initial state (1).
+		CHECK(nft.num_of_states() == 7);
 		CHECK(Nft{nft}.trim().num_of_states() == nft.num_of_states());
 		CHECK(nft.is_in_lang_by_levels({Word{BEGIN_MARKER, 'a', BEGIN_MARKER, 'a'}, Word{'f', 'f'}}));
 		CHECK(nft.is_in_lang_by_levels({Word{'f', BEGIN_MARKER, 'a', 'a'}, Word{'f', 'f', 'a'}}));
