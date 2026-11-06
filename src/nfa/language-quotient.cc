@@ -33,6 +33,8 @@ class BitMatrixPairStore {
 	BitMatrixPairStore(const size_t prefixes_num_of_states, const size_t nfa_num_of_states)
 		: row_words_{words_per_row(prefixes_num_of_states)},
 		  // calloc() of a large block maps zeroed pages lazily: rows of states of nfa never reached cost nothing.
+		  //  'std::make_unique<uint64_t[]>()' would zero the whole block up front instead.
+		  // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
 		  bits_{static_cast<uint64_t*>(std::calloc(nfa_num_of_states * 2 * row_words_, sizeof(uint64_t)))},
 		  queued_(nfa_num_of_states, false) {
 		if (bits_ == nullptr) { throw std::bad_alloc{}; }
@@ -78,11 +80,13 @@ class BitMatrixPairStore {
 
   private:
 	struct Free {
+		// NOLINTNEXTLINE(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory): releases the calloc() above.
 		void operator()(uint64_t* const bits) const noexcept { std::free(bits); }
 	};
 
 	const size_t row_words_;
 	/// Per state of nfa, the row of visited pairs followed by the row of pending pairs.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): runtime-sized, calloc()-backed block.
 	std::unique_ptr<uint64_t[], Free> bits_;
 	BoolVector queued_;
 	std::deque<State> worklist_{};
