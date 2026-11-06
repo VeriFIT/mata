@@ -1703,10 +1703,9 @@ namespace {
 bool unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
 	if (nft.contains_jump_transitions()) { return true; }
 	if (dont_care_symbol_replacements == OrdVector<Symbol>{DONT_CARE}) { return false; }
-	for (const StatePost& state_post : nft.delta) {
-		if (state_post.find(DONT_CARE) != state_post.end()) { return true; }
-	}
-	return false;
+	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
+		return state_post.find(DONT_CARE) != state_post.end();
+	});
 }
 } // namespace
 

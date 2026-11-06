@@ -43,10 +43,9 @@ OrdVector<Symbol> unwinding_symbols(const Nft& lhs, const Nft& rhs, const mata::
 bool spells_out_dont_care(const Nft& nft, const OrdVector<Symbol>& symbols, const JumpMode jump_mode) {
 	if (symbols == OrdVector<Symbol>{DONT_CARE}) { return false; }
 	if (jump_mode == JumpMode::AppendDontCares && nft.contains_jump_transitions()) { return true; }
-	for (const StatePost& state_post : nft.delta) {
-		if (state_post.find(DONT_CARE) != state_post.end()) { return true; }
-	}
-	return false;
+	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
+		return state_post.find(DONT_CARE) != state_post.end();
+	});
 }
 
 /*
