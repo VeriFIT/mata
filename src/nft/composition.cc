@@ -229,9 +229,6 @@ class SynchronizationProperties {
 	const Nft& nft;
 	Level sync_level;
 	size_t num_of_levels_before_sync;
-	// Computed from the constructor arguments, not a constant: the check is confused by the constructor parameters
-	//  deliberately shadowing the members.
-	// NOLINTNEXTLINE(cppcoreguidelines-use-default-member-init,modernize-use-default-member-init)
 	size_t num_of_levels_after_sync;
 	std::vector<SynchronizationType> sync_types_vec;
 

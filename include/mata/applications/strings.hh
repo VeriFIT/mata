@@ -278,7 +278,6 @@ class Segmentation {
 	/// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
 	// A one-shot, stack-allocated algorithm helper which only borrows the input automaton for its lifetime; it is
 	//  never copied nor assigned.
-	// NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
 	const SegNfa& automaton_;
 	/// ε-transitions indexed by their depth; each ε-transition is stored once.
 	std::vector<std::vector<Transition>> epsilon_transitions_by_depth_{};
