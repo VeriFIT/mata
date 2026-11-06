@@ -1312,6 +1312,7 @@ class FourRussiansDeterminizer {
 	FourRussiansDeterminizer& operator=(const FourRussiansDeterminizer&) = delete;
 
 	Nfa run(SubsetMap* const subset_map) {
+		subset_map_ = subset_map;
 		std::vector<State> initial_states(aut_.initial.begin(), aut_.initial.end());
 		std::sort(initial_states.begin(), initial_states.end());
 		std::vector<Chunk> chunks;
@@ -1355,6 +1356,7 @@ class FourRussiansDeterminizer {
   private:
 	const Nfa& aut_;
 	const MacrostateDiscover& discover_;
+	SubsetMap* subset_map_ = nullptr; ///< Also filled at each discovery, so that the callback can read it.
 	const unsigned fixed_block_size_; ///< 0: automatic.
 	SymbolClasses classes_;
 	/// Numbers of the NFA states inside the construction, permuted by try_renumbering().
@@ -1560,9 +1562,13 @@ class FourRussiansDeterminizer {
 		return {state, true};
 	}
 
-	/// Tell the callback, if any, about the new macrostate. Returns false if it stops.
+	/// Tell the callback, if any, about the new macrostate, which is in the subset map already. Returns false if it
+	///  stops.
 	bool report_discovery(const State macrostate) const {
-		return !discover_.has_value() || (*discover_)(result_, macrostate, outer_states(macrostate));
+		if (!discover_.has_value()) { return true; }
+		StateSet states = outer_states(macrostate);
+		if (subset_map_ != nullptr) { (*subset_map_)[states] = macrostate; }
+		return (*discover_)(result_, macrostate, states);
 	}
 };
 
@@ -2178,8 +2184,24 @@ Nfa mata::nfa::algorithms::determinize_four_russians(
 	const Nfa& aut,
 	const FourRussiansOptions& options,
 	std::unordered_map<StateSet, State>* subset_map,
-	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover,
+	const mata::utils::OrdVector<Symbol>* const restrict_to_symbols
 ) {
+	const auto is_other = [&](const SymbolPost& symbol_post) {
+		return !restrict_to_symbols->contains(symbol_post.symbol);
+	};
+	const auto has_other = [&](const StatePost& state_post) {
+		return std::any_of(state_post.begin(), state_post.end(), is_other);
+	};
+	if (restrict_to_symbols != nullptr && std::any_of(aut.delta.begin(), aut.delta.end(), has_other)) {
+		// Determinize a copy without the transitions over the other symbols.
+		Nfa restricted = aut;
+		for (State state = 0; state < restricted.delta.num_of_states(); ++state) {
+			StatePost& state_post = restricted.delta.mutable_state_post(state);
+			state_post.erase(std::remove_if(state_post.begin(), state_post.end(), is_other), state_post.end());
+		}
+		return determinize_four_russians(restricted, options, subset_map, std::move(macrostate_discover));
+	}
 	if (options.reduction != FourRussiansReduction::None) {
 		return determinize_reduced(aut, options, subset_map, macrostate_discover);
 	}

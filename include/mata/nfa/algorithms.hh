@@ -48,7 +48,8 @@ struct FourRussiansOptions {
  *
  * This is the "Four Russians" technique of Arlazarov, Dinic, Kronrod and Faradzev (1970), applied lazily.
  *
- * Gives the DFA of @c determinize(), usually much faster on large automata.
+ * Gives the DFA of @c determinize_classical() up to the numbering of the states, usually much faster on large
+ * automata. The default algorithm of @c determinize().
  * The NFA states are cut into blocks, and the post of each combination of states of a block is computed once, when it
  * first occurs, and kept in a table. The post of a macrostate is then a union over its blocks instead of its states.
  *
@@ -66,6 +67,7 @@ struct FourRussiansOptions {
  *  reduction, merged states appear as one of them).
  * @param[in] macrostate_discover Callback event handler for discovering a new macrostate for the first time, as in
  *  @c determinize(). Not allowed with a reduction.
+ * @param[in] restrict_to_symbols When not @c nullptr, determinize over these symbols only, as in @c determinize().
  * @return Determinized automaton.
  * @throws std::invalid_argument for an invalid block size, or for a reduction with @p macrostate_discover.
  */
@@ -73,7 +75,21 @@ Nfa determinize_four_russians(
 	const Nfa& aut,
 	const FourRussiansOptions& options = {},
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
-	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
+);
+
+/**
+ * @brief Determinize automaton by the classical subset construction.
+ *
+ * The parameters are those of @c determinize().
+ * @return Determinized automaton.
+ */
+Nfa determinize_classical(
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map = nullptr,
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
 );
 
 /**
