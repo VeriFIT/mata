@@ -122,7 +122,7 @@ class HashPairStore {
 };
 
 /// The bit matrix is used while it takes at most this many Bytes, the hash table otherwise.
-constexpr size_t max_bit_matrix_bytes{200'000'000};
+constexpr size_t MAX_BIT_MATRIX_BYTES{200'000'000};
 
 /**
  * @brief The moves of nfa along its transitions, forward: the pairs reached from the batch of one state of nfa by a
@@ -319,7 +319,7 @@ utils::SparseSet<State> explore_pairs(
 	const size_t words_num_of_states{words.num_of_states()};
 	if (nfa_num_of_states == 0 || words_num_of_states == 0) { return {}; }
 	const BoolVector useful_words_states{words.get_useful_states()};
-	if (BitMatrixPairStore::num_of_bytes(words_num_of_states, nfa_num_of_states) <= max_bit_matrix_bytes) {
+	if (BitMatrixPairStore::num_of_bytes(words_num_of_states, nfa_num_of_states) <= MAX_BIT_MATRIX_BYTES) {
 		return explore_pairs<BitMatrixPairStore>(
 			nfa_moves, nfa_num_of_states, nfa_start, words, first_epsilon, useful_words_states
 		);
