@@ -47,7 +47,7 @@ class BitMatrixPairStore {
 
 	/// Mark the pair visited and pending. Returns true iff it was not visited before.
 	bool visit(const State prefixes_state, const State nfa_state) {
-		uint64_t* const visited_row{bits_.get() + static_cast<size_t>(nfa_state) * 2 * row_words_};
+		uint64_t* const visited_row{bits_.get() + (static_cast<size_t>(nfa_state) * 2 * row_words_)};
 		const size_t word{prefixes_state / 64};
 		const uint64_t bit{uint64_t{1} << (prefixes_state % 64)};
 		if ((visited_row[word] & bit) != 0) { return false; }
@@ -67,10 +67,10 @@ class BitMatrixPairStore {
 		worklist_.pop_front();
 		queued_[nfa_state] = false;
 		batch.clear();
-		uint64_t* const pending_row{bits_.get() + (static_cast<size_t>(nfa_state) * 2 + 1) * row_words_};
+		uint64_t* const pending_row{bits_.get() + ((static_cast<size_t>(nfa_state) * 2 + 1) * row_words_)};
 		for (size_t word{0}; word < row_words_; ++word) {
 			for (uint64_t bits{std::exchange(pending_row[word], 0)}; bits != 0; bits &= bits - 1) {
-				batch.push_back(static_cast<State>(word * 64 + static_cast<size_t>(std::countr_zero(bits))));
+				batch.push_back(static_cast<State>((word * 64) + static_cast<size_t>(std::countr_zero(bits))));
 			}
 		}
 		return true;
