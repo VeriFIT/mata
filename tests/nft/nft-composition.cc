@@ -3298,6 +3298,140 @@ TEST_CASE("mata::nft::compose_fast_no_jump()") {
 	}
 }
 
+TEST_CASE("mata::nft::algorithms::compose_fast() reads jump transitions") {
+	constexpr mata::Symbol a{'a'}, b{'b'}, c{'c'}, x{'x'};
+	const std::vector<mata::Symbol> symbols{a, b, c};
+	const OrdVector<mata::Symbol> keep_dont_care{DONT_CARE};
+
+	SECTION("an identity of whole-round jumps under RepeatSymbol is the explicit identity") {
+		// The identity of Nft::insert_identity() under RepeatSymbol: one whole-round self-loop jump per symbol.
+		Nft identity_jumps{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		for (const mata::Symbol symbol : symbols) { identity_jumps.delta.add(0, symbol, 0); }
+		Nft identity_explicit{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		identity_explicit.insert_identity(0, symbols, JumpMode::NoJump);
+		// Tracks [A, B]: the rounds (a, b), (b, a) and (c, c).
+		Nft replace{Nft::with_levels({2, {0, 1, 1, 1}}, 4, {0}, {0})};
+		replace.delta.add(0, a, 1);
+		replace.delta.add(1, b, 0);
+		replace.delta.add(0, b, 2);
+		replace.delta.add(2, a, 0);
+		replace.delta.add(0, c, 3);
+		replace.delta.add(3, c, 0);
+		for (const bool project_out : {false, true}) {
+			const Nft output_identity{
+				algorithms::compose_fast(replace, identity_jumps, 1, 0, project_out, JumpMode::RepeatSymbol)
+			};
+			CHECK(are_equivalent(
+				output_identity, algorithms::compose_fast_no_jump(replace, identity_explicit, 1, 0, project_out)
+			));
+			CHECK(are_equivalent(
+				output_identity,
+				algorithms::compose_general(replace, identity_jumps, {1}, {0}, project_out, JumpMode::RepeatSymbol),
+				JumpMode::RepeatSymbol
+			));
+			const Nft input_identity{
+				algorithms::compose_fast(identity_jumps, replace, 1, 0, project_out, JumpMode::RepeatSymbol)
+			};
+			CHECK(are_equivalent(
+				input_identity, algorithms::compose_fast_no_jump(identity_explicit, replace, 1, 0, project_out)
+			));
+			if (!project_out) { continue; }
+			CHECK(output_identity.is_in_lang_by_levels({{a}, {b}}));
+			CHECK(input_identity.is_in_lang_by_levels({{b}, {a}}));
+			CHECK(!output_identity.is_in_lang_by_levels({{a}, {a}}));
+		}
+
+		// With EPSILON, which compose() leaves to the general composition, compose_fast() reads the identity of jumps
+		//  as the explicit one all the same: the round (c, EPSILON).
+		replace.delta.add(3, EPSILON, 0);
+		CHECK(are_equivalent(
+			algorithms::compose_fast(replace, identity_jumps, 1, 0, true, JumpMode::RepeatSymbol),
+			algorithms::compose_fast_no_jump(replace, identity_explicit, 1, 0, true)
+		));
+	}
+
+	SECTION("a level inside a jump synchronizes on the symbol the jump reads there") {
+		// LHS tracks [A, X, C], synchronizing X: a whole-round jump on a, which reads (a, a, a) under RepeatSymbol and
+		//  (a, DONT_CARE, DONT_CARE) under AppendDontCares. RHS tracks [X, B]: the rounds (a, b) and (x, c). The
+		//  projected result tracks [A, C, B].
+		Nft lhs{Nft::with_levels({3, {0}}, 1, {0}, {0})};
+		lhs.delta.add(0, a, 0);
+		Nft rhs{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		rhs.delta.add(0, a, 1);
+		rhs.delta.add(1, b, 0);
+		rhs.delta.add(0, x, 2);
+		rhs.delta.add(2, c, 0);
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const Nft fast{algorithms::compose_fast(lhs, rhs, 1, 0, true, jump_mode)};
+			CHECK(are_equivalent(
+				fast, algorithms::compose_fast_no_jump(lhs.unwind_jumps(keep_dont_care, jump_mode), rhs, 1, 0, true)
+			));
+			if (jump_mode == JumpMode::RepeatSymbol) {
+				CHECK(
+					are_equivalent(fast, algorithms::compose_general(lhs, rhs, {1}, {0}, true, jump_mode), jump_mode)
+				);
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {b}}));
+				CHECK(!fast.is_in_lang_by_levels({{a}, {x}, {c}}));
+				CHECK(!fast.is_in_lang_by_levels({{a}, {b}, {b}}));
+			} else {
+				// X reads DONT_CARE, which matches a and x, and C reads DONT_CARE.
+				CHECK(fast.is_in_lang_by_levels({{a}, {b}, {b}}));
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {c}}));
+				CHECK(!fast.is_in_lang_by_levels({{b}, {a}, {b}}));
+			}
+		}
+	}
+
+	SECTION("jumps of one symbol post ending on different levels") {
+		// LHS tracks [A, X, C, D], synchronizing X. From state 0 on a: one level to state 2, a jump to state 1 on C,
+		//  and a whole-round jump back to 0. Then x from 2 to 1, and (b, c) from 1 back to 0. RHS tracks [X, B]: the
+		//  rounds (a, b) and (x, c).
+		Nft lhs{Nft::with_levels({4, {0, 2, 1, 3}}, 4, {0}, {0})};
+		lhs.delta.add(0, a, 0);
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(0, a, 2);
+		lhs.delta.add(2, x, 1);
+		lhs.delta.add(1, b, 3);
+		lhs.delta.add(3, c, 0);
+		Nft rhs{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		rhs.delta.add(0, a, 1);
+		rhs.delta.add(1, b, 0);
+		rhs.delta.add(0, x, 2);
+		rhs.delta.add(2, c, 0);
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			for (const bool project_out : {false, true}) {
+				const Nft fast{algorithms::compose_fast(lhs, rhs, 1, 0, project_out, jump_mode)};
+				CHECK(are_equivalent(
+					fast, algorithms::compose_fast_no_jump(
+							  lhs.unwind_jumps(keep_dont_care, jump_mode), rhs, 1, 0, project_out
+						  )
+				));
+				if (jump_mode == JumpMode::RepeatSymbol) {
+					CHECK(are_equivalent(
+						fast, algorithms::compose_general(lhs, rhs, {1}, {0}, project_out, jump_mode), jump_mode
+					));
+				}
+				if (!project_out) { continue; }
+				// Projected tracks [A, C, D, B]. The jump to state 1 and the one-level transition, then b and c.
+				CHECK(fast.is_in_lang_by_levels({{a}, {b}, {c}, {b}}));
+				CHECK(fast.is_in_lang_by_levels({{a}, {b}, {c}, {c}}));
+				// The whole-round jump reads a on X under RepeatSymbol, DONT_CARE, which matches x, otherwise.
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {a}, {b}}));
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {a}, {c}}) == (jump_mode == JumpMode::AppendDontCares));
+			}
+		}
+	}
+
+	SECTION("a transition back to an earlier level is rejected") {
+		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		backwards.delta.add(0, a, 1);
+		backwards.delta.add(1, a, 2);
+		CHECK_THROWS_AS(
+			algorithms::compose_fast(backwards, backwards, 1, 0, true, JumpMode::RepeatSymbol), std::invalid_argument
+		);
+	}
+}
+
 TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #812)") {
 	// The three operand shapes of the issue's table: n silent EPSILON moves on each side followed
 	// by one matching symbol X on the synchronization level, so the accepted relation is a single

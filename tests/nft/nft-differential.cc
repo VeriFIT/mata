@@ -502,6 +502,152 @@ TEST_CASE("mata::nft differential: the direct general composition is the pipelin
 	CHECK(num_of_nonempty_multi_sync > 0);
 }
 
+namespace {
+/// Whether a transition of @p nft reads @p level after its first level, i.e., it is a jump over @p level.
+bool jumps_over(const Nft& nft, const Level level) {
+	for (const Transition& transition : nft.delta.transitions()) {
+		const size_t source_level{nft.levels[transition.source]};
+		const size_t end{nft.levels[transition.target] == 0 ? nft.levels.num_of_levels : nft.levels[transition.target]};
+		if (source_level < level && level < end) { return true; }
+	}
+	return false;
+}
+
+/// Whether @p nft has a transition over DONT_CARE.
+bool has_dont_care_transition(const Nft& nft) {
+	for (const Transition& transition : nft.delta.transitions()) {
+		if (transition.symbol == DONT_CARE) { return true; }
+	}
+	return false;
+}
+
+/// @p nft with its jumps unwound in @p jump_mode, DONT_CARE kept, but for the EPSILON transitions between two
+/// zero-level
+///  states under JumpMode::RepeatSymbol, which compose_fast_no_jump() reads as whole rounds of EPSILON already, and
+///  places their EPSILON otherwise than the unwound chains.
+Nft unwind_jumps_but_fast_epsilon(const Nft& nft, const JumpMode jump_mode) {
+	std::vector<Transition> fast_epsilon_transitions{};
+	Nft without_fast_epsilon{nft};
+	if (jump_mode == JumpMode::RepeatSymbol && nft.levels.num_of_levels > 1) {
+		for (const Transition& transition : nft.delta.transitions()) {
+			if (transition.symbol == EPSILON && nft.levels[transition.source] == 0 &&
+				nft.levels[transition.target] == 0) {
+				fast_epsilon_transitions.push_back(transition);
+			}
+		}
+		for (const Transition& transition : fast_epsilon_transitions) { without_fast_epsilon.delta.remove(transition); }
+	}
+	Nft unwound{without_fast_epsilon.unwind_jumps(OrdVector<Symbol>{DONT_CARE}, jump_mode)};
+	for (const Transition& transition : fast_epsilon_transitions) { unwound.delta.add(transition); }
+	return unwound;
+}
+} // namespace
+
+// compose_fast() reads a jump transition level by level. Its result has no jumps, and it accepts the relation of
+//  compose_fast_no_jump() on the operands with their jumps unwound in the jump mode (but for the fast EPSILON
+//  transitions under RepeatSymbol), EPSILON placement included: are_equivalent() reads EPSILON as a letter. Wherever
+//  the general composition reads the operands alike, which compose_fast() documents, it accepts the general relation
+//  too, as EPSILON-erased bounded tuples, and as a whole without EPSILON.
+TEST_CASE("mata::nft differential: the fast composition reads jump transitions", "[differential]") {
+	size_t num_of_nonempty_with_jumps{0};
+	size_t num_of_nonempty_with_epsilon{0};
+	size_t num_of_nonempty_with_dont_care{0};
+	size_t num_of_nonempty_projected{0};
+	size_t num_of_nonempty_alike_with_jumps{0};
+	size_t num_of_nonempty_equivalent_with_jumps{0};
+	size_t num_of_differing_choosing_jump_again{0};
+	size_t num_of_differing_dont_care_on_sync{0};
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+		size_t num_of_nonempty_in_mode{0};
+		for (unsigned seed{0}; seed < 600; ++seed) {
+			std::mt19937 rng{seed};
+			const size_t num_of_symbols{1 + seed % 2};
+			const size_t lhs_num_of_levels{1 + draw(rng, 4)};
+			const size_t rhs_num_of_levels{1 + draw(rng, 4)};
+			if (lhs_num_of_levels + rhs_num_of_levels == 2) { continue; }
+			const bool with_epsilon{seed % 3 == 1};
+			const bool with_dont_care{seed % 4 == 2};
+			const size_t lhs_num_of_states_per_level{1 + draw(rng, 3)};
+			const size_t rhs_num_of_states_per_level{1 + draw(rng, 3)};
+			Nft lhs{random_nft(
+				rng, lhs_num_of_states_per_level, num_of_symbols, lhs_num_of_levels, with_dont_care, with_epsilon, true
+			)};
+			Nft rhs{random_nft(
+				rng, rhs_num_of_states_per_level, num_of_symbols, rhs_num_of_levels, with_dont_care, with_epsilon, true
+			)};
+			// random_nft() numbers the zero-level states first.
+			lhs.initial.insert(static_cast<State>(draw(rng, lhs_num_of_states_per_level)));
+			rhs.initial.insert(static_cast<State>(draw(rng, rhs_num_of_states_per_level)));
+			const auto lhs_sync_level{static_cast<Level>(draw(rng, lhs_num_of_levels))};
+			const auto rhs_sync_level{static_cast<Level>(draw(rng, rhs_num_of_levels))};
+			const bool has_jumps{lhs.contains_jump_transitions() || rhs.contains_jump_transitions()};
+			const bool has_epsilon{has_epsilon_transition(lhs) || has_epsilon_transition(rhs)};
+			const bool has_dont_care{has_dont_care_transition(lhs) || has_dont_care_transition(rhs)};
+			// What the general composition reads otherwise: DONT_CARE, which it matches with EPSILON (#561), and the
+			//  jumps of an operand composed with a one-level one, which product() lets choose again.
+			const bool reads_dont_care_on_sync{
+				has_dont_care || (jump_mode == JumpMode::AppendDontCares &&
+								  (jumps_over(lhs, lhs_sync_level) || jumps_over(rhs, rhs_sync_level)))
+			};
+			const bool chooses_jump_again{
+				jump_mode == JumpMode::RepeatSymbol && ((lhs_num_of_levels == 1 && rhs.contains_jump_transitions()) ||
+														(rhs_num_of_levels == 1 && lhs.contains_jump_transitions()))
+			};
+			const bool alike{!reads_dont_care_on_sync && !chooses_jump_again};
+			INFO(describe(seed, lhs) + "\n---\n" + describe(seed, rhs));
+			for (const bool project_out : {false, true}) {
+				INFO(
+					"sync " << lhs_sync_level << " / " << rhs_sync_level << " project_out " << project_out
+							<< " jump mode " << static_cast<int>(jump_mode)
+				);
+				const Nft fast{
+					algorithms::compose_fast(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, jump_mode)
+				};
+				CHECK(!fast.contains_jump_transitions());
+				const Nft unwound{algorithms::compose_fast_no_jump(
+					unwind_jumps_but_fast_epsilon(lhs, jump_mode), unwind_jumps_but_fast_epsilon(rhs, jump_mode),
+					lhs_sync_level, rhs_sync_level, project_out
+				)};
+				REQUIRE(fast.levels.num_of_levels == unwound.levels.num_of_levels);
+				CHECK(are_equivalent(fast, unwound));
+				const std::set<std::vector<Word>> tuples{bounded_tuples(fast, num_of_symbols, 2)};
+				CHECK(bounded_tuples(unwound, num_of_symbols, 2) == tuples);
+
+				const Nft general{
+					algorithms::compose_general(lhs, rhs, {lhs_sync_level}, {rhs_sync_level}, project_out, jump_mode)
+				};
+				if (alike) {
+					const OrdVector<Symbol> keep_dont_care{DONT_CARE};
+					CHECK(bounded_tuples(general.unwind_jumps(keep_dont_care, jump_mode), num_of_symbols, 2) == tuples);
+				}
+				if (alike && !has_epsilon) {
+					CHECK(are_equivalent(fast, general, jump_mode));
+				} else if (!has_epsilon && !has_dont_care && !are_equivalent(fast, general, jump_mode)) {
+					// The relations the general composition reads otherwise do differ.
+					++(chooses_jump_again ? num_of_differing_choosing_jump_again : num_of_differing_dont_care_on_sync);
+				}
+				if (tuples.empty()) { continue; }
+				++num_of_nonempty_in_mode;
+				if (has_jumps) { ++num_of_nonempty_with_jumps; }
+				if (has_epsilon) { ++num_of_nonempty_with_epsilon; }
+				if (has_dont_care) { ++num_of_nonempty_with_dont_care; }
+				if (project_out) { ++num_of_nonempty_projected; }
+				if (alike && has_jumps) { ++num_of_nonempty_alike_with_jumps; }
+				if (alike && !has_epsilon && has_jumps) { ++num_of_nonempty_equivalent_with_jumps; }
+			}
+		}
+		CHECK(num_of_nonempty_in_mode > 0);
+	}
+	CHECK(num_of_nonempty_with_jumps > 0);
+	CHECK(num_of_nonempty_with_epsilon > 0);
+	CHECK(num_of_nonempty_with_dont_care > 0);
+	CHECK(num_of_nonempty_projected > 0);
+	CHECK(num_of_nonempty_alike_with_jumps > 0);
+	CHECK(num_of_nonempty_equivalent_with_jumps > 0);
+	CHECK(num_of_differing_choosing_jump_again > 0);
+	CHECK(num_of_differing_dont_care_on_sync > 0);
+}
+
 TEST_CASE("mata::nft differential: composing with an empty operand keeps the level count", "[differential]") {
 	for (unsigned seed{0}; seed < 20; ++seed) {
 		std::mt19937 rng{seed};
