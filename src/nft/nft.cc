@@ -499,66 +499,137 @@ void mata::nft::internal::validate_nft_levels(const Nft& nft, const char* const 
 void Nft::unwind_jumps_inplace(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
 	internal::validate_nft_levels(*this, "unwind_jumps_inplace");
 	const bool dont_care_for_dont_care = dont_care_symbol_replacements == utils::OrdVector<Symbol>({DONT_CARE});
-	std::vector<Transition> transitions_to_del;
-	std::vector<Transition> transitions_to_add;
+	const size_t num_of_delta_states{delta.num_of_states()};
+	const auto num_of_levels{static_cast<Level>(levels.num_of_levels)};
+	// The unsigned span of a transition: a target level below the source level wraps around.
+	const auto span = [&](const Level src_lvl, const Level trg_lvl) -> Level {
+		return (trg_lvl == 0) ? (num_of_levels - src_lvl) : trg_lvl - src_lvl;
+	};
 
-	auto add_inner_transitions = [&](State src, Symbol symbol, State trg) {
+	// Fresh states are numbered from num_of_states() in the order of the transitions they unwind, as add_state()
+	//  would; a jump over the levels in between gets one per inner level, a wrapping one (0 < target < source level)
+	//  a single one. A source keeps its post unless it has a jump or a DONT_CARE over one level to spell out.
+	size_t num_of_fresh_states{0};
+	std::vector<State> rewritten_sources{};
+	for (State source{0}; source < num_of_delta_states; ++source) {
+		const Level src_lvl{levels[source]};
+		bool rewritten{false};
+		for (const SymbolPost& symbol_post : delta[source]) {
+			const bool spelled{symbol_post.symbol == DONT_CARE && !dont_care_for_dont_care};
+			for (const State target : symbol_post.targets) {
+				const Level trg_lvl{levels[target]};
+				if (const Level diff_lvl{span(src_lvl, trg_lvl)}; diff_lvl > 1) {
+					num_of_fresh_states += (trg_lvl == 0 || trg_lvl > src_lvl) ? diff_lvl - 1 : 1;
+					rewritten = true;
+				} else if (diff_lvl == 1 && spelled) {
+					rewritten = true;
+				}
+			}
+		}
+		if (rewritten) { rewritten_sources.push_back(source); }
+	}
+	const size_t first_fresh{num_of_states()};
+	if (num_of_fresh_states > 0) {
+		delta.allocate(first_fresh + num_of_fresh_states);
+		if (levels.size() < first_fresh + num_of_fresh_states) {
+			levels.resize(first_fresh + num_of_fresh_states, DEFAULT_LEVEL);
+		}
+	}
+	auto next_fresh{static_cast<State>(first_fresh)};
+
+	// The one link of a chain from the fresh state @p fresh, over every replacement for DONT_CARE.
+	const auto set_fresh_link = [&](const State fresh, const Symbol symbol, const State target) {
+		StatePost& fresh_post{delta.mutable_state_post(fresh)};
 		if (symbol == DONT_CARE && !dont_care_for_dont_care) {
 			for (const Symbol replace_symbol : dont_care_symbol_replacements) {
-				transitions_to_add.emplace_back(src, replace_symbol, trg);
+				fresh_post.push_back(SymbolPost{replace_symbol, target});
 			}
 		} else {
-			transitions_to_add.emplace_back(src, symbol, trg);
+			fresh_post.push_back(SymbolPost{symbol, target});
 		}
 	};
 
-	for (const auto& transition : delta.transitions()) {
-		const Level src_lvl = levels[transition.source];
-		const Level trg_lvl = levels[transition.target];
+	// The moves of a spelled-out DONT_CARE post, merged into the rest of the post once it is complete.
+	std::vector<std::pair<Symbol, State>> spelled_moves{};
+	std::vector<State> fresh_targets{};
+	for (const State source : rewritten_sources) {
+		const Level src_lvl{levels[source]};
+		StatePost state_post{};
+		spelled_moves.clear();
+		for (const SymbolPost& symbol_post : delta[source]) {
+			const Symbol symbol{symbol_post.symbol};
+			const bool spelled{symbol == DONT_CARE && !dont_care_for_dont_care};
+			// Targets kept, then the fresh ones, all above the kept ones and numbered in increasing order.
+			SymbolPost kept{symbol};
+			fresh_targets.clear();
+			for (const State target : symbol_post.targets) {
+				const Level trg_lvl{levels[target]};
+				const Level diff_lvl{span(src_lvl, trg_lvl)};
+				if (diff_lvl == 1 && spelled) {
+					// The transition is replaced, so a DONT_CARE among the replacements does not stay either.
+					for (const Symbol replace_symbol : dont_care_symbol_replacements) {
+						if (replace_symbol != DONT_CARE) { spelled_moves.emplace_back(replace_symbol, target); }
+					}
+				} else if (diff_lvl > 1) {
+					// The first link connecting the original source state with an inner state.
+					State inner_src{next_fresh++};
+					levels[inner_src] = src_lvl + 1;
+					if (spelled) {
+						for (const Symbol replace_symbol : dont_care_symbol_replacements) {
+							spelled_moves.emplace_back(replace_symbol, inner_src);
+						}
+					} else {
+						fresh_targets.push_back(inner_src);
+					}
 
-		if (const Level diff_lvl =
-				(trg_lvl == 0) ? (static_cast<Level>(levels.num_of_levels) - src_lvl) : trg_lvl - src_lvl;
-			diff_lvl == 1 && transition.symbol == DONT_CARE && !dont_care_for_dont_care) {
-			transitions_to_del.push_back(transition);
-			for (const Symbol replace_symbol : dont_care_symbol_replacements) {
-				transitions_to_add.emplace_back(transition.source, replace_symbol, transition.target);
+					// Links 1 to n-1 connecting inner states.
+					const Symbol inner_symbol{jump_mode == JumpMode::AppendDontCares ? DONT_CARE : symbol};
+					for (Level inner_trg_lvl = src_lvl + 2,
+							   pre_trg_lvl = (trg_lvl == 0) ? (num_of_levels - 1) : (trg_lvl - 1);
+						 inner_trg_lvl - 1 < pre_trg_lvl; ++inner_trg_lvl) {
+						const State inner_trg{next_fresh++};
+						levels[inner_trg] = inner_trg_lvl;
+						set_fresh_link(inner_src, inner_symbol, inner_trg);
+						inner_src = inner_trg;
+					}
+
+					// The last link connecting the last inner state with the original target state.
+					set_fresh_link(inner_src, inner_symbol, target);
+				} else if (spelled) {
+					spelled_moves.emplace_back(DONT_CARE, target);
+				} else {
+					kept.push_back(target);
+				}
 			}
-		} else if (diff_lvl > 1) {
-			transitions_to_del.push_back(transition);
-			State inner_src = transition.source;
-			Level inner_src_lvl = src_lvl;
-
-			// The first iteration connecting original source state with inner state.
-			State inner_trg = add_state();
-			Level inner_trg_lvl = src_lvl + 1;
-			levels[inner_trg] = inner_trg_lvl;
-			add_inner_transitions(inner_src, transition.symbol, inner_trg);
-			inner_src = inner_trg;
-			inner_src_lvl++;
-			inner_trg_lvl++;
-
-			// Iterations 1 to n-1 connecting inner states.
-			for (const Level pre_trg_lvl = (trg_lvl == 0) ? (static_cast<Level>(levels.num_of_levels) - 1)
-														  : (trg_lvl - 1);
-				 inner_src_lvl < pre_trg_lvl; inner_src_lvl++, inner_trg_lvl++) {
-				inner_trg = add_state();
-				levels[inner_trg] = inner_trg_lvl;
-
-				add_inner_transitions(
-					inner_src, jump_mode == JumpMode::AppendDontCares ? DONT_CARE : transition.symbol, inner_trg
-				);
-				inner_src = inner_trg;
-			}
-
-			// The last iteration connecting last inner state with the original target state.
-			add_inner_transitions(
-				inner_src, jump_mode == JumpMode::AppendDontCares ? DONT_CARE : transition.symbol, transition.target
-			);
+			for (const State fresh : fresh_targets) { kept.push_back(fresh); }
+			if (!kept.empty()) { state_post.push_back(std::move(kept)); }
 		}
-	}
 
-	for (const Transition& transition : transitions_to_add) { delta.add(transition); }
-	for (const Transition& transition : transitions_to_del) { delta.remove(transition); }
+		if (!spelled_moves.empty()) {
+			std::ranges::sort(spelled_moves);
+			spelled_moves.erase(std::ranges::unique(spelled_moves).begin(), spelled_moves.end());
+			StatePost merged{};
+			auto post{state_post.begin()};
+			for (auto move{spelled_moves.begin()}; move != spelled_moves.end();) {
+				const Symbol symbol{move->first};
+				for (; post != state_post.end() && post->symbol < symbol; ++post) {
+					merged.push_back(std::move(*post));
+				}
+				SymbolPost spelled_post{symbol};
+				for (; move != spelled_moves.end() && move->first == symbol; ++move) {
+					spelled_post.push_back(move->second);
+				}
+				if (post != state_post.end() && post->symbol == symbol) {
+					spelled_post.insert(post->target_span());
+					++post;
+				}
+				merged.push_back(std::move(spelled_post));
+			}
+			for (; post != state_post.end(); ++post) { merged.push_back(std::move(*post)); }
+			state_post = std::move(merged);
+		}
+		delta.mutable_state_post(source) = std::move(state_post);
+	}
 }
 
 Nft Nft::unwind_jumps(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
@@ -1699,22 +1770,18 @@ bool Nft::is_identical(const Nft& aut) const {
 	return levels.num_of_levels == aut.levels.num_of_levels && levels == aut.levels && Automaton::is_identical(aut);
 }
 
-namespace {
-/// Whether unwinding @p nft with @p dont_care_symbol_replacements changes it: a transition does not advance exactly one
-///  level, or a DONT_CARE is spelled out (it is kept only when it is its own sole replacement).
-bool unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
+bool mata::nft::internal::unwinding_changes(const Nft& nft, const OrdVector<Symbol>& dont_care_symbol_replacements) {
 	if (nft.contains_jump_transitions()) { return true; }
 	if (dont_care_symbol_replacements == OrdVector<Symbol>{DONT_CARE}) { return false; }
 	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
 		return state_post.find(DONT_CARE) != state_post.end();
 	});
 }
-} // namespace
 
 mata::nfa::Nfa
 	Nft::to_nfa_update_copy(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
 	internal::validate_nft_levels(*this, "to_nfa_update_copy");
-	if (!unwinding_changes(*this, dont_care_symbol_replacements)) { return to_nfa_copy(); }
+	if (!internal::unwinding_changes(*this, dont_care_symbol_replacements)) { return to_nfa_copy(); }
 	// Unwind a private copy and move it out instead of copying the unwound transducer once more.
 	Nft unwound{*this};
 	unwound.unwind_jumps_inplace(dont_care_symbol_replacements, jump_mode);

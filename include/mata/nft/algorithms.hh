@@ -74,10 +74,10 @@ bool is_included_naive(
  * Inclusion implemented by antichain algorithms.
  *
  * The operands are read as the flat automata that @c Nft::unwind_jumps() with the DONT_CARE replacements below would
- *  produce, EPSILON being an ordinary letter. When unwinding would spell DONT_CARE out over the replacements (on a
- *  DONT_CARE transition, or on the links padding a jump under @c JumpMode::AppendDontCares), the jumps and DONT_CAREs
- *  are explored lazily during the search instead: no operand is unwound and DONT_CARE is not expanded over the
- *  alphabet. The answer is that of @c is_included_antichains_unwound().
+ *  produce, EPSILON being an ordinary letter. When unwinding would change an operand (a jump transition, or a DONT_CARE
+ *  spelled out over the replacements), the jumps and DONT_CAREs are explored lazily during the search instead: no
+ *  operand is unwound and DONT_CARE is not expanded over the alphabet. The answer is that of
+ *  @c is_included_antichains_unwound().
  * @param[in] smaller Automaton which language should be included in the bigger one
  * @param[in] bigger Automaton which language should include the smaller one
  * @param[in] alphabet Alphabet whose symbols replace @c DONT_CARE; @c nullptr for the symbols of both automata

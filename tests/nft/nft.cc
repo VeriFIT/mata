@@ -1638,6 +1638,19 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 	}
 } // }}}
 
+TEST_CASE("mata::nft::is_included() and are_equivalent() with a jump over 2^32 - 1 levels") {
+	// The lazy exploration of jumps must not allocate per level of a jump the search does not read: no final state is
+	//  reachable here, so it reads none.
+	Nft nft{Nft::with_levels(std::numeric_limits<Level>::max())};
+	nft.add_state_with_level(0);
+	nft.add_state_with_level(0);
+	nft.initial.insert(0);
+	nft.delta.add(0, DONT_CARE, 1);
+	nft.delta.add(1, 0, 0);
+	CHECK(is_included(nft, nft));
+	CHECK(are_equivalent(nft, nft));
+}
+
 TEST_CASE("mata::nft::are_equivalent") {
 	Nft smaller(10);
 	Nft bigger(16);
