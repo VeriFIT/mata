@@ -992,7 +992,7 @@ class Nft : public mata::Automaton {
 	}
 
 	/**
-	 * @brief Get the set of states reachable from the given set of @p states over the given vector of @p words
+	 * @brief Get the set of states reachable from the given set of @p states over the given vector of @p level_words
 	 * (index corresponds to the level). Levels with the corresponding @p use_level set to false will be ignored.
 	 *
 	 * This post uses a bitmask @p use_level to determine which levels to use.
@@ -1029,7 +1029,8 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given set of zero-level @p states over the given
-	 * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
+	 * vector of @p level_words (index corresponds to the level). All words on all levels are used and have to be
+	 * specified.
 	 *
 	 * This post uses all words on all levels.
 	 *
@@ -1061,7 +1062,8 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
-	 * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
+	 * vector of @p level_words (index corresponds to the level). All words on all levels are used and have to be
+	 * specified.
 	 *
 	 * This post uses all words on all levels.
 	 *
@@ -1092,16 +1094,17 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given set of @p states over the given
-	 * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only
-	 * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels
-	 * are ignored (projected-out)
+	 * vector of @p level_words. The levels of the words are specified in @p word_levels vector. The post is computed
+	 * only for the words that have a level corresponding to the level of the state. Levels not specified in
+	 * @p word_levels are ignored (projected-out)
 	 *
 	 * This post uses a vector @p word_levels to specify levels of used words.
 	 * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
 	 *
 	 * @param states Set of zero-level states to compute the post set from.
 	 * @param level_words Vector of words to compute the post set for.
-	 * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
+	 * @param word_levels Vector of levels corresponding to the words in @p level_words (has to be the same size as
+	 * @p level_words).
 	 * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
 	 * were visited during the post operation. If nullptr, this set will not be filled.
@@ -1122,16 +1125,17 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
-	 * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only
-	 * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels
-	 * are ignored (projected-out).
+	 * vector of @p level_words. The levels of the words are specified in @p word_levels vector. The post is computed
+	 * only for the words that have a level corresponding to the level of the state. Levels not specified in
+	 * @p word_levels are ignored (projected-out).
 	 *
 	 * This post uses a vector @p word_levels to specify levels of used words.
 	 * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
 	 *
 	 * @param state Zero-level state to compute the post set from.
 	 * @param level_words Vector of words to compute the post set for.
-	 * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
+	 * @param word_levels Vector of levels corresponding to the words in @p level_words (has to be the same size as
+	 * @p level_words).
 	 * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
 	 * were visited during the post operation. If nullptr, this set will not be filled.

@@ -658,7 +658,7 @@ class Nfa : public Automaton {
 	 *
 	 * If the automaton is nondeterministic, the result is undefined.
 	 *
-	 * @param word The word to read.
+	 * @param run The run whose word is read.
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
