@@ -48,8 +48,22 @@ inline void minimize(Nfa* res, const Nfa& aut, const ParameterMap& params = {{"a
 	*res = minimize(aut, params);
 }
 
-inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State>* subset_map = nullptr) {
-	*result = determinize(aut, subset_map);
+inline void determinize(
+	Nfa* result,
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map = nullptr,
+	const ParameterMap& params = {{"algorithm", "four_russians"}}
+) {
+	*result = determinize(aut, subset_map, std::nullopt, nullptr, params);
+}
+
+inline void determinize_four_russians(
+	Nfa* result,
+	const Nfa& aut,
+	const algorithms::FourRussiansOptions& options = {},
+	std::unordered_map<StateSet, State>* subset_map = nullptr
+) {
+	*result = algorithms::determinize_four_russians(aut, options, subset_map);
 }
 
 inline void reduce(
