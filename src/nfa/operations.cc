@@ -1087,8 +1087,8 @@ namespace {
 template <typename T>
 /**
  * A class for partitionable sets of elements. All elements are stored in a contiguous vector.
- * Elements from the same set are contiguous in the vector. Auxiliary data (indices, positions, etc.) are
- * stored in separate vectors.
+ * Elements from the same set are contiguous in the vector. The set and the location of an element, and the bounds of
+ *  a set, are each stored together, since every operation reads them together.
  */
 class RefinablePartition {
   public:
@@ -1096,15 +1096,23 @@ class RefinablePartition {
 	static const T no_more_elements = std::numeric_limits<T>::max();
 	static constexpr size_t no_split = std::numeric_limits<size_t>::max();
 	size_t num_of_sets; ///< The number of sets in the partition.
-	std::vector<size_t> set_idx; ///< For each element, tells the index of the set it belongs to.
 
   private:
+	/// Where an element is: the index of its set and its location in the elements vector.
+	struct ElementInfo {
+		size_t set;
+		size_t location;
+	};
+	/// Indices into the elements vector: the first element of a set, the element after the first half of the set (the
+	///  marked elements), and the element after the last element of the set.
+	struct SetBounds {
+		size_t first;
+		size_t mid;
+		size_t end;
+	};
 	std::vector<T> elems_; ///< Contains all elements in an order such that the elements of the same set are contiguous.
-	std::vector<T> location_; ///< Contains the location of each element in the elements vector.
-	std::vector<size_t> first_; ///< Contains the index of the first element of each set in the elements vector.
-	std::vector<size_t> end_; ///< Contains the index after the last element of each set in the elements vector.
-	std::vector<size_t>
-		mid_; ///< Contains the index after the last element of the first half of the set in the elements vector.
+	std::vector<ElementInfo> info_; ///< The set and the location of each element.
+	std::vector<SetBounds> bounds_; ///< The bounds of each set.
 
   public:
 	/**
@@ -1114,18 +1122,14 @@ class RefinablePartition {
 	 */
 	explicit RefinablePartition(const size_t num_of_states)
 		: num_of_sets(1),
-		  set_idx(num_of_states),
 		  elems_(num_of_states),
-		  location_(num_of_states),
-		  first_(num_of_states),
-		  end_(num_of_states),
-		  mid_(num_of_states) {
+		  info_(num_of_states),
+		  bounds_(num_of_states) {
 		// Initially, all states are in the same equivalence class.
-		first_[0] = mid_[0] = 0;
-		end_[0] = num_of_states;
+		bounds_[0] = {.first = 0, .mid = 0, .end = num_of_states};
 		for (State e = 0; e < num_of_states; ++e) {
-			elems_[e] = location_[e] = e;
-			set_idx[e] = 0;
+			elems_[e] = e;
+			info_[e] = {.set = 0, .location = e};
 		}
 	}
 
@@ -1135,14 +1139,7 @@ class RefinablePartition {
 	 *
 	 * @param delta The transition function.
 	 */
-	explicit RefinablePartition(const Delta& delta)
-		: num_of_sets(0),
-		  set_idx(),
-		  elems_(),
-		  location_(),
-		  first_(),
-		  end_(),
-		  mid_() {
+	explicit RefinablePartition(const Delta& delta) : num_of_sets(0) {
 		size_t num_of_transitions = 0;
 		std::vector<size_t> counts;
 		std::unordered_map<Symbol, size_t> symbol_map;
@@ -1161,81 +1158,36 @@ class RefinablePartition {
 
 		// Initialize data structures.
 		elems_.resize(num_of_transitions);
-		location_.resize(num_of_transitions);
-		set_idx.resize(num_of_transitions);
-		first_.resize(num_of_transitions);
-		end_.resize(num_of_transitions);
-		mid_.resize(num_of_transitions);
+		info_.resize(num_of_transitions);
+		bounds_.resize(num_of_transitions);
 
 		// Compute set indices.
 		// Use (mid - 1) as an index for the insertion.
-		first_[0] = 0;
-		end_[0] = counts[0];
-		mid_[0] = end_[0];
+		bounds_[0] = {.first = 0, .mid = counts[0], .end = counts[0]};
 		for (size_t i = 1; i < num_of_sets; ++i) {
-			first_[i] = end_[i - 1];
-			end_[i] = first_[i] + counts[i];
-			mid_[i] = end_[i];
+			const size_t first{bounds_[i - 1].end};
+			bounds_[i] = {.first = first, .mid = first + counts[i], .end = first + counts[i]};
 		}
 
 		// Fill the sets from the back.
 		// Mid, decremented before use, is used as an index for the next element.
 		size_t trans_idx = 0; // Index of the transition in the (flattened) delta.
 		for (const auto& trans : delta.transitions()) {
-			const Symbol a = trans.symbol;
-			const size_t a_idx = symbol_map[a];
-			const size_t trans_loc = mid_[a_idx] - 1;
-			mid_[a_idx] = trans_loc;
+			const size_t a_idx = symbol_map[trans.symbol];
+			const size_t trans_loc = --bounds_[a_idx].mid;
 			elems_[trans_loc] = trans_idx;
-			location_[trans_idx] = trans_loc;
-			set_idx[trans_idx] = a_idx;
+			info_[trans_idx] = {.set = a_idx, .location = trans_loc};
 			++trans_idx;
 		}
 	}
 
-	RefinablePartition(const RefinablePartition& other)
-		: num_of_sets(other.num_of_sets),
-		  set_idx(other.set_idx),
-		  elems_(other.elems_),
-		  location_(other.location_),
-		  first_(other.first_),
-		  end_(other.end_),
-		  mid_(other.mid_) {}
-
-	RefinablePartition(RefinablePartition&& other) noexcept
-		: num_of_sets(other.num_of_sets),
-		  set_idx(std::move(other.set_idx)),
-		  elems_(std::move(other.elems_)),
-		  location_(std::move(other.location_)),
-		  first_(std::move(other.first_)),
-		  end_(std::move(other.end_)),
-		  mid_(std::move(other.mid_)) {}
-
-	RefinablePartition& operator=(const RefinablePartition& other) {
-		if (this != &other) {
-			elems_ = other.elems_;
-			set_idx = other.set_idx;
-			location_ = other.location_;
-			first_ = other.first_;
-			end_ = other.end_;
-			mid_ = other.mid_;
-			num_of_sets = other.num_of_sets;
-		}
-		return *this;
-	}
-
-	RefinablePartition& operator=(RefinablePartition&& other) noexcept {
-		if (this != &other) {
-			elems_ = std::move(other.elems_);
-			set_idx = std::move(other.set_idx);
-			location_ = std::move(other.location_);
-			first_ = std::move(other.first_);
-			end_ = std::move(other.end_);
-			mid_ = std::move(other.mid_);
-			num_of_sets = other.num_of_sets;
-		}
-		return *this;
-	}
+	/**
+	 * @brief Get the index of the set the element belongs to.
+	 *
+	 * @param e The element.
+	 * @return The index of the set.
+	 */
+	inline size_t set_of(const T e) const { return info_[e].set; }
 
 	~RefinablePartition() = default;
 
@@ -1252,7 +1204,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The size of the set.
 	 */
-	size_t size_of_set(const size_t s) const { return end_[s] - first_[s]; }
+	inline size_t size_of_set(const size_t s) const { return bounds_[s].end - bounds_[s].first; }
 
 	/**
 	 * @brief Get the first element of the set.
@@ -1260,7 +1212,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The first element of the set.
 	 */
-	T get_first(const size_t s) const { return elems_[first_[s]]; }
+	inline T get_first(const size_t s) const { return elems_[bounds_[s].first]; }
 
 	/**
 	 * @brief Get the next element of the set.
@@ -1268,9 +1220,10 @@ class RefinablePartition {
 	 * @param e The element.
 	 * @return The next element of the set or NO_MORE_ELEMENTS if there is no next element.
 	 */
-	T get_next(const T e) const {
-		if (location_[e] + 1 >= end_[set_idx[e]]) { return no_more_elements; }
-		return elems_[location_[e] + 1];
+	inline T get_next(const T e) const {
+		const ElementInfo& e_info{info_[e]};
+		if (e_info.location + 1 >= bounds_[e_info.set].end) { return no_more_elements; }
+		return elems_[e_info.location + 1];
 	}
 
 	/**
@@ -1279,15 +1232,15 @@ class RefinablePartition {
 	 * @param e The element.
 	 */
 	void mark(const T e) {
-		const size_t e_set = set_idx[e];
-		const size_t e_loc = location_[e];
-		const size_t e_set_mid = mid_[e_set];
-		if (e_loc >= e_set_mid) {
-			elems_[e_loc] = elems_[e_set_mid];
-			location_[elems_[e_loc]] = static_cast<T>(e_loc);
+		ElementInfo& e_info{info_[e]};
+		size_t& e_set_mid{bounds_[e_info.set].mid};
+		if (const size_t e_loc{e_info.location}; e_loc >= e_set_mid) {
+			const T moved{elems_[e_set_mid]};
+			elems_[e_loc] = moved;
+			info_[moved].location = e_loc;
 			elems_[e_set_mid] = e;
-			location_[e] = static_cast<T>(e_set_mid);
-			mid_[e_set] = e_set_mid + 1;
+			e_info.location = e_set_mid;
+			++e_set_mid;
 		}
 	}
 
@@ -1297,7 +1250,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return True if the set has no marked elements, false otherwise.
 	 */
-	bool has_no_marks(const size_t s) const { return mid_[s] == first_[s]; }
+	inline bool has_no_marks(const size_t s) const { return bounds_[s].mid == bounds_[s].first; }
 
 	/**
 	 * @brief Split the set into two sets according to the marked elements (the mid).
@@ -1307,19 +1260,20 @@ class RefinablePartition {
 	 * @return The new set index.
 	 */
 	size_t split(const size_t s) {
-		if (mid_[s] == end_[s]) {
+		SetBounds& s_bounds{bounds_[s]};
+		if (s_bounds.mid == s_bounds.end) {
 			// If no elements were marked, move the mid to the end (no split needed).
-			mid_[s] = first_[s];
+			s_bounds.mid = s_bounds.first;
 		}
-		if (mid_[s] == first_[s]) {
+		if (s_bounds.mid == s_bounds.first) {
 			// If all or no elements were marked, there is no need to split the set.
 			return no_split;
-		} // Split the set according to the mid.
-		first_[num_of_sets] = first_[s];
-		mid_[num_of_sets] = first_[s];
-		end_[num_of_sets] = mid_[s];
-		first_[s] = mid_[s];
-		for (size_t l = first_[num_of_sets]; l < end_[num_of_sets]; ++l) { set_idx[elems_[l]] = num_of_sets; }
+		}
+		// Split the set according to the mid.
+		const SetBounds marked{.first = s_bounds.first, .mid = s_bounds.first, .end = s_bounds.mid};
+		s_bounds.first = s_bounds.mid;
+		bounds_[num_of_sets] = marked;
+		for (size_t l = marked.first; l < marked.end; ++l) { info_[elems_[l]].set = num_of_sets; }
 		return num_of_sets++;
 	}
 };
@@ -1377,7 +1331,7 @@ RefinablePartition<State> refine_by_hopcroft(const Nfa& aut) {
 		// Transitions in one splitter must have the same symbol and go to the same block.
 		for (State q = brp.get_first(b_prime); q != RefinablePartition<State>::no_more_elements; q = brp.get_next(q)) {
 			for (const size_t trans_index : incoming_trans_idxs[q]) {
-				if (const size_t splitter_idx = trp.set_idx[trans_index]; trp.has_no_marks(splitter_idx)) {
+				if (const size_t splitter_idx = trp.set_of(trans_index); trp.has_no_marks(splitter_idx)) {
 					touched_splitters.push(splitter_idx);
 				}
 				// Mark the transition in the splitter and move it to the first half of the set.
@@ -1415,7 +1369,7 @@ RefinablePartition<State> refine_by_hopcroft(const Nfa& aut) {
 		for (size_t trans_index = trp.get_first(splitter_idx);
 			 trans_index != RefinablePartition<size_t>::no_more_elements; trans_index = trp.get_next(trans_index)) {
 			const State q = trans_source_map[trans_index];
-			if (const size_t b_prime = brp.set_idx[q]; brp.has_no_marks(b_prime)) { touched_blocks.push(b_prime); }
+			if (const size_t b_prime = brp.set_of(q); brp.has_no_marks(b_prime)) { touched_blocks.push(b_prime); }
 			brp.mark(q);
 		}
 		// Try to split the blocks touched during the backpropagation.
@@ -1576,7 +1530,7 @@ Nfa quotient_by_bisimulation(const Nfa& aut, StateRenaming& state_renaming) {
 	std::vector<State> reduced(num_of_states);
 	Nfa result;
 	for (State q{0}; q < num_of_states; ++q) {
-		State& reduced_q{reduced_of_block[brp.set_idx[q]]};
+		State& reduced_q{reduced_of_block[brp.set_of(q)]};
 		if (reduced_q == Limits::max_state) { reduced_q = result.add_state(); }
 		reduced[q] = reduced_q;
 	}
@@ -1614,14 +1568,14 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 
 	// Construct the minimized automaton using equivalence classes (BRP).
 	MATA_ASSERT(dfa_trimmed.initial.size() == 1);
-	Nfa result(brp.num_of_sets, {static_cast<State>(brp.set_idx[*dfa_trimmed.initial.begin()])}, {});
+	Nfa result(brp.num_of_sets, {static_cast<State>(brp.set_of(*dfa_trimmed.initial.begin()))}, {});
 	for (State block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
 		const State q = brp.get_first(block_idx);
 		if (dfa_trimmed.final.contains(q)) { result.final.insert(block_idx); }
 		StatePost& mut_state_post = result.delta.mutable_state_post(block_idx);
 		for (const SymbolPost& symbol_post : dfa_trimmed.delta[q]) {
 			MATA_ASSERT(symbol_post.targets.size() == 1);
-			const auto target{static_cast<State>(brp.set_idx[*symbol_post.targets.begin()])};
+			const auto target{static_cast<State>(brp.set_of(*symbol_post.targets.begin()))};
 			mut_state_post.push_back(SymbolPost{symbol_post.symbol, target});
 		}
 	}
