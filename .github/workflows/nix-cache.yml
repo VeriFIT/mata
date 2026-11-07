@@ -1,11 +1,13 @@
 name: Nix cache
 # Fills the `mata` Cachix cache with the merged state of `devel`, which pull requests (`nix-flake-check`) pull from.
+# TODO(ci): Enable `push` and `schedule` once the Nix packages take only the files they build from, so that pull
+#  requests can reuse the cached builds of devel; any changed tracked file currently rebuilds every package.
 on:
-  push:
-    branches: [devel]
-  # Merges done with GITHUB_TOKEN (the Dependabot auto-merge) trigger no `push` run, so `devel` is also cached daily.
-  schedule:
-    - cron: "0 4 * * *"
+  # push:
+  #   branches: [devel]
+  # # Merges done with GITHUB_TOKEN (the Dependabot auto-merge) trigger no `push` run, so `devel` is also cached daily.
+  # schedule:
+  #   - cron: "0 4 * * *"
   workflow_dispatch:
 permissions:
   contents: read
