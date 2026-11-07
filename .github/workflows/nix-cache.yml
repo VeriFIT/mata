@@ -1,0 +1,25 @@
+name: Nix cache
+# Fills the `mata` Cachix cache with the merged state of `devel`, which pull requests (`nix-flake-check`) pull from.
+on:
+  push:
+    branches: [devel]
+permissions:
+  contents: read
+concurrency:
+  group: nix-cache
+  cancel-in-progress: true
+jobs:
+  push-to-cachix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - uses: actions/checkout@v6
+      - name: Build all packages and run the flake checks
+        run: nix flake check --print-build-logs
+      - name: Build the development shells
+        run: nix build --no-link --print-build-logs .#devShells.x86_64-linux.{default,clang,gcc}
