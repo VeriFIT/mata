@@ -22,7 +22,11 @@ See the [`mata-sys` README](bindings/rust/mata-sys/README.md#webassembly) for th
 
 ## The playground
 
-The [playground](https://verifit.github.io/mata/playground/) on the website runs Mata compiled to WASM. Its interface to JavaScript is in [`bindings/wasm`](bindings/wasm/), and its page in [`site/playground`](site/playground/). With `emcmake` on `PATH`, build it, test the build under Node, download [Viz.js](https://github.com/mdaines/viz-js) (which draws the automata), and serve the website at <http://localhost:8000>:
+The [playground](https://verifit.github.io/mata/playground/) on the website runs Mata compiled to WASM.
+Its interface to JavaScript is in [`bindings/wasm`](bindings/wasm/), and its page is in
+[`site/playground`](site/playground/).
+With `emcmake` on `PATH`, build it, test the build under Node, download [Viz.js](https://github.com/mdaines/viz-js)
+(which draws the automata), and serve the website at <http://localhost:8000>:
 
 ```shell
 just site playground
@@ -37,4 +41,5 @@ cmake --build build-wasm --parallel
 node bindings/wasm/smoke-test.mjs build-wasm/mata-playground.js
 ```
 
-The workflow [`website.yml`](.github/workflows/website.yml) builds the website with the documentation and deploys it to GitHub Pages when `master` is released.
+The workflow [`website.yml`](.github/workflows/website.yml) builds the website with the documentation and deploys it
+to GitHub Pages when `master` is released.
