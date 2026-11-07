@@ -1,0 +1,47 @@
+version: 2
+# The lock files feed the same Nix outputs (the development shells are built from uv.lock and the Rust package from
+#  Cargo.lock), so they are bumped together and checked together by the `nix-flake-check` job.
+multi-ecosystem-groups:
+  deps:
+    schedule:
+      interval: "weekly"
+    target-branch: "devel"
+    commit-message:
+      prefix: "deps: +chore "
+updates:
+  # The `deps` updates are auto-merged; a week-old release has had time to be yanked if it is compromised.
+  - package-ecosystem: "nix"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "deps"
+    cooldown:
+      default-days: 7
+  # Lock files only: raising the lower bounds in pyproject.toml/Cargo.toml would force newer dependencies on the users of
+  #  the published packages.
+  - package-ecosystem: "uv"
+    directory: "/"
+    versioning-strategy: "lockfile-only"
+    patterns: ["*"]
+    multi-ecosystem-group: "deps"
+    cooldown:
+      default-days: 7
+  - package-ecosystem: "cargo"
+    directory: "/bindings/rust"
+    versioning-strategy: "lockfile-only"
+    patterns: ["*"]
+    multi-ecosystem-group: "deps"
+    cooldown:
+      default-days: 7
+  # Separate from `deps` and never auto-merged: the release workflows only run after a merge, so a pull request cannot
+  #  test an update of the actions they use.
+  - package-ecosystem: "github-actions"
+    # `/` covers only the workflows; the local composite actions need their own directories.
+    directories: ["/", "/.github/workflows/actions/*"]
+    target-branch: "devel"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "github: +chore "
+    groups:
+      actions:
+        patterns: ["*"]
