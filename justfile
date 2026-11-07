@@ -12,6 +12,7 @@ mod cpp 'src/cpp.just'
 mod docs 'docs/docs.just'
 mod examples 'examples/examples.just'
 mod nix 'nix/nix.just'
+mod site 'site/site.just'
 mod tests-cpp 'tests/tests.just'
 
 alias t := test
@@ -48,7 +49,7 @@ release-debuginfo: (cpp::build "release-debuginfo")
 lint *ARGS: (cpp::lint BUILD_MODE ARGS)
 
 # Remove the build artifacts of the project, the bindings, and the documentation.
-clean: cpp::clean bindings::clean docs::clean
+clean: cpp::clean bindings::clean docs::clean site::clean
 
 # TODO: Implement.
 ci:

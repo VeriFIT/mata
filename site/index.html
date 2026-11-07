@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Mata: a fast and simple finite automata library</title>
+    <meta
+      name="description"
+      content="Mata is an open-source C++ library for finite automata with Python and Rust bindings. It builds automata from regular expressions, determinizes, minimizes and reduces them, combines them, and decides emptiness, inclusion and equivalence."
+    />
+    <link rel="canonical" href="https://verifit.github.io/mata/" />
+    <meta
+      name="theme-color"
+      content="#F4F6F9"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#111A30"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mata" />
+    <meta property="og:url" content="https://verifit.github.io/mata/" />
+    <meta
+      property="og:title"
+      content="Mata: a fast and simple finite automata library"
+    />
+    <meta
+      property="og:description"
+      content="An open-source C++ library for finite automata, with Python and Rust bindings and a playground that runs in your browser."
+    />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      href="assets/fonts/source-serif-4-roman-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="assets/fonts/ibm-plex-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script src="assets/theme.js"></script>
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+        <a class="wordmark" href="./" aria-label="Mata home">
+          <svg class="wordmark-glyph" viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="12.5" />
+            <circle cx="16" cy="16" r="8.5" />
+          </svg>
+          <span>Mata</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a class="nav-local" href="#features">Features</a>
+          <a class="nav-local" href="#start">Get started</a>
+          <a class="nav-local" href="#papers">Publications</a>
+          <a href="playground/">Playground</a>
+          <a href="docs/">Documentation</a>
+          <a href="https://github.com/VeriFIT/mata">GitHub</a>
+        </nav>
+        <button
+          class="theme-toggle"
+          type="button"
+          aria-label="Switch between light and dark theme"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-text">
+          <h1 id="hero-title">Mata</h1>
+          <p class="tagline">
+            A fast and simple library for finite automata, with interfaces in
+            C++, Python and Rust.
+          </p>
+          <p class="lead">
+            Mata builds automata from regular expressions and from its own
+            <code>.mata</code> format, then determinizes, minimizes, reduces and
+            combines them, and decides emptiness, inclusion and equivalence.
+            When the answer is no, it also gives you a word that shows why. Mata
+            is the automata engine of the
+            <a href="https://github.com/VeriFIT/z3-noodler">Z3-Noodler</a>
+            string solver.
+          </p>
+          <div class="actions">
+            <a class="button button-primary" href="playground/"
+              >Try the playground</a
+            >
+            <a class="button" href="docs/">Read the documentation</a>
+          </div>
+        </div>
+
+        <figure class="automaton-demo" aria-labelledby="demo-caption">
+          <!-- The labels of the states must stay on one line: a line break would show as a space. -->
+          <!-- prettier-ignore -->
+          <svg class="dfa" viewBox="12 12 540 252" role="img" aria-labelledby="dfa-title dfa-desc">
+            <title id="dfa-title">The minimal deterministic automaton for (a|b)*abb</title>
+            <desc id="dfa-desc">Four states, q0 to q3. q0 is initial and q3 is final. From q0, a leads to q1 and b stays in q0. From q1, a stays in q1 and b leads to q2. From q2, a leads back to q1 and b leads to q3. From q3, a leads to q1 and b leads back to q0.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto">
+                <path class="arrowhead" d="M0 1 L10 5 L0 9 z"/>
+              </marker>
+              <marker id="arrow-active" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="13" markerHeight="13" markerUnits="userSpaceOnUse" orient="auto">
+                <path class="arrowhead-active" d="M0 1 L10 5 L0 9 z"/>
+              </marker>
+            </defs>
+            <path class="edge" d="M24 100 H63" marker-end="url(#arrow)"/>
+            <g class="edge-group" data-from="0" data-symbol="b">
+              <path class="edge" d="M77 77.5 C58 30 122 30 103 77.5" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="90" y="37">b</text>
+            </g>
+            <g class="edge-group" data-from="0" data-symbol="a">
+              <path class="edge" d="M116 100 H203" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="160" y="91">a</text>
+            </g>
+            <g class="edge-group" data-from="1" data-symbol="a">
+              <path class="edge" d="M217 77.5 C198 30 262 30 243 77.5" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="230" y="37">a</text>
+            </g>
+            <g class="edge-group" data-from="1" data-symbol="b">
+              <path class="edge" d="M256 100 H343" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="300" y="91">b</text>
+            </g>
+            <g class="edge-group" data-from="2" data-symbol="a">
+              <path class="edge" d="M357 122.5 Q300 170 243 122.5" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="300" y="141">a</text>
+            </g>
+            <g class="edge-group" data-from="2" data-symbol="b">
+              <path class="edge" d="M396 100 H483" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="440" y="91">b</text>
+            </g>
+            <g class="edge-group" data-from="3" data-symbol="a">
+              <path class="edge" d="M497 122.5 C470 205 215 205 220 124" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="347" y="205">a</text>
+            </g>
+            <g class="edge-group" data-from="3" data-symbol="b">
+              <path class="edge" d="M510 126 C500 270 100 270 90 126" marker-end="url(#arrow)"/>
+              <text class="edge-label" x="300" y="253">b</text>
+            </g>
+            <g class="state" data-state="0"><circle cx="90" cy="100" r="26"/><text x="88" y="105">q<tspan class="sub" dy="5">0</tspan></text></g>
+            <g class="state" data-state="1"><circle cx="230" cy="100" r="26"/><text x="228" y="105">q<tspan class="sub" dy="5">1</tspan></text></g>
+            <g class="state" data-state="2"><circle cx="370" cy="100" r="26"/><text x="368" y="105">q<tspan class="sub" dy="5">2</tspan></text></g>
+            <g class="state state-final" data-state="3"><circle cx="510" cy="100" r="26"/><circle class="inner" cx="510" cy="100" r="21.5"/><text x="508" y="105">q<tspan class="sub" dy="5">3</tspan></text></g>
+          </svg>
+
+          <div class="demo-controls">
+            <label class="demo-label" for="demo-word">Word to read</label>
+            <input
+              id="demo-word"
+              class="demo-input"
+              type="text"
+              value="abaabb"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="40"
+              aria-describedby="demo-verdict"
+            />
+            <button class="button button-small demo-replay" type="button">
+              Replay
+            </button>
+            <ol class="tape" aria-hidden="true"></ol>
+            <p class="verdict" id="demo-verdict" aria-live="polite"></p>
+          </div>
+          <figcaption id="demo-caption">
+            The minimal deterministic automaton for <code>(a|b)*abb</code>, the
+            words over <i>a</i> and <i>b</i> ending in <i>abb</i>. Type a word
+            to run it.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="chapter" id="features" aria-labelledby="features-title">
+        <h2 id="features-title">What Mata does</h2>
+        <p class="chapter-lead">
+          Mata covers the automata operations that verification tools and string
+          solvers rely on, with the algorithms that make them fast in practice:
+          antichains for inclusion and universality, simulations for reduction,
+          and a compact transition relation underneath.
+        </p>
+        <dl class="capabilities">
+          <div class="capability">
+            <dt>Build</dt>
+            <dd>
+              Create automata from regular expressions (parsed by
+              <a href="https://github.com/google/re2">RE2</a>), from the textual
+              <a href="docs/automata-format.html"><code>.mata</code> format</a>,
+              or transition by transition.
+            </dd>
+          </div>
+          <div class="capability">
+            <dt>Transform</dt>
+            <dd>
+              Determinize, minimize with Hopcroft’s or Brzozowski’s algorithm,
+              reduce by simulation or to a residual automaton, trim, remove
+              <span class="nowrap">ε-transitions</span>, reverse and complement.
+            </dd>
+          </div>
+          <div class="capability">
+            <dt>Combine</dt>
+            <dd>
+              Intersect automata with the product construction, unite and
+              concatenate them, and compute language differences.
+            </dd>
+          </div>
+          <div class="capability">
+            <dt>Decide</dt>
+            <dd>
+              Check emptiness, universality, inclusion and equivalence. A
+              negative answer comes with a word that witnesses it.
+            </dd>
+          </div>
+          <div class="capability">
+            <dt>Solve string constraints</dt>
+            <dd>
+              Split automata into segments at
+              <span class="nowrap">ε-transitions</span> and enumerate their
+              noodles, the decision procedure behind Z3-Noodler.
+            </dd>
+          </div>
+          <div class="capability">
+            <dt>Transduce</dt>
+            <dd>
+              Compose finite transducers, apply them to words and automata, and
+              project out their tapes. Transducer support is experimental, and
+              its interface may still change.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="chapter" id="start" aria-labelledby="start-title">
+        <h2 id="start-title">Get started</h2>
+        <p class="chapter-lead">
+          The same small program in each language: an automaton with four
+          states, two of them initial and two final, printed in the DOT format.
+        </p>
+
+        <div class="tabs" data-tabs>
+          <div class="tab-list" role="tablist" aria-label="Language">
+            <button
+              class="tab"
+              type="button"
+              role="tab"
+              id="tab-cpp"
+              aria-controls="panel-cpp"
+              aria-selected="true"
+            >
+              C++
+            </button>
+            <button
+              class="tab"
+              type="button"
+              role="tab"
+              id="tab-python"
+              aria-controls="panel-python"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Python
+            </button>
+            <button
+              class="tab"
+              type="button"
+              role="tab"
+              id="tab-rust"
+              aria-controls="panel-rust"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Rust
+            </button>
+          </div>
+
+          <div
+            class="tab-panel"
+            role="tabpanel"
+            id="panel-cpp"
+            aria-labelledby="tab-cpp"
+          >
+            <div class="steps">
+              <div class="step">
+                <h3>Add Mata to your CMake project</h3>
+                <p>
+                  Use an installed Mata, or let CMake fetch and build it. Mata
+                  needs CMake 3.23 and a C++23 compiler (GCC 14 or Clang 18).
+                </p>
+                <pre class="code"><code>include(FetchContent)
+find_package(mata QUIET)
+if(NOT mata_FOUND)
+  FetchContent_Declare(mata
+    GIT_REPOSITORY https://github.com/VeriFIT/mata
+    GIT_TAG devel)
+  FetchContent_MakeAvailable(mata)
+endif()
+target_link_libraries(my-project PUBLIC mata::libmata)</code></pre>
+                <p class="aside">
+                  Mata is also packaged for Nix:
+                  <code>nix build nixpkgs#mata</code>.
+                </p>
+              </div>
+              <div class="step">
+                <h3>Write and run</h3>
+                <pre class="code"><code>#include &lt;iostream&gt;
+#include &lt;mata/nfa/nfa.hh&gt;
+
+using namespace mata::nfa;
+
+int main() {
+    Nfa aut(4);
+    aut.initial = {0, 1};
+    aut.final = {2, 3};
+    aut.delta.add(0, 0, 2);
+    aut.delta.add(1, 1, 3);
+
+    aut.print_to_dot(std::cout);
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="tab-panel"
+            role="tabpanel"
+            id="panel-python"
+            aria-labelledby="tab-python"
+            hidden
+          >
+            <div class="steps">
+              <div class="step">
+                <h3>Install the <code>libmata</code> package</h3>
+                <p>
+                  The package is on PyPI and needs Python 3.13 or newer.
+                  Installing it compiles Mata, which needs CMake 3.23 and a
+                  C++23 compiler (GCC 14 or Clang 18).
+                </p>
+                <pre class="code"><code>pip install libmata
+# or, with uv:
+uv add libmata</code></pre>
+              </div>
+              <div class="step">
+                <h3>Write and run</h3>
+                <pre class="code"><code>import libmata.nfa.nfa as mata_nfa
+
+aut = mata_nfa.Nfa(4)
+aut.initial_states = {0, 1}
+aut.final_states = {2, 3}
+aut.add_transition(0, 0, 2)
+aut.add_transition(1, 1, 3)
+
+print(aut.to_dot_str())</code></pre>
+                <p class="aside">
+                  Three
+                  <a
+                    href="https://github.com/VeriFIT/mata/tree/devel/examples/notebooks"
+                    >Jupyter notebooks</a
+                  >
+                  show larger uses: WS1S formulae, ReDoS attacks and a maze.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="tab-panel"
+            role="tabpanel"
+            id="panel-rust"
+            aria-labelledby="tab-rust"
+            hidden
+          >
+            <div class="steps">
+              <div class="step">
+                <h3>Add the <code>mata</code> crate</h3>
+                <p>
+                  The crate needs Rust 1.88 or newer. Its companion crate
+                  <code>mata-sys</code> compiles Mata, which needs CMake 3.23
+                  and a C++23 compiler (GCC 14 or Clang 18).
+                </p>
+                <pre class="code"><code>cargo add mata</code></pre>
+              </div>
+              <div class="step">
+                <h3>Write and run</h3>
+                <pre class="code"><code>use mata::{Error, Nfa, State, Symbol};
+
+fn main() -&gt; Result&lt;(), Error&gt; {
+    let mut aut = Nfa::with_states(4);
+
+    aut.add_initial(State::new(0))?;
+    aut.add_initial(State::new(1))?;
+    aut.add_final(State::new(2))?;
+    aut.add_final(State::new(3))?;
+    aut.add_transition(State::new(0), Symbol::new(0), State::new(2))?;
+    aut.add_transition(State::new(1), Symbol::new(1), State::new(3))?;
+
+    println!("{}", aut.dot());
+    Ok(())
+}</code></pre>
+                <p class="aside">
+                  The API reference is on
+                  <a href="https://docs.rs/mata">docs.rs</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="chapter chapter-playground"
+        id="playground"
+        aria-labelledby="playground-title"
+      >
+        <h2 id="playground-title">Try it in your browser</h2>
+        <div class="playground-teaser">
+          <p>
+            The playground runs Mata compiled to WebAssembly. Enter regular
+            expressions or automata in the <code>.mata</code> format, then
+            determinize, minimize, intersect or compare them and see the results
+            drawn as you type. Everything runs in your browser; nothing is
+            uploaded.
+          </p>
+          <a class="button button-primary" href="playground/"
+            >Open the playground</a
+          >
+        </div>
+      </section>
+
+      <section class="chapter" id="papers" aria-labelledby="papers-title">
+        <h2 id="papers-title">Publications</h2>
+        <p class="chapter-lead">
+          If you use Mata in your research, please cite the paper that
+          introduced it.
+        </p>
+        <article class="paper">
+          <p class="paper-authors">
+            David Chocholatý, Tomáš Fiedor, Vojtěch Havlena, Lukáš Holík, Martin
+            Hruška, Ondřej Lengál and Juraj Síč
+          </p>
+          <h3 class="paper-title">
+            <a href="https://doi.org/10.1007/978-3-031-57249-4_7"
+              >Mata: A Fast and Simple Finite Automata Library</a
+            >
+          </h3>
+          <p class="paper-venue">
+            In
+            <i
+              >Tools and Algorithms for the Construction and Analysis of Systems
+              (TACAS 2024)</i
+            >, LNCS 14571, pages 130–151. Springer, 2024.
+          </p>
+          <p class="paper-links">
+            <a href="https://doi.org/10.5281/zenodo.10044515"
+              >Replication package</a
+            >
+          </p>
+          <details class="bibtex">
+            <summary>BibTeX</summary>
+            <pre class="code"><code>@inproceedings{mata-tacas24,
+  author    = {Chocholat{\'y}, David and Fiedor, Tom{\'a}{\v{s}} and
+               Havlena, Vojt{\v{e}}ch and Hol{\'i}k, Luk{\'a}{\v{s}} and
+               Hru{\v{s}}ka, Martin and Leng{\'a}l, Ond{\v{r}}ej and
+               S{\'i}{\v{c}}, Juraj},
+  title     = {Mata: A Fast and Simple Finite Automata Library},
+  booktitle = {Tools and Algorithms for the Construction and Analysis
+               of Systems (TACAS 2024)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {14571},
+  pages     = {130--151},
+  publisher = {Springer},
+  year      = {2024},
+  doi       = {10.1007/978-3-031-57249-4_7}
+}</code></pre>
+          </details>
+        </article>
+      </section>
+
+      <section class="chapter" id="more" aria-labelledby="more-title">
+        <h2 id="more-title">Documentation and help</h2>
+        <ul class="link-list">
+          <li>
+            <a href="docs/">Documentation</a>
+            <span
+              >Guides to the library, the <code>.mata</code> format, and the C++
+              API reference.</span
+            >
+          </li>
+          <li>
+            <a href="https://docs.rs/mata">Rust API on docs.rs</a>
+            <span>The reference of the <code>mata</code> crate.</span>
+          </li>
+          <li>
+            <a href="https://github.com/VeriFIT/mata/tree/devel/examples"
+              >Examples</a
+            >
+            <span>C++ programs, Python scripts and Jupyter notebooks.</span>
+          </li>
+          <li>
+            <a href="https://github.com/VeriFIT/mata/issues">Issue tracker</a>
+            <span
+              >Report bugs and request features. Please report security
+              vulnerabilities to the
+              <a href="https://github.com/VeriFIT/mata/blob/devel/AUTHORS.md"
+                >authors</a
+              >
+              directly.</span
+            >
+          </li>
+          <li>
+            <a href="https://github.com/VeriFIT/mata/blob/devel/CONTRIBUTING.md"
+              >Contributing</a
+            >
+            <span>How to set up a development build and submit changes.</span>
+          </li>
+          <li>
+            <a href="https://github.com/VeriFIT/mata/releases">Releases</a>
+            <span>Versions are numbered generation.major.minor.</span>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <div class="colophon-inner">
+        <p>
+          Mata is developed by the Automata@FIT group at the
+          <a href="https://www.fit.vutbr.cz/"
+            >Faculty of Information Technology, Brno University of Technology</a
+          >. It is free software under the
+          <a href="https://github.com/VeriFIT/mata/blob/devel/LICENSE"
+            >MIT licence</a
+          >.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

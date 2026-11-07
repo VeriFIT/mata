@@ -71,6 +71,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "alabaster"
 
+# Links from the sidebar to the rest of the website, whose landing page is one level up.
+html_theme_options = {
+    "extra_nav_links": {
+        "Mata website": "https://verifit.github.io/mata/",
+        "Playground": "https://verifit.github.io/mata/playground/",
+    },
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
