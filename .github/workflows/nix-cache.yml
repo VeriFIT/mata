@@ -3,6 +3,10 @@ name: Nix cache
 on:
   push:
     branches: [devel]
+  # Merges done with GITHUB_TOKEN (the Dependabot auto-merge) trigger no `push` run, so `devel` is also cached daily.
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -18,7 +22,10 @@ jobs:
         with:
           name: mata
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Scheduled runs start on the default branch (master), so check out devel explicitly.
       - uses: actions/checkout@v6
+        with:
+          ref: devel
       - name: Build all packages and run the flake checks
         run: nix flake check --print-build-logs
       - name: Build the development shells
