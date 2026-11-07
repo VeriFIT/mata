@@ -9,10 +9,13 @@ multi-ecosystem-groups:
     commit-message:
       prefix: "deps: +chore "
 updates:
+  # The `deps` updates are auto-merged; a week-old release has had time to be yanked if it is compromised.
   - package-ecosystem: "nix"
     directory: "/"
     patterns: ["*"]
     multi-ecosystem-group: "deps"
+    cooldown:
+      default-days: 7
   # Lock files only: raising the lower bounds in pyproject.toml/Cargo.toml would force newer dependencies on the users of
   #  the published packages.
   - package-ecosystem: "uv"
@@ -20,11 +23,15 @@ updates:
     versioning-strategy: "lockfile-only"
     patterns: ["*"]
     multi-ecosystem-group: "deps"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "cargo"
     directory: "/bindings/rust"
     versioning-strategy: "lockfile-only"
     patterns: ["*"]
     multi-ecosystem-group: "deps"
+    cooldown:
+      default-days: 7
   # Separate from `deps` and never auto-merged: the release workflows only run after a merge, so a pull request cannot
   #  test an update of the actions they use.
   - package-ecosystem: "github-actions"
