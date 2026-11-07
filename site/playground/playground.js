@@ -226,51 +226,108 @@ function clearFieldErrors() {
     for (const key of ["a", "b", "word"]) setFieldError(key, null);
 }
 
-// The worker.
+// The worker. It computes one request at a time; only the newest request waits for it, and every computation has a
+// time limit, also one whose result is no longer wanted.
 
 let worker = null;
 let nextId = 1;
-let pending = null;
-let timeout = null;
+// Whether the worker has loaded Mata.
+let ready = false;
+// The request the worker is computing: { id, started }.
+let running = null;
+let runningTimer = null;
+// The newest request, waiting for the worker: { id, request }.
+let queued = null;
+// The request whose result is shown when it arrives: { id, state }.
+let wanted = null;
 let statusTimer = null;
 let latestAutomata = {};
 // The format and text of each input that `latestAutomata` were computed from.
 let latestSources = {};
-// Whether the worker has loaded Mata.
-let ready = false;
 
 function startWorker() {
+    ready = false;
     worker = new Worker("worker.js", { type: "module" });
     worker.addEventListener("message", onWorkerMessage);
     worker.addEventListener("error", (event) => {
         event.preventDefault();
-        finish();
+        worker = null;
+        running = null;
+        queued = null;
+        clearTimeout(runningTimer);
+        stopWaiting();
         showMessage(
             "The playground could not start Mata. Reload the page to try again.",
         );
-        worker = null;
     });
 }
 
 function restartWorker() {
     worker?.terminate();
+    running = null;
+    clearTimeout(runningTimer);
     startWorker();
 }
 
-function finish() {
-    pending = null;
-    clearTimeout(timeout);
+function stopWaiting() {
+    wanted = null;
     clearTimeout(statusTimer);
+    output.status.textContent = "";
 }
 
-// Drops the computation in progress, whose result no longer matches the inputs. One that has run for a while is
-// stopped; a quick one is left to finish, and its result is ignored.
-function dropPending() {
-    if (pending === null) return;
-    const long = ready && performance.now() - pending.started > 300;
-    finish();
-    output.status.textContent = "";
-    if (long) restartWorker();
+function send(job) {
+    if (worker === null) startWorker();
+    running = { id: job.id, started: performance.now() };
+    worker.postMessage({ id: job.id, request: job.request });
+    clearTimeout(runningTimer);
+    runningTimer = setTimeout(() => {
+        const timedOut = running?.id;
+        restartWorker();
+        if (wanted !== null && wanted.id === timedOut) {
+            stopWaiting();
+            showMessage(
+                `Mata did not finish within ${TIMEOUT_MS / 1000} seconds, so the computation was stopped. The result may be too large for the browser.`,
+            );
+        }
+        sendQueued();
+    }, TIMEOUT_MS);
+}
+
+function sendQueued() {
+    if (queued === null || running !== null) return;
+    const job = queued;
+    queued = null;
+    send(job);
+}
+
+// Stops waiting for the current result, whose inputs have changed. A computation that has run for a while is
+// stopped; a quick one is left to finish within its time limit, and its result is ignored.
+function abandon() {
+    stopWaiting();
+    queued = null;
+    if (running !== null && ready && performance.now() - running.started > 300)
+        restartWorker();
+}
+
+function submit(state, request) {
+    const job = { id: nextId++, request };
+    wanted = { id: job.id, state };
+    if (running === null) {
+        send(job);
+    } else {
+        queued = job;
+        // The computation in the way gets a moment to finish before it is stopped for the newer request.
+        const blocking = running.id;
+        setTimeout(() => {
+            if (ready && running?.id === blocking && queued !== null) {
+                restartWorker();
+                sendQueued();
+            }
+        }, 300);
+    }
+    statusTimer = setTimeout(() => {
+        output.status.textContent = ready ? "Computing…" : "Loading Mata…";
+    }, 200);
 }
 
 function onWorkerMessage({ data }) {
@@ -290,16 +347,20 @@ function onWorkerMessage({ data }) {
         }
         return;
     }
-    if (pending === null || data.id !== pending.id) return;
-    const { state } = pending;
-    finish();
-    if (data.failure) {
-        showMessage(data.failure);
-        output.status.textContent = "";
-        restartWorker();
-        return;
+    if (running !== null && data.id === running.id) {
+        running = null;
+        clearTimeout(runningTimer);
     }
-    render(state, data.response, data.drawings);
+    const shown = wanted !== null && data.id === wanted.id ? wanted : null;
+    if (shown !== null) stopWaiting();
+    if (data.failure) {
+        // The worker may be broken after a failure, so it is started anew.
+        if (shown !== null) showMessage(data.failure);
+        restartWorker();
+    } else if (shown !== null) {
+        render(shown.state, data.response, data.drawings);
+    }
+    sendQueued();
 }
 
 // Evaluation.
@@ -317,16 +378,15 @@ function evaluate() {
     history.replaceState(null, "", `#${encodeState(state)}`);
     updateControls(state);
     clearFieldErrors();
+    abandon();
 
     if (state.aText.trim() === "") {
-        dropPending();
         showMessage(
             "Enter automaton A: a regular expression, or an automaton in the .mata format.",
         );
         return;
     }
     if (USES_B.has(state.operation) && state.bText.trim() === "") {
-        dropPending();
         showMessage("Enter automaton B: this operation uses both A and B.");
         return;
     }
@@ -347,7 +407,6 @@ function evaluate() {
         try {
             request[`${key}Text`] = regexToBytes(request[`${key}Text`]);
         } catch (error) {
-            dropPending();
             setFieldError(key, error.message);
             showMessage(
                 `Correct automaton ${key.toUpperCase()} to see the result.`,
@@ -355,25 +414,7 @@ function evaluate() {
             return;
         }
     }
-
-    dropPending();
-    if (worker === null) startWorker();
-    const id = nextId++;
-    pending = { id, state, started: performance.now() };
-    worker.postMessage({ id, request });
-    clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => {
-        output.status.textContent = ready ? "Computing…" : "Loading Mata…";
-    }, 200);
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-        finish();
-        restartWorker();
-        output.status.textContent = "";
-        showMessage(
-            `Mata did not finish within ${TIMEOUT_MS / 1000} seconds, so the computation was stopped. The result may be too large for the browser.`,
-        );
-    }, TIMEOUT_MS);
+    submit(state, request);
 }
 
 // Showing the outcome.
