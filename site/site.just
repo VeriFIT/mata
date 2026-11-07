@@ -9,10 +9,24 @@ VIZ_VERSION := "3.31.0"
 # Build directory of the playground, compiled to WebAssembly.
 WASM_BUILD := BUILD_ROOT / "wasm"
 
-# Serve the website at http://localhost:PORT. The playground needs the files from `just site playground` first.
+# Serve the website at http://localhost:PORT, with the documentation once `just docs` has built it. The pages are linked
+# rather than copied, so edits show on reload. The playground needs the files from `just site playground` first.
 [default]
 serve PORT="8000":
-	python3 -m http.server '{{ PORT }}' --bind 127.0.0.1
+	#!/usr/bin/env bash
+	set -euo pipefail
+	root='{{ BUILD_ROOT }}/site'
+	rm -rf "$root"
+	mkdir -p "$root"
+	for entry in *; do
+		if [ "$entry" != site.just ]; then ln -s "$PWD/$entry" "$root/$entry"; fi
+	done
+	if [ -d '{{ ROOT }}/docs/_build/html' ]; then
+		ln -s '{{ ROOT }}/docs/_build/html' "$root/docs"
+	else
+		echo "The documentation is not built, so its links will not work; run 'just docs' first."
+	fi
+	python3 -m http.server '{{ PORT }}' --bind 127.0.0.1 --directory "$root"
 
 # Build Mata for the playground with Emscripten, test the build under Node, and download Viz.js.
 playground: wasm viz

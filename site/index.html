@@ -347,7 +347,11 @@ int main() {
             <div class="steps">
               <div class="step">
                 <h3>Install the <code>libmata</code> package</h3>
-                <p>The package is on PyPI and needs Python 3.13 or newer.</p>
+                <p>
+                  The package is on PyPI and needs Python 3.13 or newer.
+                  Installing it compiles Mata, which needs CMake 3.23 and a
+                  C++23 compiler (GCC 14 or Clang 18).
+                </p>
                 <pre class="code"><code>pip install libmata
 # or, with uv:
 uv add libmata</code></pre>
@@ -386,8 +390,9 @@ print(aut.to_dot_str())</code></pre>
               <div class="step">
                 <h3>Add the <code>mata</code> crate</h3>
                 <p>
-                  The crate needs Rust 1.88 or newer; its companion crate
-                  <code>mata-sys</code> builds the C++ library.
+                  The crate needs Rust 1.88 or newer. Its companion crate
+                  <code>mata-sys</code> compiles Mata, which needs CMake 3.23
+                  and a C++23 compiler (GCC 14 or Clang 18).
                 </p>
                 <pre class="code"><code>cargo add mata</code></pre>
               </div>

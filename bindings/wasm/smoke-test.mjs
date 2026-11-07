@@ -74,6 +74,28 @@ response = evaluate({
 });
 assert.equal(response.check.holds, true);
 
+// The .mata text of a result reads back as the same automaton: bytes that the reader takes for operators, and names
+// that need quotes.
+response = evaluate({ aText: "[!&|]x", operation: "show" });
+response = evaluate({
+    aFormat: "mata",
+    aText: response.automata.a.mata,
+    bText: "[!&|]x",
+    operation: "are_equivalent",
+});
+assert.equal(response.check.holds, true);
+const quoted =
+    '@NFA-explicit\n%Alphabet-auto\n%Initial s\n%Final f\ns "foo bar" f\n';
+response = evaluate({ aFormat: "mata", aText: quoted, operation: "show" });
+response = evaluate({
+    aFormat: "mata",
+    aText: response.automata.a.mata,
+    bFormat: "mata",
+    bText: quoted,
+    operation: "are_equivalent",
+});
+assert.equal(response.check.holds, true);
+
 // Errors in the inputs are reported, which needs working C++ exceptions.
 response = evaluate({ aText: "(a|b", operation: "show" });
 assert.equal(response.ok, false);

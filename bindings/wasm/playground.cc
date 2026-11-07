@@ -12,6 +12,7 @@
 #include "mata/parser/re2parser.hh"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <exception>
@@ -23,6 +24,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+// Set by CMakeLists.txt.
+#ifndef MATA_PLAYGROUND_REVISION
+	#define MATA_PLAYGROUND_REVISION ""
+#endif
 
 namespace mata::playground {
 namespace {
@@ -52,9 +58,9 @@ class InputError : public std::runtime_error {
 };
 
 /// The name of byte @p byte: the character itself for a printable ASCII character that can stand unquoted in the
-///  .mata format, and \\xHH otherwise.
+///  .mata format, and \\xHH otherwise. The reader takes `!`, `&` and `|` for operators, so they are written as \\xHH.
 std::string byte_name(const unsigned byte) {
-	constexpr std::string_view SPECIAL{"\"#%()@\\"};
+	constexpr std::string_view SPECIAL{"\"#%()@\\!&|"};
 	if (byte > 0x20 && byte < 0x7f && SPECIAL.find(static_cast<char>(byte)) == std::string_view::npos) {
 		return std::string(1, static_cast<char>(byte));
 	}
@@ -104,6 +110,15 @@ std::string error_json(const std::string_view source, const std::string_view mes
 	return out;
 }
 
+/// Whether the symbol name @p name has to be quoted to read back as a single token of the .mata format.
+bool needs_quotes(const std::string_view name) {
+	if (name.empty() || name.front() == '@' || name.front() == '%') { return true; }
+	return std::ranges::any_of(name, [](const char ch) {
+		return std::isspace(static_cast<unsigned char>(ch)) != 0 ||
+			   std::string_view{"\"#()!&|"}.find(ch) != std::string_view::npos;
+	});
+}
+
 bool has_epsilon(const Nfa& aut) {
 	for (const Transition& transition : aut.delta.transitions()) {
 		if (transition.symbol == EPSILON) { return true; }
@@ -134,6 +149,9 @@ class Evaluation {
 	utils::OrdVector<Symbol> alphabet_symbols(const Nfa& a, const Nfa* b);
 	void append_automaton(std::string& out, const Nfa& aut, const std::vector<std::string>& state_names);
 	void append_word(std::string& out, const Word& word);
+	/// @p aut in the .mata format. Unlike Nfa::print_to_mata(), it quotes the symbol names that need it, so that the
+	///  text reads back as the same automaton.
+	std::string to_mata(const Nfa& aut);
 	int symbol_index(Symbol symbol);
 
 	const Request& request_;
@@ -216,6 +234,48 @@ int Evaluation::symbol_index(const Symbol symbol) {
 	return it->second;
 }
 
+std::string Evaluation::to_mata(const Nfa& aut) {
+	std::string out{"@NFA-explicit\n%Alphabet-auto\n"};
+	const auto append_states = [&out](const std::string_view key, const auto& states) {
+		if (states.empty()) { return; }
+		out += key;
+		for (const State state : states) {
+			out += " q";
+			out += std::to_string(state);
+		}
+		out += '\n';
+	};
+	append_states("%Initial", aut.initial);
+	append_states("%Final", aut.final);
+	std::unordered_map<Symbol, std::string> names{};
+	for (const Transition& transition : aut.delta.transitions()) {
+		auto it{names.find(transition.symbol)};
+		if (it == names.end()) {
+			std::string name{
+				transition.symbol == EPSILON ? std::string{EPSILON_NAME}
+											 : alphabet_.reverse_translate_symbol(transition.symbol)
+			};
+			if (transition.symbol != EPSILON && needs_quotes(name)) {
+				std::string quoted{'"'};
+				for (const char ch : name) {
+					if (ch == '"') { quoted += '\\'; }
+					quoted += ch;
+				}
+				name = quoted + '"';
+			}
+			it = names.emplace(transition.symbol, std::move(name)).first;
+		}
+		out += 'q';
+		out += std::to_string(transition.source);
+		out += ' ';
+		out += it->second;
+		out += " q";
+		out += std::to_string(transition.target);
+		out += '\n';
+	}
+	return out;
+}
+
 void Evaluation::append_word(std::string& out, const Word& word) {
 	out += '[';
 	bool first{true};
@@ -279,7 +339,7 @@ void Evaluation::append_automaton(std::string& out, const Nfa& aut, const std::v
 		}
 		out += ']';
 	}
-	std::string mata{aut.print_to_mata(&alphabet_)};
+	std::string mata{to_mata(aut)};
 	const bool truncated{mata.size() > MAX_MATA_LENGTH};
 	if (truncated) { mata.resize(mata.rfind('\n', MAX_MATA_LENGTH) + 1); }
 	out += R"(,"mata":)";

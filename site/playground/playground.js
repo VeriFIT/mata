@@ -58,6 +58,11 @@ const HINTS = {
     mata: "An @NFA-explicit automaton with %Alphabet-auto; write <eps> for ε.",
 };
 
+const WORD_HINTS = {
+    regex: "Type the word character by character; write \\xHH for any byte. Leave it empty for the empty word.",
+    mata: "Write the names of the symbols, separated by spaces. Leave it empty for the empty word.",
+};
+
 const MATA_TEMPLATE = `@NFA-explicit
 %Alphabet-auto
 %Initial s
@@ -196,6 +201,8 @@ function updateControls(state) {
         .classList.toggle("is-unused", !USES_B.has(state.operation));
     document.getElementById("word-option").hidden =
         state.operation !== "is_in_lang";
+    document.getElementById("word-hint").textContent =
+        WORD_HINTS[state.aFormat];
     document.getElementById("alphabet-option").hidden = !WITH_ALPHABET.has(
         state.operation,
     );
@@ -227,6 +234,8 @@ let pending = null;
 let timeout = null;
 let statusTimer = null;
 let latestAutomata = {};
+// The format and text of each input that `latestAutomata` were computed from.
+let latestSources = {};
 // Whether the worker has loaded Mata.
 let ready = false;
 
@@ -252,6 +261,16 @@ function finish() {
     pending = null;
     clearTimeout(timeout);
     clearTimeout(statusTimer);
+}
+
+// Drops the computation in progress, whose result no longer matches the inputs. One that has run for a while is
+// stopped; a quick one is left to finish, and its result is ignored.
+function dropPending() {
+    if (pending === null) return;
+    const long = ready && performance.now() - pending.started > 300;
+    finish();
+    output.status.textContent = "";
+    if (long) restartWorker();
 }
 
 function onWorkerMessage({ data }) {
@@ -300,12 +319,14 @@ function evaluate() {
     clearFieldErrors();
 
     if (state.aText.trim() === "") {
+        dropPending();
         showMessage(
             "Enter automaton A: a regular expression, or an automaton in the .mata format.",
         );
         return;
     }
     if (USES_B.has(state.operation) && state.bText.trim() === "") {
+        dropPending();
         showMessage("Enter automaton B: this operation uses both A and B.");
         return;
     }
@@ -317,7 +338,7 @@ function evaluate() {
         operation: state.operation,
         word:
             state.operation === "is_in_lang"
-                ? wordNames(state.word).join("\n")
+                ? wordNames(state.word, state.aFormat).join("\n")
                 : "",
         alphabet: state.alphabet,
     };
@@ -326,6 +347,7 @@ function evaluate() {
         try {
             request[`${key}Text`] = regexToBytes(request[`${key}Text`]);
         } catch (error) {
+            dropPending();
             setFieldError(key, error.message);
             showMessage(
                 `Correct automaton ${key.toUpperCase()} to see the result.`,
@@ -334,9 +356,7 @@ function evaluate() {
         }
     }
 
-    // A computation that has run for a while is abandoned; a quick one is left to finish, and its result is ignored.
-    if (pending !== null && ready && performance.now() - pending.started > 300)
-        restartWorker();
+    dropPending();
     if (worker === null) startWorker();
     const id = nextId++;
     pending = { id, state, started: performance.now() };
@@ -399,7 +419,7 @@ function verdictFor(state, response, symbols) {
                     : " is in B but not in A.",
             ];
         case "is_in_lang": {
-            const typed = showWord(wordNames(state.word));
+            const typed = showWord(wordNames(state.word, state.aFormat));
             return [
                 answer,
                 holds ? " A accepts " : " A rejects ",
@@ -436,6 +456,10 @@ function render(state, response, drawings) {
     }
 
     latestAutomata = response.automata;
+    latestSources = {
+        a: `${state.aFormat}\n${state.aText}`,
+        b: `${state.bFormat}\n${state.bText}`,
+    };
     output.message.hidden = true;
     output.status.textContent = `Mata took ${formatTime(response.milliseconds)}.`;
 
@@ -650,9 +674,16 @@ form.addEventListener("change", (event) => {
         const textarea = form.elements[`${key}Text`];
         const previous = target.value === "mata" ? "regex" : "mata";
         lastTexts[key][previous] = textarea.value;
-        // Switching to the .mata format shows the automaton of the regular expression in that format.
+        // Switching to the .mata format shows the automaton of the regular expression in that format, provided the
+        //  latest result was computed from this very expression and its text is complete.
+        const automaton = latestAutomata[key];
         const converted =
-            target.value === "mata" ? latestAutomata[key]?.mata : undefined;
+            target.value === "mata" &&
+            automaton !== undefined &&
+            !automaton.mataTruncated &&
+            latestSources[key] === `${previous}\n${textarea.value}`
+                ? automaton.mata
+                : undefined;
         textarea.value =
             converted ??
             (lastTexts[key][target.value] ||
@@ -687,7 +718,9 @@ exampleSelect.addEventListener("change", () => {
 const copyLink = document.getElementById("copy-link");
 copyLink.addEventListener("click", async () => {
     try {
-        await navigator.clipboard.writeText(location.href);
+        const url = new URL(location.href);
+        url.hash = encodeState(readForm());
+        await navigator.clipboard.writeText(url.href);
         copyLink.textContent = "Link copied";
     } catch {
         copyLink.textContent = "Copy failed";

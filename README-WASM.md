@@ -26,7 +26,8 @@ The [playground](https://verifit.github.io/mata/playground/) on the website runs
 Its interface to JavaScript is in [`bindings/wasm`](bindings/wasm/), and its page is in
 [`site/playground`](site/playground/).
 With `emcmake` on `PATH`, build it, test the build under Node, download [Viz.js](https://github.com/mdaines/viz-js)
-(which draws the automata), and serve the website at <http://localhost:8000>:
+(which draws the automata), and serve the website at <http://localhost:8000> (with the documentation once
+`just docs` has built it):
 
 ```shell
 just site playground
