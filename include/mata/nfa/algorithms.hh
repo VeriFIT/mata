@@ -26,10 +26,10 @@
  */
 namespace mata::nfa::algorithms {
 
-/// @brief Reduction of the DFA of @c determinize_four_russians():
+/// @brief Reduction of the DFA of @c determinize_four_russians() and @c determinize_classical()
 /// a smaller DFA for the same language, not always minimal.
 /// There is no real winner, but based on benchmarks, @c Adaptive is the best choice for general use.
-enum class FourRussiansReduction : std::uint8_t {
+enum class DeterminizationReduction : std::uint8_t {
 	None, ///< No reduction.
 	Bisimulation, ///< Merge bisimilar states. Fast.
 	Simulation, ///< Also use the simulation. Smaller DFAs, but memory quadratic in the number of states.
@@ -40,7 +40,7 @@ enum class FourRussiansReduction : std::uint8_t {
 struct FourRussiansOptions {
 	/// NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 (default) to choose automatically.
 	unsigned block_size = 0;
-	FourRussiansReduction reduction = FourRussiansReduction::None; ///< Reduction of the result.
+	DeterminizationReduction reduction = DeterminizationReduction::None; ///< Reduction of the result.
 };
 
 /**
@@ -58,7 +58,7 @@ struct FourRussiansOptions {
  *
  * @code
  *   const Nfa dfa = algorithms::determinize_four_russians(aut);
- *   const Nfa smaller = algorithms::determinize_four_russians(aut, {.reduction = FourRussiansReduction::Adaptive});
+ *   const Nfa smaller = algorithms::determinize_four_russians(aut, {.reduction = DeterminizationReduction::Adaptive});
  * @endcode
  *
  * @param[in] aut Automaton to determinize.
@@ -82,14 +82,18 @@ Nfa determinize_four_russians(
 /**
  * @brief Determinize automaton by the classical subset construction.
  *
- * The parameters are those of @c determinize().
+ * The other parameters are those of @c determinize().
+ * @param[in] reduction Reduction of the result, as in @c determinize_four_russians(), which then gives the same DFA up
+ *  to the numbering of the states. Not allowed with @p macrostate_discover.
  * @return Determinized automaton.
+ * @throws std::invalid_argument for a reduction with @p macrostate_discover.
  */
 Nfa determinize_classical(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
 	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
-	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr,
+	DeterminizationReduction reduction = DeterminizationReduction::None
 );
 
 /**

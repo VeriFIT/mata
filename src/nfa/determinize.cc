@@ -1,8 +1,10 @@
 /** @file
- * @brief Determinization by the "Four Russians" subset construction (algorithms::determinize_four_russians()).
+ * @brief Determinization: mata::nfa::determinize(), the classical subset construction
+ *  (algorithms::determinize_classical()), the "Four Russians" subset construction
+ *  (algorithms::determinize_four_russians()), and their reductions.
  *
- * This works by splitting the NFA into smaller blocks that are easier for the computer to memoize, which leads to a
- * speedup of the subset construction, especially for NFAs with many states and few symbols.
+ * The "Four Russians" construction works by splitting the NFA into smaller blocks that are easier for the computer to
+ * memoize, which leads to a speedup of the subset construction, especially for NFAs with many states and few symbols.
  */
 
 #include <algorithm>
@@ -28,8 +30,10 @@
 
 using namespace mata::nfa;
 using mata::Symbol;
+using mata::nfa::algorithms::DeterminizationReduction;
 using mata::nfa::algorithms::FourRussiansOptions;
-using mata::nfa::algorithms::FourRussiansReduction;
+using mata::utils::haskey;
+using mata::utils::OrdVector;
 
 namespace {
 
@@ -148,10 +152,10 @@ void merge_sorted(
 	for (; rhs_it != rhs.end(); ++rhs_it) { out.push_back(*rhs_it); }
 }
 
-// Faster than `emplace_back` in place: inlined into the output loops, it makes SymbolPost call the out-of-line
-// SmallOrdVector constructor for every transition.
+// The target is added in place, SymbolPost(symbol, target) sorts a one-element list, and moving a SmallStateSet in
+// copies its buffer right after its key is stored.
 inline void append_transition(StatePost& state_post, const Symbol symbol, const State target) {
-	state_post.emplace_back(symbol, target);
+	state_post.emplace_back(symbol).emplace_back(target);
 }
 
 // ===== Symbol classes.
@@ -1607,6 +1611,142 @@ Nfa copy_deterministic(const Nfa& aut, SubsetMap* const subset_map) {
 	return result;
 }
 
+/// @p aut without its transitions over the symbols outside @p symbols, or nothing if it has none or @p symbols is null.
+std::optional<Nfa> without_other_symbols(const Nfa& aut, const mata::utils::OrdVector<Symbol>* const symbols) {
+	const auto is_other = [&](const SymbolPost& symbol_post) { return !symbols->contains(symbol_post.symbol); };
+	const auto has_other = [&](const StatePost& state_post) {
+		return std::any_of(state_post.begin(), state_post.end(), is_other);
+	};
+	if (symbols == nullptr || std::none_of(aut.delta.begin(), aut.delta.end(), has_other)) { return std::nullopt; }
+	Nfa restricted = aut;
+	for (State state = 0; state < restricted.delta.num_of_states(); ++state) {
+		StatePost& state_post = restricted.delta.mutable_state_post(state);
+		state_post.erase(std::remove_if(state_post.begin(), state_post.end(), is_other), state_post.end());
+	}
+	return restricted;
+}
+
+// ===== The classical subset construction.
+
+/// The classical subset construction, with every macrostate passed through @p prune before its lookup in the subset
+///  map.
+template <typename Prune>
+Nfa determinize_classical_with(
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map,
+	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
+	const OrdVector<Symbol>* const restrict_to_symbols,
+	const Prune prune
+) {
+	// DFA fast path: a scalar depth-first renumbering reproduces the numbering of the generic subset
+	//  construction below exactly (same stack discipline, same increasing-symbol visit order) without
+	//  hashing one-element macrostates. A macrostate of one state has nothing to prune.
+	if (aut.is_deterministic()) {
+		std::unordered_map<StateSet, State> subset_map_local{};
+		if (subset_map == nullptr) { subset_map = &subset_map_local; }
+		Nfa result{};
+		const State initial_res{result.add_state()};
+		result.initial.insert(initial_res);
+		const State initial_orig{*aut.initial.begin()};
+		if (aut.final.contains(initial_orig)) { result.final.insert(initial_res); }
+		(*subset_map)[StateSet{initial_orig}] = initial_res;
+		if (aut.delta.empty()) { return result; }
+		if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_res, StateSet{initial_orig})) {
+			return result;
+		}
+		constexpr State kUnseen{std::numeric_limits<State>::max()};
+		std::vector<State> renaming(aut.num_of_states(), kUnseen);
+		renaming[initial_orig] = initial_res;
+		std::vector<State> worklist{initial_orig};
+		while (!worklist.empty()) {
+			const State state_orig{worklist.back()};
+			worklist.pop_back();
+			const State state_res{renaming[state_orig]};
+			for (const SymbolPost& symbol_post : aut.delta[state_orig]) {
+				if (symbol_post.targets.empty()) { continue; }
+				if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, symbol_post.symbol)) { continue; }
+				const State target_orig{symbol_post.targets.front()};
+				State target_res{renaming[target_orig]};
+				const bool target_is_new{target_res == kUnseen};
+				if (target_is_new) {
+					target_res = result.add_state();
+					renaming[target_orig] = target_res;
+					(*subset_map)[StateSet{target_orig}] = target_res;
+					if (aut.final.contains(target_orig)) { result.final.insert(target_res); }
+					worklist.push_back(target_orig);
+				}
+				result.delta.mutable_state_post(state_res).insert(SymbolPost(symbol_post.symbol, target_res));
+				if (target_is_new && macrostate_discover.has_value() &&
+					!(*macrostate_discover)(result, target_res, StateSet{target_orig})) {
+					return result;
+				}
+			}
+		}
+		return result;
+	}
+
+	Nfa result{};
+	// assuming all sets targets are non-empty
+	// Macrostates are owned by the subset map; its nodes never move, so the worklist points to their keys.
+	std::vector<std::pair<State, const StateSet*>> worklist{};
+	std::unordered_map<StateSet, State> subset_map_local{};
+	if (subset_map == nullptr) { subset_map = &subset_map_local; }
+
+	const State initial_state_res{result.add_state()};
+	result.initial.insert(initial_state_res);
+	const StateSet& initial_states_orig{
+		subset_map->insert_or_assign(prune(StateSet{aut.initial}), initial_state_res).first->first
+	};
+
+	if (aut.final.intersects_with(initial_states_orig)) { result.final.insert(initial_state_res); }
+	worklist.emplace_back(initial_state_res, &initial_states_orig);
+	if (aut.delta.empty()) { return result; }
+	if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_state_res, initial_states_orig)) {
+		return result;
+	}
+
+	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
+
+	while (!worklist.empty()) {
+		const auto [state_res, states_orig_ptr]{worklist.back()};
+		worklist.pop_back();
+		const StateSet& states_orig{*states_orig_ptr};
+		if (states_orig.empty()) {
+			// This should not happen assuming all sets targets are non-empty.
+			break;
+		}
+
+		// add moves of S to the sync ex iterator
+		synchronized_iterator.reset();
+		for (State q : states_orig) { push_back(synchronized_iterator, aut.delta[q]); }
+
+		while (synchronized_iterator.advance()) {
+			// extract post from the synchronized_iterator iterator
+			const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
+			Symbol current_symbol = (*symbol_posts.begin())->symbol;
+			// Skipping before the targets are unified keeps the macrostates reachable only over a foreign symbol
+			//  from ever being constructed.
+			if (restrict_to_symbols != nullptr && !haskey(*restrict_to_symbols, current_symbol)) { continue; }
+
+			// One hash per macrostate; an existing key is left untouched, so a known macrostate is not copied.
+			const auto [target_it, inserted]{subset_map->try_emplace(prune(synchronized_iterator.unify_targets()), 0)};
+			if (inserted) {
+				target_it->second = result.add_state();
+				if (aut.final.intersects_with(target_it->first)) { result.final.insert(target_it->second); }
+				worklist.emplace_back(target_it->second, &target_it->first);
+			}
+			const State target_res{target_it->second};
+			result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
+			if (inserted && macrostate_discover.has_value() &&
+				!(*macrostate_discover)(result, target_res, target_it->first)) {
+				return result;
+			}
+		}
+	}
+	return result;
+}
+
 // ===== The reductions.
 
 /// Removes from a set of states the states that another state of the set dominates.
@@ -1641,6 +1781,17 @@ class SimulationPruner {
 		return intersects(states, dominated_) ? prune_candidates(states) : states;
 	}
 
+	/// Removes the dominated states from @p states.
+	void prune(StateSet& states) {
+		set_chunks_.clear();
+		for (const State q : states) { push_state(set_chunks_, 0, q); }
+		if (!intersects(set_chunks_, dominated_)) { return; }
+		states.clear();
+		for (const Chunk& chunk : prune_candidates(set_chunks_)) {
+			for (const unsigned bit : SetBits{chunk.bits}) { states.push_back(state_at(chunk.word, bit)); }
+		}
+	}
+
   private:
 	std::vector<uint64_t> dominated_; ///< States with a dominator.
 	/// Dominators of q are dominator_chunks_[dominator_offsets_[q] .. dominator_offsets_[q + 1]).
@@ -1648,6 +1799,7 @@ class SimulationPruner {
 	std::vector<Chunk> dominator_chunks_ = {};
 	std::vector<uint64_t> members_; ///< The set being pruned; all zero between calls.
 	std::vector<Chunk> pruned_ = {};
+	std::vector<Chunk> set_chunks_ = {}; ///< The StateSet being pruned.
 
 	ChunkSpan dominators(const State q) const {
 		return {dominator_chunks_.data() + dominator_offsets_[q], dominator_offsets_[q + 1] - dominator_offsets_[q]};
@@ -1820,6 +1972,28 @@ Nfa restrict_to_class_representatives(const Nfa& aut, const SymbolClasses& class
 		);
 	}
 	return restricted;
+}
+
+/// @p aut, which has transitions only under the first symbol of each class, with them under every symbol of the class.
+Nfa expand_class_representatives(const Nfa& aut, const SymbolClasses& classes) {
+	Nfa expanded(aut.num_of_states(), aut.initial, aut.final);
+	std::vector<SymbolPost> symbol_posts;
+	for (State q = 0; q < aut.num_of_states(); ++q) {
+		symbol_posts.clear();
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			const auto representative = static_cast<SymbolIndex>(
+				std::ranges::lower_bound(classes.symbols(), symbol_post.symbol) - classes.symbols().begin()
+			);
+			for (const SymbolIndex symbol : classes.members(classes.class_of(representative))) {
+				symbol_posts.push_back(symbol_post);
+				symbol_posts.back().symbol = classes.symbol(symbol);
+			}
+		}
+		std::ranges::sort(symbol_posts, {}, &SymbolPost::symbol);
+		StatePost& state_post = expanded.delta.mutable_state_post(q);
+		for (SymbolPost& symbol_post : symbol_posts) { state_post.push_back(std::move(symbol_post)); }
+	}
+	return expanded;
 }
 
 /// Partition of the states into blocks, numbered by their smallest states.
@@ -2046,7 +2220,7 @@ struct ReducedAutomaton {
 
 /// Reduce @p aut for determinize_reduced(): trim it, keep one symbol per class, merge bisimilar states (and, with
 ///  Simulation, states that simulate each other), and build the pruner.
-ReducedAutomaton reduce_for_determinization(const Nfa& aut, const FourRussiansReduction reduction) {
+ReducedAutomaton reduce_for_determinization(const Nfa& aut, const DeterminizationReduction reduction) {
 	// The trimmed automaton (a copy only if some state is useless).
 	const mata::BoolVector useful = aut.get_useful_states();
 	const bool all_useful = useful.count() == useful.size();
@@ -2061,7 +2235,7 @@ ReducedAutomaton reduce_for_determinization(const Nfa& aut, const FourRussiansRe
 
 	// Simulators of every block.
 	const Nfa block_aut = block_automaton(compressed, blocks);
-	const Simulators simulators_of = reduction == FourRussiansReduction::Simulation && num_of_blocks > 0
+	const Simulators simulators_of = reduction == DeterminizationReduction::Simulation && num_of_blocks > 0
 										 ? simulators(block_aut)
 										 : universal_simulators(block_aut);
 
@@ -2117,28 +2291,29 @@ ReducedAutomaton reduce_for_determinization(const Nfa& aut, const FourRussiansRe
 	return result;
 }
 
-/// Determinize @p reduced, or give up after more than @p max_macrostates macrostates.
-std::optional<Nfa> determinize_reduced_automaton(
-	ReducedAutomaton& reduced,
-	const FourRussiansOptions& options,
-	SubsetMap* const subset_map,
-	const size_t max_macrostates = std::numeric_limits<size_t>::max()
+/// Determinize @p reduced by the classical subset construction, or give up after more than @p max_macrostates
+///  macrostates.
+std::optional<Nfa> determinize_reduced_classically(
+	ReducedAutomaton& reduced, SubsetMap* const subset_map, const size_t max_macrostates
 ) {
-	// The construction writes the transitions for all symbols of a class.
-	SubsetMap reduced_map;
-	std::optional<Nfa> result = determinize_pruned(
-		reduced.aut, std::move(reduced.classes), reduced.pruner, options,
-		subset_map == nullptr ? nullptr : &reduced_map, max_macrostates
-	);
-	if (result.has_value() && subset_map != nullptr) {
-		std::vector<State> states;
-		// Map the macrostates back to the original states.
-		for (const auto& [macrostate, state] : reduced_map) {
-			states.clear();
-			for (const State q : macrostate) { states.push_back(reduced.original[q]); } // (Increasing.)
-			(*subset_map)[StateSet(states)] = state;
-		}
+	const Nfa expanded =
+		reduced.classes.all_singletons() ? Nfa() : expand_class_representatives(reduced.aut, reduced.classes);
+	const Nfa& aut = reduced.classes.all_singletons() ? reduced.aut : expanded;
+	const bool prunes = !reduced.pruner.prunes_nothing();
+	bool stopped = false;
+	MacrostateDiscover discover = std::nullopt;
+	if (max_macrostates != std::numeric_limits<size_t>::max()) {
+		discover = [&](const Nfa&, const State state, const StateSet&) {
+			stopped = state >= max_macrostates;
+			return !stopped;
+		};
 	}
+	Nfa result =
+		determinize_classical_with(aut, subset_map, discover, nullptr, [&](StateSet&& macrostate) -> StateSet&& {
+			if (prunes) { reduced.pruner.prune(macrostate); }
+			return std::move(macrostate);
+		});
+	if (stopped) { return std::nullopt; }
 	return result;
 }
 
@@ -2148,19 +2323,33 @@ constexpr size_t ADAPTIVE_MIN_BUDGET = 1'000;
 /// Keeps the budget in the range of size_t when it has 32 bits (more macrostates than fit in memory there).
 constexpr double ADAPTIVE_MAX_BUDGET = 1e9;
 
-/// determinize_four_russians() with a reduction.
+/// Determinize @p aut with @p reduction by @p construct(reduced, reduced_map, max_macrostates), which gives up after
+///  more than max_macrostates macrostates and fills reduced_map, if not null, with the macrostates of reduced.aut.
+template <typename Construct>
 Nfa determinize_reduced(
-	const Nfa& aut, const FourRussiansOptions& options, SubsetMap* const subset_map, const MacrostateDiscover& discover
+	const Nfa& aut, const DeterminizationReduction reduction, SubsetMap* const subset_map, const Construct construct
 ) {
-	if (discover.has_value()) {
-		throw std::invalid_argument("determinize_four_russians: a reduction cannot have a discovery callback");
-	}
-	if (options.reduction != FourRussiansReduction::Adaptive) {
-		ReducedAutomaton reduced = reduce_for_determinization(aut, options.reduction);
-		return *determinize_reduced_automaton(reduced, options, subset_map);
+	constexpr size_t NO_LIMIT = std::numeric_limits<size_t>::max();
+	const auto run = [&](ReducedAutomaton& reduced, const size_t max_macrostates) {
+		SubsetMap reduced_map;
+		std::optional<Nfa> result = construct(reduced, subset_map == nullptr ? nullptr : &reduced_map, max_macrostates);
+		if (result.has_value() && subset_map != nullptr) {
+			std::vector<State> states;
+			// Map the macrostates back to the original states.
+			for (const auto& [macrostate, state] : reduced_map) {
+				states.clear();
+				for (const State q : macrostate) { states.push_back(reduced.original[q]); } // (Increasing.)
+				(*subset_map)[StateSet(states)] = state;
+			}
+		}
+		return result;
+	};
+	if (reduction != DeterminizationReduction::Adaptive) {
+		ReducedAutomaton reduced = reduce_for_determinization(aut, reduction);
+		return *run(reduced, NO_LIMIT);
 	}
 	// Like ski rental: use the cheap reduction until it has cost about as much as the simulation.
-	ReducedAutomaton cheap = reduce_for_determinization(aut, FourRussiansReduction::Bisimulation);
+	ReducedAutomaton cheap = reduce_for_determinization(aut, DeterminizationReduction::Bisimulation);
 	// The budget in macrostates: about what the simulation would cost.
 	const double num_of_states = static_cast<double>(cheap.aut.num_of_states());
 	const double num_of_transitions = static_cast<double>(cheap.aut.delta.num_of_transitions());
@@ -2171,14 +2360,35 @@ Nfa determinize_reduced(
 	const double scaled_cost =
 		std::min(ADAPTIVE_BUDGET_FACTOR * simulation_cost / macrostate_cost, ADAPTIVE_MAX_BUDGET);
 	const size_t budget = static_cast<size_t>(scaled_cost) + ADAPTIVE_MIN_BUDGET;
-	if (std::optional<Nfa> result = determinize_reduced_automaton(cheap, options, subset_map, budget)) {
-		return std::move(*result);
-	}
-	ReducedAutomaton reduced = reduce_for_determinization(aut, FourRussiansReduction::Simulation);
-	return *determinize_reduced_automaton(reduced, options, subset_map);
+	if (std::optional<Nfa> result = run(cheap, budget)) { return std::move(*result); }
+	ReducedAutomaton reduced = reduce_for_determinization(aut, DeterminizationReduction::Simulation);
+	return *run(reduced, NO_LIMIT);
 }
 
 } // namespace
+
+Nfa mata::nfa::algorithms::determinize_classical(
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map,
+	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
+	const OrdVector<Symbol>* const restrict_to_symbols,
+	const DeterminizationReduction reduction
+) {
+	if (reduction == DeterminizationReduction::None) {
+		return determinize_classical_with(
+			aut, subset_map, std::move(macrostate_discover), restrict_to_symbols,
+			[](StateSet&& macrostate) -> StateSet&& { return std::move(macrostate); }
+		);
+	}
+	if (macrostate_discover.has_value()) {
+		throw std::invalid_argument("determinize_classical: a reduction cannot have a discovery callback");
+	}
+	if (const std::optional<Nfa> restricted = without_other_symbols(aut, restrict_to_symbols)) {
+		// Reduce a copy without the transitions over the other symbols.
+		return determinize_classical(*restricted, subset_map, std::nullopt, nullptr, reduction);
+	}
+	return determinize_reduced(aut, reduction, subset_map, determinize_reduced_classically);
+}
 
 Nfa mata::nfa::algorithms::determinize_four_russians(
 	const Nfa& aut,
@@ -2187,27 +2397,82 @@ Nfa mata::nfa::algorithms::determinize_four_russians(
 	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover,
 	const mata::utils::OrdVector<Symbol>* const restrict_to_symbols
 ) {
-	const auto is_other = [&](const SymbolPost& symbol_post) {
-		return !restrict_to_symbols->contains(symbol_post.symbol);
-	};
-	const auto has_other = [&](const StatePost& state_post) {
-		return std::any_of(state_post.begin(), state_post.end(), is_other);
-	};
-	if (restrict_to_symbols != nullptr && std::any_of(aut.delta.begin(), aut.delta.end(), has_other)) {
+	if (const std::optional<Nfa> restricted = without_other_symbols(aut, restrict_to_symbols)) {
 		// Determinize a copy without the transitions over the other symbols.
-		Nfa restricted = aut;
-		for (State state = 0; state < restricted.delta.num_of_states(); ++state) {
-			StatePost& state_post = restricted.delta.mutable_state_post(state);
-			state_post.erase(std::remove_if(state_post.begin(), state_post.end(), is_other), state_post.end());
+		Nfa result = determinize_four_russians(*restricted, options, subset_map, macrostate_discover);
+		// As determinize_classical(), which skips the callback only if the input has no transitions at all.
+		if (restricted->delta.empty() && macrostate_discover.has_value()) {
+			(*macrostate_discover)(result, *result.initial.begin(), StateSet(aut.initial));
 		}
-		return determinize_four_russians(restricted, options, subset_map, std::move(macrostate_discover));
+		return result;
 	}
-	if (options.reduction != FourRussiansReduction::None) {
-		return determinize_reduced(aut, options, subset_map, macrostate_discover);
+	if (options.reduction != DeterminizationReduction::None) {
+		if (macrostate_discover.has_value()) {
+			throw std::invalid_argument("determinize_four_russians: a reduction cannot have a discovery callback");
+		}
+		// The construction writes the transitions for all symbols of a class.
+		return determinize_reduced(
+			aut, options.reduction, subset_map,
+			[&](ReducedAutomaton& reduced, SubsetMap* const reduced_map, const size_t max_macrostates) {
+				return determinize_pruned(
+					reduced.aut, std::move(reduced.classes), reduced.pruner, options, reduced_map, max_macrostates
+				);
+			}
+		);
 	}
 	if (!macrostate_discover.has_value() && aut.is_deterministic()) {
 		checked_block_size(options.block_size);
 		return copy_deterministic(aut, subset_map);
 	}
 	return FourRussiansDeterminizer{aut, options, macrostate_discover}.run(subset_map);
+}
+
+Nfa mata::nfa::determinize(
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map,
+	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
+	const OrdVector<Symbol>* const restrict_to_symbols,
+	const ParameterMap& params
+) {
+	if (!haskey(params, "algorithm")) {
+		throw std::runtime_error(
+			std::to_string(__func__) +
+			" requires setting the \"algorithm\" key in the \"params\" argument; "
+			"received: " +
+			std::to_string(params)
+		);
+	}
+
+	auto reduction = algorithms::DeterminizationReduction::None;
+	if (haskey(params, "reduction")) {
+		const std::string& str_reduction = params.at("reduction");
+		if ("bisimulation" == str_reduction) {
+			reduction = algorithms::DeterminizationReduction::Bisimulation;
+		} else if ("simulation" == str_reduction) {
+			reduction = algorithms::DeterminizationReduction::Simulation;
+		} else if ("adaptive" == str_reduction) {
+			reduction = algorithms::DeterminizationReduction::Adaptive;
+		} else if ("none" != str_reduction) {
+			throw std::runtime_error(
+				std::to_string(__func__) + " received an unknown value of the \"reduction\" key: " + str_reduction
+			);
+		}
+	}
+
+	const std::string& str_algo = params.at("algorithm");
+	if ("four_russians" == str_algo) {
+		return algorithms::determinize_four_russians(
+			aut, {.reduction = reduction}, subset_map, std::move(macrostate_discover), restrict_to_symbols
+		);
+	}
+
+	if ("classical" == str_algo) {
+		return algorithms::determinize_classical(
+			aut, subset_map, std::move(macrostate_discover), restrict_to_symbols, reduction
+		);
+	}
+
+	throw std::runtime_error(
+		std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+	);
 }

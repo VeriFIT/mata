@@ -226,15 +226,15 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
 cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
     cdef CBinaryRelation c_compute_relation "mata::nfa::algorithms::compute_relation" (CNfa&, ParameterMap&) except + nogil
 
-    cdef enum CFourRussiansReduction "mata::nfa::algorithms::FourRussiansReduction":
-        FourRussiansReductionNone "mata::nfa::algorithms::FourRussiansReduction::None"
-        FourRussiansReductionBisimulation "mata::nfa::algorithms::FourRussiansReduction::Bisimulation"
-        FourRussiansReductionSimulation "mata::nfa::algorithms::FourRussiansReduction::Simulation"
-        FourRussiansReductionAdaptive "mata::nfa::algorithms::FourRussiansReduction::Adaptive"
+    cdef enum CDeterminizationReduction "mata::nfa::algorithms::DeterminizationReduction":
+        DeterminizationReductionNone "mata::nfa::algorithms::DeterminizationReduction::None"
+        DeterminizationReductionBisimulation "mata::nfa::algorithms::DeterminizationReduction::Bisimulation"
+        DeterminizationReductionSimulation "mata::nfa::algorithms::DeterminizationReduction::Simulation"
+        DeterminizationReductionAdaptive "mata::nfa::algorithms::DeterminizationReduction::Adaptive"
 
     cdef cppclass CFourRussiansOptions "mata::nfa::algorithms::FourRussiansOptions":
         unsigned block_size
-        CFourRussiansReduction reduction
+        CDeterminizationReduction reduction
 
 # The long-running entry points are declared `except + nogil` so that the callers can run them without the GIL.
 # The C++ library does not synchronise anything: concurrent calls may only read the automata and alphabets they

@@ -602,8 +602,12 @@ class Nfa:
         """
 
 # Operations
+class _DeterminizeParams(TypedDict, total=False):
+    algorithm: Required[Literal["four_russians", "classical"]]
+    reduction: Literal["none", "bisimulation", "simulation", "adaptive"]
+
 def determinize_with_subset_map(
-    lhs: Nfa, params: dict[Literal["algorithm"], Literal["four_russians", "classical"]] | None = None
+    lhs: Nfa, params: _DeterminizeParams | None = None
 ) -> tuple[Nfa, dict[tuple[State], State]]:
     """Determinize the lhs automaton
 
@@ -611,35 +615,41 @@ def determinize_with_subset_map(
     :param Dict params: Additional parameters for the determinization:
       - "algorithm":
         - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default.
+          default when params is None; in params, the key "algorithm" is required.
         - "classical": The classical subset construction.
-        Both give the same DFA up to the numbering of its states.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton, subset map
     """
 
-def determinize(
-    lhs: Nfa, params: dict[Literal["algorithm"], Literal["four_russians", "classical"]] | None = None
-) -> Nfa:
+def determinize(lhs: Nfa, params: _DeterminizeParams | None = None) -> Nfa:
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
     :param Dict params: Additional parameters for the determinization:
       - "algorithm":
         - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default.
+          default when params is None; in params, the key "algorithm" is required.
         - "classical": The classical subset construction.
-        Both give the same DFA up to the numbering of its states.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton
     """
 
-class FourRussiansReduction(IntEnum):
-    """Reduction of the DFA of `determinize_four_russians()`: a smaller DFA for the same language, not always minimal."""
+class DeterminizationReduction(IntEnum):
+    """Reduction of a determinized automaton: a smaller DFA for the same language, not always minimal."""
 
     Bisimulation = 1
     Simulation = 2
     Adaptive = 3
 
-def determinize_four_russians(lhs: Nfa, block_size: int = 0, reduction: FourRussiansReduction | None = None) -> Nfa:
+def determinize_four_russians(lhs: Nfa, block_size: int = 0, reduction: DeterminizationReduction | None = None) -> Nfa:
     """Determinize the lhs automaton by the "Four Russians" subset construction.
 
     The same construction as the default of `determinize()`, with its options. With a reduction, gives a smaller DFA
@@ -647,18 +657,18 @@ def determinize_four_russians(lhs: Nfa, block_size: int = 0, reduction: FourRuss
 
     :param Nfa lhs: non-deterministic finite automaton
     :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
-    :param FourRussiansReduction reduction: reduction of the result, or None for no reduction
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
     :return: deterministic finite automaton
     """
 
 def determinize_four_russians_with_subset_map(
-    lhs: Nfa, block_size: int = 0, reduction: FourRussiansReduction | None = None
+    lhs: Nfa, block_size: int = 0, reduction: DeterminizationReduction | None = None
 ) -> tuple[Nfa, dict[tuple[State], State]]:
     """Determinize the lhs automaton by the "Four Russians" subset construction, see `determinize_four_russians()`.
 
     :param Nfa lhs: non-deterministic finite automaton
     :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
-    :param FourRussiansReduction reduction: reduction of the result, or None for no reduction
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
     :return: deterministic finite automaton, subset map (with a reduction, merged states appear as one of them)
     """
 

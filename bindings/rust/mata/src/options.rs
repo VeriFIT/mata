@@ -4,8 +4,8 @@
 
 use mata_sys::ffi;
 
-/// How [`Nfa::determinize_with`](crate::Nfa::determinize_with) determinizes. Both give the same DFA up to
-/// the numbering of its states.
+/// How [`Nfa::determinize_with`](crate::Nfa::determinize_with) determinizes.
+/// Both give the same DFA, but they may number its states differently.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum Determinization {

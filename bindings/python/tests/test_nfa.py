@@ -219,12 +219,28 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     assert sm_map == {(0,): 0, (0, 1): 1}
 
 
+def _check_subset_map(dfa, subset_map, macrostates):
+    """Checks that the subset map has the macrostates, one for each state of the DFA, in any numbering."""
+    assert set(subset_map) == macrostates
+    assert sorted(subset_map.values()) == list(range(dfa.num_of_states()))
+
+
+def _check_subset_map_languages(nfa, dfa, subset_map):
+    """Checks that every macrostate of the subset map has the language of its state of the DFA."""
+    for macrostate, state in subset_map.items():
+        from_macrostate = nfa.deepcopy()
+        from_macrostate.initial_states = list(macrostate)
+        from_state = dfa.deepcopy()
+        from_state.initial_states = [state]
+        assert mata_nfa.equivalence_check(from_macrostate, from_state)
+
+
 def test_determinize_four_russians(nfa_two_states_uni):
     """Tests the "Four Russians" determinisation against the classical one."""
     for block_size in (0, 1, 2, 64):
         dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa_two_states_uni, block_size)
         assert dfa.is_deterministic()
-        assert subset_map == {(0,): 0, (0, 1): 1}
+        _check_subset_map(dfa, subset_map, {(0,), (0, 1)})
 
     nfa = _nth_symbol_from_the_end_nfa(7)
     classic = mata_nfa.determinize(nfa, {"algorithm": "classical"})
@@ -234,11 +250,14 @@ def test_determinize_four_russians(nfa_two_states_uni):
         assert dfa.num_of_states() == classic.num_of_states() == 2**7
         assert mata_nfa.equivalence_check(dfa, nfa)
 
-    for reduction in mata_nfa.FourRussiansReduction:
-        dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa, reduction=reduction)
+    for reduction in mata_nfa.DeterminizationReduction:
+        dfa = mata_nfa.determinize_four_russians(nfa, reduction=reduction)
         assert dfa.is_deterministic()
-        assert dfa.num_of_states() <= classic.num_of_states()
         assert mata_nfa.equivalence_check(dfa, nfa)
+        # With a reduction, the macrostates may be smaller, but each still has the language of its state.
+        dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa_two_states_uni, reduction=reduction)
+        _check_subset_map_languages(nfa_two_states_uni, dfa, subset_map)
+        assert mata_nfa.equivalence_check(dfa, nfa_two_states_uni)
 
     with pytest.raises(ValueError):
         mata_nfa.determinize_four_russians(nfa, block_size=3)
@@ -246,22 +265,73 @@ def test_determinize_four_russians(nfa_two_states_uni):
         mata_nfa.determinize_four_russians(nfa, reduction=7)
 
 
+def _transitions(nfa):
+    return sorted((t.source, t.symbol, t.target) for t in nfa.get_trans_as_sequence())
+
+
 def test_determinize_algorithm(nfa_two_states_uni):
-    """Tests the choice of the algorithm in determinize()."""
-    for params in (None, {"algorithm": "four_russians"}, {"algorithm": "classical"}):
+    """Tests the choice of the algorithm and of the reduction in determinize()."""
+    for params in (
+        None,
+        {"algorithm": "four_russians"},
+        {"algorithm": "classical"},
+        {"algorithm": "four_russians", "reduction": "none"},
+        {"algorithm": "classical", "reduction": "none"},
+    ):
         dfa, subset_map = mata_nfa.determinize_with_subset_map(nfa_two_states_uni, params)
         assert dfa.is_deterministic()
-        assert subset_map == {(0,): 0, (0, 1): 1}
+        _check_subset_map(dfa, subset_map, {(0,), (0, 1)})
 
+    # The same DFA up to the numbering of its states; the default is the Four Russians one.
     nfa = _nth_symbol_from_the_end_nfa(7)
-    dfa = mata_nfa.determinize(nfa, {"algorithm": "classical"})
-    assert dfa.num_of_states() == mata_nfa.determinize(nfa).num_of_states() == 2**7
-    assert mata_nfa.equivalence_check(dfa, nfa)
+    classical = mata_nfa.determinize(nfa, {"algorithm": "classical"})
+    four_russians = mata_nfa.determinize(nfa, {"algorithm": "four_russians"})
+    for dfa in (classical, four_russians):
+        assert dfa.is_deterministic()
+        assert dfa.num_of_states() == 2**7
+        assert mata_nfa.equivalence_check(dfa, nfa)
+    assert _transitions(mata_nfa.determinize(nfa)) == _transitions(four_russians)
+    # With every reduction too.
+    for reduction in mata_nfa.DeterminizationReduction:
+        params = {"reduction": reduction.name.lower()}
+        classical = mata_nfa.determinize(nfa, {"algorithm": "classical"} | params)
+        four_russians = mata_nfa.determinize(nfa, {"algorithm": "four_russians"} | params)
+        for dfa in (classical, four_russians):
+            assert dfa.is_deterministic()
+            assert mata_nfa.equivalence_check(dfa, nfa)
+        assert _transitions(four_russians) == _transitions(mata_nfa.determinize_four_russians(nfa, reduction=reduction))
+
+    # L(1) = a* is a subset of L(2) = (a|b)* (a = 0, b = 1, c = 2): the simulation prunes the state 1 from {1, 2};
+    #  there are no bisimilar states, and Adaptive keeps the cheap reduction far below its budget.
+    pruned = mata_nfa.Nfa(3)
+    pruned.make_initial_state(0)
+    pruned.make_final_state(1)
+    pruned.make_final_state(2)
+    for source, symbol, target in ((0, 0, 1), (0, 0, 2), (0, 1, 1), (0, 2, 0), (1, 0, 1), (2, 0, 2), (2, 1, 2)):
+        pruned.add_transition(source, symbol, target)
+    expected_states = {"none": 4, "bisimulation": 4, "simulation": 3, "adaptive": 4}
+    for reduction, num_of_states in expected_states.items():
+        for algorithm in ("four_russians", "classical"):
+            dfa, subset_map = mata_nfa.determinize_with_subset_map(
+                pruned, {"algorithm": algorithm, "reduction": reduction}
+            )
+            assert dfa.num_of_states() == num_of_states
+            assert mata_nfa.equivalence_check(dfa, pruned)
+            _check_subset_map_languages(pruned, dfa, subset_map)
+            if algorithm == "four_russians" and reduction != "none":
+                _, expected_map = mata_nfa.determinize_four_russians_with_subset_map(
+                    pruned, reduction=mata_nfa.DeterminizationReduction[reduction.capitalize()]
+                )
+                assert subset_map == expected_map
 
     with pytest.raises(RuntimeError):
         mata_nfa.determinize(nfa, {"algorithm": "subset"})
     with pytest.raises(RuntimeError):
         mata_nfa.determinize_with_subset_map(nfa, {"type": "classical"})
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize(nfa, {"algorithm": "classical", "reduction": "minimal"})
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize(nfa, {"reduction": "simulation"})
 
 
 def test_forward_reach_states(fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight):

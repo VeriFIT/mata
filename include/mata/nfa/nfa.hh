@@ -1161,12 +1161,17 @@ Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}
  *  symbol are ignored, so the macrostates reachable only over such a transition are never constructed. The caller
  *  gets the determinization of @p aut with its transitions restricted to @p restrict_to_symbols.
  * @param[in] params Optional parameters to control the determinization algorithm:
- * - "algorithm":
- *      - "four_russians" (default): The "Four Russians" subset construction, see
- *                                   @c algorithms::determinize_four_russians().
+ * - "algorithm" (required in @p params, which is {"algorithm": "four_russians"} by default):
+ *      - "four_russians": The "Four Russians" subset construction, see @c algorithms::determinize_four_russians().
  *      - "classical": The classical subset construction, see @c algorithms::determinize_classical().
- *   Both give the same DFA up to the numbering of its states.
+ * - "reduction":
+ *      - "none" (default): No reduction.
+ *      - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+ *        @c algorithms::DeterminizationReduction. It is no longer the subset construction, so in @p subset_map, merged
+ *        states appear as one of them, and @p macrostate_discover is not allowed.
+ *
  * @return Determinized automaton.
+ * @note With the same reduction, both give the same DFA, but they may number its states differently.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
 Nfa determinize(

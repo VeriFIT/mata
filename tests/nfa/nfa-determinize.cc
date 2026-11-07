@@ -1,11 +1,14 @@
 /** @file
  * @brief Tests for the "Four Russians" subset construction (mata::nfa::algorithms::determinize_four_russians())
- *  with its block sizes and reductions, and for the choice of the algorithm in mata::nfa::determinize().
+ *  with its block sizes and reductions, for the reductions of mata::nfa::algorithms::determinize_classical(), and for
+ *  the parameters of mata::nfa::determinize().
  */
 
 #include <algorithm>
 #include <initializer_list>
 #include <random>
+#include <span>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -42,8 +45,8 @@ Nfa random_nfa(
 	return aut;
 }
 
-/// A random NFA whose symbols come in @p num_of_groups groups of @p copies symbols with the same transitions (one extra
-///  transition splits the first group).
+/// A random NFA whose symbols come in @p num_of_groups groups of @p copies symbols with the same transitions, plus one
+///  random transition under symbol 0, which splits the first group unless the NFA has it already.
 Nfa random_grouped_nfa(
 	std::mt19937& rng,
 	const size_t num_of_states,
@@ -121,66 +124,113 @@ Nfa padded_exponential_nfa(const State k, const State padding) {
 	return aut;
 }
 
+/// L(1) = a* is a subset of L(2) = (a|b)*, and state 2 is universal: every reduction makes the macrostate {1, 2} the
+///  state 2, so the DFA has 3 states instead of 4.
+Nfa small_universal_nfa() {
+	Nfa aut(3);
+	aut.initial = {0};
+	aut.final = {1, 2};
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(0, 'a', 2);
+	aut.delta.add(0, 'b', 1);
+	aut.delta.add(1, 'a', 1);
+	aut.delta.add(2, 'a', 2);
+	aut.delta.add(2, 'b', 2);
+	return aut;
+}
+
 std::vector<State> sorted_states(const mata::utils::SparseSet<State>& states) {
 	std::vector<State> result(states.begin(), states.end());
 	std::sort(result.begin(), result.end());
 	return result;
 }
 
-/// All transitions of @p aut in the order of its Delta (SymbolPost::operator== compares the symbols only).
-std::vector<std::tuple<State, Symbol, State>> transitions_of(const Nfa& aut) {
-	std::vector<std::tuple<State, Symbol, State>> result;
-	for (const Transition& transition : aut.delta.transitions()) {
-		result.emplace_back(transition.source, transition.symbol, transition.target);
-	}
-	return result;
-}
-
-/// Checks that determinize_four_russians() with @p block_size gives @p classic, the result of determinize_classical()
-///  with the subset map @p classic_map, up to the numbering of the states.
-void check_same_subset_construction(
-	const Nfa& aut,
-	const unsigned block_size,
-	const Nfa& classic,
-	const std::unordered_map<StateSet, State>& classic_map
+/// Checks that the DFA @p dfa with the subset map @p dfa_map is @p expected with the subset map @p expected_map, up to
+///  the numbering of the states.
+void check_same_dfa(
+	const Nfa& dfa,
+	const std::unordered_map<StateSet, State>& dfa_map,
+	const Nfa& expected,
+	const std::unordered_map<StateSet, State>& expected_map
 ) {
-	std::unordered_map<StateSet, State> four_russians_map;
-	const Nfa four_russians = determinize_four_russians(aut, {.block_size = block_size}, &four_russians_map);
-
-	REQUIRE(four_russians.num_of_states() == classic.num_of_states());
-	REQUIRE(four_russians_map.size() == classic_map.size());
-	CHECK(four_russians.delta.num_of_transitions() == classic.delta.num_of_transitions());
-	CHECK(four_russians.final.size() == classic.final.size());
-	CHECK(four_russians.initial.size() == 1);
-	CHECK(four_russians.is_deterministic());
+	REQUIRE(dfa.num_of_states() == expected.num_of_states());
+	REQUIRE(dfa_map.size() == expected_map.size());
+	CHECK(dfa.delta.num_of_transitions() == expected.delta.num_of_transitions());
+	CHECK(dfa.final.size() == expected.final.size());
 
 	// Mismatches are counted, not checked one by one: the automata have up to tens of thousands of transitions.
-	std::vector<State> classic_to_four_russians(classic.num_of_states(), 0);
+	std::vector<State> expected_to_dfa(expected.num_of_states(), 0);
 	size_t num_of_missing_sets = 0;
 	size_t num_of_different_states = 0;
-	for (const auto& [subset, classic_state] : classic_map) {
-		const auto it = four_russians_map.find(subset);
-		if (it == four_russians_map.end()) {
+	for (const auto& [subset, expected_state] : expected_map) {
+		const auto it = dfa_map.find(subset);
+		if (it == dfa_map.end()) {
 			++num_of_missing_sets;
 			continue;
 		}
-		classic_to_four_russians[classic_state] = it->second;
-		const bool same_final = classic.final.contains(classic_state) == four_russians.final.contains(it->second);
-		const bool same_initial = classic.initial.contains(classic_state) == four_russians.initial.contains(it->second);
+		expected_to_dfa[expected_state] = it->second;
+		const bool same_final = expected.final.contains(expected_state) == dfa.final.contains(it->second);
+		const bool same_initial = expected.initial.contains(expected_state) == dfa.initial.contains(it->second);
 		if (!same_final || !same_initial) { ++num_of_different_states; }
 	}
 	REQUIRE(num_of_missing_sets == 0);
 	CHECK(num_of_different_states == 0);
+	// One-to-one, so that with the equal numbers of transitions, the transitions are the same.
+	std::vector<State> images = expected_to_dfa;
+	std::sort(images.begin(), images.end());
+	CHECK(std::adjacent_find(images.begin(), images.end()) == images.end());
 	size_t num_of_missing_transitions = 0;
-	for (const Transition& transition : classic.delta.transitions()) {
-		if (!four_russians.delta.contains(
-				classic_to_four_russians[transition.source], transition.symbol,
-				classic_to_four_russians[transition.target]
+	for (const Transition& transition : expected.delta.transitions()) {
+		if (!dfa.delta.contains(
+				expected_to_dfa[transition.source], transition.symbol, expected_to_dfa[transition.target]
 			)) {
 			++num_of_missing_transitions;
 		}
 	}
 	CHECK(num_of_missing_transitions == 0);
+}
+
+/// Checks that every state of @p dfa has a macrostate in @p subset_map, and that every macrostate, a set of states of
+///  @p aut, has the language of its state.
+void check_subset_map_languages(const Nfa& aut, const Nfa& dfa, const std::unordered_map<StateSet, State>& subset_map) {
+	std::vector<bool> has_macrostate(dfa.num_of_states(), false);
+	for (const auto& [macrostate, state] : subset_map) {
+		REQUIRE(state < dfa.num_of_states());
+		has_macrostate[state] = true;
+		Nfa from_macrostate = aut;
+		from_macrostate.initial.clear();
+		for (const State q : macrostate) { from_macrostate.initial.insert(q); }
+		Nfa from_state = dfa;
+		from_state.initial = {state};
+		CHECK(are_equivalent(from_macrostate, from_state));
+	}
+	CHECK(std::ranges::find(has_macrostate, false) == has_macrostate.end());
+}
+
+/// Checks that determinize_four_russians() with @p block_size and @p reduction gives @p classic, the result of
+///  determinize_classical() (with the same reduction), up to the numbering of the states, and without a reduction also
+///  its subset map @p classic_map.
+void check_same_subset_construction(
+	const Nfa& aut,
+	const unsigned block_size,
+	const Nfa& classic,
+	const std::unordered_map<StateSet, State>& classic_map,
+	const DeterminizationReduction reduction = DeterminizationReduction::None
+) {
+	std::unordered_map<StateSet, State> four_russians_map;
+	const Nfa four_russians =
+		determinize_four_russians(aut, {.block_size = block_size, .reduction = reduction}, &four_russians_map);
+	CHECK(four_russians.initial.size() == 1);
+	CHECK(four_russians.is_deterministic());
+	if (reduction == DeterminizationReduction::None) {
+		check_same_dfa(four_russians, four_russians_map, classic, classic_map);
+		return;
+	}
+	// The subset maps show merged states as one of them, not necessarily the same one in both.
+	REQUIRE(four_russians.num_of_states() == classic.num_of_states());
+	CHECK(four_russians.delta.num_of_transitions() == classic.delta.num_of_transitions());
+	CHECK(four_russians.final.size() == classic.final.size());
+	CHECK(are_equivalent(four_russians, classic));
 }
 
 /// Checks that determinize_four_russians() with @p block_size gives the DFA and the subset map of
@@ -198,6 +248,54 @@ void check_same_subset_construction_for_all_block_sizes(const Nfa& aut) {
 	for (const unsigned block_size : BLOCK_SIZES) {
 		check_same_subset_construction(aut, block_size, classic, classic_map);
 	}
+}
+
+/// A random NFA over {a, b} like random_nfa(), drawn by rng() % n: std::uniform_int_distribution gives other numbers
+///  with other standard libraries, and the automata of adaptive_automata() must be the same everywhere.
+Nfa portable_random_nfa(
+	std::mt19937& rng, const State num_of_states, const size_t num_of_transitions, const size_t num_of_final
+) {
+	Nfa aut(num_of_states);
+	const auto state = [&] { return static_cast<State>(rng() % num_of_states); };
+	for (size_t i = 0; i < num_of_transitions; ++i) {
+		const State source = state();
+		const Symbol symbol = rng() % 2 == 0 ? 'a' : 'b';
+		aut.delta.add(source, symbol, state());
+	}
+	aut.initial.insert(state());
+	for (size_t i = 0; i < num_of_final; ++i) { aut.final.insert(state()); }
+	return aut;
+}
+
+/// Random automata whose DFA with DeterminizationReduction::Simulation is smaller than with Bisimulation: the first two
+///  have far more Bisimulation states than any budget of DeterminizationReduction::Adaptive, so that Adaptive switches
+///  to the simulation, and the last one at most 900 (any budget is at least 1000), so that Adaptive keeps Bisimulation.
+///  Computed once.
+const std::vector<Nfa>& adaptive_automata() {
+	static const std::vector<Nfa> automata = [] {
+		const auto num_of_states = [](const Nfa& nfa, const DeterminizationReduction reduction) {
+			return determinize_four_russians(nfa, {.reduction = reduction}).num_of_states();
+		};
+		std::vector<Nfa> found;
+		std::mt19937 rng(11);
+		for (size_t round = 0; round < 300 && found.size() < 2; ++round) {
+			Nfa nfa = portable_random_nfa(rng, 50, 130, 25);
+			const size_t bisimulation = num_of_states(nfa, DeterminizationReduction::Bisimulation);
+			if (bisimulation >= 6'000 && num_of_states(nfa, DeterminizationReduction::Simulation) < bisimulation) {
+				found.push_back(std::move(nfa));
+			}
+		}
+		for (size_t round = 0; round < 300 && found.size() < 3; ++round) {
+			Nfa nfa = portable_random_nfa(rng, 20, 50, 10);
+			const size_t bisimulation = num_of_states(nfa, DeterminizationReduction::Bisimulation);
+			if (bisimulation >= 200 && bisimulation <= 900 &&
+				num_of_states(nfa, DeterminizationReduction::Simulation) < bisimulation) {
+				found.push_back(std::move(nfa));
+			}
+		}
+		return found;
+	}();
+	return automata;
 }
 
 } // namespace
@@ -221,8 +319,8 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 		aut.final = {1};
 		result = determinize_four_russians(aut, {}, &subset_map);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
-		REQUIRE(result.final[subset_map[{1}]]);
+		REQUIRE(result.initial[subset_map.at({1})]);
+		REQUIRE(result.final[subset_map.at({1})]);
 		REQUIRE(result.delta.empty());
 	}
 
@@ -232,9 +330,9 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 		aut.delta.add(1, 'a', 2);
 		result = determinize_four_russians(aut, {}, &subset_map);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
-		REQUIRE(result.final[subset_map[{2}]]);
-		REQUIRE(result.delta.contains(subset_map[{1}], 'a', subset_map[{2}]));
+		REQUIRE(result.initial[subset_map.at({1})]);
+		REQUIRE(result.final[subset_map.at({2})]);
+		REQUIRE(result.delta.contains(subset_map.at({1}), 'a', subset_map.at({2})));
 	}
 
 	SECTION("no initial states") {
@@ -271,20 +369,18 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 		const Nfa nfa = exponential_nfa(6);
 		for (const unsigned block_size : BLOCK_SIZES) {
 			subset_map.clear();
-			std::vector<StateSet> discovered;
+			// Each state once, with the macrostate of the subset map.
+			std::unordered_map<State, StateSet> discovered;
 			result = determinize_four_russians(
 				nfa, {.block_size = block_size}, &subset_map,
 				[&](const Nfa& partial, const State state, const StateSet& macrostate) {
 					CHECK(state < partial.num_of_states());
-					CHECK(state == discovered.size());
-					discovered.push_back(macrostate);
+					CHECK(discovered.emplace(state, macrostate).second);
 					return true;
 				}
 			);
 			REQUIRE(discovered.size() == result.num_of_states());
-			for (State state = 0; state < discovered.size(); ++state) {
-				CHECK(subset_map.at(discovered[state]) == state);
-			}
+			for (const auto& [state, macrostate] : discovered) { CHECK(subset_map.at(macrostate) == state); }
 
 			// Stop after the 10th discovered macrostate.
 			size_t calls = 0;
@@ -297,28 +393,27 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 		}
 	}
 
-	SECTION("renumbering the NFA states for locality keeps the subset map and the callback in the input's states") {
+	SECTION("renumbering the NFA states (for locality) keeps the subset map and the callback in the input's states") {
 		for (const auto& [k, fan] : std::vector<std::pair<size_t, State>>{{12, 9}, {13, 20}}) {
 			const Nfa nfa = fanned_exponential_nfa(k, fan);
 			for (const unsigned block_size : std::vector<unsigned>{0, 1, 8, 64}) {
 				check_same_subset_construction(nfa, block_size);
 			}
 			subset_map.clear();
-			std::vector<StateSet> discovered;
+			std::unordered_map<State, StateSet> discovered;
 			size_t num_of_wrong_states = 0;
 			result = determinize_four_russians(
 				nfa, {}, &subset_map, [&](const Nfa&, const State state, const StateSet& macrostate) {
-					if (state != discovered.size()) { ++num_of_wrong_states; }
-					discovered.push_back(macrostate);
+					if (!discovered.emplace(state, macrostate).second) { ++num_of_wrong_states; }
 					return true;
 				}
 			);
 			REQUIRE(discovered.size() == result.num_of_states());
 			REQUIRE(result.num_of_states() == determinize_classical(nfa).num_of_states());
 			const auto final_state = static_cast<State>((k + 1) * (fan + 1));
-			for (State state = 0; state < discovered.size(); ++state) {
-				if (subset_map.at(discovered[state]) != state ||
-					result.final.contains(state) != discovered[state].contains(final_state)) {
+			for (const auto& [state, macrostate] : discovered) {
+				if (subset_map.at(macrostate) != state ||
+					result.final.contains(state) != macrostate.contains(final_state)) {
 					++num_of_wrong_states;
 				}
 			}
@@ -341,10 +436,14 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 		result = determinize_four_russians(nfa, {.block_size = 4}, &subset_map);
 		const std::vector<StateSet> macrostates = {{0}, {0, 2, 3, 5}, {0, 2, 3, 4, 5}, {2, 3}, {0, 1, 2, 3, 4, 5}};
 		REQUIRE(result.num_of_states() == macrostates.size());
-		for (State m = 0; m < macrostates.size(); ++m) { CHECK(subset_map.at(macrostates[m]) == m); }
-		CHECK(result.final == mata::utils::SparseSet<State>{1, 2, 4});
+		REQUIRE(subset_map.size() == macrostates.size());
+		// The states of the DFA by the indices of their macrostates.
+		const auto state = [&](const size_t m) { return subset_map.at(macrostates[m]); };
+		CHECK(sorted_states(result.initial) == std::vector<State>{state(0)});
+		CHECK(result.final.size() == 3);
+		for (const size_t m : std::initializer_list<size_t>{1, 2, 4}) { CHECK(result.final.contains(state(m))); }
 		CHECK(result.delta.num_of_transitions() == 10);
-		for (const auto& [source, symbol, target] : std::vector<std::tuple<State, Symbol, State>>{
+		for (const auto& [source, symbol, target] : std::vector<std::tuple<size_t, Symbol, size_t>>{
 				 {0, 'a', 1},
 				 {1, 'a', 2},
 				 {1, 'b', 3},
@@ -356,7 +455,7 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 				 {4, 'b', 3},
 				 {4, 'c', 3}
 			 }) {
-			CHECK(result.delta.contains(source, symbol, target));
+			CHECK(result.delta.contains(state(source), symbol, state(target)));
 		}
 		check_same_subset_construction(nfa, 4);
 	}
@@ -378,7 +477,8 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 					for (Symbol k = 0; k < group_size; ++k) { nfa.delta.add(source, group * 100 + k, target); }
 				}
 			}
-			// Symbol 1000 + k copies group 0 except in one state, so it must end up in its own class.
+			// Symbol 1000 copies symbol 0 except in state 0, so it is in a class of its own if state 0 has a transition
+			//  under symbol 0.
 			const std::vector<Transition> transitions(nfa.delta.transitions().begin(), nfa.delta.transitions().end());
 			for (const Transition& transition : transitions) {
 				if (transition.symbol == 0 && transition.source != 0) {
@@ -438,11 +538,8 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians()") {
 				determinize_four_russians(nfa, {}, &constructed_map, [](const Nfa&, const State, const StateSet&) {
 					return true;
 				});
-			REQUIRE(result.num_of_states() == constructed.num_of_states());
+			CHECK(result.is_identical(constructed));
 			CHECK(map == constructed_map);
-			CHECK(result.initial == constructed.initial);
-			CHECK(result.final == constructed.final);
-			CHECK(transitions_of(result) == transitions_of(constructed));
 		}
 		Nfa one_state(1);
 		one_state.initial.insert(0);
@@ -494,10 +591,7 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() numbers the states
 				const Nfa dfa = with_callback
 									? determinize_four_russians(aut, {.block_size = block_size}, &map, keep_going)
 									: determinize_four_russians(aut, {.block_size = block_size}, &map);
-				CHECK(dfa.num_of_states() == expected.num_of_states());
-				CHECK(sorted_states(dfa.initial) == sorted_states(expected.initial));
-				CHECK(sorted_states(dfa.final) == sorted_states(expected.final));
-				CHECK(transitions_of(dfa) == transitions_of(expected));
+				CHECK(dfa.is_identical(expected));
 				CHECK(map == expected_map);
 			}
 		}
@@ -505,10 +599,21 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() numbers the states
 }
 
 TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-preserving reduction") {
-	using Reduction = FourRussiansReduction;
+	using Reduction = DeterminizationReduction;
 	const auto determinize_reduced = [](const Nfa& aut, const Reduction reduction, const unsigned block_size = 0,
 										std::unordered_map<StateSet, State>* subset_map = nullptr) {
 		return determinize_four_russians(aut, {.block_size = block_size, .reduction = reduction}, subset_map);
+	};
+	const auto classical_reduced = [](const Nfa& aut, const Reduction reduction,
+									  std::unordered_map<StateSet, State>* subset_map = nullptr) {
+		return determinize_classical(aut, subset_map, std::nullopt, nullptr, reduction);
+	};
+	// Checks that the classical construction with the reduction gives the DFA of the Four Russians one.
+	const auto check_classical_reduced = [&](const Nfa& aut, const Reduction reduction) {
+		std::unordered_map<StateSet, State> classic_map;
+		const Nfa classic = classical_reduced(aut, reduction, &classic_map);
+		check_same_subset_construction(aut, 0, classic, classic_map, reduction);
+		if (classic_map.size() <= 200) { check_subset_map_languages(aut, classic, classic_map); }
 	};
 	constexpr Reduction REDUCTIONS[]{Reduction::Bisimulation, Reduction::Simulation, Reduction::Adaptive};
 
@@ -522,19 +627,16 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 			const Nfa result = determinize_reduced(aut, reduction);
 			CHECK(result.num_of_states() == 1);
 			CHECK(result.is_lang_empty());
+			const Nfa classic = classical_reduced(aut, reduction);
+			CHECK(classic.num_of_states() == 1);
+			CHECK(classic.is_lang_empty());
+			check_classical_reduced(aut, reduction);
 		}
+		CHECK(classical_reduced(Nfa(3), Reduction::Bisimulation).is_lang_empty());
 	}
 
-	// L(1) = a* is a subset of L(2) = (a|b)*: the macrostate {1, 2} of the subset construction becomes {2}.
-	Nfa aut(3);
-	aut.initial = {0};
-	aut.final = {1, 2};
-	aut.delta.add(0, 'a', 1);
-	aut.delta.add(0, 'a', 2);
-	aut.delta.add(0, 'b', 1);
-	aut.delta.add(1, 'a', 1);
-	aut.delta.add(2, 'a', 2);
-	aut.delta.add(2, 'b', 2);
+	// The macrostate {1, 2} of the subset construction becomes {2}.
+	Nfa aut = small_universal_nfa();
 	REQUIRE(determinize_classical(aut).num_of_states() == 4);
 
 	SECTION("a universal state is the whole macrostate") {
@@ -544,7 +646,9 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 			const Nfa result = determinize_reduced(aut, reduction, 0, &subset_map);
 			CHECK(result.num_of_states() == 3);
 			CHECK(are_equivalent(result, aut));
-			CHECK(subset_map.contains({2}));
+			check_subset_map_languages(aut, result, subset_map);
+			CHECK(classical_reduced(aut, reduction).num_of_states() == 3);
+			check_classical_reduced(aut, reduction);
 		}
 	}
 
@@ -552,15 +656,18 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 		aut.delta.add(0, 'c', 0); // State 2 is no longer universal (no transition under c).
 		REQUIRE(determinize_classical(aut).num_of_states() == 4);
 		CHECK(determinize_reduced(aut, Reduction::Bisimulation).num_of_states() == 4); // No bisimilar states.
+		// Far below the budget of Adaptive, which keeps the cheap reduction.
+		CHECK(determinize_reduced(aut, Reduction::Adaptive).num_of_states() == 4);
+		CHECK(classical_reduced(aut, Reduction::Bisimulation).num_of_states() == 4);
+		CHECK(classical_reduced(aut, Reduction::Simulation).num_of_states() == 3);
+		CHECK(classical_reduced(aut, Reduction::Adaptive).num_of_states() == 4);
+		for (const Reduction reduction : REDUCTIONS) { check_classical_reduced(aut, reduction); }
 		std::unordered_map<StateSet, State> subset_map;
 		const Nfa result = determinize_reduced(aut, Reduction::Simulation, 0, &subset_map);
 		CHECK(result.num_of_states() == 3);
 		CHECK(result.is_deterministic());
 		CHECK(are_equivalent(result, aut));
-		REQUIRE(subset_map.size() == 3);
-		CHECK(subset_map.contains({0}));
-		CHECK(subset_map.contains({1}));
-		CHECK(subset_map.contains({2}));
+		check_subset_map_languages(aut, result, subset_map);
 	}
 
 	SECTION("bisimilar states are merged") {
@@ -581,10 +688,31 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 			const Nfa result = determinize_reduced(twice, reduction, 0, &subset_map);
 			CHECK(result.num_of_states() == (size_t{1} << (k + 1)));
 			CHECK(are_equivalent(result, copy));
+			check_subset_map_languages(twice, result, subset_map);
 			for (const auto& [macrostate, state] : subset_map) {
-				// Each class of merged states stands for its smallest state, which is in the first copy.
-				CHECK(std::ranges::all_of(macrostate, [&](const State q) { return q <= k + 1; }));
+				// Merged states appear as one of them: never a state with its twin in the other copy.
+				CHECK(std::ranges::none_of(macrostate, [&](const State q) { return macrostate.contains(last - q); }));
 			}
+			check_classical_reduced(twice, reduction);
+		}
+	}
+
+	SECTION("deterministic input") {
+		// States 1 and 2 are bisimilar: the reduced automaton is deterministic too, which the classical construction
+		//  takes in its fast path.
+		Nfa dfa(3);
+		dfa.initial = {0};
+		dfa.final = {1, 2};
+		dfa.delta.add(0, 'a', 1);
+		dfa.delta.add(0, 'b', 2);
+		dfa.delta.add(1, 'a', 1);
+		dfa.delta.add(2, 'a', 2);
+		REQUIRE(dfa.is_deterministic());
+		REQUIRE(determinize_classical(dfa).num_of_states() == 3);
+		for (const Reduction reduction : REDUCTIONS) {
+			CHECK(determinize_reduced(dfa, reduction).num_of_states() == 2);
+			CHECK(classical_reduced(dfa, reduction).num_of_states() == 2);
+			check_classical_reduced(dfa, reduction);
 		}
 	}
 
@@ -595,6 +723,7 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 				CHECK(result.num_of_states() == (size_t{1} << 9));
 				CHECK(are_equivalent(result, exponential_nfa(8)));
 			}
+			CHECK(classical_reduced(exponential_nfa(8), reduction).num_of_states() == (size_t{1} << 9));
 		}
 	}
 
@@ -611,6 +740,7 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 						static_cast<size_t>(density * static_cast<double>(num_of_states * alphabet->size()));
 					Nfa nfa =
 						random_nfa(rng, num_of_states, *alphabet, num_of_transitions, 1 + round, 1 + num_of_states / 4);
+					CAPTURE(num_of_states, alphabet->size(), round);
 					if (round == 2) {
 						// Symbols with the same transitions everywhere (one symbol class), and a copy of every state:
 						//  bisimilar states.
@@ -636,6 +766,17 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 							return ++num_of_macrostates <= 3'000;
 						});
 					if (num_of_macrostates > 3'000) { continue; }
+					// The classical construction with each reduction gives the DFA of the Four Russians one.
+					for (const Reduction reduction : REDUCTIONS) {
+						std::unordered_map<StateSet, State> classic_map;
+						const Nfa reduced_classic = classical_reduced(nfa, reduction, &classic_map);
+						for (const unsigned block_size : {0U, 1U, 8U}) {
+							check_same_subset_construction(nfa, block_size, reduced_classic, classic_map, reduction);
+						}
+						if (num_of_states <= 30 && classic_map.size() <= 200) {
+							check_subset_map_languages(nfa, reduced_classic, classic_map);
+						}
+					}
 					for (const unsigned block_size : {0U, 1U, 8U}) {
 						size_t num_of_bisimulation_states = 0;
 						size_t num_of_simulation_states = 0;
@@ -655,17 +796,8 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 															result.num_of_states() == num_of_simulation_states;
 								CHECK(is_one_of_them);
 							}
-							REQUIRE(subset_map.size() == result.num_of_states());
 							if (num_of_states > 30 || subset_map.size() > 200) { continue; }
-							// Every macrostate (a set of states of the input) has the language of its state.
-							for (const auto& [macrostate, state] : subset_map) {
-								Nfa from_macrostate = nfa;
-								from_macrostate.initial.clear();
-								for (const State q : macrostate) { from_macrostate.initial.insert(q); }
-								Nfa from_state = result;
-								from_state.initial = {state};
-								CHECK(are_equivalent(from_macrostate, from_state));
-							}
+							check_subset_map_languages(nfa, result, subset_map);
 						}
 					}
 				}
@@ -674,23 +806,27 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 	}
 
 	SECTION("the adaptive reduction switches to the simulation on large DFAs") {
-		// Random automata with far more macrostates than the budget of Reduction::Adaptive, and smaller with the
-		//  simulation.
-		std::mt19937 rng(11);
-		const std::vector<Symbol> alphabet = {'a', 'b'};
-		size_t num_of_checked = 0;
-		for (size_t round = 0; round < 300 && num_of_checked < 2; ++round) {
-			const Nfa nfa = random_nfa(rng, 50, alphabet, 130, 1, 25);
+		REQUIRE(adaptive_automata().size() == 3);
+		for (const Nfa& nfa : std::span(adaptive_automata()).first(2)) {
 			const Nfa bisimulation = determinize_reduced(nfa, Reduction::Bisimulation);
-			if (bisimulation.num_of_states() < 6'000) { continue; }
 			const Nfa simulation = determinize_reduced(nfa, Reduction::Simulation);
-			if (simulation.num_of_states() == bisimulation.num_of_states()) { continue; }
+			REQUIRE(simulation.num_of_states() < bisimulation.num_of_states());
 			const Nfa adaptive = determinize_reduced(nfa, Reduction::Adaptive);
 			CHECK(adaptive.num_of_states() == simulation.num_of_states());
 			CHECK(adaptive.delta.num_of_transitions() == simulation.delta.num_of_transitions());
-			++num_of_checked;
+			// The classical construction switches too: the DFA and the subset map of the Four Russians one.
+			check_classical_reduced(nfa, Reduction::Adaptive);
 		}
-		CHECK(num_of_checked == 2);
+	}
+
+	SECTION("the adaptive reduction keeps the bisimulation below its budget") {
+		REQUIRE(adaptive_automata().size() == 3);
+		const Nfa& nfa = adaptive_automata().back();
+		const Nfa bisimulation = determinize_reduced(nfa, Reduction::Bisimulation);
+		REQUIRE(determinize_reduced(nfa, Reduction::Simulation).num_of_states() < bisimulation.num_of_states());
+		CHECK(determinize_reduced(nfa, Reduction::Adaptive).is_identical(bisimulation));
+		CHECK(classical_reduced(nfa, Reduction::Adaptive).num_of_states() == bisimulation.num_of_states());
+		check_classical_reduced(nfa, Reduction::Adaptive);
 	}
 
 	SECTION("invalid arguments") {
@@ -700,6 +836,13 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() with a language-pr
 				determinize_four_russians(
 					exponential_nfa(2), {.reduction = reduction}, nullptr,
 					[](const Nfa&, const State, const StateSet&) { return true; }
+				),
+				std::invalid_argument
+			);
+			CHECK_THROWS_AS(
+				determinize_classical(
+					exponential_nfa(2), nullptr, [](const Nfa&, const State, const StateSet&) { return true; }, nullptr,
+					reduction
 				),
 				std::invalid_argument
 			);
@@ -726,21 +869,72 @@ TEST_CASE("mata::nfa::algorithms::determinize_four_russians() over restricted sy
 		CHECK(dfa.is_identical(expected));
 		CHECK(map == expected_map);
 	}
-	constexpr FourRussiansOptions BISIMULATION = {.reduction = FourRussiansReduction::Bisimulation};
-	CHECK(determinize_four_russians(aut, BISIMULATION, nullptr, std::nullopt, &symbols)
-			  .is_identical(determinize_four_russians(without_c, BISIMULATION)));
-
 	// The DFA of the classical construction over the same symbols.
 	std::unordered_map<StateSet, State> classic_map;
 	const Nfa classic = determinize_classical(aut, &classic_map, std::nullopt, &symbols);
 	check_same_subset_construction(without_c, 0, classic, classic_map);
+
+	// With a reduction, the restricted automaton is reduced: state 2 is universal only without c, and nothing is
+	//  reduced with c (L(1) = (a|c)* and L(2) = (a|b)* are incomparable).
+	const Nfa small = small_universal_nfa();
+	Nfa small_c = small;
+	small_c.delta.add(1, 'c', 1);
+	for (const DeterminizationReduction reduction :
+		 {DeterminizationReduction::Bisimulation, DeterminizationReduction::Simulation,
+		  DeterminizationReduction::Adaptive}) {
+		REQUIRE(determinize_four_russians(small_c, {.reduction = reduction}).num_of_states() == 4);
+		std::unordered_map<StateSet, State> map;
+		std::unordered_map<StateSet, State> expected_map;
+		const Nfa dfa = determinize_four_russians(small_c, {.reduction = reduction}, &map, std::nullopt, &symbols);
+		const Nfa expected = determinize_four_russians(small, {.reduction = reduction}, &expected_map);
+		CHECK(expected.num_of_states() == 3);
+		CHECK(dfa.is_identical(expected));
+		CHECK(map == expected_map);
+		std::unordered_map<StateSet, State> reduced_map;
+		const Nfa reduced = determinize_classical(small_c, &reduced_map, std::nullopt, &symbols, reduction);
+		CHECK(reduced.num_of_states() == 3);
+		check_same_subset_construction(small, 0, reduced, reduced_map, reduction);
+	}
+
+	// Only other symbols have transitions: both constructions report the initial macrostate once.
+	Nfa only_c(2);
+	only_c.initial = {0};
+	only_c.final = {0};
+	only_c.delta.add(0, 'c', 1);
+	for (const bool deterministic : {true, false}) {
+		if (!deterministic) { only_c.delta.add(0, 'c', 0); }
+		size_t four_russians_calls = 0;
+		size_t classical_calls = 0;
+		const Nfa four_russians_dfa = determinize_four_russians(
+			only_c, {}, nullptr,
+			[&](const Nfa&, const State, const StateSet& macrostate) {
+				CHECK(macrostate == StateSet{0});
+				++four_russians_calls;
+				return true;
+			},
+			&symbols
+		);
+		const Nfa classical_dfa = determinize_classical(
+			only_c, nullptr,
+			[&](const Nfa&, const State, const StateSet& macrostate) {
+				CHECK(macrostate == StateSet{0});
+				++classical_calls;
+				return true;
+			},
+			&symbols
+		);
+		CHECK(four_russians_calls == 1);
+		CHECK(classical_calls == 1);
+		CHECK(are_equivalent(four_russians_dfa, classical_dfa));
+		CHECK(four_russians_dfa.num_of_states() == 1);
+	}
 
 	// Without other symbols, the restriction changes nothing.
 	CHECK(determinize_four_russians(without_c, {}, nullptr, std::nullopt, &symbols)
 			  .is_identical(determinize_four_russians(without_c)));
 }
 
-TEST_CASE("mata::nfa::determinize() with the \"algorithm\" key") {
+TEST_CASE("mata::nfa::determinize() with the \"algorithm\" and \"reduction\" keys") {
 	const Nfa aut = padded_exponential_nfa(4, 10);
 	std::unordered_map<StateSet, State> map;
 	std::unordered_map<StateSet, State> expected_map;
@@ -759,8 +953,105 @@ TEST_CASE("mata::nfa::determinize() with the \"algorithm\" key") {
 		CHECK(determinize(aut, {{"algorithm", "classical"}}).is_identical(expected));
 	}
 
+	SECTION("restricted to symbols") {
+		Nfa with_c = aut;
+		const auto num_of_states = static_cast<State>(with_c.num_of_states());
+		for (State q = 0; q < num_of_states; q += 3) { with_c.delta.add(q, 'c', (q + 5) % num_of_states); }
+		const mata::utils::OrdVector<Symbol> symbols = {'a', 'b'};
+		REQUIRE(!determinize(with_c).is_identical(determinize(aut))); // The transitions under c matter.
+		const ParameterMap four_russians{{"algorithm", "four_russians"}};
+		CHECK(determinize(with_c, nullptr, std::nullopt, &symbols, four_russians)
+				  .is_identical(determinize_four_russians(aut)));
+		const ParameterMap classical{{"algorithm", "classical"}};
+		CHECK(determinize(with_c, nullptr, std::nullopt, &symbols, classical).is_identical(determinize_classical(aut)));
+
+		// With a reduction, which reduces only the restricted automaton (see the test of the restricted symbols).
+		Nfa small_c = small_universal_nfa();
+		small_c.delta.add(1, 'c', 1);
+		for (const std::string algorithm : {"four_russians", "classical"}) {
+			const ParameterMap params{{"algorithm", algorithm}, {"reduction", "bisimulation"}};
+			CHECK(determinize(small_c, params).num_of_states() == 4);
+			CHECK(determinize(small_c, nullptr, std::nullopt, &symbols, params).num_of_states() == 3);
+		}
+	}
+
+	SECTION("reduction") {
+		// The simulation prunes the state 1 from {1, 2}; there are no bisimilar states, and Adaptive keeps the cheap
+		//  reduction far below its budget.
+		Nfa pruned = small_universal_nfa();
+		pruned.delta.add(0, 'c', 0);
+		const std::tuple<std::string, DeterminizationReduction, size_t> reductions[]{
+			{"none", DeterminizationReduction::None, 4},
+			{"bisimulation", DeterminizationReduction::Bisimulation, 4},
+			{"simulation", DeterminizationReduction::Simulation, 3},
+			{"adaptive", DeterminizationReduction::Adaptive, 4},
+		};
+		for (const auto& [name, reduction, num_of_states] : reductions) {
+			for (const std::string algorithm : {"four_russians", "classical"}) {
+				std::unordered_map<StateSet, State> reduced_map;
+				std::unordered_map<StateSet, State> expected_reduced_map;
+				const Nfa expected =
+					algorithm == "four_russians"
+						? determinize_four_russians(pruned, {.reduction = reduction}, &expected_reduced_map)
+						: determinize_classical(pruned, &expected_reduced_map, std::nullopt, nullptr, reduction);
+				const ParameterMap params{{"algorithm", algorithm}, {"reduction", name}};
+				const Nfa dfa = determinize(pruned, &reduced_map, std::nullopt, nullptr, params);
+				CHECK(dfa.num_of_states() == num_of_states);
+				CHECK(dfa.is_deterministic());
+				CHECK(are_equivalent(dfa, pruned));
+				CHECK(dfa.is_identical(expected));
+				CHECK(reduced_map == expected_reduced_map);
+			}
+		}
+
+		// The same on a DFA that the two constructions may number differently.
+		const Nfa exponential = exponential_nfa(3);
+		for (const auto& [name, reduction, _] : reductions) {
+			CAPTURE(name);
+			for (const std::string algorithm : {"four_russians", "classical"}) {
+				const Nfa dfa = determinize(exponential, {{"algorithm", algorithm}, {"reduction", name}});
+				CHECK(dfa.is_deterministic());
+				CHECK(are_equivalent(dfa, exponential));
+				CHECK(dfa.is_identical(
+					algorithm == "four_russians"
+						? determinize_four_russians(exponential, {.reduction = reduction})
+						: determinize_classical(exponential, nullptr, std::nullopt, nullptr, reduction)
+				));
+			}
+		}
+
+		// Adaptive switches to the simulation on a large DFA, which tells it apart from Bisimulation.
+		REQUIRE(!adaptive_automata().empty());
+		const Nfa& large = adaptive_automata().front();
+		const size_t bisimulation =
+			determinize_four_russians(large, {.reduction = DeterminizationReduction::Bisimulation}).num_of_states();
+		const size_t simulation =
+			determinize_four_russians(large, {.reduction = DeterminizationReduction::Simulation}).num_of_states();
+		REQUIRE(simulation < bisimulation);
+		for (const std::string algorithm : {"four_russians", "classical"}) {
+			const auto num_of_states = [&](const std::string& reduction) {
+				return determinize(large, {{"algorithm", algorithm}, {"reduction", reduction}}).num_of_states();
+			};
+			CHECK(num_of_states("bisimulation") == bisimulation);
+			CHECK(num_of_states("simulation") == simulation);
+			CHECK(num_of_states("adaptive") == simulation);
+		}
+	}
+
 	SECTION("invalid parameters") {
 		CHECK_THROWS_AS(determinize(aut, {{"algorithm", "subset"}}), std::runtime_error);
 		CHECK_THROWS_AS(determinize(aut, {{"type", "classical"}}), std::runtime_error);
+		// The key "algorithm" is required also with "reduction".
+		CHECK_THROWS_AS(determinize(aut, {{"reduction", "simulation"}}), std::runtime_error);
+		CHECK_THROWS_AS(
+			determinize(aut, {{"algorithm", "four_russians"}, {"reduction", "minimal"}}), std::runtime_error
+		);
+		const auto discover = [](const Nfa&, State, const StateSet&) { return true; };
+		for (const std::string algorithm : {"four_russians", "classical"}) {
+			CHECK_THROWS_AS(
+				determinize(aut, nullptr, discover, nullptr, {{"algorithm", algorithm}, {"reduction", "bisimulation"}}),
+				std::invalid_argument
+			);
+		}
 	}
 }

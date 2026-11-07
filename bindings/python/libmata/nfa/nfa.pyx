@@ -1343,9 +1343,13 @@ def determinize_with_subset_map(Nfa lhs, params = None):
     :param Dict params: Additional parameters for the determinization:
       - "algorithm":
         - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default.
+          default when params is None; in params, the key "algorithm" is required.
         - "classical": The classical subset construction.
-        Both give the same DFA up to the numbering of its states.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton, subset map
     """
     params = params or {"algorithm": "four_russians"}
@@ -1365,9 +1369,13 @@ def determinize(Nfa lhs, params = None):
     :param Dict params: Additional parameters for the determinization:
       - "algorithm":
         - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default.
+          default when params is None; in params, the key "algorithm" is required.
         - "classical": The classical subset construction.
-        Both give the same DFA up to the numbering of its states.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton
     """
     params = params or {"algorithm": "four_russians"}
@@ -1379,20 +1387,20 @@ def determinize(Nfa lhs, params = None):
         mata_nfa.c_determinize(c_result, dereference(c_lhs), NULL, c_params)
     return result
 
-class FourRussiansReduction(IntEnum):
-    """Reduction of the DFA of `determinize_four_russians()`: a smaller DFA for the same language, not always minimal."""
-    Bisimulation = <int>mata_nfa.FourRussiansReductionBisimulation
-    Simulation = <int>mata_nfa.FourRussiansReductionSimulation
-    Adaptive = <int>mata_nfa.FourRussiansReductionAdaptive
+class DeterminizationReduction(IntEnum):
+    """Reduction of a determinized automaton: a smaller DFA for the same language, not always minimal."""
+    Bisimulation = <int>mata_nfa.DeterminizationReductionBisimulation
+    Simulation = <int>mata_nfa.DeterminizationReductionSimulation
+    Adaptive = <int>mata_nfa.DeterminizationReductionAdaptive
 
 
 cdef mata_nfa.CFourRussiansOptions _c_four_russians_options(unsigned block_size, reduction):
     cdef mata_nfa.CFourRussiansOptions options
     options.block_size = block_size
     if reduction is None:
-        options.reduction = mata_nfa.FourRussiansReductionNone
+        options.reduction = mata_nfa.DeterminizationReductionNone
     else:
-        options.reduction = <mata_nfa.CFourRussiansReduction><int>FourRussiansReduction(reduction)
+        options.reduction = <mata_nfa.CDeterminizationReduction><int>DeterminizationReduction(reduction)
     return options
 
 def determinize_four_russians(Nfa lhs, unsigned block_size = 0, reduction = None):
@@ -1403,7 +1411,7 @@ def determinize_four_russians(Nfa lhs, unsigned block_size = 0, reduction = None
 
     :param Nfa lhs: non-deterministic finite automaton
     :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
-    :param FourRussiansReduction reduction: reduction of the result, or None for no reduction
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
     :return: deterministic finite automaton
     """
     cdef Nfa result = Nfa()
@@ -1419,7 +1427,7 @@ def determinize_four_russians_with_subset_map(Nfa lhs, unsigned block_size = 0, 
 
     :param Nfa lhs: non-deterministic finite automaton
     :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
-    :param FourRussiansReduction reduction: reduction of the result, or None for no reduction
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
     :return: deterministic finite automaton, subset map (with a reduction, merged states appear as one of them)
     """
     cdef Nfa result = Nfa()

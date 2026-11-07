@@ -221,7 +221,7 @@ proptest! {
 		let dfa = nfa.determinize();
 		prop_assert!(dfa.is_deterministic());
 		assert_language(&dfa, |w| m.accepts(w), "determinize");
-		// The same DFA up to the numbering of its states.
+		// The classical construction, the same size and language
 		let classical = nfa.determinize_with(Determinization::Classical);
 		prop_assert!(classical.is_deterministic());
 		prop_assert_eq!(classical.num_states(), dfa.num_states());
