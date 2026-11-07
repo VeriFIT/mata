@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Page not found</title>
+    <script>
+      // The documentation used to be at the root of the website; it is now under docs/. Addresses of its pages are sent
+      // there, so that old links keep working.
+      (function () {
+        var segments = location.pathname.split("/").filter(Boolean);
+        var base =
+          location.hostname.endsWith(".github.io") && segments.length > 0
+            ? "/" + segments[0] + "/"
+            : "/";
+        var rest = location.pathname.slice(base.length);
+        if (rest !== "" && !/^(docs|playground|assets)(\/|$)/.test(rest)) {
+          location.replace(
+            base + "docs/" + rest + location.search + location.hash,
+          );
+        }
+      })();
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #f4f6f9;
+        --ink: #141b2d;
+        --ink-soft: #4a5468;
+        --blue: #2b44c8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #111a30;
+          --ink: #e6eaf2;
+          --ink-soft: #a6b0c5;
+          --blue: #93a5ff;
+        }
+      }
+      body {
+        max-width: 38rem;
+        margin: 0 auto;
+        padding: 4rem 1rem;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          1.125rem/1.6 Georgia,
+          "Times New Roman",
+          serif;
+      }
+      h1 {
+        font-size: 2.5rem;
+        line-height: 1.1;
+      }
+      p {
+        color: var(--ink-soft);
+      }
+      a {
+        color: var(--blue);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Page not found</h1>
+    <p>
+      There is no page at this address. The documentation of Mata has moved to a
+      new address, so you may have followed an old link.
+    </p>
+    <p>
+      Go to the <a href="https://verifit.github.io/mata/">home page of Mata</a>,
+      its <a href="https://verifit.github.io/mata/docs/">documentation</a>, or
+      the <a href="https://verifit.github.io/mata/playground/">playground</a>.
+    </p>
+  </body>
+</html>

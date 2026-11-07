@@ -11,6 +11,8 @@ Mata is an open source automata library that offers interface for different kind
 2. A flexible wrapper implemented in Python that uses the efficient library, and
 3. Rust bindings with a safe API over the efficient library.
 
+The [website of Mata](https://verifit.github.io/mata/) gives an overview of the library, its [documentation](https://verifit.github.io/mata/docs/), and a [playground](https://verifit.github.io/mata/playground/) that runs Mata in the browser.
+
 ## Installation
 
 ### Nix
@@ -374,7 +376,9 @@ Please refer to our [contributing guidelines](CONTRIBUTING.md).
   - In case of some sensitive bugs (like security vulnerabilities),
     please contact us directly, instead of using issue tracker.
     We value your effort to improve the security and privacy of this project!
-- Project documentation: <https://verifit.github.io/mata>
+- Website: <https://verifit.github.io/mata/>
+- Project documentation: <https://verifit.github.io/mata/docs/>
+- Playground: <https://verifit.github.io/mata/playground/>
 - Jupyter notebooks demonstrating `mata` usage: <https://github.com/VeriFIT/mata/tree/devel/examples/notebooks>
   - [Example 01: WS1S Logic](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb)
   - [Example 02: ReDoS Attacks](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb)

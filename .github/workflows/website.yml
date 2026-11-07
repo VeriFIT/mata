@@ -1,0 +1,128 @@
+name: Website
+# Builds the website, which is the landing page and the playground from site/ together with the documentation, and
+#  deploys it to GitHub Pages. The release of master deploys it, and it can be deployed by hand with "Run workflow".
+#  Pull requests that change the website only check that it builds.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build the website from.
+        type: string
+        required: true
+      deploy:
+        description: Deploy the website to GitHub Pages.
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy the website to GitHub Pages.
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - site/**
+      - bindings/wasm/**
+      - .github/workflows/website.yml
+permissions:
+  contents: read
+env:
+  # The same release of Emscripten as the WebAssembly tests of the Rust bindings in code-quality.yml.
+  EMSCRIPTEN_VERSION: 6.0.13
+  # Viz.js, the build of Graphviz that draws automata in the playground.
+  VIZ_VERSION: 3.31.0
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/_build/html
+  playground:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install "$EMSCRIPTEN_VERSION"
+          "$HOME/emsdk/emsdk" activate "$EMSCRIPTEN_VERSION"
+      - name: Build Mata for the playground
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          emcmake cmake -S bindings/wasm -B build-wasm -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-wasm --parallel
+      - name: Test the build under Node
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          node bindings/wasm/smoke-test.mjs build-wasm/mata-playground.js
+      - name: Download Viz.js
+        run: |
+          npm pack "@viz-js/viz@$VIZ_VERSION" --pack-destination "$RUNNER_TEMP"
+          tar -xzf "$RUNNER_TEMP/viz-js-viz-$VIZ_VERSION.tgz" -C "$RUNNER_TEMP"
+      - name: Collect the generated files of the playground
+        run: |
+          mkdir -p "$RUNNER_TEMP/playground/vendor"
+          cp build-wasm/mata-playground.js build-wasm/mata-playground.wasm "$RUNNER_TEMP/playground/"
+          # A single module with Graphviz inlined; its header carries the copyright notices.
+          cp "$RUNNER_TEMP/package/dist/viz.js" "$RUNNER_TEMP/playground/vendor/viz.js"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playground
+          path: ${{ runner.temp }}/playground
+  site:
+    needs: [docs, playground]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+      - name: Copy the pages
+        run: |
+          cp -r site _site
+          rm _site/site.just
+      - uses: actions/download-artifact@v4
+        with:
+          name: docs
+          path: _site/docs
+      - uses: actions/download-artifact@v4
+        with:
+          name: playground
+          path: _site/playground
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: _site
+  deploy:
+    needs: site
+    # Pull requests leave the input unset.
+    if: inputs.deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: website
+          path: _site
+      # GitHub Pages would otherwise build the site with Jekyll, which leaves out the directories of the documentation
+      #  that start with an underscore.
+      - name: Turn off Jekyll
+        run: touch _site/.nojekyll
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: _site

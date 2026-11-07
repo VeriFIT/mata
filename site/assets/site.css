@@ -1,0 +1,1016 @@
+/* Styles shared by the Mata landing page and the playground. */
+
+/* Fonts (SIL Open Font License 1.1, see fonts/OFL-*.txt). */
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("fonts/source-serif-4-roman-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("fonts/source-serif-4-roman-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("fonts/source-serif-4-roman-greek.woff2") format("woff2");
+  unicode-range:
+    U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("fonts/source-serif-4-italic-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("fonts/source-serif-4-italic-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("fonts/source-serif-4-italic-greek.woff2") format("woff2");
+  unicode-range:
+    U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-greek.woff2") format("woff2");
+  unicode-range:
+    U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ibm-plex-mono-400-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ibm-plex-mono-400-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/ibm-plex-mono-500-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/ibm-plex-mono-500-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Tokens. Ultramarine marks states, links and the primary action; the highlighter yellow marks only the
+   current state of a run; green and red are kept for accepted and rejected. */
+:root {
+  color-scheme: light;
+  --paper: #f4f6f9;
+  --paper-raised: #ffffff;
+  --paper-sunken: #e8ecf2;
+  --ink: #141b2d;
+  --ink-soft: #4a5468;
+  --rule: #d6dce6;
+  --rule-strong: #b4bdcc;
+  --blue: #2b44c8;
+  --blue-hover: #1f34a6;
+  --blue-wash: #e4e9fb;
+  --on-blue: #ffffff;
+  --edge: #6b7488;
+  --mark: #ffe45c;
+  --on-mark: #141b2d;
+  --accept: #1d7a4b;
+  --reject: #b4232f;
+  --shadow:
+    0 1px 2px rgb(20 27 45 / 0.06), 0 10px 30px -14px rgb(20 27 45 / 0.22);
+
+  --serif:
+    "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --measure: 38rem;
+  --page: 74rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #111a30;
+    --paper-raised: #172240;
+    --paper-sunken: #0c1426;
+    --ink: #e6eaf2;
+    --ink-soft: #a6b0c5;
+    --rule: #2a3757;
+    --rule-strong: #3e4d72;
+    --blue: #93a5ff;
+    --blue-hover: #b6c2ff;
+    --blue-wash: #1f2c55;
+    --on-blue: #0d1530;
+    --edge: #8a95ad;
+    --mark: #f7d849;
+    --on-mark: #141b2d;
+    --accept: #5fd394;
+    --reject: #ff8a90;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 36px -18px rgb(0 0 0 / 0.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #111a30;
+  --paper-raised: #172240;
+  --paper-sunken: #0c1426;
+  --ink: #e6eaf2;
+  --ink-soft: #a6b0c5;
+  --rule: #2a3757;
+  --rule-strong: #3e4d72;
+  --blue: #93a5ff;
+  --blue-hover: #b6c2ff;
+  --blue-wash: #1f2c55;
+  --on-blue: #0d1530;
+  --edge: #8a95ad;
+  --mark: #f7d849;
+  --on-mark: #141b2d;
+  --accept: #5fd394;
+  --reject: #ff8a90;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 36px -18px rgb(0 0 0 / 0.7);
+}
+
+/* Base. */
+[hidden] {
+  display: none !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-optical-sizing: auto;
+  overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--blue);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--blue-hover);
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+}
+
+code {
+  font-size: 0.86em;
+}
+
+:not(pre) > code {
+  padding: 0.06em 0.3em;
+  border-radius: 3px;
+  background: var(--paper-sunken);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  top: -4rem;
+  left: 1rem;
+  z-index: 20;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  background: var(--blue);
+  color: var(--on-blue);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Set for a moment when the theme is switched, so that colours change at once. */
+.no-transitions * {
+  transition: none !important;
+}
+
+/* Masthead. */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.masthead-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0.7rem var(--gutter);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.wordmark:hover {
+  color: var(--ink);
+}
+
+.wordmark-glyph {
+  width: 1.6rem;
+  height: 1.6rem;
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2.2;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.35rem;
+  margin-left: auto;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+}
+
+.site-nav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.site-nav a[aria-current="page"] {
+  text-decoration: underline 2px var(--blue);
+  text-underline-offset: 0.45em;
+}
+
+@media (max-width: 48rem) {
+  .masthead {
+    position: static;
+  }
+
+  .masthead-inner {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+
+  .site-nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .site-nav .nav-local {
+    display: none;
+  }
+
+  .theme-toggle {
+    margin-left: auto;
+  }
+}
+
+.theme-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--rule-strong);
+}
+
+.theme-toggle svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.theme-toggle circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.theme-toggle path {
+  fill: currentColor;
+}
+
+/* Buttons. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.button-primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+.button-primary:hover {
+  border-color: var(--blue-hover);
+  background: var(--blue-hover);
+  color: var(--on-blue);
+}
+
+.button-small {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+/* Hero. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: center;
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 7vw, 5.5rem) var(--gutter) clamp(1rem, 3vw, 2rem);
+}
+
+@media (min-width: 64rem) {
+  .hero {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+}
+
+.hero h1 {
+  margin: 0 0 0.3rem;
+  font-size: clamp(4.5rem, 11vw, 8rem);
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+}
+
+.tagline {
+  max-width: 19em;
+  margin: 0 0 1.4rem;
+  font-size: clamp(1.4rem, 2.5vw, 1.75rem);
+  line-height: 1.28;
+}
+
+.lead {
+  max-width: var(--measure);
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+/* The automaton in the hero. */
+.automaton-demo {
+  margin: 0;
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow);
+}
+
+.dfa {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.dfa .state circle {
+  fill: var(--paper-raised);
+  stroke: var(--blue);
+  stroke-width: 1.8;
+  transition: fill 180ms ease;
+}
+
+.dfa .state text {
+  fill: var(--ink);
+  font-family: var(--serif);
+  font-size: 23px;
+  font-style: italic;
+  text-anchor: middle;
+}
+
+.dfa .state .sub {
+  font-size: 14px;
+  font-style: normal;
+}
+
+.dfa .state.is-current circle {
+  fill: var(--mark);
+}
+
+.dfa .state.is-current text {
+  fill: var(--on-mark);
+}
+
+.dfa .edge {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1.4;
+}
+
+.dfa .arrowhead {
+  fill: var(--edge);
+}
+
+.dfa .arrowhead-active {
+  fill: var(--blue);
+}
+
+.dfa .edge-label {
+  fill: var(--ink-soft);
+  font-family: var(--serif);
+  font-size: 21px;
+  font-style: italic;
+  text-anchor: middle;
+}
+
+.dfa .edge-group.is-active .edge {
+  stroke: var(--blue);
+  stroke-width: 2.4;
+}
+
+.dfa .edge-group.is-active .edge-label {
+  fill: var(--blue);
+  font-weight: 700;
+}
+
+.dfa .token {
+  fill: var(--blue);
+}
+
+.demo-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem 0.6rem;
+  align-items: center;
+  margin-top: 1.1rem;
+  font-family: var(--sans);
+}
+
+.demo-label {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.demo-input {
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.demo-input:focus-visible {
+  outline-offset: 1px;
+}
+
+.tape {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 2rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tape li {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 2rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+}
+
+.tape li.is-read {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+.tape li.is-last {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
+  color: var(--blue);
+  font-weight: 500;
+}
+
+.tape li.is-stuck {
+  border-color: var(--reject);
+  box-shadow: inset 0 0 0 1px var(--reject);
+  color: var(--reject);
+}
+
+.verdict {
+  grid-column: 1 / -1;
+  min-height: 1.6em;
+  margin: 0.15rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.verdict strong {
+  font-weight: 600;
+}
+
+.verdict .accepted {
+  color: var(--accept);
+}
+
+.verdict .rejected {
+  color: var(--reject);
+}
+
+.verdict .q {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.05em;
+  font-style: italic;
+}
+
+.verdict .q sub {
+  font-style: normal;
+}
+
+.automaton-demo figcaption {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Chapters. */
+.chapter {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: clamp(3.5rem, 8vw, 6rem) var(--gutter) 0;
+}
+
+.chapter h2 {
+  margin: 0 0 0.85rem;
+  font-size: clamp(2rem, 3.6vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.chapter-lead {
+  max-width: var(--measure);
+  margin: 0 0 2.25rem;
+  color: var(--ink-soft);
+  font-size: 1.1875rem;
+}
+
+.capabilities {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem 3rem;
+  margin: 0;
+}
+
+@media (min-width: 52rem) {
+  .capabilities {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.capability dt {
+  margin-bottom: 0.3rem;
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.capability dd {
+  max-width: var(--measure);
+  margin: 0;
+}
+
+/* Language tabs and steps. */
+.tab-list {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tab {
+  margin-bottom: -1px;
+  padding: 0.6rem 1.05rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--blue);
+  color: var(--ink);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.25rem 3rem;
+  counter-reset: step;
+}
+
+@media (min-width: 64rem) {
+  .steps {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+}
+
+.step h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.step h3::before {
+  content: counter(step) ". ";
+  color: var(--blue);
+  counter-increment: step;
+}
+
+.step p {
+  max-width: var(--measure);
+  margin: 0 0 0.75rem;
+}
+
+.step .aside {
+  margin-top: 0.85rem;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.code-block {
+  position: relative;
+}
+
+pre.code {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper-raised);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  tab-size: 4;
+}
+
+pre.code code {
+  font-size: inherit;
+}
+
+.copy-button {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.code-block:hover .copy-button,
+.copy-button:focus-visible,
+.copy-button.is-done {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .copy-button {
+    opacity: 1;
+  }
+}
+
+.copy-button:hover {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+/* Playground teaser. */
+.playground-teaser {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem 3rem;
+  align-items: center;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-raised);
+}
+
+@media (min-width: 52rem) {
+  .playground-teaser {
+    grid-template-columns: minmax(0, var(--measure)) auto;
+    justify-content: space-between;
+  }
+}
+
+.playground-teaser p {
+  margin: 0;
+}
+
+/* Publications. */
+.paper {
+  max-width: 46rem;
+}
+
+.paper p {
+  margin: 0;
+}
+
+.paper-authors {
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.paper-title {
+  margin: 0.3rem 0;
+  font-size: 1.4rem;
+  line-height: 1.3;
+}
+
+.paper-title a {
+  color: var(--ink);
+  text-decoration-color: var(--rule-strong);
+}
+
+.paper-title a:hover {
+  color: var(--blue);
+  text-decoration-color: currentColor;
+}
+
+.paper-venue {
+  font-size: 1rem;
+}
+
+.paper .paper-links {
+  margin-top: 0.6rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+}
+
+.bibtex {
+  margin-top: 1rem;
+}
+
+.bibtex summary {
+  width: max-content;
+  color: var(--blue);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.bibtex[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+/* Further links. */
+.link-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 1.5rem 3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link-list li > a {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.link-list span {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Footer. */
+.colophon {
+  margin-top: clamp(4rem, 9vw, 7rem);
+  border-top: 1px solid var(--rule);
+}
+
+.colophon-inner {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 2rem var(--gutter) 3rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.colophon p {
+  max-width: var(--measure);
+  margin: 0;
+}

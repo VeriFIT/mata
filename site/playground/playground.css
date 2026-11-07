@@ -1,0 +1,480 @@
+/* The playground page; the tokens, fonts and shared components are in ../assets/site.css. */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.playground {
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 2.5rem) var(--gutter) 0;
+}
+
+.playground-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.playground-head h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 4.5vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.playground-lead {
+  max-width: 40rem;
+  margin: 0.4rem 0 0;
+  color: var(--ink-soft);
+}
+
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.head-actions .select {
+  width: 20rem;
+}
+
+.playground-page .masthead-inner,
+.playground-page .colophon-inner {
+  max-width: 90rem;
+}
+
+.select {
+  min-height: 2.25rem;
+  max-width: 100%;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+}
+
+.workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 64rem) {
+  .workbench {
+    grid-template-columns: minmax(21rem, 28rem) minmax(0, 1fr);
+  }
+}
+
+/* Inputs and operations. */
+.controls {
+  display: grid;
+  gap: 1rem;
+}
+
+.controls fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper-raised);
+}
+
+.controls legend {
+  float: left;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+}
+
+.format-switch {
+  display: inline-flex;
+  float: right;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+}
+
+.format-switch label {
+  position: relative;
+  padding: 0.25rem 0.65rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.format-switch label + label {
+  border-left: 1px solid var(--rule-strong);
+}
+
+.format-switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.format-switch label:has(input:checked) {
+  background: var(--blue-wash);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.format-switch label:has(input:focus-visible) {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.automaton-input textarea {
+  display: block;
+  clear: both;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.automaton-input textarea.is-mata {
+  font-size: 0.875rem;
+}
+
+.automaton-input textarea::placeholder,
+.option input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+.automaton-input.is-unused {
+  border-style: dashed;
+  background: transparent;
+}
+
+.controls [aria-invalid="true"] {
+  border-color: var(--reject);
+}
+
+.hint {
+  margin: 0.4rem 0 0;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.field-error {
+  margin: 0.4rem 0 0;
+  color: var(--reject);
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.operations legend {
+  margin-bottom: 0.15rem;
+}
+
+.operation-group {
+  clear: both;
+}
+
+.group-title {
+  margin: 0.7rem 0 0.4rem;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  position: relative;
+}
+
+.chip input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chip span {
+  display: inline-block;
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.chip:hover span {
+  border-color: var(--ink-soft);
+}
+
+.chip input:checked + span {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+.chip input:focus-visible + span {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.option {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1.1rem;
+}
+
+.option label {
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.option input {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+}
+
+.option .hint {
+  margin: 0;
+}
+
+/* The outcome. */
+.output {
+  min-width: 0;
+  min-height: 26rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow);
+}
+
+.output-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.output-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.status {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+}
+
+.verdict-box p {
+  margin: 0.85rem 0 0;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.verdict-box .yes {
+  color: var(--accept);
+}
+
+.verdict-box .no {
+  color: var(--reject);
+}
+
+.word {
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+  background: var(--paper-sunken);
+  font-size: 0.9em;
+}
+
+.notes p {
+  margin: 0.85rem 0 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--blue);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.875rem;
+}
+
+.views {
+  margin-top: 1rem;
+}
+
+.view-tabs {
+  margin-bottom: 1rem;
+}
+
+.view-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.facts {
+  margin: 0.15rem 0 0.75rem;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+}
+
+.drawing {
+  display: flex;
+  min-height: 9rem;
+  padding: 0.75rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+/* Centred while it fits; a wider drawing scrolls from its left edge. */
+.drawing > * {
+  flex: none;
+  margin: auto;
+}
+
+.drawing svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.drawing.is-empty p {
+  max-width: 28rem;
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.drawing .graph > polygon {
+  fill: transparent;
+  stroke: none;
+}
+
+.drawing .node ellipse {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 1.4;
+}
+
+/* A final state has a second, outer ellipse, which must leave the inner one visible. */
+.drawing .node ellipse:first-of-type {
+  fill: var(--paper-raised);
+}
+
+.drawing text {
+  fill: var(--ink);
+  font-family: var(--mono);
+}
+
+.drawing .edge path {
+  stroke: var(--edge);
+  stroke-width: 1.2;
+}
+
+.drawing .edge polygon {
+  fill: var(--edge);
+  stroke: var(--edge);
+}
+
+.drawing .edge text {
+  fill: var(--ink-soft);
+}
+
+.text-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.1rem;
+}
+
+.text-head h3 {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.text-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.text-actions .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.mata-text {
+  max-height: 16rem;
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.message {
+  margin: 1.5rem 0 0;
+  color: var(--ink-soft);
+}
+
+.playground-page .colophon {
+  margin-top: 3rem;
+}

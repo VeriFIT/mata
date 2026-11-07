@@ -87,3 +87,8 @@ tests-integration/results/*.output
 # Environent files.
 .env.private
 .envrc.private
+
+# Generated files of the playground on the website (just site playground)
+site/playground/mata-playground.js
+site/playground/mata-playground.wasm
+site/playground/vendor/
