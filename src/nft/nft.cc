@@ -1798,7 +1798,12 @@ Nft Nft::apply(
 	const bool project_out_applied_level,
 	const JumpMode jump_mode
 ) const {
-	return compose(Nft{nfa}, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode);
+	// A projected image is trimmed anyway; asking for it explicitly lets the composer race both directions, which
+	//  matters for applying languages, where the forward composition can build orders of magnitude more dead states.
+	return compose(
+		Nft{nfa}, *this, 0, level_to_apply_on, project_out_applied_level, jump_mode, CompositionMode::Auto,
+		project_out_applied_level ? CompositionNormalization::Trim : CompositionNormalization::Auto
+	);
 }
 
 Nft Nft::apply(

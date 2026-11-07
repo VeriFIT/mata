@@ -320,8 +320,8 @@ struct CompositionSchedule {
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE.
- * @param[in] normalization Only @c CompositionNormalization::Full changes the result: the general composition
- *  generates no states of its own for @c GeneratedOnly to rewrite.
+ * @param[in] normalization Only @c CompositionNormalization::Full and @c Trim change the result: the general
+ *  composition generates no states of its own for @c GeneratedOnly to rewrite.
  *
  * Operands whose transitions all go to a later level of their round or end it are composed by
  *  @c compose_general_direct() (with more than one aligned level), all others by the pipeline of

@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "mata/nft/algorithms.hh"
@@ -1155,15 +1156,17 @@ namespace {
 /// The body of @c compose_fast(), with the EPSILON-composition filter compiled in only when @p UseFilter is set; the
 /// inputs are validated by the caller. With @p normalize_generated, the builder records the states it generates and
 /// normalizes the result on them (@c CompositionNormalization::GeneratedOnly). @p Operand is an @c Nft without jump
-/// transitions (fast EPSILON transitions apart) or a @c CursorOperand; the result has no alphabets.
+/// transitions (fast EPSILON transitions apart) or a @c CursorOperand; the result has no alphabets. Gives up and
+/// returns nothing once the result has more than @p max_num_of_states states.
 template <bool UseFilter, typename Operand>
-Nft compose_fast_with(
+std::optional<Nft> compose_fast_with(
 	const Operand& lhs,
 	const Operand& rhs,
 	const Level lhs_sync_level,
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels,
-	const bool normalize_generated
+	const bool normalize_generated,
+	const size_t max_num_of_states
 ) {
 	// Number of Levels and States.
 	const size_t lhs_num_of_states = lhs.num_of_states();
@@ -1176,7 +1179,7 @@ Nft compose_fast_with(
 	const SynchronizationProperties lhs_sync_props(lhs, lhs_sync_level);
 	const SynchronizationProperties rhs_sync_props(rhs, rhs_sync_level);
 
-	Nft result;
+	Nft result{};
 	result.levels.num_of_levels = result_num_of_levels;
 	// Use composition storage without tracking inverted indices,
 	// because waiting in virtual states would spoil the inverse mapping.
@@ -1919,6 +1922,8 @@ Nft compose_fast_with(
 
 	// The maing loop of the composition algorithm.
 	while (not worklist.empty()) {
+		// Every added state is allocated in the delta, whose size is inline; Nft::num_of_states() is a call.
+		if (result.delta.num_of_states() > max_num_of_states) { return std::nullopt; }
 		const CompositionKey<UseFilter> key{worklist.front()};
 		worklist.pop();
 		const State lhs_state{key.lhs_state};
@@ -2067,7 +2072,28 @@ Nft compose_fast_with(
 ///  silent move of the RHS alone. Without one it keeps every configuration in the LhsMayMoveAlone mode and refuses
 ///  nothing, so the composition runs without its bookkeeping.
 template <typename Operand>
-Nft compose_fast_choosing_filter(
+std::optional<Nft> compose_fast_choosing_filter(
+	const Operand& lhs,
+	const Operand& rhs,
+	const Level lhs_sync_level,
+	const Level rhs_sync_level,
+	const bool project_out_sync_levels,
+	const bool normalize_generated,
+	const size_t max_num_of_states
+) {
+	return can_move_alone_silently(rhs) ? compose_fast_with<true>(
+											  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels,
+											  normalize_generated, max_num_of_states
+										  )
+										: compose_fast_with<false>(
+											  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels,
+											  normalize_generated, max_num_of_states
+										  );
+}
+
+/// @c compose_fast_choosing_filter() without a state budget.
+template <typename Operand>
+Nft compose_fast_at_once(
 	const Operand& lhs,
 	const Operand& rhs,
 	const Level lhs_sync_level,
@@ -2075,13 +2101,63 @@ Nft compose_fast_choosing_filter(
 	const bool project_out_sync_levels,
 	const bool normalize_generated
 ) {
-	return can_move_alone_silently(rhs)
-			   ? compose_fast_with<true>(
-					 lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
-				 )
-			   : compose_fast_with<false>(
-					 lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
-				 );
+	std::optional<Nft> result{compose_fast_choosing_filter(
+		lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated, SIZE_MAX
+	)};
+	MATA_ASSERT(result.has_value());
+	return std::move(*result);
+}
+
+/// The states a composition may build before it gives up for the other direction; a composition this small takes
+///  milliseconds, so most compositions are built forward only, once.
+constexpr size_t INITIAL_DIRECTION_BUDGET{size_t{1} << 16};
+
+/**
+ * @brief The trimmed fast composition of operands without jump transitions, built forward or as the reverse of the
+ *  composition of the reverted operands, whichever finishes first.
+ *
+ * Reverting an NFT reverses the order of its levels (@c revert()), so the reverted composition synchronizes level
+ *  `n - 1 - l` of an operand of `n` levels instead of level `l`, and composing the reverted RHS with the reverted LHS
+ *  keeps the order of the levels of the result. The forward composition builds every state reachable from the
+ *  initial states, the reverted one every state from which a final state is reachable; trimming keeps the states
+ *  that are both, so either direction gives the same trimmed relation. On the transducers of string constraints,
+ *  either direction can build tens of times more states than the other, and only building them tells which. The two
+ *  directions take turns, each starting over with a state budget doubled every round, so the composition costs a
+ *  small multiple of the cheaper direction. Starting over keeps the composer an ordinary function: suspending it in
+ *  the middle (as a coroutine) makes every composition slower, also those that never take turns. The result has no
+ *  alphabets.
+ */
+Nft compose_fast_trimmed(
+	const Nft& lhs,
+	const Nft& rhs,
+	const Level lhs_sync_level,
+	const Level rhs_sync_level,
+	const bool project_out_sync_levels
+) {
+	std::optional<Nft> reverted_lhs{};
+	std::optional<Nft> reverted_rhs{};
+	for (size_t budget{INITIAL_DIRECTION_BUDGET};; budget = budget > SIZE_MAX / 2 ? SIZE_MAX : budget * 2) {
+		std::optional<Nft> forward{compose_fast_choosing_filter(
+			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, false, budget
+		)};
+		if (forward.has_value()) {
+			// The composer trims a result without the synchronization levels itself.
+			if (!project_out_sync_levels) { forward->trim(); }
+			return std::move(*forward);
+		}
+		if (!reverted_lhs.has_value()) {
+			reverted_lhs.emplace(revert(lhs));
+			reverted_rhs.emplace(revert(rhs));
+		}
+		std::optional<Nft> backward{compose_fast_choosing_filter(
+			*reverted_rhs, *reverted_lhs, static_cast<Level>(rhs.levels.num_of_levels - 1 - rhs_sync_level),
+			static_cast<Level>(lhs.levels.num_of_levels - 1 - lhs_sync_level), project_out_sync_levels, false, budget
+		)};
+		if (backward.has_value()) {
+			if (!project_out_sync_levels) { backward->trim(); }
+			return revert(*backward);
+		}
+	}
 }
 
 /// The body of @c compose_fast() and @c compose_fast_no_jump(), which name themselves @p caller in their errors.
@@ -2100,6 +2176,16 @@ Nft compose_fast_checked(
 	check_result_num_of_levels(caller, lhs, rhs, 1, project_out_sync_levels);
 	const bool normalize_generated{
 		normalization == CompositionNormalization::GeneratedOnly || normalization == CompositionNormalization::Full
+	};
+	// Operands that read as they are race both directions only when the caller asks for the trimmed result: on most
+	//  compositions the forward one is the cheaper, and the turns of the reverted one are wasted there.
+	const auto compose_plain = [&]() {
+		if (normalization == CompositionNormalization::Trim) {
+			return compose_fast_trimmed(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels);
+		}
+		return compose_fast_at_once(
+			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+		);
 	};
 	Nft result{};
 	if (jump_mode == JumpMode::NoJump) {
@@ -2129,22 +2215,19 @@ Nft compose_fast_checked(
 			"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
 			"transitions"
 		);
-		result = compose_fast_choosing_filter(
-			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
-		);
+		result = compose_plain();
 	} else {
 		const CursorOperand lhs_operand{lhs, jump_mode};
 		const CursorOperand rhs_operand{rhs, jump_mode};
 		// Without a cursor the operands read as they are, and the composer reads them without the indirection.
-		result =
-			lhs_operand.num_of_states() == lhs.num_of_states() && rhs_operand.num_of_states() == rhs.num_of_states()
-				? compose_fast_choosing_filter(
-					  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
-				  )
-				: compose_fast_choosing_filter(
-					  lhs_operand, rhs_operand, lhs_sync_level, rhs_sync_level, project_out_sync_levels,
-					  normalize_generated
-				  );
+		if (lhs_operand.num_of_states() == lhs.num_of_states() && rhs_operand.num_of_states() == rhs.num_of_states()) {
+			result = compose_plain();
+		} else {
+			result = compose_fast_at_once(
+				lhs_operand, rhs_operand, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated
+			);
+			if (normalization == CompositionNormalization::Trim && !project_out_sync_levels) { result.trim(); }
+		}
 	}
 	result.alphabets = compose_alphabets(
 		lhs, rhs, OrdVector<Level>{lhs_sync_level}, OrdVector<Level>{rhs_sync_level}, project_out_sync_levels
@@ -3051,7 +3134,7 @@ std::optional<Nft> compose_directly(
 			.compose()
 	};
 	// A projected result is trimmed, as the pipeline one is.
-	if (project_out_sync_levels) { result.trim(); }
+	if (project_out_sync_levels || normalization == CompositionNormalization::Trim) { result.trim(); }
 	result.alphabets = compose_alphabets(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
 	if (normalization == CompositionNormalization::Full) { normalize_fully(result, jump_mode); }
 	return result;
@@ -3152,8 +3235,12 @@ Nft algorithms::compose_general_reference(
 	}
 
 	result.alphabets = compose_alphabets(lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels);
-	// The general composer generates no states of its own, so only `Full` has anything to do.
-	if (normalization == CompositionNormalization::Full) { normalize_fully(result, jump_mode); }
+	// The general composer generates no states of its own, so only `Full` and `Trim` have anything to do.
+	if (normalization == CompositionNormalization::Full) {
+		normalize_fully(result, jump_mode);
+	} else if (normalization == CompositionNormalization::Trim && !project_out_sync_levels) {
+		result.trim();
+	}
 
 	return result;
 }
