@@ -70,7 +70,7 @@ This process helps ensure that:
 
 ## Pull Request Process
 
-1. Ensure your code builds successfully. <!-- 2. If you have made a change to the dependencies then update the `nix/vendor-hash` file. -->
+1. Ensure your code builds successfully.
 2. (Optional) Submit your pull request with screenshots (if applicable).
 
 ### Commit messages
