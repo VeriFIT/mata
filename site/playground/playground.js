@@ -260,6 +260,9 @@ function startWorker() {
             "The playground could not start Mata. Reload the page to try again.",
         );
     });
+    // The worker answers this request as soon as it has loaded Mata, before the requests that follow it, so that a
+    // costly computation can be stopped while it runs.
+    worker.postMessage({ id: 0, request: null });
 }
 
 function restartWorker() {
@@ -784,5 +787,4 @@ writeForm(
 );
 output.status.textContent = "Loading Mata…";
 startWorker();
-worker.postMessage({ id: 0, request: null });
 evaluate();
