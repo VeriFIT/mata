@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/workflows/actions/docs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: docs
           path: docs/_build/html
@@ -75,7 +75,7 @@ jobs:
           cp build-wasm/mata-playground.js build-wasm/mata-playground.wasm "$RUNNER_TEMP/playground/"
           # A single module with Graphviz inlined; its header carries the copyright notices.
           cp "$RUNNER_TEMP/package/dist/viz.js" "$RUNNER_TEMP/playground/vendor/viz.js"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: playground
           path: ${{ runner.temp }}/playground
@@ -90,15 +90,15 @@ jobs:
         run: |
           cp -r site _site
           rm _site/site.just
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: docs
           path: _site/docs
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: playground
           path: _site/playground
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: website
           path: _site
@@ -114,7 +114,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: website
           path: _site
