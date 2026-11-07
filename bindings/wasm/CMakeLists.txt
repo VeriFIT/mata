@@ -42,6 +42,16 @@ add_subdirectory (../.. mata EXCLUDE_FROM_ALL)
 
 add_executable (mata-playground playground.cc bindings.cc)
 target_link_libraries (mata-playground PRIVATE mata::libmata)
+
+# The Git revision the page shows. Mata's own detection does not look above the top-level source directory, which is
+#  this one here.
+execute_process (
+	COMMAND git rev-parse HEAD
+	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+	OUTPUT_VARIABLE MATA_PLAYGROUND_REVISION
+	OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+)
+target_compile_definitions (mata-playground PRIVATE MATA_PLAYGROUND_REVISION="${MATA_PLAYGROUND_REVISION}")
 target_link_options (
 	mata-playground
 	PRIVATE

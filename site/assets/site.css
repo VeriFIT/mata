@@ -144,7 +144,7 @@
 :root {
   color-scheme: light;
   --paper: #f4f6f9;
-  --paper-raised: #ffffff;
+  --paper-raised: #fff;
   --paper-sunken: #e8ecf2;
   --ink: #141b2d;
   --ink-soft: #4a5468;
@@ -153,7 +153,7 @@
   --blue: #2b44c8;
   --blue-hover: #1f34a6;
   --blue-wash: #e4e9fb;
-  --on-blue: #ffffff;
+  --on-blue: #fff;
   --edge: #6b7488;
   --mark: #ffe45c;
   --on-mark: #141b2d;

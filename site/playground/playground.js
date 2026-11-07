@@ -664,6 +664,13 @@ form.addEventListener("change", (event) => {
     }
 });
 
+// The state an example sets: everything but its title.
+function exampleState(example) {
+    const state = { ...DEFAULT_STATE, ...example };
+    delete state.title;
+    return state;
+}
+
 const exampleSelect = document.getElementById("example");
 EXAMPLES.forEach((example, index) =>
     exampleSelect.append(el("option", { value: String(index) }, example.title)),
@@ -672,8 +679,7 @@ exampleSelect.addEventListener("change", () => {
     const example = EXAMPLES[Number(exampleSelect.value)];
     exampleSelect.value = "";
     if (!example) return;
-    const { title: _, ...state } = example;
-    writeForm({ ...DEFAULT_STATE, ...state });
+    writeForm(exampleState(example));
     selectedView = "result";
     evaluate();
 });
@@ -697,11 +703,11 @@ window.addEventListener("hashchange", () => {
 });
 
 // Start: the state from the address, or the first example.
-const { title: _, ...firstExample } = EXAMPLES[0];
-writeForm({
-    ...DEFAULT_STATE,
-    ...(location.hash.length > 1 ? decodeState(location.hash) : firstExample),
-});
+writeForm(
+    location.hash.length > 1
+        ? { ...DEFAULT_STATE, ...decodeState(location.hash) }
+        : exampleState(EXAMPLES[0]),
+);
 output.status.textContent = "Loading Mata…";
 startWorker();
 worker.postMessage({ id: 0, request: null });

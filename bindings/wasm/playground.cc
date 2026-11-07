@@ -10,7 +10,6 @@
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/parser.hh"
 #include "mata/parser/re2parser.hh"
-#include "mata/utils/utils.hh"
 
 #include <algorithm>
 #include <chrono>
@@ -425,6 +424,6 @@ std::string evaluate(const Request& request) {
 	} catch (const std::exception& error) { return error_json("operation", error.what()); }
 }
 
-std::string revision() { return mata::g_GIT_SHA1; }
+std::string revision() { return MATA_PLAYGROUND_REVISION; }
 
 } // namespace mata::playground
