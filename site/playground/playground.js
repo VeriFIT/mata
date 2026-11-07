@@ -251,12 +251,7 @@ function startWorker() {
     worker.addEventListener("message", onWorkerMessage);
     worker.addEventListener("error", (event) => {
         event.preventDefault();
-        worker = null;
-        running = null;
-        queued = null;
-        clearTimeout(runningTimer);
-        stopWaiting();
-        showMessage(
+        stopWorker(
             "The playground could not start Mata. Reload the page to try again.",
         );
     });
@@ -333,7 +328,22 @@ function submit(state, request) {
     }, 200);
 }
 
+// Stops the worker that could not load Mata. Starting another one would only fail again, so the next request tries.
+function stopWorker(message) {
+    worker?.terminate();
+    worker = null;
+    running = null;
+    queued = null;
+    clearTimeout(runningTimer);
+    stopWaiting();
+    showMessage(message);
+}
+
 function onWorkerMessage({ data }) {
+    if (data.id === 0 && data.failure) {
+        stopWorker(data.failure);
+        return;
+    }
     ready = true;
     if (data.revision !== undefined) {
         if (/^[0-9a-f]{7,40}$/.test(data.revision)) {
