@@ -1,0 +1,26 @@
+name: Dependabot auto-merge
+on: pull_request
+# Dependabot pull requests get a read-only token unless the workflow asks for more.
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  enable-auto-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # The required checks gate the merge. Updates of the actions are left to a maintainer, as the release workflows
+      #  using them only run after a merge.
+      - name: Enable auto-merge for lock file updates
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          # A separate assignment, so that a failed fetch fails the step (bash -e) instead of reading as no match.
+          files=$(gh pr diff "$PR_URL" --name-only)
+          if grep --quiet '^\.github/' <<<"$files"; then
+              echo "The pull request changes .github/; leaving the merge to a maintainer."
+          else
+              # GITHUB_TOKEN merges trigger no workflows, so release-devel.yml would not run on them.
+              gh pr merge "$PR_URL" --auto --merge
+          fi
