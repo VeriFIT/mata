@@ -226,6 +226,27 @@ bool is_included_antichains(
 );
 
 /**
+ * @brief Inclusion by bisimulation up to congruence (HKC), after F. Bonchi and D. Pous, "Checking NFA equivalence
+ *  with bisimulations up to congruence", POPL 2013.
+ *
+ * Checks that the macrostates X ∪ Y and Y are equivalent for every pair of a macrostate X of @p smaller and Y of
+ *  @p bigger reached over the same word, starting from the initial states. Unlike @c is_included_antichains(), which
+ *  pairs single states of @p smaller with macrostates of @p bigger, it determinizes both automata on the fly. A pair
+ *  is skipped when it lies in the congruence closure of the pairs stored before, which for this shape of pairs means
+ *  that every state x of X lies in a stored pair whose macrostate of @p bigger is a subset of Y; a stored pair all of
+ *  whose states of @p smaller are covered this way by pairs with smaller macrostates is not expanded either.
+ *  @c EPSILON is an ordinary symbol here.
+ *
+ * @param[in] smaller Automaton which language should be included in the bigger one
+ * @param[in] bigger Automaton which language should include the smaller one
+ * @param[in] alphabet Alphabet of both automata (not needed by the algorithm)
+ * @param[out] cex A word of @p smaller rejected by @p bigger, with an accepting run of @p smaller over it, when the
+ *  inclusion does not hold; cleared otherwise.
+ * @return True if the language of @p smaller is included in the language of @p bigger.
+ */
+bool is_included_hkc(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+
+/**
  * @brief Check equivalence with @c EPSILON read as an ordinary symbol.
  *
  * This is what @c mata::nfa::are_equivalent() does once its operands have no epsilon transitions left. Callers that
@@ -234,7 +255,7 @@ bool is_included_antichains(
  * @param[in] lhs,rhs Automata to compare.
  * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if
  *  you have it).
- * @param[in] params Algorithm to use, @c "naive" or @c "antichains".
+ * @param[in] params Algorithm to use, @c "naive", @c "antichains" or @c "hkc", for the inclusion in each direction.
  * @param[out] cex A word of the symmetric difference, when the languages differ; cleared when they are equal.
  * @return True if the languages are equal.
  */

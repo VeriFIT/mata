@@ -51,11 +51,15 @@ struct Step {
  *
  * Every node on the worklist is stored here as well, so marking the pruned nodes as dominated also removes them
  *  from the worklist, without scanning it.
+ *
+ * The stored nodes are read through @c bigger_set and @c signature only, so the HKC inclusion
+ *  (@c algorithms::is_included_hkc()) indexes its pairs of macrostates with the same class.
  */
 class ProcessedAntichain {
   public:
 	/// Is some stored macrostate a subset of @p succ_set, and therefore dominates it?
-	bool subsumes(const std::vector<Node>& nodes, const StateSet& succ_set, const uint64_t succ_signature) const {
+	template <class NodeT>
+	bool subsumes(const std::vector<NodeT>& nodes, const StateSet& succ_set, const uint64_t succ_signature) const {
 		const size_t cardinality{succ_set.size()};
 		for (const Bucket& bucket : buckets_) {
 			if (bucket.cardinality > cardinality) { break; }
@@ -76,22 +80,32 @@ class ProcessedAntichain {
 	/// Removes every stored macrostate that @p succ_set dominates, that is, every strict superset of it, and
 	///  marks its node as dominated.
 	void prune(std::vector<Node>& nodes, const StateSet& succ_set, const uint64_t succ_signature) {
+		prune(nodes, succ_set, succ_signature, [](Node& node) {
+			node.dominated = true;
+			node.bigger_set = StateSet{};
+		});
+	}
+
+	/// Removes every stored macrostate that @p succ_set dominates and passes its node to @p on_pruned.
+	template <class NodeT, class OnPruned>
+	void prune(
+		std::vector<NodeT>& nodes, const StateSet& succ_set, const uint64_t succ_signature, OnPruned&& on_pruned
+	) {
 		auto bucket{std::ranges::upper_bound(buckets_, succ_set.size(), {}, &Bucket::cardinality)};
 		while (bucket != buckets_.end()) {
 			std::erase_if(bucket->entries, [&](const Entry& stored) {
 				if ((succ_signature & ~stored.signature) != 0) { return false; }
-				Node& node{nodes[stored.node]};
+				NodeT& node{nodes[stored.node]};
 				if (!succ_set.is_subset_of(node.bigger_set)) { return false; }
-				node.dominated = true;
-				node.bigger_set = StateSet{};
+				on_pruned(node);
 				return true;
 			});
 			bucket = bucket->entries.empty() ? buckets_.erase(bucket) : bucket + 1;
 		}
 	}
 
-	void insert(const std::vector<Node>& nodes, const size_t node_idx) {
-		const Node& node{nodes[node_idx]};
+	template <class NodeT> void insert(const std::vector<NodeT>& nodes, const size_t node_idx) {
+		const NodeT& node{nodes[node_idx]};
 		const size_t cardinality{node.bigger_set.size()};
 		auto bucket{std::ranges::lower_bound(buckets_, cardinality, {}, &Bucket::cardinality)};
 		if (bucket == buckets_.end() || bucket->cardinality != cardinality) {

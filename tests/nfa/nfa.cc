@@ -3063,6 +3063,7 @@ TEST_CASE("mata::nfa::is_included()") { // {{{
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
 		"antichains",
+		"hkc",
 	};
 
 	SECTION("{} <= {}, empty alphabet") {
@@ -3500,6 +3501,7 @@ TEST_CASE("mata::nfa::are_equivalent") {
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
 		"antichains",
+		"hkc",
 	};
 
 	SECTION("{} == {}, empty alphabet") {
@@ -3675,7 +3677,7 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 	OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
 	ParameterMap params;
 
-	const std::unordered_set<std::string> ALGORITHMS = {"naive", "antichains"};
+	const std::unordered_set<std::string> ALGORITHMS = {"naive", "antichains", "hkc"};
 
 	SECTION("equivalent automata clear a prefilled cex") {
 		Nfa aut1(1), aut2(2);

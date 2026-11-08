@@ -1930,7 +1930,7 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
 :param Nfa rhs: Bigger automaton.
 :param alph.Alphabet alphabet: Alphabet shared by two automata.
 :param dict params: Additional params:
-- "algorithm": "antichains"
+- "algorithm": "naive", "antichains" or "hkc" (bisimulation up to congruence). Default: "antichains".
 
 Epsilon transitions are removed from copies of the operands that have them.
 

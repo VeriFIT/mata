@@ -313,6 +313,35 @@ const ParameterMap BRZOZOWSKI{{"algorithm", "brzozowski"}};
 const ParameterMap HOPCROFT_NONDET{{"algorithm", "hopcroft_nondet"}};
 const ParameterMap NAIVE{{"algorithm", "naive"}};
 const ParameterMap ANTICHAINS{{"algorithm", "antichains"}};
+const ParameterMap HKC{{"algorithm", "hkc"}};
+
+/// HKC agrees with the antichains on both inclusions and on the equivalence of @p lhs and @p rhs, and every
+///  counterexample it reports is an accepting run of one operand over a word the other one rejects.
+void check_hkc(const Nfa& lhs, const Nfa& rhs, const mata::Alphabet* const alphabet) {
+	for (const auto& [smaller, bigger] : {std::pair{&lhs, &rhs}, std::pair{&rhs, &lhs}}) {
+		Run cex{.word = {0}, .path = {0}};
+		const bool included{is_included(*smaller, *bigger, &cex, alphabet, HKC)};
+		CHECK(included == is_included(*smaller, *bigger, alphabet, ANTICHAINS));
+		if (included) {
+			CHECK(cex.word.empty());
+			CHECK(cex.path.empty());
+		} else {
+			CHECK(is_accepting_run(*smaller, cex));
+			CHECK(!reference_accepts(*bigger, cex.word));
+		}
+	}
+	Run cex{.word = {0}, .path = {0}};
+	const bool equivalent{are_equivalent(lhs, rhs, alphabet, HKC, &cex)};
+	CHECK(equivalent == are_equivalent(lhs, rhs, alphabet, ANTICHAINS));
+	if (equivalent) {
+		CHECK(cex.word.empty());
+		CHECK(cex.path.empty());
+	} else {
+		const bool in_lhs{reference_accepts(lhs, cex.word)};
+		CHECK(in_lhs != reference_accepts(rhs, cex.word));
+		CHECK(is_accepting_run(in_lhs ? lhs : rhs, cex));
+	}
+}
 
 /// Every property of one random automaton (and one random companion) that holds on the devel
 ///  implementation, checked on all words up to @p max_word_length.
@@ -399,6 +428,9 @@ void check_nfa_properties(
 	const bool antichain_equivalence{are_equivalent(nfa, other, alphabet.get(), ANTICHAINS)};
 	CHECK(naive_equivalence == antichain_equivalence);
 	if (naive_equivalence) { CHECK(same_language_on(nfa, other, words)); }
+
+	// HKC agrees with them on both, and its counterexamples are witnesses.
+	check_hkc(nfa, other, alphabet.get());
 }
 
 /// Removing @p epsilon keeps the language, also after determinization.
@@ -762,6 +794,91 @@ TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with mo
 			CHECK(reference_accepts(united, cex.word));
 			CHECK(is_accepting_run(united, cex));
 			CHECK(!reference_accepts(lhs, cex.word));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: HKC agrees with the antichains on related automata", "[differential]") {
+	// Unrelated random automata are mostly told apart by the first pair of macrostates. Automata related by
+	//  construction run HKC to its fixpoint, where the congruence closure decides which pairs are skipped.
+	for (unsigned seed{0}; seed < 150; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{4 + seed % 20};
+		const size_t num_of_symbols{1 + seed % 3};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+		const Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+		const Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+		const Nfa united{union_nondet(lhs, rhs)};
+		check_hkc(lhs, rhs, alphabet.get());
+		check_hkc(lhs, reduce(lhs), alphabet.get());
+		check_hkc(lhs, determinize(lhs), alphabet.get());
+		check_hkc(united, union_nondet(rhs, lhs), alphabet.get());
+		check_hkc(lhs, united, alphabet.get());
+		// The shape of the regular membership heuristics of z3-noodler.
+		check_hkc(intersection(lhs, rhs), united, alphabet.get());
+
+		// Universality as an equivalence with Σ*, on a universal automaton and on a nearly universal one.
+		Nfa sigma_star{1};
+		sigma_star.initial.insert(0);
+		sigma_star.final.insert(0);
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { sigma_star.delta.add(0, symbol, 0); }
+		check_hkc(sigma_star, union_nondet(lhs, complement(lhs, *alphabet)), alphabet.get());
+		check_hkc(sigma_star, union_nondet(lhs, complement(rhs, *alphabet)), alphabet.get());
+	}
+}
+
+TEST_CASE("mata::nfa differential: HKC on dense automata with more than 64 states", "[differential]") {
+	// Inclusion in a union runs both inclusion algorithms to their fixpoint over wide macrostates.
+	constexpr size_t NUM_OF_SYMBOLS{2};
+	for (unsigned seed{0}; seed < 4; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{65 + seed % 6};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(NUM_OF_SYMBOLS)};
+		const Nfa lhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		const Nfa rhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+		check_hkc(lhs, union_nondet(lhs, rhs), alphabet.get());
+	}
+}
+
+TEST_CASE("mata::nfa differential: HKC with epsilon transitions", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 7};
+		const size_t num_of_symbols{1 + seed % 2};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+		const Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		const Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+
+		// The dispatchers remove epsilon first, so a counterexample is a word over the ordinary symbols.
+		for (const auto& [smaller, bigger] : {std::pair{&lhs, &rhs}, std::pair{&rhs, &lhs}}) {
+			Run cex{};
+			const bool included{is_included(*smaller, *bigger, &cex, alphabet.get(), HKC)};
+			CHECK(included == is_included(*smaller, *bigger, alphabet.get(), ANTICHAINS));
+			if (!included) {
+				CHECK(reference_accepts(*smaller, cex.word));
+				CHECK(!reference_accepts(*bigger, cex.word));
+			}
+		}
+		CHECK(are_equivalent(lhs, rhs, alphabet.get(), HKC) == are_equivalent(lhs, rhs, alphabet.get(), ANTICHAINS));
+		CHECK(are_equivalent(lhs, remove_epsilon(lhs), alphabet.get(), HKC));
+		CHECK(are_equivalent(remove_epsilon(rhs), rhs, alphabet.get(), HKC));
+
+		// Read as a letter, epsilon makes a counterexample like any other symbol. The reference acceptor then gets an
+		//  unused symbol as its epsilon.
+		Run cex{};
+		const bool equivalent{algorithms::are_equivalent_epsilon_as_symbol(lhs, rhs, alphabet.get(), HKC, &cex)};
+		CHECK(equivalent == algorithms::are_equivalent_epsilon_as_symbol(lhs, rhs, alphabet.get(), ANTICHAINS));
+		if (!equivalent) {
+			const Symbol no_epsilon{static_cast<Symbol>(num_of_symbols)};
+			const bool in_lhs{reference_accepts(lhs, cex.word, no_epsilon)};
+			CHECK(in_lhs != reference_accepts(rhs, cex.word, no_epsilon));
+			CHECK(is_accepting_run(in_lhs ? lhs : rhs, cex));
 		}
 	}
 }
