@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light dark" />
     <title>Page not found</title>
     <script>
-      // Keep the old, unversioned documentation and playground addresses working after moving master below master/.
+      // Send old, unversioned addresses to the version selector.
       (function () {
         var segments = location.pathname.split("/").filter(Boolean);
         var base =
@@ -14,15 +14,8 @@
             ? "/" + segments[0] + "/"
             : "/";
         var rest = location.pathname.slice(base.length);
-        if (/^(docs|playground)(\/|$)/.test(rest)) {
-          location.replace(
-            base + "master/" + rest + location.search + location.hash,
-          );
-        } else if (rest !== "" && !/^(master|devel|assets)(\/|$)/.test(rest)) {
-          // The documentation was at the root before it moved below docs/.
-          location.replace(
-            base + "master/docs/" + rest + location.search + location.hash,
-          );
+        if (rest !== "" && !/^(master|devel|assets)(\/|$)/.test(rest)) {
+          location.replace(base);
         }
       })();
     </script>
@@ -67,10 +60,7 @@
   </head>
   <body>
     <h1>Page not found</h1>
-    <p>
-      There is no page at this address. The documentation of Mata has moved to a
-      new address, so you may have followed an old link.
-    </p>
+    <p>There is no page at this address.</p>
     <p>
       Return to the
       <a href="https://verifit.github.io/mata/">version selector</a>, open the
