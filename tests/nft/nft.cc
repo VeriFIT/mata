@@ -5331,6 +5331,28 @@ TEST_CASE("mata::nft::project_to()") {
 		expected.delta.add(7, 11, 0);
 		CHECK(nft::are_equivalent(projection, expected));
 	}
+
+	SECTION("self-loop of a state reached over projected levels") {
+		nft = Nft::with_levels(2);
+		const State p = nft.add_state_with_level(0);
+		const State s = nft.add_state_with_level(1);
+		const State c = nft.add_state_with_level(0);
+		const State d = nft.add_state_with_level(0);
+		const State f = nft.add_state_with_level(0);
+		nft.initial.insert(p);
+		nft.final.insert(f);
+		nft.delta.add(p, 'x', s);
+		nft.delta.add(s, 'y', c);
+		nft.delta.add(s, 'z', d);
+		nft.delta.add(c, 'a', c);
+		nft.delta.add(c, 'e', f);
+		nft.delta.add(d, 'b', f);
+		projection = project_to(nft, 0);
+		// The loop of c must not let 'b' follow 'a'.
+		expected = Nft{nfa::builder::create_from_regex("(xa*e)|(xb)")};
+		CHECK(nft::are_equivalent(projection, expected));
+		CHECK(!projection.is_in_lang_by_levels({{'x', 'a', 'b'}}));
+	}
 }
 
 TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level alphabets in sync") {

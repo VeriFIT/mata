@@ -739,10 +739,6 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 						// If there are remaining levels between cls_state and tgt_state
 						// on a transition with a length greater than 1, then these levels must be preserved.
 						moves.emplace_back(jump_mode != JumpMode::AppendDontCares ? move.symbol : DONT_CARE, tgt_state);
-					} else if (is_loop_on_target) {
-						// Instead of creating a transition to tgt_state and
-						// then a self-loop, establish the self-loop directly on src_state.
-						moves.emplace_back(move.symbol, src_state);
 					} else {
 						moves.emplace_back(move.symbol, tgt_state);
 					}
