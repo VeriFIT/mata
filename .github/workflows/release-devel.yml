@@ -85,18 +85,14 @@ jobs:
       - uses: ./.github/workflows/actions/bump-version
         with:
           prerelease: true
-# FIXME: Support in the docs template docs deployment for development releases as well (currently only supported for
-# master releases).
-# deploy-docs:
-#   needs: development-release
-#   runs-on: ubuntu-latest
-#   steps:
-#     - uses: actions/checkout@v6
-#     - uses: ./.github/workflows/actions/docs
-#     - name: Deploy to GitHub Pages
-#       uses: JamesIves/github-pages-deploy-action@v4
-#       with:
-#         folder: docs/_build/html
+  deploy-website:
+    needs: release-dev
+    permissions:
+      contents: write
+    uses: ./.github/workflows/website.yml
+    with:
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+      version: devel
 # FIXME: Support in the python binding template for development releases as well (currently only supported for master
 # releases).
 # build-and-deploy-to-pypi:

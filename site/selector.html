@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Choose a Mata website version</title>
+    <meta
+      name="description"
+      content="Choose the stable master website or the development website of Mata, a finite automata library."
+    />
+    <link rel="canonical" href="https://verifit.github.io/mata/" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #f4f6f9;
+        --ink: #141b2d;
+        --ink-soft: #4a5468;
+        --blue: #2b44c8;
+        --border: #cbd2df;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #111a30;
+          --ink: #e6eaf2;
+          --ink-soft: #a6b0c5;
+          --blue: #93a5ff;
+          --border: #3b465c;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          1.125rem/1.6 Georgia,
+          "Times New Roman",
+          serif;
+      }
+      main {
+        max-width: 64rem;
+        margin: 0 auto;
+        padding: 8vh 1.5rem;
+      }
+      .eyebrow {
+        color: var(--blue);
+        font:
+          700 1rem/1.2 system-ui,
+          sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0.25rem 0 1rem;
+        font-size: clamp(2.5rem, 7vw, 4.5rem);
+        line-height: 1.05;
+      }
+      .versions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+        gap: 1.25rem;
+        margin: 3rem 0 1.5rem;
+      }
+      .version {
+        display: block;
+        padding: 1.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        color: inherit;
+        text-decoration: none;
+      }
+      .version:hover,
+      .version:focus-visible {
+        border-color: var(--blue);
+        outline: none;
+      }
+      .version h2 {
+        margin: 0.25rem 0 0.75rem;
+        font-size: 2rem;
+      }
+      .version p,
+      .hint {
+        color: var(--ink-soft);
+      }
+      .label,
+      .open {
+        font-family: system-ui, sans-serif;
+      }
+      .label {
+        color: var(--blue);
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .open {
+        color: var(--blue);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Mata</p>
+      <h1>Choose a version</h1>
+      <p>
+        Select the website for the stable release branch or the development
+        branch. Both include the documentation and the browser playground.
+      </p>
+      <div class="versions">
+        <a class="version" href="master/">
+          <span class="label">Stable</span>
+          <h2>Master</h2>
+          <p>The released version of Mata, recommended for everyday use.</p>
+          <span class="open">Open the master website →</span>
+        </a>
+        <a class="version" href="devel/">
+          <span class="label">Development preview</span>
+          <h2>Devel</h2>
+          <p>Unreleased changes and documentation from active development.</p>
+          <span class="open">Open the devel website →</span>
+        </a>
+      </div>
+      <p class="hint">
+        Looking for the project sources? Visit
+        <a href="https://github.com/VeriFIT/mata">Mata on GitHub</a>.
+      </p>
+    </main>
+  </body>
+</html>

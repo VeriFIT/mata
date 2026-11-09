@@ -71,11 +71,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "alabaster"
 
-# Links from the sidebar to the rest of the website, whose landing page is one level up.
+# Links from the sidebar to the pages built from the same branch.
+website_url = os.environ.get("MATA_WEBSITE_URL", "https://verifit.github.io/mata/master/")
 html_theme_options = {
     "extra_nav_links": {
-        "Mata website": "https://verifit.github.io/mata/",
-        "Playground": "https://verifit.github.io/mata/playground/",
+        "Mata website": website_url,
+        "Playground": f"{website_url}playground/",
     },
 }
 

@@ -163,6 +163,7 @@ jobs:
     uses: ./.github/workflows/website.yml
     with:
       ref: ${{ github.event.pull_request.merge_commit_sha }}
+      version: master
   deploy-pypi:
     needs: release
     runs-on: ubuntu-latest

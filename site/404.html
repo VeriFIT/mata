@@ -6,8 +6,7 @@
     <meta name="color-scheme" content="light dark" />
     <title>Page not found</title>
     <script>
-      // The documentation used to be at the root of the website; it is now under docs/. Addresses of its pages are sent
-      // there, so that old links keep working.
+      // Keep the old, unversioned documentation and playground addresses working after moving master below master/.
       (function () {
         var segments = location.pathname.split("/").filter(Boolean);
         var base =
@@ -15,9 +14,14 @@
             ? "/" + segments[0] + "/"
             : "/";
         var rest = location.pathname.slice(base.length);
-        if (rest !== "" && !/^(docs|playground|assets)(\/|$)/.test(rest)) {
+        if (/^(docs|playground)(\/|$)/.test(rest)) {
           location.replace(
-            base + "docs/" + rest + location.search + location.hash,
+            base + "master/" + rest + location.search + location.hash,
+          );
+        } else if (rest !== "" && !/^(master|devel|assets)(\/|$)/.test(rest)) {
+          // The documentation was at the root before it moved below docs/.
+          location.replace(
+            base + "master/docs/" + rest + location.search + location.hash,
           );
         }
       })();
@@ -68,9 +72,11 @@
       new address, so you may have followed an old link.
     </p>
     <p>
-      Go to the <a href="https://verifit.github.io/mata/">home page of Mata</a>,
-      its <a href="https://verifit.github.io/mata/docs/">documentation</a>, or
-      the <a href="https://verifit.github.io/mata/playground/">playground</a>.
+      Return to the
+      <a href="https://verifit.github.io/mata/">version selector</a>, open the
+      <a href="https://verifit.github.io/mata/master/">master website</a>, or
+      open the
+      <a href="https://verifit.github.io/mata/devel/">development website</a>.
     </p>
   </body>
 </html>
