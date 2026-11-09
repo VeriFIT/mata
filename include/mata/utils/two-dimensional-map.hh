@@ -155,6 +155,55 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 	}
 
 	/**
+	 * @brief Insert @p value for the pair of keys, unless the pair already has a value.
+	 *
+	 * One probe of the hash table decides whether the pair is new, so a caller that would look the pair up and then
+	 *  insert it pays for a single probe, not two.
+	 *
+	 * @param first First key.
+	 * @param second Second key.
+	 * @param value Value to associate with the pair when it has none yet.
+	 * @return The value stored for the pair (the new one, or the one inserted earlier) and whether @p value was
+	 *  inserted.
+	 */
+	std::pair<T, bool> insert_if_absent(const T first, const T second, const T value) {
+		MATA_ASSERT(first < first_dim_size_);
+		MATA_ASSERT(second < second_dim_size_);
+		if (!is_large_) {
+			MATA_ASSERT(value <= max_value, "value {} does not fit into a matrix cell", value);
+			Row& row{matrix_storage_[first]};
+			// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): see 'Row' above.
+			if (row == nullptr) { row = std::make_unique<Cell[]>(second_dim_size_); }
+			Cell& cell{row[second]};
+			if (cell != 0) { return {static_cast<T>(cell - 1), false}; }
+			cell = static_cast<Cell>(value + 1);
+		} else {
+			const uint64_t key{pack(first, second)};
+			size_t index{find_slot(key)};
+			if (hash_storage_[index].key == key) { return {hash_storage_[index].value, false}; }
+			// Keep the load factor at most 1/2 so that the probe sequences stay short.
+			if (2 * (hash_size_ + 1) > hash_storage_.size()) {
+				grow_hash_storage();
+				index = find_slot(key);
+			}
+			hash_storage_[index].key = key;
+			hash_storage_[index].value = value;
+			++hash_size_;
+		}
+		if constexpr (TrackInverted) {
+			// The inverted arrays only ever grow: resizing them to value + 1 unconditionally would drop the
+			// entries of all larger values inserted before.
+			if (first_dim_inverted_.size() <= value) {
+				first_dim_inverted_.resize(value + 1);
+				second_dim_inverted_.resize(value + 1);
+			}
+			first_dim_inverted_[value] = first;
+			second_dim_inverted_[value] = second;
+		}
+		return {value, true};
+	}
+
+	/**
 	 * @brief Get the first inverted index for a @p value.
 	 * This is only available if track_inverted is true.
 	 */
