@@ -24,7 +24,7 @@ bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch ==
 /// Throws unless @p tokens is an explicit `state symbol state` transition of an @p automaton_type ("NFA" or "NFT").
 /// The source state and the symbol bypass the formula parser, which would otherwise reject an operator or a
 /// parenthesis (as it does for the target state), so they are checked here.
-void check_explicit_transition(const std::vector<std::string>& tokens, const std::string& automaton_type) {
+void check_explicit_transition(const mata::parser::BodyLine& tokens, const std::string& automaton_type) {
 	if (tokens.size() != 3) {
 		throw std::runtime_error(
 			"Malformed explicit " + automaton_type + " transition " + std::to_string(tokens) +
@@ -32,7 +32,10 @@ void check_explicit_transition(const std::vector<std::string>& tokens, const std
 		);
 	}
 	for (size_t i = 0; i < 2; ++i) { // The source state and the symbol.
-		if (const std::string& token = tokens[i];
+		// A quoted token names a symbol, even when the name is that of an operator: the reader quoted it exactly
+		//  so that it is not read for an operator.
+		if (tokens[i].quoted) { continue; }
+		if (const std::string& token = tokens[i].token;
 			token == "&" || token == "|" || token == "!" || token == "(" || token == ")") {
 			throw std::runtime_error(
 				std::format(
@@ -121,23 +124,29 @@ std::string serialize_graph(const mata::FormulaGraph& graph) {
 	return lhs + " " + graph.node.raw + " " + rhs;
 }
 
-mata::FormulaNode create_node(const mata::IntermediateAut& mata, const std::string& token) {
-	if (is_logical_operator(token[0])) {
-		switch (token[0]) {
-			case '&':
-				return {mata::FormulaNode::Type::Operator, token, token, mata::FormulaNode::OperatorType::And};
-			case '|':
-				return {mata::FormulaNode::Type::Operator, token, token, mata::FormulaNode::OperatorType::Or};
-			case '!':
-				return {mata::FormulaNode::Type::Operator, token, token, mata::FormulaNode::OperatorType::Neg};
-			default:
-				MATA_ASSERT(false);
+mata::FormulaNode create_node(const mata::IntermediateAut& mata, const std::string& token, const bool quoted = false) {
+	// A quoted token stands for a name, even when the name is that of an operator: the reader quoted it exactly
+	//  so that it is not read for an operator of the transition formula.
+	if (!quoted) {
+		if (is_logical_operator(token[0])) {
+			switch (token[0]) {
+				case '&':
+					return {mata::FormulaNode::Type::Operator, token, token, mata::FormulaNode::OperatorType::And};
+				case '|':
+					return {mata::FormulaNode::Type::Operator, token, token, mata::FormulaNode::OperatorType::Or};
+				case '!':
+					return {mata::FormulaNode::Type::Operator, token, token, mata::FormulaNode::OperatorType::Neg};
+				default:
+					MATA_ASSERT(false);
+			}
+		} else if (token == "(") {
+			return {mata::FormulaNode::Type::LeftParenthesis, token};
+		} else if (token == ")") {
+			return {mata::FormulaNode::Type::RightParenthesis, token};
 		}
-	} else if (token == "(") {
-		return {mata::FormulaNode::Type::LeftParenthesis, token};
-	} else if (token == ")") {
-		return {mata::FormulaNode::Type::RightParenthesis, token};
-	} else if (token == "\\true") {
+	}
+
+	if (token == "\\true") {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::True};
 	} else if (token == "\\false") {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::False};
@@ -179,14 +188,14 @@ bool lower_precedence(const mata::FormulaNode::OperatorType op1, const mata::For
  * @return A postfix notation for input
  */
 std::vector<mata::FormulaNode>
-	infix_to_postfix(const mata::IntermediateAut& aut, const std::vector<std::string>& tokens) {
+	infix_to_postfix(const mata::IntermediateAut& aut, const std::vector<mata::parser::BodyToken>& tokens) {
 	std::vector<mata::FormulaNode> opstack;
 	std::vector<mata::FormulaNode> output;
 	output.reserve(tokens.size());
 	opstack.reserve(32);
 
-	for (const std::string& token : tokens) {
-		switch (mata::FormulaNode node = create_node(aut, token); node.type) {
+	for (const mata::parser::BodyToken& token : tokens) {
+		switch (mata::FormulaNode node = create_node(aut, token.token, token.quoted); node.type) {
 			case mata::FormulaNode::Type::Operand:
 				output.emplace_back(std::move(node));
 				break;
@@ -225,14 +234,6 @@ std::vector<mata::FormulaNode>
 		output.push_back(std::move(opstack.back()));
 		opstack.pop_back();
 	}
-
-#ifndef NDEBUG
-	for (const auto& node : output) {
-		MATA_ASSERT(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
-		MATA_ASSERT(node.is_left_parenthesis() || node.name != "(");
-		MATA_ASSERT(node.is_right_parenthesis() || node.name != ")");
-	}
-#endif // #ifndef NDEBUG.
 
 	return output;
 }
@@ -362,22 +363,27 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 	}
 
 	// Once we know what states and nodes are we can parse initial and final formula
+	const auto dict_tokens = [](const std::vector<std::string>& names) {
+		std::vector<mata::parser::BodyToken> tokens{};
+		tokens.reserve(names.size());
+		for (const std::string& name : names) { tokens.emplace_back(name, false); }
+		return tokens;
+	};
 	for (const auto& [key, symbol_names] : section.dict) {
 		if (key.starts_with("Initial")) {
-			auto postfix = infix_to_postfix(aut, symbol_names);
+			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names));
 			if (no_operators(postfix)) {
 				aut.initial_enumerated = true;
 				postfix = add_disjunction_implicitly(std::move(postfix));
 			}
 			aut.initial_formula = postfix_to_graph(std::move(postfix));
 		} else if (key.starts_with("Final")) {
-			auto postfix = infix_to_postfix(aut, symbol_names);
+			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names));
 			if (no_operators(postfix)) {
 				postfix = add_disjunction_implicitly(std::move(postfix));
 				aut.final_enumerated = true;
 			}
 			aut.final_formula = postfix_to_graph(std::move(postfix));
-			;
 		}
 	}
 
@@ -419,54 +425,57 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const {
  * @param aut Automaton to which transition will be added.
  * @param tokens Series of tokens representing transition formula
  */
-void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const std::vector<std::string>& tokens) {
+void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& tokens) {
 	if (tokens.size() < 2) {
 		throw std::runtime_error(
 			"Malformed transition " + std::to_string(tokens) + ": expected at least 2 tokens, got " +
 			std::to_string(tokens.size())
 		);
 	}
-	mata::FormulaNode lhs = create_node(aut, tokens[0]);
-	std::vector<std::string> rhs(tokens.begin() + 1, tokens.end());
+	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted);
+	std::vector<mata::parser::BodyToken> rhs(tokens.begin() + 1, tokens.end());
 
 	std::vector<mata::FormulaNode> postfix;
 
 	// add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-	if (aut.automaton_type == mata::IntermediateAut::AutomatonType::Nfa && tokens[tokens.size() - 2] != "&") {
-		// we need to take care about this case manually since user does not need to determine
+	// A quoted "&" names the symbol &; it is not the conjunction of an explicit transition.
+	const bool explicit_transition = tokens[tokens.size() - 2].quoted || tokens[tokens.size() - 2].token != "&";
+	if (aut.automaton_type == mata::IntermediateAut::AutomatonType::Nfa && explicit_transition) {
+		// we need to take care of this case manually since user does not need to determine
 		// symbol and state naming and put conjunction to transition
 		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
 			check_explicit_transition(tokens, "NFA");
+			// The symbol slot is identified by position, not by naming: keep its full name, also when quoted.
 			postfix.emplace_back(
-				mata::FormulaNode::Type::Operand, rhs[0], rhs[0], mata::FormulaNode::OperandType::Symbol
+				mata::FormulaNode::Type::Operand, rhs[0].token, rhs[0].token, mata::FormulaNode::OperandType::Symbol
 			);
-			postfix.emplace_back(create_node(aut, rhs[1]));
+			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
 		} else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
 			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
-			const std::string last_token{rhs.back()};
+			const mata::parser::BodyToken last_token{rhs.back()};
 			rhs.pop_back();
 			postfix = infix_to_postfix(aut, rhs);
-			postfix.emplace_back(create_node(aut, last_token));
+			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
 		} else {
 			MATA_ASSERT(false, "Unknown NFA type");
 		}
 
 		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", "&", mata::FormulaNode::OperatorType::And);
-	} else if (aut.automaton_type == mata::IntermediateAut::AutomatonType::Nft && tokens[tokens.size() - 2] != "&") {
-		// we need to take care about this case manually since user does not need to determine
+	} else if (aut.automaton_type == mata::IntermediateAut::AutomatonType::Nft && explicit_transition) {
+		// we need to take care of this case manually since user does not need to determine
 		// symbol and state naming and put conjunction to transition
 		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
 			check_explicit_transition(tokens, "NFT");
 			postfix.emplace_back(
-				mata::FormulaNode::Type::Operand, rhs[0], rhs[0], mata::FormulaNode::OperandType::Symbol
+				mata::FormulaNode::Type::Operand, rhs[0].token, rhs[0].token, mata::FormulaNode::OperandType::Symbol
 			);
-			postfix.emplace_back(create_node(aut, rhs[1]));
+			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
 		} else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
 			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
-			const std::string last_token{rhs.back()};
+			const mata::parser::BodyToken last_token{rhs.back()};
 			rhs.pop_back();
 			postfix = infix_to_postfix(aut, rhs);
-			postfix.emplace_back(create_node(aut, last_token));
+			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
 		} else {
 			MATA_ASSERT(false, "Unknown NFT type");
 		}
@@ -476,13 +485,6 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const s
 		postfix = infix_to_postfix(aut, rhs);
 	}
 
-#ifndef NDEBUG
-	for (const auto& node : postfix) {
-		MATA_ASSERT(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
-		MATA_ASSERT(node.is_left_parenthesis() || node.name != "(");
-		MATA_ASSERT(node.is_right_parenthesis() || node.name != ")");
-	}
-#endif // #ifndef NDEBUG.
 	aut.transitions.emplace_back(std::move(lhs), postfix_to_graph(std::move(postfix)));
 }
 

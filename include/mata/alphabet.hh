@@ -39,6 +39,16 @@ constexpr bool is_reserved_symbol_name(const std::string_view name) {
 }
 
 /**
+ * @brief Returns @p name written as a single token of the .mata format.
+ *
+ * Quotes the name when it is empty, contains white space, a quote, or a character the reader treats specially
+ * (@c "#@%()!&|\\"), writing an inner @c " as @c \", the only escape the reader knows.
+ * A name ending in @c \\ cannot be quoted this way, because the reader reads the closing @c \" as an escaped
+ * quote; such a name never reads back to the same symbol.
+ */
+std::string quote_symbol_name(const std::string_view name);
+
+/**
  * The abstract interface for NFA alphabets.
  */
 class Alphabet {

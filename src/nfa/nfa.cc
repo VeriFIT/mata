@@ -335,7 +335,12 @@ void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
 		} else if (used_alphabet != nullptr) {
 			auto it{symbol_names.find(trans.symbol)};
 			if (it == symbol_names.end()) {
-				it = symbol_names.emplace(trans.symbol, used_alphabet->reverse_translate_symbol(trans.symbol)).first;
+				it =
+					symbol_names
+						.emplace(
+							trans.symbol, mata::quote_symbol_name(used_alphabet->reverse_translate_symbol(trans.symbol))
+						)
+						.first;
 			}
 			output << it->second;
 		} else {

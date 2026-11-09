@@ -12,7 +12,6 @@
 #include "mata/parser/re2parser.hh"
 
 #include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <exception>
@@ -57,13 +56,11 @@ class InputError : public std::runtime_error {
 	std::string source_;
 };
 
-/// The name of byte @p byte: the character itself for a printable ASCII character that can stand unquoted in the
-///  .mata format, and \\xHH otherwise. The reader takes `!`, `&` and `|` for operators, so they are written as \\xHH.
+/// The name of byte @p byte: the character itself for a printable ASCII character, and \\xHH otherwise. The
+///  library printer quotes a name when the reader would take it for something else. Backslash stays escaped: its
+///  own name would be a trailing backslash, which the .mata reader cannot take back from a quoted token.
 std::string byte_name(const unsigned byte) {
-	constexpr std::string_view SPECIAL{"\"#%()@\\!&|"};
-	if (byte > 0x20 && byte < 0x7f && SPECIAL.find(static_cast<char>(byte)) == std::string_view::npos) {
-		return std::string(1, static_cast<char>(byte));
-	}
+	if (byte > 0x20 && byte < 0x7f && byte != '\\') { return std::string(1, static_cast<char>(byte)); }
 	constexpr std::string_view DIGITS{"0123456789abcdef"};
 	return {'\\', 'x', DIGITS[byte >> 4], DIGITS[byte & 0xf]};
 }
@@ -108,15 +105,6 @@ std::string error_json(const std::string_view source, const std::string_view mes
 	append_json_string(out, message);
 	out += '}';
 	return out;
-}
-
-/// Whether the symbol name @p name has to be quoted to read back as a single token of the .mata format.
-bool needs_quotes(const std::string_view name) {
-	if (name.empty() || name.front() == '@' || name.front() == '%') { return true; }
-	return std::ranges::any_of(name, [](const char ch) {
-		return std::isspace(static_cast<unsigned char>(ch)) != 0 ||
-			   std::string_view{"\"#()!&|"}.find(ch) != std::string_view::npos;
-	});
 }
 
 bool has_epsilon(const Nfa& aut) {
@@ -235,45 +223,8 @@ int Evaluation::symbol_index(const Symbol symbol) {
 }
 
 std::string Evaluation::to_mata(const Nfa& aut) {
-	std::string out{"@NFA-explicit\n%Alphabet-auto\n"};
-	const auto append_states = [&out](const std::string_view key, const auto& states) {
-		if (states.empty()) { return; }
-		out += key;
-		for (const State state : states) {
-			out += " q";
-			out += std::to_string(state);
-		}
-		out += '\n';
-	};
-	append_states("%Initial", aut.initial);
-	append_states("%Final", aut.final);
-	std::unordered_map<Symbol, std::string> names{};
-	for (const Transition& transition : aut.delta.transitions()) {
-		auto it{names.find(transition.symbol)};
-		if (it == names.end()) {
-			std::string name{
-				transition.symbol == EPSILON ? std::string{EPSILON_NAME}
-											 : alphabet_.reverse_translate_symbol(transition.symbol)
-			};
-			if (transition.symbol != EPSILON && needs_quotes(name)) {
-				std::string quoted{'"'};
-				for (const char ch : name) {
-					if (ch == '"') { quoted += '\\'; }
-					quoted += ch;
-				}
-				name = quoted + '"';
-			}
-			it = names.emplace(transition.symbol, std::move(name)).first;
-		}
-		out += 'q';
-		out += std::to_string(transition.source);
-		out += ' ';
-		out += it->second;
-		out += " q";
-		out += std::to_string(transition.target);
-		out += '\n';
-	}
-	return out;
+	// Nfa::print_to_mata() quotes the symbol names that need it, so the text reads back as the same automaton.
+	return aut.print_to_mata(&alphabet_);
 }
 
 void Evaluation::append_word(std::string& out, const Word& word) {

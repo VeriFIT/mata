@@ -109,14 +109,14 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 2);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 1);
-		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][0].token == "a");
 		REQUIRE(body[1].size() == 6);
-		REQUIRE(body[1][0] == "b0");
-		REQUIRE(body[1][1] == "b1");
-		REQUIRE(body[1][2] == "b2");
-		REQUIRE(body[1][3] == "b3");
-		REQUIRE(body[1][4] == "b4");
-		REQUIRE(body[1][5] == "b5");
+		REQUIRE(body[1][0].token == "b0");
+		REQUIRE(body[1][1].token == "b1");
+		REQUIRE(body[1][2].token == "b2");
+		REQUIRE(body[1][3].token == "b3");
+		REQUIRE(body[1][4].token == "b4");
+		REQUIRE(body[1][5].token == "b5");
 	}
 
 	SECTION("file with transitions and line break") {
@@ -139,8 +139,8 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 1);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 2);
-		REQUIRE(body[0][0] == "a");
-		REQUIRE(body[0][1] == "b");
+		REQUIRE(body[0][0].token == "a");
+		REQUIRE(body[0][1].token == "b");
 	}
 
 	SECTION("lone backslash as the type line (#761)") {
@@ -170,20 +170,20 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 1);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 14);
-		REQUIRE(body[0][0] == "a");
-		REQUIRE(body[0][1] == "x");
-		REQUIRE(body[0][2] == "&");
-		REQUIRE(body[0][3] == "!");
-		REQUIRE(body[0][4] == "b");
-		REQUIRE(body[0][5] == "&");
-		REQUIRE(body[0][6] == "c");
-		REQUIRE(body[0][7] == "|");
-		REQUIRE(body[0][8] == "(");
-		REQUIRE(body[0][9] == "a");
-		REQUIRE(body[0][10] == "&");
-		REQUIRE(body[0][11] == "!");
-		REQUIRE(body[0][12] == "b");
-		REQUIRE(body[0][13] == ")");
+		REQUIRE(body[0][0].token == "a");
+		REQUIRE(body[0][1].token == "x");
+		REQUIRE(body[0][2].token == "&");
+		REQUIRE(body[0][3].token == "!");
+		REQUIRE(body[0][4].token == "b");
+		REQUIRE(body[0][5].token == "&");
+		REQUIRE(body[0][6].token == "c");
+		REQUIRE(body[0][7].token == "|");
+		REQUIRE(body[0][8].token == "(");
+		REQUIRE(body[0][9].token == "a");
+		REQUIRE(body[0][10].token == "&");
+		REQUIRE(body[0][11].token == "!");
+		REQUIRE(body[0][12].token == "b");
+		REQUIRE(body[0][13].token == ")");
 	}
 
 	SECTION("file with comments and whitespaces") {
@@ -213,10 +213,10 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 2);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 1);
-		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][0].token == "a");
 		REQUIRE(body[1].size() == 2);
-		REQUIRE(body[1][0] == "b0");
-		REQUIRE(body[1][1] == "b1");
+		REQUIRE(body[1][0].token == "b0");
+		REQUIRE(body[1][1].token == "b1");
 	}
 
 	SECTION("using double quotes and escaping for names") {
@@ -261,31 +261,31 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 8);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 2);
-		REQUIRE(body[0][0] == "a");
-		REQUIRE(body[0][1] == "");
+		REQUIRE(body[0][0].token == "a");
+		REQUIRE(body[0][1].token == "");
 		REQUIRE(body[1].size() == 4);
-		REQUIRE(body[1][0] == "b0");
-		REQUIRE(body[1][1] == "b 1");
-		REQUIRE(body[1][2] == "c");
-		REQUIRE(body[1][3] == "d");
+		REQUIRE(body[1][0].token == "b0");
+		REQUIRE(body[1][1].token == "b 1");
+		REQUIRE(body[1][2].token == "c");
+		REQUIRE(body[1][3].token == "d");
 		REQUIRE(body[2].size() == 1);
-		REQUIRE(body[2][0] == "%key6");
+		REQUIRE(body[2][0].token == "%key6");
 		REQUIRE(body[3].size() == 5);
-		REQUIRE(body[3][0] == "c");
-		REQUIRE(body[3][1] == "0");
-		REQUIRE(body[3][2] == "\"he's so cool,\" he said \\/");
-		REQUIRE(body[3][3] == "c");
-		REQUIRE(body[3][4] == "d");
+		REQUIRE(body[3][0].token == "c");
+		REQUIRE(body[3][1].token == "0");
+		REQUIRE(body[3][2].token == "\"he's so cool,\" he said \\/");
+		REQUIRE(body[3][3].token == "c");
+		REQUIRE(body[3][4].token == "d");
 		REQUIRE(body[4].size() == 1);
-		REQUIRE(body[4][0] == "a");
+		REQUIRE(body[4][0].token == "a");
 		REQUIRE(body[5].size() == 1);
-		REQUIRE(body[5][0] == "");
+		REQUIRE(body[5][0].token == "");
 		REQUIRE(body[6].size() == 1);
-		REQUIRE(body[6][0] == "'");
+		REQUIRE(body[6][0].token == "'");
 		REQUIRE(body[7].size() == 3);
-		REQUIRE(body[7][0] == "q");
-		REQUIRE(body[7][1] == "a");
-		REQUIRE(body[7][2] == "q'");
+		REQUIRE(body[7][0].token == "q");
+		REQUIRE(body[7][1].token == "a");
+		REQUIRE(body[7][2].token == "q'");
 	}
 
 	SECTION("file with newlines among keys") {
@@ -342,9 +342,9 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 1);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 3);
-		REQUIRE(body[0][0] == "a");
-		REQUIRE(body[0][1] == "b");
-		REQUIRE(body[0][2] == "c");
+		REQUIRE(body[0][0].token == "a");
+		REQUIRE(body[0][1].token == "b");
+		REQUIRE(body[0][2].token == "c");
 	}
 
 	SECTION("correct handling of parentheses") {
@@ -364,14 +364,14 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.size() == 1);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
 		REQUIRE(body[0].size() == 8);
-		REQUIRE(body[0][0] == "a");
-		REQUIRE(body[0][1] == "(");
-		REQUIRE(body[0][2] == "b");
-		REQUIRE(body[0][3] == "c");
-		REQUIRE(body[0][4] == "d");
-		REQUIRE(body[0][5] == ")");
-		REQUIRE(body[0][6] == "(");
-		REQUIRE(body[0][7] == "e");
+		REQUIRE(body[0][0].token == "a");
+		REQUIRE(body[0][1].token == "(");
+		REQUIRE(body[0][2].token == "b");
+		REQUIRE(body[0][3].token == "c");
+		REQUIRE(body[0][4].token == "d");
+		REQUIRE(body[0][5].token == ")");
+		REQUIRE(body[0][6].token == "(");
+		REQUIRE(body[0][7].token == "e");
 	}
 
 	SECTION("correct handling of start of another section") {

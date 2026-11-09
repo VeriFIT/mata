@@ -166,7 +166,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted) {
  * @brief  Transforms a line into a vector of tokens
  */
 std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line) {
-	std::vector<std::pair<std::string, bool>> result;
+	std::vector<std::pair<std::string, bool>> token_line;
 	std::istringstream stream(line);
 	bool first = true;
 	while (stream.good()) {
@@ -180,11 +180,11 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 			if ('%' == token[0]) { throw std::runtime_error("invalid position of %KEY: " + line); }
 		}
 
-		result.emplace_back(std::move(token), quoted);
+		token_line.emplace_back(std::move(token), quoted);
 		first = false;
 	}
 
-	return result;
+	return token_line;
 }
 
 std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens) {
@@ -346,8 +346,8 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 			BodyLine stripped_token_line;
 			std::ranges::transform(
 				token_line, std::back_inserter(stripped_token_line), [&](const std::pair<std::string, bool>& token) {
-					if (keep_quotes && token.second) { return "\"" + token.first + "\""; }
-					return token.first;
+					if (keep_quotes && token.second) { return BodyToken{"\"" + token.first + "\"", token.second}; }
+					return BodyToken{token.first, token.second};
 				}
 			);
 			result.body.push_back(std::move(stripped_token_line));
@@ -384,10 +384,10 @@ std::ostream& std::operator<<(std::ostream& os, const ParsedSection& parsec) {
 	os << "# Body:\n";
 	for (const auto& body_line : parsec.body) {
 		bool first = true;
-		for (const std::string& str : body_line) {
+		for (const auto& token : body_line) {
 			if (!first) { os << " "; }
 			first = false;
-			os << str;
+			os << token.token;
 		}
 		os << "\n";
 	}
