@@ -104,6 +104,21 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == false") {
 		CHECK(map.get_first_inverted(4) == 1);
 		CHECK(map.get_second_inverted(4) == 2);
 	}
+
+	SECTION("insert_if_absent() keeps the value of an existing pair") {
+		TwoDimensionalMap<unsigned> map(10, 10);
+
+		CHECK(map.insert_if_absent(1, 2, 5) == std::pair(5U, true));
+		CHECK(map.insert_if_absent(1, 3, 6) == std::pair(6U, true));
+		// The pair exists: the new value is refused and the stored one returned.
+		CHECK(map.insert_if_absent(1, 2, 7) == std::pair(5U, false));
+		CHECK(map.get(1, 2) == 5);
+		CHECK(map.get(1, 3) == 6);
+		CHECK(map.get(1, 4) == std::numeric_limits<unsigned>::max());
+		// Only the inserted values have inverted entries.
+		CHECK(map.get_first_inverted(5) == 1);
+		CHECK(map.get_first_inverted(6) == 1);
+	}
 }
 
 TEST_CASE("mata::utils::TwoDimensionalMap::large_map == true") {
@@ -205,6 +220,23 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == true") {
 		CHECK(map.get(1, 2) == 4);
 		CHECK(map.get_first_inverted(4) == 1);
 		CHECK(map.get_second_inverted(4) == 2);
+	}
+
+	SECTION("insert_if_absent() keeps the value of an existing pair") {
+		TwoDimensionalMap<unsigned, true, 10> map(10, 10);
+
+		CHECK(map.insert_if_absent(1, 2, 5) == std::pair(5U, true));
+		CHECK(map.insert_if_absent(1, 3, 6) == std::pair(6U, true));
+		// The pair exists: the new value is refused and the stored one returned, also after the table grew.
+		CHECK(map.insert_if_absent(1, 2, 7) == std::pair(5U, false));
+		for (unsigned i = 0; i < 10; ++i) { map.insert_if_absent(i, i, 100 + i); }
+		CHECK(map.insert_if_absent(1, 2, 8) == std::pair(5U, false));
+		CHECK(map.get(1, 2) == 5);
+		CHECK(map.get(1, 3) == 6);
+		CHECK(map.get(9, 9) == 109);
+		CHECK(map.get(1, 4) == std::numeric_limits<unsigned>::max());
+		CHECK(map.get_first_inverted(5) == 1);
+		CHECK(map.get_second_inverted(5) == 2);
 	}
 
 	SECTION("non-square dimensions") {

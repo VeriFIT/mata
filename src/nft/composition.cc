@@ -1307,20 +1307,20 @@ std::optional<Nft> compose_fast_with(
 			"Only zero-level configurations are split by the EPSILON filter mode"
 		);
 
-		// Try to find the entry in the state map.
 		TwoDimensionalMap<State, false>& storage = storage_for(epsilon_filter_mode);
-		const State found_state = storage.get(key.first, key.second);
-		if (found_state != Limits::max_state) {
-			MATA_ASSERT(result.levels[found_state] == level);
-			return found_state;
+		const State next_state = composition_state_to_add != Limits::max_state
+									 ? composition_state_to_add
+									 : static_cast<State>(result.num_of_states());
+		const auto [new_state, inserted]{storage.insert_if_absent(key.first, key.second, next_state)};
+		if (!inserted) {
+			MATA_ASSERT(result.levels[new_state] == level);
+			return new_state;
 		}
 		MATA_ASSERT(composition_state_to_add == Limits::max_state || result.levels[composition_state_to_add] == level);
 
-		// If not found, add a new state to the result NFT.
-		// Since the key pair was not found in the map, we can be certain that the state is not yet in the worklist.
-		const State new_state = (composition_state_to_add != Limits::max_state) ? composition_state_to_add
-																				: result.add_state_with_level(level);
-		storage.insert(key.first, key.second, new_state);
+		// The state must not be created before the insertion above: a duplicate configuration must leave the result
+		// alone.
+		if (composition_state_to_add == Limits::max_state) { result.add_state_with_level(level); }
 		if (level == 0) {
 			// If the level is zero, check for final states and add the state to the worklist.
 			if ((is_first_lhs && lhs.final.contains(first) && rhs.final.contains(second)) ||
@@ -2856,9 +2856,11 @@ class DirectGeneralComposer {
 	/// The state of the configuration, created on the first visit.
 	State intern(const State lhs_state, const State rhs_state, const size_t layer, const Level level) {
 		const State row{static_cast<State>(lhs_state * num_of_layers_ + layer)};
-		if (const State state{configurations_.get(row, rhs_state)}; state != Limits::max_state) { return state; }
-		const auto state{static_cast<State>(configuration_of_.size())};
-		configurations_.insert(row, rhs_state, state);
+		// The number the configuration would get: the states are numbered by their creation.
+		const auto [state, inserted]{
+			configurations_.insert_if_absent(row, rhs_state, static_cast<State>(configuration_of_.size()))
+		};
+		if (!inserted) { return state; }
 		configuration_of_.push_back({lhs_state, rhs_state, layer});
 		levels_.push_back(level);
 		if (layer < num_of_filter_modes_ && lhs_.nft().final.contains(lhs_state) &&
