@@ -423,7 +423,59 @@ jobs:
               echo "Code is properly formatted."
           fi
   # The only check of the Nix outputs and of uv.lock, which only the development shells are built from.
-  nix-flake-check:
+  # Evaluates the flake and lists its checks; `nix-build` below builds one check per runner in parallel instead
+  #  of `nix flake check`'s serial loop over all of them on a single runner.
+  nix-list-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      checks: ${{ steps.list.outputs.checks }}
+    steps:
+      - uses: cachix/install-nix-action@v31
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      # `--no-build` still evaluates every check and package, so a broken Nix expression or a missing attribute
+      #  fails here.
+      - name: Evaluate the flake
+        run: nix flake check --no-build --print-build-logs
+      # `nix-build` consumes the check names from this output, so a check added to the flake later gets its own
+      #  runner without anyone remembering this workflow.
+      - name: List the checks
+        id: list
+        run: |
+          checks="$(
+            nix eval --json .#checks.x86_64-linux --apply builtins.attrNames \
+              | nix shell nixpkgs#jq --command jq -c 'map(select(. != "treefmt"))'
+          )"
+          echo "checks=$checks" >> "$GITHUB_OUTPUT"
+  # Builds and tests one check per runner; a failing one shows up as its own red job instead of a line in the
+  #  serial `nix flake check` output.
+  nix-build:
+    needs: nix-list-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJSON(needs.nix-list-checks.outputs.checks) }}
+    steps:
+      - uses: cachix/install-nix-action@v31
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. `nix-cache.yml`
+      #  pushes after a merge.
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          skipPush: true
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Build and test ${{ matrix.check }}
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.${{ matrix.check }}
+  # The only check of uv.lock, which only the development shells are built from.
+  nix-devshells:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -438,10 +490,19 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Build all packages and run the flake checks
-        run: nix flake check --print-build-logs
       - name: Build the development shells
         run: nix build --no-link --print-build-logs .#devShells.x86_64-linux.{default,clang,gcc}
+  # One check for the whole Nix side under the name pull requests merged on before. It runs even when a job it
+  #  needs failed and fails itself then: a skipped job would count as passed for a required status check.
+  nix-flake-check:
+    needs: [nix-build, nix-devshells]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every Nix job to pass
+        run: |
+          test "${{ needs.nix-build.result }}" = success
+          test "${{ needs.nix-devshells.result }}" = success
   sanitizers:
     runs-on: ubuntu-latest
     steps:
