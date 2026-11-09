@@ -18,7 +18,26 @@
 namespace mata::parser {
 
 using KeyListStore = std::map<std::string, std::vector<std::string>>;
-using BodyLine = std::vector<std::string>;
+
+/**
+ * One token of a body line, with the flag telling whether the reader read it in quotes.
+ * @c create_node() lets a quoted token be an operand even when it starts with @c & @c | or @c !, which the
+ * unquoted reader would take for an operator of the transition formula.
+ */
+struct BodyToken {
+	std::string token{};
+	bool quoted{false};
+
+	BodyToken() = default;
+	BodyToken(std::string token, const bool quoted) : token{std::move(token)}, quoted{quoted} {}
+	/// An unquoted token, so that a body line reads as a list of plain names in tests and call sites.
+	BodyToken(const char* token) : token{token} {}
+	bool operator==(const BodyToken& rhs) const = default;
+};
+
+inline std::ostream& operator<<(std::ostream& os, const BodyToken& token) { return os << token.token; }
+
+using BodyLine = std::vector<BodyToken>;
 
 /** Parsed data (single section) */
 struct ParsedSection {

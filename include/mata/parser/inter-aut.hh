@@ -238,7 +238,7 @@ class IntermediateAut {
 
 	size_t get_number_of_disjuncts() const;
 
-	static void parse_transition(IntermediateAut& aut, const std::vector<std::string>& tokens);
+	static void parse_transition(IntermediateAut& aut, const mata::parser::BodyLine& tokens);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
 	void print_transitions_trees(std::ostream& os) const;

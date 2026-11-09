@@ -7,10 +7,26 @@
 #include <mata/utils/assert.hh>
 
 #include <algorithm>
+#include <cctype>
 
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
 using mata::Symbol;
+
+std::string mata::quote_symbol_name(const std::string_view name) {
+	const bool needs_quotes{name.empty() || name.back() == '\\' || std::ranges::any_of(name, [](const char ch) {
+								return std::isspace(static_cast<unsigned char>(ch)) != 0 ||
+									   std::string_view{"\"#()!&|\\@%"}.find(ch) != std::string_view::npos;
+							})};
+	if (!needs_quotes) { return std::string{name}; }
+	std::string output{'"'};
+	for (const char ch : name) {
+		if (ch == '"') { output += '\\'; }
+		output += ch;
+	}
+	output += '"';
+	return output;
+}
 
 OnTheFlyAlphabet::OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet)
 	: Alphabet(alphabet),

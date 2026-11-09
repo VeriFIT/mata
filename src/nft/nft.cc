@@ -393,7 +393,11 @@ void Nft::print_to_mata(std::ostream& output) const {
 			const auto key{std::pair{trans.symbol, levels[trans.source]}};
 			auto it{symbol_names.find(key)};
 			if (it == symbol_names.end()) {
-				it = symbol_names.emplace(key, alphabets->reverse_translate_symbol(key.first, key.second)).first;
+				it = symbol_names
+						 .emplace(
+							 key, mata::quote_symbol_name(alphabets->reverse_translate_symbol(key.first, key.second))
+						 )
+						 .first;
 			}
 			output << it->second;
 		} else {

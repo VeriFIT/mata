@@ -1706,7 +1706,7 @@ TEST_CASE("mata::nfa::construct() correct calls") { // {{{
 		parsec.type = nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
-		parsec.body = {{"q1", "a", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2"}}};
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -1723,21 +1723,21 @@ TEST_CASE("mata::nfa::construct() correct calls") { // {{{
 		parsec.type = nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
-		parsec.body.push_back({"q1", "a", "q3"});
-		parsec.body.push_back({"q1", "a", "q10"});
-		parsec.body.push_back({"q1", "b", "q7"});
-		parsec.body.push_back({"q3", "a", "q7"});
-		parsec.body.push_back({"q3", "b", "q9"});
-		parsec.body.push_back({"q9", "a", "q9"});
-		parsec.body.push_back({"q7", "b", "q1"});
-		parsec.body.push_back({"q7", "a", "q3"});
-		parsec.body.push_back({"q7", "c", "q3"});
-		parsec.body.push_back({"q10", "a", "q7"});
-		parsec.body.push_back({"q10", "b", "q7"});
-		parsec.body.push_back({"q10", "c", "q7"});
-		parsec.body.push_back({"q7", "a", "q5"});
-		parsec.body.push_back({"q5", "a", "q5"});
-		parsec.body.push_back({"q5", "c", "q9"});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q10"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "b", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q9", "a", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "b", "q1"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "c", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "c", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "c", "q9"}});
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -1764,14 +1764,14 @@ TEST_CASE("mata::nfa::construct() invalid calls") { // {{{
 
 	SECTION("construct() call with an epsilon transition") {
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"q1", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1"}, {"q2"}}};
 
 		CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition") {
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"q1", "a", "q2", "q3"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2", "q3"}}};
 
 		CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
 	}
@@ -1781,7 +1781,7 @@ TEST_CASE("mata::nfa::construct() invalid calls") { // {{{
 		parsec.body.clear();
 		parsec.dict.insert({"Initial", {"q0"}});
 		parsec.dict.insert({"Final", {"q1"}});
-		parsec.body = {{"q0", "x", "q1"}}; // 'x' is not numeric
+		parsec.body = {mata::parser::BodyLine{{"q0", "x", "q1"}}}; // 'x' is not numeric
 		mata::IntAlphabet int_alphabet;
 
 		// The symbol translation throws; the temporary NameStateMap is a stack object, so it is released while the
@@ -2011,7 +2011,10 @@ TEST_CASE("mata::nfa::construct() with a partly filled state map") { // {{{
 	SECTION("from ParsedSection") {
 		mata::parser::ParsedSection parsec;
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"0", "a", "1"}, {"1", "b", "2"}, {"3", "c", "4"}};
+		parsec.body = {
+			mata::parser::BodyLine{{"0", "a", "1"}}, mata::parser::BodyLine{{"1", "b", "2"}},
+			mata::parser::BodyLine{{"3", "c", "4"}}
+		};
 		aut = builder::construct(parsec, &alphabet, &state_map);
 	}
 	SECTION("from IntermediateAut") {
@@ -5981,6 +5984,30 @@ TEST_CASE("mata::nfa:: print_to_mata") {
 		builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
+}
+
+TEST_CASE("mata::nfa:: print_to_mata with names that need quoting (#1021)") {
+	for (const std::string name :
+		 {"foo bar", "#", "a|b", "(x)", "x\"y", "@at", "%p", "!", "&", "|", "a@b", "a%b", "q5", "n5", ""}) {
+		// A name ending in a backslash cannot be quoted: the reader reads the closing \" as an escaped quote.
+		OnTheFlyAlphabet alphabet{};
+		std::string escaped_name{};
+		for (const char ch : name) {
+			if (ch == '"' || ch == '\\') { escaped_name += '\\'; }
+			escaped_name += ch;
+		}
+		const std::string input{"@NFA-explicit\n%Alphabet-auto\n%Initial s\n%Final f\ns \"" + escaped_name + "\" f\n"};
+		const Nfa nfa{builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(input))[0], &alphabet)};
+		const std::string printed{nfa.print_to_mata(&alphabet)};
+
+		OnTheFlyAlphabet read_alphabet{};
+		const Nfa read_back{
+			builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(printed))[0], &read_alphabet)
+		};
+		CHECK(are_equivalent(read_back, nfa));
+		// The name prints as one token and reads back as the same name.
+		CHECK(read_alphabet.get_symbol_map().contains(name));
+	}
 }
 
 TEST_CASE("mata::nfa::Nfa::trim() bug") {

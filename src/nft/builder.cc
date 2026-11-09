@@ -122,9 +122,9 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 			throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 		}
 
-		const State source = get_state_name(body_line[0]);
-		const Symbol symbol = translate_symbol_name(alphabet, body_line[1]);
-		const State target = get_state_name(body_line[2]);
+		const State source = get_state_name(body_line[0].token);
+		const Symbol symbol = translate_symbol_name(alphabet, body_line[1].token);
+		const State target = get_state_name(body_line[2].token);
 		aut.delta.add(source, symbol, target);
 	}
 

@@ -1,13 +1,13 @@
 // Helpers of the playground that do not need Mata: symbol names, words, labels, and drawing automata in the DOT
 // language of Graphviz. They are shared by the page and its worker.
 
-// The name of byte `byte` in Mata's playground: the character for printable ASCII characters that can stand unquoted
-// in the .mata format, and \xHH otherwise (the .mata reader takes !, & and | for operators). It must agree with
-// byte_name() in bindings/wasm/playground.cc.
+// The name of byte `byte` in Mata's playground: the character for printable ASCII characters, and \xHH otherwise.
+// The library printer quotes a name when the reader would take it for something else. Backslash stays escaped: its
+// own name would be a trailing backslash, which the .mata reader cannot take back from a quoted token. It must
+// agree with byte_name() in bindings/wasm/playground.cc.
 export function byteName(byte) {
     const char = String.fromCharCode(byte);
-    if (byte > 0x20 && byte < 0x7f && !'"#%()@\\!&|'.includes(char))
-        return char;
+    if (byte > 0x20 && byte < 0x7f && byte !== 0x5c) return char;
     return `\\x${byte.toString(16).padStart(2, "0")}`;
 }
 
@@ -15,7 +15,7 @@ export function byteName(byte) {
 export function byteOfName(name) {
     if (name.length === 1) {
         const code = name.charCodeAt(0);
-        return code > 0x20 && code < 0x7f ? code : undefined;
+        return code > 0x20 && code < 0x7f && code !== 0x5c ? code : undefined;
     }
     const match = /^\\x([0-9a-f]{2})$/.exec(name);
     return match ? parseInt(match[1], 16) : undefined;

@@ -72,9 +72,9 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		}
 
 		// Sequenced, so that a mapped source is allocated before a new target gets an identifier.
-		const State src_state{get_state_name(body_line[0])};
-		const Symbol symbol{translate_symbol_name(alphabet, body_line[1])};
-		const State tgt_state{get_state_name(body_line[2])};
+		const State src_state{get_state_name(body_line[0].token)};
+		const Symbol symbol{translate_symbol_name(alphabet, body_line[1].token)};
+		const State tgt_state{get_state_name(body_line[2].token)};
 		transitions.emplace_back(src_state, symbol, tgt_state);
 	}
 	aut.delta.add(std::move(transitions));
