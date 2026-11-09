@@ -1,7 +1,6 @@
 name: Website
-# Builds the website, which is the landing page and the playground from site/ together with the documentation, and
-#  deploys it to GitHub Pages. The release of master deploys it, and it can be deployed by hand with "Run workflow".
-#  Pull requests that change the website only check that it builds.
+# Builds the landing page, playground and documentation of one branch under master/ or devel/. The root page lets
+#  visitors choose between them. Releases deploy their branch; pull requests only check that the master version builds.
 on:
   workflow_call:
     inputs:
@@ -9,12 +8,23 @@ on:
         description: Commit to build the website from.
         type: string
         required: true
+      version:
+        description: Branch directory to publish.
+        type: string
+        default: master
       deploy:
         description: Deploy the website to GitHub Pages.
         type: boolean
         default: true
   workflow_dispatch:
     inputs:
+      version:
+        description: Branch directory to publish.
+        type: choice
+        options:
+          - master
+          - devel
+        default: master
       deploy:
         description: Deploy the website to GitHub Pages.
         type: boolean
@@ -27,6 +37,10 @@ on:
 permissions:
   contents: read
 env:
+  WEBSITE_VERSION: ${{ inputs.version || 'master' }}
+  MATA_WEBSITE_URL: https://verifit.github.io/mata/${{ inputs.version || 'master' }}/
+  # Releases and pull requests build their triggering revision; manual runs build the selected branch.
+  WEBSITE_SOURCE_REF: ${{ inputs.ref || github.event.pull_request.head.sha || (github.event_name == 'workflow_dispatch' && inputs.version) || github.sha }}
   # The same release of Emscripten as the WebAssembly tests of the Rust bindings in code-quality.yml.
   EMSCRIPTEN_VERSION: 6.0.13
   # Viz.js, the build of Graphviz that draws automata in the playground.
@@ -38,7 +52,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
       - uses: ./.github/workflows/actions/docs
       - uses: actions/upload-artifact@v7
         with:
@@ -50,7 +64,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
       - name: Install Emscripten
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
@@ -85,19 +99,25 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
       - name: Copy the pages
         run: |
-          cp -r site _site
-          rm _site/site.just
+          mkdir -p "_site/$WEBSITE_VERSION"
+          cp -r site/. "_site/$WEBSITE_VERSION/"
+          sed --in-place "s|https://verifit.github.io/mata/master/|$MATA_WEBSITE_URL|g" \
+            "_site/$WEBSITE_VERSION/index.html" "_site/$WEBSITE_VERSION/playground/index.html"
+          rm "_site/$WEBSITE_VERSION/site.just" "_site/$WEBSITE_VERSION/serve.py" \
+            "_site/$WEBSITE_VERSION/selector.html" "_site/$WEBSITE_VERSION/404.html"
+          cp site/selector.html _site/index.html
+          cp site/404.html _site/404.html
       - uses: actions/download-artifact@v8
         with:
           name: docs
-          path: _site/docs
+          path: _site/${{ env.WEBSITE_VERSION }}/docs
       - uses: actions/download-artifact@v8
         with:
           name: playground
-          path: _site/playground
+          path: _site/${{ env.WEBSITE_VERSION }}/playground
       - uses: actions/upload-artifact@v7
         with:
           name: website
@@ -126,3 +146,5 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: _site
+          # Each branch owns the root selector and its directory; preserve the other branch's current deployment.
+          clean-exclude: ${{ env.WEBSITE_VERSION == 'master' && 'devel' || 'master' }}

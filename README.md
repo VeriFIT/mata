@@ -12,8 +12,9 @@ Mata is an open source automata library that offers interface for different kind
 3. Rust bindings with a safe API over the efficient library.
 
 The [website of Mata](https://verifit.github.io/mata/) gives an overview of the library, its
-[documentation](https://verifit.github.io/mata/docs/), and a [playground](https://verifit.github.io/mata/playground/)
-that runs Mata in the browser.
+[documentation](https://verifit.github.io/mata/master/docs/), and a
+[playground](https://verifit.github.io/mata/master/playground/) that runs Mata in the browser. The
+[development website](https://verifit.github.io/mata/devel/) tracks the `devel` branch.
 
 ## Installation
 
