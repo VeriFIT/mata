@@ -837,6 +837,12 @@ void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>
 			ranges.emplace_back(std::next(epsilon_it), post.end());
 
 			for (const State target : epsilon_it->targets) {
+				if (target >= components.component_of.size()) {
+					// The target has no allocated post, but its finality is part of the closure.
+					closure_is_final = closure_is_final || final.contains(target);
+					continue;
+				}
+
 				const uint32_t target_component = components.component_of[target];
 				if (target_component == marker) { continue; }
 				// A component is marked by its first member, which already holds the closure post.

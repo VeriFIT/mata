@@ -5342,6 +5342,16 @@ TEST_CASE("mata::nfa::Nfa::remove_epsilon() in place") {
 		check_in_place(aut, 'b', "[ac]*c");
 	}
 
+	SECTION("an unallocated final epsilon target") {
+		Nfa aut{};
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(1, 'a', 0);
+		aut.delta.mutable_state_post(0).push_back(SymbolPost{EPSILON, 2});
+		REQUIRE(aut.delta.num_of_states() == 2);
+		check_in_place(aut, EPSILON, "");
+	}
+
 	SECTION("symbol posts without targets") {
 		// States 1 and 2 have no epsilon post and keep a symbol post without targets; state 3 is unused.
 		Nfa aut(4);
