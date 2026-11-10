@@ -900,7 +900,14 @@ void drop_unused_trailing_posts(Delta& delta) {
 
 // In-place version
 void mata::nfa::Nfa::remove_epsilon(const Symbol epsilon) {
-	// The states without an epsilon post keep their posts as they are.
+	// As in the copying version, the symbol posts that have no target are dropped.
+	const size_t num_of_states = delta.num_of_states();
+	for (State state = 0; state < num_of_states; ++state) {
+		if (std::ranges::any_of(delta[state], &SymbolPost::empty)) {
+			delta.mutable_state_post(state).filter([](const SymbolPost& symbol_post) { return !symbol_post.empty(); });
+		}
+	}
+
 	write_epsilon_closures(delta, delta, final, epsilon);
 	drop_unused_trailing_posts(delta);
 }

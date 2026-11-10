@@ -5342,6 +5342,18 @@ TEST_CASE("mata::nfa::Nfa::remove_epsilon() in place") {
 		check_in_place(aut, 'b', "[ac]*c");
 	}
 
+	SECTION("symbol posts without targets") {
+		// States 1 and 2 have no epsilon post and keep a symbol post without targets; state 3 is unused.
+		Nfa aut(4);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 1);
+		aut.delta.mutable_state_post(1).emplace_back('b');
+		aut.delta.mutable_state_post(2).emplace_back('a');
+		check_in_place(aut, EPSILON, "a*");
+	}
+
 	SECTION("without epsilon transitions") {
 		Nfa aut(3);
 		aut.initial.insert(0);
